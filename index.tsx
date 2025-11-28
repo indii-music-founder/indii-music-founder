@@ -15,6 +15,7 @@ import * as db from './db';
 import * as agentZero from './agent_zero';
 import * as router from './router';
 import * as dashboard from './dashboard';
+import { events, APP_EVENTS } from './events';
 
 async function reloadProjectData(projectId: string) {
     try {
@@ -32,17 +33,28 @@ async function reloadProjectData(projectId: string) {
         
         gallery.updateGalleryUI(); gallery.updateHistoryUI(); canvasLogic.drawCanvas(); agentZero.renderChat();
         if (dom.projectSelector) ui.updateProjectsUI();
+
+        events.emit(APP_EVENTS.PROJECT_LOADED, projectId);
     } catch(e) { console.error("Reload failed", e); }
 }
 
-async function init() {
+async function initApp() {
+    // 1. Initialize DOM Elements
     if (dom.initDOM) dom.initDOM();
+    events.emit(APP_EVENTS.DOM_READY);
+
+    // 2. Initialize DB
     await db.initDB();
+    events.emit(APP_EVENTS.DB_READY);
+
+    // 3. Load Project Data
     let savedProjId = await db.getSettings('currentProjectId') || 'default';
     await reloadProjectData(savedProjId);
+
+    // 4. Initialize Router
     router.switchView('studio');
 
-    // Restore UI State
+    // 5. Restore UI State
     if(state.showroomAsset && dom.showroomAssetPreview) { dom.showroomAssetPreview.src = state.showroomAsset.base64; dom.showroomAssetPreview.classList.remove('hidden'); }
     if(state.uploadedAudio && dom.audioContainer) { dom.audioContainer.classList.remove('hidden'); dom.audioFilename.textContent = state.uploadedAudio.name; dom.audioPlayer.src = state.uploadedAudio.base64; }
     
@@ -50,11 +62,19 @@ async function init() {
     if(savedVidMode) { const radio = document.getElementById(savedVidMode) as HTMLInputElement; if(radio) radio.checked = true; }
     if(dom.directorsCutToggle) dom.directorsCutToggle.checked = await db.getSettings('directorsCut') || false;
 
-    // Initialize UI Components
+    // 6. Initialize UI Components
     ui.initPromptBuilder(); ui.initStudioControlPanel(); ui.initGenerateMenu(); ui.updateVideoInstructionUI(); ui.updateGenerateButtonLabel();
     gallery.updateGalleryUI(); gallery.updateHistoryUI(); canvasLogic.setupCanvasInteractions(); agentZero.initAgentZero();
 
-    // Event Bindings
+    // 7. Setup Event Bindings
+    setupEventBindings();
+
+    // 8. Signal App Ready
+    events.emit(APP_EVENTS.APP_READY);
+    console.log("🚀 Rndr-AI initialized via EventBus");
+}
+
+function setupEventBindings() {
     const bind = (el: HTMLElement | null, evt: string, fn: (e:any)=>void) => { if(el) el.addEventListener(evt, fn); };
     const click = (el: HTMLElement | null, fn: (e:any)=>void) => bind(el, 'click', fn);
 
@@ -216,4 +236,5 @@ async function init() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Bootstrap
+document.addEventListener('DOMContentLoaded', initApp);
