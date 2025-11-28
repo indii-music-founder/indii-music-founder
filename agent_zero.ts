@@ -55,6 +55,12 @@ function detectPersona(): string {
     return 'GENERALIST';
 }
 
+function getProjectVisualContext(): string {
+    // Get last 3 generated items to give Agent awareness of recent visual style
+    const recent = state.generatedHistory.slice(0, 3).map(h => `[${h.type.toUpperCase()}] "${h.prompt}"`).join('; ');
+    return recent ? `RECENT VISUAL HISTORY: ${recent}` : "";
+}
+
 // --- TOOL REGISTRY ---
 const TOOL_REGISTRY: Record<string, (args: any) => Promise<string | void> | string | void> = {
     set_mode: (args) => {
@@ -196,7 +202,8 @@ export async function runAgentLoop(userGoal: string, attachedImages?: { mimeType
     dom.agentInput.disabled = true;
 
     const persona = detectPersona();
-    const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${BASE_TOOLS}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }`;
+    const visualCtx = getProjectVisualContext();
+    const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${BASE_TOOLS}\n${visualCtx}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }`;
 
     try {
         let iterations = 0;
@@ -225,7 +232,13 @@ export async function runAgentLoop(userGoal: string, attachedImages?: { mimeType
                 renderChat();
                 const output = await executeTool(result.tool, result.args);
                 await addMessage('system', `Output: ${output}`);
-                currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+
+                // Auto-Reflection Logic
+                if (result.tool === 'generate_image') {
+                    currentInput = `Tool ${result.tool} Output: ${output}. \nCRITICAL STEP: Critique the generated image against the user's goal. If it's bad, plan a retry. If good, confirm.`;
+                } else {
+                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                }
             }
             iterations++;
         }

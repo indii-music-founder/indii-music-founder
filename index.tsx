@@ -15,6 +15,7 @@ import * as db from './db';
 import * as agentZero from './agent_zero';
 import * as router from './router';
 import * as dashboard from './dashboard';
+import * as toast from './toast';
 
 async function reloadProjectData(projectId: string) {
     try {
@@ -105,7 +106,13 @@ async function init() {
     });
     click(dom.closeBibleBtn, () => {
         const p = state.projects.find(pr => pr.id === state.currentProjectId);
-        if(p) { p.name = dom.bibleProjectName.value; p.context = dom.bibleContext.value; db.saveSettings('projects', state.projects); ui.updateProjectsUI(); }
+        if(p) {
+            p.name = dom.bibleProjectName.value;
+            p.context = dom.bibleContext.value;
+            db.saveSettings('projects', state.projects);
+            ui.updateProjectsUI();
+            toast.show("Bible Saved", "success");
+        }
         dom.bibleModal.classList.add('hidden');
     });
 
@@ -213,6 +220,19 @@ async function init() {
     document.addEventListener('keydown', (e) => {
         if(e.key === 'Escape') [dom.improverModal, dom.bibleModal, dom.videoConfigModal, dom.lightboxModal, dom.annotationModal, dom.promptLibraryModal, dom.storyboardContainer].forEach(el => el?.classList.add('hidden'));
         if(state.currentMode === 'canvas' && (e.key === 'Delete' || e.key === 'Backspace')) canvasLogic.deleteSelection();
+
+        // Power User Shortcuts
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+             dom.generateTrigger?.click();
+        }
+        if (e.key === '[') {
+            const range = dom.brushSizeInput;
+            if(range) { range.value = Math.max(5, parseInt(range.value) - 5).toString(); range.dispatchEvent(new Event('input')); }
+        }
+        if (e.key === ']') {
+            const range = dom.brushSizeInput;
+            if(range) { range.value = Math.min(100, parseInt(range.value) + 5).toString(); range.dispatchEvent(new Event('input')); }
+        }
     });
 }
 

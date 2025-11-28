@@ -151,6 +151,42 @@ export async function clearProjectAgentMemory(projectId: string) {
     };
 }
 
+export async function deleteProjectData(projectId: string): Promise<void> {
+    const storesToDeleteFrom = [
+        DB_STORES.IMAGES,
+        DB_STORES.HISTORY,
+        DB_STORES.PROMPTS,
+        DB_STORES.CANVAS
+    ];
+
+    for (const storeName of storesToDeleteFrom) {
+        const store = await getStore(storeName, 'readwrite');
+        // Since we don't have indices on projectId for these stores yet,
+        // we have to iterate through all records.
+        // See SCHEMA_UPGRADE_NOTES.md
+        const request = store.openCursor();
+
+        await new Promise<void>((resolve, reject) => {
+            request.onsuccess = (event) => {
+                const cursor = (event.target as IDBRequest).result as IDBCursorWithValue;
+                if (cursor) {
+                    const record = cursor.value;
+                    if (record.projectId === projectId) {
+                        cursor.delete();
+                    }
+                    cursor.continue();
+                } else {
+                    resolve();
+                }
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // Agent memory has an index, so we use the optimized delete helper
+    await clearProjectAgentMemory(projectId);
+}
+
 // --- NEW HELPER FOR DASHBOARD ---
 export async function getProjectMetadata(projectId: string) {
     const [images, history] = await Promise.all([

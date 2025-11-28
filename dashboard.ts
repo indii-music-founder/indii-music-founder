@@ -3,6 +3,7 @@ import * as db from './db';
 import * as router from './router';
 import { state } from './state';
 import * as ui from './ui';
+import * as toast from './toast';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function initDashboard() {
@@ -59,9 +60,11 @@ export async function renderProjectGrid() {
         const delBtn = card.querySelector('.delete-proj-btn') as HTMLButtonElement;
         delBtn.onclick = async (e) => {
             e.stopPropagation();
-            if(confirm(`Delete project "${p.name}" and all its files?`)) {
-                // In a real app, this would cascade delete from DB. 
-                // For now, remove from project list.
+            if(confirm(`Delete project "${p.name}" and all its files? This cannot be undone.`)) {
+                // Delete all associated data
+                await db.deleteProjectData(p.id);
+
+                // Remove from project list
                 state.projects = state.projects.filter(pr => pr.id !== p.id);
                 await db.saveSettings('projects', state.projects);
                 renderProjectGrid();
@@ -192,7 +195,7 @@ async function exportBackup() {
         URL.revokeObjectURL(url);
     } catch(e) {
         console.error(e);
-        alert("Export failed.");
+        toast.show("Export failed.", "error");
     } finally {
         if(backupBtn) {
             backupBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Full Backup`;
@@ -229,11 +232,11 @@ async function importBackup(file: File) {
             // Settings need special handling as they are key-value
             for (const item of data.settings || []) await db.saveSettings(item.key, item.value);
 
-            alert("Restore complete. Reloading...");
-            window.location.reload();
+            toast.show("Restore complete. Reloading...", "success");
+            setTimeout(() => window.location.reload(), 1000);
         } catch(err) {
             console.error(err);
-            alert("Failed to restore backup. Invalid file format.");
+            toast.show("Failed to restore backup. Invalid file format.", "error");
         }
     };
     reader.readAsText(file);

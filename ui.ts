@@ -6,23 +6,13 @@ import { STUDIO_TAGS } from './constants';
 
 function getModeConfig(mode: string) {
     const configs: Record<string, { activeBtn?: HTMLElement, show?: (HTMLElement | null)[], hide?: (HTMLElement | null)[], overflow?: boolean }> = {
-        generate: { activeBtn: dom.modeGenerateBtn, show: [dom.storyChainWrapper, dom.countContainer], hide: [dom.videoConfigModal, dom.infiniteCanvas, dom.canvasHud] },
-        video: { activeBtn: dom.modeGenerateBtn, show: [dom.videoConfigModal], hide: [dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
- dashboard-and-canvas-fix
+        generate: { activeBtn: dom.modeGenerateBtn, show: [dom.storyChainWrapper, dom.countContainer], hide: [dom.videoConfigModal, dom.infiniteCanvasContainer, dom.canvasHud] },
+        video: { activeBtn: dom.modeGenerateBtn, show: [dom.videoConfigModal], hide: [dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
+        edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
+        reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
+        remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
         showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
         canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-
- showroom-fix
-        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvas, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-
-        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
-        canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-main
- main
     };
     return configs[mode] || configs.generate;
 }
@@ -45,15 +35,7 @@ export function setMode(mode: OperationMode) {
         dom.videoConfigModal,
         dom.countContainer,
         dom.storyChainWrapper,
- dashboard-and-canvas-fix
         dom.infiniteCanvasContainer,
-
- showroom-fix
-        dom.infiniteCanvas,
-
-        dom.infiniteCanvasContainer,
- main
- main
         dom.canvasHud
     ];
     allContainers.forEach(el => el?.classList.add('hidden'));
