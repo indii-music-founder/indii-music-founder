@@ -6,6 +6,7 @@ export let storyChainWrapper: HTMLDivElement;
 export let viewDashboard: HTMLDivElement;
 export let viewStudio: HTMLDivElement;
 export let projectGrid: HTMLDivElement;
+export let dashboardSettings: HTMLDivElement;
 
 export let imageGallery: HTMLDivElement;
 export let historyList: HTMLDivElement;
@@ -170,6 +171,7 @@ export function initDOM() {
     viewDashboard = document.querySelector('#view-dashboard') as HTMLDivElement;
     viewStudio = document.querySelector('#view-studio') as HTMLDivElement;
     projectGrid = document.querySelector('#project-grid') as HTMLDivElement;
+    dashboardSettings = document.querySelector('#dashboard-settings') as HTMLDivElement;
     imageGallery = document.querySelector('#image-gallery') as HTMLDivElement;
     historyList = document.querySelector('#history-list') as HTMLDivElement;
     projectSelector = document.querySelector('#project-selector') as HTMLSelectElement;
