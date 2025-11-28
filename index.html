@@ -25,6 +25,11 @@
         <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Project Cards Rendered Here -->
         </div>
+
+        <div id="dashboard-settings" class="mt-8 border-t border-gray-800 pt-8">
+            <h2 class="text-xl font-bold text-white mb-4">Settings & Storage</h2>
+            <!-- Settings Rendered Here -->
+        </div>
     </div>
 
     <!-- VIEW: STUDIO (Main App) -->
@@ -232,7 +237,7 @@
                         </div>
 
                         <!-- Showroom Container (RESTORED) -->
-                        <div class="hidden space-y-4">
+                        <div id="showroom-container" class="hidden space-y-4">
                             <div class="grid grid-cols-2 gap-4">
                                 <div id="showroom-drop-zone" class="border-2 border-dashed border-gray-700 rounded-lg p-4 h-32 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-purple-500 hover:bg-[#1a1a1a] transition-all relative">
                                     <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -250,9 +255,30 @@
                                             <option value="Can">Soda Can</option>
                                         </select>
                                     </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Placement</label>
+                                        <select id="showroom-placement" class="w-full bg-[#1a1a1a] border border-gray-700 text-gray-300 text-xs rounded p-2 outline-none">
+                                            <option value="Center Chest">Center Chest</option>
+                                            <option value="Left Pocket">Left Pocket</option>
+                                            <option value="Full Print">Full Print</option>
+                                            <option value="Back Centered">Back Centered</option>
+                                            <option value="Sleeve">Sleeve</option>
+                                        </select>
+                                    </div>
                                     <button id="showroom-mockup-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 rounded">Generate Mockup</button>
                                 </div>
                             </div>
+
+                            <div class="mb-2">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Scene Presets</label>
+                                <div class="flex gap-2">
+                                    <button class="showroom-preset-btn bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] px-3 py-1.5 rounded border border-gray-700" data-prompt="Professional studio photography, solid neutral background, soft lighting, 4k">Studio</button>
+                                    <button class="showroom-preset-btn bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] px-3 py-1.5 rounded border border-gray-700" data-prompt="Urban street style, tokyo night city background, neon lighting, bokeh">Urban</button>
+                                    <button class="showroom-preset-btn bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] px-3 py-1.5 rounded border border-gray-700" data-prompt="Outdoor nature lifestyle, sunlight, forest background, depth of field">Nature</button>
+                                    <button class="showroom-preset-btn bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] px-3 py-1.5 rounded border border-gray-700" data-prompt="High fashion runway, spotlight, minimal aesthetic">Runway</button>
+                                </div>
+                            </div>
+
                             <div>
                                 <div class="flex justify-between items-center mb-1">
                                     <label class="block text-[10px] font-bold text-gray-500 uppercase">Motion</label>

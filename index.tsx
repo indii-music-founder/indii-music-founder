@@ -59,7 +59,7 @@ async function init() {
     const click = (el: HTMLElement | null, fn: (e:any)=>void) => bind(el, 'click', fn);
 
     // Nav & Modes
-    click(dom.homeBtn, () => { dashboard.renderProjectGrid(); router.switchView('dashboard'); });
+    click(dom.homeBtn, () => { dashboard.initDashboard(); router.switchView('dashboard'); });
     click(dom.modeEditBtn, () => ui.setMode('edit'));
     click(dom.modeReferenceBtn, () => ui.setMode('reference'));
     click(dom.modeRemixBtn, () => ui.setMode('remix'));
@@ -145,7 +145,7 @@ async function init() {
     // Sub-Features
     gallery.setupRemixDropZone(dom.remixContentDrop, 'content');
     gallery.setupRemixDropZone(dom.remixStyleDrop, 'style');
-    showroomLogic.setupShowroomDropZone();
+    showroomLogic.initShowroom();
     click(dom.showroomMockupBtn, showroomLogic.runShowroomMockup);
     click(dom.showroomVideoBtn, showroomLogic.runShowroomVideo);
     click(dom.magicMotionBtn, showroomLogic.generateMagicMotion);

@@ -4,19 +4,22 @@ import { state } from './state';
 import { OperationMode } from './types';
 import { STUDIO_TAGS } from './constants';
 
-const MODE_CONFIG: Record<string, { activeBtn?: HTMLElement, show?: (HTMLElement | null)[], hide?: (HTMLElement | null)[], overflow?: boolean }> = {
-    generate: { activeBtn: dom.modeGenerateBtn, show: [dom.storyChainWrapper, dom.countContainer], hide: [dom.videoConfigModal, dom.infiniteCanvas, dom.canvasHud] },
-    video: { activeBtn: dom.modeGenerateBtn, show: [dom.videoConfigModal], hide: [dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-    edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-    reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-    remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-    showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomDropZone?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-    canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvas, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-};
+function getModeConfig(mode: string) {
+    const configs: Record<string, { activeBtn?: HTMLElement, show?: (HTMLElement | null)[], hide?: (HTMLElement | null)[], overflow?: boolean }> = {
+        generate: { activeBtn: dom.modeGenerateBtn, show: [dom.storyChainWrapper, dom.countContainer], hide: [dom.videoConfigModal, dom.infiniteCanvas, dom.canvasHud] },
+        video: { activeBtn: dom.modeGenerateBtn, show: [dom.videoConfigModal], hide: [dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
+        edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
+        reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
+        remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
+        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
+        canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
+    };
+    return configs[mode] || configs.generate;
+}
 
 export function setMode(mode: OperationMode) {
     state.currentMode = mode;
-    const cfg = MODE_CONFIG[mode] || MODE_CONFIG.generate;
+    const cfg = getModeConfig(mode);
 
     // Reset Buttons
     [dom.modeGenerateBtn, dom.modeEditBtn, dom.modeReferenceBtn, dom.modeRemixBtn, dom.modeCanvasBtn, dom.modeShowroomBtn, dom.modeAgentBtn]
@@ -24,8 +27,18 @@ export function setMode(mode: OperationMode) {
     cfg.activeBtn?.classList.add('bg-blue-600', 'text-white');
 
     // Visibility Toggles
-    [dom.remixContentDrop?.parentElement, dom.showroomDropZone?.parentElement, dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud]
-        .forEach(el => el?.classList.add('hidden'));
+    // We need to hide EVERYTHING that might be shown in other modes
+    // To be safe, we hide all potential containers
+    const allContainers = [
+        dom.remixContentDrop?.parentElement,
+        dom.showroomContainer, // Use the container ID
+        dom.videoConfigModal,
+        dom.countContainer,
+        dom.storyChainWrapper,
+        dom.infiniteCanvasContainer,
+        dom.canvasHud
+    ];
+    allContainers.forEach(el => el?.classList.add('hidden'));
     
     cfg.show?.forEach(el => el?.classList.remove('hidden'));
     if(dom.viewStudio) dom.viewStudio.classList.toggle('overflow-hidden', !!cfg.overflow);
