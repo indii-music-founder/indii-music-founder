@@ -12,6 +12,8 @@ import * as promptLogic from './prompt';
 import { v4 as uuidv4 } from 'uuid';
 import * as utils from './utils';
 import * as canvasLogic from './canvas';
+import * as memory from './agent_memory';
+import { showToast } from './toast';
 
 let isProcessing = false;
 
@@ -37,6 +39,8 @@ AVAILABLE TOOLS:
 18. assign_asset_slot(history_id: string, slot: string) - Put an image into a specific slot. Slots: 'remix_content', 'remix_style', 'showroom_asset'.
 19. set_story_time_delta(value: number) - Set Story Chain slider (0-100).
 20. add_to_canvas(history_id: string, x?: number, y?: number) - Place a history image onto the infinite canvas.
+21. save_memory(content: string, type: string) - Save a fact, rule, or summary to long-term memory. Type: 'fact' | 'rule'.
+22. recall_memories(query: string) - Search long-term memory for info.
 `;
 
 const PERSONA_DEFINITIONS: Record<string, string> = {
@@ -168,11 +172,38 @@ const TOOL_REGISTRY: Record<string, (args: any) => Promise<string | void> | stri
         const item = state.generatedHistory.find(h => h.id === args.history_id);
         if (item && item.type === 'image') { canvasLogic.addImageToCanvas(item.base64, args.x || 0, args.y || 0); return "Added to canvas."; }
         return "Invalid item.";
+    },
+    save_memory: async (args) => {
+        await memory.saveMemory(state.currentProjectId, args.content, args.type || 'fact');
+        showToast("Memory saved", "success");
+        return "Memory saved.";
+    },
+    recall_memories: async (args) => {
+        const mems = await memory.retrieveRelevantMemories(state.currentProjectId, args.query);
+        return mems.length ? `MEMORIES FOUND:\n${mems.join('\n')}` : "No relevant memories found.";
     }
+};
+
+const SCHEMAS: {[key: string]: any} = {
+    generate_image: { count: 'number' },
+    set_mode: { mode: 'string' },
+    save_memory: { content: 'string' },
+    recall_memories: { query: 'string' }
 };
 
 async function executeTool(toolName: string, args: any): Promise<string> {
     console.log(`[AgentR] Executing ${toolName}`, args);
+
+    // Schema Validation (Lightweight)
+    if (SCHEMAS[toolName]) {
+        const res = memory.validateSchema(args, SCHEMAS[toolName]);
+        if (!res.valid) {
+            const err = `Validation Error: ${res.error}`;
+            showToast(err, 'error');
+            return err;
+        }
+    }
+
     const tool = TOOL_REGISTRY[toolName];
     if (tool) {
         try {

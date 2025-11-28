@@ -11,18 +11,8 @@ function getModeConfig(mode: string) {
         edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
         reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
         remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
- dashboard-and-canvas-fix
-        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
+        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.infiniteCanvasContainer, dom.canvasHud] },
         canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-
- showroom-fix
-        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvas, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-
-        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
-        canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
-main
- main
     };
     return configs[mode] || configs.generate;
 }
@@ -37,23 +27,14 @@ export function setMode(mode: OperationMode) {
     cfg.activeBtn?.classList.add('bg-blue-600', 'text-white');
 
     // Visibility Toggles
-    // We need to hide EVERYTHING that might be shown in other modes
-    // To be safe, we hide all potential containers
     const allContainers = [
         dom.remixContentDrop?.parentElement,
-        dom.showroomContainer, // Use the container ID
+        dom.showroomContainer,
         dom.videoConfigModal,
         dom.countContainer,
         dom.storyChainWrapper,
- dashboard-and-canvas-fix
         dom.infiniteCanvasContainer,
-
- showroom-fix
         dom.infiniteCanvas,
-
-        dom.infiniteCanvasContainer,
- main
- main
         dom.canvasHud
     ];
     allContainers.forEach(el => el?.classList.add('hidden'));

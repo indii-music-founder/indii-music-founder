@@ -4,6 +4,8 @@ import * as router from './router';
 import { state } from './state';
 import * as ui from './ui';
 import { v4 as uuidv4 } from 'uuid';
+import { showToast } from './toast';
+import { vacuumDatabase } from './vacuum';
 
 export async function initDashboard() {
     await renderProjectGrid();
@@ -60,11 +62,12 @@ export async function renderProjectGrid() {
         delBtn.onclick = async (e) => {
             e.stopPropagation();
             if(confirm(`Delete project "${p.name}" and all its files?`)) {
-                // In a real app, this would cascade delete from DB. 
-                // For now, remove from project list.
+                // Remove from project list
                 state.projects = state.projects.filter(pr => pr.id !== p.id);
                 await db.saveSettings('projects', state.projects);
+                // TODO: Cascade delete DB items for this project (Phase 3)
                 renderProjectGrid();
+                showToast(`Project "${p.name}" deleted`, 'warning');
             }
         };
 
@@ -82,6 +85,7 @@ async function createNewProject() {
     state.projects.push(newProj);
     await db.saveSettings('projects', state.projects);
     
+    showToast(`Project "${name}" created`, 'success');
     openProject(id);
 }
 
@@ -138,6 +142,12 @@ function renderSettings() {
 
             <div class="bg-[#1a1a1a] border border-gray-800 rounded-xl p-6">
                 <h3 class="text-white font-bold mb-4">System Actions</h3>
+
+                <button id="vacuum-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-4 py-3 rounded text-sm font-bold flex items-center justify-center gap-2 mb-3">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9l.6.4"/></svg>
+                    Vacuum Database (Cleanup)
+                </button>
+
                 <button id="clear-all-btn" class="w-full bg-red-900/20 hover:bg-red-900/50 text-red-400 border border-red-900/50 px-4 py-3 rounded text-sm font-bold flex items-center justify-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     Factory Reset (Clear All Data)
@@ -151,6 +161,9 @@ function renderSettings() {
 
     const restoreInput = document.getElementById('restore-input');
     if (restoreInput) restoreInput.onchange = (e: any) => importBackup(e.target.files[0]);
+
+    const vacuumBtn = document.getElementById('vacuum-btn');
+    if (vacuumBtn) vacuumBtn.onclick = vacuumDatabase;
 
     const clearBtn = document.getElementById('clear-all-btn');
     if (clearBtn) clearBtn.onclick = async () => {
@@ -172,27 +185,121 @@ async function exportBackup() {
     if(backupBtn) { backupBtn.textContent = "Exporting..."; (backupBtn as HTMLButtonElement).disabled = true; }
 
     try {
-        const data = {
+        const zip = new (window as any).JSZip();
+        const dateStr = new Date().toISOString().split('T')[0];
+
+        // 1. Export Metadata JSON (Lightweight)
+        const metadata = {
             version: 1,
             timestamp: Date.now(),
-            images: await db.getAll('images'),
-            history: await db.getAll('history'),
             prompts: await db.getAll('prompts'),
             settings: await db.getAll('settings'),
-            canvas: await db.getAll('canvas'),
+            agent_memory: await db.getAll('agent_memory'),
+            projects: state.projects // Ensure we capture project structure
+        };
+        zip.file('metadata.json', JSON.stringify(metadata, null, 2));
+
+        // 2. Export Images (Binary)
+        const images = await db.getAll<any>('images');
+        const imgFolder = zip.folder("images");
+
+        // Helper to convert base64 to Blob/Uint8Array for cleaner ZIP
+        const base64ToBinary = (base64: string) => {
+             const binaryString = window.atob(base64.split(',')[1]);
+             const len = binaryString.length;
+             const bytes = new Uint8Array(len);
+             for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+             return bytes;
+        };
+
+        // Add Uploaded Images
+        for (const img of images) {
+            if (img.base64) {
+                try {
+                    const ext = img.mimeType.split('/')[1] || 'png';
+                    imgFolder.file(`${img.id}.${ext}`, base64ToBinary(img.base64));
+                    // Replace base64 in metadata with reference if we were doing a relational export
+                    // But for restore simplicity, we might keep the "old style" JSON import
+                    // or we write a "manifest" for images.
+                    // For now, to support the EXISTING importBackup which expects a single JSON,
+                    // we actually have a conflict. The user asked for ZIP.
+                    // So we must update Import to handle ZIP too.
+                } catch(e) { console.warn("Failed to zip image", img.id); }
+            }
+        }
+
+        // 3. Export History (Generated Assets)
+        const history = await db.getAll<any>('history');
+        const historyFolder = zip.folder("history");
+        for (const h of history) {
+            if (h.base64) {
+                try {
+                    const isVideo = h.type === 'video' || h.base64.startsWith('data:video');
+                    const ext = isVideo ? 'mp4' : 'png'; // Simplified ext detection
+                    historyFolder.file(`${h.id}.${ext}`, base64ToBinary(h.base64));
+                } catch(e) { console.warn("Failed to zip history", h.id); }
+            }
+        }
+
+        // Add full JSON dump for compatibility (so we don't break the restore logic yet,
+        // or we rewrite restore logic. Let's rewrite restore to be robust).
+        // Actually, to keep it simple and robust:
+        // We will include 'database_dump.json' inside the ZIP which contains everything as Base64
+        // (the old format) AND individual files for user convenience.
+        // This doubles the size but ensures 100% compatibility with the current restore logic
+        // if we just extract that one file, OR we can make a smarter restorer.
+
+        // Let's do the "Smarter Restorer" approach.
+        // We create a `database.json` that has the structure but references files?
+        // No, let's stick to the "Big JSON" inside the ZIP for the machine,
+        // and "Asset Folders" for the human.
+        // Wait, that's huge duplication.
+
+        // Better Plan:
+        // `database.json` contains all the data arrays (images, history) but the `base64` fields are empty strings.
+        // The images are in the folders.
+        // The Import function reads `database.json`, then iterates the IDs and loads the content from the ZIP folder back into base64.
+
+        const imagesClean = images.map(i => ({ ...i, base64: '' })); // Strip data
+        const historyClean = history.map(h => ({ ...h, base64: '' }));
+        const canvasClean = (await db.getAll<any>('canvas')).map(c => ({ ...c, base64: '' })); // Strip data if needed
+
+        const dbDump = {
+            version: 2, // Bump version
+            timestamp: Date.now(),
+            images: imagesClean,
+            history: historyClean,
+            prompts: await db.getAll('prompts'),
+            settings: await db.getAll('settings'),
+            canvas: canvasClean,
             agent_memory: await db.getAll('agent_memory')
         };
 
-        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        zip.file('database.json', JSON.stringify(dbDump, null, 2));
+
+        // Canvas Images
+        const canvas = await db.getAll<any>('canvas');
+        const canvasFolder = zip.folder("canvas");
+        for (const c of canvas) {
+            if (c.base64) {
+                 try {
+                    canvasFolder.file(`${c.id}.png`, base64ToBinary(c.base64));
+                 } catch(e) {}
+            }
+        }
+
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `rndr-backup-${new Date().toISOString().split('T')[0]}.rndr`;
+        a.download = `rndr-backup-${dateStr}.zip`;
         a.click();
         URL.revokeObjectURL(url);
+        showToast("Backup exported as ZIP", "success");
+
     } catch(e) {
         console.error(e);
-        alert("Export failed.");
+        showToast("Export failed: " + e, "error");
     } finally {
         if(backupBtn) {
             backupBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Full Backup`;
@@ -205,36 +312,98 @@ async function importBackup(file: File) {
     if (!file) return;
     if (!confirm("This will overwrite existing data with the backup. Continue?")) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
+    // Detect if ZIP or JSON
+    if (file.name.endsWith('.zip')) {
         try {
-            const data = JSON.parse(e.target?.result as string);
-            if (!data.version) throw new Error("Invalid backup file.");
+            const zip = new (window as any).JSZip();
+            const contents = await zip.loadAsync(file);
 
-            // Clear current data
-            await db.clearStore('images');
-            await db.clearStore('history');
-            await db.clearStore('prompts');
-            await db.clearStore('settings');
-            await db.clearStore('canvas');
-            await db.clearStore('agent_memory');
+            // Read Manifest
+            const dbFile = contents.file("database.json");
+            if (!dbFile) throw new Error("Invalid backup: missing database.json");
 
-            // Restore
-            for (const item of data.images || []) await db.saveImage(item);
-            for (const item of data.history || []) await db.saveHistoryItem(item);
+            const dbText = await dbFile.async("string");
+            const data = JSON.parse(dbText);
+
+            if (data.version !== 2) throw new Error("Unsupported backup version. Needs version 2 (ZIP).");
+
+            // Clear Data
+            await db.clearStore('images'); await db.clearStore('history'); await db.clearStore('prompts');
+            await db.clearStore('settings'); await db.clearStore('canvas'); await db.clearStore('agent_memory');
+
+            // Helper to reconstruct Base64
+            const fileToBase64 = async (folderName: string, id: string, mimeType: string) => {
+                const ext = mimeType.split('/')[1] || 'png';
+                // Try extension variations if needed, but for now stick to simple
+                let f = contents.file(`${folderName}/${id}.${ext}`);
+                if (!f && ext === 'png') f = contents.file(`${folderName}/${id}.jpeg`); // Fallback check
+                if (!f) return null;
+                const b64 = await f.async("base64");
+                return `data:${mimeType};base64,${b64}`;
+            };
+
+            // Restore Images
+            for (const item of data.images || []) {
+                const b64 = await fileToBase64("images", item.id, item.mimeType);
+                if (b64) item.base64 = b64;
+                await db.saveImage(item);
+            }
+
+            // Restore History
+            for (const item of data.history || []) {
+                const mime = item.type === 'video' ? 'video/mp4' : 'image/png';
+                // Some history items might not have mime stored explicitly, rely on type
+                const b64 = await fileToBase64("history", item.id, mime);
+                if (b64) item.base64 = b64;
+                await db.saveHistoryItem(item);
+            }
+
+            // Restore Canvas
+            for (const item of data.canvas || []) {
+                const b64 = await fileToBase64("canvas", item.id, "image/png");
+                if (b64) item.base64 = b64;
+                await db.saveCanvasImage(item);
+            }
+
+            // Simple Data
             for (const item of data.prompts || []) await db.savePrompt(item);
-            for (const item of data.canvas || []) await db.saveCanvasImage(item);
             for (const item of data.agent_memory || []) await db.saveAgentMessage(item);
-
-            // Settings need special handling as they are key-value
             for (const item of data.settings || []) await db.saveSettings(item.key, item.value);
 
-            alert("Restore complete. Reloading...");
-            window.location.reload();
-        } catch(err) {
-            console.error(err);
-            alert("Failed to restore backup. Invalid file format.");
+            showToast("Restore from ZIP complete. Reloading...", "success");
+            setTimeout(() => window.location.reload(), 1500);
+
+        } catch(e) {
+            console.error(e);
+            showToast("ZIP Restore failed: " + e, "error");
         }
-    };
-    reader.readAsText(file);
+    } else {
+        // Fallback to legacy JSON import
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target?.result as string);
+                if (!data.version) throw new Error("Invalid backup file.");
+
+                // Clear current data
+                await db.clearStore('images'); await db.clearStore('history'); await db.clearStore('prompts');
+                await db.clearStore('settings'); await db.clearStore('canvas'); await db.clearStore('agent_memory');
+
+                // Restore
+                for (const item of data.images || []) await db.saveImage(item);
+                for (const item of data.history || []) await db.saveHistoryItem(item);
+                for (const item of data.prompts || []) await db.savePrompt(item);
+                for (const item of data.canvas || []) await db.saveCanvasImage(item);
+                for (const item of data.agent_memory || []) await db.saveAgentMessage(item);
+                for (const item of data.settings || []) await db.saveSettings(item.key, item.value);
+
+                showToast("Legacy Restore complete. Reloading...", "success");
+                setTimeout(() => window.location.reload(), 1500);
+            } catch(err) {
+                console.error(err);
+                showToast("Failed to restore backup. Invalid file format.", "error");
+            }
+        };
+        reader.readAsText(file);
+    }
 }
