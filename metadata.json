@@ -1,0 +1,7 @@
+{
+  "name": "Rndr-AI-8.1",
+  "description": "Rndr-AI Studio",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
