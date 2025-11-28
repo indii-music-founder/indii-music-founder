@@ -11,6 +11,10 @@ function getModeConfig(mode: string) {
         edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
         reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
         remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
+ dashboard-and-canvas-fix
+        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
+        canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
+
  showroom-fix
         showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
         canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvas, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
@@ -18,6 +22,7 @@ function getModeConfig(mode: string) {
         showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
         canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
 main
+ main
     };
     return configs[mode] || configs.generate;
 }
@@ -40,10 +45,14 @@ export function setMode(mode: OperationMode) {
         dom.videoConfigModal,
         dom.countContainer,
         dom.storyChainWrapper,
+ dashboard-and-canvas-fix
+        dom.infiniteCanvasContainer,
+
  showroom-fix
         dom.infiniteCanvas,
 
         dom.infiniteCanvasContainer,
+ main
  main
         dom.canvasHud
     ];
