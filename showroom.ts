@@ -8,6 +8,19 @@ import { AI } from './ai';
 import { v4 as uuidv4 } from 'uuid';
 import * as db from './db';
 
+export function initShowroom() {
+    setupShowroomDropZone();
+
+    // Wire up Scene Presets
+    const presetBtns = document.querySelectorAll('.showroom-preset-btn');
+    presetBtns.forEach(btn => {
+        (btn as HTMLElement).onclick = () => {
+            const val = (btn as HTMLElement).dataset.prompt;
+            if(val && dom.promptEl) dom.promptEl.value = val;
+        };
+    });
+}
+
 export function setupShowroomDropZone() {
     if (!dom.showroomDropZone) return;
 
@@ -68,12 +81,13 @@ export async function runShowroomMockup() {
     ui.startEvolution(18000, dom.showroomMockupBtn);
     try {
         const product = dom.showroomProductType.value;
+        const placement = dom.showroomPlacement ? dom.showroomPlacement.value : "Center Chest";
         const response = await AI.generateContent({
             model: 'gemini-3-pro-image-preview',
             contents: { parts: [
                     { inlineData: { mimeType: state.showroomAsset.mimeType, data: state.showroomAsset.base64.split(',')[1] } },
                     { text: "Apply this graphic." },
-                    { text: `Scene: ${dom.promptEl.value.trim()}. Product: ${product}. ${gallery.getProjectContext()}` }
+                    { text: `Scene: ${dom.promptEl.value.trim()}. Product: ${product}. Placement: ${placement}. ${gallery.getProjectContext()}` }
             ]},
             systemInstruction: "Apply graphic to product in scene.",
             config: { imageConfig: { aspectRatio: '1:1', imageSize: '2K' } }
