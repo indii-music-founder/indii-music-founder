@@ -8,6 +8,7 @@ import * as lightbox from './lightbox';
 import { AI } from './ai';
 import { v4 as uuidv4 } from 'uuid';
 import * as db from './db';
+import * as toast from './toast';
 import { UploadedImage, HistoryItem } from './types';
 
 export async function generateImages(): Promise<string | null> {
@@ -122,7 +123,7 @@ export async function generateImages(): Promise<string | null> {
 
 export async function runStoryChainGeneration() {
     const prompt = dom.promptEl.value.trim();
-    if (!prompt) { alert("Enter a topic."); return; }
+    if (!prompt) { toast.show("Enter a topic.", "error"); return; }
     let count = parseInt(dom.generationCountEl.value) || 4;
     
     dom.statusEl.textContent = 'Planning Timeline...';
@@ -247,7 +248,7 @@ export async function runStoryChainGeneration() {
 }
 
 export async function runRemix() {
-    if (!state.remixContent || !state.remixStyle) { alert("Provide Content & Style."); return; }
+    if (!state.remixContent || !state.remixStyle) { toast.show("Provide Content & Style.", "error"); return; }
     dom.statusEl.textContent = 'Remixing...';
     ui.startEvolution(20000);
     try {
@@ -367,12 +368,12 @@ export async function extractImageStyle(img: UploadedImage) {
             if (p) {
                 p.context = data.style_context;
                 db.saveSettings('projects', state.projects);
-                alert(`Style Extracted!\n\nContext Updated: ${data.style_context.substring(0, 50)}...`);
+                toast.show(`Style Extracted: ${data.style_context.substring(0, 50)}...`, "success");
             }
         }
     } catch (e: any) {
         console.error(e);
-        alert("Failed to extract style.");
+        toast.show("Failed to extract style.", "error");
     } finally {
         dom.statusEl.textContent = 'Ready';
     }

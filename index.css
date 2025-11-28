@@ -195,6 +195,11 @@ button, input, select, textarea {
     width: 100%;
 }
 
+/* Mobile Safe Area for Film Strip */
+#film-strip-container {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
 .image-thumbnail {
     position: relative;
     aspect-ratio: 1;

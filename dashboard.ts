@@ -3,6 +3,7 @@ import * as db from './db';
 import * as router from './router';
 import { state } from './state';
 import * as ui from './ui';
+import * as toast from './toast';
 import { v4 as uuidv4 } from 'uuid';
 import { showToast } from './toast';
 import { vacuumDatabase } from './vacuum';
@@ -61,7 +62,14 @@ export async function renderProjectGrid() {
         const delBtn = card.querySelector('.delete-proj-btn') as HTMLButtonElement;
         delBtn.onclick = async (e) => {
             e.stopPropagation();
+ feature/gaps-and-toasts
+            if(confirm(`Delete project "${p.name}" and all its files? This cannot be undone.`)) {
+                // Delete all associated data
+                await db.deleteProjectData(p.id);
+
+
             if(confirm(`Delete project "${p.name}" and all its files?`)) {
+ main
                 // Remove from project list
                 state.projects = state.projects.filter(pr => pr.id !== p.id);
                 await db.saveSettings('projects', state.projects);
@@ -299,7 +307,11 @@ async function exportBackup() {
 
     } catch(e) {
         console.error(e);
+ feature/gaps-and-toasts
+        toast.show("Export failed.", "error");
+
         showToast("Export failed: " + e, "error");
+ main
     } finally {
         if(backupBtn) {
             backupBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Full Backup`;
@@ -370,12 +382,20 @@ async function importBackup(file: File) {
             for (const item of data.agent_memory || []) await db.saveAgentMessage(item);
             for (const item of data.settings || []) await db.saveSettings(item.key, item.value);
 
+ feature/gaps-and-toasts
+            toast.show("Restore complete. Reloading...", "success");
+            setTimeout(() => window.location.reload(), 1000);
+        } catch(err) {
+            console.error(err);
+            toast.show("Failed to restore backup. Invalid file format.", "error");
+
             showToast("Restore from ZIP complete. Reloading...", "success");
             setTimeout(() => window.location.reload(), 1500);
 
         } catch(e) {
             console.error(e);
             showToast("ZIP Restore failed: " + e, "error");
+ main
         }
     } else {
         // Fallback to legacy JSON import

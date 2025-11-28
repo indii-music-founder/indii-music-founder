@@ -152,6 +152,8 @@ export let approvalApproveBtn: HTMLButtonElement;
 export let approvalRejectBtn: HTMLButtonElement;
 export let approvalImage: HTMLImageElement;
 
+export let toastContainer: HTMLDivElement;
+
 // New Selectors for Collapsible Panels & Menus
 export let promptBuilderToggle: HTMLButtonElement;
 export let promptBuilderContent: HTMLDivElement;
@@ -315,6 +317,8 @@ export function initDOM() {
     approvalApproveBtn = document.querySelector('#approval-approve-btn') as HTMLButtonElement;
     approvalRejectBtn = document.querySelector('#approval-reject-btn') as HTMLButtonElement;
     approvalImage = document.querySelector('#approval-image') as HTMLImageElement;
+
+    toastContainer = document.querySelector('#toast-container') as HTMLDivElement;
 
     // New Component Selectors
     promptBuilderToggle = document.querySelector('#prompt-builder-toggle') as HTMLButtonElement;
