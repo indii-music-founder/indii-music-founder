@@ -6,6 +6,7 @@ export let storyChainWrapper: HTMLDivElement;
 export let viewDashboard: HTMLDivElement;
 export let viewStudio: HTMLDivElement;
 export let projectGrid: HTMLDivElement;
+export let dashboardSettings: HTMLDivElement;
 
 export let imageGallery: HTMLDivElement;
 export let historyList: HTMLDivElement;
@@ -100,6 +101,7 @@ export let agentFileInput: HTMLInputElement;
 export let filmScrollLeft: HTMLButtonElement;
 export let filmScrollRight: HTMLButtonElement;
 export let filmStripContainer: HTMLDivElement;
+export let infiniteCanvasContainer: HTMLDivElement;
 export let infiniteCanvas: HTMLCanvasElement;
 export let canvasHud: HTMLDivElement;
 export let canvasEmptyState: HTMLDivElement;
@@ -169,6 +171,7 @@ export function initDOM() {
     viewDashboard = document.querySelector('#view-dashboard') as HTMLDivElement;
     viewStudio = document.querySelector('#view-studio') as HTMLDivElement;
     projectGrid = document.querySelector('#project-grid') as HTMLDivElement;
+    dashboardSettings = document.querySelector('#dashboard-settings') as HTMLDivElement;
     imageGallery = document.querySelector('#image-gallery') as HTMLDivElement;
     historyList = document.querySelector('#history-list') as HTMLDivElement;
     projectSelector = document.querySelector('#project-selector') as HTMLSelectElement;
@@ -262,6 +265,7 @@ export function initDOM() {
     filmScrollLeft = document.querySelector('#film-scroll-left') as HTMLButtonElement;
     filmScrollRight = document.querySelector('#film-scroll-right') as HTMLButtonElement;
     filmStripContainer = document.querySelector('#film-strip-container') as HTMLDivElement;
+    infiniteCanvasContainer = document.querySelector('#infinite-canvas-container') as HTMLDivElement;
     infiniteCanvas = document.querySelector('#infinite-canvas') as HTMLCanvasElement;
     canvasHud = document.querySelector('#canvas-hud') as HTMLDivElement;
     canvasEmptyState = document.querySelector('#canvas-empty-state') as HTMLDivElement;
