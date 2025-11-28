@@ -15,11 +15,9 @@ import * as db from './db';
 import * as agentZero from './agent_zero';
 import * as router from './router';
 import * as dashboard from './dashboard';
- feature/gaps-and-toasts
 import * as toast from './toast';
 
 import { events, APP_EVENTS } from './events';
- main
 
 async function reloadProjectData(projectId: string) {
     try {

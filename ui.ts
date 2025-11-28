@@ -6,21 +6,12 @@ import { STUDIO_TAGS } from './constants';
 
 function getModeConfig(mode: string) {
     const configs: Record<string, { activeBtn?: HTMLElement, show?: (HTMLElement | null)[], hide?: (HTMLElement | null)[], overflow?: boolean }> = {
- feature/gaps-and-toasts
         generate: { activeBtn: dom.modeGenerateBtn, show: [dom.storyChainWrapper, dom.countContainer], hide: [dom.videoConfigModal, dom.infiniteCanvasContainer, dom.canvasHud] },
         video: { activeBtn: dom.modeGenerateBtn, show: [dom.videoConfigModal], hide: [dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
         edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
         reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
         remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer, dom.canvasHud] },
         showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvasContainer] },
-
-        generate: { activeBtn: dom.modeGenerateBtn, show: [dom.storyChainWrapper, dom.countContainer], hide: [dom.videoConfigModal, dom.infiniteCanvas, dom.canvasHud] },
-        video: { activeBtn: dom.modeGenerateBtn, show: [dom.videoConfigModal], hide: [dom.countContainer, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        edit: { activeBtn: dom.modeEditBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        reference: { activeBtn: dom.modeReferenceBtn, show: [dom.countContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        remix: { activeBtn: dom.modeRemixBtn, show: [dom.countContainer, dom.remixContentDrop?.parentElement], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.canvasHud] },
-        showroom: { activeBtn: dom.modeShowroomBtn, show: [dom.countContainer, dom.showroomContainer], hide: [dom.videoConfigModal, dom.storyChainWrapper, dom.infiniteCanvas, dom.infiniteCanvasContainer, dom.canvasHud] },
- main
         canvas: { activeBtn: dom.modeCanvasBtn, show: [dom.infiniteCanvasContainer, dom.canvasHud], hide: [dom.videoConfigModal, dom.countContainer, dom.storyChainWrapper], overflow: true }
     };
     return configs[mode] || configs.generate;
@@ -43,10 +34,6 @@ export function setMode(mode: OperationMode) {
         dom.countContainer,
         dom.storyChainWrapper,
         dom.infiniteCanvasContainer,
- feature/gaps-and-toasts
-
-        dom.infiniteCanvas,
- main
         dom.canvasHud
     ];
     allContainers.forEach(el => el?.classList.add('hidden'));
