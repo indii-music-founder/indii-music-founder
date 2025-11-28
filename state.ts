@@ -1,5 +1,6 @@
 
 import { OperationMode, UploadedImage, Project, SavedPrompt, CanvasImage, UploadedAudio, HistoryItem, AgentMessage } from './types';
+import { events, APP_EVENTS } from './events';
 
 interface AppState {
     currentMode: OperationMode;
@@ -23,10 +24,10 @@ interface AppState {
     activeHistoryId: string | null;
     canvasTool: 'pan' | 'generate';
     selectedCanvasImageId: string | null;
-    agentHistory: AgentMessage[]; // Item 3: Memory Vault
+    agentHistory: AgentMessage[];
 }
 
-export const state: AppState = {
+const initialState: AppState = {
     currentMode: 'generate',
     lastPromptVideoModeId: 'agent-mode',
     uploadedImages: [],
@@ -50,3 +51,24 @@ export const state: AppState = {
     selectedCanvasImageId: null,
     agentHistory: []
 };
+
+// Proxy to intercept writes and emit events
+export const state = new Proxy<AppState>(initialState, {
+    set(target, property, value) {
+        // @ts-ignore
+        target[property] = value;
+
+        // Emit general state change (for debug/persistence)
+        events.emit(APP_EVENTS.STATE_CHANGED, { key: property, value });
+
+        // Specific events for critical state
+        if (property === 'currentMode') events.emit(APP_EVENTS.MODE_CHANGED, value);
+
+        return true;
+    }
+});
+
+// Helper for bulk updates without spamming events (optional, can just assign)
+export function setState(newState: Partial<AppState>) {
+    Object.assign(state, newState);
+}
