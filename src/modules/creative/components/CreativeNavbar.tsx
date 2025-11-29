@@ -1,36 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import { Image } from '@/services/image/ImageService';
-import { MonitorPlay, Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { MonitorPlay, Sparkles, Loader2, ChevronDown, ChevronUp, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import PromptTools from './PromptTools';
 import PromptLibrary from './PromptLibrary';
+import StudioNavControls from './StudioNavControls';
 
 import { useToast } from '@/core/context/ToastContext';
 
+import BrandAssetsDrawer from './BrandAssetsDrawer';
+
 export default function CreativeNavbar() {
-    const { currentProjectId, addToHistory } = useStore();
+    const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, addUploadedImage, generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode } = useStore();
     const toast = useToast();
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
+    const [showModeDropdown, setShowModeDropdown] = useState(false);
+    const [showMobileControls, setShowMobileControls] = useState(false);
+    const [showBrandAssets, setShowBrandAssets] = useState(false);
+
+    const firstFrameInputRef = useRef<HTMLInputElement>(null);
+    const lastFrameInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFrameUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'firstFrame' | 'lastFrame') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            if (event.target?.result) {
+                const newItem = {
+                    id: crypto.randomUUID(),
+                    type: 'image' as const,
+                    url: event.target.result as string,
+                    prompt: file.name,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                };
+                addUploadedImage(newItem);
+                setVideoInput(target, newItem);
+                toast.success(`Set ${target === 'firstFrame' ? 'First' : 'Last'} Frame`);
+            }
+        };
+        reader.readAsDataURL(file);
+        // Reset input
+        e.target.value = '';
+    };
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
         setIsGenerating(true);
         try {
-            const results = await Image.generateImages({
-                prompt: prompt,
-                count: 1,
-                resolution: '2K'
-            });
+            let results;
+            if (generationMode === 'video') {
+                results = await Image.generateVideo({
+                    prompt: prompt,
+                    resolution: studioControls.resolution,
+                    aspectRatio: studioControls.aspectRatio,
+                    negativePrompt: studioControls.negativePrompt,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    firstFrame: videoInputs.firstFrame?.url,
+                    lastFrame: videoInputs.lastFrame?.url,
+                    timeOffset: videoInputs.timeOffset
+                });
+            } else {
+                results = await Image.generateImages({
+                    prompt: prompt,
+                    count: 1,
+                    resolution: studioControls.resolution,
+                    aspectRatio: studioControls.aspectRatio,
+                    negativePrompt: studioControls.negativePrompt,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
+                });
+            }
 
             if (results.length === 0) {
-                toast.error("No images were generated. The model might have returned text only or failed silently.");
+                toast.error(`No ${generationMode}s were generated. The model might have failed silently.`);
                 console.warn("Generation returned 0 results.");
             } else {
-                toast.success("Image generated successfully!");
+                toast.success(`${generationMode === 'video' ? 'Video' : 'Image'} generated successfully!`);
             }
 
             results.forEach(res => {
@@ -38,7 +89,7 @@ export default function CreativeNavbar() {
                     id: res.id,
                     url: res.url,
                     prompt: res.prompt,
-                    type: 'image',
+                    type: generationMode,
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
@@ -54,20 +105,46 @@ export default function CreativeNavbar() {
 
     return (
         <div className="flex flex-col z-20">
+            {/* Main Navbar */}
             <div className="bg-[#1a1a1a] border-b border-gray-800 py-2 px-4 flex-shrink-0">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 w-full">
                     <div className="flex items-center justify-between md:justify-start gap-4 flex-shrink-0">
                         <div className="flex items-center gap-4">
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Studio Mode</p>
+                            {/* Branding */}
+                            <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">Rndr-AI</h1>
                             <div className="h-4 w-px bg-gray-700"></div>
-                            <select
-                                className="bg-[#0f0f0f] border border-gray-700 text-xs rounded px-2 py-1 text-gray-300 focus:ring-1 focus:ring-yellow-500 outline-none"
-                                value={currentProjectId}
-                                onChange={() => { }}
-                            >
-                                <option value="default">Default Project</option>
-                                <option value="new">+ New Project</option>
-                            </select>
+
+                            {/* Mode Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowModeDropdown(!showModeDropdown)}
+                                    className="flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 text-xs rounded px-3 py-1.5 text-gray-300 hover:border-gray-500 transition-colors whitespace-nowrap"
+                                >
+                                    {generationMode === 'image' ? (
+                                        <><ImageIcon size={12} /> Image</>
+                                    ) : (
+                                        <><Video size={12} /> Video</>
+                                    )}
+                                    <ChevronDown size={12} />
+                                </button>
+
+                                {showModeDropdown && (
+                                    <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                                        <button
+                                            onClick={() => { setGenerationMode('image'); setShowModeDropdown(false); }}
+                                            className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                                        >
+                                            <ImageIcon size={12} /> Image Mode
+                                        </button>
+                                        <button
+                                            onClick={() => { setGenerationMode('video'); setShowModeDropdown(false); }}
+                                            className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                                        >
+                                            <Video size={12} /> Video Mode
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Mobile: Agent Toggle in top row */}
@@ -81,23 +158,23 @@ export default function CreativeNavbar() {
                     </div>
 
                     {/* Prompt Input Area */}
-                    <div className="flex-1 w-full md:max-w-3xl flex items-center gap-2 order-3 md:order-2">
+                    <div className="flex-1 w-full flex items-center gap-2 order-3 md:order-2">
                         <div className="flex-1 relative flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 rounded-lg pr-2 focus-within:ring-1 focus-within:ring-purple-500 transition-all">
                             <input
                                 type="text"
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                                placeholder="Describe what you want to create..."
-                                className="flex-1 bg-transparent border-none rounded-l-lg pl-3 py-1.5 text-sm text-white placeholder-gray-500 focus:ring-0 outline-none"
+                                placeholder={`Describe what you want to create in ${generationMode} mode...`}
+                                className="flex-1 bg-transparent border-none rounded-l-lg pl-3 py-1.5 text-sm text-white placeholder-gray-500 focus:ring-0 outline-none min-w-0"
                             />
 
                             {/* Tools inside input */}
-                            <div className="flex items-center gap-1 border-l border-gray-700 pl-2">
+                            <div className="flex items-center gap-1 border-l border-gray-700 pl-2 flex-shrink-0">
                                 <PromptTools currentPrompt={prompt} onUpdatePrompt={setPrompt} />
                                 <PromptLibrary currentPrompt={prompt} onLoadPrompt={setPrompt} />
                                 <button
-                                    onClick={() => setShowPromptBuilder(!showPromptBuilder)}
+                                    onClick={(e) => { e.stopPropagation(); setShowPromptBuilder(!showPromptBuilder); }}
                                     className={`p-1.5 rounded transition-colors ${showPromptBuilder ? 'text-white bg-gray-700' : 'text-gray-500 hover:text-white'}`}
                                     title="Toggle Prompt Builder"
                                 >
@@ -106,13 +183,28 @@ export default function CreativeNavbar() {
                             </div>
                         </div>
 
+                        {/* Studio Controls (Desktop) */}
+                        <div className="hidden md:block">
+                            <StudioNavControls />
+                        </div>
+
+                        {/* Studio Controls Toggle (Mobile) */}
+                        <div className="md:hidden">
+                            <button
+                                onClick={() => setShowMobileControls(!showMobileControls)}
+                                className={`p-2 rounded transition-colors ${showMobileControls ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <Settings2 size={18} />
+                            </button>
+                        </div>
+
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating || !prompt.trim()}
-                            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-1.5 px-4 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-purple-900/20"
+                            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-1.5 px-4 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-purple-900/20 whitespace-nowrap"
                         >
                             {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                            Generate
+                            {generationMode === 'video' ? 'Generate Video' : 'Generate Image'}
                         </button>
                     </div>
 
@@ -142,9 +234,200 @@ export default function CreativeNavbar() {
                 </div>
             </div>
 
+            {/* Sub-Menu Bar */}
+            <div className="bg-[#111] border-b border-gray-800 py-1 px-4">
+                <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
+                    {generationMode === 'image' ? (
+                        <>
+                            <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Image</button>
+                            <button
+                                onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0])}
+                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (generatedHistory.length > 0) {
+                                        setActiveReferenceImage(generatedHistory[0]);
+                                        toast.success("Latest image set as reference");
+                                    }
+                                }}
+                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                            >
+                                Reference
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (generatedHistory.length > 0) {
+                                        setPrompt(generatedHistory[0].prompt);
+                                        toast.success("Prompt copied from latest image");
+                                    }
+                                }}
+                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                            >
+                                Remix
+                            </button>
+                            <button
+                                onClick={() => setViewMode('showroom')}
+                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                            >
+                                Showroom
+                            </button>
+                            <button
+                                onClick={() => setViewMode('canvas')}
+                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                            >
+                                Canvas
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Video</button>
+
+                            {/* Daisy Chain Controls */}
+                            <div className="flex items-center gap-2 border-l border-r border-gray-800 px-3 mx-2">
+                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Composition</span>
+
+                                {/* First Frame Slot */}
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        ref={firstFrameInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => handleFrameUpload(e, 'firstFrame')}
+                                    />
+                                    <div
+                                        onClick={() => !videoInputs.firstFrame && firstFrameInputRef.current?.click()}
+                                        className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.firstFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
+                                    >
+                                        {videoInputs.firstFrame ? (
+                                            <>
+                                                <img src={videoInputs.firstFrame.url} className="w-full h-full object-cover" alt="First Frame" />
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', null); }}
+                                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <span className="text-white text-xs">×</span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <span className="text-[9px] text-gray-600 text-center leading-none select-none">First<br />Frame</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Link Icon */}
+                                <div className={`h-px w-4 ${videoInputs.isDaisyChain ? 'bg-purple-500' : 'bg-gray-700'}`}></div>
+
+                                {/* Last Frame Slot */}
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        ref={lastFrameInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => handleFrameUpload(e, 'lastFrame')}
+                                    />
+                                    <div
+                                        onClick={() => !videoInputs.lastFrame && lastFrameInputRef.current?.click()}
+                                        className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.lastFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
+                                    >
+                                        {videoInputs.lastFrame ? (
+                                            <>
+                                                <img src={videoInputs.lastFrame.url} className="w-full h-full object-cover" alt="Last Frame" />
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', null); }}
+                                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <span className="text-white text-xs">×</span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <span className="text-[9px] text-gray-600 text-center leading-none select-none">Last<br />Frame</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Daisy Chain Toggle */}
+                                <button
+                                    onClick={() => setVideoInput('isDaisyChain', !videoInputs.isDaisyChain)}
+                                    className={`ml-2 text-[10px] px-2 py-0.5 rounded border transition-colors ${videoInputs.isDaisyChain ? 'bg-purple-900/30 border-purple-500 text-purple-300' : 'bg-transparent border-gray-700 text-gray-500 hover:text-gray-300'}`}
+                                >
+                                    Daisy Chain
+                                </button>
+
+                                {/* Time Offset Slider */}
+                                <div className="flex items-center gap-2 ml-4 border-l border-gray-800 pl-4">
+                                    <span className="text-[9px] text-gray-500 uppercase font-bold">Time</span>
+                                    <input
+                                        type="range"
+                                        min="-8"
+                                        max="8"
+                                        step="1"
+                                        value={videoInputs.timeOffset}
+                                        onChange={(e) => setVideoInput('timeOffset', parseInt(e.target.value))}
+                                        className="w-20 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                    />
+                                    <span className={`text-[10px] font-mono w-8 text-right ${videoInputs.timeOffset > 0 ? 'text-green-400' : videoInputs.timeOffset < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                                        {videoInputs.timeOffset > 0 ? '+' : ''}{videoInputs.timeOffset}s
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Motion Brush</button>
+                            <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Director's Cut</button>
+                        </>
+                    )}
+
+                    {/* Brand Palette Section */}
+                    <div className="h-4 w-px bg-gray-700 mx-2 flex-shrink-0"></div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                            onClick={() => setShowBrandAssets(!showBrandAssets)}
+                            className={`text-[10px] uppercase font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${showBrandAssets ? 'bg-yellow-900/30 text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Sparkles size={10} className={showBrandAssets ? "text-yellow-500" : "text-gray-500"} /> Brand
+                        </button>
+                        {useStore.getState().userProfile.brandKit?.colors?.length > 0 && !showBrandAssets && (
+                            <div className="flex gap-1">
+                                {useStore.getState().userProfile.brandKit.colors.map((color, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-4 h-4 rounded-full border border-gray-600 cursor-pointer hover:scale-110 transition-transform relative group"
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(color);
+                                            toast.success(`Copied ${color}`);
+                                        }}
+                                    >
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                                            {color}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Controls Drawer */}
+            {showMobileControls && (
+                <div className="md:hidden bg-[#1a1a1a] border-b border-gray-800 p-4 animate-in slide-in-from-top-2">
+                    <StudioNavControls className="flex-col items-stretch gap-4" />
+                </div>
+            )}
+
             {/* Prompt Builder Drawer */}
             {showPromptBuilder && (
                 <PromptBuilder onAddTag={(tag) => setPrompt(prev => prev ? `${prev}, ${tag}` : tag)} />
+            )}
+
+            {/* Brand Assets Drawer */}
+            {showBrandAssets && (
+                <BrandAssetsDrawer onClose={() => setShowBrandAssets(false)} />
             )}
         </div>
     );

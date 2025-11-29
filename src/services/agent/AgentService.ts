@@ -39,13 +39,26 @@ class AgentService {
 
     private async runAgentLoop(userGoal: string) {
         const persona = 'GENERALIST'; // TODO: Detect persona from project context
-        const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${BASE_TOOLS}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }`;
+
+        // Inject Brand Context
+        const { userProfile } = useStore.getState();
+        const brandKit = userProfile.brandKit;
+        const brandContext = `
+        BRAND CONTEXT:
+        - Identity: ${userProfile.bio || 'N/A'}
+        - Visual Style: ${brandKit.brandDescription || 'N/A'}
+        - Colors: ${brandKit.colors.join(', ') || 'N/A'}
+        - Fonts: ${brandKit.fonts || 'N/A'}
+        - Current Release: ${brandKit.releaseDetails.title} (${brandKit.releaseDetails.type}) - ${brandKit.releaseDetails.mood}
+        `;
+
+        const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${brandContext}\n${BASE_TOOLS}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }\n4. When the task is complete, you MUST use "final_response" to finish.`;
 
         let iterations = 0;
         let currentInput = userGoal;
         const history = useStore.getState().agentHistory;
 
-        while (iterations < 5) { // Limit iterations for safety
+        while (iterations < 8) { // Limit iterations for safety
             const parts: any[] = [];
 
             // Build Context from History
@@ -93,7 +106,12 @@ class AgentService {
                 }
 
                 this.addSystemMessage(`Output: ${output}`);
-                currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+
+                if (output.toLowerCase().includes('successfully')) {
+                    currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
+                } else {
+                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                }
             }
             iterations++;
         }

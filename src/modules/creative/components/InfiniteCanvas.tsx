@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, CanvasImage } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { Image } from '@/services/image/ImageService';
 import { Loader2, Move, MousePointer2, Eraser, ImagePlus } from 'lucide-react';
 
 export default function InfiniteCanvas() {
@@ -60,7 +60,7 @@ export default function InfiniteCanvas() {
         canvasImages.forEach(img => {
             let image = imageCache.current.get(img.id);
             if (!image) {
-                image = new Image();
+                image = new window.Image();
                 image.src = img.base64;
                 image.onload = () => draw();
                 imageCache.current.set(img.id, image);
@@ -225,23 +225,56 @@ export default function InfiniteCanvas() {
             const ww = w / scale;
             const wh = h / scale;
 
-            // TODO: Capture context from canvas for outpainting
-            // For now, simple generation
-            const response = await AI.generateContent({
-                model: 'gemini-3-pro-image-preview',
-                contents: { parts: [{ text: prompt }] },
-                config: { imageConfig: { aspectRatio: "1:1", imageSize: '2K' } }
+            // Capture Context
+            const canvas = canvasRef.current;
+            if (!canvas) throw new Error("No canvas");
+
+            // Create a temp canvas to crop the selection
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = w;
+            tempCanvas.height = h;
+            const tCtx = tempCanvas.getContext('2d');
+            if (!tCtx) throw new Error("No temp context");
+
+            // Draw the visible canvas onto temp canvas
+            // We need to map screen coords (sx, sy) to the temp canvas (0, 0)
+            tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h);
+
+            const contextDataUrl = tempCanvas.toDataURL('image/png');
+            const base64Data = contextDataUrl.split(',')[1];
+
+            // Use ImageService for generation (Edit Mode / Magic Fill)
+            // We use editImage to include the context
+            const result = await Image.editImage({
+                image: { mimeType: 'image/png', data: base64Data },
+                prompt: prompt
             });
 
-            const part = response.candidates?.[0]?.content?.parts?.[0];
-            if (part && part.inlineData) {
+            if (result) {
                 addCanvasImage({
-                    id: crypto.randomUUID(),
-                    base64: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+                    id: result.id,
+                    base64: result.url,
                     x: wx, y: wy, width: ww, height: wh,
                     aspect: ww / wh,
                     projectId: currentProjectId
                 });
+            } else {
+                // Fallback to pure generation if edit returns null (unlikely)
+                const results = await Image.generateImages({
+                    prompt: prompt,
+                    count: 1,
+                    aspectRatio: "1:1"
+                });
+                if (results.length > 0) {
+                    const res = results[0];
+                    addCanvasImage({
+                        id: res.id,
+                        base64: res.url,
+                        x: wx, y: wy, width: ww, height: wh,
+                        aspect: ww / wh,
+                        projectId: currentProjectId
+                    });
+                }
             }
         } catch (e) {
             console.error(e);
@@ -255,16 +288,17 @@ export default function InfiniteCanvas() {
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         const id = e.dataTransfer.getData('text/plain');
-        const historyItem = useStore.getState().generatedHistory.find(h => h.id === id);
+        const state = useStore.getState();
+        const historyItem = state.generatedHistory.find(h => h.id === id) || state.uploadedImages.find(u => u.id === id);
 
-        if (historyItem && historyItem.type === 'image') {
+        if (historyItem && (historyItem.type === 'image' || historyItem.type === 'video')) { // Allow videos as static frames for now
             const rect = canvasRef.current!.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
             const wx = (mx - offset.x) / scale;
             const wy = (my - offset.y) / scale;
 
-            const img = new Image();
+            const img = new window.Image(); // Explicit window.Image to avoid conflict if imported
             img.onload = () => {
                 const aspect = img.width / img.height;
                 addCanvasImage({

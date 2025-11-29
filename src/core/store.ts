@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { CustomNode, CustomEdge, KnowledgeDocument, UserProfile, BrandKit } from '../modules/workflow/types';
 
 export interface AgentMessage {
     id: string;
@@ -16,6 +17,7 @@ export interface HistoryItem {
     timestamp: number;
     projectId: string;
     meta?: string;
+    mask?: string; // Base64 mask data
 }
 
 export interface SavedPrompt {
@@ -37,7 +39,7 @@ export interface CanvasImage {
 }
 
 interface AppState {
-    currentModule: 'creative' | 'legal' | 'music' | 'marketing';
+    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard';
     currentProjectId: string;
     agentHistory: AgentMessage[];
     isAgentOpen: boolean;
@@ -49,6 +51,7 @@ interface AppState {
     clearAgentHistory: () => void;
     toggleAgentWindow: () => void;
     addToHistory: (item: HistoryItem) => void;
+    updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
     removeFromHistory: (id: string) => void;
     savedPrompts: SavedPrompt[];
     savePrompt: (prompt: SavedPrompt) => void;
@@ -60,10 +63,60 @@ interface AppState {
     removeCanvasImage: (id: string) => void;
     selectedCanvasImageId: string | null;
     selectCanvasImage: (id: string | null) => void;
+
+    uploadedImages: HistoryItem[]; // Reusing HistoryItem for consistency
+    addUploadedImage: (img: HistoryItem) => void;
+    removeUploadedImage: (id: string) => void;
+
+    studioControls: {
+        aspectRatio: string;
+        resolution: string;
+        negativePrompt: string;
+        seed: string;
+    };
+    setStudioControls: (controls: Partial<AppState['studioControls']>) => void;
+
+    generationMode: 'image' | 'video';
+    setGenerationMode: (mode: 'image' | 'video') => void;
+
+    activeReferenceImage: HistoryItem | null;
+    setActiveReferenceImage: (img: HistoryItem | null) => void;
+
+    videoInputs: {
+        firstFrame: HistoryItem | null;
+        lastFrame: HistoryItem | null;
+        isDaisyChain: boolean;
+        timeOffset: number;
+    };
+    setVideoInput: (key: keyof AppState['videoInputs'], value: any) => void;
+
+    viewMode: 'gallery' | 'canvas' | 'showroom';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'showroom') => void;
+
+    selectedItem: HistoryItem | null;
+    setSelectedItem: (item: HistoryItem | null) => void;
+
+    // Workflow State
+    nodes: CustomNode[];
+    edges: CustomEdge[];
+    selectedNodeId: string | null;
+    setNodes: (nodes: CustomNode[] | ((nodes: CustomNode[]) => CustomNode[])) => void;
+    setEdges: (edges: CustomEdge[] | ((edges: CustomEdge[]) => CustomEdge[])) => void;
+    addNode: (node: CustomNode) => void;
+    setSelectedNodeId: (id: string | null) => void;
+    // Knowledge Base State
+    knowledgeBase: KnowledgeDocument[];
+    addKnowledgeDocument: (doc: KnowledgeDocument) => void;
+
+    // User Profile & Brand Kit
+    userProfile: UserProfile;
+    setUserProfile: (profile: UserProfile) => void;
+    updateBrandKit: (updates: Partial<BrandKit>) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
-    currentModule: 'creative',
+    currentModule: 'dashboard',
+    // ... existing initial state ...
     currentProjectId: 'default',
     agentHistory: [],
     isAgentOpen: true,
@@ -75,6 +128,9 @@ export const useStore = create<AppState>((set) => ({
     clearAgentHistory: () => set({ agentHistory: [] }),
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
     addToHistory: (item) => set((state) => ({ generatedHistory: [item, ...state.generatedHistory] })),
+    updateHistoryItem: (id, updates) => set((state) => ({
+        generatedHistory: state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item)
+    })),
     removeFromHistory: (id) => set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) })),
 
     savedPrompts: [],
@@ -89,4 +145,89 @@ export const useStore = create<AppState>((set) => ({
     })),
     removeCanvasImage: (id) => set((state) => ({ canvasImages: state.canvasImages.filter(i => i.id !== id) })),
     selectCanvasImage: (id) => set({ selectedCanvasImageId: id }),
+
+    uploadedImages: [],
+    addUploadedImage: (img) => set((state) => ({ uploadedImages: [img, ...state.uploadedImages] })),
+    removeUploadedImage: (id) => set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) })),
+
+    studioControls: {
+        aspectRatio: '16:9',
+        resolution: '1K',
+        negativePrompt: '',
+        seed: ''
+    },
+    setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
+
+    generationMode: 'image',
+    setGenerationMode: (mode) => set({ generationMode: mode }),
+
+    activeReferenceImage: null as HistoryItem | null,
+    setActiveReferenceImage: (img: HistoryItem | null) => set({ activeReferenceImage: img }),
+
+    videoInputs: {
+        firstFrame: null,
+        lastFrame: null,
+        isDaisyChain: false,
+        timeOffset: 0
+    },
+    setVideoInput: (key, value) => set(state => ({
+        videoInputs: { ...state.videoInputs, [key]: value }
+    })),
+
+    viewMode: 'gallery',
+    setViewMode: (mode) => set({ viewMode: mode }),
+
+    selectedItem: null,
+    setSelectedItem: (item) => set({ selectedItem: item }),
+
+    // Workflow State
+    nodes: [],
+    edges: [],
+    selectedNodeId: null,
+    setNodes: (nodes) => set((state) => ({
+        nodes: typeof nodes === 'function' ? nodes(state.nodes) : nodes
+    })),
+    setEdges: (edges) => set((state) => ({
+        edges: typeof edges === 'function' ? edges(state.edges) : edges
+    })),
+    addNode: (node) => set((state) => ({ nodes: [...state.nodes, node] })),
+    setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+
+    // Knowledge Base State
+    knowledgeBase: [],
+    addKnowledgeDocument: (doc) => set((state) => ({ knowledgeBase: [...state.knowledgeBase, doc] })),
+
+    // User Profile & Brand Kit
+    userProfile: {
+        bio: '',
+        preferences: '',
+        brandKit: {
+            colors: [],
+            fonts: '',
+            brandDescription: '',
+            negativePrompt: '',
+            socials: {},
+            brandAssets: [],
+            referenceImages: [],
+            releaseDetails: {
+                title: '',
+                type: 'Single',
+                artists: '',
+                genre: '',
+                mood: '',
+                themes: '',
+                lyrics: ''
+            }
+        },
+        analyzedTrackIds: [],
+        knowledgeBase: [],
+        savedWorkflows: []
+    },
+    setUserProfile: (profile) => set({ userProfile: profile }),
+    updateBrandKit: (updates) => set((state) => ({
+        userProfile: {
+            ...state.userProfile,
+            brandKit: { ...state.userProfile.brandKit, ...updates }
+        }
+    })),
 }));

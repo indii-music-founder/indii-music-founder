@@ -12,4 +12,18 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    chunkSizeWarningLimit: 3000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'framer-motion', 'reactflow', 'zustand'],
+          'vendor-google': ['@google/genai', '@googlemaps/react-wrapper'],
+          'vendor-essentia': ['essentia.js'],
+          'vendor-wavesurfer': ['wavesurfer.js'],
+          'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
+        },
+      },
+    },
+  },
 });

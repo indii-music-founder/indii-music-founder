@@ -64,9 +64,23 @@ export class DualAgentService {
         }
     }
 
+    private getBrandContext(): string {
+        const { userProfile } = useStore.getState();
+        const brandKit = userProfile.brandKit;
+        return `
+        BRAND CONTEXT:
+        - Identity: ${userProfile.bio || 'N/A'}
+        - Visual Style: ${brandKit.brandDescription || 'N/A'}
+        - Colors: ${brandKit.colors.join(', ') || 'N/A'}
+        - Fonts: ${brandKit.fonts || 'N/A'}
+        - Current Release: ${brandKit.releaseDetails.title} (${brandKit.releaseDetails.type}) - ${brandKit.releaseDetails.mood}
+        `;
+    }
+
     private async generateManagerPlan(goal: string): Promise<string> {
         const prompt = `
             ${this.managerConfig.systemPrompt}
+            ${this.getBrandContext()}
 GOAL: ${goal}
 TASK: Break this down into a step - by - step plan for the Executor.
     OUTPUT: Plain text plan.
@@ -80,6 +94,7 @@ TASK: Break this down into a step - by - step plan for the Executor.
 
         const prompt = `
             ${this.executorConfig.systemPrompt}
+            ${this.getBrandContext()}
 PLAN: ${plan}
             AVAILABLE TOOLS: ${toolNames}
 
@@ -115,6 +130,7 @@ TASK: Execute the plan.If you need to use a tool, output ONLY a JSON object in t
     private async generateManagerCritique(goal: string, result: string): Promise<{ pass: boolean; reason: string }> {
         const prompt = `
             ${this.managerConfig.systemPrompt}
+            ${this.getBrandContext()}
             ORIGINAL GOAL: ${goal}
             EXECUTION RESULT: ${result}
 TASK: Critique the result.Did it fully satisfy the goal ?

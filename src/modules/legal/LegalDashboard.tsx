@@ -39,7 +39,7 @@ export default function LegalDashboard() {
             </div>
 
             {/* We reuse the AgentWindow to show the Dual Agent's internal monologue */}
-            <AgentWindow />
+            <AgentWindow agent={legalAgent} title="Legal Counsel" className="flex-1 rounded-xl border border-gray-800" />
         </div>
     );
 }

@@ -6,6 +6,15 @@
 
 This contains everything you need to run your app locally.
 
+## Features
+
+- **Creative Studio**: Infinite canvas for image generation, editing, and product visualization.
+- **Video Studio**: AI-powered video production workflow (Idea -> Brief -> Review).
+- **Music Studio**: Audio analysis and generation tools.
+- **Workflow Lab**: Node-based automation editor for chaining AI tasks.
+- **Marketing Dashboard**: Campaign management and asset organization.
+- **Legal Dashboard**: Contract review and compliance tools.
+
 View your app in AI Studio: https://ai.studio/apps/drive/18pEkF91MXcj3e5e_NCJi1p1Wia36Tmxi
 
 ## Run Locally

@@ -14,10 +14,20 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
     const { agentHistory, clearAgentHistory, isAgentOpen, toggleAgentWindow } = useStore();
     const [input, setInput] = useState('');
     const [isMinimized, setIsMinimized] = useState(false);
+    const [size, setSize] = useState({ width: 320, height: 500 });
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const activeAgent = agent || agentService;
-    const windowTitle = title || "Agent R (React)";
+    const windowTitle = title || "Agent R";
+
+    const AgentHeader = () => (
+        <div className="flex items-center gap-2 pointer-events-none">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="font-bold text-xs text-gray-200">
+                Agent <span className="inline-block transform -scale-x-100">R</span>
+            </span>
+        </div>
+    );
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -31,6 +41,30 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
         setInput('');
     };
 
+    const handleResizeStart = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent drag interference
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = size.width;
+        const startHeight = size.height;
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            const newWidth = Math.max(280, startWidth + (moveEvent.clientX - startX));
+            const newHeight = Math.max(200, startHeight + (moveEvent.clientY - startY));
+            setSize({ width: newWidth, height: newHeight });
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
     const isEmbedded = !!className;
 
     // For embedded windows, we render normally.
@@ -39,10 +73,7 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
             <div className={`flex flex-col h-full bg-[#0f0f0f] border-l border-gray-800 ${className}`}>
                 {/* Header */}
                 <div className="bg-[#1a1a1a] p-2 border-b border-gray-800 flex justify-between items-center select-none">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className="font-bold text-xs text-gray-200">{windowTitle}</span>
-                    </div>
+                    <AgentHeader />
                     <div className="flex gap-1">
                         <button onClick={clearAgentHistory} className="p-1 hover:text-red-400 text-gray-500"><Trash2 size={12} /></button>
                     </div>
@@ -97,16 +128,19 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                     drag
                     dragMomentum={false}
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0, height: isMinimized ? 40 : '85vh' }}
+                    animate={{
+                        opacity: 1,
+                        scale: 1,
+                        y: 0,
+                        width: size.width,
+                        height: isMinimized ? 40 : size.height
+                    }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className={`fixed top-20 left-20 bg-[#0f0f0f] border border-gray-700 rounded-xl shadow-2xl z-50 flex flex-col w-72 overflow-hidden`}
+                    className={`fixed top-20 left-20 bg-[#0f0f0f] border border-gray-700 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden`}
                 >
                     {/* Header */}
                     <div className="bg-[#1a1a1a] p-2 border-b border-gray-800 flex justify-between items-center cursor-move select-none">
-                        <div className="flex items-center gap-2 pointer-events-none">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                            <span className="font-bold text-xs text-gray-200">{windowTitle}</span>
-                        </div>
+                        <AgentHeader />
                         <div className="flex gap-1" onPointerDownCapture={e => e.stopPropagation()}>
                             <button onClick={clearAgentHistory} className="p-1 hover:text-red-400 text-gray-500"><Trash2 size={12} /></button>
                             <button onClick={() => setIsMinimized(!isMinimized)} className="p-1 hover:text-white text-gray-500"><Minimize2 size={12} /></button>
@@ -139,7 +173,7 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                             </div>
 
                             {/* Input Area */}
-                            <div className="p-2 bg-[#1a1a1a] border-t border-gray-800" onPointerDownCapture={e => e.stopPropagation()}>
+                            <div className="p-2 bg-[#1a1a1a] border-t border-gray-800 relative" onPointerDownCapture={e => e.stopPropagation()}>
                                 <div className="flex gap-2">
                                     <button className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"><Paperclip size={14} /></button>
                                     <input
@@ -151,6 +185,14 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     />
                                     <button onClick={handleSend} className="p-2 bg-purple-600 hover:bg-purple-500 text-white rounded"><Send size={14} /></button>
+                                </div>
+
+                                {/* Resize Handle */}
+                                <div
+                                    className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize flex items-end justify-end p-0.5 hover:bg-gray-700/50 rounded-tl"
+                                    onMouseDown={handleResizeStart}
+                                >
+                                    <div className="w-1.5 h-1.5 bg-gray-500 rounded-full opacity-50"></div>
                                 </div>
                             </div>
                         </>

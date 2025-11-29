@@ -15,9 +15,9 @@ export default function CreativeHistory() {
                 <div key={item.id} className="p-3 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors group">
                     <div className="w-full aspect-video bg-gray-900 rounded mb-2 overflow-hidden relative border border-gray-800 group-hover:border-gray-600">
                         {item.type === 'video' ? (
-                            <video src={item.url} className="w-full h-full object-cover" />
+                            <video src={item.url} className="w-full h-full object-contain bg-black" />
                         ) : (
-                            <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" />
+                            <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
                         )}
                         {item.type === 'video' && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/20">

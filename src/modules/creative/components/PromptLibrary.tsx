@@ -8,12 +8,16 @@ interface PromptLibraryProps {
     onLoadPrompt: (text: string) => void;
 }
 
+import { useToast } from '@/core/context/ToastContext';
+
 export default function PromptLibrary({ currentPrompt, onLoadPrompt }: PromptLibraryProps) {
     const { savedPrompts, savePrompt, deletePrompt } = useStore();
+    const toast = useToast();
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleSave = () => {
-        if (!currentPrompt.trim()) return alert("Enter a prompt to save.");
+    const handleSave = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!currentPrompt.trim()) return toast.error("Enter a prompt to save.");
         const defaultTitle = currentPrompt.split(' ').slice(0, 4).join(' ') + '...';
         const title = prompt("Name this prompt:", defaultTitle);
         if (title) {
@@ -23,6 +27,7 @@ export default function PromptLibrary({ currentPrompt, onLoadPrompt }: PromptLib
                 text: currentPrompt,
                 date: Date.now()
             });
+            toast.success("Prompt saved to library!");
         }
     };
 
@@ -38,7 +43,7 @@ export default function PromptLibrary({ currentPrompt, onLoadPrompt }: PromptLib
                     <Save size={14} />
                 </button>
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
                     className="p-1.5 text-yellow-400 hover:text-yellow-200 hover:bg-yellow-900/30 rounded transition-colors"
                     title="Prompt Library"
                 >
