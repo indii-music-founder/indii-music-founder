@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DualAgentService } from '@/services/agent/DualAgentService';
 import { LEGAL_TOOLS, LEGAL_MANAGER_PROMPT, LEGAL_EXECUTOR_PROMPT } from './tools';
-import AgentWindow from '@/modules/creative/components/AgentWindow'; // Reuse for now
+import AgentWindow from '../../core/components/AgentWindow'; // Reuse for now
 
 // Initialize the Dual Agent for Legal
 const legalAgent = new DualAgentService(

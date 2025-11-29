@@ -1,0 +1,98 @@
+import { AI } from '../../services/ai/AIService';
+
+export const MARKETING_TOOLS = {
+    generate_campaign_strategy: async (args: { product_name: string, target_audience: string, goal: string }) => {
+        const prompt = `
+        You are a Chief Marketing Officer.
+        Develop a comprehensive campaign strategy for:
+        Product: ${args.product_name}
+        Target Audience: ${args.target_audience}
+        Goal: ${args.goal}
+        
+        OUTPUT JSON:
+        {
+            "campaign_name": "string",
+            "key_message": "string",
+            "channels": ["string"],
+            "timeline_weeks": number,
+            "budget_allocation": { "channel": "percentage" }
+        }
+        `;
+
+        try {
+            const res = await AI.generateContent({
+                model: 'gemini-3-pro-preview',
+                contents: { parts: [{ text: prompt }] }
+            });
+            return res.text || "Failed to generate strategy.";
+        } catch (e) {
+            return JSON.stringify({ error: "AI Service Unavailable" });
+        }
+    },
+
+    write_social_copy: async (args: { platform: string, topic: string, tone: string }) => {
+        const prompt = `
+        You are a Senior Copywriter.
+        Write a social media post for ${args.platform}.
+        Topic: ${args.topic}
+        Tone: ${args.tone}
+        
+        Include hashtags and emojis.
+        `;
+
+        try {
+            const res = await AI.generateContent({
+                model: 'gemini-3-pro-preview',
+                contents: { parts: [{ text: prompt }] }
+            });
+            return res.text || "Failed to generate copy.";
+        } catch (e) {
+            return "Error generating copy.";
+        }
+    },
+
+    analyze_market_trends: async (args: { industry: string }) => {
+        // Mocking trend analysis
+        const trends = [
+            "AI-driven personalization",
+            "Short-form video dominance",
+            "Sustainability focus",
+            "Community-led growth",
+            "Voice search optimization"
+        ];
+
+        const relevantTrends = trends.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+        return JSON.stringify({
+            industry: args.industry,
+            top_trends: relevantTrends,
+            sentiment: "Positive",
+            opportunity_score: Math.floor(Math.random() * 100)
+        }, null, 2);
+    }
+};
+
+export const MARKETING_MANAGER_PROMPT = `
+You are the "Chief Marketing Officer" (CMO) for Rndr-AI.
+Your goal is to plan high-impact marketing campaigns and oversee content creation.
+
+CAPABILITIES:
+1. Develop strategic campaigns using 'generate_campaign_strategy'.
+2. Analyze market trends using 'analyze_market_trends'.
+3. Direct the Copywriter (Executor) to write content using 'write_social_copy'.
+
+WORKFLOW:
+1. Understand the user's marketing goal.
+2. Formulate a strategy.
+3. Execute the content plan by instructing the Executor.
+`;
+
+export const MARKETING_EXECUTOR_PROMPT = `
+You are the "Senior Copywriter" (Executor).
+Your job is to write compelling copy and execute marketing tasks.
+
+TOOLS:
+- generate_campaign_strategy
+- write_social_copy
+- analyze_market_trends
+`;

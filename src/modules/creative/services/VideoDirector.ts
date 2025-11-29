@@ -1,0 +1,102 @@
+import { AI } from '@/services/ai/AIService';
+import { useStore } from '@/core/store';
+
+export class VideoDirector {
+    static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
+        // Note: In a real scenario, we'd fetch the video blob. 
+        // For this demo/port, we assume 'uri' is accessible or a data URI.
+        // If it's a remote URL, we might need a proxy or CORS handling if not on same origin.
+
+        try {
+            // 1. Fetch Video
+            // const res = await fetch(uri); // Assuming URI is fetchable
+            // const blob = await res.blob();
+            // const url = URL.createObjectURL(blob);
+
+            // SIMPLIFICATION: We'll assume 'uri' is the URL we can use directly for now.
+            const url = uri;
+
+            if (enableDirectorsCut && !isRetry) {
+                console.log("🎬 Director QA Started...");
+
+                // 2. Extract Frame for Critique
+                const frameBase64 = await this.extractFrame(url);
+                if (!frameBase64) {
+                    console.warn("Could not extract frame for QA.");
+                    return this.saveVideo(url, prompt, isRetry);
+                }
+
+                // 3. Critique
+                const critique = await AI.generateContent({
+                    model: 'gemini-3-pro-preview',
+                    contents: {
+                        parts: [
+                            { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
+                            { text: `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it. Return JSON: {score, refined_prompt}` }
+                        ]
+                    },
+                    config: { responseMimeType: 'application/json' }
+                });
+
+                const feedback = AI.parseJSON(critique.text);
+                console.log("🎬 Director Feedback:", feedback);
+
+                if (feedback.score < 8) {
+                    console.log("🎬 Director Rejected. Reshooting...");
+                    // 4. Reshoot
+                    // Note: We need to call the generation service again. 
+                    // Since this is a service, we might need to pass the generator function or import it.
+                    // For now, we'll return a special signal or handle it if we move generation here.
+
+                    // Ideally, this method should be part of the generation flow.
+                    // Let's return the refined prompt so the caller can retry.
+                    throw { retry: true, refinedPrompt: feedback.refined_prompt };
+                }
+            }
+
+            return this.saveVideo(url, prompt, isRetry);
+
+        } catch (e: any) {
+            if (e.retry) throw e; // Propagate retry signal
+            console.error("Video Processing Error:", e);
+            return null;
+        }
+    }
+
+    private static saveVideo(url: string, prompt: string, isRetry: boolean): string {
+        const id = crypto.randomUUID();
+        const metaLabel = isRetry ? 'DIRECTOR\'S CUT (V2)' : undefined;
+
+        useStore.getState().addToHistory({
+            id,
+            url,
+            prompt,
+            timestamp: Date.now(),
+            type: 'video',
+            meta: metaLabel,
+            projectId: useStore.getState().currentProjectId
+        });
+
+        return id;
+    }
+
+    private static async extractFrame(videoUrl: string): Promise<string | null> {
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            video.crossOrigin = "anonymous";
+            video.src = videoUrl;
+            video.muted = true;
+            video.onloadeddata = () => {
+                video.currentTime = 1.0; // Seek to 1s
+            };
+            video.onseeked = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d')?.drawImage(video, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg'));
+            };
+            video.onerror = () => resolve(null);
+        });
+    }
+}

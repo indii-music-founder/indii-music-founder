@@ -1,10 +1,32 @@
+import { AI } from '@/services/ai/AIService';
+
 export const LEGAL_TOOLS = {
     analyze_contract: async (args: { text: string }) => {
-        // Mock analysis
-        return `Analyzed contract length: ${args.text.length} chars. Found 3 potential liability clauses.`;
+        const prompt = `
+        ROLE: Senior Legal Analyst
+        TASK: Analyze the following contract text. Identify key risks, missing clauses, and provide a summary.
+        CONTRACT TEXT:
+        ${args.text}
+        
+        OUTPUT FORMAT: Markdown.
+        `;
+        const res = await AI.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: { parts: [{ text: prompt }] }
+        });
+        return res.text || "Analysis failed.";
     },
     check_compliance: async (args: { region: string }) => {
-        return `Checked compliance for ${args.region}. Status: OK.`;
+        const prompt = `
+        ROLE: Compliance Officer
+        TASK: Check regulatory compliance requirements for region: ${args.region}.
+        OUTPUT: Brief summary of key regulations.
+        `;
+        const res = await AI.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: { parts: [{ text: prompt }] }
+        });
+        return res.text || "Compliance check failed.";
     }
 };
 

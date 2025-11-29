@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { useStore, AgentMessage } from '../../core/store';
+import { AI } from '../ai/AIService';
+import { events } from '../../core/events';
 
 interface AgentConfig {
     name: string;
@@ -19,39 +20,45 @@ export class DualAgentService {
         this.executorConfig = executor;
     }
 
-    async processGoal(userGoal: string) {
+    async sendMessage(text: string) {
+        return this.processGoal(text);
+    }
+
+    async processGoal(goal: string) {
         if (this.isProcessing) return;
         this.isProcessing = true;
 
-        this.addMessage('user', userGoal);
+        this.addMessage('user', goal);
+        events.emit('AGENT_ACTION', { agentId: 'Manager', action: 'Goal Received', details: goal });
 
         try {
             // 1. Manager: Deconstruct Goal & Plan
             this.addSystemMessage(`[${this.managerConfig.name}] Planning curriculum...`);
-            const plan = await this.generateManagerPlan(userGoal);
-            this.addMessage('model', `Plan: ${plan}`);
+            const plan = await this.generateManagerPlan(goal);
+            this.addMessage('model', `Plan: ${plan} `);
+            events.emit('AGENT_ACTION', { agentId: 'Manager', action: 'Plan Created', details: JSON.stringify(plan) });
 
             // 2. Executor: Execute Plan
             this.addSystemMessage(`[${this.executorConfig.name}] Executing plan...`);
             const executionResult = await this.runExecutorLoop(plan);
-            this.addMessage('model', `Execution Result: ${executionResult}`);
+            this.addMessage('model', `Execution Result: ${executionResult} `);
 
             // 3. Manager: Critique & Evolve
             this.addSystemMessage(`[${this.managerConfig.name}] Critiquing output...`);
-            const critique = await this.generateManagerCritique(userGoal, executionResult);
+            const critique = await this.generateManagerCritique(goal, executionResult);
 
             if (critique.pass) {
-                this.addSystemMessage(`[${this.managerConfig.name}] PASSED. Result approved.`);
+                this.addSystemMessage(`[${this.managerConfig.name}]PASSED.Result approved.`);
                 // In a real Agent Zero, we would save the successful trajectory here
             } else {
-                this.addSystemMessage(`[${this.managerConfig.name}] FAILED. Critique: ${critique.reason}`);
+                this.addSystemMessage(`[${this.managerConfig.name}]FAILED.Critique: ${critique.reason} `);
                 // In a real Agent Zero, we would update the Executor's system prompt (Memory) here
                 this.evolveExecutorMemory(critique.reason);
             }
 
         } catch (e: any) {
             console.error(e);
-            this.addSystemMessage(`Error: ${e.message}`);
+            this.addSystemMessage(`Error: ${e.message} `);
         } finally {
             this.isProcessing = false;
         }
@@ -60,30 +67,49 @@ export class DualAgentService {
     private async generateManagerPlan(goal: string): Promise<string> {
         const prompt = `
             ${this.managerConfig.systemPrompt}
-            GOAL: ${goal}
-            TASK: Break this down into a step-by-step plan for the Executor.
-            OUTPUT: Plain text plan.
+GOAL: ${goal}
+TASK: Break this down into a step - by - step plan for the Executor.
+    OUTPUT: Plain text plan.
         `;
         const res = await AI.generateContent({ model: 'gemini-3-pro-preview', contents: { parts: [{ text: prompt }] } });
         return res.text || "Failed to generate plan.";
     }
 
     private async runExecutorLoop(plan: string): Promise<string> {
-        // Simplified loop for the Executor
-        // In a full implementation, this would be similar to the AgentService loop
-        // but guided by the specific plan steps.
+        const toolNames = Object.keys(this.executorConfig.tools).join(', ');
 
         const prompt = `
             ${this.executorConfig.systemPrompt}
-            PLAN: ${plan}
-            TASK: Execute this plan using your tools.
-            OUTPUT: Final summary of actions.
+PLAN: ${plan}
+            AVAILABLE TOOLS: ${toolNames}
+
+TASK: Execute the plan.If you need to use a tool, output ONLY a JSON object in this format:
+{ "tool": "tool_name", "args": { "arg_name": "value" } }
+            
+            If no tool is needed, just provide the final answer text.
         `;
 
-        // For this proof of concept, we'll do a single shot execution
-        // Real implementation would loop through tools
-        const res = await AI.generateContent({ model: 'gemini-3-pro-preview', contents: { parts: [{ text: prompt }] } });
-        return res.text || "Execution failed.";
+        const res = await AI.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: { parts: [{ text: prompt }] },
+            config: { responseMimeType: 'application/json' } // Force JSON to make parsing easier
+        });
+
+        const responseText = res.text || "{}";
+        const parsed = AI.parseJSON(responseText);
+
+        if (parsed.tool && this.executorConfig.tools[parsed.tool]) {
+            this.addSystemMessage(`[${this.executorConfig.name}] Calling tool: ${parsed.tool}...`);
+            try {
+                const toolOutput = await this.executorConfig.tools[parsed.tool](parsed.args);
+                return `Tool Output: ${toolOutput} `;
+            } catch (err: any) {
+                return `Tool Execution Failed: ${err.message} `;
+            }
+        }
+
+        // If no tool called, return the text (or the parsed JSON if it was just a message)
+        return responseText;
     }
 
     private async generateManagerCritique(goal: string, result: string): Promise<{ pass: boolean; reason: string }> {
@@ -91,9 +117,9 @@ export class DualAgentService {
             ${this.managerConfig.systemPrompt}
             ORIGINAL GOAL: ${goal}
             EXECUTION RESULT: ${result}
-            TASK: Critique the result. Did it fully satisfy the goal?
-            OUTPUT JSON: { "pass": boolean, "reason": "string" }
-        `;
+TASK: Critique the result.Did it fully satisfy the goal ?
+    OUTPUT JSON: { "pass": boolean, "reason": "string" }
+`;
         const res = await AI.generateContent({
             model: 'gemini-3-pro-preview',
             contents: { parts: [{ text: prompt }] },
@@ -105,7 +131,7 @@ export class DualAgentService {
     private evolveExecutorMemory(critique: string) {
         // "In-Context Evolution"
         // We append the lesson learned to the Executor's system prompt for this session
-        this.executorConfig.systemPrompt += `\n\n[LESSON LEARNED]: ${critique}`;
+        this.executorConfig.systemPrompt += `\n\n[LESSON LEARNED]: ${critique} `;
         this.addSystemMessage(`[Evolution] Executor memory updated with lesson.`);
     }
 
