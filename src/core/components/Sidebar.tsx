@@ -13,7 +13,7 @@ export default function Sidebar() {
     ];
 
     return (
-        <div className="w-16 bg-[#0a0a0a] border-r border-gray-800 flex flex-col items-center py-4 z-50">
+        <div className="w-16 min-w-[4rem] bg-[#0a0a0a] border-r border-gray-800 flex flex-col items-center py-4 z-50 flex-shrink-0">
             <div className="mb-8">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
             </div>
@@ -24,8 +24,8 @@ export default function Sidebar() {
                         key={item.id}
                         onClick={() => setModule(item.id as any)}
                         className={`p-3 rounded-xl transition-all group relative flex justify-center ${currentModule === item.id
-                                ? 'bg-gray-800 text-white shadow-lg shadow-purple-900/20'
-                                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
+                            ? 'bg-gray-800 text-white shadow-lg shadow-purple-900/20'
+                            : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
                             }`}
                     >
                         <item.icon size={20} />
