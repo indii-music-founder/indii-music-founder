@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { STUDIO_TAGS } from '@/legacy/constants';
+import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { ChevronDown, ChevronRight, Plus, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';

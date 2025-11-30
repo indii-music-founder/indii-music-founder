@@ -33,7 +33,7 @@
     "src"
   ],
   "exclude": [
-    "src/legacy"
+    "src/_archive_legacy"
   ],
   "references": [
     {
