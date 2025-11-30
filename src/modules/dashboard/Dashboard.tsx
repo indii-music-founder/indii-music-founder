@@ -1,20 +1,17 @@
 import React from 'react';
-import { useStore } from '@/core/store';
+import { useStore, AppSlice } from '@/core/store';
 import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
+import { AppSlice } from '@/core/store'; // Added import for AppSlice
 
 export default function Dashboard() {
-    const { setModule, setProject, currentProjectId, currentOrganizationId } = useStore();
+    const { setModule, setProject, currentOrganizationId, projects, addProject } = useStore();
 
-    const projects = [
-        { id: 'default', name: 'Default Project', date: Date.now(), type: 'creative', orgId: 'org-default' },
-        { id: 'proj-2', name: 'Neon City Campaign', date: Date.now() - 86400000, type: 'marketing', orgId: 'org-default' },
-        { id: 'proj-3', name: 'Audio Experience', date: Date.now() - 172800000, type: 'music', orgId: 'org-default' },
-    ].filter(p => p.orgId === currentOrganizationId);
+    const filteredProjects = projects.filter(p => p.orgId === currentOrganizationId);
 
-    const handleOpenProject = (id: string, type: any) => {
+    const handleOpenProject = (id: string, type: AppSlice['currentModule']) => {
         setProject(id);
         setModule(type);
     };
@@ -27,7 +24,15 @@ export default function Dashboard() {
     const handleCreateProject = () => {
         if (!newProjectName.trim()) return;
         const newId = `proj-${Date.now()}`;
-        // In a real app, we would save this to a backend or store
+
+        addProject({
+            id: newId,
+            name: newProjectName,
+            type: newProjectType,
+            date: Date.now(),
+            orgId: currentOrganizationId || 'org-default'
+        });
+
         setProject(newId);
         setModule(newProjectType);
         setShowNewProjectModal(false);
@@ -114,7 +119,7 @@ export default function Dashboard() {
                         <Clock size={20} className="text-purple-500" /> Recent Projects
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {projects.map((project, index) => (
+                        {filteredProjects.map((project, index) => (
                             <motion.div
                                 key={project.id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -242,7 +247,7 @@ export default function Dashboard() {
                                     {['creative', 'music', 'marketing', 'legal'].map((type) => (
                                         <button
                                             key={type}
-                                            onClick={() => setNewProjectType(type as any)}
+                                            onClick={() => setNewProjectType(type as 'creative' | 'music' | 'marketing' | 'legal')}
                                             className={`p-3 rounded-lg border text-sm font-medium capitalize transition-all ${newProjectType === type
                                                 ? 'bg-purple-500/20 border-purple-500 text-purple-400'
                                                 : 'bg-[#0f0f0f] border-gray-700 text-gray-400 hover:border-gray-500'

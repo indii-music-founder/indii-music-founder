@@ -6,6 +6,7 @@ import { CreativeSlice, createCreativeSlice } from './store/slices/creativeSlice
 import { WorkflowSlice, createWorkflowSlice } from './store/slices/workflowSlice';
 
 // Re-export types for backward compatibility
+export type { AppSlice } from './store/slices/appSlice';
 export type { AgentMessage } from './store/slices/agentSlice';
 export type { Organization } from './store/slices/authSlice';
 export type { HistoryItem, CanvasImage, SavedPrompt } from './store/slices/creativeSlice';
