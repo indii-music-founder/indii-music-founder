@@ -22,18 +22,30 @@ class AIService {
 
     async generateContent(options: {
         model: string;
-        contents: { role: string; parts: { text: string }[] };
+        contents: { role: string; parts: { text: string }[] } | { role: string; parts: { text: string }[] }[];
         config?: Record<string, unknown>;
     }) {
         const { GoogleGenerativeAI } = await import('@google/generative-ai');
         const genAI = new GoogleGenerativeAI(this.apiKey);
+
+        // Extract top-level parameters from config
+        const { systemInstruction, tools, toolConfig, safetySettings, thinkingConfig, ...generationConfig } = options.config || {};
+
         const model = genAI.getGenerativeModel({
             model: options.model,
-            generationConfig: options.config as any
+            systemInstruction: systemInstruction as any,
+            tools: tools as any,
+            toolConfig: toolConfig as any,
+            safetySettings: safetySettings as any,
+            // @ts-ignore - thinkingConfig might not be in types yet
+            thinkingConfig: thinkingConfig as any,
+            generationConfig: generationConfig as any
         });
 
+        const contents = Array.isArray(options.contents) ? options.contents : [options.contents];
+
         const result = await model.generateContent({
-            contents: [options.contents] as any
+            contents: contents as any
         });
 
         return result.response;
@@ -46,9 +58,19 @@ class AIService {
     }) {
         const { GoogleGenerativeAI } = await import('@google/generative-ai');
         const genAI = new GoogleGenerativeAI(this.apiKey);
+
+        // Extract top-level parameters from config
+        const { systemInstruction, tools, toolConfig, safetySettings, thinkingConfig, ...generationConfig } = options.config || {};
+
         const model = genAI.getGenerativeModel({
             model: options.model,
-            generationConfig: options.config as any
+            systemInstruction: systemInstruction as any,
+            tools: tools as any,
+            toolConfig: toolConfig as any,
+            safetySettings: safetySettings as any,
+            // @ts-ignore - thinkingConfig might not be in types yet
+            thinkingConfig: thinkingConfig as any,
+            generationConfig: generationConfig as any
         });
 
         const result = await model.generateContentStream({
