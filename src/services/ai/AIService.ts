@@ -20,7 +20,43 @@ class AIService {
         }
     }
 
-    // ... (getClient remains the same)
+    async generateContent(options: {
+        model: string;
+        contents: { role: string; parts: { text: string }[] };
+        config?: Record<string, unknown>;
+    }) {
+        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(this.apiKey);
+        const model = genAI.getGenerativeModel({
+            model: options.model,
+            generationConfig: options.config as any
+        });
+
+        const result = await model.generateContent({
+            contents: [options.contents] as any
+        });
+
+        return result.response;
+    }
+
+    async generateContentStream(options: {
+        model: string;
+        contents: { role: string; parts: { text: string }[] }[];
+        config?: Record<string, unknown>;
+    }) {
+        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(this.apiKey);
+        const model = genAI.getGenerativeModel({
+            model: options.model,
+            generationConfig: options.config as any
+        });
+
+        const result = await model.generateContentStream({
+            contents: options.contents as any
+        });
+
+        return result.stream;
+    }
 
     async generateVideo(options: {
         model: string;

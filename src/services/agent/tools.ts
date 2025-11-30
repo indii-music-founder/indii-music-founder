@@ -170,6 +170,75 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
         } catch (e: any) {
             return `Batch video processing failed: ${e.message}`;
         }
+    },
+    create_project: async (args: { name: string, type: 'creative' | 'music' | 'marketing' | 'legal' }) => {
+        try {
+            const { addProject, setProject, setModule, currentOrganizationId } = useStore.getState();
+            const newId = `proj-${Date.now()}`;
+            const newProject = {
+                id: newId,
+                name: args.name,
+                type: args.type || 'creative',
+                date: Date.now(),
+                orgId: currentOrganizationId || 'org-default'
+            };
+
+            addProject(newProject);
+            setProject(newId);
+            setModule(newProject.type);
+
+            return `Successfully created project "${args.name}" (${args.type}) and switched to it.`;
+        } catch (e: any) {
+            return `Failed to create project: ${e.message}`;
+        }
+    },
+    list_projects: async () => {
+        const { projects, currentOrganizationId } = useStore.getState();
+        const orgProjects = projects.filter(p => p.orgId === currentOrganizationId);
+
+        if (orgProjects.length === 0) {
+            return "No projects found in this organization.";
+        }
+
+        return orgProjects.map(p => `- ${p.name} (${p.type}) [ID: ${p.id}]`).join('\n');
+    },
+    switch_module: async (args: { module: string }) => {
+        const validModules = ['creative', 'legal', 'music', 'marketing', 'video', 'workflow', 'dashboard'];
+        if (validModules.includes(args.module)) {
+            useStore.getState().setModule(args.module as any);
+            return `Switched to ${args.module} module.`;
+        }
+        return `Invalid module. Available: ${validModules.join(', ')}`;
+    },
+    search_knowledge: async (args: { query: string }) => {
+        try {
+            // Import dynamically to avoid circular deps
+            const { runAgenticWorkflow } = await import('../../services/rag/ragService');
+            // We need an instance, but the service exports a class. 
+            // Ideally we should use the singleton from ragService or instantiate here if we have the key.
+            // Let's use the ragService export if available or instantiate.
+            // For now, let's assume we can use the RAG service singleton if we export it, 
+            // or just instantiate a temporary one if we have the key in env.
+            // A better approach is to add a search method to the store or a service wrapper.
+
+            // Import dynamically to avoid circular deps
+            const { runAgenticWorkflow } = await import('../../services/rag/ragService');
+            const { useStore } = await import('@/core/store');
+
+            // We need to mock or provide the required arguments for runAgenticWorkflow
+            // It expects: query, userProfile, activeTrack, onUpdate, _updateDocStatus
+
+            const { userProfile } = useStore.getState();
+
+            // Mock callbacks
+            const onUpdate = (msg: string) => console.log(`[RAG]: ${msg}`);
+            const onDocStatus = () => { };
+
+            const result = await runAgenticWorkflow(args.query, userProfile, null, onUpdate, onDocStatus);
+            return `RAG Search Result: ${result.asset.content}`;
+        } catch (e: any) {
+            return `Knowledge search failed: ${e.message}`;
+        }
     }
 };
 
@@ -181,4 +250,8 @@ AVAILABLE TOOLS:
 4. read_history() - Read recent chat history.
 5. batch_edit_images(prompt: string, imageIndices?: number[]) - Edit uploaded images with an instruction.
 6. batch_edit_videos(prompt: string, videoIndices?: number[]) - Edit/Grade uploaded videos with an instruction.
+7. create_project(name: string, type: string) - Create a new project (types: creative, music, marketing, legal).
+8. list_projects() - List all projects in the current organization.
+9. switch_module(module: string) - Navigate to a specific module.
+10. search_knowledge(query: string) - Search the knowledge base for answers.
 `;

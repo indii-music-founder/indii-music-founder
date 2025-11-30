@@ -10,10 +10,15 @@ DEPARTMENTS:
 1. "creative" - Image generation, video editing, visual design, canvas work.
 2. "legal" - Contracts, compliance, NDAs, legal review.
 3. "music" - Composition, songwriting, audio production.
-4. "marketing" - Ad copy, social media, branding (Coming Soon).
+4. "marketing" - Ad copy, social media, branding.
+5. "dashboard" - Project management, file uploads, general overview.
+6. "workflow" - Research, RAG, complex multi-step workflows.
 
 TASK:
 Analyze the user's input and determine the best department.
+If the user asks to "create a project" or "upload a file", route to "dashboard".
+If the user asks about "research" or "knowledge base", route to "workflow".
+
 OUTPUT:
 Return ONLY the department ID (e.g., "legal") as a lowercase string.
 If unsure, default to "creative".
@@ -41,7 +46,7 @@ class OrchestratorService {
             const route = (res.text || 'creative').trim().toLowerCase();
 
             // Validate route
-            const validRoutes = ['creative', 'legal', 'music', 'marketing'];
+            const validRoutes = ['creative', 'legal', 'music', 'marketing', 'dashboard', 'workflow'];
             if (validRoutes.includes(route)) {
                 return route;
             }

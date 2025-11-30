@@ -4,7 +4,7 @@ import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Cam
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
-import { AppSlice } from '@/core/store'; // Added import for AppSlice
+
 
 export default function Dashboard() {
     const { setModule, setProject, currentOrganizationId, projects, addProject } = useStore();
