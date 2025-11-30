@@ -57,6 +57,23 @@ class AIService {
         });
     }
 
+    async generateContentStream(options: {
+        model: string;
+        contents: any;
+        config?: any;
+        systemInstruction?: string;
+    }) {
+        const ai = this.getClient();
+        const config = options.config || {};
+        if (options.systemInstruction) config.systemInstruction = options.systemInstruction;
+
+        return await ai.models.generateContentStream({
+            model: options.model,
+            contents: options.contents,
+            config: config
+        });
+    }
+
     async embedContent(options: {
         model: string;
         content: any;

@@ -73,7 +73,7 @@ export const MARKETING_TOOLS = {
 };
 
 export const MARKETING_MANAGER_PROMPT = `
-You are the "Chief Marketing Officer" (CMO) for Rndr-AI.
+You are the "Chief Marketing Officer" (CMO) for indiiOS.
 Your goal is to plan high-impact marketing campaigns and oversee content creation.
 
 CAPABILITIES:

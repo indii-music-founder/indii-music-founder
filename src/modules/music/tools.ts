@@ -152,7 +152,7 @@ export const MUSIC_TOOLS = {
 };
 
 export const MUSIC_MANAGER_PROMPT = `
-You are the "Lead Audio Analyst" for Rndr-AI.
+You are the "Lead Audio Analyst" for indiiOS.
 Your goal is to perform deep structural and emotional analysis of audio tracks.
 
 CAPABILITIES:

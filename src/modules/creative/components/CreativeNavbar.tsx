@@ -117,7 +117,7 @@ export default function CreativeNavbar() {
                     <div className="flex items-center justify-between md:justify-start gap-4 flex-shrink-0">
                         <div className="flex items-center gap-4">
                             {/* Branding */}
-                            <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">Rndr-AI</h1>
+                            <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">indiiOS</h1>
                             <div className="h-4 w-px bg-gray-700"></div>
                             <span className="text-[10px] text-gray-500 font-mono" id="debug-uid">
                                 {auth.currentUser?.uid || 'No User'}

@@ -3,15 +3,16 @@ import { useStore } from '@/core/store';
 import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
+import { OrganizationSelector } from './components/OrganizationSelector';
 
 export default function Dashboard() {
-    const { setModule, setProject, currentProjectId } = useStore();
+    const { setModule, setProject, currentProjectId, currentOrganizationId } = useStore();
 
     const projects = [
-        { id: 'default', name: 'Default Project', date: Date.now(), type: 'creative' },
-        { id: 'proj-2', name: 'Neon City Campaign', date: Date.now() - 86400000, type: 'marketing' },
-        { id: 'proj-3', name: 'Audio Experience', date: Date.now() - 172800000, type: 'music' },
-    ];
+        { id: 'default', name: 'Default Project', date: Date.now(), type: 'creative', orgId: 'org-default' },
+        { id: 'proj-2', name: 'Neon City Campaign', date: Date.now() - 86400000, type: 'marketing', orgId: 'org-default' },
+        { id: 'proj-3', name: 'Audio Experience', date: Date.now() - 172800000, type: 'music', orgId: 'org-default' },
+    ].filter(p => p.orgId === currentOrganizationId);
 
     const handleOpenProject = (id: string, type: any) => {
         setProject(id);
@@ -38,8 +39,11 @@ export default function Dashboard() {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-12">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-2">Welcome back, Creator.</h1>
-                        <p className="text-gray-400">Manage your creative projects and workflows.</p>
+                        <h1 className="text-4xl font-bold text-white mb-2">Welcome back to indiiOS.</h1>
+                        <div className="flex items-center gap-4">
+                            <OrganizationSelector />
+                            <p className="text-gray-400">Manage your creative projects and workflows.</p>
+                        </div>
                     </div>
                     <div className="flex gap-3">
                         <button

@@ -7,6 +7,7 @@ export interface AgentMessage {
     text: string;
     timestamp: number;
     attachments?: { mimeType: string; base64: string }[];
+    isStreaming?: boolean;
 }
 
 export interface HistoryItem {
@@ -38,9 +39,23 @@ export interface CanvasImage {
     projectId: string;
 }
 
+export interface Organization {
+    id: string;
+    name: string;
+    plan: 'free' | 'pro' | 'enterprise';
+    members: string[];
+}
+
 interface AppState {
     currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard';
     currentProjectId: string;
+
+    // Organization State
+    currentOrganizationId: string;
+    organizations: Organization[];
+    setOrganization: (id: string) => void;
+    addOrganization: (org: Organization) => void;
+
     agentHistory: AgentMessage[];
     isAgentOpen: boolean;
     generatedHistory: HistoryItem[];
@@ -48,6 +63,7 @@ interface AppState {
     setModule: (module: AppState['currentModule']) => void;
     setProject: (id: string) => void;
     addAgentMessage: (msg: AgentMessage) => void;
+    updateAgentMessage: (id: string, updates: Partial<AgentMessage>) => void;
     clearAgentHistory: () => void;
     toggleAgentWindow: () => void;
     addToHistory: (item: HistoryItem) => void;
@@ -122,6 +138,15 @@ export const useStore = create<AppState>((set) => ({
     currentModule: 'dashboard',
     // ... existing initial state ...
     currentProjectId: 'default',
+
+    // Organization State
+    currentOrganizationId: 'org-default',
+    organizations: [
+        { id: 'org-default', name: 'Personal Workspace', plan: 'free', members: ['me'] }
+    ],
+    setOrganization: (id) => set({ currentOrganizationId: id }),
+    addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
+
     agentHistory: [],
     isAgentOpen: false,
     generatedHistory: [],
@@ -129,6 +154,9 @@ export const useStore = create<AppState>((set) => ({
     setModule: (module) => set({ currentModule: module }),
     setProject: (id) => set({ currentProjectId: id }),
     addAgentMessage: (msg) => set((state) => ({ agentHistory: [...state.agentHistory, msg] })),
+    updateAgentMessage: (id, updates) => set((state) => ({
+        agentHistory: state.agentHistory.map(msg => msg.id === id ? { ...msg, ...updates } : msg)
+    })),
     clearAgentHistory: () => set({ agentHistory: [] }),
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
     addToHistory: (item) => {

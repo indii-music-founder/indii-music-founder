@@ -57,7 +57,7 @@ export default function CommandBar() {
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Ask Rndr-AI to do something (e.g., 'Draft a contract', 'Compose a song')..."
+                        placeholder="Ask indii to do something (e.g., 'Draft a contract', 'Compose a song')..."
                         className="flex-1 bg-transparent text-xl text-white placeholder-gray-500 outline-none"
                     />
                     {isProcessing ? (

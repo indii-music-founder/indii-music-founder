@@ -140,6 +140,9 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                     'bg-[#1a1a1a] text-gray-300 border border-gray-800'
                                 }`}>
                                 {msg.text}
+                                {msg.isStreaming && (
+                                    <span className="inline-block w-2 h-4 ml-1 bg-purple-500 animate-pulse align-middle"></span>
+                                )}
                                 {msg.attachments && (
                                     <div className="mt-2 flex gap-1 flex-wrap">
                                         {msg.attachments.map((att, i) => (
@@ -235,6 +238,9 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                                 'bg-[#1a1a1a] text-gray-300 border border-gray-800'
                                             }`}>
                                             {msg.text}
+                                            {msg.isStreaming && (
+                                                <span className="inline-block w-2 h-4 ml-1 bg-purple-500 animate-pulse align-middle"></span>
+                                            )}
                                             {msg.attachments && (
                                                 <div className="mt-2 flex gap-1 flex-wrap">
                                                     {msg.attachments.map((att, i) => (

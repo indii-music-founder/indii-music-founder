@@ -25,19 +25,19 @@ async function reloadProjectData(projectId: string) {
         state.uploadedImages = []; state.generatedHistory = []; state.canvasImages = []; state.agentHistory = [];
         if (dom.imageGallery) dom.imageGallery.innerHTML = '';
         if (dom.historyList) dom.historyList.innerHTML = '';
-        
+
         const data = await db.loadAllData(projectId);
         Object.assign(state, {
             uploadedImages: data.images, generatedHistory: data.history, savedPrompts: data.prompts, projects: data.projects,
             currentProjectId: projectId, canvasImages: data.canvasImages, uploadedAudio: data.audio, agentHistory: data.agentHistory
         });
-        if(data.showroomAsset) state.showroomAsset = data.showroomAsset;
-        
+        if (data.showroomAsset) state.showroomAsset = data.showroomAsset;
+
         gallery.updateGalleryUI(); gallery.updateHistoryUI(); canvasLogic.drawCanvas(); agentZero.renderChat();
         if (dom.projectSelector) ui.updateProjectsUI();
 
         events.emit(APP_EVENTS.PROJECT_LOADED, projectId);
-    } catch(e) { console.error("Reload failed", e); }
+    } catch (e) { console.error("Reload failed", e); }
 }
 
 async function initApp() {
@@ -57,12 +57,12 @@ async function initApp() {
     router.switchView('studio');
 
     // 5. Restore UI State
-    if(state.showroomAsset && dom.showroomAssetPreview) { dom.showroomAssetPreview.src = state.showroomAsset.base64; dom.showroomAssetPreview.classList.remove('hidden'); }
-    if(state.uploadedAudio && dom.audioContainer) { dom.audioContainer.classList.remove('hidden'); dom.audioFilename.textContent = state.uploadedAudio.name; dom.audioPlayer.src = state.uploadedAudio.base64; }
-    
+    if (state.showroomAsset && dom.showroomAssetPreview) { dom.showroomAssetPreview.src = state.showroomAsset.base64; dom.showroomAssetPreview.classList.remove('hidden'); }
+    if (state.uploadedAudio && dom.audioContainer) { dom.audioContainer.classList.remove('hidden'); dom.audioFilename.textContent = state.uploadedAudio.name; dom.audioPlayer.src = state.uploadedAudio.base64; }
+
     const savedVidMode = await db.getSettings('videoMode');
-    if(savedVidMode) { const radio = document.getElementById(savedVidMode) as HTMLInputElement; if(radio) radio.checked = true; }
-    if(dom.directorsCutToggle) dom.directorsCutToggle.checked = await db.getSettings('directorsCut') || false;
+    if (savedVidMode) { const radio = document.getElementById(savedVidMode) as HTMLInputElement; if (radio) radio.checked = true; }
+    if (dom.directorsCutToggle) dom.directorsCutToggle.checked = await db.getSettings('directorsCut') || false;
 
     // 6. Initialize UI Components
     ui.initPromptBuilder(); ui.initStudioControlPanel(); ui.initGenerateMenu(); ui.updateVideoInstructionUI(); ui.updateGenerateButtonLabel();
@@ -73,12 +73,12 @@ async function initApp() {
 
     // 8. Signal App Ready
     events.emit(APP_EVENTS.APP_READY);
-    console.log("🚀 Rndr-AI initialized via EventBus");
+    console.log("🚀 indiiOS initialized via EventBus");
 }
 
 function setupEventBindings() {
-    const bind = (el: HTMLElement | null, evt: string, fn: (e:any)=>void) => { if(el) el.addEventListener(evt, fn); };
-    const click = (el: HTMLElement | null, fn: (e:any)=>void) => bind(el, 'click', fn);
+    const bind = (el: HTMLElement | null, evt: string, fn: (e: any) => void) => { if (el) el.addEventListener(evt, fn); };
+    const click = (el: HTMLElement | null, fn: (e: any) => void) => bind(el, 'click', fn);
 
     // Nav & Modes
     click(dom.homeBtn, () => { dashboard.initDashboard(); router.switchView('dashboard'); });
@@ -87,11 +87,11 @@ function setupEventBindings() {
     click(dom.modeRemixBtn, () => ui.setMode('remix'));
     click(dom.modeCanvasBtn, () => ui.setMode('canvas'));
     click(dom.modeShowroomBtn, () => ui.setMode('showroom'));
-    
+
     // AGENT R TOGGLE
-    click(dom.modeAgentBtn, () => { 
-        dom.agentWindow.classList.toggle('hidden'); 
-        agentZero.renderChat(); 
+    click(dom.modeAgentBtn, () => {
+        dom.agentWindow.classList.toggle('hidden');
+        agentZero.renderChat();
     });
 
     // Generation
@@ -117,17 +117,17 @@ function setupEventBindings() {
     click(dom.genActionVideo, (e) => { e.stopPropagation(); ui.setMode('video'); setTimeout(videoLogic.runDirectVideo, 100); });
 
     // Project & Bible
-    if(dom.projectSelector) dom.projectSelector.onchange = async () => {
+    if (dom.projectSelector) dom.projectSelector.onchange = async () => {
         if (dom.projectSelector.value === 'new') router.switchView('dashboard');
         else { await db.saveSettings('currentProjectId', dom.projectSelector.value); await reloadProjectData(dom.projectSelector.value); router.switchView('studio'); }
     };
-    click(dom.editBibleBtn, () => { 
+    click(dom.editBibleBtn, () => {
         const p = state.projects.find(pr => pr.id === state.currentProjectId);
-        if(p) { dom.bibleProjectName.value = p.name; dom.bibleContext.value = p.context; dom.bibleModal.classList.remove('hidden'); }
+        if (p) { dom.bibleProjectName.value = p.name; dom.bibleContext.value = p.context; dom.bibleModal.classList.remove('hidden'); }
     });
     click(dom.closeBibleBtn, () => {
         const p = state.projects.find(pr => pr.id === state.currentProjectId);
-        if(p) {
+        if (p) {
             p.name = dom.bibleProjectName.value;
             p.context = dom.bibleContext.value;
             db.saveSettings('projects', state.projects);
@@ -147,17 +147,17 @@ function setupEventBindings() {
     click(dom.acceptImprovementBtn, promptLogic.applyImprovedPrompt);
     click(dom.cancelImprovementBtn, promptLogic.closeImproverModal);
     click(dom.closeModalBtn, promptLogic.closeImproverModal);
-    click(dom.improverModal, (e) => { if(e.target === dom.improverModal) promptLogic.closeImproverModal(); });
+    click(dom.improverModal, (e) => { if (e.target === dom.improverModal) promptLogic.closeImproverModal(); });
 
     // Inputs & Files
-    if(dom.fileInput) dom.fileInput.onchange = (e: any) => gallery.handleFiles(e.target.files);
-    document.addEventListener('paste', (e) => { if(e.clipboardData?.files.length) gallery.handleFiles(e.clipboardData.files); });
-    
-    if(dom.dropZone) {
-        click(dom.dropZone, (e) => { if(!(e.target as HTMLElement).closest('button, .image-thumbnail')) dom.fileInput.click(); });
+    if (dom.fileInput) dom.fileInput.onchange = (e: any) => gallery.handleFiles(e.target.files);
+    document.addEventListener('paste', (e) => { if (e.clipboardData?.files.length) gallery.handleFiles(e.clipboardData.files); });
+
+    if (dom.dropZone) {
+        click(dom.dropZone, (e) => { if (!(e.target as HTMLElement).closest('button, .image-thumbnail')) dom.fileInput.click(); });
         dom.dropZone.ondragover = (e) => { e.preventDefault(); dom.dropZone.classList.add('border-blue-500'); };
         dom.dropZone.ondragleave = () => dom.dropZone.classList.remove('border-blue-500');
-        dom.dropZone.ondrop = (e) => { e.preventDefault(); dom.dropZone.classList.remove('border-blue-500'); if(e.dataTransfer?.files) gallery.handleFiles(e.dataTransfer.files); };
+        dom.dropZone.ondrop = (e) => { e.preventDefault(); dom.dropZone.classList.remove('border-blue-500'); if (e.dataTransfer?.files) gallery.handleFiles(e.dataTransfer.files); };
     }
 
     if (dom.storyChainCheckbox) dom.storyChainCheckbox.onchange = () => {
@@ -187,15 +187,15 @@ function setupEventBindings() {
     click(dom.closeCanvasHelpBtn, canvasLogic.toggleCanvasHelp);
     click(dom.exitCanvasBtn, () => ui.setMode('generate'));
     click(dom.canvasUploadBtn, () => {
-        const i = document.createElement('input'); i.type='file'; i.multiple=true; i.accept='image/*';
-        i.onchange=()=>gallery.handleFiles(i.files!); i.click();
+        const i = document.createElement('input'); i.type = 'file'; i.multiple = true; i.accept = 'image/*';
+        i.onchange = () => gallery.handleFiles(i.files!); i.click();
     });
 
     // Video Config
     click(dom.closeVideoConfigBtn, () => dom.videoConfigModal.classList.add('hidden'));
-    const updateVideoMode = (e: any) => { if(e.target.checked) { db.saveSettings('videoMode', e.target.id); ui.updateVideoInstructionUI(); ui.updateGenerateButtonLabel(); }};
+    const updateVideoMode = (e: any) => { if (e.target.checked) { db.saveSettings('videoMode', e.target.id); ui.updateVideoInstructionUI(); ui.updateGenerateButtonLabel(); } };
     [dom.draftModeRadio, dom.agentModeRadio, dom.infiniteReelRadio, dom.keyframeModeRadio, dom.musicModeRadio, dom.motionBrushRadio].forEach(r => bind(r, 'change', updateVideoMode));
-    if(dom.directorsCutToggle) dom.directorsCutToggle.onchange = () => { db.saveSettings('directorsCut', dom.directorsCutToggle.checked); ui.updateGenerateButtonLabel(); };
+    if (dom.directorsCutToggle) dom.directorsCutToggle.onchange = () => { db.saveSettings('directorsCut', dom.directorsCutToggle.checked); ui.updateGenerateButtonLabel(); };
 
     // Annotation
     click(dom.cancelAnnotationBtn, annotationLogic.closeAnnotationModal);
@@ -204,7 +204,7 @@ function setupEventBindings() {
     click(dom.invertMaskBtn, annotationLogic.invertMask);
     click(dom.toolBrushBtn, () => annotationLogic.setDrawingTool('brush'));
     click(dom.toolEraserBtn, () => annotationLogic.setDrawingTool('eraser'));
-    if(dom.annotationCanvas) {
+    if (dom.annotationCanvas) {
         bind(dom.annotationCanvas, 'mousedown', annotationLogic.startDrawing);
         bind(dom.annotationCanvas, 'mousemove', annotationLogic.draw);
         bind(dom.annotationCanvas, 'mouseup', annotationLogic.stopDrawing);
@@ -219,40 +219,40 @@ function setupEventBindings() {
     click(dom.lightboxDownload, () => lightboxLogic.downloadItem(state.generatedHistory[state.currentLightboxIndex]));
     lightboxLogic.setupLightboxEdit();
     click(dom.exportReelBtn, lightboxLogic.exportReel);
-    if(dom.lightboxCompareBtn) {
+    if (dom.lightboxCompareBtn) {
         bind(dom.lightboxCompareBtn, 'mousedown', () => lightboxLogic.toggleCompare(true));
         bind(dom.lightboxCompareBtn, 'mouseup', () => lightboxLogic.toggleCompare(false));
         bind(dom.lightboxCompareBtn, 'mouseleave', () => lightboxLogic.toggleCompare(false));
         bind(dom.lightboxCompareBtn, 'touchstart', (e) => { e.preventDefault(); lightboxLogic.toggleCompare(true); });
         bind(dom.lightboxCompareBtn, 'touchend', (e) => { e.preventDefault(); lightboxLogic.toggleCompare(false); });
     }
-    
+
     click(dom.openHistoryBtn, () => dom.historySidebar.classList.remove('translate-x-full'));
     click(dom.closeHistoryBtn, () => dom.historySidebar.classList.add('translate-x-full'));
     click(dom.downloadAllBtn, lightboxLogic.downloadAllResults);
-    click(dom.clearHistoryBtn, () => { if(confirm("Clear history?")) { state.generatedHistory=[]; gallery.updateHistoryUI(); } });
+    click(dom.clearHistoryBtn, () => { if (confirm("Clear history?")) { state.generatedHistory = []; gallery.updateHistoryUI(); } });
     click(dom.closeStoryboardBtn, () => dom.storyboardContainer.classList.add('hidden'));
-    click(dom.removeAudioBtn, () => { state.uploadedAudio=null; dom.audioContainer.classList.add('hidden'); dom.audioPlayer.pause(); db.saveSettings('uploadedAudio', null); });
-    
-    if(dom.filmScrollLeft) click(dom.filmScrollLeft, () => dom.filmStripContainer.scrollBy({ left: -200, behavior: 'smooth' }));
-    if(dom.filmScrollRight) click(dom.filmScrollRight, () => dom.filmStripContainer.scrollBy({ left: 200, behavior: 'smooth' }));
+    click(dom.removeAudioBtn, () => { state.uploadedAudio = null; dom.audioContainer.classList.add('hidden'); dom.audioPlayer.pause(); db.saveSettings('uploadedAudio', null); });
+
+    if (dom.filmScrollLeft) click(dom.filmScrollLeft, () => dom.filmStripContainer.scrollBy({ left: -200, behavior: 'smooth' }));
+    if (dom.filmScrollRight) click(dom.filmScrollRight, () => dom.filmStripContainer.scrollBy({ left: 200, behavior: 'smooth' }));
 
     // Global Keys
     document.addEventListener('keydown', (e) => {
-        if(e.key === 'Escape') [dom.improverModal, dom.bibleModal, dom.videoConfigModal, dom.lightboxModal, dom.annotationModal, dom.promptLibraryModal, dom.storyboardContainer].forEach(el => el?.classList.add('hidden'));
-        if(state.currentMode === 'canvas' && (e.key === 'Delete' || e.key === 'Backspace')) canvasLogic.deleteSelection();
+        if (e.key === 'Escape') [dom.improverModal, dom.bibleModal, dom.videoConfigModal, dom.lightboxModal, dom.annotationModal, dom.promptLibraryModal, dom.storyboardContainer].forEach(el => el?.classList.add('hidden'));
+        if (state.currentMode === 'canvas' && (e.key === 'Delete' || e.key === 'Backspace')) canvasLogic.deleteSelection();
 
         // Power User Shortcuts
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-             dom.generateTrigger?.click();
+            dom.generateTrigger?.click();
         }
         if (e.key === '[') {
             const range = dom.brushSizeInput;
-            if(range) { range.value = Math.max(5, parseInt(range.value) - 5).toString(); range.dispatchEvent(new Event('input')); }
+            if (range) { range.value = Math.max(5, parseInt(range.value) - 5).toString(); range.dispatchEvent(new Event('input')); }
         }
         if (e.key === ']') {
             const range = dom.brushSizeInput;
-            if(range) { range.value = Math.min(100, parseInt(range.value) + 5).toString(); range.dispatchEvent(new Event('input')); }
+            if (range) { range.value = Math.min(100, parseInt(range.value) + 5).toString(); range.dispatchEvent(new Event('input')); }
         }
     });
 }

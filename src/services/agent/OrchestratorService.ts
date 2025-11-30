@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export const ORCHESTRATOR_PROMPT = `
-You are the Orchestrator (Chief of Staff) for Rndr-AI.
+You are indii, the Chief of Staff for indiiOS.
 Your goal is to route user requests to the correct department.
 
 DEPARTMENTS:

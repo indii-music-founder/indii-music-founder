@@ -71,32 +71,68 @@ class AgentService {
             });
             parts.push({ text: `${systemPrompt}\n\nLast Input: ${currentInput}\nNext Step (JSON):` });
 
-            // UI Feedback
-            const thinkingId = uuidv4();
-            useStore.getState().addAgentMessage({ id: thinkingId, role: 'system', text: 'Thinking...', timestamp: Date.now() });
+            // Create placeholder for streaming response
+            const responseId = uuidv4();
+            useStore.getState().addAgentMessage({ id: responseId, role: 'model', text: '', timestamp: Date.now(), isStreaming: true });
 
-            // Call AI
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { parts },
-                config: {
-                    responseMimeType: 'application/json',
-                    ...AI_CONFIG.THINKING.HIGH
+            // Call AI with Streaming
+            // Note: We are assuming the AI service wrapper supports generateContentStream. 
+            // If not, we might need to fallback or update the wrapper. 
+            // For this implementation, we'll try to use the stream if available, or simulate it if the wrapper is strict.
+
+            let fullText = '';
+
+            try {
+                // Check if the underlying AI service has stream capability exposed
+                // If strictly typed to not have it, we might need to cast or update AIService.ts first.
+                // For now, let's assume we can call it.
+                const streamResult = await AI.generateContentStream({
+                    model: AI_MODELS.TEXT.AGENT,
+                    contents: { parts },
+                    config: {
+                        responseMimeType: 'application/json',
+                        ...AI_CONFIG.THINKING.HIGH
+                    }
+                });
+
+                for await (const chunk of streamResult) {
+                    const chunkText = typeof (chunk as any).text === 'function' ? (chunk as any).text() : ((chunk as any).text || '');
+                    fullText += chunkText;
+
+                    // Update store with partial text
+                    useStore.getState().updateAgentMessage(responseId, { text: fullText });
                 }
-            });
+            } catch (err) {
+                // Fallback to non-streaming if stream fails or not implemented
+                console.warn("Streaming failed, falling back to unary", err);
+                const res = await AI.generateContent({
+                    model: AI_MODELS.TEXT.AGENT,
+                    contents: { parts },
+                    config: {
+                        responseMimeType: 'application/json',
+                        ...AI_CONFIG.THINKING.HIGH
+                    }
+                });
+                fullText = res.text;
+                useStore.getState().updateAgentMessage(responseId, { text: fullText });
+            }
 
-            // Remove "Thinking..."
-            useStore.setState(state => ({ agentHistory: state.agentHistory.filter(m => m.id !== thinkingId) }));
+            // Mark streaming as done
+            useStore.getState().updateAgentMessage(responseId, { isStreaming: false });
 
-            const result = AI.parseJSON(res.text);
+            const result = AI.parseJSON(fullText);
 
             if (result.final_response) {
-                this.addModelMessage(result.final_response);
+                // If the final response is different from the raw JSON, update it to show the clean response
+                // Or we can just leave the JSON for transparency. 
+                // Let's replace the JSON with the final response text for better UX.
+                useStore.getState().updateAgentMessage(responseId, { text: String(result.final_response || '') });
                 break;
             }
 
             if (result.tool) {
-                this.addModelMessage(`⚙️ ${result.tool}`);
+                // We keep the tool call visible or maybe minimize it? 
+                // For now, let's keep it as is.
 
                 // Execute Tool
                 const toolFunc = TOOL_REGISTRY[result.tool];

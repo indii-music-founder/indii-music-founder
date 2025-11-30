@@ -3,7 +3,7 @@
 import { UploadedImage, HistoryItem, SavedPrompt, Project, CanvasImage, UploadedAudio, AgentMessage } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-const DB_NAME = 'RndrAI_DB';
+const DB_NAME = 'indiiOS_DB';
 const DB_VERSION = 3;
 
 export const DB_STORES = {
@@ -193,24 +193,24 @@ export async function getProjectMetadata(projectId: string) {
         getAll<UploadedImage>(DB_STORES.IMAGES),
         getAll<HistoryItem>(DB_STORES.HISTORY)
     ]);
-    
+
     // Filter by Project ID
     const projImages = images.filter(i => i.projectId === projectId);
     const projHistory = history.filter(h => h.projectId === projectId);
     const videos = projHistory.filter(h => h.type === 'video');
-    
+
     // Get thumbnail (prefer recent history, else recent upload)
     let thumbnail = null;
     if (projHistory.length > 0) thumbnail = projHistory[0].base64;
     else if (projImages.length > 0) thumbnail = projImages[0].base64;
-    
+
     // If video, extract frame (simplified, might be raw data URI)
     if (thumbnail && thumbnail.startsWith('data:video')) {
         // Thumbnail generation for video is async/complex, skipping here for speed
         // Or assume history items are images unless type video, but history base64 is dataURI
         // If history item is video, the base64 is usually the video file. 
         // We might need to store a separate thumbnail. For now, fallback to generic icon if video.
-        thumbnail = null; 
+        thumbnail = null;
     }
 
     return {
@@ -237,7 +237,7 @@ export async function loadAllData(projectId: string) {
     prompts.sort((a, b) => b.date - a.date);
 
     const safeProjectId = projectId || (currentProjectWrap || 'default');
-    
+
     const filteredImages = images.filter(i => i.projectId === safeProjectId);
     const filteredHistory = history.filter(h => h.projectId === safeProjectId);
     const filteredCanvas = canvasImages.filter(c => c.projectId === safeProjectId);
