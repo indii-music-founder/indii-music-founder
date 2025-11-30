@@ -1,4 +1,4 @@
-import { AI_CONFIG } from '@/core/config/ai-models';
+
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -12,12 +12,12 @@ interface Corpus {
 interface Document {
     name: string;
     displayName: string;
-    customMetadata?: Record<string, any>;
+    customMetadata?: Record<string, unknown>;
 }
 
 interface Chunk {
     data: { stringValue: string };
-    customMetadata?: Record<string, any>;
+    customMetadata?: Record<string, unknown>;
 }
 
 export class GeminiRetrievalService {
@@ -84,7 +84,7 @@ export class GeminiRetrievalService {
     /**
      * Creates a Document within a Corpus.
      */
-    async createDocument(corpusName: string, displayName: string, metadata?: Record<string, any>): Promise<Document> {
+    async createDocument(corpusName: string, displayName: string, metadata?: Record<string, unknown>): Promise<Document> {
         return this.fetch(`${corpusName}/documents`, {
             method: 'POST',
             body: JSON.stringify({

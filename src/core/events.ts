@@ -1,4 +1,4 @@
-type EventCallback<T = any> = (data: T) => void;
+type EventCallback<T = unknown> = (data: T) => void;
 
 export type EventType =
     | 'AGENT_ACTION'
@@ -31,7 +31,7 @@ class EventBus {
         if (!this.listeners[event]) {
             this.listeners[event] = [];
         }
-        this.listeners[event]?.push(callback);
+        this.listeners[event]?.push(callback as EventCallback<any>);
     }
 
     off<T>(event: EventType, callback: EventCallback<T>): void {

@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-
 // Helper to clean JSON (remove markdown blocks)
 function cleanJSON(text: string): string {
     return text.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
@@ -28,7 +26,7 @@ class AIService {
         model: string;
         prompt: string;
         image?: { imageBytes: string; mimeType: string };
-        config?: any;
+        config?: Record<string, unknown>;
     }) {
         // Call Firebase Cloud Function
         const functionUrl = import.meta.env.VITE_FUNCTIONS_URL;
@@ -73,7 +71,7 @@ class AIService {
         if (!text) return {};
         try {
             return JSON.parse(cleanJSON(text));
-        } catch (e) {
+        } catch {
             console.error("Failed to parse JSON:", text);
             return {};
         }

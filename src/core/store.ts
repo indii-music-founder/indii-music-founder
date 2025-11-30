@@ -21,7 +21,13 @@ export const useStore = create<AppState>((...a) => ({
     ...createWorkflowSlice(...a),
 }));
 
+declare global {
+    interface Window {
+        useStore: typeof useStore;
+    }
+}
+
 // Expose store for debugging/automation
 if (typeof window !== 'undefined') {
-    (window as any).useStore = useStore;
+    window.useStore = useStore;
 }

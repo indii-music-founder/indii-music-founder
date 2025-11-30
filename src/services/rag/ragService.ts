@@ -1,7 +1,12 @@
 import { AI } from '../ai/AIService';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/ai-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';
-import type { KnowledgeAsset, KnowledgeDocument, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
+import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
+
+interface Attribution {
+    sourceId?: string;
+    content?: { parts?: { text: string }[] };
+}
 
 /**
  * Runs the RAG workflow using Gemini Semantic Retrieval (AQA).
@@ -11,7 +16,7 @@ export async function runAgenticWorkflow(
     userProfile: UserProfile,
     activeTrack: AudioAnalysisJob | null,
     onUpdate: (update: string) => void,
-    updateDocStatus: (docId: string, status: KnowledgeDocumentIndexingStatus) => void
+    _updateDocStatus: (docId: string, status: KnowledgeDocumentIndexingStatus) => void
 ): Promise<{ asset: KnowledgeAsset; updatedProfile: UserProfile | null }> {
 
     onUpdate("Initializing Gemini Knowledge Base...");
@@ -26,7 +31,7 @@ export async function runAgenticWorkflow(
         // 2. Query AQA Model
         const response = await GeminiRetrieval.query(corpusName, query);
         const answer = response.answer?.content?.parts?.[0]?.text || "No answer found.";
-        const attributedPassages = response.answer?.groundingAttributions || [];
+        const attributedPassages: Attribution[] = response.answer?.groundingAttributions || [];
 
         // 3. Construct Knowledge Asset
         const asset: KnowledgeAsset = {
@@ -36,7 +41,7 @@ export async function runAgenticWorkflow(
             content: answer,
             date: Date.now(),
             tags: ['gemini-rag', 'aqa'],
-            sources: attributedPassages.map((p: any) => ({
+            sources: attributedPassages.map((p) => ({
                 name: p.sourceId?.replace(corpusName + '/documents/', '') || 'Unknown',
                 content: p.content?.parts?.[0]?.text || ''
             })),

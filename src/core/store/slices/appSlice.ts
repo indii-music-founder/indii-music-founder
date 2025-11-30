@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 
 export interface AppSlice {
-    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard';
+    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org';
     currentProjectId: string;
     setModule: (module: AppSlice['currentModule']) => void;
     setProject: (id: string) => void;

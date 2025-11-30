@@ -1,15 +1,16 @@
-import React from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 
 // Lazy load modules
-const CreativeStudio = React.lazy(() => import('../modules/creative/CreativeStudio'));
-const MusicStudio = React.lazy(() => import('../modules/music/MusicStudio'));
-const LegalDashboard = React.lazy(() => import('../modules/legal/LegalDashboard'));
-const MarketingDashboard = React.lazy(() => import('../modules/marketing/MarketingDashboard'));
-const VideoStudio = React.lazy(() => import('../modules/video/VideoStudio'));
-const WorkflowLab = React.lazy(() => import('../modules/workflow/WorkflowLab'));
-const Dashboard = React.lazy(() => import('../modules/dashboard/Dashboard'));
+const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
+const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
+const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
+const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
+const VideoStudio = lazy(() => import('../modules/video/VideoStudio'));
+const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
+const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
+const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
 
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
@@ -17,7 +18,7 @@ import { ToastProvider } from './context/ToastContext';
 export default function App() {
     const { currentModule, initializeHistory } = useStore();
 
-    React.useEffect(() => {
+    useEffect(() => {
         initializeHistory();
         useStore.setState({ isAgentOpen: false });
     }, []);
@@ -26,10 +27,11 @@ export default function App() {
         <ToastProvider>
             <div className="flex h-screen w-screen bg-surface text-white overflow-hidden font-sans">
                 <CommandBar />
-                <Sidebar />
+                {currentModule !== 'select-org' && <Sidebar />}
 
                 <main className="flex-1 relative overflow-hidden flex flex-col pb-16 md:pb-0">
-                    <React.Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
+                    <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
+                        {currentModule === 'select-org' && <SelectOrg />}
                         {currentModule === 'dashboard' && <Dashboard />}
                         {currentModule === 'creative' && <CreativeStudio />}
                         {currentModule === 'legal' && <LegalDashboard />}
@@ -37,7 +39,7 @@ export default function App() {
                         {currentModule === 'marketing' && <MarketingDashboard />}
                         {currentModule === 'video' && <VideoStudio />}
                         {currentModule === 'workflow' && <WorkflowLab />}
-                    </React.Suspense>
+                    </Suspense>
                 </main>
             </div>
         </ToastProvider>

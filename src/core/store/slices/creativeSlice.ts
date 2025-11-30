@@ -72,7 +72,7 @@ export interface CreativeSlice {
         isDaisyChain: boolean;
         timeOffset: number;
     };
-    setVideoInput: (key: keyof CreativeSlice['videoInputs'], value: any) => void;
+    setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
 
     viewMode: 'gallery' | 'canvas' | 'showroom' | 'video_production';
     setViewMode: (mode: 'gallery' | 'canvas' | 'showroom' | 'video_production') => void;

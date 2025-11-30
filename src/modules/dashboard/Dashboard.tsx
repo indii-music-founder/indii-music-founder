@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles } from 'lucide-react';
+import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
@@ -31,6 +31,53 @@ export default function Dashboard() {
         setProject(newId);
         setModule(newProjectType);
         setShowNewProjectModal(false);
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // For images, we might want to OCR them or just store them. 
+            // For now, we'll treat everything as text/blob for the RAG service to handle (it might need updating for images)
+            // Or we just read text for now as before.
+
+            try {
+                let textContent = '';
+
+                if (file.type.startsWith('image/')) {
+                    // TODO: Implement OCR or Image Description here
+                    // For now, we'll just use a placeholder
+                    textContent = `[Image Upload: ${file.name}]`;
+                    alert("Image upload detected. OCR would run here.");
+                } else {
+                    textContent = await file.text();
+                }
+
+                const { processForKnowledgeBase } = await import('../../services/rag/ragService');
+                const { useStore } = await import('@/core/store');
+
+                const processed = await processForKnowledgeBase(textContent, file.name);
+                console.log("Processed Doc:", processed);
+
+                // Add to store
+                const newDoc = {
+                    id: crypto.randomUUID(),
+                    name: processed.title,
+                    content: processed.content,
+                    type: 'document' as const,
+                    tags: processed.tags,
+                    entities: processed.entities,
+                    embeddingId: processed.embeddingId,
+                    indexingStatus: 'ready' as const,
+                    createdAt: Date.now()
+                };
+
+                useStore.getState().addKnowledgeDocument(newDoc);
+                alert(`Added ${processed.title} to Knowledge Base!`);
+            } catch (err) {
+                console.error(err);
+                alert("Failed to process document.");
+            }
+        }
     };
 
     return (
@@ -98,50 +145,37 @@ export default function Dashboard() {
                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <Folder size={20} className="text-yellow-500" /> Knowledge Base
                     </h2>
-                    <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-gray-800">
-                        <div className="border-2 border-dashed border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:border-yellow-500/50 hover:bg-[#222] transition-all cursor-pointer relative">
-                            <input
-                                type="file"
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        const text = await file.text();
-                                        // Import dynamically to avoid circular deps if any, or just use direct import
-                                        const { processForKnowledgeBase } = await import('../../services/rag/ragService');
-                                        const { useStore } = await import('@/core/store');
-
-                                        try {
-                                            const processed = await processForKnowledgeBase(text, file.name);
-                                            console.log("Processed Doc:", processed);
-
-                                            // Add to store
-                                            const newDoc = {
-                                                id: crypto.randomUUID(),
-                                                name: processed.title,
-                                                content: processed.content,
-                                                type: 'document',
-                                                tags: processed.tags,
-                                                entities: processed.entities,
-                                                embeddingId: processed.embeddingId,
-                                                indexingStatus: 'ready',
-                                                createdAt: Date.now()
-                                            };
-
-                                            useStore.getState().addKnowledgeDocument(newDoc as any);
-                                            alert(`Added ${processed.title} to Knowledge Base!`);
-                                        } catch (err) {
-                                            console.error(err);
-                                            alert("Failed to process document.");
-                                        }
-                                    }
-                                }}
-                            />
-                            <div className="w-12 h-12 bg-yellow-500/20 text-yellow-500 rounded-full flex items-center justify-center mb-4">
-                                <Plus size={24} />
+                    <div className="bg-[#1a1a1a] p-8 rounded-3xl border border-gray-800 shadow-2xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Drop Zone */}
+                            <div className="border-2 border-dashed border-gray-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-yellow-500 hover:bg-yellow-500/5 transition-all cursor-pointer relative group min-h-[250px]">
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    onChange={handleFileUpload}
+                                />
+                                <div className="w-16 h-16 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                                    <Plus size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Upload Knowledge Assets</h3>
+                                <p className="text-sm text-gray-400 max-w-xs mx-auto">Drag & drop Brand Kits, Bios, or Strategy Docs (TXT, JSON, MD)</p>
                             </div>
-                            <h3 className="text-lg font-bold text-white mb-1">Upload Knowledge Assets</h3>
-                            <p className="text-sm text-gray-500">Drag & drop Brand Kits, Bios, or Strategy Docs (TXT, JSON, MD)</p>
+
+                            {/* Mobile Camera Option */}
+                            <div className="border-2 border-dashed border-gray-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer relative group min-h-[250px]">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    onChange={handleFileUpload}
+                                />
+                                <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                                    <Camera size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Scan Document</h3>
+                                <p className="text-sm text-gray-400 max-w-xs mx-auto">Use your camera to capture and upload physical documents instantly.</p>
+                            </div>
                         </div>
                     </div>
                 </section>

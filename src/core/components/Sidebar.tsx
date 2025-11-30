@@ -1,11 +1,11 @@
 import React from 'react';
 import { useStore } from '../store';
-import { Palette, Scale, Music, Megaphone, Search, Settings, Layout, Film, Network } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Search, Settings, Layout, Network } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule } = useStore();
 
-    const navItems = [
+    const navItems: { id: typeof currentModule; icon: any; label: string }[] = [
         { id: 'dashboard', icon: Layout, label: 'Dashboard' },
         { id: 'creative', icon: Palette, label: 'Studio' },
         { id: 'music', icon: Music, label: 'Music' },
@@ -37,7 +37,7 @@ export default function Sidebar() {
                 {navItems.map((item) => (
                     <button
                         key={item.id}
-                        onClick={() => setModule(item.id as any)}
+                        onClick={() => setModule(item.id)}
                         className={`p-3 rounded-xl transition-all group relative flex justify-center ${currentModule === item.id
                             ? 'bg-gray-800 text-white shadow-lg shadow-purple-900/20'
                             : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
