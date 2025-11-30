@@ -26,7 +26,7 @@ export default function PromptTools({ currentPrompt, onUpdatePrompt }: PromptToo
                 config: { temperature: 1.0 }
             });
 
-            let words = (response.text || '').replace(/```[\s\S]*?```/g, '').replace(/[\{\}\[\]"]/g, '').trim();
+            const words = (response.text || '').replace(/```[\s\S]*?```/g, '').replace(/[\{\}\[\]"]/g, '').trim();
             if (words) {
                 onUpdatePrompt(currentPrompt + (currentPrompt ? ', ' : '') + words);
             }

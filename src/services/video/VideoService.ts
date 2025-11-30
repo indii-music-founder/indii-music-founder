@@ -47,7 +47,7 @@ export class VideoService {
     async generateVideo(options: VideoGenerationOptions): Promise<string | null> {
         try {
             let model = AI_MODELS.VIDEO.GENERATION; // Default to generation model
-            let config: any = {
+            const config: any = {
                 numberOfVideos: 1,
                 resolution: options.resolution || '720p',
                 aspectRatio: options.aspectRatio || '16:9'

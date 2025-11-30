@@ -284,7 +284,7 @@ export function processFunctionCalls(
     // Start with a shallow copy
     let updatedProfile = { ...currentProfile };
     let isFinished = false;
-    let updates: string[] = [];
+    const updates: string[] = [];
 
     functionCalls.forEach(call => {
         switch (call.name) {

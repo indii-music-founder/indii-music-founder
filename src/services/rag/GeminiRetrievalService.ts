@@ -23,8 +23,9 @@ interface Chunk {
 export class GeminiRetrievalService {
     private apiKey: string;
 
-    constructor() {
-        this.apiKey = import.meta.env.VITE_API_KEY || '';
+    constructor(apiKey?: string) {
+        const env = import.meta.env || {};
+        this.apiKey = apiKey || env.VITE_API_KEY || '';
         if (!this.apiKey) {
             console.error("GeminiRetrievalService: Missing API Key");
         }
@@ -116,6 +117,13 @@ export class GeminiRetrievalService {
                 body: JSON.stringify({ requests: batch.map(c => ({ chunk: c })) })
             });
         }
+    }
+
+    /**
+     * Deletes a corpus.
+     */
+    async deleteCorpus(corpusName: string) {
+        return this.fetch(corpusName, { method: 'DELETE' });
     }
 
     /**
