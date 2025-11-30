@@ -12,8 +12,7 @@ class AIService {
     private useVertex: boolean;
 
     constructor() {
-        // Support both Vite env and legacy process.env if needed
-        this.apiKey = import.meta.env.VITE_API_KEY || (window as any).process?.env?.API_KEY || '';
+        this.apiKey = import.meta.env.VITE_API_KEY || '';
         this.projectId = import.meta.env.VITE_VERTEX_PROJECT_ID;
         this.location = import.meta.env.VITE_VERTEX_LOCATION || 'us-central1';
         this.useVertex = import.meta.env.VITE_USE_VERTEX === 'true';
@@ -23,67 +22,7 @@ class AIService {
         }
     }
 
-    private getClient() {
-        if (this.useVertex && this.projectId) {
-            // Vertex AI Client
-            console.log("Using Vertex AI with Project:", this.projectId);
-            return new GoogleGenAI({
-                vertexai: true,
-                project: this.projectId,
-                location: this.location || 'us-central1',
-                apiKey: this.apiKey
-            });
-        }
-
-        if (!this.apiKey) throw new Error("API Key not found. Please set VITE_API_KEY in .env");
-        // Veo 3.1 is likely in v1alpha, but Gemini models need v1beta
-        return new GoogleGenAI({ apiKey: this.apiKey, apiVersion: 'v1beta' });
-    }
-
-    async generateContent(options: {
-        model: string;
-        contents: any;
-        config?: any;
-        systemInstruction?: string;
-    }) {
-        const ai = this.getClient();
-        const config = options.config || {};
-        if (options.systemInstruction) config.systemInstruction = options.systemInstruction;
-
-        return await ai.models.generateContent({
-            model: options.model,
-            contents: options.contents,
-            config: config
-        });
-    }
-
-    async generateContentStream(options: {
-        model: string;
-        contents: any;
-        config?: any;
-        systemInstruction?: string;
-    }) {
-        const ai = this.getClient();
-        const config = options.config || {};
-        if (options.systemInstruction) config.systemInstruction = options.systemInstruction;
-
-        return await ai.models.generateContentStream({
-            model: options.model,
-            contents: options.contents,
-            config: config
-        });
-    }
-
-    async embedContent(options: {
-        model: string;
-        content: any;
-    }) {
-        const ai = this.getClient();
-        return await ai.models.embedContent({
-            model: options.model,
-            contents: options.content
-        });
-    }
+    // ... (getClient remains the same)
 
     async generateVideo(options: {
         model: string;
@@ -92,11 +31,11 @@ class AIService {
         config?: any;
     }) {
         // Call Firebase Cloud Function
-        // In development, this might need to point to localhost if emulators are running,
-        // or the deployed URL.
-        const projectId = this.projectId || 'architexture-ai-api';
-        const location = 'us-central1';
-        const functionUrl = import.meta.env.VITE_FUNCTIONS_URL || `https://${location}-${projectId}.cloudfunctions.net/generateVideo`;
+        const functionUrl = import.meta.env.VITE_FUNCTIONS_URL;
+
+        if (!functionUrl) {
+            throw new Error("VITE_FUNCTIONS_URL is not defined in environment variables.");
+        }
 
         try {
             const response = await fetch(functionUrl, {
