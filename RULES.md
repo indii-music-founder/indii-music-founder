@@ -32,3 +32,9 @@ Every user instruction must follow this 4-step process:
 ## 6. Context Anchoring
 
 - Reasoning must be anchored to specific contextual data and this `RULES.md` file.
+
+## 7. Tool Usage & MCPs
+
+- **Model Context Protocol (MCP)**: Use MCP servers to extend capabilities (e.g., `ref` for docs, `firebase` for backend).
+- **Configuration**: MCP settings are located in `~/.gemini/antigravity/mcp_config.json`.
+- **Usage**: When a task requires external tools or data (e.g., reading docs, checking logs), prioritize using the appropriate MCP tool.
