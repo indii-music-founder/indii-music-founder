@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage } from '@/core/store';
 import { AI } from '@/services/ai/AIService';
 import { TOOL_REGISTRY, BASE_TOOLS } from './tools';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 const PERSONA_DEFINITIONS: Record<string, string> = {
     GENERALIST: `You are Agent R, the Autonomous Studio Manager. Generalist: video, image, text ops. Respect settings unless overriding.`,
@@ -76,9 +77,12 @@ class AgentService {
 
             // Call AI
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { parts },
-                config: { responseMimeType: 'application/json' }
+                config: {
+                    responseMimeType: 'application/json',
+                    ...AI_CONFIG.THINKING.HIGH
+                }
             });
 
             // Remove "Thinking..."

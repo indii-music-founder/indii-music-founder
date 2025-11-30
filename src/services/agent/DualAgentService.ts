@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage } from '../../core/store';
 import { AI } from '../ai/AIService';
 import { events } from '../../core/events';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 interface AgentConfig {
     name: string;
@@ -85,7 +86,11 @@ GOAL: ${goal}
 TASK: Break this down into a step - by - step plan for the Executor.
     OUTPUT: Plain text plan.
         `;
-        const res = await AI.generateContent({ model: 'gemini-3-pro-preview', contents: { parts: [{ text: prompt }] } });
+        const res = await AI.generateContent({
+            model: AI_MODELS.TEXT.AGENT,
+            contents: { parts: [{ text: prompt }] },
+            config: { ...AI_CONFIG.THINKING.HIGH }
+        });
         return res.text || "Failed to generate plan.";
     }
 
@@ -105,9 +110,9 @@ TASK: Execute the plan.If you need to use a tool, output ONLY a JSON object in t
         `;
 
         const res = await AI.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: AI_MODELS.TEXT.AGENT,
             contents: { parts: [{ text: prompt }] },
-            config: { responseMimeType: 'application/json' } // Force JSON to make parsing easier
+            config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH } // Force JSON to make parsing easier
         });
 
         const responseText = res.text || "{}";
@@ -137,9 +142,9 @@ TASK: Critique the result.Did it fully satisfy the goal ?
     OUTPUT JSON: { "pass": boolean, "reason": "string" }
 `;
         const res = await AI.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: AI_MODELS.TEXT.AGENT,
             contents: { parts: [{ text: prompt }] },
-            config: { responseMimeType: 'application/json' }
+            config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
         });
         return AI.parseJSON(res.text);
     }

@@ -7,8 +7,7 @@ export default function Sidebar() {
 
     const navItems = [
         { id: 'dashboard', icon: Layout, label: 'Dashboard' },
-        { id: 'creative', icon: Palette, label: 'Creative' },
-        { id: 'video', icon: Film, label: 'Video' },
+        { id: 'creative', icon: Palette, label: 'Studio' },
         { id: 'music', icon: Music, label: 'Music' },
         { id: 'workflow', icon: Network, label: 'Workflow' },
         { id: 'marketing', icon: Megaphone, label: 'Marketing' },

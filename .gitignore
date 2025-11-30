@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+temp_comparison_repo_backup
+temp_comparison_repo

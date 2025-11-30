@@ -51,6 +51,7 @@ interface AppState {
     clearAgentHistory: () => void;
     toggleAgentWindow: () => void;
     addToHistory: (item: HistoryItem) => void;
+    initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
     removeFromHistory: (id: string) => void;
     savedPrompts: SavedPrompt[];
@@ -90,8 +91,11 @@ interface AppState {
     };
     setVideoInput: (key: keyof AppState['videoInputs'], value: any) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'showroom';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'showroom') => void;
+    viewMode: 'gallery' | 'canvas' | 'showroom' | 'video_production';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'showroom' | 'video_production') => void;
+
+    prompt: string;
+    setPrompt: (prompt: string) => void;
 
     selectedItem: HistoryItem | null;
     setSelectedItem: (item: HistoryItem | null) => void;
@@ -119,7 +123,7 @@ export const useStore = create<AppState>((set) => ({
     // ... existing initial state ...
     currentProjectId: 'default',
     agentHistory: [],
-    isAgentOpen: true,
+    isAgentOpen: false,
     generatedHistory: [],
 
     setModule: (module) => set({ currentModule: module }),
@@ -127,7 +131,59 @@ export const useStore = create<AppState>((set) => ({
     addAgentMessage: (msg) => set((state) => ({ agentHistory: [...state.agentHistory, msg] })),
     clearAgentHistory: () => set({ agentHistory: [] }),
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
-    addToHistory: (item) => set((state) => ({ generatedHistory: [item, ...state.generatedHistory] })),
+    addToHistory: (item) => {
+        set((state) => ({ generatedHistory: [item, ...state.generatedHistory] }));
+        // Fire and forget save to Firestore
+        import('../services/StorageService').then(({ StorageService }) => {
+            StorageService.saveItem(item)
+                .then(() => console.log("Saved to Firestore"))
+                .catch(e => console.error("Save failed", e));
+        });
+    },
+    initializeHistory: async () => {
+        const { auth } = await import('../services/firebase');
+        const { onAuthStateChanged, signInAnonymously } = await import('firebase/auth');
+        const { StorageService } = await import('../services/StorageService');
+
+        // Wait for auth to initialize
+        return new Promise<void>((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    console.log("User authenticated:", user.uid);
+                    try {
+                        const history = await StorageService.loadHistory();
+                        set({ generatedHistory: history });
+                        console.log("Loaded history:", history.length, "items");
+                    } catch (error) {
+                        console.error("Error loading history:", error);
+                    }
+                    unsubscribe();
+                    resolve();
+                } else {
+                    console.log("No user, signing in anonymously...");
+                    try {
+                        const cred = await signInAnonymously(auth);
+                        console.log("Sign in successful. User:", cred.user.uid);
+                        // Manually load history if listener doesn't fire immediately
+                        // (Though it should fire)
+                        if (auth.currentUser) {
+                            console.log("Manual load after sign in...");
+                            const history = await StorageService.loadHistory();
+                            set({ generatedHistory: history });
+                            console.log("Manual load success:", history.length);
+                            unsubscribe();
+                            resolve();
+                        }
+                    } catch (e) {
+                        console.error("Anonymous sign-in failed:", e);
+                        // Resolve anyway so the app doesn't hang on "Loading..."
+                        unsubscribe();
+                        resolve();
+                    }
+                }
+            });
+        });
+    },
     updateHistoryItem: (id, updates) => set((state) => ({
         generatedHistory: state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item)
     })),
@@ -152,7 +208,7 @@ export const useStore = create<AppState>((set) => ({
 
     studioControls: {
         aspectRatio: '16:9',
-        resolution: '1K',
+        resolution: '4K',
         negativePrompt: '',
         seed: ''
     },
@@ -176,6 +232,9 @@ export const useStore = create<AppState>((set) => ({
 
     viewMode: 'gallery',
     setViewMode: (mode) => set({ viewMode: mode }),
+
+    prompt: '',
+    setPrompt: (prompt) => set({ prompt }),
 
     selectedItem: null,
     setSelectedItem: (item) => set({ selectedItem: item }),
@@ -231,3 +290,8 @@ export const useStore = create<AppState>((set) => ({
         }
     })),
 }));
+
+// Expose store for debugging/automation
+if (typeof window !== 'undefined') {
+    (window as any).useStore = useStore;
+}

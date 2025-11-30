@@ -1,4 +1,5 @@
 import { AI } from '../ai/AIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { generateEmbedding, localQueryStore } from './fileSearchService';
 import { saveAssetToStorage } from '../storage/repository';
 import type { KnowledgeAsset, KnowledgeDocument, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
@@ -53,7 +54,7 @@ export async function processForKnowledgeBase(reportContent: string, contextSour
 
     // GEMINI 3 MIGRATION: Upgrading to Gemini 3 Pro for superior entity extraction capabilities.
     const response = await AI.generateContent({
-        model: 'gemini-2.0-flash', // Use Flash for speed/cost, or Pro if needed
+        model: AI_MODELS.TEXT.AGENT,
         contents: { role: 'user', parts: [{ text: userPrompt }] },
         config: {
             systemInstruction: systemPrompt,
@@ -67,7 +68,8 @@ export async function processForKnowledgeBase(reportContent: string, contextSour
                     tags: { type: 'ARRAY', items: { type: 'STRING' } }
                 },
                 required: ['title', 'content', 'entities', 'tags']
-            }
+            },
+            ...AI_CONFIG.THINKING.LOW
         }
     });
 

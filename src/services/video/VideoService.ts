@@ -1,4 +1,5 @@
 import { AI } from '../ai/AIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export interface VideoGenerationOptions {
     prompt: string;
@@ -16,7 +17,7 @@ export class VideoService {
         try {
             // Step 1: Plan Motion
             const analysisRes = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: {
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
@@ -24,13 +25,13 @@ export class VideoService {
                         { text: "Describe masked area motion prompt. JSON: {video_prompt}" }
                     ]
                 },
-                config: { responseMimeType: 'application/json' }
+                config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
             });
             const plan = AI.parseJSON(analysisRes.text);
 
             // Step 2: Generate Video
             const uri = await AI.generateVideo({
-                model: 'veo-3.1-generate-preview',
+                model: AI_MODELS.VIDEO.GENERATION,
                 prompt: plan.video_prompt || "Animate",
                 image: { imageBytes: image.data, mimeType: image.mimeType },
                 config: { numberOfVideos: 1, resolution: '720p', aspectRatio: '16:9' }
@@ -45,7 +46,7 @@ export class VideoService {
 
     async generateVideo(options: VideoGenerationOptions): Promise<string | null> {
         try {
-            let model = 'veo-3.1-fast-generate-preview';
+            let model = AI_MODELS.VIDEO.GENERATION; // Default to generation model
             let config: any = {
                 numberOfVideos: 1,
                 resolution: options.resolution || '720p',
@@ -53,7 +54,7 @@ export class VideoService {
             };
 
             if (options.anchors && options.anchors.length > 0) {
-                model = 'veo-3.1-generate-preview';
+                model = AI_MODELS.VIDEO.GENERATION;
                 // Note: The AI Service needs to support referenceImages in config if we pass them here
                 // Assuming AI.generateVideo handles this structure or we need to update AI Service types
                 config.referenceImages = options.anchors.map(img => ({
@@ -81,7 +82,7 @@ export class VideoService {
     async generateKeyframeTransition(startImage: { mimeType: string; data: string }, endImage: { mimeType: string; data: string }, prompt: string): Promise<string | null> {
         try {
             const uri = await AI.generateVideo({
-                model: 'veo-3.1-fast-generate-preview',
+                model: AI_MODELS.VIDEO.GENERATION,
                 prompt: prompt || "Transition",
                 image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
                 config: {

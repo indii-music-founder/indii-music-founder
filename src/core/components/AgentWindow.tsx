@@ -11,10 +11,11 @@ interface AgentWindowProps {
 }
 
 export default function AgentWindow({ agent, title, className }: AgentWindowProps) {
-    const { agentHistory, clearAgentHistory, isAgentOpen, toggleAgentWindow } = useStore();
+    const { agentHistory, clearAgentHistory, isAgentOpen, toggleAgentWindow, generatedHistory, uploadedImages } = useStore();
     const [input, setInput] = useState('');
     const [isMinimized, setIsMinimized] = useState(false);
     const [size, setSize] = useState({ width: 320, height: 500 });
+    const [pendingAttachments, setPendingAttachments] = useState<{ mimeType: string; base64: string; preview: string }[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const activeAgent = agent || agentService;
@@ -36,9 +37,48 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
     }, [agentHistory]);
 
     const handleSend = () => {
-        if (!input.trim()) return;
-        activeAgent.sendMessage(input);
+        if (!input.trim() && pendingAttachments.length === 0) return;
+
+        const attachments = pendingAttachments.map(a => ({ mimeType: a.mimeType, base64: a.base64 }));
+        activeAgent.sendMessage(input, attachments.length > 0 ? attachments : undefined);
+
         setInput('');
+        setPendingAttachments([]);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 1. Handle Internal Drag (History/Assets)
+        const id = e.dataTransfer.getData('text/plain');
+        if (id) {
+            const item = generatedHistory.find(i => i.id === id) || uploadedImages.find(i => i.id === id);
+            if (item) {
+                setPendingAttachments(prev => [...prev, {
+                    mimeType: item.type === 'video' ? 'video/mp4' : 'image/png', // Simplified assumption
+                    base64: item.url, // Assuming URL is base64 or we treat it as such for the agent context
+                    preview: item.url
+                }]);
+                return;
+            }
+        }
+
+        // 2. Handle External Files
+        const files = Array.from(e.dataTransfer.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if (ev.target?.result) {
+                    setPendingAttachments(prev => [...prev, {
+                        mimeType: file.type,
+                        base64: ev.target!.result as string,
+                        preview: ev.target!.result as string
+                    }]);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
     };
 
     const handleResizeStart = (e: React.MouseEvent) => {
@@ -70,7 +110,11 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
     // For embedded windows, we render normally.
     if (isEmbedded) {
         return (
-            <div className={`flex flex-col h-full bg-[#0f0f0f] border-l border-gray-800 ${className}`}>
+            <div
+                className={`flex flex-col h-full bg-[#0f0f0f] border-l border-gray-800 ${className}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+            >
                 {/* Header */}
                 <div className="bg-[#1a1a1a] p-2 border-b border-gray-800 flex justify-between items-center select-none">
                     <AgentHeader />
@@ -96,6 +140,13 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                     'bg-[#1a1a1a] text-gray-300 border border-gray-800'
                                 }`}>
                                 {msg.text}
+                                {msg.attachments && (
+                                    <div className="mt-2 flex gap-1 flex-wrap">
+                                        {msg.attachments.map((att, i) => (
+                                            <img key={i} src={att.base64} className="w-12 h-12 object-cover rounded border border-white/10" />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -103,6 +154,21 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
 
                 {/* Input Area */}
                 <div className="p-2 bg-[#1a1a1a] border-t border-gray-800">
+                    {pendingAttachments.length > 0 && (
+                        <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+                            {pendingAttachments.map((att, i) => (
+                                <div key={i} className="relative group">
+                                    <img src={att.preview} className="w-12 h-12 object-cover rounded border border-purple-500" />
+                                    <button
+                                        onClick={() => setPendingAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <X size={8} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <div className="flex gap-2">
                         <button className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"><Paperclip size={14} /></button>
                         <input
@@ -136,7 +202,9 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                         height: isMinimized ? 40 : size.height
                     }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className={`fixed top-20 left-20 bg-[#0f0f0f] border border-gray-700 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden`}
+                    className={`fixed top-28 left-20 bg-[#0f0f0f] border border-gray-700 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
                 >
                     {/* Header */}
                     <div className="bg-[#1a1a1a] p-2 border-b border-gray-800 flex justify-between items-center cursor-move select-none">
@@ -167,6 +235,13 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                                 'bg-[#1a1a1a] text-gray-300 border border-gray-800'
                                             }`}>
                                             {msg.text}
+                                            {msg.attachments && (
+                                                <div className="mt-2 flex gap-1 flex-wrap">
+                                                    {msg.attachments.map((att, i) => (
+                                                        <img key={i} src={att.base64} className="w-12 h-12 object-cover rounded border border-white/10" />
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -174,6 +249,21 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
 
                             {/* Input Area */}
                             <div className="p-2 bg-[#1a1a1a] border-t border-gray-800 relative" onPointerDownCapture={e => e.stopPropagation()}>
+                                {pendingAttachments.length > 0 && (
+                                    <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+                                        {pendingAttachments.map((att, i) => (
+                                            <div key={i} className="relative group">
+                                                <img src={att.preview} className="w-12 h-12 object-cover rounded border border-purple-500" />
+                                                <button
+                                                    onClick={() => setPendingAttachments(prev => prev.filter((_, idx) => idx !== i))}
+                                                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X size={8} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="flex gap-2">
                                     <button className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"><Paperclip size={14} /></button>
                                     <input

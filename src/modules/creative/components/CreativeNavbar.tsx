@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import { Image } from '@/services/image/ImageService';
+import { auth } from '@/services/firebase';
 import { MonitorPlay, Sparkles, Loader2, ChevronDown, ChevronUp, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import PromptTools from './PromptTools';
@@ -11,44 +12,19 @@ import StudioNavControls from './StudioNavControls';
 import { useToast } from '@/core/context/ToastContext';
 
 import BrandAssetsDrawer from './BrandAssetsDrawer';
+import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
 export default function CreativeNavbar() {
-    const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, addUploadedImage, generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode } = useStore();
+    const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, addUploadedImage, generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode, prompt, setPrompt } = useStore();
     const toast = useToast();
-    const [prompt, setPrompt] = useState('');
+    // const [prompt, setPrompt] = useState(''); // Removed local state
     const [isGenerating, setIsGenerating] = useState(false);
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [showMobileControls, setShowMobileControls] = useState(false);
     const [showBrandAssets, setShowBrandAssets] = useState(false);
-
-    const firstFrameInputRef = useRef<HTMLInputElement>(null);
-    const lastFrameInputRef = useRef<HTMLInputElement>(null);
-
-    const handleFrameUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'firstFrame' | 'lastFrame') => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            if (event.target?.result) {
-                const newItem = {
-                    id: crypto.randomUUID(),
-                    type: 'image' as const,
-                    url: event.target.result as string,
-                    prompt: file.name,
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                };
-                addUploadedImage(newItem);
-                setVideoInput(target, newItem);
-                toast.success(`Set ${target === 'firstFrame' ? 'First' : 'Last'} Frame`);
-            }
-        };
-        reader.readAsDataURL(file);
-        // Reset input
-        e.target.value = '';
-    };
+    const [showFrameModal, setShowFrameModal] = useState(false);
+    const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -94,6 +70,36 @@ export default function CreativeNavbar() {
                     projectId: currentProjectId
                 });
             });
+
+            // Daisy Chain Logic
+            if (generationMode === 'video' && videoInputs.isDaisyChain && results.length > 0) {
+                const lastVideo = results[0];
+                try {
+                    // Check if it's a fallback image (Storyboard)
+                    if (lastVideo.url.startsWith('data:image')) {
+                        setVideoInput('firstFrame', {
+                            url: lastVideo.url,
+                            file: null
+                        });
+                        toast.success("Daisy Chain: Next frame set (from Storyboard)!");
+                    } else {
+                        const { extractVideoFrame } = await import('@/utils/video');
+                        // Extract the very last frame
+                        const lastFrameData = await extractVideoFrame(lastVideo.url, -1);
+
+                        setVideoInput('firstFrame', {
+                            url: lastFrameData,
+                            file: null // It's a data URI, no file object
+                        });
+                    }
+                    setVideoInput('lastFrame', null); // Clear last frame for next segment
+                    if (!lastVideo.url.startsWith('data:image')) toast.success("Daisy Chain: Next frame set!");
+                } catch (err) {
+                    console.error("Daisy Chain Error:", err);
+                    toast.error("Failed to extract frame for Daisy Chain");
+                }
+            }
+
             setPrompt('');
         } catch (e) {
             console.error("Generation Error:", e);
@@ -113,6 +119,9 @@ export default function CreativeNavbar() {
                             {/* Branding */}
                             <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">Rndr-AI</h1>
                             <div className="h-4 w-px bg-gray-700"></div>
+                            <span className="text-[10px] text-gray-500 font-mono" id="debug-uid">
+                                {auth.currentUser?.uid || 'No User'}
+                            </span>
 
                             {/* Mode Dropdown */}
                             <div className="relative">
@@ -159,18 +168,27 @@ export default function CreativeNavbar() {
 
                     {/* Prompt Input Area */}
                     <div className="flex-1 w-full flex items-center gap-2 order-3 md:order-2">
-                        <div className="flex-1 relative flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 rounded-lg pr-2 focus-within:ring-1 focus-within:ring-purple-500 transition-all">
-                            <input
-                                type="text"
+                        <div className="flex-1 relative flex items-end gap-2 bg-[#0f0f0f] border border-gray-700 rounded-xl pr-2 focus-within:ring-1 focus-within:ring-purple-500 transition-all shadow-inner">
+                            <textarea
                                 value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                                onChange={(e) => {
+                                    setPrompt(e.target.value);
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleGenerate();
+                                    }
+                                }}
                                 placeholder={`Describe what you want to create in ${generationMode} mode...`}
-                                className="flex-1 bg-transparent border-none rounded-l-lg pl-3 py-1.5 text-sm text-white placeholder-gray-500 focus:ring-0 outline-none min-w-0"
+                                className="flex-1 bg-transparent border-none rounded-l-xl pl-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-0 outline-none min-w-0 resize-none overflow-y-auto custom-scrollbar leading-relaxed"
+                                style={{ height: '44px', minHeight: '44px', maxHeight: '120px' }}
                             />
 
                             {/* Tools inside input */}
-                            <div className="flex items-center gap-1 border-l border-gray-700 pl-2 flex-shrink-0">
+                            <div className="flex items-center gap-1 border-l border-gray-700 pl-2 mb-2 flex-shrink-0">
                                 <PromptTools currentPrompt={prompt} onUpdatePrompt={setPrompt} />
                                 <PromptLibrary currentPrompt={prompt} onLoadPrompt={setPrompt} />
                                 <button
@@ -239,6 +257,12 @@ export default function CreativeNavbar() {
                 <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
                     {generationMode === 'image' ? (
                         <>
+                            <button
+                                onClick={() => setViewMode('gallery')}
+                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                            >
+                                Gallery
+                            </button>
                             <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Image</button>
                             <button
                                 onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0])}
@@ -291,15 +315,11 @@ export default function CreativeNavbar() {
 
                                 {/* First Frame Slot */}
                                 <div className="flex items-center gap-2">
-                                    <input
-                                        type="file"
-                                        ref={firstFrameInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => handleFrameUpload(e, 'firstFrame')}
-                                    />
                                     <div
-                                        onClick={() => !videoInputs.firstFrame && firstFrameInputRef.current?.click()}
+                                        onClick={() => {
+                                            setFrameModalTarget('firstFrame');
+                                            setShowFrameModal(true);
+                                        }}
                                         className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.firstFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
                                     >
                                         {videoInputs.firstFrame ? (
@@ -323,15 +343,11 @@ export default function CreativeNavbar() {
 
                                 {/* Last Frame Slot */}
                                 <div className="flex items-center gap-2">
-                                    <input
-                                        type="file"
-                                        ref={lastFrameInputRef}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => handleFrameUpload(e, 'lastFrame')}
-                                    />
                                     <div
-                                        onClick={() => !videoInputs.lastFrame && lastFrameInputRef.current?.click()}
+                                        onClick={() => {
+                                            setFrameModalTarget('lastFrame');
+                                            setShowFrameModal(true);
+                                        }}
                                         className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.lastFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
                                     >
                                         {videoInputs.lastFrame ? (
@@ -422,13 +438,20 @@ export default function CreativeNavbar() {
 
             {/* Prompt Builder Drawer */}
             {showPromptBuilder && (
-                <PromptBuilder onAddTag={(tag) => setPrompt(prev => prev ? `${prev}, ${tag}` : tag)} />
+                <PromptBuilder onAddTag={(tag) => setPrompt(prompt ? `${prompt}, ${tag}` : tag)} />
             )}
 
             {/* Brand Assets Drawer */}
             {showBrandAssets && (
                 <BrandAssetsDrawer onClose={() => setShowBrandAssets(false)} />
             )}
+
+            <FrameSelectionModal
+                isOpen={showFrameModal}
+                onClose={() => setShowFrameModal(false)}
+                onSelect={(image) => setVideoInput(frameModalTarget, image)}
+                target={frameModalTarget}
+            />
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { AI } from '@/services/ai/AIService';
 import { useStore } from '@/core/store';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export const ORCHESTRATOR_PROMPT = `
 You are the Orchestrator (Chief of Staff) for Rndr-AI.
@@ -30,8 +31,11 @@ class OrchestratorService {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
-                contents: { parts: [{ text: prompt }] }
+                model: AI_MODELS.TEXT.FAST,
+                contents: { parts: [{ text: prompt }] },
+                config: {
+                    ...AI_CONFIG.THINKING.LOW
+                }
             });
 
             const route = (res.text || 'creative').trim().toLowerCase();

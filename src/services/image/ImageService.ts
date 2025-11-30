@@ -1,5 +1,6 @@
 import { AI } from '../ai/AIService';
 import { extractVideoFrame } from '@/utils/video';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -25,7 +26,9 @@ export class ImageService {
         const count = options.count || 1;
 
         const baseConfig: any = {
+            ...AI_CONFIG.IMAGE.DEFAULT,
             imageConfig: {
+                ...AI_CONFIG.IMAGE.DEFAULT.imageConfig,
                 imageSize: options.resolution || '2K',
                 aspectRatio: options.aspectRatio
             }
@@ -49,7 +52,7 @@ export class ImageService {
                 contents.parts.push({ text: fullPrompt });
 
                 const response = await AI.generateContent({
-                    model: 'gemini-3-pro-image-preview',
+                    model: AI_MODELS.IMAGE.GENERATION,
                     contents,
                     config: iterConfig
                 });
@@ -85,7 +88,7 @@ export class ImageService {
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-image-preview',
+                model: AI_MODELS.IMAGE.GENERATION,
                 contents: {
                     parts: [
                         { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } }, { text: "Content Ref" },
@@ -93,7 +96,7 @@ export class ImageService {
                         { text: `Generate: ${options.prompt || "Fusion"}` }
                     ]
                 },
-                config: { imageConfig: { imageSize: '2K' } }
+                config: AI_CONFIG.IMAGE.DEFAULT
             });
 
             const part = response.candidates?.[0]?.content?.parts?.[0];
@@ -110,14 +113,17 @@ export class ImageService {
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
         try {
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.FAST,
                 contents: {
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
                         { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
                     ]
                 },
-                config: { responseMimeType: 'application/json' }
+                config: {
+                    responseMimeType: 'application/json',
+                    ...AI_CONFIG.THINKING.LOW
+                }
             });
 
             return AI.parseJSON(response.text);
@@ -141,9 +147,12 @@ export class ImageService {
             Break this into ${options.count} specific scene descriptions. Return JSON { "scenes": [] }`;
 
             const planRes = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { parts: [{ text: plannerPrompt }] },
-                config: { responseMimeType: 'application/json' }
+                config: {
+                    responseMimeType: 'application/json',
+                    ...AI_CONFIG.THINKING.HIGH
+                }
             });
             const plan = AI.parseJSON(planRes.text);
             const scenes = plan.scenes || [];
@@ -156,12 +165,15 @@ export class ImageService {
                 // Step 2: Analyze Context (if prev image exists)
                 if (previousImage) {
                     const analysisRes = await AI.generateContent({
-                        model: 'gemini-3-pro-preview',
+                        model: AI_MODELS.TEXT.FAST,
                         contents: {
                             parts: [
                                 { inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } },
                                 { text: `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.` }
                             ]
+                        },
+                        config: {
+                            ...AI_CONFIG.THINKING.LOW
                         }
                     });
                     visualContext = analysisRes.text || "";
@@ -178,9 +190,9 @@ export class ImageService {
                 contents.parts.push({ text: promptText });
 
                 const response = await AI.generateContent({
-                    model: 'gemini-3-pro-image-preview',
+                    model: AI_MODELS.IMAGE.GENERATION,
                     contents,
-                    config: { imageConfig: { imageSize: '2K' } }
+                    config: AI_CONFIG.IMAGE.DEFAULT
                 });
 
                 const part = response.candidates?.[0]?.content?.parts?.[0];
@@ -210,7 +222,7 @@ export class ImageService {
         try {
             for (const target of options.targetImages) {
                 const response = await AI.generateContent({
-                    model: 'gemini-3-pro-image-preview',
+                    model: AI_MODELS.IMAGE.GENERATION,
                     contents: {
                         parts: [
                             { inlineData: { mimeType: target.mimeType, data: target.data } },
@@ -220,7 +232,7 @@ export class ImageService {
                             { text: `Render the Content image exactly in the style of the Reference image. ${options.prompt || "Restyle"}` }
                         ]
                     },
-                    config: { imageConfig: { imageSize: '2K' } }
+                    config: AI_CONFIG.IMAGE.DEFAULT
                 });
 
                 const part = response.candidates?.[0]?.content?.parts?.[0];
@@ -254,9 +266,9 @@ export class ImageService {
             contents.parts.push({ text: `Combine these references. ${options.prompt} ${options.projectContext || ''}` });
 
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-image-preview',
+                model: AI_MODELS.IMAGE.GENERATION,
                 contents,
-                config: { imageConfig: { imageSize: '2K' } }
+                config: AI_CONFIG.IMAGE.DEFAULT
             });
 
             const part = response.candidates?.[0]?.content?.parts?.[0];
@@ -274,6 +286,41 @@ export class ImageService {
             throw e;
         }
     }
+    private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
+        try {
+            const direction = offset > 0 ? 'future' : 'past';
+            const duration = Math.abs(offset);
+
+            const analysisPrompt = `You are a master cinematographer and physics engine. 
+            Analyze this image frame which represents the ${offset > 0 ? 'START' : 'END'} of a video sequence.
+            Context: "${basePrompt}"
+            
+            Task: Predict exactly what happens ${duration} seconds into the ${direction}.
+            Describe the motion, physics, lighting changes, and character actions that bridge this gap.
+            Focus on continuity and logical progression.
+            
+            Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
+
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: {
+                    parts: [
+                        { inlineData: { mimeType: image.split(';')[0].split(':')[1], data: image.split(',')[1] } },
+                        { text: analysisPrompt }
+                    ]
+                },
+                config: {
+                    ...AI_CONFIG.THINKING.HIGH
+                }
+            });
+
+            return response.text || "";
+        } catch (e) {
+            console.warn("Temporal Analysis Failed:", e);
+            return "";
+        }
+    }
+
     async generateVideo(options: {
         prompt: string;
         aspectRatio?: string;
@@ -285,13 +332,23 @@ export class ImageService {
         lastFrame?: string; // Data URI
         timeOffset?: number;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const model = options.model || 'veo-3.1-generate-preview';
-        const fullPrompt = options.negativePrompt
+        const model = options.model || AI_MODELS.VIDEO.GENERATION;
+        let fullPrompt = options.negativePrompt
             ? `${options.prompt} --negative_prompt ${options.negativePrompt}`
             : options.prompt;
 
-        // Append time offset to prompt for now, as API might not support it directly yet
-        // or handle it in config if supported.
+        // AI Temporal Analysis
+        if (options.timeOffset && options.timeOffset !== 0) {
+            const referenceFrame = options.firstFrame || options.lastFrame;
+            if (referenceFrame && referenceFrame.startsWith('data:')) {
+                console.log(`Analyzing temporal context for ${options.timeOffset}s offset...`);
+                const temporalContext = await this.analyzeTemporalContext(referenceFrame, options.timeOffset, options.prompt);
+                if (temporalContext) {
+                    fullPrompt += `\n\nVisual Sequence: ${temporalContext}`;
+                }
+            }
+        }
+
         const timeContext = options.timeOffset
             ? ` (Time Offset: ${options.timeOffset > 0 ? '+' : ''}${options.timeOffset}s)`
             : '';
@@ -320,8 +377,32 @@ export class ImageService {
                 }];
             }
 
-            // Fallback / Simulation for demo purposes if API fails or returns nothing
-            console.warn("Video API returned null, using simulation fallback.");
+            // Fallback: Generate a Storyboard Preview using Gemini 3 Pro Image
+            console.log("Video API unavailable, generating Storyboard Preview...");
+
+            const storyboardPrompt = `Create a 2x2 storyboard grid showing the sequence of: ${options.prompt}. 
+            ${options.firstFrame ? 'The sequence starts with the provided reference image.' : ''}
+            ${options.lastFrame ? 'The sequence ends with the provided reference image.' : ''}
+            Cinematic lighting, 8k resolution, consistent character and style.`;
+
+            // Reuse generateImages to create the storyboard
+            const storyboardImages = await this.generateImages({
+                prompt: storyboardPrompt,
+                count: 1,
+                resolution: '2K',
+                aspectRatio: '16:9', // Keep 16:9 for the grid itself
+                sourceImages: options.firstFrame ? [{ mimeType: 'image/png', data: options.firstFrame.split(',')[1] }] : undefined
+            });
+
+            if (storyboardImages.length > 0) {
+                return [{
+                    id: crypto.randomUUID(),
+                    url: storyboardImages[0].url,
+                    prompt: `[Storyboard Preview] ${options.prompt}`
+                }];
+            }
+
+            // Ultimate fallback if even image gen fails
             return [{
                 id: crypto.randomUUID(),
                 url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
@@ -329,8 +410,35 @@ export class ImageService {
             }];
         } catch (e: any) {
             console.error("Video Generation Error:", e);
-            // Even on error, return simulation for now to keep UI functional for user review
-            // Embed error in prompt so user can see it in UI
+
+            // Attempt Storyboard Fallback
+            try {
+                console.log("Attempting Storyboard Fallback...");
+                const storyboardPrompt = `Create a cinematic storyboard sequence for: ${options.prompt}. 
+                ${options.firstFrame ? 'The sequence starts with the provided reference image.' : ''}
+                ${options.lastFrame ? 'The sequence ends with the provided reference image.' : ''}
+                High resolution, consistent style.`;
+
+                const storyboardImages = await this.generateImages({
+                    prompt: storyboardPrompt,
+                    count: 1,
+                    resolution: '2K',
+                    aspectRatio: '16:9',
+                    sourceImages: options.firstFrame ? [{ mimeType: 'image/png', data: options.firstFrame.split(',')[1] }] : undefined
+                });
+
+                if (storyboardImages.length > 0) {
+                    return [{
+                        id: crypto.randomUUID(),
+                        url: storyboardImages[0].url,
+                        prompt: `[Storyboard Fallback] ${options.prompt}`
+                    }];
+                }
+            } catch (fallbackErr) {
+                console.error("Fallback failed:", fallbackErr);
+            }
+
+            // Ultimate fallback
             const errorMessage = e.message || e.toString();
             return [{
                 id: crypto.randomUUID(),
@@ -358,9 +466,9 @@ export class ImageService {
             parts.push({ text: `Edit this image: ${options.prompt}` + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '') });
 
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-image-preview',
+                model: AI_MODELS.IMAGE.GENERATION,
                 contents: { parts },
-                config: { imageConfig: { imageSize: '2K' } }
+                config: AI_CONFIG.IMAGE.DEFAULT
             });
 
             const part = response.candidates?.[0]?.content?.parts?.[0];
@@ -417,7 +525,7 @@ export class ImageService {
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
             // Use Veo or Gemini 1.5 Pro for video editing/analysis
-            const model = 'veo-2.0-generate-001';
+            const model = AI_MODELS.VIDEO.EDIT;
 
             const response = await AI.generateContent({
                 model,

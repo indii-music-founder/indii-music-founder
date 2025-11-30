@@ -70,7 +70,16 @@ export default function CreativeGallery() {
             className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer"
         >
             {item.type === 'video' ? (
-                <video src={item.url} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
+                item.url.startsWith('data:image') ? (
+                    <div className="relative w-full h-full">
+                        <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
+                        <div className="absolute top-2 left-2 bg-purple-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+                            STORYBOARD
+                        </div>
+                    </div>
+                ) : (
+                    <video src={item.url} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
+                )
             ) : (
                 <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
             )}
@@ -122,7 +131,31 @@ export default function CreativeGallery() {
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             {/* Assets Section */}
-            <div className="flex-shrink-0 p-4 border-b border-gray-800 max-h-[40%] overflow-y-auto custom-scrollbar">
+            <div
+                className="flex-shrink-0 p-4 border-b border-gray-800 max-h-[40%] overflow-y-auto custom-scrollbar transition-colors"
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('bg-gray-800/50');
+                }}
+                onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('bg-gray-800/50');
+                }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('bg-gray-800/50');
+                    const id = e.dataTransfer.getData('text/plain');
+                    const item = generatedHistory.find(i => i.id === id);
+                    if (item) {
+                        addUploadedImage({
+                            ...item,
+                            id: crypto.randomUUID(), // New ID for the asset copy
+                            timestamp: Date.now()
+                        });
+                        toast.success("Saved to Assets");
+                    }
+                }}
+            >
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Assets & Uploads</h2>
                     <button
@@ -157,7 +190,7 @@ export default function CreativeGallery() {
                 ) : (
                     <div className="p-8 border border-dashed border-gray-800 rounded-lg flex flex-col items-center justify-center text-gray-600 gap-2">
                         <Upload size={24} className="opacity-50" />
-                        <p className="text-xs">No assets uploaded yet</p>
+                        <p className="text-xs">No assets uploaded yet. Drag generated images here to save them.</p>
                     </div>
                 )}
             </div>

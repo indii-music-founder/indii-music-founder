@@ -1,4 +1,5 @@
 import { AI } from '../ai/AIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { getAssetFromStorage } from '../storage/repository';
 import type { KnowledgeDocument, KnowledgeAsset, KnowledgeDocumentIndexingStatus } from '../../modules/workflow/types';
 
@@ -114,7 +115,7 @@ async function expandQuery(originalQuery: string): Promise<string[]> {
 
     try {
         const response = await AI.generateContent({
-            model: 'gemini-2.0-flash', // Use Flash for speed
+            model: AI_MODELS.TEXT.FAST,
             contents: {
                 role: 'user', parts: [{
                     text: `You are an expert search query optimizer. 
@@ -130,7 +131,8 @@ async function expandQuery(originalQuery: string): Promise<string[]> {
                 responseSchema: {
                     type: 'ARRAY',
                     items: { type: 'STRING' }
-                }
+                },
+                ...AI_CONFIG.THINKING.LOW
             }
         });
 
@@ -240,9 +242,12 @@ export async function localQueryStore(
 
     try {
         const response = await AI.generateContent({
-            model: 'gemini-2.0-flash-thinking-exp-01-21', // Use Thinking model for reasoning
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] },
             systemInstruction: systemInstruction,
+            config: {
+                ...AI_CONFIG.THINKING.HIGH
+            }
         });
 
         const answer = response.candidates?.[0]?.content?.parts?.[0]?.text || "No answer generated.";

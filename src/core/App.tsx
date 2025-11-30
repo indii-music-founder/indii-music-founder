@@ -15,7 +15,12 @@ import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
 
 export default function App() {
-    const { currentModule } = useStore();
+    const { currentModule, initializeHistory } = useStore();
+
+    React.useEffect(() => {
+        initializeHistory();
+        useStore.setState({ isAgentOpen: false });
+    }, []);
 
     return (
         <ToastProvider>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@/core/store';
-import { X, Download, Share2, Wand2, Brush, Eraser, Save, RotateCcw, Trash2 } from 'lucide-react';
+import { X, Download, Share2, Wand2, Brush, Eraser, Save, RotateCcw, Trash2, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -10,7 +10,7 @@ interface CreativeCanvasProps {
 }
 
 export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
-    const { updateHistoryItem } = useStore();
+    const { updateHistoryItem, setActiveReferenceImage, uploadedImages, addUploadedImage, currentProjectId } = useStore();
     const toast = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const [tool, setTool] = useState<'brush' | 'eraser'>('brush');
@@ -18,6 +18,13 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
+    const [prompt, setPrompt] = useState('');
+
+    useEffect(() => {
+        if (item) {
+            setPrompt(item.prompt);
+        }
+    }, [item]);
 
     if (!item) return null;
 
@@ -108,12 +115,110 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
         }
     };
 
+    const handlePromptChange = (newPrompt: string) => {
+        setPrompt(newPrompt);
+        updateHistoryItem(item.id, { prompt: newPrompt });
+    };
+
     const [showPromptInput, setShowPromptInput] = useState(false);
     const [magicPrompt, setMagicPrompt] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const { setActiveReferenceImage } = useStore();
 
-    // ... (existing helper functions)
+    const handleUseAsReference = () => {
+        // 1. Add to Assets if not present
+        const exists = uploadedImages.some(img => img.id === item.id);
+        if (!exists) {
+            addUploadedImage({
+                ...item,
+                id: crypto.randomUUID(), // New ID for the asset
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            });
+        }
+
+        // 2. Set as Active Reference
+        setActiveReferenceImage({
+            ...item,
+            timestamp: Date.now(),
+            projectId: currentProjectId
+        });
+        toast.success("Added to Assets & set as Reference");
+        onClose();
+    };
+
+    const handleHeaderGenerate = async () => {
+        if (!prompt.trim()) {
+            toast.error("Please enter a prompt.");
+            return;
+        }
+        setIsProcessing(true);
+
+        try {
+            // Prepare Image Data
+            const match = item.url.match(/^data:(.+);base64,(.+)$/);
+            if (!match) {
+                toast.error("Invalid image data.");
+                setIsProcessing(false);
+                return;
+            }
+            const imageData = { mimeType: match[1], data: match[2] };
+
+            // Prepare Mask Data
+            let maskData = undefined;
+            let currentMaskUrl = item.mask;
+
+            // If currently editing, grab mask from canvas directly
+            if (isEditing && canvasRef.current) {
+                currentMaskUrl = canvasRef.current.toDataURL();
+                // Optional: Save it to history too
+                updateHistoryItem(item.id, { mask: currentMaskUrl });
+            }
+
+            if (currentMaskUrl) {
+                const maskMatch = currentMaskUrl.match(/^data:(.+);base64,(.+)$/);
+                if (maskMatch) {
+                    maskData = { mimeType: maskMatch[1], data: maskMatch[2] };
+                }
+            }
+
+            let result;
+            if (maskData) {
+                // Inpainting
+                result = await import('@/services/image/ImageService').then(m => m.Image.editImage({
+                    image: imageData,
+                    mask: maskData,
+                    prompt: prompt
+                }));
+            } else {
+                // Remix / Img2Img (No mask)
+                result = await import('@/services/image/ImageService').then(m => m.Image.generateImage({
+                    prompt: prompt,
+                    referenceImage: imageData
+                }));
+            }
+
+            if (result) {
+                useStore.getState().addToHistory({
+                    id: result.id,
+                    url: result.url,
+                    prompt: result.prompt,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+                toast.success("Generation complete!");
+                onClose();
+            } else {
+                toast.error("Generation failed.");
+            }
+
+        } catch (e) {
+            console.error(e);
+            toast.error("Generation failed.");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const handleMagicFill = async () => {
         if (!magicPrompt.trim()) return;
@@ -149,7 +254,7 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                     prompt: result.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: 'default' // Should get from store
+                    projectId: currentProjectId
                 });
                 toast.success("Magic Fill complete!");
                 onClose(); // Close canvas to show result in gallery
@@ -183,11 +288,28 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1a1a1a]">
-                        <div>
-                            <h3 className="text-sm font-bold text-white">
-                                {isEditing ? "Annotation Mode" : "Canvas Preview"}
-                            </h3>
-                            <p className="text-xs text-gray-400 line-clamp-1 max-w-md">{item.prompt}</p>
+                        <div className="flex-1 mr-4 flex items-center gap-2">
+                            <div className="flex-1">
+                                <h3 className="text-sm font-bold text-white mb-1">
+                                    {isEditing ? "Annotation Mode" : "Canvas Preview"}
+                                </h3>
+                                <input
+                                    type="text"
+                                    value={prompt}
+                                    onChange={(e) => handlePromptChange(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleHeaderGenerate()}
+                                    className="w-full bg-transparent text-xs text-gray-400 focus:text-white focus:outline-none border-b border-transparent focus:border-gray-700 transition-colors"
+                                    placeholder="Enter prompt..."
+                                />
+                            </div>
+                            <button
+                                onClick={handleHeaderGenerate}
+                                disabled={isProcessing}
+                                className={`p-2 rounded-full transition-colors ${isProcessing ? 'bg-gray-700 text-gray-500' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
+                                title="Generate from Prompt"
+                            >
+                                <Play size={16} fill="currentColor" />
+                            </button>
                         </div>
                         <div className="flex items-center gap-2">
                             {!isEditing ? (
@@ -318,11 +440,7 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                                     <Wand2 size={14} /> Magic Fill (Inpaint)
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        setActiveReferenceImage(item as any); // Cast to HistoryItem
-                                        toast.success("Image set as reference.");
-                                        onClose();
-                                    }}
+                                    onClick={handleUseAsReference}
                                     className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold rounded-lg transition-colors"
                                 >
                                     Use as Reference

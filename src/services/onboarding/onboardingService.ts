@@ -1,4 +1,5 @@
 import { AI } from '../ai/AIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '../../modules/workflow/types';
 import { FunctionDeclaration } from '@google/genai';
 import { v4 as uuidv4 } from 'uuid';
@@ -244,10 +245,11 @@ export async function runOnboardingConversation(
 
     try {
         const response = await AI.generateContent({
-            model: 'gemini-2.0-flash-thinking-exp-01-21',
+            model: AI_MODELS.TEXT.AGENT,
             contents: contents,
             config: {
                 systemInstruction,
+                ...AI_CONFIG.THINKING.HIGH,
                 tools: [{
                     functionDeclarations: [
                         updateProfileFunction,
@@ -379,10 +381,11 @@ export async function generateSection(section: 'bio' | 'brand_description' | 'pr
     const systemPrompt = `You are a professional copywriter specializing in the music industry. Write a compelling, concise, and professional piece of content for the specified section. The tone should be authentic and engaging. Do not add any extra conversational text, just return the content.`;
 
     const response = await AI.generateContent({
-        model: 'gemini-2.0-flash-thinking-exp-01-21',
+        model: AI_MODELS.TEXT.AGENT,
         contents: { role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] },
         config: {
             systemInstruction: systemPrompt,
+            ...AI_CONFIG.THINKING.HIGH,
         },
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
