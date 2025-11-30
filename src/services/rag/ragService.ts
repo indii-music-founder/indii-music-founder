@@ -1,11 +1,10 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { generateEmbedding, localQueryStore } from './fileSearchService';
-import { saveAssetToStorage } from '../storage/repository';
+import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { KnowledgeAsset, KnowledgeDocument, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
 
 /**
- * Runs the RAG workflow using local client-side retrieval.
+ * Runs the RAG workflow using Gemini Semantic Retrieval (AQA).
  */
 export async function runAgenticWorkflow(
     query: string,
@@ -15,79 +14,79 @@ export async function runAgenticWorkflow(
     updateDocStatus: (docId: string, status: KnowledgeDocumentIndexingStatus) => void
 ): Promise<{ asset: KnowledgeAsset; updatedProfile: UserProfile | null }> {
 
-    onUpdate("Searching Knowledge Base...");
+    onUpdate("Initializing Gemini Knowledge Base...");
 
-    // Use the local search service with the documents currently in the profile
-    const asset = await localQueryStore(
-        userProfile.knowledgeBase,
-        query,
-        updateDocStatus
-    );
+    // 1. Ensure Corpus Exists
+    // In a real app, we'd cache this ID in the user profile or store
+    const corpusName = await GeminiRetrieval.initCorpus();
 
-    return { asset, updatedProfile: null };
+    onUpdate("Querying Semantic Retriever...");
+
+    try {
+        // 2. Query AQA Model
+        const response = await GeminiRetrieval.query(corpusName, query);
+        const answer = response.answer?.content?.parts?.[0]?.text || "No answer found.";
+        const attributedPassages = response.answer?.groundingAttributions || [];
+
+        // 3. Construct Knowledge Asset
+        const asset: KnowledgeAsset = {
+            id: crypto.randomUUID(),
+            assetType: 'knowledge',
+            title: `Answer: ${query}`,
+            content: answer,
+            date: Date.now(),
+            tags: ['gemini-rag', 'aqa'],
+            sources: attributedPassages.map((p: any) => ({
+                name: p.sourceId?.replace(corpusName + '/documents/', '') || 'Unknown',
+                content: p.content?.parts?.[0]?.text || ''
+            })),
+            retrievalDetails: attributedPassages,
+            reasoningTrace: [
+                `Query: "${query}"`,
+                `Corpus: ${corpusName}`,
+                `Model: models/aqa`
+            ]
+        };
+
+        return { asset, updatedProfile: null };
+
+    } catch (error) {
+        console.error("Gemini RAG Failed:", error);
+        throw error;
+    }
 }
 
 /**
- * Takes raw content (e.g. a department report) and uses AI to process it for the Knowledge Base.
- * Extracts Title, Summary, Entities, and Tags to enable GraphRAG-style retrieval.
+ * Takes raw content and ingests it into the Gemini Corpus.
  */
 export async function processForKnowledgeBase(reportContent: string, contextSource: string): Promise<{ title: string; content: string; entities: string[]; tags: string[]; embeddingId?: string }> {
-    let contentToSummarize = reportContent;
-    try {
-        const parsed = JSON.parse(reportContent);
-        if (parsed.assetType === 'document' && parsed.content) {
-            contentToSummarize = `Title: ${parsed.title}\n\n${parsed.content}`;
-        }
-    } catch (e) { /* Not a JSON asset */ }
-
-    const systemPrompt = `You are an expert Knowledge Engineer building a GraphRAG system for a music artist.
-    
-    YOUR TASK:
-    1. **Summarize**: Create a concise, standalone knowledge snippet from the input.
-    2. **Title**: Give it a clear, descriptive title.
-    3. **Extract Entities**: Identify specific proper nouns (People, Songs, Albums, Venues, Brands, Tools).
-    4. **Extract Tags**: Identify broad concepts (Themes, Genres, Moods, Departments).
-    
-    This metadata will be used to drastically reduce false positives in retrieval.`;
-
-    const userPrompt = `Source Context: ${contextSource}\n\nContent to Process:\n${contentToSummarize}`;
-
-    // GEMINI 3 MIGRATION: Upgrading to Gemini 3 Pro for superior entity extraction capabilities.
+    // 1. Extract Metadata (Title, Summary) using standard Gemini
+    // We still do this to get a nice title/summary for the UI
+    const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;
     const response = await AI.generateContent({
-        model: AI_MODELS.TEXT.AGENT,
-        contents: { role: 'user', parts: [{ text: userPrompt }] },
-        config: {
-            systemInstruction: systemPrompt,
-            responseMimeType: 'application/json',
-            responseSchema: {
-                type: 'OBJECT',
-                properties: {
-                    title: { type: 'STRING' },
-                    content: { type: 'STRING' },
-                    entities: { type: 'ARRAY', items: { type: 'STRING' } },
-                    tags: { type: 'ARRAY', items: { type: 'STRING' } }
-                },
-                required: ['title', 'content', 'entities', 'tags']
-            },
-            ...AI_CONFIG.THINKING.LOW
-        }
+        model: AI_MODELS.TEXT.FAST,
+        contents: { role: 'user', parts: [{ text: reportContent }] },
+        config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
     });
 
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
-    const metadata = JSON.parse(text || "{}");
+    const metadata = JSON.parse(text || '{"title": "Untitled", "summary": ""}');
 
-    // Generate Embedding for Vector Search
-    let embeddingId: string | undefined;
+    // 2. Ingest into Gemini Corpus
     try {
-        const embedding = await generateEmbedding(metadata.content || contentToSummarize);
-        // Save embedding to IndexedDB as a blob/asset
-        // We store it as a JSON string
-        const embeddingJson = JSON.stringify(embedding);
-        const blob = new Blob([embeddingJson], { type: 'application/json' });
-        embeddingId = await saveAssetToStorage(blob);
+        const corpusName = await GeminiRetrieval.initCorpus();
+        const doc = await GeminiRetrieval.createDocument(corpusName, metadata.title, { source: contextSource });
+        await GeminiRetrieval.ingestText(doc.name, reportContent);
+        console.log("Ingested into Gemini Corpus:", doc.name);
     } catch (e) {
-        console.warn("Failed to generate embedding for knowledge doc:", e);
+        console.error("Failed to ingest into Gemini Corpus:", e);
     }
 
-    return { ...metadata, embeddingId };
+    return {
+        title: metadata.title,
+        content: metadata.summary,
+        entities: [],
+        tags: ['gemini-corpus'],
+        embeddingId: 'managed-by-gemini' // Placeholder
+    };
 }

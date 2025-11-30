@@ -117,7 +117,7 @@ export class WorkflowEngine {
         const data = node.data as DepartmentNodeData;
         const prompt = data.prompt || inputs.data || ''; // Use node prompt or input data
 
-        // --- MOCK AI EXECUTION FOR NOW (Replace with real Service calls) ---
+        // --- REAL AI EXECUTION ---
         if (data.departmentName === 'Art Department') {
             // Generate Image
             const images = await Image.generateImages({ prompt, count: 1, aspectRatio: '1:1' });
@@ -129,6 +129,20 @@ export class WorkflowEngine {
                 contents: [{ role: 'user', parts: [{ text: `Write marketing copy for: ${prompt}` }] }]
             });
             return response.candidates?.[0]?.content?.parts?.[0]?.text;
+        } else if (data.departmentName === 'Research Department') {
+            // RAG / Knowledge Base
+            const { runAgenticWorkflow } = await import('@/services/rag/ragService');
+            const { useStore } = await import('@/core/store');
+            const userProfile = useStore.getState().userProfile;
+
+            const result = await runAgenticWorkflow(
+                prompt,
+                userProfile,
+                null,
+                (status) => console.log(`[Research]: ${status}`),
+                (id, status) => console.log(`[Doc ${id}]: ${status}`)
+            );
+            return result.asset.content;
         } else {
             // Generic
             return `Processed by ${data.departmentName}: ${prompt}`;
