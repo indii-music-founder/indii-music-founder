@@ -37,7 +37,7 @@ class AIService {
             tools: tools as any,
             toolConfig: toolConfig as any,
             safetySettings: safetySettings as any,
-            // @ts-ignore - thinkingConfig might not be in types yet
+            // @ts-expect-error - thinkingConfig might not be in types yet
             thinkingConfig: thinkingConfig as any,
             generationConfig: generationConfig as any
         });
@@ -68,7 +68,7 @@ class AIService {
             tools: tools as any,
             toolConfig: toolConfig as any,
             safetySettings: safetySettings as any,
-            // @ts-ignore - thinkingConfig might not be in types yet
+            // @ts-expect-error - thinkingConfig might not be in types yet
             thinkingConfig: thinkingConfig as any,
             generationConfig: generationConfig as any
         });
