@@ -19,13 +19,13 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const activeAgent = agent || agentService;
-    const windowTitle = title || "Agent R";
+    const windowTitle = title || "indii";
 
     const AgentHeader = () => (
         <div className="flex items-center gap-2 pointer-events-none">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
             <span className="font-bold text-xs text-gray-200">
-                Agent <span className="inline-block transform -scale-x-100">R</span>
+                indii
             </span>
         </div>
     );

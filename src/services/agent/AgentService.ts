@@ -3,16 +3,33 @@ import { useStore, AgentMessage } from '@/core/store';
 import { AI } from '@/services/ai/AIService';
 import { TOOL_REGISTRY, BASE_TOOLS } from './tools';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { agentRegistry } from './registry';
+import { LegalAgent } from './specialists/LegalAgent';
+import { MarketingAgent } from './specialists/MarketingAgent';
+import { MusicAgent } from './specialists/MusicAgent';
+
+
 
 const PERSONA_DEFINITIONS: Record<string, string> = {
-    GENERALIST: `You are Agent R, the Autonomous Studio Manager. Generalist: video, image, text ops. Respect settings unless overriding.`,
-    ARCHITECT: `You are Agent R, Senior Architectural Visualizer. Focus: batch_style_transfer, 4K, 16:9, consistent geometry.`,
-    FASHION: `You are Agent R, Digital Fashion Stylist. Focus: 9:16, fabric textures, social media.`,
-    DIRECTOR: `You are Agent R, Creative Director. Focus: Cohesive video, Director's Cut, Show Bible consistency.`
+    GENERALIST: `You are indii, the Autonomous Studio Manager. Generalist: video, image, text ops. Respect settings unless overriding.`,
+    ARCHITECT: `You are indii, Senior Architectural Visualizer. Focus: batch_style_transfer, 4K, 16:9, consistent geometry.`,
+    FASHION: `You are indii, Digital Fashion Stylist. Focus: 9:16, fabric textures, social media.`,
+    DIRECTOR: `You are indii, Creative Director. Focus: Cohesive video, Director's Cut, Show Bible consistency.`,
+    MUSICIAN: `You are indii, Lead Composer. Focus: Audio synthesis, BPM matching, key signatures, soundscapes.`,
+    MARKETER: `You are indii, Chief Marketing Officer. Focus: Campaign strategy, social media copy, brand alignment.`,
+    LAWYER: `You are indii, Legal Counsel. Focus: Contract review, rights management, compliance.`
 };
 
 class AgentService {
     private isProcessing = false;
+
+    constructor() {
+        // Register Specialists
+        agentRegistry.register(new LegalAgent());
+        agentRegistry.register(new MarketingAgent());
+        agentRegistry.register(new MusicAgent());
+    }
+
 
     async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[]) {
         if (this.isProcessing) return;
@@ -39,7 +56,19 @@ class AgentService {
     }
 
     private async runAgentLoop(userGoal: string) {
-        const persona = 'GENERALIST'; // TODO: Detect persona from project context
+        const { currentProjectId, projects } = useStore.getState();
+        const currentProject = projects.find(p => p.id === currentProjectId);
+
+        let persona = 'GENERALIST';
+        if (currentProject) {
+            switch (currentProject.type) {
+                case 'creative': persona = 'DIRECTOR'; break;
+                case 'music': persona = 'MUSICIAN'; break; // We need to add MUSICIAN to definitions
+                case 'marketing': persona = 'MARKETER'; break; // We need to add MARKETER to definitions
+                case 'legal': persona = 'LAWYER'; break; // We need to add LAWYER to definitions
+                default: persona = 'GENERALIST';
+            }
+        }
 
         // Inject Brand Context
         const { userProfile } = useStore.getState();
@@ -105,7 +134,7 @@ class AgentService {
                 // For now, let's assume we can call it.
                 const streamResult = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
-                    contents: { parts },
+                    contents: [{ role: 'user', parts }],
                     config: {
                         responseMimeType: 'application/json',
                         ...AI_CONFIG.THINKING.HIGH
@@ -124,13 +153,13 @@ class AgentService {
                 console.warn("Streaming failed, falling back to unary", err);
                 const res = await AI.generateContent({
                     model: AI_MODELS.TEXT.AGENT,
-                    contents: { parts },
+                    contents: [{ role: 'user', parts }],
                     config: {
                         responseMimeType: 'application/json',
                         ...AI_CONFIG.THINKING.HIGH
                     }
                 });
-                fullText = res.text;
+                fullText = res.text();
                 useStore.getState().updateAgentMessage(responseId, { text: fullText });
             }
 
@@ -143,7 +172,7 @@ class AgentService {
                 // If the final response is different from the raw JSON, update it to show the clean response
                 // Or we can just leave the JSON for transparency. 
                 // Let's replace the JSON with the final response text for better UX.
-                useStore.getState().updateAgentMessage(responseId, { text: String(result.final_response || '') });
+                useStore.getState().updateAgentMessage(responseId, { text: `${result.final_response || ''}` });
                 break;
             }
 

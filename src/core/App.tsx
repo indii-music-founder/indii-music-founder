@@ -14,6 +14,7 @@ const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
 
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
     const { currentModule, initializeHistory } = useStore();
@@ -26,23 +27,25 @@ export default function App() {
 
     return (
         <ToastProvider>
-            <div className="flex h-screen w-screen bg-surface text-white overflow-hidden font-sans">
-                <CommandBar />
-                {currentModule !== 'select-org' && <Sidebar />}
+            <ErrorBoundary>
+                <div className="flex h-screen w-screen bg-surface text-white overflow-hidden font-sans">
+                    <CommandBar />
+                    {currentModule !== 'select-org' && <Sidebar />}
 
-                <main className="flex-1 relative overflow-hidden flex flex-col pb-16 md:pb-0">
-                    <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
-                        {currentModule === 'select-org' && <SelectOrg />}
-                        {currentModule === 'dashboard' && <Dashboard />}
-                        {currentModule === 'creative' && <CreativeStudio />}
-                        {currentModule === 'legal' && <LegalDashboard />}
-                        {currentModule === 'music' && <MusicStudio />}
-                        {currentModule === 'marketing' && <MarketingDashboard />}
-                        {currentModule === 'video' && <VideoStudio />}
-                        {currentModule === 'workflow' && <WorkflowLab />}
-                    </Suspense>
-                </main>
-            </div>
+                    <main className="flex-1 relative overflow-hidden flex flex-col pb-16 md:pb-0">
+                        <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
+                            {currentModule === 'select-org' && <SelectOrg />}
+                            {currentModule === 'dashboard' && <Dashboard />}
+                            {currentModule === 'creative' && <CreativeStudio />}
+                            {currentModule === 'legal' && <LegalDashboard />}
+                            {currentModule === 'music' && <MusicStudio />}
+                            {currentModule === 'marketing' && <MarketingDashboard />}
+                            {currentModule === 'video' && <VideoStudio />}
+                            {currentModule === 'workflow' && <WorkflowLab />}
+                        </Suspense>
+                    </main>
+                </div>
+            </ErrorBoundary>
         </ToastProvider>
     );
 }

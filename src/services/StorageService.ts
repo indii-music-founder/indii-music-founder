@@ -1,7 +1,8 @@
 import { db, storage, auth } from './firebase';
-import { collection, addDoc, getDocs, query, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, Timestamp, where } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { HistoryItem } from '../core/store';
+import { OrganizationService } from './OrganizationService';
 
 export const StorageService = {
     async saveItem(item: HistoryItem) {
@@ -15,11 +16,15 @@ export const StorageService = {
                 imageUrl = await getDownloadURL(storageRef);
             }
 
+            // Get Current Org ID
+            const orgId = OrganizationService.getCurrentOrgId();
+
             // Ensure timestamp is a number or Firestore Timestamp
             const docData = {
                 ...item,
                 url: imageUrl,
-                timestamp: Timestamp.fromMillis(item.timestamp)
+                timestamp: Timestamp.fromMillis(item.timestamp),
+                orgId: orgId || 'personal' // Default to 'personal' if no org selected
             };
             const docRef = await addDoc(collection(db, 'history'), docData);
             console.log("Document written with ID: ", docRef.id);
@@ -32,9 +37,29 @@ export const StorageService = {
 
     async loadHistory(limitCount = 50): Promise<HistoryItem[]> {
         try {
-            // Re-enable orderBy now that we suspect size limit was the issue
-            const q = query(collection(db, 'history'), orderBy('timestamp', 'desc'), limit(limitCount));
-            // const q = query(collection(db, 'history'), limit(limitCount));
+            const orgId = OrganizationService.getCurrentOrgId();
+
+            // Query with Org Filter
+            // Note: This requires a composite index in Firestore (orgId + timestamp)
+            let q;
+            if (orgId) {
+                q = query(
+                    collection(db, 'history'),
+                    where('orgId', '==', orgId),
+                    orderBy('timestamp', 'desc'),
+                    limit(limitCount)
+                );
+            } else {
+                // Fallback for legacy/personal items (or if no org is set)
+                // We might want to show only 'personal' items here, or everything for now.
+                // Let's default to showing items without an orgId or 'personal'
+                q = query(
+                    collection(db, 'history'),
+                    orderBy('timestamp', 'desc'),
+                    limit(limitCount)
+                );
+            }
+
             const querySnapshot = await getDocs(q);
             return querySnapshot.docs.map(doc => {
                 const data = doc.data();

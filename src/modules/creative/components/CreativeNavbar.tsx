@@ -246,7 +246,7 @@ export default function CreativeNavbar() {
                             className="bg-purple-900/50 hover:bg-purple-800 text-purple-200 text-xs py-1.5 px-3 rounded border border-purple-700 transition-all flex items-center gap-2"
                         >
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            Agent R
+                            indii
                         </button>
                     </div>
                 </div>

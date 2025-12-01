@@ -105,9 +105,14 @@ function NeuralAether() {
     );
 }
 
+import LiquidOrbs from './LiquidOrbs';
+
 export default function Scene() {
     return (
-        <div className="h-screen w-full bg-black">
+        <div className="h-screen w-full bg-black relative">
+            {/* 2D Background Layer (Liquid Orbs) */}
+            <LiquidOrbs />
+
             <AudioManager />
             <Canvas camera={{ position: [0, 0, 5], fov: 75 }} dpr={[1, 2]}>
                 <Suspense fallback={null}>

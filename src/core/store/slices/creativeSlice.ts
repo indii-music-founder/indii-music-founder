@@ -7,6 +7,7 @@ export interface HistoryItem {
     prompt: string;
     timestamp: number;
     projectId: string;
+    orgId?: string;
     meta?: string;
     mask?: string;
 }

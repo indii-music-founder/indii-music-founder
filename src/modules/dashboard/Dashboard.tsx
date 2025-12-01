@@ -49,8 +49,8 @@ export default function Dashboard() {
                 let textContent = '';
 
                 if (file.type.startsWith('image/')) {
-                    // TODO: Implement OCR or Image Description here
-                    // For now, we'll just use a placeholder
+                    // Placeholder for OCR or Image Description
+                    // Future implementation: Use AI service to describe image content
                     textContent = `[Image Upload: ${file.name}]`;
                     alert("Image upload detected. OCR would run here.");
                 } else {

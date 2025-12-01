@@ -6,8 +6,15 @@ export class AudioAnalysisEngine {
         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
 
-    async analyze(file: File) {
-        const arrayBuffer = await file.arrayBuffer();
+    async analyze(input: File | ArrayBuffer) {
+        let arrayBuffer: ArrayBuffer;
+
+        if (input instanceof File) {
+            arrayBuffer = await input.arrayBuffer();
+        } else {
+            arrayBuffer = input;
+        }
+
         const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
         const channelData = audioBuffer.getChannelData(0); // Use left channel

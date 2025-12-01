@@ -10,7 +10,13 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 5173,
+    watch: {
+      ignored: ['**/temp_comparison_repo_backup/**']
+    }
+  },
+  optimizeDeps: {
+    exclude: ['temp_comparison_repo_backup']
   },
   build: {
     chunkSizeWarningLimit: 3000,

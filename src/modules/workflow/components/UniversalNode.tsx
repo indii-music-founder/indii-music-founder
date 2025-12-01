@@ -67,7 +67,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
-        // TODO: Implement openPromptEditor action in store
+        // Placeholder for openPromptEditor action
         console.log("Edit node:", id);
     };
 

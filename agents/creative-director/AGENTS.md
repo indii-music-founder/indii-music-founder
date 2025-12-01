@@ -1,4 +1,4 @@
-# Creative Director Agent
+# Creative Director indii
 
 ## Goal
 
@@ -12,5 +12,5 @@ Creative Director agent responsible for managing image and video generation task
 
 ## Tech Stack
 
-- Framework: Mastra (TypeScript)
+- Framework: Custom BaseAgent (Mastra-compatible pattern)
 - LLM: Google Gemini

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateVideo = void 0;
+exports.creativeDirectorAgent = exports.generateVideo = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors");
@@ -48,6 +48,25 @@ exports.generateVideo = functions.https.onRequest(async (req, res) => {
         }
         catch (error) {
             console.error("Function Error:", error);
+            res.status(500).send({ error: error.message });
+        }
+    });
+});
+const creative_director_1 = require("./agents/creative-director");
+exports.creativeDirectorAgent = functions.https.onRequest(async (req, res) => {
+    corsHandler(req, res, async () => {
+        try {
+            const { prompt } = req.body;
+            if (!prompt) {
+                res.status(400).send({ error: "Prompt is required" });
+                return;
+            }
+            // Execute the agent
+            const result = await creative_director_1.creativeDirector.generate(prompt);
+            res.json({ result });
+        }
+        catch (error) {
+            console.error("Agent Error:", error);
             res.status(500).send({ error: error.message });
         }
     });

@@ -238,6 +238,121 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
         } catch (e: any) {
             return `Knowledge search failed: ${e.message}`;
         }
+    },
+    delegate_task: async (args: { agent_id: string, task: string, context?: any }) => {
+        try {
+            // Dynamic import to avoid circular dependency if registry imports tools
+            const { agentRegistry } = await import('./registry');
+            const agent = agentRegistry.get(args.agent_id);
+
+            if (!agent) {
+                return `Error: Agent '${args.agent_id}' not found. Available: ${agentRegistry.listCapabilities()}`;
+            }
+
+            const response = await agent.execute(args.task, args.context);
+            return `[${agent.name}]: ${response.text}`;
+        } catch (e: any) {
+            return `Delegation failed: ${e.message}`;
+        }
+    },
+    generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
+        try {
+            const { Video } = await import('../../services/video/VideoService');
+
+            let imageInput;
+            if (args.image) {
+                const match = args.image.match(/^data:(.+);base64,(.+)$/);
+                if (match) {
+                    imageInput = { mimeType: match[1], data: match[2] };
+                }
+            }
+
+            const uri = await Video.generateVideo({
+                prompt: args.prompt,
+                image: imageInput,
+                durationSeconds: args.duration
+            });
+
+            if (uri) {
+                const { addToHistory, currentProjectId } = useStore.getState();
+                // We might want to fetch the blob here to store it properly or just store the URI
+                // For now, let's assume URI is sufficient or we fetch it
+                // Ideally, we should add it to history similar to images
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: uri,
+                    prompt: args.prompt,
+                    type: 'video',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+                return `Video generated successfully: ${uri}`;
+            }
+            return "Video generation failed (no URI returned).";
+        } catch (e: any) {
+            return `Video generation failed: ${e.message}`;
+        }
+    },
+    generate_motion_brush: async (args: { image: string, mask: string, prompt?: string }) => {
+        try {
+            const { Video } = await import('../../services/video/VideoService');
+
+            const imgMatch = args.image.match(/^data:(.+);base64,(.+)$/);
+            const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
+
+            if (!imgMatch || !maskMatch) {
+                return "Invalid image or mask data. Must be base64 data URIs.";
+            }
+
+            const image = { mimeType: imgMatch[1], data: imgMatch[2] };
+            const mask = { mimeType: maskMatch[1], data: maskMatch[2] };
+
+            const uri = await Video.generateMotionBrush(image, mask);
+
+            if (uri) {
+                const { addToHistory, currentProjectId } = useStore.getState();
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: uri,
+                    prompt: args.prompt || "Motion Brush",
+                    type: 'video',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+                return `Motion Brush video generated successfully: ${uri}`;
+            }
+            return "Motion Brush generation failed.";
+        } catch (e: any) {
+            return `Motion Brush failed: ${e.message}`;
+        }
+    },
+    analyze_audio: async (args: { audio: string }) => {
+        try {
+            // Dynamic import to avoid circular deps
+            // We need to import the class, but it's not a singleton export in the file we saw?
+            // Wait, AudioAnalysisEngine.ts exports the class. We need to instantiate it.
+            const { AudioAnalysisEngine } = await import('../../modules/music/services/AudioAnalysisEngine');
+            const engine = new AudioAnalysisEngine();
+
+            const match = args.audio.match(/^data:(.+);base64,(.+)$/);
+            if (!match) {
+                return "Invalid audio data. Must be base64 data URI.";
+            }
+
+            const base64Data = match[2];
+            const binaryString = window.atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const arrayBuffer = bytes.buffer;
+
+            const analysis = await engine.analyze(arrayBuffer);
+            return `Audio Analysis Result: ${JSON.stringify(analysis, null, 2)}`;
+        } catch (e: any) {
+            return `Audio analysis failed: ${e.message}`;
+        }
     }
 };
 
@@ -253,4 +368,9 @@ AVAILABLE TOOLS:
 8. list_projects() - List all projects in the current organization.
 9. switch_module(module: string) - Navigate to a specific module.
 10. search_knowledge(query: string) - Search the knowledge base for answers.
+
+11. delegate_task(agent_id: string, task: string, context?: any) - Delegate a sub-task to a specialized agent (ids: legal, marketing, music).
+12. generate_video(prompt: string, image?: string, duration?: number) - Generate a video from text or image.
+13. generate_motion_brush(image: string, mask: string, prompt?: string) - Animate a specific area of an image.
+14. analyze_audio(audio: string) - Analyze an audio file (base64) for BPM, key, and energy.
 `;
