@@ -60,7 +60,7 @@ export default function Overlays() {
         <>
             {/* Hero Section (Page 0) */}
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
-                <div className="text-center z-10 mix-blend-difference">
+                <div className="text-center z-10 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                     <h1 className="text-7xl md:text-9xl font-bold tracking-tighter mb-6 text-white">
                         indiiOS
                     </h1>
@@ -121,7 +121,7 @@ export default function Overlays() {
             {/* Neural Forge (Page 3) */}
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
                 <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white mix-blend-difference">
+                    <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Career Strategy
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
@@ -174,7 +174,7 @@ export default function Overlays() {
             {/* Commerce (Page 5) */}
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
                 <div className="text-center p-10 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-6xl md:text-8xl font-bold text-white mb-4 mix-blend-difference">
+                    <h2 className="text-6xl md:text-8xl font-bold text-white mb-4 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Direct to Fan.
                     </h2>
                     <p className="text-xl text-white/90 max-w-xl mx-auto">
@@ -188,10 +188,10 @@ export default function Overlays() {
             {/* Outro */}
             <section className="h-[100vh] w-full flex flex-col items-center justify-center pointer-events-none">
                 <div className="text-center z-10">
-                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 mix-blend-difference">
+                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Your Music.
                     </h2>
-                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 mix-blend-difference">
+                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Your Rules.
                     </h2>
                     <h2 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-purple via-neon-blue to-signal-green mt-8 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">

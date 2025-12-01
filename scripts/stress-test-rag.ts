@@ -29,16 +29,25 @@ class GeminiRetrievalService {
     }
 
     public async fetch(endpoint: string, options: RequestInit = {}) {
-        const url = `${BASE_URL}/${endpoint}?key=${this.apiKey}`;
+        const proxyUrl = process.env.VITE_RAG_PROXY_URL;
+        let url: string;
+
+        if (proxyUrl) {
+            url = `${proxyUrl}/v1beta/${endpoint}`;
+        } else {
+            url = `${BASE_URL}/${endpoint}?key=${this.apiKey}`;
+        }
+
         // console.log(`DEBUG: Fetching ${url} [${options.method || 'GET'}]`);
         const response = await fetch(url, {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
-                'x-goog-api-key': this.apiKey,
                 ...options.headers
             }
         });
+
+        // ...
 
         if (!response.ok) {
             const errorText = await response.text();

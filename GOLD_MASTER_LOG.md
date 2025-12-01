@@ -14,15 +14,22 @@ The application has been upgraded to a full multi-tenant architecture.
 * **Service Layer:**
   * `OrganizationService`: Manages org switching and member access.
   * `ProjectService`: Handles project CRUD operations scoped to the active org.
+* **Organization Context:** All data (Projects, History, Assets) is now scoped to an `Organization`.
+* **Data Hierarchy:** `Organization` -> `Project` -> `Asset`.
+* **Service Layer:**
+  * `OrganizationService`: Manages org switching and member access.
+  * `ProjectService`: Handles project CRUD operations scoped to the active org.
   * `AgentService`: Injects `currentOrganizationId` into the AI context for all agents.
 * **State Management:**
   * `AuthSlice`: Manages the current user's active organization.
   * `AppSlice`: Manages the active project within that organization.
   * `CreativeSlice`: Automatically tags generated assets with the active `orgId`.
 
-## 2. Agent System (The "Hub-and-Spoke" Model)
+## 2. Agent System (Hybrid Architecture)
 
-The AI system is structured as a multi-agent team orchestrated by a central manager.
+The AI system is a hybrid model combining client-side responsiveness with server-side power.
+
+### A. Client-Side Agents (The "Hub")
 
 * **Manager:** `AgentService` (The "Generalist" / "Agent Zero").
   * **Role:** Triage, Strategy, and Delegation.
@@ -31,16 +38,23 @@ The AI system is structured as a multi-agent team orchestrated by a central mana
   * `LegalAgent`: Contracts, Rights Management, Compliance.
   * `MarketingAgent`: Campaign Strategy, Copywriting.
   * `MusicAgent`: Audio Synthesis, Theory.
-* **Tooling:**
-  * All agents share a `TOOL_REGISTRY` but have specialized prompts.
-  * Tools are executed via strict JSON function calling.
+
+### B. Server-Side Agents (The "Heavy Lifters")
+
+* **Framework:** `@mastra/core` running on Firebase Cloud Functions.
+* **Creative Director:**
+  * **Role:** High-fidelity asset generation oversight.
+  * **Tools:** `imageTool` (Gemini 3 Pro Image), Video Treatment generation.
+  * **Access:** Exposed via `creativeDirectorAgent` HTTP function.
+
+### C. Tooling
+
+* **Registry:** Client-side agents share a `TOOL_REGISTRY`.
+* **Execution:** Tools are executed via strict JSON function calling.
 
 ## 3. Frontend Experience
 
-* **Landing Page:**
-  * **Visuals:** "Liquid Orbs" (Bubbles) with audio reactivity and scroll-based density.
-  * **Security Grid:** 3D "Data Vault" visualization.
-  * **Tech Stack:** React Three Fiber, PixiJS v8 (for 2D overlays), Framer Motion.
+* **Tech Stack:** React Three Fiber, PixiJS v8 (for 2D overlays), Framer Motion.
 * **Studio App:**
   * **Modules:** Creative (Image/Video), Music, Marketing, Legal, Workflow, Dashboard.
   * **Navigation:** Context-aware sidebar and command bar.
@@ -68,6 +82,21 @@ The AI system is structured as a multi-agent team orchestrated by a central mana
 
 * **Streaming:** Agents must support streaming responses for immediate user feedback.
 * **Context:** Every agent execution **MUST** include `orgId` and `projectId` in the prompt context.
+
+## 6. RAG & Knowledge Base
+
+* **Service:** `GeminiRetrievalService` (Semantic Retriever API).
+* **Architecture:**
+  * **Frontend:** Uses `fetch` to call Gemini API directly (via `v1beta`).
+  * **CORS Issue:** Direct calls from browser are blocked by CORS.
+  * **Proxy Solution:** A local proxy server (`scripts/start-proxy.ts`) is provided for development.
+* **Configuration:**
+  * Set `VITE_RAG_PROXY_URL=http://localhost:3001` in `.env` to use the proxy.
+  * Run `npx tsx scripts/start-proxy.ts` to start the proxy.
+* **Status:**
+  * `createCorpus`: Working.
+  * `createDocument`: Currently returning 404 (API configuration issue under investigation).
+  * `generateContent`: Working (using `gemini-flash-latest`).
 
 ---
 *This document serves as the source of truth for the indiiOS application state.*

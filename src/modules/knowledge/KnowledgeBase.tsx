@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, Trash2, Book, Loader, RefreshCw } from 'lucide-react';
 import { GeminiRetrieval } from '../../services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '../../services/rag/ragService';
+import { useToast } from '@/core/context/ToastContext';
 
 interface Doc {
     name: string;
@@ -14,6 +15,7 @@ export default function KnowledgeBase() {
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const toast = useToast();
 
     useEffect(() => {
         loadDocuments();
@@ -42,9 +44,10 @@ export default function KnowledgeBase() {
             // We use the filename as context source
             await processForKnowledgeBase(text, file.name);
             await loadDocuments(); // Refresh list
-        } catch (error) {
+            toast.success(`Successfully uploaded ${file.name}`);
+        } catch (error: any) {
             console.error("Upload failed:", error);
-            alert("Failed to upload document.");
+            toast.error(`Failed to upload document: ${error.message || "Unknown error"}`);
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

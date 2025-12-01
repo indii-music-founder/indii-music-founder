@@ -105,9 +105,19 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 if (isFinished) {
                     // Handle completion
                 }
-            }
 
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+                // Fallback: If model did work but didn't speak, speak for it.
+                if (!text && updates.length > 0) {
+                    const fallbackText = `I've updated your ${updates.join(', ')}. What else can I help you with?`;
+                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: fallbackText }] }]);
+                } else if (text) {
+                    setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+                } else {
+                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: "I processed that, but I'm not sure what to say. Is there anything else?" }] }]);
+                }
+            } else {
+                setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+            }
 
         } catch (error) {
             console.error("Onboarding error:", error);

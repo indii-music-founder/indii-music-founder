@@ -68,14 +68,22 @@ export async function processForKnowledgeBase(reportContent: string, contextSour
     // 1. Extract Metadata (Title, Summary) using standard Gemini
     // We still do this to get a nice title/summary for the UI
     const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;
-    const response = await AI.generateContent({
-        model: AI_MODELS.TEXT.FAST,
-        contents: { role: 'user', parts: [{ text: reportContent }] },
-        config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
-    });
+    let metadata = { title: contextSource, summary: '' };
+    try {
+        const response = await AI.generateContent({
+            model: AI_MODELS.TEXT.FAST,
+            contents: { role: 'user', parts: [{ text: reportContent }] },
+            config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
+        });
 
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
-    const metadata = JSON.parse(text || '{"title": "Untitled", "summary": ""}');
+        const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+            metadata = JSON.parse(text);
+        }
+    } catch (error) {
+        console.warn("Metadata extraction failed, using defaults:", error);
+        // Fallback is already set
+    }
 
     // 2. Ingest into Gemini Corpus
     try {

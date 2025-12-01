@@ -331,6 +331,26 @@ textarea {
    On touch devices (max-width 768px), force the hover overlay to be visible 
    if the item is selected or just always visible to make actions accessible.
 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    @apply bg-surface text-white antialiased;
+  }
+}
+
 @media (max-width: 768px) {
   .image-thumbnail .group-hover\:opacity-100 {
     opacity: 1 !important;

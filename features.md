@@ -16,6 +16,7 @@
   * **LegalAgent:** Contract analysis and risk assessment.
   * **MarketingAgent:** Campaign generation and brand voice alignment.
   * **MusicAgent:** Audio theory and composition assistance.
+* **Server-Side Agents (Mastra):** "Creative Director" agent running on Cloud Functions for high-fidelity asset generation.
 * **Context Injection:** Agents automatically receive Organization, Project, and Brand Kit context.
 * **Streaming Responses:** Real-time token streaming for immediate feedback.
 

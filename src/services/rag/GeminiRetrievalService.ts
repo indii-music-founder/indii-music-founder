@@ -1,5 +1,7 @@
 
 
+import { smartChunk } from '@/utils/textChunker';
+
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
 interface Corpus {
@@ -32,7 +34,19 @@ export class GeminiRetrievalService {
     }
 
     private async fetch(endpoint: string, options: RequestInit = {}) {
-        const url = `${BASE_URL}/${endpoint}?key=${this.apiKey}`;
+        const proxyUrl = import.meta.env?.VITE_RAG_PROXY_URL;
+        let url: string;
+
+        if (proxyUrl) {
+            // Use Proxy: http://localhost:3001/v1beta/...
+            // Endpoint is like 'corpora' or 'corpora/123/documents'
+            // Proxy expects /v1beta/...
+            url = `${proxyUrl}/v1beta/${endpoint}`;
+        } else {
+            // Direct: https://generativelanguage.googleapis.com/v1beta/...
+            url = `${BASE_URL}/${endpoint}?key=${this.apiKey}`;
+        }
+
         const response = await fetch(url, {
             ...options,
             headers: {
@@ -69,16 +83,25 @@ export class GeminiRetrievalService {
     /**
      * Gets or creates the default corpus for the app.
      */
-    async initCorpus(): Promise<string> {
-        const list = await this.listCorpora();
-        const existing = list.corpora?.find(c => c.displayName === "indiiOS Knowledge Base");
+    async initCorpus(corpusDisplayName: string = "indiiOS Knowledge Base"): Promise<string> {
+        console.log(`GeminiRetrievalService: Initializing Corpus '${corpusDisplayName}'...`);
+        try {
+            const list = await this.listCorpora();
+            const existing = list.corpora?.find(c => c.displayName === corpusDisplayName);
 
-        if (existing) {
-            return existing.name; // e.g., "corpora/12345"
+            if (existing) {
+                console.log("GeminiRetrievalService: Found existing corpus:", existing.name);
+                return existing.name; // e.g., "corpora/12345"
+            }
+
+            console.log("GeminiRetrievalService: Creating new corpus...");
+            const newCorpus = await this.createCorpus(corpusDisplayName);
+            console.log("GeminiRetrievalService: Created new corpus:", newCorpus.name);
+            return newCorpus.name;
+        } catch (error) {
+            console.error("GeminiRetrievalService: Failed to init corpus:", error);
+            throw error;
         }
-
-        const newCorpus = await this.createCorpus();
-        return newCorpus.name;
     }
 
     /**
@@ -98,14 +121,13 @@ export class GeminiRetrievalService {
      * Ingests text into a Document by creating chunks.
      * Note: Gemini API handles embedding automatically.
      */
-    async ingestText(documentName: string, text: string, chunkSize: number = 500) {
-        // Simple chunking strategy (can be improved)
-        const chunks: Chunk[] = [];
-        for (let i = 0; i < text.length; i += chunkSize) {
-            chunks.push({
-                data: { stringValue: text.substring(i, i + chunkSize) }
-            });
-        }
+    async ingestText(documentName: string, text: string, chunkSize: number = 1000) {
+        // Use smart chunking
+        const textChunks = smartChunk(text, chunkSize);
+
+        const chunks: Chunk[] = textChunks.map(str => ({
+            data: { stringValue: str }
+        }));
 
         // Batch create chunks
         // API limit is usually 100 chunks per batch

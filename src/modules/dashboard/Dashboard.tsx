@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore, AppSlice } from '@/core/store';
-import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera, ArrowUpRight } from 'lucide-react';
+import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera, ArrowUpRight, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
@@ -87,35 +87,41 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="flex-1 bg-surface p-8 overflow-y-auto custom-scrollbar relative">
-            <div className="max-w-7xl mx-auto">
+        <div className="flex-1 bg-surface p-4 md:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar relative w-full">
+            <div className="max-w-7xl mx-auto w-full">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-12">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-4">
                     <div>
-                        <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Welcome back to <span className="neon-text-blue">indiiOS</span>.</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">Welcome back to <span className="neon-text-blue">indiiOS</span>.</h1>
                         <div className="flex items-center gap-4">
                             <OrganizationSelector />
-                            <p className="text-white/50">Manage your creative projects and workflows.</p>
+                            <p className="text-white/50 hidden md:block">Manage your creative projects and workflows.</p>
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 w-full md:w-auto justify-end md:justify-start">
                         <button
                             onClick={() => auth.signOut()}
-                            className="px-4 py-3 bg-red-500/10 text-red-500 border border-red-500/50 rounded-full font-bold hover:bg-red-500/20 transition-all"
+                            className="p-3 md:px-4 md:py-3 bg-red-500/10 text-red-500 border border-red-500/50 rounded-full font-bold hover:bg-red-500/20 transition-all flex items-center justify-center"
+                            title="Sign Out"
                         >
-                            Sign Out
+                            <LogOut size={20} />
+                            <span className="hidden md:inline ml-2">Sign Out</span>
                         </button>
                         <button
                             onClick={() => setShowBrandKit(true)}
-                            className="px-6 py-3 bg-neon-purple/10 text-neon-purple border border-neon-purple/50 rounded-full font-bold hover:bg-neon-purple/20 hover:shadow-[0_0_15px_rgba(176,38,255,0.3)] transition-all flex items-center gap-2"
+                            className="p-3 md:px-6 md:py-3 bg-neon-purple/10 text-neon-purple border border-neon-purple/50 rounded-full font-bold hover:bg-neon-purple/20 hover:shadow-[0_0_15px_rgba(176,38,255,0.3)] transition-all flex items-center justify-center gap-2"
+                            title="Brand Kit"
                         >
-                            <Sparkles size={20} /> Brand Kit
+                            <Sparkles size={20} />
+                            <span className="hidden md:inline">Brand Kit</span>
                         </button>
                         <button
                             onClick={() => setShowNewProjectModal(true)}
-                            className="px-6 py-3 bg-white text-black rounded-full font-bold hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,243,255,0.5)] transition-all flex items-center gap-2"
+                            className="p-3 md:px-6 md:py-3 bg-white text-black rounded-full font-bold hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,243,255,0.5)] transition-all flex items-center justify-center gap-2"
+                            title="New Project"
                         >
-                            <Plus size={20} /> New Project
+                            <Plus size={20} />
+                            <span className="hidden md:inline">New Project</span>
                         </button>
                     </div>
                 </div>
@@ -157,8 +163,8 @@ export default function Dashboard() {
                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <Folder size={20} className="text-signal-green" /> Knowledge Base
                     </h2>
-                    <div className="glass-panel p-8 rounded-3xl shadow-2xl">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="glass-panel p-4 md:p-8 rounded-3xl shadow-2xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                             {/* Drop Zone */}
                             <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-signal-green hover:bg-signal-green/5 transition-all cursor-pointer relative group min-h-[250px]">
                                 <input
@@ -260,10 +266,10 @@ export default function Dashboard() {
                                         <button
                                             key={type}
                                             onClick={() => setNewProjectType(type as 'creative' | 'music' | 'marketing' | 'legal')}
-                                            className={`p-3 rounded-lg border text-sm font-medium capitalize transition-all ${newProjectType === type
-                                                ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
-                                                : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'
-                                                }`}
+                                            className={`p - 3 rounded - lg border text - sm font - medium capitalize transition - all ${newProjectType === type
+                                                    ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
+                                                    : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'
+                                                } `}
                                         >
                                             {type}
                                         </button>
