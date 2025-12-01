@@ -27,9 +27,14 @@
 - [x] **Install Dependencies**: Install Mastra SDK.
 - [x] **Implement Agent**: Create agent entry point with Gemini 3.0 Pro.
 - [x] **Create Tools**: Implement Image and Video generation tools.
-- [ ] **Integrate**: Connect agent to React frontend (AgentZero).
+- [x] **Integrate**: Connect agent to React frontend (AgentZero).
 
-### 5. General Improvements
+### 5. Landing Page (NEW)
+
+- [x] **Copywriting**: Generate copy options for high-end visuals.
+- [x] **Implementation**: Update landing page with selected copy (Business Partner).
+
+### 6. General Improvements
 
 - [ ] **File Drop UI**: Make drop area more prominent, add "Take Picture" for mobile.
 - [ ] **"Check UI click"**: Investigate origin of this log message.

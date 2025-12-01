@@ -65,7 +65,7 @@ export default function Overlays() {
                         indiiOS
                     </h1>
                     <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto font-light tracking-wide h-8">
-                        <GlitchText text={heroText} delay={200} />
+                        The operating system for independent wealth.
                     </p>
                 </div>
                 <div className="absolute bottom-10 animate-bounce text-white/50 text-sm tracking-widest uppercase">
@@ -77,13 +77,13 @@ export default function Overlays() {
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
                 <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
-                        Deep Listening
+                        Smart Audio Analysis
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 font-light mb-8 drop-shadow-lg">
-                        The AI doesn't just listen it HEARS. From raw audio chaos to structured creative inspiration.
+                        Informative. Helpful. Creative.
                     </p>
                     <div className="text-neon-blue text-lg tracking-widest uppercase font-bold drop-shadow-md">
-                        It listens. It learns. It gets in line.
+                        Turning your music into actionable data.
                     </div>
                 </div>
             </section>
@@ -95,7 +95,7 @@ export default function Overlays() {
                         Agent <span className="inline-block transform -scale-x-100">R</span>
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
-                        Symbiotic Co-Evolution. Not just a bot—a manager that writes its own curriculum based on your career’s unique data.
+                        Your helpful AI assistant. It handles the business tasks humans used to do.
                     </p>
 
                     <div className="flex flex-col gap-4 items-end">
@@ -104,7 +104,7 @@ export default function Overlays() {
                             <div className="w-12 h-1 bg-neon-purple/50 rounded-full"></div>
                         </div>
                         <p className="text-sm text-white/80 max-w-xs">
-                            Formulates strategy and "Frontier Tasks" to push your limits.
+                            Plans your career strategy.
                         </p>
 
                         <div className="flex items-center gap-4 mt-4">
@@ -112,7 +112,7 @@ export default function Overlays() {
                             <div className="w-12 h-1 bg-neon-blue/50 rounded-full"></div>
                         </div>
                         <p className="text-sm text-white/80 max-w-xs">
-                            Ruthlessly executes code and tools to build the vision.
+                            Executes the work.
                         </p>
                     </div>
                 </div>
@@ -122,10 +122,10 @@ export default function Overlays() {
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
                 <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white mix-blend-difference">
-                        The Neural Forge
+                        Career Strategy
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
-                        Where raw data is smelted into strategy. <span className="text-neon-pink font-bold">Chaos becomes structure.</span>
+                        Useful insights to grow your fanbase and income. <span className="text-neon-pink font-bold">Profitable growth.</span>
                     </p>
                 </div>
             </section>
@@ -134,10 +134,10 @@ export default function Overlays() {
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
                 <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
-                        The Firewall
+                        Rights Protection
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
-                        Absolute security. <span className="text-neon-green font-bold">Zero compromise.</span>
+                        Secure your IP. <span className="text-neon-green font-bold">Get paid for your work.</span>
                     </p>
                 </div>
             </section>
@@ -159,14 +159,14 @@ export default function Overlays() {
                         <h3 className="text-3xl font-bold text-white mb-2">The Shield</h3>
                         <p className="text-neon-purple text-sm uppercase tracking-wider mb-6">Legal & Rights</p>
                         <p className="text-white/80">
-                            AI-powered contract scanning. Instantly turns red flags (bad terms) into green lights (negotiated rights).
+                            Reach real fans. Instantly turns red flags (bad terms) into green lights (negotiated rights).
                         </p>
                     </div>
                 </div>
 
                 <div className="text-center p-6 rounded-2xl bg-black/30 backdrop-blur-sm">
                     <h2 className="text-4xl md:text-5xl font-bold text-white">
-                        Scale your reach. <span className="text-white/50">Secure your rights.</span>
+                        Scale Your Career.
                     </h2>
                 </div>
             </section>
@@ -175,10 +175,10 @@ export default function Overlays() {
             <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
                 <div className="text-center p-10 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-6xl md:text-8xl font-bold text-white mb-4 mix-blend-difference">
-                        The Infinite Showroom
+                        Direct to Fan.
                     </h2>
                     <p className="text-xl text-white/90 max-w-xl mx-auto">
-                        Liquid Art splashes onto the physical world. Instant merch generation from your sonic identity.
+                        Sell merch, tickets, and vinyl directly to your audience. No middlemen.
                     </p>
                 </div>
             </section>

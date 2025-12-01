@@ -55,3 +55,26 @@ export const generateVideo = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+
+import { creativeDirector } from './agents/creative-director';
+
+export const creativeDirectorAgent = functions.https.onRequest(async (req, res) => {
+    corsHandler(req, res, async () => {
+        try {
+            const { prompt } = req.body;
+
+            if (!prompt) {
+                res.status(400).send({ error: "Prompt is required" });
+                return;
+            }
+
+            // Execute the agent
+            const result = await creativeDirector.generate(prompt);
+
+            res.json({ result });
+        } catch (error: any) {
+            console.error("Agent Error:", error);
+            res.status(500).send({ error: error.message });
+        }
+    });
+});
