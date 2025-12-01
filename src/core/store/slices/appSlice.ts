@@ -15,21 +15,38 @@ export interface AppSlice {
     setModule: (module: AppSlice['currentModule']) => void;
     setProject: (id: string) => void;
     addProject: (project: Project) => void;
+    loadProjects: () => Promise<void>;
+    createNewProject: (name: string, type: Project['type']) => Promise<string>;
     pendingPrompt: string | null;
     setPendingPrompt: (prompt: string | null) => void;
 }
 
-export const createAppSlice: StateCreator<AppSlice> = (set) => ({
+export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentModule: 'dashboard',
     currentProjectId: 'default',
-    projects: [
-        { id: 'default', name: 'Default Project', date: Date.now(), type: 'creative', orgId: 'org-default' },
-        { id: 'proj-2', name: 'Neon City Campaign', date: Date.now() - 86400000, type: 'marketing', orgId: 'org-default' },
-        { id: 'proj-3', name: 'Audio Experience', date: Date.now() - 172800000, type: 'music', orgId: 'org-default' },
-    ],
+    projects: [],
     setModule: (module) => set({ currentModule: module }),
     setProject: (id) => set({ currentProjectId: id }),
     addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
+    loadProjects: async () => {
+        const { ProjectService } = await import('@/services/ProjectService');
+        const { OrganizationService } = await import('@/services/OrganizationService');
+        const orgId = OrganizationService.getCurrentOrgId();
+        if (orgId) {
+            const projects = await ProjectService.getProjectsForOrg(orgId);
+            set({ projects });
+        }
+    },
+    createNewProject: async (name, type) => {
+        const { ProjectService } = await import('@/services/ProjectService');
+        const newProject = await ProjectService.createProject(name, type);
+        set((state) => ({
+            projects: [newProject, ...state.projects],
+            currentProjectId: newProject.id,
+            currentModule: type
+        }));
+        return newProject.id;
+    },
     pendingPrompt: null,
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
 });

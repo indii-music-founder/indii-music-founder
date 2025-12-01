@@ -109,12 +109,56 @@ function HexShields() {
     );
 }
 
+function DataVault() {
+    const group = useRef<THREE.Group>(null!);
+
+    useFrame((state) => {
+        const t = state.clock.getElapsedTime();
+        group.current.rotation.y = t * 0.2;
+        group.current.position.y = Math.sin(t * 0.5) * 0.5;
+    });
+
+    return (
+        <group ref={group}>
+            {/* Core */}
+            <mesh>
+                <icosahedronGeometry args={[2, 0]} />
+                <meshStandardMaterial
+                    color="#00ff00"
+                    emissive="#00ff00"
+                    emissiveIntensity={0.5}
+                    wireframe
+                    transparent
+                    opacity={0.8}
+                />
+            </mesh>
+
+            {/* Inner Glow */}
+            <mesh scale={0.8}>
+                <icosahedronGeometry args={[2, 2]} />
+                <meshBasicMaterial color="#ccffcc" transparent opacity={0.2} />
+            </mesh>
+
+            {/* Rotating Rings */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[3, 0.05, 16, 100]} />
+                <meshBasicMaterial color="#00ff00" transparent opacity={0.6} />
+            </mesh>
+            <mesh rotation={[0, 0, Math.PI / 4]}>
+                <torusGeometry args={[3.5, 0.02, 16, 100]} />
+                <meshBasicMaterial color="#00ff00" transparent opacity={0.4} />
+            </mesh>
+        </group>
+    );
+}
+
 export default function SecurityGrid() {
     return (
         <group position={[0, -48, 0]}>
             <LaserGrid />
             <Scanner />
             <HexShields />
+            <DataVault />
             <pointLight position={[0, 0, 5]} color="#00ff00" intensity={2} distance={20} />
         </group>
     );

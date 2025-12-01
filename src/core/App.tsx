@@ -17,11 +17,13 @@ import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
-    const { currentModule, initializeHistory } = useStore();
+    const { currentModule, initializeHistory, initializeAuth, loadProjects } = useStore();
     console.log('App: Render, currentModule:', currentModule);
 
     useEffect(() => {
+        initializeAuth();
         initializeHistory();
+        loadProjects();
         useStore.setState({ isAgentOpen: false });
     }, []);
 

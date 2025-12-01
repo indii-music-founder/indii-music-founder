@@ -6,87 +6,172 @@ import { KawaseBlurFilter } from '@pixi/filter-kawase-blur';
 import { createNoise2D } from 'simplex-noise';
 import debounce from 'debounce';
 import hsl from 'hsl-to-hex';
+import { useAudioStore } from '../store/audioStore';
 
 // --- Configuration ---
 // We expose these as constants so they can be easily tweaked or mapped to Audio later.
-const ORB_COUNT = 20;
-const BASE_RADIUS = 80; // Base size of orbs
+const MAX_ORB_COUNT = 50; // Max bubbles at bottom
+const BASE_RADIUS = 60; // Base size of orbs
 const COLOR_RANGE = {
     hueMin: 180, // Cyan
     hueMax: 280, // Purple
     sat: 80,
     light: 60
 };
-const SPEED_FACTOR = 0.0015; // How fast they move
+const SPEED_FACTOR = 0.002; // How fast they move
 
 export default function LiquidOrbs() {
     const containerRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<PIXI.Application | null>(null);
+    const orbsRef = useRef<Orb[]>([]);
+
+    // Scroll State (We need to listen to scroll)
+    // Since this is outside the R3F Canvas, we can't use useScroll directly easily without bridging.
+    // We'll use a native scroll listener on the window/body for this overlay effect.
+    const scrollRef = useRef(0);
+
+    // Subscribe to Audio Store
+    // We use a ref for the data to avoid re-creating the loop on every frame update
+    const freqDataRef = useRef({ bass: 0, mid: 0, high: 0 });
+
+    useEffect(() => {
+        const unsub = useAudioStore.subscribe((state) => {
+            freqDataRef.current = state.frequencyData;
+        });
+
+        // Native Scroll Listener for the overlay
+        // The R3F ScrollControls uses a virtual scroll, so we might need to hook into the DOM element it creates if possible,
+        // or just approximate with window scroll if the body is scrolling.
+        // However, R3F ScrollControls usually sets document height.
+        const onScroll = () => {
+            const h = document.documentElement.scrollHeight - window.innerHeight;
+            const s = window.scrollY;
+            scrollRef.current = s / h; // 0 to 1
+        };
+
+        window.addEventListener('scroll', onScroll);
+
+        return () => {
+            unsub();
+            window.removeEventListener('scroll', onScroll);
+        };
+    }, []);
 
     useEffect(() => {
         if (!containerRef.current) return;
 
-        // 1. Initialize PixiJS Application
-        const app = new PIXI.Application({
-            resizeTo: window, // Auto-resize to window
-            backgroundAlpha: 0, // Transparent background
-            antialias: true,
-            autoDensity: true,
-            resolution: 2, // Retina support
-        });
+        let app: PIXI.Application | null = null;
+        let mounted = true;
+        let handleResize: (() => void) | null = null;
 
-        containerRef.current.appendChild(app.view as unknown as Node);
-        appRef.current = app;
+        const initPixi = async () => {
+            // 1. Initialize PixiJS Application (v8 is async)
+            app = new PIXI.Application();
 
-        // 2. Create the Stage for Orbs
-        // We render orbs into a container so we can apply the blur filter to the *group*
-        const orbStage = new PIXI.Container();
-        app.stage.addChild(orbStage);
+            await app.init({
+                resizeTo: window,
+                backgroundAlpha: 0,
+                antialias: true,
+                autoDensity: true,
+                resolution: 2,
+            });
 
-        // 3. Apply the "Liquid" Filter (Kawase Blur)
-        // High blur + Thresholding (handled visually by contrast) creates the goo effect
-        const blurFilter = new KawaseBlurFilter(30, 10, true);
-        // @ts-ignore - PixiJS Filter type compatibility issue with plugin
-        orbStage.filters = [blurFilter];
+            if (!mounted || !containerRef.current) {
+                app.destroy();
+                return;
+            }
 
-        // 4. Create Orbs
-        const orbs: Orb[] = [];
-        const noise2D = createNoise2D();
+            // Clear any existing canvas to prevent duplicates
+            while (containerRef.current.firstChild) {
+                containerRef.current.removeChild(containerRef.current.firstChild);
+            }
 
-        for (let i = 0; i < ORB_COUNT; i++) {
-            const orb = new Orb(noise2D, i);
-            orbs.push(orb);
-            orbStage.addChild(orb.graphics);
-        }
+            containerRef.current.appendChild(app.canvas);
+            appRef.current = app;
 
-        // 5. Animation Loop
-        app.ticker.add(() => {
-            orbs.forEach(orb => orb.update());
-        });
+            // 2. Create Stage
+            const orbStage = new PIXI.Container();
+            app.stage.addChild(orbStage);
 
-        // 6. Handle Resize
-        const handleResize = debounce(() => {
-            app.resize();
-            orbs.forEach(orb => orb.setBounds(window.innerWidth, window.innerHeight));
-        }, 200);
+            // 3. Apply Filter
+            const blurFilter = new KawaseBlurFilter(30, 10, true);
+            // @ts-ignore
+            orbStage.filters = [blurFilter];
 
-        window.addEventListener('resize', handleResize);
+            // 4. Create Orbs
+            const orbs: Orb[] = [];
+            const noise2D = createNoise2D();
 
-        // Cleanup
+            for (let i = 0; i < MAX_ORB_COUNT; i++) {
+                const orb = new Orb(noise2D, i);
+                orbs.push(orb);
+                orbStage.addChild(orb.graphics);
+            }
+            orbsRef.current = orbs;
+
+            // 5. Animation Loop
+            app.ticker.add(() => {
+                const { bass, mid, high } = freqDataRef.current;
+                const scrollProgress = scrollRef.current; // 0 to 1
+
+                // Calculate active orb count based on scroll
+                // Start with 5, ramp up to MAX
+                const activeCount = Math.floor(5 + (scrollProgress * (MAX_ORB_COUNT - 5)));
+
+                // Global modulation based on Bass (Kick)
+                const globalScale = 1 + (bass * 0.2);
+                orbStage.scale.set(globalScale);
+                // Center the scaling
+                orbStage.x = (app!.screen.width - app!.screen.width * globalScale) / 2;
+                orbStage.y = (app!.screen.height - app!.screen.height * globalScale) / 2;
+
+                orbs.forEach((orb, i) => {
+                    // Only update and show active orbs
+                    if (i < activeCount) {
+                        orb.graphics.visible = true;
+                        orb.update(bass, mid, high, app!.screen.height);
+                    } else {
+                        orb.graphics.visible = false;
+                        orb.reset(app!.screen.height); // Keep them ready at bottom
+                    }
+                });
+            });
+
+            // 6. Handle Resize
+            handleResize = debounce(() => {
+                if (app && app.renderer) {
+                    app.resize();
+                    orbs.forEach(orb => orb.setBounds(window.innerWidth, window.innerHeight));
+                }
+            }, 200);
+
+            window.addEventListener('resize', handleResize);
+        };
+
+        initPixi();
+
         return () => {
-            window.removeEventListener('resize', handleResize);
-            // PixiJS 7+ destroy signature is simpler or object-based, removing specific flags to be safe
-            app.destroy(true, { children: true, texture: true });
+            mounted = false;
+            if (handleResize) {
+                window.removeEventListener('resize', handleResize);
+            }
+            // Cleanup
+            if (app) {
+                // v8 destroy
+                app.destroy({ removeView: true }, { children: true, texture: true });
+            }
         };
     }, []);
 
     return (
         <div
             ref={containerRef}
-            className="fixed bottom-0 left-0 w-full h-[50vh] pointer-events-none z-0 opacity-60 mix-blend-screen"
+            className="fixed bottom-0 left-0 w-full h-full pointer-events-none z-0 opacity-60 mix-blend-screen"
             style={{
-                maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
+                // Full screen mask to allow bubbles everywhere but fade at very top
+                maskImage: 'linear-gradient(to top, black 80%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 80%, transparent 100%)',
+                zIndex: 0 // Explicitly set z-index
             }}
         />
     );
@@ -101,10 +186,10 @@ class Orb {
     // State
     x: number = 0;
     y: number = 0;
-    vx: number = 0;
-    vy: number = 0;
     radius: number = 0;
+    baseRadius: number = 0;
     color: number = 0;
+    baseColorHue: number = 0;
 
     // Bounds
     boundsX: number = window.innerWidth;
@@ -114,6 +199,9 @@ class Orb {
     xOff: number;
     yOff: number;
     inc: number;
+
+    popping: boolean = false;
+    popScale: number = 1;
 
     constructor(noiseInstance: (x: number, y: number) => number, index: number) {
         this.noise2D = noiseInstance;
@@ -126,7 +214,7 @@ class Orb {
         this.inc = SPEED_FACTOR + (Math.random() * 0.002); // Slight speed variance
 
         this.setBounds(window.innerWidth, window.innerHeight);
-        this.reset();
+        this.reset(window.innerHeight);
     }
 
     setBounds(w: number, h: number) {
@@ -134,41 +222,68 @@ class Orb {
         this.boundsY = h;
     }
 
-    reset() {
-        // Start somewhere near the bottom center
-        this.x = this.boundsX / 2 + (Math.random() - 0.5) * (this.boundsX * 0.5);
-        this.y = this.boundsY + (Math.random() * 200); // Start slightly below screen
+    reset(screenHeight: number) {
+        this.x = this.boundsX / 2 + (Math.random() - 0.5) * this.boundsX; // Full width spread
+        this.y = screenHeight + (Math.random() * 200); // Start well below screen
 
-        // Random Size
-        this.radius = BASE_RADIUS + (Math.random() * 50);
+        this.baseRadius = BASE_RADIUS + (Math.random() * 40);
+        this.radius = this.baseRadius;
 
-        // Random Color from Palette
-        const hue = COLOR_RANGE.hueMin + Math.random() * (COLOR_RANGE.hueMax - COLOR_RANGE.hueMin);
-        this.color = parseInt(hsl(hue, COLOR_RANGE.sat, COLOR_RANGE.light).replace('#', ''), 16);
+        this.baseColorHue = COLOR_RANGE.hueMin + Math.random() * (COLOR_RANGE.hueMax - COLOR_RANGE.hueMin);
+        this.color = parseInt(hsl(this.baseColorHue, COLOR_RANGE.sat, COLOR_RANGE.light).replace('#', ''), 16);
+
+        this.popping = false;
+        this.popScale = 1;
     }
 
-    update() {
-        // 1. Calculate Organic Movement using Simplex Noise
-        // We map noise (-1 to 1) to velocity
+    update(bass: number, mid: number, high: number, screenHeight: number) {
+        if (this.popping) {
+            // Pop animation
+            this.popScale += 0.2;
+            this.graphics.clear();
+            this.graphics.beginFill(this.color, 1 - (this.popScale - 1) * 2); // Fade out fast
+            this.graphics.drawCircle(this.x, this.y, this.radius * this.popScale);
+            this.graphics.endFill();
+
+            if (this.popScale > 1.5) {
+                this.reset(screenHeight);
+            }
+            return;
+        }
+
+        // 1. Audio Reactivity
+        const targetRadius = this.baseRadius + (bass * 40);
+        this.radius += (targetRadius - this.radius) * 0.1;
+
+        const speedMultiplier = 1 + (high * 4);
+
+        const hueShift = mid * 60;
+        const currentHue = (this.baseColorHue + hueShift) % 360;
+        this.color = parseInt(hsl(currentHue, COLOR_RANGE.sat, COLOR_RANGE.light + (high * 20)).replace('#', ''), 16);
+
+        // 2. Calculate Organic Movement using Simplex Noise
         const nX = this.noise2D(this.xOff, this.xOff);
         const nY = this.noise2D(this.yOff, this.yOff);
 
-        // Map noise to position updates
-        // We want them to generally float UP (-y) but wander left/right
-        this.x += nX * 2;
-        this.y -= Math.abs(nY) * 2 + 0.5; // Always float up
+        this.x += nX * 2 * speedMultiplier;
+        this.y -= (Math.abs(nY) * 2 + 1.0) * speedMultiplier; // Constant upward flow
 
-        // 2. Update Noise Offsets
-        this.xOff += this.inc;
-        this.yOff += this.inc;
+        // 3. Update Noise Offsets
+        this.xOff += this.inc * speedMultiplier;
+        this.yOff += this.inc * speedMultiplier;
 
-        // 3. Wrap / Reset if off screen
-        if (this.y < -this.radius * 2) {
-            this.reset();
-            this.y = this.boundsY + this.radius; // Reset to bottom
+        // 4. Random Pop Chance (Higher with Highs)
+        if (this.y < screenHeight * 0.5 && Math.random() < (0.001 + high * 0.01)) {
+            this.popping = true;
         }
 
-        // 4. Render
+        // 5. Wrap / Reset if off screen
+        if (this.y < -this.radius * 2) {
+            this.reset(screenHeight);
+            this.y = screenHeight + this.radius; // Reset to bottom
+        }
+
+        // 6. Render
         this.graphics.clear();
         this.graphics.beginFill(this.color);
         this.graphics.drawCircle(this.x, this.y, this.radius);

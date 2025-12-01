@@ -16,6 +16,7 @@ export interface AuthSlice {
     addOrganization: (org: Organization) => void;
     setUserProfile: (profile: UserProfile) => void;
     updateBrandKit: (updates: Partial<BrandKit>) => void;
+    initializeAuth: () => void;
 }
 
 export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
@@ -57,4 +58,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
             brandKit: { ...state.userProfile.brandKit, ...updates }
         }
     })),
+    initializeAuth: () => {
+        const storedOrgId = localStorage.getItem('currentOrgId');
+        if (storedOrgId) {
+            set({ currentOrganizationId: storedOrgId });
+        }
+    }
 });

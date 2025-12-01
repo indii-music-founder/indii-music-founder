@@ -89,14 +89,27 @@ export interface CreativeSlice {
     deletePrompt: (id: string) => void;
 }
 
-export const createCreativeSlice: StateCreator<CreativeSlice> = (set) => ({
+export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     generatedHistory: [],
     addToHistory: (item) => {
-        set((state) => ({ generatedHistory: [item, ...state.generatedHistory] }));
-        import('@/services/StorageService').then(({ StorageService }) => {
-            StorageService.saveItem(item)
-                .then(() => console.log("Saved to Firestore"))
-                .catch(e => console.error("Save failed", e));
+        // Access the full store state to get currentOrganizationId
+        // Note: 'get()' here returns the slice state if not typed correctly, but in zustand 'get' usually gives full state if used in a combined store.
+        // However, StateCreator<CreativeSlice> might limit it.
+        // Let's use a dynamic import of the store for safety or assume the item has it.
+        // OR better: use the store instance directly if we can't get it here.
+
+        // Let's try to get it from the store module to be safe and avoid type issues with 'get' in partial slices.
+        import('@/core/store').then(({ useStore }) => {
+            const { currentOrganizationId } = useStore.getState();
+            const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
+
+            set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory] }));
+
+            import('@/services/StorageService').then(({ StorageService }) => {
+                StorageService.saveItem(enrichedItem)
+                    .then(() => console.log("Saved to Firestore"))
+                    .catch(e => console.error("Save failed", e));
+            });
         });
     },
     initializeHistory: async () => {

@@ -173,20 +173,8 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     },
     create_project: async (args: { name: string, type: 'creative' | 'music' | 'marketing' | 'legal' }) => {
         try {
-            const { addProject, setProject, setModule, currentOrganizationId } = useStore.getState();
-            const newId = `proj-${Date.now()}`;
-            const newProject = {
-                id: newId,
-                name: args.name,
-                type: args.type || 'creative',
-                date: Date.now(),
-                orgId: currentOrganizationId || 'org-default'
-            };
-
-            addProject(newProject);
-            setProject(newId);
-            setModule(newProject.type);
-
+            const { createNewProject } = useStore.getState();
+            await createNewProject(args.name, args.type || 'creative');
             return `Successfully created project "${args.name}" (${args.type}) and switched to it.`;
         } catch (e: any) {
             return `Failed to create project: ${e.message}`;

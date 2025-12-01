@@ -14,7 +14,17 @@ export abstract class BaseAgent implements SpecializedAgent {
     async execute(task: string, context?: any): Promise<AgentResponse> {
         console.log(`[${this.name}] Received task: ${task}`);
 
-        const contextStr = context ? `\nCONTEXT:\n${JSON.stringify(context, null, 2)}` : '';
+        // Dynamically import store to avoid circular deps if any
+        const { useStore } = await import('@/core/store');
+        const { currentOrganizationId, currentProjectId } = useStore.getState();
+
+        const enrichedContext = {
+            ...context,
+            orgId: currentOrganizationId,
+            projectId: currentProjectId
+        };
+
+        const contextStr = `\nCONTEXT:\n${JSON.stringify(enrichedContext, null, 2)}`;
         const fullPrompt = `${this.systemPrompt}\n${contextStr}\n\nTASK: ${task}`;
 
         try {

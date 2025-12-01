@@ -56,7 +56,7 @@ class AgentService {
     }
 
     private async runAgentLoop(userGoal: string) {
-        const { currentProjectId, projects } = useStore.getState();
+        const { currentProjectId, projects, currentOrganizationId } = useStore.getState();
         const currentProject = projects.find(p => p.id === currentProjectId);
 
         let persona = 'GENERALIST';
@@ -69,6 +69,12 @@ class AgentService {
                 default: persona = 'GENERALIST';
             }
         }
+
+        const orgContext = `
+        ORGANIZATION CONTEXT:
+        - Organization ID: ${currentOrganizationId}
+        - Project ID: ${currentProjectId}
+        `;
 
         // Inject Brand Context
         const { userProfile } = useStore.getState();
@@ -99,7 +105,7 @@ class AgentService {
             * *"[Executor]: Deploying tools to solve this task..."*
         `;
 
-        const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${brandContext}\n${AGENT0_PROTOCOL}\n${BASE_TOOLS}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }\n4. When the task is complete, you MUST use "final_response" to finish.`;
+        const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${orgContext}\n${brandContext}\n${AGENT0_PROTOCOL}\n${BASE_TOOLS}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }\n4. When the task is complete, you MUST use "final_response" to finish.`;
 
         let iterations = 0;
         let currentInput = userGoal;

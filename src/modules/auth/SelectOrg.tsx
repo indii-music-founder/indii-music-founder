@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function SelectOrg() {
     console.log('SelectOrg: Component Mounting');
-    const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule } = useStore();
+    const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
     console.log('SelectOrg: State loaded', { organizations, currentOrganizationId });
 
     if (!organizations) {
@@ -16,21 +16,47 @@ export default function SelectOrg() {
     const [isCreating, setIsCreating] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
 
-    const handleSelect = (orgId: string) => {
+    const handleSelect = async (orgId: string) => {
+        // 1. Update LocalStorage (for Services)
+        const { OrganizationService } = await import('@/services/OrganizationService');
+        await OrganizationService.switchOrganization(orgId);
+
+        // 2. Update Store
         setOrganization(orgId);
+
+        // 3. Reload History for new Org
+        await initializeHistory();
+        await useStore.getState().loadProjects();
+
+        // 4. Navigate
         setModule('dashboard');
     };
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!newOrgName.trim()) return;
+
+        // 1. Create Org in Backend
+        const { OrganizationService } = await import('@/services/OrganizationService');
+        const newOrgId = await OrganizationService.createOrganization(newOrgName);
+
         const newOrg = {
-            id: `org-${Date.now()}`,
+            id: newOrgId,
             name: newOrgName,
             plan: 'free' as const,
-            members: ['me']
+            members: ['me'] // This should ideally come from the created org data
         };
+
+        // 2. Update Store
         addOrganization(newOrg);
+
+        // 3. Switch Context
+        await OrganizationService.switchOrganization(newOrg.id);
         setOrganization(newOrg.id);
+
+        // 4. Reload History (will be empty for new org, but good practice)
+        await initializeHistory();
+        await useStore.getState().loadProjects();
+
         setModule('dashboard');
     };
 

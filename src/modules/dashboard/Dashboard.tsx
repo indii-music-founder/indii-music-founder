@@ -21,20 +21,12 @@ export default function Dashboard() {
     const [newProjectName, setNewProjectName] = React.useState('');
     const [newProjectType, setNewProjectType] = React.useState<'creative' | 'music' | 'marketing' | 'legal'>('creative');
 
-    const handleCreateProject = () => {
+    const handleCreateProject = async () => {
         if (!newProjectName.trim()) return;
-        const newId = `proj-${Date.now()}`;
 
-        addProject({
-            id: newId,
-            name: newProjectName,
-            type: newProjectType,
-            date: Date.now(),
-            orgId: currentOrganizationId || 'org-default'
-        });
+        const { createNewProject } = useStore.getState();
+        await createNewProject(newProjectName, newProjectType);
 
-        setProject(newId);
-        setModule(newProjectType);
         setShowNewProjectModal(false);
     };
 
