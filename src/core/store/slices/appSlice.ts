@@ -9,14 +9,14 @@ export interface Project {
 }
 
 export interface AppSlice {
-    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org';
+    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge';
     currentProjectId: string;
     projects: Project[];
     setModule: (module: AppSlice['currentModule']) => void;
     setProject: (id: string) => void;
     addProject: (project: Project) => void;
     loadProjects: () => Promise<void>;
-    createNewProject: (name: string, type: Project['type']) => Promise<string>;
+    createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
     pendingPrompt: string | null;
     setPendingPrompt: (prompt: string | null) => void;
 }
@@ -37,9 +37,9 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             set({ projects });
         }
     },
-    createNewProject: async (name, type) => {
+    createNewProject: async (name, type, orgId) => {
         const { ProjectService } = await import('@/services/ProjectService');
-        const newProject = await ProjectService.createProject(name, type);
+        const newProject = await ProjectService.createProject(name, type, orgId);
         set((state) => ({
             projects: [newProject, ...state.projects],
             currentProjectId: newProject.id,

@@ -1,12 +1,12 @@
-# Rndr-AI Improvement Roadmap
+# indiiOS Improvement Roadmap
 
-This document tracks the implementation of improvements identified in the Gold Master v7.6 review.
+This document tracks the implementation of technical improvements and architectural upgrades.
 
 ## Phase 1: Architecture & Foundation
 
-- [ ] **Event Bus**: Implement a central Pub/Sub system to decouple modules (`events.ts`).
-- [ ] **State Management**: Refactor `state.ts` to control mutations and emit events on change.
-- [ ] **Robust Initialization**: Replace `DOMContentLoaded` chains with Event Bus "App Ready" signals.
+- [x] **State Management**: Refactored to Zustand with modular slices (`authSlice`, `appSlice`, `creativeSlice`).
+- [x] **Robust Initialization**: Implemented `initializeAuth` and `loadProjects` in `App.tsx` for reliable startup.
+- [x] **Multi-Tenancy**: Implemented Organization/Project hierarchy and context switching.
 
 ## Phase 2: User Experience (Feedback Loop)
 
@@ -15,8 +15,8 @@ This document tracks the implementation of improvements identified in the Gold M
 
 ## Phase 3: Data Integrity & Safety
 
-- [ ] **ZIP Export**: Add `JSZip` and implement full project export (assets + JSON) in `dashboard.ts`.
-- [ ] **Database Vacuum**: Implement Garbage Collection for orphaned IndexedDB blobs in `db.ts`.
+- [ ] **ZIP Export**: Add `JSZip` and implement full project export (assets + JSON).
+- [ ] **Database Vacuum**: Implement Garbage Collection for orphaned Firestore records.
 
 ## Phase 4: AI Hardening
 
@@ -26,4 +26,10 @@ This document tracks the implementation of improvements identified in the Gold M
 
 ## Phase 5: UI Polish
 
-- [ ] **Mobile Density**: Refactor "Studio Mode" tabs to use Icons-only layout on mobile devices.
+- [x] **Mobile Density**: Refactored "Studio Mode" tabs and Navbar for mobile responsiveness.
+- [x] **Landing Page**: Implemented "Liquid Orbs" and "Data Vault" visuals.
+
+## Phase 6: Stability & Scale (Current Focus)
+
+- [ ] **Stress Testing**: Execute the [Stress Test Plan](./STRESS_TEST_PLAN.md).
+- [ ] **E2E Testing**: Implement Playwright flows for critical paths.

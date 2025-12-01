@@ -1,13 +1,15 @@
 import React from 'react';
 import { useStore, AppSlice } from '@/core/store';
-import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera } from 'lucide-react';
+import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera, ArrowUpRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
+import { auth } from '@/services/firebase';
 
 
 export default function Dashboard() {
     const { setModule, setProject, currentOrganizationId, projects, addProject } = useStore();
+    console.log("Dashboard Render. Current User:", auth.currentUser?.uid, "Is Anonymous:", auth.currentUser?.isAnonymous);
 
     const filteredProjects = projects.filter(p => p.orgId === currentOrganizationId);
 
@@ -20,14 +22,21 @@ export default function Dashboard() {
     const [showBrandKit, setShowBrandKit] = React.useState(false);
     const [newProjectName, setNewProjectName] = React.useState('');
     const [newProjectType, setNewProjectType] = React.useState<'creative' | 'music' | 'marketing' | 'legal'>('creative');
+    const [error, setError] = React.useState<string | null>(null);
 
     const handleCreateProject = async () => {
         if (!newProjectName.trim()) return;
+        setError(null);
 
-        const { createNewProject } = useStore.getState();
-        await createNewProject(newProjectName, newProjectType);
-
-        setShowNewProjectModal(false);
+        try {
+            const { createNewProject } = useStore.getState();
+            await createNewProject(newProjectName, newProjectType, currentOrganizationId);
+            setShowNewProjectModal(false);
+            setNewProjectName(''); // Reset name on success
+        } catch (e: any) {
+            console.error("Project creation failed:", e);
+            setError(e.message || "Failed to create project");
+        }
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +99,12 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="flex gap-3">
+                        <button
+                            onClick={() => auth.signOut()}
+                            className="px-4 py-3 bg-red-500/10 text-red-500 border border-red-500/50 rounded-full font-bold hover:bg-red-500/20 transition-all"
+                        >
+                            Sign Out
+                        </button>
                         <button
                             onClick={() => setShowBrandKit(true)}
                             className="px-6 py-3 bg-neon-purple/10 text-neon-purple border border-neon-purple/50 rounded-full font-bold hover:bg-neon-purple/20 hover:shadow-[0_0_15px_rgba(176,38,255,0.3)] transition-all flex items-center gap-2"
@@ -219,6 +234,11 @@ export default function Dashboard() {
                         className="glass-panel rounded-2xl p-6 w-full max-w-md shadow-2xl"
                     >
                         <h2 className="text-2xl font-bold text-white mb-6">Create New Project</h2>
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
+                                {error}
+                            </div>
+                        )}
 
                         <div className="space-y-4">
                             <div>
@@ -274,21 +294,4 @@ export default function Dashboard() {
     );
 }
 
-function ArrowUpRight({ size }: { size: number }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M7 17L17 7" />
-            <path d="M7 7h10v10" />
-        </svg>
-    );
-}
+

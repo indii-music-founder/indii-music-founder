@@ -134,6 +134,13 @@ export class GeminiRetrievalService {
     }
 
     /**
+     * Lists documents in a corpus.
+     */
+    async listDocuments(corpusName: string): Promise<{ documents: Document[] }> {
+        return this.fetch(`${corpusName}/documents`);
+    }
+
+    /**
      * Answers a question using the AQA (Attributed Question Answering) model.
      */
     async query(corpusName: string, userQuery: string) {

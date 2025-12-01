@@ -18,8 +18,7 @@ export const ProjectService = {
         }
     },
 
-    async createProject(name: string, type: Project['type']): Promise<Project> {
-        const orgId = OrganizationService.getCurrentOrgId();
+    async createProject(name: string, type: Project['type'], orgId: string): Promise<Project> {
         if (!orgId) throw new Error("No organization selected");
 
         const newProject: Omit<Project, 'id'> = {

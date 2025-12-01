@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
-import { Palette, Scale, Music, Megaphone, Search, Settings, Layout, Network, Film } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Search, Settings, Layout, Network, Film, Book } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule } = useStore();
@@ -13,6 +13,7 @@ export default function Sidebar() {
         { id: 'workflow', icon: Network, label: 'Workflow' },
         { id: 'marketing', icon: Megaphone, label: 'Marketing' },
         { id: 'legal', icon: Scale, label: 'Legal' },
+        { id: 'knowledge', icon: Book, label: 'Knowledge' },
     ];
 
     return (

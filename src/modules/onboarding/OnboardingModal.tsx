@@ -223,7 +223,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 </div>
 
                 {/* Right Panel: Status */}
-                <div className="w-80 bg-[#111] p-6 overflow-y-auto">
+                <div className="hidden md:block w-80 bg-[#111] p-6 overflow-y-auto">
                     <h3 className="text-white font-bold mb-6">Profile Status</h3>
 
                     {/* Identity Progress */}

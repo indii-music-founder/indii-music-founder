@@ -2,28 +2,71 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# indiiOS: The AI-Native Creative Studio
 
-This contains everything you need to run your app locally.
+indiiOS is a comprehensive, multi-tenant creative platform powered by a multi-agent AI system. It unifies image generation, video production, music synthesis, and campaign management into a single, intelligent workspace.
 
-## Features
+## 🚀 Live Demo
 
-- **Creative Studio**: Infinite canvas for image generation, editing, and product visualization.
-- **Video Studio**: AI-powered video production workflow (Idea -> Brief -> Review).
-- **Music Studio**: Audio analysis and generation tools.
-- **Workflow Lab**: Node-based automation editor for chaining AI tasks.
-- **Marketing Dashboard**: Campaign management and asset organization.
-- **Legal Dashboard**: Contract review and compliance tools.
+- **Landing Page:** [https://indiios-v-1-1.web.app](https://indiios-v-1-1.web.app)
+- **Studio App:** [https://indiios-studio.web.app](https://indiios-studio.web.app)
 
-View your app in AI Studio: https://ai.studio/apps/drive/18pEkF91MXcj3e5e_NCJi1p1Wia36Tmxi
+## ✨ Key Features
 
-## Run Locally
+### 🏢 Multi-Tenancy & Collaboration
 
-**Prerequisites:**  Node.js
+- **Organization Support:** Create and manage multiple organizations (workspaces).
+- **Project Isolation:** Data (Assets, History, Context) is strictly scoped to the active Organization and Project.
+- **Cloud Persistence:** All data is securely stored and synced via Firebase Firestore.
 
+### 🤖 The Multi-Agent System ("Hub-and-Spoke")
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **indii (Agent Zero):** The Generalist Manager that triages requests and orchestrates workflows.
+- **Specialist Agents:**
+  - **LegalAgent:** Contract review, rights management, and compliance.
+  - **MarketingAgent:** Campaign strategy, copywriting, and brand alignment.
+  - **MusicAgent:** Audio synthesis theory and composition.
+- **Context Awareness:** Agents are aware of your current Organization, Project, and Brand Kit.
+
+### 🎨 Creative Suites
+
+- **Creative Studio:** Infinite canvas for image generation, editing, and product visualization ("Showroom").
+- **Video Studio:** AI-powered video production workflow (Idea -> Brief -> Review) with "Director's Cut" QA.
+- **Music Studio:** Audio analysis and generation tools.
+- **Workflow Lab:** Node-based automation editor for chaining AI tasks.
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React 19, Vite, TailwindCSS, Framer Motion, React Three Fiber, PixiJS v8.
+- **Backend:** Firebase (Hosting, Functions, Firestore, Storage).
+- **AI Core:** Google Gemini 3.0 Pro (High Thinking), Veo 3.1, Imagen 3.
+
+## 💻 Run Locally
+
+**Prerequisites:** Node.js 20+, Firebase CLI.
+
+1. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+2. **Environment Setup:**
+   Create a `.env.local` file with your keys:
+
+   ```env
+   VITE_GEMINI_API_KEY=your_key_here
+   VITE_FIREBASE_CONFIG=your_firebase_config_json
+   ```
+
+3. **Run the Development Server:**
+
+   ```bash
+   npm run dev
+   ```
+
+4. **Deploy:**
+
+   ```bash
+   firebase deploy
+   ```
