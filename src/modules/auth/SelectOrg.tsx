@@ -4,7 +4,9 @@ import { Building2, Plus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SelectOrg() {
+    console.log('SelectOrg: Component Mounting');
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule } = useStore();
+    console.log('SelectOrg: State loaded', { organizations, currentOrganizationId });
     const [isCreating, setIsCreating] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
 

@@ -1,9 +1,9 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { Icosahedron, Octahedron, Trail } from '@react-three/drei';
+import { Trail, TorusKnot } from '@react-three/drei';
 
 const GlitchMaterial = {
     uniforms: {
@@ -44,25 +44,60 @@ const GlitchMaterial = {
   `
 };
 
+function OrbitalPath() {
+    const orbiterRef = useRef<THREE.Mesh>(null!);
+
+    // Create a complex 3D curve "back to front, around and over"
+    const curve = useMemo(() => {
+        return new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0, -4),   // Back
+            new THREE.Vector3(3, 2, 0),    // Right Up
+            new THREE.Vector3(0, 4, 2),    // Top Front
+            new THREE.Vector3(-3, 0, 0),   // Left
+            new THREE.Vector3(0, -3, -2),  // Bottom Back
+            new THREE.Vector3(4, 0, 2),    // Right Front
+            new THREE.Vector3(0, 0, -4)    // Back (Loop)
+        ], true, 'catmullrom', 0.5);
+    }, []);
+
+    useFrame((state) => {
+        const t = (state.clock.getElapsedTime() * 0.2) % 1; // 5 seconds per loop
+        const point = curve.getPointAt(t);
+        const tangent = curve.getTangentAt(t);
+
+        orbiterRef.current.position.copy(point);
+        orbiterRef.current.lookAt(point.clone().add(tangent));
+    });
+
+    return (
+        <group>
+            {/* Visualize Path (Optional, faint) */}
+            <line>
+                <bufferGeometry setFromPoints={curve.getPoints(100)} />
+                <lineBasicMaterial color="#444" transparent opacity={0.2} />
+            </line>
+
+            {/* Orbiter with Trail */}
+            <Trail width={0.4} length={12} color={new THREE.Color("#00f3ff")} attenuation={(t) => t * t}>
+                <mesh ref={orbiterRef}>
+                    <sphereGeometry args={[0.15, 16, 16]} />
+                    <meshBasicMaterial color="#00f3ff" toneMapped={false} />
+                </mesh>
+            </Trail>
+        </group>
+    );
+}
+
 function AgentEntities() {
-    const architectRef = useRef<THREE.Mesh>(null!);
-    const builderRef = useRef<THREE.Mesh>(null!);
+    const knotRef = useRef<THREE.Mesh>(null!);
     const materialRef = useRef<THREE.ShaderMaterial>(null!);
 
     useFrame((state) => {
         const time = state.clock.getElapsedTime();
 
-        // Architect: Slow, structured orbit
-        architectRef.current.position.x = Math.sin(time * 0.5) * 2;
-        architectRef.current.position.y = Math.cos(time * 0.5) * 1;
-        architectRef.current.rotation.x = time * 0.2;
-        architectRef.current.rotation.y = time * 0.2;
-
-        // Builder: Fast, chaotic orbit around Architect
-        builderRef.current.position.x = architectRef.current.position.x + Math.sin(time * 3) * 1.5;
-        builderRef.current.position.y = architectRef.current.position.y + Math.cos(time * 3) * 1.5;
-        builderRef.current.position.z = Math.sin(time * 4) * 1;
-        builderRef.current.rotation.z = time * 5;
+        // Slow, majestic rotation for the central knot
+        knotRef.current.rotation.x = time * 0.1;
+        knotRef.current.rotation.y = time * 0.15;
 
         if (materialRef.current) {
             materialRef.current.uniforms.uTime.value = time;
@@ -71,28 +106,24 @@ function AgentEntities() {
 
     return (
         <>
-            {/* The Architect (Curriculum Agent) */}
-            <Icosahedron ref={architectRef} args={[1, 0]} position={[0, 0, 0]}>
+            {/* The Architect (Central Knot) */}
+            <TorusKnot ref={knotRef} args={[1.5, 0.4, 128, 32]} position={[0, 0, 0]}>
                 <shaderMaterial
                     ref={materialRef}
                     args={[GlitchMaterial]}
                     wireframe
                 />
-            </Icosahedron>
+            </TorusKnot>
 
-            {/* The Builder (Executor Agent) */}
-            <Trail width={0.2} length={8} color={new THREE.Color("#00f3ff")} attenuation={(t) => t * t}>
-                <Octahedron ref={builderRef} args={[0.3, 0]} position={[2, 0, 0]}>
-                    <meshStandardMaterial color="#00f3ff" emissive="#00f3ff" emissiveIntensity={2} />
-                </Octahedron>
-            </Trail>
+            {/* The Builder (Orbital Flow) */}
+            <OrbitalPath />
         </>
     );
 }
 
 export default function AgentZero() {
     return (
-        <group position={[0, -20, 0]}>
+        <group position={[0, -32, 0]}>
             <ambientLight intensity={0.2} />
             <pointLight position={[10, 10, 10]} intensity={1} />
             <AgentEntities />

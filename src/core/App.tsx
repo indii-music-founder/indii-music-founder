@@ -17,6 +17,7 @@ import { ToastProvider } from './context/ToastContext';
 
 export default function App() {
     const { currentModule, initializeHistory } = useStore();
+    console.log('App: Render, currentModule:', currentModule);
 
     useEffect(() => {
         initializeHistory();

@@ -1,23 +1,26 @@
 'use client';
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { Sphere } from '@react-three/drei';
+import { Sphere, Instance, Instances } from '@react-three/drei';
 
 const NeuralNetworkMaterial = {
     uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color('#b026ff') },
-        uColor2: { value: new THREE.Color('#00f3ff') }
+        uColor2: { value: new THREE.Color('#00f3ff') },
+        uMouse: { value: new THREE.Vector3(0, 0, 0) },
+        uIntensity: { value: 1.0 }
     },
     vertexShader: `
     varying vec2 vUv;
     varying vec3 vNormal;
     varying vec3 vPos;
     uniform float uTime;
+    uniform vec3 uMouse;
     
-    // Simplex noise function (simplified)
+    // Simplex noise
     vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
     vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
     vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
@@ -74,9 +77,17 @@ const NeuralNetworkMaterial = {
       vNormal = normal;
       vPos = position;
       
-      // Pulse effect
-      float noise = snoise(position * 2.0 + uTime * 0.5);
-      vec3 pos = position + normal * noise * 0.2;
+      // Dynamic noise based on time
+      float noise = snoise(position * 1.5 + uTime * 0.3);
+      float noise2 = snoise(position * 3.0 - uTime * 0.5);
+      
+      // Mouse interaction displacement
+      float dist = distance(position, uMouse);
+      float mouseInfluence = smoothstep(2.0, 0.0, dist) * 0.2;
+      
+      // Combine displacements
+      float displacement = (noise * 0.3 + noise2 * 0.1) + mouseInfluence;
+      vec3 pos = position + normal * displacement;
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
@@ -88,22 +99,29 @@ const NeuralNetworkMaterial = {
     uniform float uTime;
     uniform vec3 uColor;
     uniform vec3 uColor2;
+    uniform float uIntensity;
     
     void main() {
-      // Fresnel effect
+      // Fresnel
       vec3 viewDirection = normalize(cameraPosition - vPos);
-      float fresnel = pow(1.0 - dot(viewDirection, vNormal), 3.0);
+      float fresnel = pow(1.0 - dot(viewDirection, vNormal), 2.5);
       
-      // Grid/Network pattern
-      float grid = step(0.95, fract(vUv.x * 20.0)) + step(0.95, fract(vUv.y * 20.0));
+      // Dynamic grid pattern
+      float gridX = step(0.97, fract(vUv.x * 30.0 + sin(uTime * 0.5 + vUv.y * 10.0) * 0.1));
+      float gridY = step(0.97, fract(vUv.y * 30.0 + cos(uTime * 0.3 + vUv.x * 10.0) * 0.1));
+      float grid = max(gridX, gridY);
       
-      // Pulse color
-      vec3 color = mix(uColor, uColor2, sin(uTime + vPos.y) * 0.5 + 0.5);
+      // Color mixing
+      vec3 color = mix(uColor, uColor2, sin(uTime + vPos.y + vPos.x) * 0.5 + 0.5);
       
-      // Combine
-      float alpha = fresnel + grid * 0.5;
+      // Add "data flow" pulses
+      float pulse = step(0.9, sin(vUv.y * 50.0 - uTime * 5.0));
+      color += pulse * vec3(0.5);
       
-      gl_FragColor = vec4(color + vec3(grid), alpha * 0.8);
+      // Final composition
+      float alpha = (fresnel * 0.6 + grid * 0.8 + pulse * 0.2) * uIntensity;
+      
+      gl_FragColor = vec4(color + vec3(grid), alpha);
     }
   `
 };
@@ -111,16 +129,30 @@ const NeuralNetworkMaterial = {
 function NeuralSphere() {
     const mesh = useRef<THREE.Mesh>(null!);
     const materialRef = useRef<THREE.ShaderMaterial>(null!);
+    const { mouse, viewport } = useThree();
 
     useFrame((state) => {
         if (materialRef.current) {
             materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
+
+            // Map mouse to 3D space (approximate)
+            const mouseX = (mouse.x * viewport.width) / 2;
+            const mouseY = (mouse.y * viewport.height) / 2;
+
+            // Smoothly interpolate mouse uniform
+            materialRef.current.uniforms.uMouse.value.lerp(
+                new THREE.Vector3(mouseX, mouseY, 2),
+                0.1
+            );
         }
-        mesh.current.rotation.y = state.clock.getElapsedTime() * 0.1;
+
+        // Base rotation
+        mesh.current.rotation.y = state.clock.getElapsedTime() * 0.15;
+        mesh.current.rotation.z = Math.sin(state.clock.getElapsedTime() * 0.2) * 0.1;
     });
 
     return (
-        <Sphere ref={mesh} args={[2, 64, 64]}>
+        <Sphere ref={mesh} args={[2, 128, 128]}>
             <shaderMaterial
                 ref={materialRef}
                 args={[NeuralNetworkMaterial]}
@@ -133,23 +165,77 @@ function NeuralSphere() {
     );
 }
 
+function NodeParticles() {
+    const count = 200;
+    const mesh = useRef<THREE.InstancedMesh>(null!);
+
+    // Generate random positions on a sphere surface
+    const particles = useMemo(() => {
+        const temp = [];
+        for (let i = 0; i < count; i++) {
+            const phi = Math.acos(-1 + (2 * i) / count);
+            const theta = Math.sqrt(count * Math.PI) * phi;
+
+            const r = 2.2; // Slightly larger than the main sphere
+            const x = r * Math.cos(theta) * Math.sin(phi);
+            const y = r * Math.sin(theta) * Math.sin(phi);
+            const z = r * Math.cos(phi);
+
+            temp.push({ position: [x, y, z], scale: Math.random() * 0.5 + 0.5 });
+        }
+        return temp;
+    }, []);
+
+    useFrame((state) => {
+        const time = state.clock.getElapsedTime();
+        mesh.current.rotation.y = -time * 0.05; // Counter-rotate
+
+        // Pulse scales
+        for (let i = 0; i < count; i++) {
+            const scale = particles[i].scale * (1 + Math.sin(time * 2 + i) * 0.3);
+            const dummy = new THREE.Object3D();
+            dummy.position.set(
+                particles[i].position[0],
+                particles[i].position[1],
+                particles[i].position[2]
+            );
+            dummy.scale.setScalar(scale);
+            dummy.updateMatrix();
+            mesh.current.setMatrixAt(i, dummy.matrix);
+        }
+        mesh.current.instanceMatrix.needsUpdate = true;
+    });
+
+    return (
+        <Instances range={count} ref={mesh}>
+            <sphereGeometry args={[0.03, 16, 16]} />
+            <meshBasicMaterial color="#00f3ff" transparent opacity={0.6} />
+            {particles.map((data, i) => (
+                <Instance key={i} position={data.position as [number, number, number]} />
+            ))}
+        </Instances>
+    );
+}
+
 export default function Hero() {
     return (
         <group position={[0, 0, 0]}>
             <ambientLight intensity={0.5} />
             <NeuralSphere />
-            {/* Floating particles for depth */}
+            <NodeParticles />
+
+            {/* Background floating particles */}
             <points>
                 <bufferGeometry>
                     <bufferAttribute
                         attach="attributes-position"
-                        count={100}
-                        array={new Float32Array(300).map(() => (Math.random() - 0.5) * 10)}
+                        count={300}
+                        array={new Float32Array(900).map(() => (Math.random() - 0.5) * 15)}
                         itemSize={3}
-                        args={[new Float32Array(300).map(() => (Math.random() - 0.5) * 10), 3]}
+                        args={[new Float32Array(900).map(() => (Math.random() - 0.5) * 15), 3]}
                     />
                 </bufferGeometry>
-                <pointsMaterial size={0.05} color="#ffffff" transparent opacity={0.5} />
+                <pointsMaterial size={0.03} color="#ffffff" transparent opacity={0.3} sizeAttenuation={true} />
             </points>
         </group>
     );

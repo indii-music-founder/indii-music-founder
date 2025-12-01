@@ -88,7 +88,7 @@ export const MUSIC_TOOLS = {
                 model: 'gemini-3-pro-preview',
                 contents: { parts: [{ text: prompt }] }
             });
-            return res.text || "Synesthetic visualization of audio frequencies.";
+            return res.text() || "Synesthetic visualization of audio frequencies.";
         } catch (e) {
             return "Synesthetic visualization of audio frequencies (AI Error).";
         }
@@ -134,8 +134,7 @@ export const MUSIC_TOOLS = {
                 contents: { parts: [{ text: prompt }] }
             });
 
-            // Extract JSON from response
-            const text = res.text || "{}";
+            const text = res.text() || "{}";
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             return jsonMatch ? jsonMatch[0] : JSON.stringify({
                 title: "AI Generated Video",

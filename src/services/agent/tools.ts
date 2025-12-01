@@ -222,7 +222,6 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             // A better approach is to add a search method to the store or a service wrapper.
 
             // Import dynamically to avoid circular deps
-            const { runAgenticWorkflow } = await import('../../services/rag/ragService');
             const { useStore } = await import('@/core/store');
 
             // We need to mock or provide the required arguments for runAgenticWorkflow

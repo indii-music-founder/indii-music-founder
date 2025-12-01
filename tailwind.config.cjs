@@ -12,15 +12,20 @@ module.exports = {
             },
             colors: {
                 brand: {
-                    DEFAULT: '#9333ea', // purple-600
-                    dark: '#7e22ce', // purple-700
-                    light: '#a855f7', // purple-500
-                    glow: '#d8b4fe', // purple-300
+                    DEFAULT: '#b026ff', // neon-purple
+                    dark: '#7e22ce',
+                    light: '#d8b4fe',
+                    glow: '#d8b4fe',
+                },
+                neon: {
+                    purple: '#b026ff',
+                    blue: '#00f3ff',
+                    green: '#00ff9d',
                 },
                 surface: {
-                    DEFAULT: '#0f0f0f', // Main bg
+                    DEFAULT: '#0a0a0a', // Obsidian
                     panel: '#1a1a1a', // Sidebar/Navbar
-                    card: '#222222',
+                    card: '#1a1a1a', // Card bg
                     border: '#27272a', // gray-800
                 }
             }

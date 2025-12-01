@@ -70,22 +70,60 @@ export default function MusicStudio() {
         }
     };
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            handleAnalysis(file);
+        }
+    };
+
     // Audio Context Ref
     const audioContextRef = useRef<AudioContext | null>(null);
     const essentiaRef = useRef<any>(null);
 
-    // Initialize Essentia
+    const [isEngineReady, setIsEngineReady] = useState(false);
+
+    // Initialize Essentia (Real WASM)
     useEffect(() => {
         const loadEssentia = async () => {
             try {
-                // Dynamic imports to avoid SSR issues and ensure WASM loads correctly
-                const { EssentiaWASM } = await import('essentia.js/dist/essentia-wasm.web.js');
-                const { Essentia } = await import('essentia.js');
+                // Wait for globals to be available (in case of async script loading)
+                // @ts-ignore
+                if (!window.EssentiaWASM || !window.Essentia) {
+                    console.log("Waiting for Essentia globals...");
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
 
-                essentiaRef.current = new Essentia(EssentiaWASM);
+                // @ts-ignore
+                const EssentiaWASM = window.EssentiaWASM;
+                // @ts-ignore
+                const Essentia = window.Essentia;
+
+                if (!EssentiaWASM || !Essentia) {
+                    throw new Error("Essentia globals not found");
+                }
+
+                console.log("Initializing Essentia WASM...");
+                // Initialize the WASM backend
+                const essentiaWasmInstance = await EssentiaWASM({
+                    locateFile: (path: string, prefix: string) => {
+                        if (path.endsWith('.wasm')) {
+                            return '/essentia-wasm.web.wasm';
+                        }
+                        return prefix + path;
+                    }
+                });
+
+                console.log("WASM Instance created, creating Essentia core...");
+                essentiaRef.current = new Essentia(essentiaWasmInstance);
                 console.log("Essentia.js loaded successfully");
+                setIsEngineReady(true);
             } catch (error) {
                 console.error("Failed to load Essentia.js:", error);
+                toast.error("Failed to load audio analysis engine. Please refresh.");
             }
         };
         loadEssentia();
@@ -113,9 +151,6 @@ export default function MusicStudio() {
         // 1. Rhythm (BPM & Danceability)
         const rhythm = essentia.RhythmExtractor2013(vectorSignal);
         const bpm = rhythm.bpm;
-        // Danceability is usually a separate model in Essentia, but we can infer it from beat confidence + energy
-        // Or use a simpler heuristic if the specific model isn't in the standard WASM build.
-        // For now, we'll use a heuristic based on beat confidence and energy.
 
         // 2. Key & Scale
         const keyExtractor = essentia.KeyExtractor(vectorSignal);
@@ -129,16 +164,20 @@ export default function MusicStudio() {
         // 4. Timbre (Spectral Centroid / Brightness)
         // We need to frame the signal for spectral analysis
         // Taking a representative segment (e.g., middle 10 seconds)
-        const frameSize = 1024;
-        const hopSize = 512;
         const midPoint = Math.floor(channelData.length / 2);
-        const segment = channelData.slice(midPoint, midPoint + 44100 * 5); // 5 seconds
+        const segmentLength = Math.min(44100 * 5, channelData.length - midPoint);
+        const segment = channelData.slice(midPoint, midPoint + segmentLength);
         const segmentVector = essentia.arrayToVector(segment);
 
         // Simple spectral centroid average over the segment
         const windowFrame = essentia.Windowing(segmentVector).frame;
-        const spectrum = essentia.Spectrum(windowFrame).spectrum;
-        const centroid = essentia.SpectralCentroidTime(windowFrame).centroid;
+        const spectrumOutput = essentia.Spectrum(windowFrame);
+        // Handle different Essentia versions return types
+        const spectrum = spectrumOutput.spectrum || spectrumOutput;
+
+        const centroidOutput = essentia.SpectralCentroidTime(windowFrame);
+        const centroid = centroidOutput.centroid;
+
         const brightness = Math.min(centroid / 5000, 1); // Normalize roughly (0-5kHz)
 
         return {
@@ -146,17 +185,17 @@ export default function MusicStudio() {
             bpm: Math.round(bpm),
             key: `${key} ${scale}`,
             energy: energy,
-            danceability: (rhythm.confidence * energy).toFixed(2), // Heuristic
+            danceability: (rhythm.confidence * energy).toFixed(2),
             brightness: brightness
         };
     };
 
     const handleAnalysis = async (file: File) => {
+        if (!file) return;
         setIsAnalyzing(true);
         setAnalysisData(null);
 
         try {
-            // 1. Perform Deep Analysis with Essentia
             const metrics = await analyzeAudioFile(file);
             console.log("Essentia Metrics:", metrics);
 
@@ -455,266 +494,342 @@ export default function MusicStudio() {
         }
     };
 
+    const runDiagnostics = async () => {
+        const essentia = essentiaRef.current;
+        if (!essentia) {
+            toast.error("Essentia not ready.");
+            return;
+        }
+
+        toast.info("Running System Diagnostics (10 iterations)...");
+        console.log("--- STARTING ESSENTIA DIAGNOSTICS ---");
+
+        try {
+            // Generate synthetic signal (Sine wave @ 440Hz)
+            const sampleRate = 44100;
+            const duration = 5; // 5 seconds
+            const length = sampleRate * duration;
+            const signal = new Float32Array(length);
+            for (let i = 0; i < length; i++) {
+                signal[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate);
+            }
+
+            for (let i = 1; i <= 10; i++) {
+                const start = performance.now();
+
+                // Memory management: Create and delete vector each time to test stability
+                const vector = essentia.arrayToVector(signal);
+
+                essentia.RMS(vector);
+                essentia.RhythmExtractor2013(vector);
+                essentia.KeyExtractor(vector);
+
+                // Clean up if possible (EssentiaJS might handle GC, but explicit delete is safer for WASM)
+                if (vector.delete) vector.delete();
+
+                const time = (performance.now() - start).toFixed(2);
+                console.log(`Diagnostic Run ${i}/10: PASS (${time}ms)`);
+            }
+
+            // toast.dismiss();
+            toast.success("Diagnostics Passed: 10/10 iterations successful.");
+            console.log("--- DIAGNOSTICS COMPLETE ---");
+        } catch (e) {
+            console.error("Diagnostic Failed:", e);
+            toast.error("Diagnostic Failed. Check console.");
+        }
+    };
+
     return (
-        <div className="h-full flex flex-col bg-[#0a0a0a] text-white p-6 overflow-hidden">
-            <header className="flex items-center gap-4 mb-8 flex-shrink-0">
-                <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400">
-                    <Activity size={32} />
+        <div className="h-full flex flex-col bg-[#0f0f0f] text-white overflow-hidden font-sans">
+            {/* Header */}
+            <div className="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-[#0f0f0f]/90 backdrop-blur z-20">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-purple-900/20">
+                        <Music size={16} className="text-white" />
+                    </div>
+                    <div>
+                        <h1 className="font-bold text-sm tracking-wide">Deep Audio Analysis Lab</h1>
+                        <p className="text-[10px] text-gray-500">Essentia-powered feature extraction & Synesthetic Art Generation.</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-3xl font-bold">Deep Audio Analysis Lab</h1>
-                    <p className="text-gray-400">Essentia-powered feature extraction & Synesthetic Art Generation.</p>
-                </div>
-            </header>
-
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-                {/* Main Work Area */}
-                <div className="lg:col-span-2 flex flex-col gap-6 min-h-0">
-                    {/* Upload / Visualizer Zone */}
-                    <div
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        className={`
-                            flex-1 border-2 border-dashed rounded-2xl flex flex-col p-8 transition-all relative overflow-hidden
-                            ${isDragging ? 'border-purple-500 bg-purple-500/10' : 'border-gray-800 bg-gray-900/50'}
-                        `}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={runDiagnostics}
+                        className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs font-mono text-green-400 border border-green-900/30 transition-colors"
                     >
-                        {/* Real-time Visualizer Canvas */}
-                        <canvas
-                            ref={realtimeCanvasRef}
-                            className="absolute inset-0 w-full h-full opacity-40 pointer-events-none"
-                            width={800}
-                            height={600}
-                        />
+                        Run Diagnostics (x10)
+                    </button>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-full border border-gray-700">
+                        <div className={`w-2 h-2 rounded-full ${isEngineReady ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse'}`}></div>
+                        <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                            {isEngineReady ? 'Engine Online' : 'Offline'}
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-                        {selectedFile ? (
-                            <div className="w-full h-full flex flex-col z-10 relative">
-                                {/* Header Info */}
-                                <div className="flex justify-between items-start mb-8">
-                                    <div>
-                                        <h3 className="text-2xl font-bold text-white mb-1">{selectedFile.name}</h3>
-                                        <p className="text-purple-400 font-mono text-sm">
-                                            {analysisData ? `${analysisData.rhythm.bpm} BPM • ${analysisData.tonality.key} • ${analysisData.energy.intensity} Energy` : 'Analyzing...'}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedFile(null)}
-                                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                                    >
-                                        <Upload size={20} className="text-gray-400" />
-                                    </button>
-                                </div>
+            <div className="flex-1 overflow-hidden p-6">
+                <div className="h-full grid grid-cols-[1fr_350px] gap-6 max-w-7xl mx-auto">
+                    {/* Main Workspace */}
+                    <div className="flex flex-col gap-6 overflow-hidden">
+                        {/* Visualizer / Drop Zone */}
+                        <div
+                            className={`flex-1 bg-gray-900/50 rounded-2xl border border-gray-800 relative overflow-hidden group transition-all ${isDragging ? 'border-blue-500 bg-blue-500/10' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileInput}
+                                className="hidden"
+                                accept="audio/*"
+                            />
 
-                                {/* WaveSurfer Container */}
-                                <div className="w-full mb-8 bg-black/20 rounded-xl p-4 border border-white/5 space-y-4">
-                                    <div ref={timelineRef} />
-                                    <div ref={waveformRef} className="w-full" />
-                                    <div ref={spectrogramRef} />
-
-                                    <div className="flex justify-end">
-                                        <button
-                                            onClick={handleAddSegment}
-                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${isAddingSegment ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-purple-500/20 text-purple-400 border border-purple-500/50 hover:bg-purple-500/30'}`}
-                                        >
-                                            {isAddingSegment ? 'Cancel Selection' : 'Add Segment'}
+                            {selectedFile ? (
+                                <div className="absolute inset-0 flex flex-col p-6">
+                                    <div className="flex justify-between items-start mb-6 z-10">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-white mb-1">{selectedFile.name}</h2>
+                                            <div className="flex items-center gap-4 text-xs font-mono text-purple-400">
+                                                {analysisData && (
+                                                    <>
+                                                        <span>{analysisData.rhythm.bpm} BPM</span>
+                                                        <span>•</span>
+                                                        <span>{analysisData.tonality.key}</span>
+                                                        <span>•</span>
+                                                        <span>{analysisData.energy.intensity} Energy</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setAnalysisData(null); }} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                            <Upload size={16} />
                                         </button>
                                     </div>
-                                </div>
 
-                                {/* Controls */}
-                                <div className="flex justify-center items-center gap-6 mb-8">
-                                    <button className="p-3 text-gray-400 hover:text-white transition-colors"><SkipBack size={24} /></button>
-                                    <button
-                                        onClick={togglePlay}
-                                        className="p-6 bg-white text-black rounded-full hover:scale-105 transition-transform shadow-xl shadow-purple-500/20"
-                                    >
-                                        {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
-                                    </button>
-                                    <button className="p-3 text-gray-400 hover:text-white transition-colors"><SkipForward size={24} /></button>
-                                </div>
+                                    {/* Waveform Visualization */}
+                                    <div className="flex-1 relative flex items-center justify-center">
+                                        <div className="absolute inset-0 flex items-center gap-0.5 opacity-50">
+                                            {Array.from({ length: 60 }).map((_, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    className="flex-1 bg-purple-500 rounded-full"
+                                                    initial={{ height: '10%' }}
+                                                    animate={{
+                                                        height: isPlaying ? [
+                                                            `${20 + Math.random() * 80}%`,
+                                                            `${20 + Math.random() * 80}%`
+                                                        ] : '20%'
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.2,
+                                                        repeat: Infinity,
+                                                        repeatType: "reverse",
+                                                        delay: i * 0.01
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
 
-                                {/* Analysis Tabs / Creative Brief */}
-                                {analysisData && (
-                                    <div className="flex-1 bg-black/20 rounded-xl border border-white/5 p-6 overflow-y-auto custom-scrollbar">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Art Department */}
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-2 text-purple-400 font-bold uppercase text-xs tracking-wider">
-                                                    <ImageIcon size={14} /> Art Department
-                                                </div>
-                                                <div className="bg-white/5 p-4 rounded-lg space-y-3">
-                                                    <div>
-                                                        <span className="text-xs text-gray-500 block mb-1">Visual Theme</span>
-                                                        <p className="text-sm text-gray-200">Abstract, {analysisData.timbre.brightness} lighting, {analysisData.timbre.roughness > 0.5 ? 'Gritty' : 'Smooth'} texture.</p>
+                                        {/* Play Button Overlay */}
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }}
+                                            className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform z-20 shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                                        >
+                                            {isPlaying ? <Pause size={24} fill="black" /> : <Play size={24} fill="black" className="ml-1" />}
+                                        </button>
+                                    </div>
+
+                                    {/* Analysis Tabs / Creative Brief */}
+                                    {analysisData && (
+                                        <div className="flex-1 bg-black/20 rounded-xl border border-white/5 p-6 overflow-y-auto custom-scrollbar">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {/* Art Department */}
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center gap-2 text-purple-400 font-bold uppercase text-xs tracking-wider">
+                                                        <ImageIcon size={14} /> Art Department
                                                     </div>
-                                                    <div>
-                                                        <span className="text-xs text-gray-500 block mb-1">Color Palette</span>
-                                                        <div className="flex gap-2 h-6">
-                                                            <div className="flex-1 rounded bg-purple-500/50"></div>
-                                                            <div className="flex-1 rounded bg-blue-500/50"></div>
-                                                            <div className="flex-1 rounded bg-pink-500/50"></div>
+                                                    <div className="bg-white/5 p-4 rounded-lg space-y-3">
+                                                        <div>
+                                                            <span className="text-xs text-gray-500 block mb-1">Visual Theme</span>
+                                                            <p className="text-sm text-gray-200">Abstract, {analysisData.timbre.brightness} lighting, {analysisData.timbre.roughness > 0.5 ? 'Gritty' : 'Smooth'} texture.</p>
                                                         </div>
+                                                        <div>
+                                                            <span className="text-xs text-gray-500 block mb-1">Color Palette</span>
+                                                            <div className="flex gap-2 h-6">
+                                                                <div className="flex-1 rounded bg-purple-500/50"></div>
+                                                                <div className="flex-1 rounded bg-blue-500/50"></div>
+                                                                <div className="flex-1 rounded bg-pink-500/50"></div>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={handleGenerateCoverArt}
+                                                            disabled={isGeneratingArt}
+                                                            className="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {isGeneratingArt ? <Loader2 size={14} className="animate-spin" /> : <Disc size={14} />}
+                                                            Generate Cover Art
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={handleGenerateCoverArt}
-                                                        disabled={isGeneratingArt}
-                                                        className="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                                                    >
-                                                        {isGeneratingArt ? <Loader2 size={14} className="animate-spin" /> : <Disc size={14} />}
-                                                        Generate Cover Art
-                                                    </button>
                                                 </div>
-                                            </div>
 
-
-
-                                            {/* Video Department */}
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-2 text-blue-400 font-bold uppercase text-xs tracking-wider">
-                                                    <Video size={14} /> Video Department
-                                                </div>
-                                                <div className="bg-white/5 p-4 rounded-lg space-y-3">
-                                                    {videoTreatment ? (
-                                                        <div className="space-y-3 animate-in fade-in">
-                                                            <div>
-                                                                <span className="text-xs text-gray-500 block mb-1">Title</span>
-                                                                <p className="text-sm font-bold text-white">{videoTreatment.title}</p>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-xs text-gray-500 block mb-1">Concept</span>
-                                                                <p className="text-sm text-gray-200">{videoTreatment.concept}</p>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-xs text-gray-500 block mb-1">Visual Style</span>
-                                                                <p className="text-xs text-gray-300">{videoTreatment.visual_style}</p>
-                                                            </div>
-                                                            <div className="max-h-32 overflow-y-auto custom-scrollbar bg-black/20 p-2 rounded">
-                                                                <span className="text-xs text-gray-500 block mb-1 sticky top-0 bg-transparent">Scenes</span>
-                                                                <ul className="space-y-2">
-                                                                    {videoTreatment.scenes?.map((scene: any, i: number) => (
-                                                                        <li key={i} className="text-xs text-gray-300 flex gap-2">
-                                                                            <span className="text-blue-400 font-mono flex-shrink-0">{scene.time}</span>
-                                                                            <span>{scene.description}</span>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                            <button
-                                                                onClick={handleGenerateVideo}
-                                                                disabled={isGeneratingVideo}
-                                                                className="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                                                            >
-                                                                {isGeneratingVideo ? <Loader2 size={14} className="animate-spin" /> : <Video size={14} />}
-                                                                Render Final Video
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div>
-                                                                <span className="text-xs text-gray-500 block mb-1">Pacing</span>
-                                                                <p className="text-sm text-gray-200">{analysisData.rhythm.bpm > 120 ? 'Fast-paced cuts' : 'Slow, cinematic flow'} synced to {analysisData.rhythm.bpm} BPM.</p>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-xs text-gray-500 block mb-1">Mood Board</span>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {Object.keys(analysisData.mood_tags).map(tag => (
-                                                                        <span key={tag} className="px-2 py-1 bg-white/10 rounded text-[10px] text-gray-300">{tag}</span>
-                                                                    ))}
+                                                {/* Video Department */}
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center gap-2 text-blue-400 font-bold uppercase text-xs tracking-wider">
+                                                        <Video size={14} /> Video Department
+                                                    </div>
+                                                    <div className="bg-white/5 p-4 rounded-lg space-y-3">
+                                                        {videoTreatment ? (
+                                                            <div className="space-y-3 animate-in fade-in">
+                                                                <div>
+                                                                    <span className="text-xs text-gray-500 block mb-1">Title</span>
+                                                                    <p className="text-sm font-bold text-white">{videoTreatment.title}</p>
                                                                 </div>
+                                                                <div>
+                                                                    <span className="text-xs text-gray-500 block mb-1">Concept</span>
+                                                                    <p className="text-sm text-gray-200">{videoTreatment.concept}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-xs text-gray-500 block mb-1">Visual Style</span>
+                                                                    <p className="text-xs text-gray-300">{videoTreatment.visual_style}</p>
+                                                                </div>
+                                                                <div className="max-h-32 overflow-y-auto custom-scrollbar bg-black/20 p-2 rounded">
+                                                                    <span className="text-xs text-gray-500 block mb-1 sticky top-0 bg-transparent">Scenes</span>
+                                                                    <ul className="space-y-2">
+                                                                        {videoTreatment.scenes?.map((scene: any, i: number) => (
+                                                                            <li key={i} className="text-xs text-gray-300 flex gap-2">
+                                                                                <span className="text-blue-400 font-mono flex-shrink-0">{scene.time}</span>
+                                                                                <span>{scene.description}</span>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                                <button
+                                                                    onClick={handleGenerateVideo}
+                                                                    disabled={isGeneratingVideo}
+                                                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                                                >
+                                                                    {isGeneratingVideo ? <Loader2 size={14} className="animate-spin" /> : <Video size={14} />}
+                                                                    Render Final Video
+                                                                </button>
                                                             </div>
-                                                            <button
-                                                                onClick={handleGenerateTreatment}
-                                                                disabled={isGeneratingVideo}
-                                                                className="w-full py-2 bg-gray-700 hover:bg-gray-600 text-blue-300 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                                                            >
-                                                                {isGeneratingVideo ? <Loader2 size={14} className="animate-spin" /> : <BotMessageSquare size={14} />}
-                                                                Generate Treatment
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                        ) : (
+                                                            <>
+                                                                <div>
+                                                                    <span className="text-xs text-gray-500 block mb-1">Pacing</span>
+                                                                    <p className="text-sm text-gray-200">{analysisData.rhythm.bpm > 120 ? 'Fast-paced cuts' : 'Slow, cinematic flow'} synced to {analysisData.rhythm.bpm} BPM.</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-xs text-gray-500 block mb-1">Mood Board</span>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {Object.keys(analysisData.mood_tags).map(tag => (
+                                                                            <span key={tag} className="px-2 py-1 bg-white/10 rounded text-[10px] text-gray-300">{tag}</span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={handleGenerateTreatment}
+                                                                    disabled={isGeneratingVideo}
+                                                                    className="w-full py-2 bg-gray-700 hover:bg-gray-600 text-blue-300 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                                                >
+                                                                    {isGeneratingVideo ? <Loader2 size={14} className="animate-spin" /> : <BotMessageSquare size={14} />}
+                                                                    Generate Treatment
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-center pointer-events-none z-10">
-                                <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-500 group-hover:scale-110 transition-transform">
-                                    <Upload size={40} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Drop Audio File Here</h3>
-                                <p className="text-gray-500 max-w-sm mx-auto">
-                                    Upload a track to extract Mood, Danceability, Roughness, and generate AI visuals.
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                                    )}
 
-                    {/* Metrics Panel */}
-                    <div className="h-48 bg-gray-900/50 rounded-2xl border border-gray-800 p-6 flex flex-col justify-between flex-shrink-0">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-sm font-bold text-gray-400 tracking-wider">REAL-TIME METRICS</h3>
-                            <span className={`text-xs font-bold flex items-center gap-2 ${isAnalyzing ? 'text-yellow-500' : 'text-green-500'}`}>
-                                <span className={`w-2 h-2 rounded-full ${isAnalyzing ? 'bg-yellow-500 animate-ping' : 'bg-green-500'}`}></span>
-                                {isAnalyzing ? 'ANALYZING...' : 'ESSENTIA ENGINE READY'}
-                            </span>
+                                    {/* Timeline */}
+                                    <div className="h-8 mt-6 flex items-end justify-between text-[10px] font-mono text-gray-600 border-t border-gray-800 pt-2">
+                                        <span>0:00</span>
+                                        <span>{analysisData?.meta?.duration ? `${Math.floor(analysisData.meta.duration / 60)}:${Math.floor(analysisData.meta.duration % 60).toString().padStart(2, '0')}` : '--:--'}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-center pointer-events-none z-10">
+                                    <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-500 group-hover:scale-110 transition-transform">
+                                        <Upload size={40} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-2">Drop Audio File Here</h3>
+                                    <p className="text-gray-500 max-w-sm mx-auto">
+                                        Upload a track to extract Mood, Danceability, Roughness, and generate AI visuals.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
-                        {analysisData ? (
-                            <div className="grid grid-cols-3 gap-8">
-                                <div>
-                                    <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                        <span>Energy</span>
-                                        <span>{Math.round(analysisData.energy * 100)}%</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${analysisData.energy * 100}%` }}
-                                            className="h-full bg-yellow-500"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                        <span>Danceability</span>
-                                        <span>{Math.round(analysisData.danceability * 100)}%</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${analysisData.danceability * 100}%` }}
-                                            className="h-full bg-purple-500"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                        <span>Valence</span>
-                                        <span>High</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: '85%' }}
-                                            className="h-full bg-blue-500"
-                                        />
-                                    </div>
-                                </div>
+                        {/* Metrics Panel */}
+                        <div className="h-48 bg-gray-900/50 rounded-2xl border border-gray-800 p-6 flex flex-col justify-between flex-shrink-0">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-sm font-bold text-gray-400 tracking-wider">REAL-TIME METRICS</h3>
+                                <span className={`text-xs font-bold flex items-center gap-2 ${isAnalyzing ? 'text-yellow-500' : isEngineReady ? 'text-green-500' : 'text-red-500'}`}>
+                                    <span className={`w-2 h-2 rounded-full ${isAnalyzing ? 'bg-yellow-500 animate-ping' : isEngineReady ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                    {isAnalyzing ? 'ANALYZING...' : isEngineReady ? 'ESSENTIA ENGINE READY' : 'LOADING ENGINE...'}
+                                </span>
                             </div>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-600 text-sm italic">
-                                Waiting for audio input...
-                            </div>
-                        )}
-                    </div>
-                </div>
 
-                {/* Agent Sidebar */}
-                <div className="bg-gray-900/30 rounded-2xl border border-gray-800 overflow-hidden flex flex-col">
-                    <AgentWindow agent={musicAgent} title="Audio Analyst" className="flex-1" />
+                            {analysisData ? (
+                                <div className="grid grid-cols-3 gap-8">
+                                    <div>
+                                        <div className="flex justify-between text-xs text-gray-400 mb-2">
+                                            <span>Energy</span>
+                                            <span>{Math.round(parseFloat(analysisData.energy.intensity) * 100)}%</span>
+                                        </div>
+                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${parseFloat(analysisData.energy.intensity) * 100}%` }}
+                                                className="h-full bg-yellow-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-xs text-gray-400 mb-2">
+                                            <span>Danceability</span>
+                                            <span>{Math.round(parseFloat(analysisData.rhythm.danceability) * 100)}%</span>
+                                        </div>
+                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${parseFloat(analysisData.rhythm.danceability) * 100}%` }}
+                                                className="h-full bg-purple-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-xs text-gray-400 mb-2">
+                                            <span>Valence</span>
+                                            <span>High</span>
+                                        </div>
+                                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: '85%' }}
+                                                className="h-full bg-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-gray-600 text-sm italic">
+                                    Waiting for audio input...
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Agent Sidebar */}
+                    <div className="bg-gray-900/30 rounded-2xl border border-gray-800 overflow-hidden flex flex-col">
+                        <AgentWindow agent={musicAgent} title="Audio Analyst" className="flex-1" />
+                    </div>
                 </div>
             </div>
         </div>

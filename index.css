@@ -1,42 +1,49 @@
-
-
-
 /* 
    --- CRITICAL MOBILE FIXES (DO NOT REMOVE) --- 
    The following rules ensure the app works on iPhone without zooming out.
 */
 
 html {
-    width: 100%; /* Must be %, not vw */
-    overflow-x: hidden; /* Prevents horizontal scroll/zoom out */
-    -webkit-text-size-adjust: 100%;
+  width: 100%;
+  /* Must be %, not vw */
+  overflow-x: hidden;
+  /* Prevents horizontal scroll/zoom out */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    position: relative;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 /* Prevent Media from blowing out containers */
-img, video, canvas, svg {
-    max-width: 100%;
-    height: auto;
-    display: block; /* Removes bottom margin issues */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  /* Removes bottom margin issues */
 }
 
 /* Flexbox safety */
 * {
-    min-width: 0; /* Allows flex children to shrink below content size */
+  min-width: 0;
+  /* Allows flex children to shrink below content size */
 }
 
 /* Make buttons snappy on mobile */
-button, input, select, textarea {
-    touch-action: manipulation;
+button,
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }
 
 /* --- END CRITICAL FIXES --- */
@@ -44,14 +51,40 @@ button, input, select, textarea {
 :root {
   --font-body: 'Inter', sans-serif;
   --font-special: 'Permanent Marker', cursive;
-  --yellow-primary: #facc15;
-  --yellow-secondary: #fde047;
-  --text-neutral-200: #e5e7eb;
-  --text-neutral-400: #9ca3af;
-  --text-neutral-500: #6b7280;
-  --text-neutral-700: #374151;
-  --blue-accent: #2563eb;
-  --gold-accent: #fbbf24;
+  --neon-purple: #b026ff;
+  --neon-blue: #00f3ff;
+  --signal-green: #00ff9d;
+  --obsidian: #0a0a0a;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+}
+
+/* --- Cyber/Glass Utilities --- */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.neon-border-blue {
+  box-shadow: 0 0 5px rgba(0, 243, 255, 0.2), inset 0 0 5px rgba(0, 243, 255, 0.1);
+  border-color: rgba(0, 243, 255, 0.5);
+}
+
+.neon-border-purple {
+  box-shadow: 0 0 5px rgba(176, 38, 255, 0.2), inset 0 0 5px rgba(176, 38, 255, 0.1);
+  border-color: rgba(176, 38, 255, 0.5);
+}
+
+.neon-text-blue {
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.neon-text-purple {
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px rgba(176, 38, 255, 0.5);
 }
 
 /* --- Banner --- */
@@ -169,7 +202,7 @@ button, input, select, textarea {
 .button-ai-studio {
   color: black;
   background-color: var(--yellow-primary);
-  box-shadow: 1px 1px 0px 1px rgba(0,0,0,0.2);
+  box-shadow: 1px 1px 0px 1px rgba(0, 0, 0, 0.2);
 }
 
 .button-ai-studio:hover {
@@ -191,106 +224,106 @@ button, input, select, textarea {
 
 /* --- Image Gallery Styles --- */
 .gallery-item {
-    /* Container for thumbnail + label */
-    width: 100%;
+  /* Container for thumbnail + label */
+  width: 100%;
 }
 
 /* Mobile Safe Area for Film Strip */
 #film-strip-container {
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
 .image-thumbnail {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
-    background-color: #1a1a1a;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  background-color: #1a1a1a;
 }
 
 .image-thumbnail:hover {
-    transform: scale(1.02);
+  transform: scale(1.02);
 }
 
 /* Selection State */
 .image-thumbnail.border-blue-500 {
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
 }
 
 /* Anchor State */
 .image-thumbnail.border-gold {
-    border-color: var(--gold-accent) !important;
-    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
+  border-color: var(--gold-accent) !important;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
 }
 
 .image-thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background-color: #111;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #111;
 }
 
 .selection-indicator {
-    position: absolute;
-    top: 0.35rem;
-    right: 0.35rem;
-    background-color: var(--blue-accent);
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  background-color: var(--blue-accent);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .image-thumbnail.border-blue-500 .selection-indicator {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* Mask Indicator Badge */
 .mask-indicator {
-    position: absolute;
-    bottom: 0.25rem;
-    left: 0.25rem;
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 0.25rem;
-    padding: 0.1rem 0.2rem;
-    font-size: 0.65rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    pointer-events: none;
+  position: absolute;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.2rem;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  pointer-events: none;
 }
 
 /* Action Buttons for Source Images */
 .action-btn {
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    transition: all 0.2s;
-    border: 1px solid rgba(255,255,255,0.2);
-    z-index: 10;
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 10;
 }
 
 .action-btn:hover {
-    background-color: var(--blue-accent);
-    transform: scale(1.1);
+  background-color: var(--blue-accent);
+  transform: scale(1.1);
 }
 
 /* 
@@ -299,65 +332,79 @@ button, input, select, textarea {
    if the item is selected or just always visible to make actions accessible.
 */
 @media (max-width: 768px) {
-    .image-thumbnail .group-hover\:opacity-100 {
-        opacity: 1 !important;
-        background-color: rgba(0, 0, 0, 0.3); /* Lighter background so image is still visible */
-    }
-    
-    .delete-btn {
-        opacity: 1 !important;
-        background-color: rgba(0,0,0,0.8);
-    }
+  .image-thumbnail .group-hover\:opacity-100 {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.3);
+    /* Lighter background so image is still visible */
+  }
+
+  .delete-btn {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.8);
+  }
 }
 
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  width: 6px;
+  height: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Utilities */
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
+
 .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 .animate-fadeIn {
-    animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 /* Storyboard Grid */
 .storyboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
 }
 
 .storyboard-card {
-    background-color: #1a1b1d;
-    border: 1px solid #374151;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    transition: border-color 0.2s;
+  background-color: #1a1b1d;
+  border: 1px solid #374151;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: border-color 0.2s;
 }
+
 .storyboard-card:hover {
-    border-color: #4b5563;
+  border-color: #4b5563;
 }

@@ -15,6 +15,8 @@ export interface AppSlice {
     setModule: (module: AppSlice['currentModule']) => void;
     setProject: (id: string) => void;
     addProject: (project: Project) => void;
+    pendingPrompt: string | null;
+    setPendingPrompt: (prompt: string | null) => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set) => ({
@@ -28,4 +30,6 @@ export const createAppSlice: StateCreator<AppSlice> = (set) => ({
     setModule: (module) => set({ currentModule: module }),
     setProject: (id) => set({ currentProjectId: id }),
     addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
+    pendingPrompt: null,
+    setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
 });

@@ -4,7 +4,7 @@ import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocess
 
 export default function Effects() {
     return (
-        <EffectComposer disableNormalPass>
+        <EffectComposer>
             <Bloom
                 luminanceThreshold={1}
                 mipmapBlur

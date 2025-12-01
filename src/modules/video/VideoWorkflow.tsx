@@ -1,26 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Film, X } from 'lucide-react';
 import { useStore } from '../../core/store';
 import CreativeGallery from '../creative/components/CreativeGallery';
 import { useToast } from '../../core/context/ToastContext';
 
 export default function VideoWorkflow() {
-    const { generatedHistory, selectedItem, uploadedImages } = useStore();
+    const { generatedHistory, selectedItem, uploadedImages, pendingPrompt, setPendingPrompt, addToHistory } = useStore();
     const toast = useToast();
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // Find the most recent video or the selected item if it's a video
     const activeVideo = selectedItem?.type === 'video' ? selectedItem : generatedHistory.find(item => item.type === 'video');
 
-    // Local state for frame designer (if we still need it, but the user wanted to remove the wizard)
-    // The previous code had a frame designer modal, let's keep it if it's useful for the gallery, 
-    // but the main request was to remove the wizard steps.
-    // Actually, the frame selection is now handled in the Navbar via the modal I added earlier.
-    // So we might not need the frame designer modal here anymore, or at least not the wizard part.
-    // The previous code had `showFrameDesigner` state but it was triggered by the ReviewStep which is now gone.
-    // So I will remove the frame designer modal from here as it's likely redundant or unreachable without the ReviewStep.
-    // If the user needs to select frames, they do it in the Navbar now.
+    useEffect(() => {
+        if (pendingPrompt) {
+            handleGenerate(pendingPrompt);
+            setPendingPrompt(null);
+        }
+    }, [pendingPrompt]);
+
+    const handleGenerate = async (prompt: string) => {
+        setIsGenerating(true);
+        toast.info('Generating video...');
+        try {
+            // Simulate generation for now or call actual service if ready
+            // const uri = await Video.generateVideo({ prompt });
+
+            // For testing/demo purposes, we'll simulate a delay and add a mock video
+            // In production, this would call the actual backend
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            const mockVideo = {
+                id: Date.now().toString(),
+                type: 'video' as const,
+                url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Placeholder
+                prompt: prompt,
+                timestamp: Date.now(),
+                thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
+                projectId: 'default'
+            };
+
+            addToHistory(mockVideo);
+            toast.success('Video generated!');
+        } catch (error) {
+            console.error("Video generation failed:", error);
+            toast.error('Generation failed');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const renderStage = () => {
+        if (isGenerating) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-pulse">
+                    <div className="w-24 h-24 bg-neon-purple/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(176,38,255,0.3)]">
+                        <Film size={48} className="text-neon-purple animate-spin" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Generating Scene...</h2>
+                    <p className="text-gray-500 max-w-md">
+                        AI is rendering your vision. This may take a moment.
+                    </p>
+                </div>
+            );
+        }
+
         if (activeVideo) {
             return (
                 <div className="flex flex-col items-center justify-center h-full p-8">
@@ -56,7 +100,7 @@ export default function VideoWorkflow() {
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Ready to Direct</h2>
                 <p className="text-gray-500 max-w-md">
-                    Enter a prompt above, select your frames, and hit Generate to create your video.
+                    Enter a prompt in the command bar (Cmd+K) to generate a video.
                 </p>
             </div>
         );

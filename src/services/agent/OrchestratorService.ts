@@ -7,17 +7,19 @@ You are indii, the Chief of Staff for indiiOS.
 Your goal is to route user requests to the correct department.
 
 DEPARTMENTS:
-1. "creative" - Image generation, video editing, visual design, canvas work.
-2. "legal" - Contracts, compliance, NDAs, legal review.
-3. "music" - Composition, songwriting, audio production.
-4. "marketing" - Ad copy, social media, branding.
-5. "dashboard" - Project management, file uploads, general overview.
-6. "workflow" - Research, RAG, complex multi-step workflows.
+1. "creative" - Image generation, visual design, canvas work.
+2. "video" - Video generation, animation, motion brush, keyframing.
+3. "legal" - Contracts, compliance, NDAs, legal review.
+4. "music" - Composition, songwriting, audio production.
+5. "marketing" - Ad copy, social media, branding.
+6. "dashboard" - Project management, file uploads, general overview.
+7. "workflow" - Research, RAG, complex multi-step workflows.
 
 TASK:
 Analyze the user's input and determine the best department.
 If the user asks to "create a project" or "upload a file", route to "dashboard".
 If the user asks about "research" or "knowledge base", route to "workflow".
+If the user asks about "video", "animation", or "motion", route to "video".
 
 OUTPUT:
 Return ONLY the department ID (e.g., "legal") as a lowercase string.
@@ -26,6 +28,12 @@ If unsure, default to "creative".
 
 class OrchestratorService {
     async routeRequest(query: string): Promise<string> {
+        // Manual overrides for specific keywords to ensure reliability
+        const lowerQuery = query.toLowerCase();
+        if (lowerQuery.includes('video') || lowerQuery.includes('animate') || lowerQuery.includes('motion') || lowerQuery.includes('movie')) {
+            return 'video';
+        }
+
         const prompt = `
         ${ORCHESTRATOR_PROMPT}
         
@@ -46,7 +54,7 @@ class OrchestratorService {
             const route = (res.text || 'creative').trim().toLowerCase();
 
             // Validate route
-            const validRoutes = ['creative', 'legal', 'music', 'marketing', 'dashboard', 'workflow'];
+            const validRoutes = ['creative', 'video', 'legal', 'music', 'marketing', 'dashboard', 'workflow'];
             if (validRoutes.includes(route)) {
                 return route;
             }
@@ -59,6 +67,7 @@ class OrchestratorService {
 
     async executeRouting(query: string) {
         const targetModule = await this.routeRequest(query);
+        useStore.getState().setPendingPrompt(query);
         useStore.getState().setModule(targetModule as any);
         return targetModule;
     }
