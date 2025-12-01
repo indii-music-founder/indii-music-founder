@@ -61,7 +61,7 @@ function NeuralAether() {
 
         particles.forEach((p, i) => {
             // Base movement
-            let y = p.position[1] + Math.sin(t * p.speed + p.phase) * 0.5;
+            const y = p.position[1] + Math.sin(t * p.speed + p.phase) * 0.5;
 
             // Scroll reactivity
             // Add turbulence based on scroll speed

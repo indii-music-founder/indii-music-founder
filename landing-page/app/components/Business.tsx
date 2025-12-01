@@ -191,7 +191,7 @@ function OrbitalDebris() {
 
         debris.forEach((d, i) => {
             // Fall downwards
-            let y = d.y - (t * d.speed * 10) % 20; // Loop fall
+            const y = d.y - (t * d.speed * 10) % 20; // Loop fall
 
             // Spiral slightly
             const x = d.x + Math.sin(t * 0.5 + i) * 0.5;
