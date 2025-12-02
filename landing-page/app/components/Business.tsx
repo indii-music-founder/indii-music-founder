@@ -3,158 +3,144 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { Instance, Instances } from '@react-three/drei';
+import { Points, PointMaterial, Instances, Instance, Float } from '@react-three/drei';
+import { useAudioStore } from '../store/audioStore';
 
-// --- SHADERS & MATERIALS ---
+function GlobalNetwork() {
+    const pointsRef = useRef<THREE.Points>(null!);
+    const linesRef = useRef<THREE.LineSegments>(null!);
+    const outerPointsRef = useRef<THREE.Points>(null!);
 
-const planetMaterial = new THREE.MeshBasicMaterial({
-    color: '#00ff9d',
-    wireframe: true,
-    transparent: true,
-    opacity: 0.15
-});
+    // Audio Reactivity
+    const mid = useAudioStore((state) => state.frequencyData.mid) || 0;
 
-const coreMaterial = new THREE.MeshBasicMaterial({
-    color: '#003311',
-    transparent: true,
-    opacity: 0.8
-});
+    const count = 250;
+    const radius = 6;
 
-// --- COMPONENTS ---
+    const { positions, linePositions, outerPositions } = useMemo(() => {
+        const pos = new Float32Array(count * 3);
+        const outerPos = new Float32Array(count * 3);
+        const vecPositions: THREE.Vector3[] = [];
+        const linePos: number[] = [];
 
-function CyberPlanet() {
-    const mesh = useRef<THREE.Mesh>(null!);
-    const core = useRef<THREE.Mesh>(null!);
+        // Inner Sphere
+        for (let i = 0; i < count; i++) {
+            const phi = Math.acos(-1 + (2 * i) / count);
+            const theta = Math.sqrt(count * Math.PI) * phi;
+            const x = radius * Math.cos(theta) * Math.sin(phi);
+            const y = radius * Math.sin(theta) * Math.sin(phi);
+            const z = radius * Math.cos(phi);
+            pos[i * 3] = x;
+            pos[i * 3 + 1] = y;
+            pos[i * 3 + 2] = z;
+            vecPositions.push(new THREE.Vector3(x, y, z));
+        }
+
+        // Outer Exosphere (Sparse)
+        for (let i = 0; i < count; i++) {
+            const r = radius * 1.5;
+            const theta = THREE.MathUtils.randFloatSpread(360);
+            const phi = THREE.MathUtils.randFloatSpread(360);
+            outerPos[i * 3] = r * Math.sin(theta) * Math.cos(phi);
+            outerPos[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
+            outerPos[i * 3 + 2] = r * Math.cos(theta);
+        }
+
+        // Connections
+        vecPositions.forEach((p1, i) => {
+            vecPositions.forEach((p2, j) => {
+                if (i < j) {
+                    const dist = p1.distanceTo(p2);
+                    if (dist < 2.5 && Math.random() > 0.85) {
+                        linePos.push(p1.x, p1.y, p1.z);
+                        linePos.push(p2.x, p2.y, p2.z);
+                    }
+                }
+            });
+        });
+
+        if (linePos.length === 0) linePos.push(0, 0, 0, 0, 0, 0);
+
+        return { positions: pos, linePositions: new Float32Array(linePos), outerPositions: outerPos };
+    }, []);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
-        mesh.current.rotation.y = t * 0.05;
-        core.current.rotation.y = t * 0.1;
-        core.current.rotation.z = Math.sin(t * 0.2) * 0.1;
+        const pulse = 1 + mid * 0.3;
+
+        // Inner Sphere
+        if (pointsRef.current) {
+            pointsRef.current.rotation.y = t * 0.1;
+            pointsRef.current.scale.setScalar(pulse);
+        }
+        if (linesRef.current) {
+            linesRef.current.rotation.y = t * 0.1;
+            linesRef.current.scale.setScalar(pulse);
+        }
+
+        // Outer Exosphere (Reverse Spin)
+        if (outerPointsRef.current) {
+            outerPointsRef.current.rotation.y = -t * 0.05;
+            outerPointsRef.current.rotation.x = Math.sin(t * 0.1) * 0.1;
+        }
     });
 
     return (
         <group>
-            {/* Wireframe Crust */}
-            <mesh ref={mesh}>
-                <icosahedronGeometry args={[4, 4]} />
-                <primitive object={planetMaterial} />
-            </mesh>
-            {/* Solid Core */}
-            <mesh ref={core} scale={0.8}>
-                <icosahedronGeometry args={[4, 1]} />
-                <primitive object={coreMaterial} />
+            {/* Inner Nodes */}
+            <Points ref={pointsRef} positions={positions} stride={3}>
+                <PointMaterial transparent color="#00ff9d" size={0.15} sizeAttenuation={true} depthWrite={false} />
+            </Points>
+
+            {/* Connections */}
+            <lineSegments ref={linesRef}>
+                <bufferGeometry>
+                    <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} args={[linePositions, 3]} />
+                </bufferGeometry>
+                <lineBasicMaterial color="#00ff9d" transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+            </lineSegments>
+
+            {/* Outer Exosphere */}
+            <Points ref={outerPointsRef} positions={outerPositions} stride={3}>
+                <PointMaterial transparent color="#008855" size={0.1} sizeAttenuation={true} depthWrite={false} opacity={0.6} />
+            </Points>
+
+            {/* Core Glow */}
+            <mesh>
+                <sphereGeometry args={[radius * 0.6, 32, 32]} />
+                <meshBasicMaterial color="#002211" transparent opacity={0.8} side={THREE.BackSide} />
             </mesh>
         </group>
     );
 }
 
-function ShipSwarm({ count, color, radius, speed, type }: { count: number, color: string, radius: number, speed: number, type: 'rebel' | 'empire' }) {
+function OrbitalClusters() {
+    const group = useRef<THREE.Group>(null!);
     const meshRef = useRef<THREE.InstancedMesh>(null!);
+    const count = 40;
 
-    const ships = useMemo(() => {
-        return new Array(count).fill(0).map((_, i) => {
-            const angle = (i / count) * Math.PI * 2;
-            const yOffset = (Math.random() - 0.5) * 2;
-            return {
-                angle,
-                radius: radius + (Math.random() - 0.5),
-                y: yOffset,
-                speedOffset: Math.random() * 0.5 + 0.8
-            };
-        });
-    }, [count, radius]);
-
-    useFrame((state) => {
-        const t = state.clock.getElapsedTime();
-        const dummy = new THREE.Object3D();
-
-        ships.forEach((ship, i) => {
-            // Orbit logic
-            const currentAngle = ship.angle + t * speed * ship.speedOffset;
-            const x = Math.cos(currentAngle) * ship.radius;
-            const z = Math.sin(currentAngle) * ship.radius;
-
-            dummy.position.set(x, ship.y, z);
-
-            // Face direction of travel
-            dummy.lookAt(0, ship.y, 0); // Look at center first
-            dummy.rotateY(Math.PI / 2); // Rotate to face tangent
-
-            // Bank on turns
-            dummy.rotateZ(Math.sin(t * 2 + i) * 0.2);
-
-            // Scale variation
-            const scale = type === 'rebel' ? 0.3 : 0.25;
-            dummy.scale.setScalar(scale);
-
-            dummy.updateMatrix();
-            meshRef.current.setMatrixAt(i, dummy.matrix);
-        });
-        meshRef.current.instanceMatrix.needsUpdate = true;
-    });
-
-    return (
-        <Instances range={count} ref={meshRef}>
-            {type === 'rebel' ? (
-                <tetrahedronGeometry args={[1]} /> // Wedge shape
-            ) : (
-                <octahedronGeometry args={[1]} /> // TIE shape
-            )}
-            <meshBasicMaterial color={color} toneMapped={false} />
-        </Instances>
-    );
-}
-
-function Lasers() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
-    const count = 20;
-
-    const lasers = useMemo(() => {
-        return new Array(count).fill(0).map(() => ({
-            active: false,
-            start: new THREE.Vector3(),
-            end: new THREE.Vector3(),
-            life: 0
+    const particles = useMemo(() => {
+        return new Array(count).fill(0).map((_, i) => ({
+            angle: (i / count) * Math.PI * 2,
+            radius: 12 + Math.random() * 4,
+            speed: Math.random() * 0.2 + 0.1,
+            y: (Math.random() - 0.5) * 4
         }));
     }, []);
 
     useFrame((state) => {
+        if (!meshRef.current) return;
         const t = state.clock.getElapsedTime();
         const dummy = new THREE.Object3D();
 
-        lasers.forEach((laser, i) => {
-            if (!laser.active) {
-                // Randomly activate
-                if (Math.random() > 0.98) {
-                    laser.active = true;
-                    laser.life = 1.0;
+        particles.forEach((p, i) => {
+            const angle = p.angle + t * p.speed;
+            const x = Math.cos(angle) * p.radius;
+            const z = Math.sin(angle) * p.radius;
 
-                    // Random positions around the planet
-                    const angle1 = Math.random() * Math.PI * 2;
-                    const r1 = 6;
-                    laser.start.set(Math.cos(angle1) * r1, (Math.random() - 0.5) * 4, Math.sin(angle1) * r1);
-
-                    // Target near opposite side or random
-                    const angle2 = angle1 + Math.PI + (Math.random() - 0.5);
-                    const r2 = 6;
-                    laser.end.set(Math.cos(angle2) * r2, (Math.random() - 0.5) * 4, Math.sin(angle2) * r2);
-                }
-                // Hide inactive
-                dummy.scale.set(0, 0, 0);
-            } else {
-                laser.life -= 0.1;
-                if (laser.life <= 0) laser.active = false;
-
-                // Position laser beam
-                const mid = new THREE.Vector3().lerpVectors(laser.start, laser.end, 0.5);
-                dummy.position.copy(mid);
-                dummy.lookAt(laser.end);
-
-                const len = laser.start.distanceTo(laser.end);
-                dummy.scale.set(0.05, 0.05, len); // Thickness, Thickness, Length
-            }
-
+            dummy.position.set(x, p.y + Math.sin(t + i) * 2, z);
+            dummy.rotation.set(t, t, t);
+            dummy.scale.setScalar(Math.random() * 0.5 + 0.5);
             dummy.updateMatrix();
             meshRef.current.setMatrixAt(i, dummy.matrix);
         });
@@ -162,81 +148,27 @@ function Lasers() {
     });
 
     return (
-        <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshBasicMaterial color="#ff0033" toneMapped={false} transparent opacity={0.8} />
-        </instancedMesh>
-    );
-}
-
-function OrbitalDebris() {
-    const meshRef = useRef<THREE.InstancedMesh>(null!);
-    const count = 100;
-
-    const debris = useMemo(() => {
-        return new Array(count).fill(0).map(() => ({
-            // Start near bottom of planet
-            x: (Math.random() - 0.5) * 8,
-            y: -4 + Math.random() * 2,
-            z: (Math.random() - 0.5) * 8,
-            speed: Math.random() * 0.1 + 0.05,
-            rotationSpeed: Math.random() * 0.05,
-            scale: Math.random() * 0.3 + 0.1
-        }));
-    }, []);
-
-    useFrame((state) => {
-        const t = state.clock.getElapsedTime();
-        const dummy = new THREE.Object3D();
-
-        debris.forEach((d, i) => {
-            // Fall downwards
-            const y = d.y - (t * d.speed * 10) % 20; // Loop fall
-
-            // Spiral slightly
-            const x = d.x + Math.sin(t * 0.5 + i) * 0.5;
-            const z = d.z + Math.cos(t * 0.5 + i) * 0.5;
-
-            dummy.position.set(x, y, z);
-            dummy.rotation.set(t * d.rotationSpeed, t * d.rotationSpeed, t * d.rotationSpeed);
-            dummy.scale.setScalar(d.scale);
-
-            dummy.updateMatrix();
-            meshRef.current.setMatrixAt(i, dummy.matrix);
-        });
-        meshRef.current.instanceMatrix.needsUpdate = true;
-    });
-
-    return (
-        <Instances range={count} ref={meshRef}>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshBasicMaterial color="#00ff9d" wireframe transparent opacity={0.3} />
-            {debris.map((_, i) => (
-                <Instance key={i} />
-            ))}
-        </Instances>
+        <group ref={group} rotation={[0.2, 0, 0.2]}>
+            <Instances range={count} ref={meshRef}>
+                <octahedronGeometry args={[0.4]} />
+                <meshBasicMaterial color="#00ff9d" wireframe />
+                {particles.map((_, i) => <Instance key={i} />)}
+            </Instances>
+        </group>
     );
 }
 
 export default function Business() {
     return (
         <group position={[0, -60, 0]}>
-            <CyberPlanet />
+            <GlobalNetwork />
+            <OrbitalClusters />
 
-            {/* Rebel Alliance - Orange/Red */}
-            <group rotation={[0.2, 0, 0]}>
-                <ShipSwarm count={12} color="#ffaa00" radius={6} speed={0.5} type="rebel" />
-            </group>
+            {/* Geospatial Grid */}
+            <gridHelper args={[60, 20, 0x004422, 0x002211]} position={[0, -10, 0]} />
 
-            {/* The Empire - Cyan/Green */}
-            <group rotation={[-0.2, Math.PI, 0]}>
-                <ShipSwarm count={20} color="#00ff9d" radius={7} speed={-0.4} type="empire" />
-            </group>
-
-            <Lasers />
-
-            {/* Debris falling to Commerce */}
-            <OrbitalDebris />
+            <pointLight position={[10, 10, 10]} color="#00ff9d" intensity={2} distance={20} />
+            <ambientLight intensity={0.2} color="#004422" />
         </group>
     );
 }

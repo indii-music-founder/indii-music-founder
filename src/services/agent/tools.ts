@@ -1,5 +1,7 @@
 import { useStore } from '@/core/store';
-import { Image } from '@/services/image/ImageService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { Editing } from '@/services/image/EditingService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService'; // Added for completeness
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     set_mode: async (args) => {
@@ -13,7 +15,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
         try {
             const { studioControls, addToHistory, currentProjectId } = useStore.getState();
 
-            const results = await Image.generateImages({
+            const results = await ImageGeneration.generateImages({
                 prompt: args.prompt || "A creative scene",
                 count: args.count || 1,
                 resolution: args.resolution || studioControls.resolution,
@@ -36,8 +38,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 return `Successfully generated ${results.length} images. They are now in the Gallery.`;
             }
             return "Generation completed but no images were returned.";
-        } catch (e: any) {
-            return `Image generation failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Image generation failed: ${e.message}`;
+            }
+            return `Image generation failed: An unknown error occurred.`;
         }
     },
     read_history: async () => {
@@ -75,7 +80,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 return "Could not process image data from uploads.";
             }
 
-            const results = await Image.batchEdit({
+            const results = await Editing.batchEdit({
                 images: imageDataList,
                 prompt: args.prompt,
                 onProgress: (current, total) => {
@@ -103,8 +108,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             }
             return "Batch edit completed but no images were returned.";
 
-        } catch (e: any) {
-            return `Batch edit failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Batch edit failed: ${e.message}`;
+            }
+            return `Batch edit failed: An unknown error occurred.`;
         }
     },
     batch_edit_videos: async (args: { prompt: string, videoIndices?: number[] }) => {
@@ -139,7 +147,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 return "Could not process video data from uploads. Ensure they are valid data URIs.";
             }
 
-            const results = await Image.batchEditVideo({
+            const results = await Editing.batchEditVideo({
                 videos: videoDataList,
                 prompt: args.prompt,
                 onProgress: (current, total) => {
@@ -167,8 +175,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             }
             return "Batch video processing completed but no videos were returned.";
 
-        } catch (e: any) {
-            return `Batch video processing failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Batch video processing failed: ${e.message}`;
+            }
+            return `Batch video processing failed: An unknown error occurred.`;
         }
     },
     create_project: async (args: { name: string, type: 'creative' | 'music' | 'marketing' | 'legal' }) => {
@@ -176,8 +187,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             const { createNewProject } = useStore.getState();
             await createNewProject(args.name, args.type || 'creative');
             return `Successfully created project "${args.name}" (${args.type}) and switched to it.`;
-        } catch (e: any) {
-            return `Failed to create project: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Failed to create project: ${e.message}`;
+            }
+            return `Failed to create project: An unknown error occurred.`;
         }
     },
     list_projects: async () => {
@@ -223,8 +237,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
 
             const result = await runAgenticWorkflow(args.query, userProfile, null, onUpdate, onDocStatus);
             return `RAG Search Result: ${result.asset.content}`;
-        } catch (e: any) {
-            return `Knowledge search failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Knowledge search failed: ${e.message}`;
+            }
+            return `Knowledge search failed: An unknown error occurred.`;
         }
     },
     delegate_task: async (args: { agent_id: string, task: string, context?: any }) => {
@@ -239,13 +256,16 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
 
             const response = await agent.execute(args.task, args.context);
             return `[${agent.name}]: ${response.text}`;
-        } catch (e: any) {
-            return `Delegation failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Delegation failed: ${e.message}`;
+            }
+            return `Delegation failed: An unknown error occurred.`;
         }
     },
     generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
         try {
-            const { Video } = await import('../../services/video/VideoService');
+            const { VideoGeneration } = await import('../../services/image/VideoGenerationService');
 
             let imageInput;
             if (args.image) {
@@ -255,7 +275,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 }
             }
 
-            const uri = await Video.generateVideo({
+            const uri = await VideoGeneration.generateVideo({
                 prompt: args.prompt,
                 image: imageInput,
                 durationSeconds: args.duration
@@ -277,13 +297,16 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 return `Video generated successfully: ${uri}`;
             }
             return "Video generation failed (no URI returned).";
-        } catch (e: any) {
-            return `Video generation failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Video generation failed: ${e.message}`;
+            }
+            return `Video generation failed: An unknown error occurred.`;
         }
     },
     generate_motion_brush: async (args: { image: string, mask: string, prompt?: string }) => {
         try {
-            const { Video } = await import('../../services/video/VideoService');
+            const { Editing } = await import('../../services/image/EditingService'); // Motion brush is more like an editing task
 
             const imgMatch = args.image.match(/^data:(.+);base64,(.+)$/);
             const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
@@ -295,7 +318,8 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             const image = { mimeType: imgMatch[1], data: imgMatch[2] };
             const mask = { mimeType: maskMatch[1], data: maskMatch[2] };
 
-            const uri = await Video.generateMotionBrush(image, mask);
+            // Assuming Editing service has a generateMotionBrush method
+            const uri = await Editing.generateMotionBrush(image, mask);
 
             if (uri) {
                 const { addToHistory, currentProjectId } = useStore.getState();
@@ -310,8 +334,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 return `Motion Brush video generated successfully: ${uri}`;
             }
             return "Motion Brush generation failed.";
-        } catch (e: any) {
-            return `Motion Brush failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Motion Brush failed: ${e.message}`;
+            }
+            return `Motion Brush failed: An unknown error occurred.`;
         }
     },
     analyze_audio: async (args: { audio: string }) => {
@@ -338,8 +365,11 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
 
             const analysis = await engine.analyze(arrayBuffer);
             return `Audio Analysis Result: ${JSON.stringify(analysis, null, 2)}`;
-        } catch (e: any) {
-            return `Audio analysis failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Audio analysis failed: ${e.message}`;
+            }
+            return `Audio analysis failed: An unknown error occurred.`;
         }
     }
 };

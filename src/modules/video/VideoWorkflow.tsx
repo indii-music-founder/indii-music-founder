@@ -21,30 +21,53 @@ export default function VideoWorkflow() {
 
     const handleGenerate = async (prompt: string) => {
         setIsGenerating(true);
-        toast.info('Generating video...');
+        toast.info('Directing scene...');
         try {
-            // Simulate generation for now or call actual service if ready
-            // const uri = await Video.generateVideo({ prompt });
+            // Call the Creative Director Agent via Firebase Functions
+            const response = await fetch('http://127.0.0.1:5001/indiios-v-1-1/us-central1/creativeDirectorAgent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt }),
+            });
 
-            // For testing/demo purposes, we'll simulate a delay and add a mock video
-            // In production, this would call the actual backend
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Agent failed to respond');
+            }
 
-            const mockVideo = {
-                id: Date.now().toString(),
-                type: 'video' as const,
-                url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Placeholder
-                prompt: prompt,
-                timestamp: Date.now(),
-                thumbnail: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg',
-                projectId: 'default'
-            };
+            const data = await response.json();
+            const result = data.result;
 
-            addToHistory(mockVideo);
-            toast.success('Video generated!');
-        } catch (error) {
+            if (result.success && result.data) {
+                // Handle different response types (image vs video)
+                // The agent might return a video URL or an image URL (storyboard)
+                // For now, let's assume it returns a standard format we can adapt
+
+                // Note: The agent tool returns { success, data }
+                // We need to parse the inner data
+
+                const assetUrl = result.data.url || result.mockUrl; // Fallback to mockUrl if provided by tool stub
+
+                const newAsset = {
+                    id: Date.now().toString(),
+                    type: (assetUrl.includes('.mp4') ? 'video' : 'image') as 'video' | 'image',
+                    url: assetUrl,
+                    prompt: prompt,
+                    timestamp: Date.now(),
+                    projectId: 'default'
+                };
+
+                addToHistory(newAsset);
+                toast.success('Scene generated!');
+            } else {
+                throw new Error(result.error || 'Generation failed');
+            }
+
+        } catch (error: any) {
             console.error("Video generation failed:", error);
-            toast.error('Generation failed');
+            toast.error(`Generation failed: ${error.message}`);
         } finally {
             setIsGenerating(false);
         }

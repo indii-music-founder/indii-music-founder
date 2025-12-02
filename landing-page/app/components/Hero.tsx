@@ -3,7 +3,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { Sphere, Instance, Instances } from '@react-three/drei';
+import { Icosahedron, Instance, Instances } from '@react-three/drei';
 
 const NeuralNetworkMaterial = {
     uniforms: {
@@ -152,7 +152,7 @@ function NeuralSphere() {
     });
 
     return (
-        <Sphere ref={mesh} args={[2, 128, 128]}>
+        <Icosahedron ref={mesh} args={[2, 16]}>
             <shaderMaterial
                 ref={materialRef}
                 args={[NeuralNetworkMaterial]}
@@ -161,7 +161,7 @@ function NeuralSphere() {
                 blending={THREE.AdditiveBlending}
                 depthWrite={false}
             />
-        </Sphere>
+        </Icosahedron>
     );
 }
 

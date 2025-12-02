@@ -3,7 +3,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useState } from 'react';
 import * as THREE from 'three';
-import { useScroll, Text } from '@react-three/drei';
+import { useScroll, Text, Float } from '@react-three/drei';
 
 export default function TheTitan() {
     const meshRef = useRef<THREE.Mesh>(null!);
@@ -12,39 +12,30 @@ export default function TheTitan() {
     const { camera } = useThree();
     const [triggered, setTriggered] = useState(false);
 
-    // Audio effect for the impact (optional, but adds to the feel)
-    // We'll just use visual shock for now
-
     useFrame((state) => {
+        if (!meshRef.current) return;
+
         const t = state.clock.getElapsedTime();
         const offset = scroll.offset; // 0 to 1
 
         // Trigger logic: Very end of scroll
         if (offset > 0.98 && !triggered) {
             setTriggered(true);
-            // Instant camera shake or flash could go here
         } else if (offset < 0.95 && triggered) {
             setTriggered(false);
         }
 
         if (triggered) {
             // "The Manifestation"
-            // Scale up instantly with a bounce
-            meshRef.current.scale.lerp(new THREE.Vector3(15, 15, 15), 0.2);
+            // Scale up instantly 
+            meshRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
 
-            // Rotate aggressively
-            meshRef.current.rotation.x = t * 2;
-            meshRef.current.rotation.y = t * 3;
-
-            // Pulse color
-            if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
-                meshRef.current.material.emissiveIntensity = 2 + Math.sin(t * 20) * 1;
-                meshRef.current.material.color.setHSL((t * 0.5) % 1, 1, 0.5);
-            }
+            // Slow rotation
+            meshRef.current.rotation.y = t * 0.2;
 
             // Camera Shake
-            camera.position.x += (Math.random() - 0.5) * 0.2;
-            camera.position.y += (Math.random() - 0.5) * 0.2;
+            camera.position.x += (Math.random() - 0.5) * 0.05;
+            camera.position.y += (Math.random() - 0.5) * 0.05;
 
             // Text Reveal
             if (textRef.current) {
@@ -64,42 +55,45 @@ export default function TheTitan() {
 
     return (
         <group position={[0, -84, 0]}> {/* Positioned way below everything else */}
-            <mesh ref={meshRef}>
-                <torusKnotGeometry args={[1, 0.3, 128, 32]} />
-                <meshStandardMaterial
-                    color="#ffffff"
-                    emissive="#ff0000"
-                    emissiveIntensity={0}
-                    roughness={0.1}
-                    metalness={1}
-                    wireframe={false}
-                />
-            </mesh>
 
-            <group ref={textRef} position={[0, 0, 0]} visible={false}>
+            {/* The Monolith - Massive Obsidian Diamond */}
+            <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+                <mesh ref={meshRef} scale={[0, 0, 0]}>
+                    <octahedronGeometry args={[8, 0]} />
+                    <meshPhysicalMaterial
+                        color="#000000"
+                        roughness={0}
+                        metalness={1}
+                        clearcoat={1}
+                        clearcoatRoughness={0}
+                        reflectivity={1}
+                        emissive="#ffffff"
+                        emissiveIntensity={0.1}
+                    />
+                </mesh>
+            </Float>
+
+            <group ref={textRef} position={[0, 0, 2]} visible={false} scale={[0, 0, 0]}>
                 <Text
-                    position={[0, 2, 0]}
+                    position={[0, 0, 0]}
                     fontSize={2}
                     color="white"
                     anchorX="center"
                     anchorY="middle"
+                    letterSpacing={0.2}
                 >
-                    OWN
+                    OWN YOUR FUTURE
                 </Text>
-                <Text
-                    position={[0, 0, 0]}
-                    fontSize={2}
-                    color="#ff0000" // Red for impact
-                    anchorX="center"
-                    anchorY="middle"
-                >
-                    YOUR FUTURE
-                </Text>
+
             </group>
 
-            {/* Dramatic Lighting just for this section */}
+            {/* Dramatic Lighting */}
             {triggered && (
-                <pointLight position={[0, 0, 10]} intensity={10} color="white" distance={20} />
+                <>
+                    <pointLight position={[0, 0, 10]} intensity={5} color="white" distance={20} />
+                    <pointLight position={[-10, 10, 5]} intensity={5} color="#b026ff" distance={30} />
+                    <pointLight position={[10, -10, 5]} intensity={5} color="#00f3ff" distance={30} />
+                </>
             )}
         </group>
     );

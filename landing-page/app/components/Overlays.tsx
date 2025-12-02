@@ -42,20 +42,6 @@ const GlitchText = ({ text, delay = 0 }: { text: string, delay?: number }) => {
 }
 
 export default function Overlays() {
-    const [heroText, setHeroText] = useState("Your Music. Your Rules.");
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setHeroText(prev =>
-                prev === "Your Music. Your Rules."
-                    ? "Your Independence Operating System"
-                    : "Your Music. Your Rules."
-            );
-        }, 5000); // Switch every 5 seconds
-
-        return () => clearInterval(interval);
-    }, []);
-
     return (
         <>
             {/* Hero Section (Page 0) */}
@@ -64,12 +50,14 @@ export default function Overlays() {
                     <h1 className="text-7xl md:text-9xl font-bold tracking-tighter mb-6 text-white">
                         indiiOS
                     </h1>
-                    <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto font-light tracking-wide h-8">
-                        The operating system for independent wealth.
-                    </p>
-                </div>
-                <div className="absolute bottom-10 animate-bounce text-white/50 text-sm tracking-widest uppercase">
-                    Scroll to Explore
+                    <div className="flex flex-col gap-2">
+                        <p className="text-2xl md:text-3xl text-white font-medium tracking-wide">
+                            Your Music. Your Rules.
+                        </p>
+                        <p className="text-xl md:text-2xl text-white/70 font-light tracking-wide">
+                            The Operating System for your Independence.
+                        </p>
+                    </div>
                 </div>
             </section>
 
@@ -89,19 +77,19 @@ export default function Overlays() {
             </section>
 
             {/* Agent Zero (Page 2) */}
-            <section className="h-[100vh] w-full flex flex-row-reverse items-center justify-between px-8 md:px-20 pointer-events-none">
-                <div className="w-full md:w-1/2 text-right p-8 rounded-3xl bg-black/30 backdrop-blur-sm">
+            <section className="h-[100vh] w-full flex items-center justify-center px-8 md:px-20 pointer-events-none">
+                <div className="max-w-4xl text-center p-8 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-6xl md:text-8xl font-bold mb-6 text-white">
-                        Agent <span className="inline-block transform -scale-x-100">R</span>
+                        indii
                     </h2>
                     <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
                         Your helpful AI assistant. It handles the business tasks humans used to do.
                     </p>
 
-                    <div className="flex flex-col gap-4 items-end">
+                    <div className="flex flex-col gap-4 items-center">
                         <div className="flex items-center gap-4">
                             <span className="text-neon-purple font-bold">THE ARCHITECT</span>
-                            <div className="w-12 h-1 bg-neon-purple/50 rounded-full"></div>
+                            <div className="w-12 h-0.5 bg-neon-purple/50"></div>
                         </div>
                         <p className="text-sm text-white/80 max-w-xs">
                             Plans your career strategy.
@@ -109,17 +97,17 @@ export default function Overlays() {
 
                         <div className="flex items-center gap-4 mt-4">
                             <span className="text-neon-blue font-bold">THE BUILDER</span>
-                            <div className="w-12 h-1 bg-neon-blue/50 rounded-full"></div>
+                            <div className="w-12 h-0.5 bg-neon-blue/50"></div>
                         </div>
                         <p className="text-sm text-white/80 max-w-xs">
                             Executes the work.
                         </p>
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* Neural Forge (Page 3) */}
-            <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
+            < section className="h-[100vh] w-full flex items-center justify-center pointer-events-none" >
                 <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Career Strategy
@@ -128,10 +116,10 @@ export default function Overlays() {
                         Useful insights to grow your fanbase and income. <span className="text-neon-pink font-bold">Profitable growth.</span>
                     </p>
                 </div>
-            </section>
+            </section >
 
             {/* The Firewall (Page 4) */}
-            <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
+            < section className="h-[100vh] w-full flex items-center justify-center pointer-events-none" >
                 <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
                         Rights Protection
@@ -140,10 +128,10 @@ export default function Overlays() {
                         Secure your IP. <span className="text-neon-green font-bold">Get paid for your work.</span>
                     </p>
                 </div>
-            </section>
+            </section >
 
             {/* Business (Page 5) */}
-            <section className="h-[120vh] w-full flex flex-col items-center justify-center pointer-events-none">
+            < section className="h-[120vh] w-full flex flex-col items-center justify-center pointer-events-none" >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-6xl px-6 mb-20">
                     {/* Marketing Card */}
                     <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md">
@@ -169,10 +157,10 @@ export default function Overlays() {
                         Scale Your Career.
                     </h2>
                 </div>
-            </section>
+            </section >
 
             {/* Commerce (Page 5) */}
-            <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
+            < section className="h-[100vh] w-full flex items-center justify-center pointer-events-none" >
                 <div className="text-center p-10 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
                     <h2 className="text-6xl md:text-8xl font-bold text-white mb-4 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Direct to Fan.
@@ -181,34 +169,34 @@ export default function Overlays() {
                         Sell merch, tickets, and vinyl directly to your audience. No middlemen.
                     </p>
                 </div>
-            </section>
+            </section >
             {/* The Titan (Spacer for 3D) */}
-            <section className="h-[100vh] w-full pointer-events-none"></section>
+            < section className="h-[100vh] w-full pointer-events-none" ></section >
 
-            {/* Outro */}
-            <section className="h-[100vh] w-full flex flex-col items-center justify-center pointer-events-none">
-                <div className="text-center z-10">
+            {/* Outro & Launch */}
+            <section className="h-auto w-full flex flex-col items-center justify-center pointer-events-auto py-32">
+                <div className="text-center z-10 mb-12 pointer-events-none">
                     <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Your Music.
                     </h2>
                     <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
                         Your Rules.
                     </h2>
-                    <h2 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-purple via-neon-blue to-signal-green mt-8 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+                    <h2 className="text-6xl md:text-8xl font-bold text-white mt-8 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
                         indiiOS
                     </h2>
+                    <p className="text-xl md:text-2xl text-white/60 font-light mt-4 tracking-widest uppercase">
+                        The Operating System for your Independence
+                    </p>
                 </div>
-            </section>
 
-            {/* Launch Button */}
-            <section className="h-[100vh] w-full flex flex-col items-center justify-center pointer-events-auto pb-20">
-                <div className="text-center z-10 bg-black/60 backdrop-blur-xl p-12 rounded-3xl border border-white/10 shadow-2xl">
+                <div className="text-center z-10 bg-black/60 backdrop-blur-xl p-12 rounded-3xl border border-white/10 shadow-2xl mb-20">
                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-8">
                         Ready to Build?
                     </h2>
                     <a
                         href="http://localhost:5173"
-                        className="px-10 py-5 bg-white text-black font-bold text-xl rounded-full hover:bg-neon-blue hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(0,243,255,0.6)] hover:scale-105 transform inline-block"
+                        className="px-10 py-5 bg-white text-black font-bold text-xl hover:bg-neon-blue hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(0,243,255,0.6)] hover:scale-105 transform inline-block"
                     >
                         Launch Studio
                     </a>
@@ -216,6 +204,18 @@ export default function Overlays() {
                         v1.0.0 (Alpha)
                     </p>
                 </div>
+
+                {/* Footer */}
+                <footer className="text-center z-10 text-white/30 text-sm">
+                    <p className="mb-2">&copy; 2025 indiiOS. All rights reserved.</p>
+                    <div className="flex gap-4 justify-center">
+                        <span className="hover:text-white cursor-pointer transition-colors">Privacy Policy</span>
+                        <span>|</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Terms of Service</span>
+                        <span>|</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Contact</span>
+                    </div>
+                </footer>
             </section>
         </>
     );
