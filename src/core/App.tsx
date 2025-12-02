@@ -30,6 +30,11 @@ export default function App() {
         initializeHistory();
         loadProjects();
         useStore.setState({ isAgentOpen: false });
+
+        // Handle direct navigation to /select-org
+        if (window.location.pathname === '/select-org') {
+            useStore.setState({ currentModule: 'select-org' });
+        }
     }, []);
 
     return (
