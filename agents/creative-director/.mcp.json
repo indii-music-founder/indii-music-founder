@@ -1,12 +1,3 @@
 {
-    "mcpServers": {
-        "filesystem": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-filesystem",
-                "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1"
-            ]
-        }
-    }
+    "mcpServers": {}
 }

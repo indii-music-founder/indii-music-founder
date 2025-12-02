@@ -12,9 +12,12 @@ Optimize the indiiOS Studio application for mobile devices, ensuring a responsiv
 - [x] **Responsive Navbar:** Implemented `CreativeNavbar` with mobile-optimized layout (icons only on small screens).
 - [x] **Dashboard Grid:** Updated `Dashboard.tsx` to use `grid-cols-1` on mobile and `grid-cols-3` on desktop.
 - [x] **Studio Controls:** `StudioNavControls` now stacks gracefully on mobile.
+- [x] **Dashboard Header:** Responsive layout for title and action buttons (icon-only on mobile).
 
 ### 2. Components
 
+- [x] **Buttons:** Updated "New Project" and "Brand Kit" buttons to be icon-only on mobile to save space.
+- [x] **Sign Out:** Added responsive "Sign Out" button.
 - [ ] **Modals:** Verify `OnboardingModal` and `NewProjectModal` fit within mobile viewports without scrolling issues.
 - [ ] **Inputs:** Ensure font size is at least 16px to prevent iOS auto-zoom.
 - [ ] **Touch Targets:** Verify all interactive elements meet the 44x44px minimum.

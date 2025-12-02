@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
-import { Image } from '@/services/image/ImageService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { Editing } from '@/services/image/EditingService'; // For completeness
 import { auth } from '@/services/firebase';
 import { MonitorPlay, Sparkles, Loader2, ChevronDown, ChevronUp, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
@@ -32,7 +34,7 @@ export default function CreativeNavbar() {
         try {
             let results;
             if (generationMode === 'video') {
-                results = await Image.generateVideo({
+                results = await VideoGeneration.generateVideo({
                     prompt: prompt,
                     resolution: studioControls.resolution,
                     aspectRatio: studioControls.aspectRatio,
@@ -43,7 +45,7 @@ export default function CreativeNavbar() {
                     timeOffset: videoInputs.timeOffset
                 });
             } else {
-                results = await Image.generateImages({
+                results = await ImageGeneration.generateImages({
                     prompt: prompt,
                     count: 1,
                     resolution: studioControls.resolution,
@@ -94,16 +96,24 @@ export default function CreativeNavbar() {
                     }
                     setVideoInput('lastFrame', null); // Clear last frame for next segment
                     if (!lastVideo.url.startsWith('data:image')) toast.success("Daisy Chain: Next frame set!");
-                } catch (err) {
-                    console.error("Daisy Chain Error:", err);
-                    toast.error("Failed to extract frame for Daisy Chain");
+                } catch (e: unknown) {
+                    console.error("Daisy Chain Error:", e);
+                    if (e instanceof Error) {
+                        toast.error(`Failed to extract frame for Daisy Chain: ${e.message}`);
+                    } else {
+                        toast.error("Failed to extract frame for Daisy Chain: Unknown error");
+                    }
                 }
             }
 
             setPrompt('');
-        } catch (e) {
+        } catch (e: unknown) {
             console.error("Generation Error:", e);
-            toast.error(`Generation failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+            if (e instanceof Error) {
+                toast.error(`Generation failed: ${e.message}`);
+            } else {
+                toast.error(`Generation failed: Unknown error`);
+            }
         } finally {
             setIsGenerating(false);
         }

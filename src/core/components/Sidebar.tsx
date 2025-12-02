@@ -1,64 +1,88 @@
 import React from 'react';
 import { useStore } from '../store';
-import { Palette, Scale, Music, Megaphone, Search, Settings, Layout, Network, Film, Book } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule } = useStore();
 
-    const navItems: { id: typeof currentModule; icon: any; label: string }[] = [
-        { id: 'dashboard', icon: Layout, label: 'Dashboard' },
-        { id: 'creative', icon: Palette, label: 'Studio' },
-        { id: 'video', icon: Film, label: 'Video' },
-        { id: 'music', icon: Music, label: 'Music' },
-        { id: 'workflow', icon: Network, label: 'Workflow' },
-        { id: 'marketing', icon: Megaphone, label: 'Marketing' },
-        { id: 'legal', icon: Scale, label: 'Legal' },
-        { id: 'knowledge', icon: Book, label: 'Knowledge' },
+    // Grouped navigation items based on the screenshot
+    const managerItems = [
+        { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
+        { id: 'road', icon: Users, label: 'Road Manager' },
+        { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
     ];
 
+    const departmentItems = [
+        { id: 'creative', icon: Palette, label: 'Art Department' },
+        { id: 'video', icon: Film, label: 'Video Department' },
+        { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
+        { id: 'social', icon: Network, label: 'Social Media Department' },
+        { id: 'legal', icon: Scale, label: 'Legal Department' },
+        { id: 'publishing', icon: Book, label: 'Publishing Department' },
+        { id: 'finance', icon: DollarSign, label: 'Finance Department' },
+        { id: 'licensing', icon: FileText, label: 'Licensing Department' },
+    ];
+
+    const toolItems = [
+        { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
+        { id: 'image-studio', icon: Palette, label: 'Image Studio' },
+        { id: 'video-studio', icon: Film, label: 'Video Studio' },
+        { id: 'workflow', icon: Network, label: 'Workflow Builder' },
+    ];
+
+    const NavItem = ({ item, isActive }: { item: any, isActive: boolean }) => (
+        <button
+            onClick={() => setModule(item.id)}
+            className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${isActive
+                    ? 'text-teal-400 bg-teal-400/10 border-r-2 border-teal-400'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                }`}
+        >
+            <item.icon size={16} />
+            <span className="truncate">{item.label}</span>
+        </button>
+    );
+
     return (
-        <div className="md:w-16 md:min-w-[4rem] w-full h-16 md:h-full glass-panel border-t md:border-t-0 md:border-r border-white/5 flex md:flex-col flex-row items-center py-2 md:py-4 z-50 flex-shrink-0 fixed bottom-0 md:relative justify-around md:justify-start">
-            <div className="hidden md:block mb-8">
-                <div className="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-blue rounded-lg shadow-[0_0_15px_rgba(176,38,255,0.3)]"></div>
+        <div className="w-64 h-full bg-[#0d1117] border-r border-white/5 flex flex-col flex-shrink-0 overflow-y-auto custom-scrollbar">
+            {/* Header */}
+            <div className="p-4 border-b border-white/5">
+                <h2 className="text-sm font-semibold text-gray-200">Studio Resources</h2>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Select an analyzed track to automatically provide its creative brief as context for your next task.
+                </p>
             </div>
 
-            <div className="flex md:flex-col flex-row gap-1 md:gap-4 w-full items-center justify-around md:justify-center">
-                {/* Command Bar Trigger */}
-                <button
-                    onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
-                    className="hidden md:flex w-10 h-10 rounded-xl items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-all group relative"
-                >
-                    <Search size={20} />
-                    <span className="absolute left-14 bg-black/90 border border-white/10 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none backdrop-blur-md">
-                        Command (Cmd+K)
-                    </span>
-                </button>
+            <div className="flex-1 py-4 space-y-6">
+                {/* Manager's Office */}
+                <div>
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manager's Office</h3>
+                    <div className="space-y-0.5">
+                        {managerItems.map(item => (
+                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
+                        ))}
+                    </div>
+                </div>
 
-                <div className="hidden md:block w-8 h-[1px] bg-white/10 my-2"></div>
+                {/* Departments */}
+                <div>
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Departments</h3>
+                    <div className="space-y-0.5">
+                        {departmentItems.map(item => (
+                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
+                        ))}
+                    </div>
+                </div>
 
-                {navItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => setModule(item.id)}
-                        className={`p-3 rounded-xl transition-all group relative flex justify-center ${currentModule === item.id
-                            ? 'bg-neon-purple/20 text-neon-purple shadow-[0_0_10px_rgba(176,38,255,0.2)] border border-neon-purple/50'
-                            : 'text-white/50 hover:bg-white/5 hover:text-white'
-                            }`}
-                    >
-                        <item.icon size={20} />
-
-                        {/* Tooltip */}
-                        <div className="hidden md:block absolute left-14 bg-black/90 border border-white/10 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 backdrop-blur-md">
-                            {item.label}
-                        </div>
-                    </button>
-                ))}
-            </div>
-
-            <div className="hidden md:block mt-auto">
-                <button className="p-3 text-white/50 hover:text-white transition-colors">
-                    <Settings size={20} />
-                </button>
+                {/* Tools */}
+                <div>
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tools</h3>
+                    <div className="space-y-0.5">
+                        {toolItems.map(item => (
+                            <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

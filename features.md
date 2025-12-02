@@ -42,6 +42,7 @@
 * **The Director's Board:** Agent-driven storyboard generation (Pre-visualization).
 * **Director's Cut:** Automated QA loop where an Agent critiques and rejects low-quality outputs.
 * **Prompt Improver:** Expert system to expand simple prompts into cinematic directives.
+* **RAG / Knowledge Base:** Semantic retrieval system for project documents and assets (Beta).
 
 ---
 

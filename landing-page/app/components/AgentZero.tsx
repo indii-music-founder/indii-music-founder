@@ -3,7 +3,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { Trail, TorusKnot } from '@react-three/drei';
+import { Trail } from '@react-three/drei';
 
 const GlitchMaterial = {
     uniforms: {
@@ -44,80 +44,52 @@ const GlitchMaterial = {
   `
 };
 
-function OrbitalPath() {
-    const orbiterRef = useRef<THREE.Mesh>(null!);
-
-    // Create a complex 3D curve "back to front, around and over"
-    const curve = useMemo(() => {
-        return new THREE.CatmullRomCurve3([
-            new THREE.Vector3(0, 0, -4),   // Back
-            new THREE.Vector3(3, 2, 0),    // Right Up
-            new THREE.Vector3(0, 4, 2),    // Top Front
-            new THREE.Vector3(-3, 0, 0),   // Left
-            new THREE.Vector3(0, -3, -2),  // Bottom Back
-            new THREE.Vector3(4, 0, 2),    // Right Front
-            new THREE.Vector3(0, 0, -4)    // Back (Loop)
-        ], true, 'catmullrom', 0.5);
-    }, []);
+function OrigamiShard({ position, rotation, scale, speed }: { position: [number, number, number], rotation: [number, number, number], scale: number, speed: number }) {
+    const mesh = useRef<THREE.Mesh>(null!);
 
     useFrame((state) => {
-        const t = (state.clock.getElapsedTime() * 0.2) % 1; // 5 seconds per loop
-        const point = curve.getPointAt(t);
-        const tangent = curve.getTangentAt(t);
-
-        orbiterRef.current.position.copy(point);
-        orbiterRef.current.lookAt(point.clone().add(tangent));
+        const t = state.clock.getElapsedTime();
+        mesh.current.rotation.x = rotation[0] + t * speed;
+        mesh.current.rotation.y = rotation[1] + t * speed * 0.5;
+        mesh.current.position.y = position[1] + Math.sin(t * 2 + position[0]) * 0.2; // Float
     });
 
     return (
-        <group>
-            {/* Visualize Path (Optional, faint) */}
-            <line>
-                <bufferGeometry setFromPoints={curve.getPoints(100)} />
-                <lineBasicMaterial color="#444" transparent opacity={0.2} />
-            </line>
-
-            {/* Orbiter with Trail */}
-            <Trail width={0.4} length={12} color={new THREE.Color("#00f3ff")} attenuation={(t) => t * t}>
-                <mesh ref={orbiterRef}>
-                    <sphereGeometry args={[0.15, 16, 16]} />
-                    <meshBasicMaterial color="#00f3ff" toneMapped={false} />
-                </mesh>
-            </Trail>
-        </group>
+        <mesh ref={mesh} position={position} scale={scale}>
+            <icosahedronGeometry args={[1, 0]} /> {/* Detail 0 = 20 triangles, sharp */}
+            <meshPhysicalMaterial
+                roughness={0.1}
+                metalness={0.1}
+                transmission={0.95}
+                thickness={2.0}
+                ior={1.5}
+                clearcoat={1}
+                attenuationDistance={1.0}
+                attenuationColor="#ffffff"
+                color="#ffffff"
+                iridescence={1}
+                iridescenceIOR={1.3}
+                dispersion={5}
+                flatShading={true} // Enhances the origami/faceted look
+            />
+        </mesh>
     );
 }
 
 function AgentEntities() {
-    const knotRef = useRef<THREE.Mesh>(null!);
-    const materialRef = useRef<THREE.ShaderMaterial>(null!);
-
-    useFrame((state) => {
-        const time = state.clock.getElapsedTime();
-
-        // Slow, majestic rotation for the central knot
-        knotRef.current.rotation.x = time * 0.1;
-        knotRef.current.rotation.y = time * 0.15;
-
-        if (materialRef.current) {
-            materialRef.current.uniforms.uTime.value = time;
-        }
-    });
-
     return (
-        <>
-            {/* The Architect (Central Knot) */}
-            <TorusKnot ref={knotRef} args={[1.5, 0.4, 128, 32]} position={[0, 0, 0]}>
-                <shaderMaterial
-                    ref={materialRef}
-                    args={[GlitchMaterial]}
-                    wireframe
-                />
-            </TorusKnot>
+        <group>
+            {/* Central "indii" Intelligence */}
+            <OrigamiShard position={[0, 0, 0]} rotation={[0, 0, 0]} scale={2} speed={0.2} />
 
-            {/* The Builder (Orbital Flow) */}
-            <OrbitalPath />
-        </>
+            {/* Orbiting Shards */}
+            <OrigamiShard position={[3, 2, -2]} rotation={[1, 2, 0]} scale={0.8} speed={0.3} />
+            <OrigamiShard position={[-3, -1, 1]} rotation={[2, 1, 1]} scale={0.6} speed={0.4} />
+            <OrigamiShard position={[1, -3, -1]} rotation={[0, 3, 2]} scale={0.5} speed={0.25} />
+
+            {/* Connecting Lines (Constellation effect) */}
+            {/* We could add lines connecting them if desired, but floating shards fits "origami" well */}
+        </group>
     );
 }
 

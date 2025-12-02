@@ -5,7 +5,9 @@ import { DualAgentService } from '../../services/agent/DualAgentService';
 import { MUSIC_TOOLS, MUSIC_MANAGER_PROMPT, MUSIC_EXECUTOR_PROMPT } from './tools';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
-import { Image } from '@/services/image/ImageService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { Editing } from '@/services/image/EditingService'; // For completeness
 import { motion, AnimatePresence } from 'framer-motion';
 
 const musicAgent = new DualAgentService(
@@ -241,7 +243,7 @@ export default function MusicStudio() {
                 brand_context: getBrandContext()
             });
 
-            const images = await Image.generateImages({
+            const images = await ImageGeneration.generateImages({
                 prompt: prompt,
                 aspectRatio: '1:1',
                 count: 1
@@ -258,9 +260,13 @@ export default function MusicStudio() {
                 });
                 toast.success("Cover Art Generated!");
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Art generation failed:", error);
-            toast.error("Failed to generate art.");
+            if (error instanceof Error) {
+                toast.error(`Failed to generate art: ${error.message}`);
+            } else {
+                toast.error("Failed to generate art: An unknown error occurred.");
+            }
         } finally {
             setIsGeneratingArt(false);
         }
@@ -277,9 +283,13 @@ export default function MusicStudio() {
             const treatment = JSON.parse(treatmentJson);
             setVideoTreatment(treatment);
             toast.success("Video Treatment Generated!");
-        } catch (e) {
+        } catch (e: unknown) {
             console.error(e);
-            toast.error("Failed to generate treatment.");
+            if (e instanceof Error) {
+                toast.error(`Failed to generate treatment: ${e.message}`);
+            } else {
+                toast.error("Failed to generate treatment: An unknown error occurred.");
+            }
         } finally {
             setIsGeneratingVideo(false);
         }
@@ -299,7 +309,7 @@ export default function MusicStudio() {
             // Use the treatment to drive the video generation
             const prompt = `${videoTreatment.title}: ${videoTreatment.concept}. ${videoTreatment.visual_style}. Camera: ${videoTreatment.camera_movement}.`;
 
-            const videos = await Image.generateVideo({
+            const videos = await VideoGeneration.generateVideo({
                 prompt: prompt,
                 aspectRatio: '16:9',
                 resolution: '720p'
@@ -316,9 +326,13 @@ export default function MusicStudio() {
                 });
                 toast.success("Music Video Generated!");
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Video generation failed:", error);
-            toast.error("Failed to generate video.");
+            if (error instanceof Error) {
+                toast.error(`Failed to generate video: ${error.message}`);
+            } else {
+                toast.error("Failed to generate video: An unknown error occurred.");
+            }
         } finally {
             setIsGeneratingVideo(false);
         }
@@ -543,28 +557,16 @@ export default function MusicStudio() {
     return (
         <div className="h-full flex flex-col bg-[#0f0f0f] text-white overflow-hidden font-sans">
             {/* Header */}
-            <div className="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-[#0f0f0f]/90 backdrop-blur z-20">
+            <div className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-[#0d1117]">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-purple-900/20">
-                        <Music size={16} className="text-white" />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-sm tracking-wide">Deep Audio Analysis Lab</h1>
-                        <p className="text-[10px] text-gray-500">Essentia-powered feature extraction & Synesthetic Art Generation.</p>
+                    <div className="flex items-center gap-2 text-teal-400">
+                        <Waves size={20} />
+                        <h1 className="font-semibold text-sm tracking-wide text-white">Audio Intelligence</h1>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={runDiagnostics}
-                        className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs font-mono text-green-400 border border-green-900/30 transition-colors"
-                    >
-                        Run Diagnostics (x10)
-                    </button>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-full border border-gray-700">
-                        <div className={`w-2 h-2 rounded-full ${isEngineReady ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 animate-pulse'}`}></div>
-                        <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
-                            {isEngineReady ? 'Engine Online' : 'Offline'}
-                        </span>
+                    <div className="px-2 py-1 rounded border border-white/10 text-[10px] font-mono text-gray-500">
+                        BETA v3.3
                     </div>
                 </div>
             </div>
@@ -575,7 +577,7 @@ export default function MusicStudio() {
                     <div className="flex flex-col gap-6 overflow-hidden">
                         {/* Visualizer / Drop Zone */}
                         <div
-                            className={`flex-1 bg-gray-900/50 rounded-2xl border border-gray-800 relative overflow-hidden group transition-all ${isDragging ? 'border-blue-500 bg-blue-500/10' : ''}`}
+                            className={`flex-1 flex items-center justify-center p-12 transition-all ${isDragging ? 'bg-white/5' : ''}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
@@ -590,11 +592,11 @@ export default function MusicStudio() {
                             />
 
                             {selectedFile ? (
-                                <div className="absolute inset-0 flex flex-col p-6">
+                                <div className="w-full h-full relative flex flex-col">
                                     <div className="flex justify-between items-start mb-6 z-10">
                                         <div>
                                             <h2 className="text-xl font-bold text-white mb-1">{selectedFile.name}</h2>
-                                            <div className="flex items-center gap-4 text-xs font-mono text-purple-400">
+                                            <div className="flex items-center gap-4 text-xs font-mono text-teal-400">
                                                 {analysisData && (
                                                     <>
                                                         <span>{analysisData.rhythm.bpm} BPM</span>
@@ -612,12 +614,12 @@ export default function MusicStudio() {
                                     </div>
 
                                     {/* Waveform Visualization */}
-                                    <div className="flex-1 relative flex items-center justify-center">
-                                        <div className="absolute inset-0 flex items-center gap-0.5 opacity-50">
+                                    <div className="flex-1 relative flex items-center justify-center bg-black/20 rounded-xl border border-white/5 overflow-hidden">
+                                        <div className="absolute inset-0 flex items-center gap-0.5 opacity-50 px-4">
                                             {Array.from({ length: 60 }).map((_, i) => (
                                                 <motion.div
                                                     key={i}
-                                                    className="flex-1 bg-purple-500 rounded-full"
+                                                    className="flex-1 bg-teal-500 rounded-full"
                                                     initial={{ height: '10%' }}
                                                     animate={{
                                                         height: isPlaying ? [
@@ -638,15 +640,15 @@ export default function MusicStudio() {
                                         {/* Play Button Overlay */}
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }}
-                                            className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform z-20 shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                                            className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform z-20 border border-white/20"
                                         >
-                                            {isPlaying ? <Pause size={24} fill="black" /> : <Play size={24} fill="black" className="ml-1" />}
+                                            {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" className="ml-1" />}
                                         </button>
                                     </div>
 
                                     {/* Analysis Tabs / Creative Brief */}
                                     {analysisData && (
-                                        <div className="flex-1 bg-black/20 rounded-xl border border-white/5 p-6 overflow-y-auto custom-scrollbar">
+                                        <div className="mt-6 bg-black/20 rounded-xl border border-white/5 p-6 overflow-y-auto custom-scrollbar h-64">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 {/* Art Department */}
                                                 <div className="space-y-4">
@@ -754,14 +756,13 @@ export default function MusicStudio() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-center pointer-events-none z-10">
-                                    <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-500 group-hover:scale-110 transition-transform">
-                                        <Upload size={40} />
+                                <div className="w-full max-w-2xl aspect-[2/1] border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center group-hover:border-white/20 transition-colors">
+                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                        <Upload size={24} className="text-gray-400" />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-white mb-2">Drop Audio File Here</h3>
-                                    <p className="text-gray-500 max-w-sm mx-auto">
-                                        Upload a track to extract Mood, Danceability, Roughness, and generate AI visuals.
-                                    </p>
+                                    <h3 className="text-lg font-medium text-white mb-2">Upload Audio Track</h3>
+                                    <p className="text-sm text-gray-500 mb-6">MP3, WAV, FLAC (Max 100MB)</p>
+                                    <span className="text-xs text-teal-500 font-medium">AI Analysis + Signal Processing</span>
                                 </div>
                             )}
                         </div>
