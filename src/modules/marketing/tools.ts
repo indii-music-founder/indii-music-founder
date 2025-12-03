@@ -22,55 +22,16 @@ export const MARKETING_TOOLS = {
         try {
             const res = await AI.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: { parts: [{ text: prompt }] }
+                contents: { role: 'user', parts: [{ text: prompt }] }
             });
-            return res.text || "Failed to generate strategy.";
+            return res.text() || "Failed to generate strategy.";
         } catch (e) {
             return JSON.stringify({ error: "AI Service Unavailable" });
         }
     },
 
-    write_social_copy: async (args: { platform: string, topic: string, tone: string }) => {
-        const prompt = `
-        You are a Senior Copywriter.
-        Write a social media post for ${args.platform}.
-        Topic: ${args.topic}
-        Tone: ${args.tone}
-        
-        Include hashtags and emojis.
-        `;
+}
 
-        try {
-            const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
-                contents: { parts: [{ text: prompt }] }
-            });
-            return res.text || "Failed to generate copy.";
-        } catch (e) {
-            return "Error generating copy.";
-        }
-    },
-
-    analyze_market_trends: async (args: { industry: string }) => {
-        // Mocking trend analysis
-        const trends = [
-            "AI-driven personalization",
-            "Short-form video dominance",
-            "Sustainability focus",
-            "Community-led growth",
-            "Voice search optimization"
-        ];
-
-        const relevantTrends = trends.sort(() => 0.5 - Math.random()).slice(0, 3);
-
-        return JSON.stringify({
-            industry: args.industry,
-            top_trends: relevantTrends,
-            sentiment: "Positive",
-            opportunity_score: Math.floor(Math.random() * 100)
-        }, null, 2);
-    }
-};
 
 export const MARKETING_MANAGER_PROMPT = `
 You are the "Chief Marketing Officer" (CMO) for indiiOS.

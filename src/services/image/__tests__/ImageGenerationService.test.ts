@@ -3,11 +3,22 @@ import { ImageGeneration } from '../ImageGenerationService';
 import { AI } from '../../ai/AIService';
 
 // Mock the AI service
+// Mock the AI service
 vi.mock('../../ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
         parseJSON: vi.fn(),
     }
+}));
+
+// Mock Firebase Functions
+const mockHttpsCallable = vi.fn();
+vi.mock('firebase/functions', () => ({
+    httpsCallable: (functions: any, name: string) => mockHttpsCallable
+}));
+
+vi.mock('@/services/firebase', () => ({
+    functions: {}
 }));
 
 describe('ImageGenerationService', () => {
@@ -18,29 +29,31 @@ describe('ImageGenerationService', () => {
     describe('generateImages', () => {
         it('should generate images successfully', async () => {
             const mockResponse = {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'image/png',
-                                data: 'base64data'
-                            }
-                        }]
-                    }
-                }]
+                data: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: 'base64data'
+                                }
+                            }]
+                        }
+                    }]
+                }
             };
-            (AI.generateContent as any).mockResolvedValue(mockResponse);
+            mockHttpsCallable.mockResolvedValue(mockResponse);
 
             const result = await ImageGeneration.generateImages({ prompt: 'test prompt' });
 
             expect(result).toHaveLength(1);
             expect(result[0].url).toBe('data:image/png;base64,base64data');
             expect(result[0].prompt).toBe('test prompt');
-            expect(AI.generateContent).toHaveBeenCalledTimes(1);
+            expect(mockHttpsCallable).toHaveBeenCalledTimes(1);
         });
 
         it('should handle errors gracefully', async () => {
-            (AI.generateContent as any).mockRejectedValue(new Error('AI Error'));
+            mockHttpsCallable.mockRejectedValue(new Error('AI Error'));
 
             await expect(ImageGeneration.generateImages({ prompt: 'test' }))
                 .rejects.toThrow('AI Error');
@@ -92,7 +105,7 @@ describe('ImageGenerationService', () => {
                 style_context: 'A style',
                 negative_prompt: 'Avoid this'
             };
-            (AI.generateContent as any).mockResolvedValue({ text: JSON.stringify(mockJSON) });
+            (AI.generateContent as any).mockResolvedValue({ text: () => JSON.stringify(mockJSON) });
             (AI.parseJSON as any).mockReturnValue(mockJSON);
 
             const result = await ImageGeneration.extractStyle({ mimeType: 'image/png', data: 'data' });

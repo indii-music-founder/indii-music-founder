@@ -88,10 +88,10 @@ TASK: Break this down into a step - by - step plan for the Executor.
         `;
         const res = await AI.generateContent({
             model: AI_MODELS.TEXT.AGENT,
-            contents: { parts: [{ text: prompt }] },
+            contents: { role: 'user', parts: [{ text: prompt }] },
             config: { ...AI_CONFIG.THINKING.HIGH }
         });
-        return res.text || "Failed to generate plan.";
+        return res.text() || "Failed to generate plan.";
     }
 
     private async runExecutorLoop(plan: string): Promise<string> {
@@ -111,11 +111,11 @@ TASK: Execute the plan.If you need to use a tool, output ONLY a JSON object in t
 
         const res = await AI.generateContent({
             model: AI_MODELS.TEXT.AGENT,
-            contents: { parts: [{ text: prompt }] },
+            contents: { role: 'user', parts: [{ text: prompt }] },
             config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH } // Force JSON to make parsing easier
         });
 
-        const responseText = res.text || "{}";
+        const responseText = res.text() || "{}";
         const parsed = AI.parseJSON(responseText);
 
         if (parsed.tool && this.executorConfig.tools[parsed.tool]) {
@@ -143,10 +143,10 @@ TASK: Critique the result.Did it fully satisfy the goal ?
 `;
         const res = await AI.generateContent({
             model: AI_MODELS.TEXT.AGENT,
-            contents: { parts: [{ text: prompt }] },
+            contents: { role: 'user', parts: [{ text: prompt }] },
             config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
         });
-        return AI.parseJSON(res.text);
+        return AI.parseJSON(res.text());
     }
 
     private evolveExecutorMemory(critique: string) {

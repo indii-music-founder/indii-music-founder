@@ -1,5 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export class EditingService {
 
@@ -10,24 +12,17 @@ export class EditingService {
         negativePrompt?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
-            const parts: any[] = [
-                { inlineData: { mimeType: options.image.mimeType, data: options.image.data } }
-            ];
+            const editImageFn = httpsCallable(functions, 'editImage');
 
-            if (options.mask) {
-                parts.push({ inlineData: { mimeType: options.mask.mimeType, data: options.mask.data } });
-                parts.push({ text: "Use the second image as a mask for inpainting." });
-            }
-
-            parts.push({ text: `Edit this image: ${options.prompt}` + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '') });
-
-            const response = await AI.generateContent({
-                model: AI_MODELS.IMAGE.GENERATION,
-                contents: { parts },
-                config: AI_CONFIG.IMAGE.DEFAULT
+            const result = await editImageFn({
+                image: options.image.data,
+                mask: options.mask?.data,
+                prompt: options.prompt + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '')
             });
 
-            const part = response.candidates?.[0]?.content?.parts?.[0];
+            const data = result.data as any;
+            const part = data.candidates?.[0]?.content?.parts?.[0];
+
             if (part && part.inlineData) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
@@ -87,6 +82,7 @@ export class EditingService {
             const response = await AI.generateContent({
                 model,
                 contents: {
+                    role: 'user',
                     parts: [
                         { inlineData: { mimeType: options.video.mimeType, data: options.video.data } },
                         { text: `Edit this video: ${options.prompt}` + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '') }
@@ -159,7 +155,7 @@ export class EditingService {
         projectContext?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
-            const contents: any = { parts: [] };
+            const contents: any = { role: 'user', parts: [] };
             options.images.forEach((img, idx) => {
                 contents.parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
                 contents.parts.push({ text: `[Reference ${idx + 1}]` });
@@ -203,13 +199,13 @@ export class EditingService {
 
             const planRes = await AI.generateContent({
                 model: AI_MODELS.TEXT.AGENT,
-                contents: { parts: [{ text: plannerPrompt }] },
+                contents: { role: 'user', parts: [{ text: plannerPrompt }] },
                 config: {
                     responseMimeType: 'application/json',
                     ...AI_CONFIG.THINKING.HIGH
                 }
             });
-            const plan = AI.parseJSON(planRes.text);
+            const plan = AI.parseJSON(planRes.text());
             const scenes = plan.scenes || [];
             while (scenes.length < options.count) scenes.push(`${options.prompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -222,6 +218,7 @@ export class EditingService {
                     const analysisRes = await AI.generateContent({
                         model: AI_MODELS.TEXT.FAST,
                         contents: {
+                            role: 'user',
                             parts: [
                                 { inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } },
                                 { text: `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.` }
@@ -231,11 +228,11 @@ export class EditingService {
                             ...AI_CONFIG.THINKING.LOW
                         }
                     });
-                    visualContext = analysisRes.text || "";
+                    visualContext = analysisRes.text() || "";
                 }
 
                 // Step 3: Generate Frame
-                const contents: any = { parts: [] };
+                const contents: any = { role: 'user', parts: [] };
                 if (previousImage) {
                     contents.parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
                     contents.parts.push({ text: `[Reference Frame]` });

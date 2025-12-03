@@ -80,8 +80,12 @@ export default function CreativeNavbar() {
                     // Check if it's a fallback image (Storyboard)
                     if (lastVideo.url.startsWith('data:image')) {
                         setVideoInput('firstFrame', {
+                            id: crypto.randomUUID(),
                             url: lastVideo.url,
-                            file: null
+                            prompt: lastVideo.prompt,
+                            type: 'image',
+                            timestamp: Date.now(),
+                            projectId: currentProjectId
                         });
                         toast.success("Daisy Chain: Next frame set (from Storyboard)!");
                     } else {
@@ -90,8 +94,12 @@ export default function CreativeNavbar() {
                         const lastFrameData = await extractVideoFrame(lastVideo.url, -1);
 
                         setVideoInput('firstFrame', {
+                            id: crypto.randomUUID(),
                             url: lastFrameData,
-                            file: null // It's a data URI, no file object
+                            prompt: lastVideo.prompt,
+                            type: 'image',
+                            timestamp: Date.now(),
+                            projectId: currentProjectId
                         });
                     }
                     setVideoInput('lastFrame', null); // Clear last frame for next segment

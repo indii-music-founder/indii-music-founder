@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 
 export interface HistoryItem {
     id: string;
-    type: 'image' | 'video';
+    type: 'image' | 'video' | 'music' | 'text';
     url: string;
     prompt: string;
     timestamp: number;

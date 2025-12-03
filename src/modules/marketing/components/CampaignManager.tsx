@@ -3,6 +3,8 @@ import { Twitter, Instagram, Send, Loader2, CheckCircle, AlertTriangle, Pencil, 
 import { CampaignAsset, CampaignStatus, ScheduledPost } from '../types';
 import EditableCopyModal from './EditableCopyModal';
 import { useToast } from '@/core/context/ToastContext';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 interface CampaignManagerProps {
     campaign: CampaignAsset;
@@ -33,30 +35,21 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ campaign, onUpdate })
         setIsExecuting(true);
         toast.info("Starting campaign execution...");
 
-        // Simulate execution
-        const updatedPosts = [...campaign.posts];
+        try {
+            const executeCampaign = httpsCallable(functions, 'executeCampaign');
+            const response = await executeCampaign({ posts: campaign.posts });
+            const data = response.data as any;
 
-        for (let i = 0; i < updatedPosts.length; i++) {
-            updatedPosts[i] = { ...updatedPosts[i], status: CampaignStatus.EXECUTING };
-            onUpdate({ ...campaign, posts: [...updatedPosts] });
-
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-
-            updatedPosts[i] = {
-                ...updatedPosts[i],
-                status: Math.random() > 0.1 ? CampaignStatus.DONE : CampaignStatus.FAILED,
-                postId: `post_${Math.random().toString(36).substr(2, 9)}`
-            };
-
-            if (updatedPosts[i].status === CampaignStatus.FAILED) {
-                updatedPosts[i].errorMessage = "Simulated API Error";
+            if (data.posts) {
+                onUpdate({ ...campaign, posts: data.posts });
+                toast.success("Campaign execution completed!");
             }
-
-            onUpdate({ ...campaign, posts: [...updatedPosts] });
+        } catch (error) {
+            console.error("Campaign Execution Failed:", error);
+            toast.error("Campaign execution failed");
+        } finally {
+            setIsExecuting(false);
         }
-
-        setIsExecuting(false);
-        toast.success("Campaign execution completed!");
     };
 
     const handleSaveCopy = (postId: string, newCopy: string) => {

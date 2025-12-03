@@ -23,6 +23,7 @@ export class VideoGenerationService {
             const response = await AI.generateContent({
                 model: AI_MODELS.TEXT.AGENT,
                 contents: {
+                    role: 'user',
                     parts: [
                         { inlineData: { mimeType: image.split(';')[0].split(':')[1], data: image.split(',')[1] } },
                         { text: analysisPrompt }
@@ -33,7 +34,7 @@ export class VideoGenerationService {
                 }
             });
 
-            return response.text || "";
+            return response.text() || "";
         } catch (e) {
             console.warn("Temporal Analysis Failed:", e);
             return "";

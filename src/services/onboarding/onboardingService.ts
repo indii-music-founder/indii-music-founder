@@ -27,6 +27,8 @@ export interface UpdateProfileArgs {
     release_themes?: string;
     social_twitter?: string;
     social_instagram?: string;
+    career_stage?: string;
+    goals?: string[];
 }
 
 export interface AddImageAssetArgs {
@@ -62,6 +64,8 @@ const updateProfileFunction: FunctionDeclaration = {
             fonts: { type: 'STRING' as any, description: 'Brand fonts.' },
             social_twitter: { type: 'STRING' as any, description: 'Twitter handle.' },
             social_instagram: { type: 'STRING' as any, description: 'Instagram handle.' },
+            career_stage: { type: 'STRING' as any, description: 'The artist\'s career stage (e.g., Emerging, Professional, Legend).' },
+            goals: { type: 'ARRAY' as any, items: { type: 'STRING' as any }, description: 'Specific career goals (e.g., Tour, Sync, Fanbase).' },
 
             // Release Fields (Transient)
             release_title: { type: 'STRING' as any, description: 'Title of the current Single, EP, or Album.' },
@@ -145,6 +149,8 @@ export function calculateProfileStatus(profile: UserProfile) {
         brandDescription: !!brandKit.brandDescription,
         socials: !!(socials.twitter || socials.instagram || socials.website),
         visuals: (brandAssets.length > 0 || colors.length > 0),
+        careerStage: !!profile.careerStage,
+        goals: !!(profile.goals && profile.goals.length > 0),
     };
 
     // Level 2: Release Context (Transient)
@@ -181,6 +187,9 @@ export async function runOnboardingConversation(
     **LAYER 1: ARTIST IDENTITY** (Progress: ${coreProgress}%)
     Missing: [${coreMissing.join(', ').toUpperCase()}]
     - Who are they? What is their core brand? This rarely changes.
+    - **Career Stage**: Where are they in their journey?
+    - **Goals**: What are they trying to achieve?
+
     
     **LAYER 2: CURRENT RELEASE** (Progress: ${releaseProgress}%)
     Missing: [${releaseMissing.join(', ').toUpperCase()}]
@@ -294,6 +303,8 @@ export function processFunctionCalls(
                 // Handle root level (Identity)
                 if (args.bio) { updatedProfile = { ...updatedProfile, bio: args.bio }; updates.push('Bio'); }
                 if (args.preferences) { updatedProfile = { ...updatedProfile, preferences: args.preferences }; updates.push('Preferences'); }
+                if (args.career_stage) { updatedProfile = { ...updatedProfile, careerStage: args.career_stage }; updates.push('Career Stage'); }
+                if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
                 // Handle BrandKit (Identity + Release)
                 const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram;
