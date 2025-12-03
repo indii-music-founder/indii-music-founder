@@ -41,24 +41,19 @@ export const StorageService = {
 
             // Query with Org Filter
             // Note: This requires a composite index in Firestore (orgId + timestamp)
-            let q;
-            if (orgId) {
-                q = query(
-                    collection(db, 'history'),
-                    where('orgId', '==', orgId),
-                    orderBy('timestamp', 'desc'),
-                    limit(limitCount)
-                );
-            } else {
-                // Fallback for legacy/personal items (or if no org is set)
-                // We might want to show only 'personal' items here, or everything for now.
-                // Let's default to showing items without an orgId or 'personal'
-                q = query(
-                    collection(db, 'history'),
-                    orderBy('timestamp', 'desc'),
-                    limit(limitCount)
-                );
+            if (!orgId) {
+                console.warn("No organization selected, returning empty history.");
+                return [];
             }
+
+            // Query with Org Filter
+            // Note: This requires a composite index in Firestore (orgId + timestamp)
+            const q = query(
+                collection(db, 'history'),
+                where('orgId', '==', orgId),
+                orderBy('timestamp', 'desc'),
+                limit(limitCount)
+            );
 
             const querySnapshot = await getDocs(q);
             return querySnapshot.docs.map(doc => {

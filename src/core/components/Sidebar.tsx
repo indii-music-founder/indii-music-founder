@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule } = useStore();
@@ -10,6 +10,7 @@ export default function Sidebar() {
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
+        { id: 'publicist', icon: Mic, label: 'Publicist' },
     ];
 
     const departmentItems = [
@@ -24,9 +25,9 @@ export default function Sidebar() {
     ];
 
     const toolItems = [
-        { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
-        { id: 'image-studio', icon: Palette, label: 'Image Studio' },
-        { id: 'video-studio', icon: Film, label: 'Video Studio' },
+        { id: 'music', icon: Radio, label: 'Audio Analyzer' },
+        { id: 'creative', icon: Palette, label: 'Image Studio' },
+        { id: 'video', icon: Film, label: 'Video Studio' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
     ];
 
@@ -34,8 +35,8 @@ export default function Sidebar() {
         <button
             onClick={() => setModule(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${isActive
-                    ? 'text-teal-400 bg-teal-400/10 border-r-2 border-teal-400'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                ? 'text-teal-400 bg-teal-400/10 border-r-2 border-teal-400'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                 }`}
         >
             <item.icon size={16} />

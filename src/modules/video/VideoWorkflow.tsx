@@ -3,6 +3,8 @@ import { Film, X } from 'lucide-react';
 import { useStore } from '../../core/store';
 import CreativeGallery from '../creative/components/CreativeGallery';
 import { useToast } from '../../core/context/ToastContext';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export default function VideoWorkflow() {
     const { generatedHistory, selectedItem, uploadedImages, pendingPrompt, setPendingPrompt, addToHistory } = useStore();
@@ -24,20 +26,9 @@ export default function VideoWorkflow() {
         toast.info('Directing scene...');
         try {
             // Call the Creative Director Agent via Firebase Functions
-            const response = await fetch('http://127.0.0.1:5001/indiios-v-1-1/us-central1/creativeDirectorAgent', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Agent failed to respond');
-            }
-
-            const data = await response.json();
+            const creativeDirectorAgent = httpsCallable(functions, 'creativeDirectorAgent');
+            const response = await creativeDirectorAgent({ prompt });
+            const data = response.data as any;
             const result = data.result;
 
             if (result.success && result.data) {

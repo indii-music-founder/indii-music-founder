@@ -13,6 +13,8 @@ const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
 const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
+const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
+const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
 
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
@@ -30,6 +32,11 @@ export default function App() {
         initializeHistory();
         loadProjects();
         useStore.setState({ isAgentOpen: false });
+
+        // Handle direct navigation to /select-org
+        if (window.location.pathname === '/select-org') {
+            useStore.setState({ currentModule: 'select-org' });
+        }
     }, []);
 
     return (
@@ -58,6 +65,8 @@ export default function App() {
                                 {currentModule === 'video' && <VideoStudio />}
                                 {currentModule === 'workflow' && <WorkflowLab />}
                                 {currentModule === 'knowledge' && <KnowledgeBase />}
+                                {currentModule === 'road' && <RoadManager />}
+                                {currentModule === 'social' && <SocialDashboard />}
                             </Suspense>
                         </div>
 

@@ -4,9 +4,7 @@ import { Building2, Plus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SelectOrg() {
-    console.log('SelectOrg: Component Mounting');
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
-    console.log('SelectOrg: State loaded', { organizations, currentOrganizationId });
 
     if (!organizations) {
         console.error('SelectOrg: Critical Error - organizations is undefined');
@@ -62,7 +60,12 @@ export default function SelectOrg() {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
-            <div className="w-full max-w-md animate-in fade-in zoom-in duration-300">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className="w-full max-w-md"
+            >
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center">
                         <span className="text-3xl font-bold text-black tracking-tighter">ii</span>
@@ -137,7 +140,7 @@ export default function SelectOrg() {
                         Create New Organization
                     </button>
                 )}
-            </div>
+            </motion.div>
         </div>
     );
 }

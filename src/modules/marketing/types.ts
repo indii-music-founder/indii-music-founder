@@ -15,10 +15,11 @@ export interface ImageAsset {
 
 export interface ScheduledPost {
     id: string;
-    platform: 'Twitter' | 'Instagram';
+    platform: 'Twitter' | 'Instagram' | 'LinkedIn';
     copy: string;
     imageAsset: ImageAsset;
-    day: number;
+    day: number; // Keep for backward compatibility or relative scheduling
+    scheduledTime?: Date;
     status: CampaignStatus;
     errorMessage?: string;
     postId?: string;

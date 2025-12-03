@@ -19,6 +19,7 @@ export class VideoService {
             const analysisRes = await AI.generateContent({
                 model: AI_MODELS.TEXT.AGENT,
                 contents: {
+                    role: 'user',
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
                         { inlineData: { mimeType: 'image/png', data: mask.data } },
@@ -27,7 +28,7 @@ export class VideoService {
                 },
                 config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
             });
-            const plan = AI.parseJSON(analysisRes.text);
+            const plan = AI.parseJSON(analysisRes.text());
 
             // Step 2: Generate Video
             const uri = await AI.generateVideo({
@@ -101,7 +102,7 @@ export class VideoService {
 
     // Helper to fetch the video blob from the URI (which might be a signed URL or API endpoint)
     async fetchVideoBlob(uri: string): Promise<string> {
-        // In legacy code: const res = await fetch(`${uri}&key=${process.env.API_KEY}`);
+
         // We need to handle the API key injection if it's not already in the URI
         const apiKey = import.meta.env.VITE_API_KEY;
         const fetchUrl = uri.includes('key=') ? uri : `${uri}&key=${apiKey}`;

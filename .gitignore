@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 temp_comparison_repo_backup
 temp_comparison_repo
+
+# Secrets
+scripts/configure_secrets.sh

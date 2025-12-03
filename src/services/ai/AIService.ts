@@ -22,7 +22,7 @@ class AIService {
 
     async generateContent(options: {
         model: string;
-        contents: { role: string; parts: { text: string }[] } | { role: string; parts: { text: string }[] }[];
+        contents: { role: string; parts: any[] } | { role: string; parts: any[] }[];
         config?: Record<string, unknown>;
     }) {
         const { GoogleGenerativeAI } = await import('@google/generative-ai');
@@ -123,6 +123,17 @@ class AIService {
             console.error("Video Gen Error", e);
             throw e;
         }
+    }
+
+    async embedContent(options: {
+        model: string;
+        content: { role?: string; parts: { text: string }[] };
+    }) {
+        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(this.apiKey);
+        const model = genAI.getGenerativeModel({ model: options.model });
+
+        return await model.embedContent({ content: { role: options.content.role || 'user', parts: options.content.parts } });
     }
 
     parseJSON(text: string | undefined) {

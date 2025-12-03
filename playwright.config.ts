@@ -8,12 +8,23 @@ export default defineConfig({
     use: {
         trace: 'on-first-retry',
     },
+    webServer: {
+        command: 'npm run dev',
+        port: 5173,
+        reuseExistingServer: !process.env.CI,
+    },
     projects: [
         {
             name: 'electron',
+            testMatch: /.*electron.spec.ts/,
+        },
+        {
+            name: 'web',
             use: {
-                // We don't need browserName for Electron
+                baseURL: 'http://localhost:5173',
+                browserName: 'chromium',
             },
+            testIgnore: /.*electron.spec.ts/,
         },
     ],
 });
