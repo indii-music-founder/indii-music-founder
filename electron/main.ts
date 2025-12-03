@@ -29,6 +29,7 @@ const createWindow = () => {
             sandbox: false, // Try disabling sandbox
         },
     });
+    console.log('Main process: Preload path configured as:', path.join(__dirname, 'preload.js'));
 
     // In production, load the index.html.
     // In development, load the Vite dev server URL.

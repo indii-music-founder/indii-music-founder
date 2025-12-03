@@ -9,6 +9,15 @@ test.describe('Electron IPC', () => {
         // Use process.cwd() since we are running from the root
         const electronPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron');
 
+        // Debug: Check if preload script exists
+        const preloadPath = path.join(process.cwd(), 'dist-electron', 'electron', 'preload.js');
+        console.log('Test: Checking preload path:', preloadPath);
+        if (fs.existsSync(preloadPath)) {
+            console.log('Test: Preload file exists');
+        } else {
+            console.error('Test: Preload file MISSING');
+        }
+
         // Launch the app
         // We point to the current directory because package.json "main" points to the compiled main.js
         const electronApp = await electron.launch({
@@ -33,6 +42,12 @@ test.describe('Electron IPC', () => {
         // Verify IPC calls
         // We execute this in the context of the browser window
         const platform = await window.evaluate(async () => {
+            // Debug: check if electronAPI is available
+            // @ts-ignore
+            if (!window.electronAPI) {
+                console.error('Window context: window.electronAPI is UNDEFINED');
+                return 'undefined-api';
+            }
             // @ts-ignore
             return await window.electronAPI.getPlatform();
         });
