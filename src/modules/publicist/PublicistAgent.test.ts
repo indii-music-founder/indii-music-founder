@@ -11,6 +11,14 @@ vi.mock('../../services/ai/AIService', () => ({
     }
 }));
 
+// Mock MemoryService to avoid IndexedDB issues
+vi.mock('../../services/agent/MemoryService', () => ({
+    memoryService: {
+        saveMemory: vi.fn(),
+        retrieveRelevantMemories: vi.fn()
+    }
+}));
+
 describe('PublicistAgent', () => {
     it('should be instantiated with correct properties', () => {
         const agent = new PublicistAgent();
