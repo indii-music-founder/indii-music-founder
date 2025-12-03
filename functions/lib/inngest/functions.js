@@ -73,11 +73,29 @@ exports.generateVideoFn = client_1.inngest.createFunction({ id: "generate-video-
         const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
         const instance = { prompt };
         if (image) {
-            // Veo expects specific image format
-            instance.image = {
-                mimeType: image.split(';')[0].split(':')[1],
-                imageBytes: image.split(',')[1]
-            };
+            if (image.startsWith('gs://')) {
+                instance.image = { gcsUri: image };
+            }
+            else {
+                // Veo expects specific image format for base64
+                instance.image = {
+                    mimeType: image.split(';')[0].split(':')[1],
+                    imageBytes: image.split(',')[1]
+                };
+            }
+        }
+        // Handle endImage for first/last frame interpolation
+        const { endImage } = event.data;
+        if (endImage) {
+            if (endImage.startsWith('gs://')) {
+                instance.end_image = { gcsUri: endImage };
+            }
+            else {
+                instance.end_image = {
+                    mimeType: endImage.split(';')[0].split(':')[1],
+                    imageBytes: endImage.split(',')[1]
+                };
+            }
         }
         const response = await fetch(endpoint, {
             method: "POST",

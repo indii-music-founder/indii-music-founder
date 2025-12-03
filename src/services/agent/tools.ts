@@ -2,8 +2,61 @@ import { useStore } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService'; // Added for completeness
+import { memoryService } from '@/services/agent/MemoryService';
+import { AI } from '@/services/ai/AIService';
+import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
+    save_memory: async (args: { content: string, type?: 'fact' | 'summary' | 'rule' }) => {
+        try {
+            const { currentProjectId } = useStore.getState();
+            await memoryService.saveMemory(currentProjectId, args.content, args.type || 'fact');
+            return `Memory saved: "${args.content}"`;
+        } catch (e: any) {
+            return `Failed to save memory: ${e.message}`;
+        }
+    },
+    recall_memories: async (args: { query: string }) => {
+        try {
+            const { currentProjectId } = useStore.getState();
+            const memories = await memoryService.retrieveRelevantMemories(currentProjectId, args.query);
+            return memories.length > 0 ? `Relevant Memories:\n- ${memories.join('\n- ')}` : "No relevant memories found.";
+        } catch (e: any) {
+            return `Failed to recall memories: ${e.message}`;
+        }
+    },
+    verify_output: async (args: { goal: string, content: string }) => {
+        try {
+            const prompt = `
+            CRITIQUE REQUEST:
+            Goal: "${args.goal}"
+            Content to Verify: "${args.content}"
+            
+            Task: Rate this content on a scale of 1-10 based on how well it meets the goal. 
+            If score < 7, provide specific improvements.
+            Output JSON: { "score": number, "reason": "string", "pass": boolean }
+            `;
+
+            const res = await AI.generateContent({
+                model: 'gemini-2.0-flash-exp',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                config: { responseMimeType: 'application/json' }
+            });
+
+            return `Verification Result: ${res.text()}`;
+        } catch (e: any) {
+            return `Verification failed: ${e.message}`;
+        }
+    },
+    request_approval: async (args: { content: string, type?: string }) => {
+        // This tool pauses execution and waits for user input.
+        // In a real async agent system, this would suspend the workflow.
+        // Here, we'll simulate a request by showing a toast or modal and returning a pending status.
+        // Ideally, we'd update the store to show a modal.
+
+        // For now, we'll just log it and return a message that tells the agent to wait.
+        return `[APPROVAL REQUESTED] Content: "${args.content}". Please wait for user confirmation. (Note: UI integration pending)`;
+    },
     set_mode: async (args) => {
         // In a real implementation, this would switch the module or UI state
         return `Switched to ${args.mode} mode (Simulation).`;
@@ -428,7 +481,8 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
         } catch (e: any) {
             return `Music generation failed: ${e.message}`;
         }
-    }
+    },
+    ...PUBLICIST_TOOLS
 };
 
 export const BASE_TOOLS = `
@@ -449,6 +503,13 @@ AVAILABLE TOOLS:
 13. generate_motion_brush(image: string, mask: string, prompt?: string) - Animate a specific area of an image.
 14. analyze_audio(audio: string) - Analyze an audio file (base64) for BPM, key, and energy.
 15. analyze_contract(file_data: string, mime_type: string) - Analyze a legal contract (base64).
+15. analyze_contract(file_data: string, mime_type: string) - Analyze a legal contract (base66).
 16. generate_social_post(platform: string, topic: string, tone?: string) - Generate a social media post.
 17. generate_music(prompt: string, duration?: number) - Generate a music track.
+18. save_memory(content: string, type?: 'fact' | 'summary' | 'rule') - Save a fact or rule to long-term memory.
+19. recall_memories(query: string) - Search long-term memory for relevant info.
+20. verify_output(goal: string, content: string) - Critique generated content against a goal.
+21. request_approval(content: string) - Pause and ask the user for approval.
+22. write_press_release(headline: string, company_name: string, key_points: string[], contact_info: string) - Write a press release.
+23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate a crisis response.
 `;

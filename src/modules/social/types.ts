@@ -1,4 +1,3 @@
-
 export enum CampaignStatus {
     PENDING = 'PENDING',
     EXECUTING = 'EXECUTING',

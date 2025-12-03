@@ -13,19 +13,28 @@ interface CreativeCanvasProps {
 }
 
 export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
-    const { updateHistoryItem, setActiveReferenceImage, uploadedImages, addUploadedImage, currentProjectId } = useStore();
+    const { updateHistoryItem, setActiveReferenceImage, uploadedImages, addUploadedImage, currentProjectId, generatedHistory } = useStore();
     const toast = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const canvasEl = useRef<HTMLCanvasElement>(null);
     const fabricCanvas = useRef<fabric.Canvas | null>(null);
     const [prompt, setPrompt] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
+    const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
 
     useEffect(() => {
         if (item) {
             setPrompt(item.prompt);
         }
     }, [item]);
+
+    // ... (Fabric Canvas initialization omitted for brevity, it remains unchanged)
+
+    // ... (Drawing functions omitted)
+
+    // ... (Magic Fill logic omitted)
+
 
     // Initialize Fabric Canvas
     useEffect(() => {
@@ -346,12 +355,30 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                                 </>
                             )}
                             {!isEditing && item.type === 'image' && (
-                                <button
-                                    onClick={() => handleAnimate()}
-                                    className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                    <Play size={14} /> Animate
-                                </button>
+                                <>
+                                    {endFrameItem ? (
+                                        <div className="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded-lg">
+                                            <img src={endFrameItem.url} alt="End Frame" className="w-6 h-6 rounded object-cover" />
+                                            <span className="text-xs text-gray-300">End Frame</span>
+                                            <button onClick={() => setEndFrameItem(null)} className="text-gray-400 hover:text-white">
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setIsSelectingEndFrame(true)}
+                                            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                                        >
+                                            <ImageIcon size={14} /> Set End Frame
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => handleAnimate()}
+                                        className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <Play size={14} /> Animate
+                                    </button>
+                                </>
                             )}
                             <button onClick={onClose} className="p-2 hover:bg-red-900/50 rounded-lg text-gray-400 hover:text-red-400 transition-colors">
                                 <X size={18} />
@@ -394,6 +421,40 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                             ) : (
                                 <img src={item.url} alt={item.prompt} className="max-w-full max-h-full object-contain shadow-2xl" />
                             )
+                        )}
+
+                        {/* End Frame Selection Overlay */}
+                        {isSelectingEndFrame && (
+                            <div className="absolute inset-0 bg-black/80 z-10 flex flex-col p-8">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-white">Select End Frame</h3>
+                                    <button onClick={() => setIsSelectingEndFrame(false)} className="text-gray-400 hover:text-white">
+                                        <X size={24} />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-4 overflow-y-auto">
+                                    {generatedHistory.filter(i => i.type === 'image' && i.id !== item.id).map(histItem => (
+                                        <button
+                                            key={histItem.id}
+                                            onClick={() => {
+                                                setEndFrameItem(histItem as any);
+                                                setIsSelectingEndFrame(false);
+                                            }}
+                                            className="relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-purple-500 transition-colors group"
+                                        >
+                                            <img src={histItem.url} alt={histItem.prompt} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="text-white font-bold">Select</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    {generatedHistory.filter(i => i.type === 'image' && i.id !== item.id).length === 0 && (
+                                        <div className="col-span-4 text-center text-gray-500 py-12">
+                                            No other images found in history.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </motion.div>

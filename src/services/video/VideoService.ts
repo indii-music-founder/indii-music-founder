@@ -102,7 +102,7 @@ export class VideoService {
 
     // Helper to fetch the video blob from the URI (which might be a signed URL or API endpoint)
     async fetchVideoBlob(uri: string): Promise<string> {
-        // In legacy code: const res = await fetch(`${uri}&key=${process.env.API_KEY}`);
+
         // We need to handle the API key injection if it's not already in the URI
         const apiKey = import.meta.env.VITE_API_KEY;
         const fetchUrl = uri.includes('key=') ? uri : `${uri}&key=${apiKey}`;

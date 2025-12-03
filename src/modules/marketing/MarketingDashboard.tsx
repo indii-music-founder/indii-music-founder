@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { Megaphone, Calendar, Plus, TrendingUp, Users, BarChart2, MoreHorizontal } from 'lucide-react';
+import { Megaphone, LayoutGrid, Plus, TrendingUp, Users, Calendar, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
 
 import BrandManager from './components/BrandManager';
 
 export default function MarketingDashboard() {
     const toast = useToast();
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const { currentModule } = useStore(); // Access store to change module if needed, though we write to it directly usually via useStore.setState or a setter
+    // Actually, looking at App.tsx, it reads from useStore.
+    // We can use useStore.setState or a helper from the store.
+
     const [activeTab, setActiveTab] = useState<'overview' | 'brand'>('overview');
 
     const handleCreateCampaign = () => {
@@ -79,6 +83,12 @@ export default function MarketingDashboard() {
                             Brand Manager
                         </button>
                     </div>
+                    <button
+                        onClick={() => useStore.setState({ currentModule: 'social' })}
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
+                    >
+                        <Megaphone size={18} /> Social Media
+                    </button>
                     <button
                         onClick={handleCreateCampaign}
                         className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
@@ -167,6 +177,8 @@ export default function MarketingDashboard() {
             ) : (
                 <BrandManager />
             )}
+
+
         </div>
     );
 }

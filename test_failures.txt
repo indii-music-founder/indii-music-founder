@@ -1,0 +1,286 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1[39m
+
+[2m7:59:45 AM[22m [33m[1m[vite][22m[39m (client) warning: Duplicate key "social_twitter" in object literal
+64 |              fonts: { type: 'STRING' as any, description: 'Brand fonts.' },
+65 |              social_twitter: { type: 'STRING' as any, description: 'Twitter handle.' },
+66 |              social_twitter: { type: 'STRING' as any, description: 'Twitter handle.' },
+   |              ^
+67 |              social_instagram: { type: 'STRING' as any, description: 'Instagram handle.' },
+68 |              career_stage: { type: 'STRING' as any, description: 'The artist\'s career stage (e.g., Emerging, Professional, Legend).' },
+
+  Plugin: vite:esbuild
+  File: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/src/services/onboarding/onboardingService.ts
+[2m7:59:45 AM[22m [33m[1m[vite][22m[39m (client) warning: Duplicate key "bio" in object literal
+150|          brandDescription: !!brandKit.brandDescription,
+151|          socials: !!(socials.twitter || socials.instagram || socials.website),
+152|          bio: !!profile.bio && profile.bio.length > 10,
+   |          ^
+153|          brandDescription: !!brandKit.brandDescription,
+154|          socials: !!(socials.twitter || socials.instagram || socials.website),
+
+  Plugin: vite:esbuild
+  File: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/src/services/onboarding/onboardingService.ts
+[2m7:59:45 AM[22m [33m[1m[vite][22m[39m (client) warning: Duplicate key "brandDescription" in object literal
+151|          socials: !!(socials.twitter || socials.instagram || socials.website),
+152|          bio: !!profile.bio && profile.bio.length > 10,
+153|          brandDescription: !!brandKit.brandDescription,
+   |          ^
+154|          socials: !!(socials.twitter || socials.instagram || socials.website),
+155|          visuals: (brandAssets.length > 0 || colors.length > 0),
+
+  Plugin: vite:esbuild
+  File: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/src/services/onboarding/onboardingService.ts
+[2m7:59:45 AM[22m [33m[1m[vite][22m[39m (client) warning: Duplicate key "socials" in object literal
+152|          bio: !!profile.bio && profile.bio.length > 10,
+153|          brandDescription: !!brandKit.brandDescription,
+154|          socials: !!(socials.twitter || socials.instagram || socials.website),
+   |          ^
+155|          visuals: (brandAssets.length > 0 || colors.length > 0),
+156|          careerStage: !!profile.careerStage,
+
+  Plugin: vite:esbuild
+  File: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/src/services/onboarding/onboardingService.ts
+ [31m❯[39m src/services/onboarding/onboardingService.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+       [32m✓[39m should return 0% progress for an empty profile[32m 1[2mms[22m[39m
+[31m       [31m×[31m should calculate core progress correctly[39m[32m 7[2mms[22m[39m
+       [32m✓[39m should calculate release progress correctly[32m 0[2mms[22m[39m
+[31m       [31m×[31m should return 100% when all fields are present[39m[32m 0[2mms[22m[39m
+ [32m✓[39m src/modules/video/VideoWorkflow.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mgenerates itinerary when inputs are valid
+[22m[39mMock httpsCallable called for: generateItinerary
+Mock function executed for generateItinerary with data: {
+  locations: [ [32m'New York'[39m ],
+  dates: { start: [32m'2023-10-01'[39m, end: [32m'2023-10-10'[39m }
+}
+
+ [32m✓[39m src/modules/marketing/components/CampaignManager.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mchecks logistics after generating itinerary
+[22m[39mMock httpsCallable called for: generateItinerary
+Mock function executed for generateItinerary with data: {
+  locations: [ [32m'New York'[39m ],
+  dates: { start: [32m'2023-10-01'[39m, end: [32m'2023-10-10'[39m }
+}
+
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mchecks logistics after generating itinerary
+[22m[39mMock httpsCallable called for: checkLogistics
+Mock function executed for checkLogistics with data: {
+  itinerary: {
+    tourName: [32m'Test Tour'[39m,
+    stops: [ [36m[Object][39m ],
+    totalDistance: [32m'1000 km'[39m,
+    estimatedBudget: [32m'$50000'[39m
+  }
+}
+
+ [32m✓[39m src/modules/touring/RoadManager.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 199[2mms[22m[39m
+[90mstderr[2m | src/services/image/__tests__/EditingService.test.ts[2m > [22m[2mEditingService[2m > [22m[2meditImage[2m > [22m[2mshould edit image successfully
+[22m[39mEdit Image Error: [FunctionsError [FirebaseError]: not-found] {
+  code: [32m'functions/not-found'[39m,
+  customData: [90mundefined[39m,
+  details: [90mundefined[39m
+}
+
+[90mstderr[2m | src/services/image/__tests__/ImageGenerationService.test.ts[2m > [22m[2mImageGenerationService[2m > [22m[2mgenerateImages[2m > [22m[2mshould generate images successfully
+[22m[39mImage Generation Error: [FunctionsError [FirebaseError]: not-found] {
+  code: [32m'functions/not-found'[39m,
+  customData: [90mundefined[39m,
+  details: [90mundefined[39m
+}
+
+ [32m✓[39m src/modules/music/MusicStudio.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 249[2mms[22m[39m
+[90mstderr[2m | src/services/image/__tests__/ImageGenerationService.test.ts[2m > [22m[2mImageGenerationService[2m > [22m[2mgenerateImages[2m > [22m[2mshould handle errors gracefully
+[22m[39mImage Generation Error: [FunctionsError [FirebaseError]: not-found] {
+  code: [32m'functions/not-found'[39m,
+  customData: [90mundefined[39m,
+  details: [90mundefined[39m
+}
+
+[90mstderr[2m | src/services/image/__tests__/EditingService.test.ts[2m > [22m[2mEditingService[2m > [22m[2meditImage[2m > [22m[2mshould handle masking
+[22m[39mEdit Image Error: [FunctionsError [FirebaseError]: not-found] {
+  code: [32m'functions/not-found'[39m,
+  customData: [90mundefined[39m,
+  details: [90mundefined[39m
+}
+
+ [31m❯[39m src/services/image/__tests__/EditingService.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 441[2mms[22m[39m
+[31m       [31m×[31m should edit image successfully[39m[32m 174[2mms[22m[39m
+[31m       [31m×[31m should handle masking[39m[32m 253[2mms[22m[39m
+       [32m✓[39m should generate story chain successfully[32m 14[2mms[22m[39m
+ [31m❯[39m src/services/image/__tests__/ImageGenerationService.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 508[2mms[22m[39m
+[31m       [31m×[31m should generate images successfully[39m[32m 203[2mms[22m[39m
+[31m       [31m×[31m should handle errors gracefully[39m[33m 303[2mms[22m[39m
+       [32m✓[39m should remix image successfully[32m 0[2mms[22m[39m
+       [32m✓[39m should return null if no image generated[32m 0[2mms[22m[39m
+       [32m✓[39m should extract style successfully[32m 0[2mms[22m[39m
+ [32m✓[39m src/modules/creative/components/__tests__/CreativeCanvas.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 628[2mms[22m[39m
+     [33m[2m✓[22m[39m should render image preview initially [33m 357[2mms[22m[39m
+ [32m✓[39m src/services/agent/agent_restore.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstderr[2m | functions/src/agents/road-manager/index.test.ts[2m > [22m[2mRoadManagerAgent[2m > [22m[2mshould handle Google Maps API errors gracefully
+[22m[39mFailed to calculate distances: Error: API Error
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mfunctions/src/agents/road-manager/index.test.ts:70:46
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1240:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1206:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/test.BT8LKgU9.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:12[90m)[39m
+
+ [32m✓[39m functions/src/agents/road-manager/index.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/modules/music/services/AudioAnalysisEngine.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/modules/legal/LegalDashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 135[2mms[22m[39m
+[90mstdout[2m | src/services/image/__tests__/VideoGenerationService.test.ts[2m > [22m[2mVideoGenerationService[2m > [22m[2mgenerateVideo[2m > [22m[2mshould fallback to storyboard if video generation fails
+[22m[39mAttempting Storyboard Fallback...
+
+[90mstderr[2m | src/services/image/__tests__/VideoGenerationService.test.ts[2m > [22m[2mVideoGenerationService[2m > [22m[2mgenerateVideo[2m > [22m[2mshould fallback to storyboard if video generation fails
+[22m[39mVideo Generation Error: Error: Video Error
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/image/__tests__/VideoGenerationService.test.ts:37:57
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1240:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1206:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/test.BT8LKgU9.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:12[90m)[39m
+
+[90mstdout[2m | src/services/image/__tests__/VideoGenerationService.test.ts[2m > [22m[2mVideoGenerationService[2m > [22m[2mgenerateVideo[2m > [22m[2mshould use ultimate fallback if everything fails
+[22m[39mAttempting Storyboard Fallback...
+
+[90mstderr[2m | src/services/image/__tests__/VideoGenerationService.test.ts[2m > [22m[2mVideoGenerationService[2m > [22m[2mgenerateVideo[2m > [22m[2mshould use ultimate fallback if everything fails
+[22m[39mVideo Generation Error: Error: Video Error
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/image/__tests__/VideoGenerationService.test.ts:53:57
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1240:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1206:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/test.BT8LKgU9.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:12[90m)[39m
+
+[90mstderr[2m | src/services/image/__tests__/VideoGenerationService.test.ts[2m > [22m[2mVideoGenerationService[2m > [22m[2mgenerateVideo[2m > [22m[2mshould use ultimate fallback if everything fails
+[22m[39mFallback failed: Error: Image Error
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/image/__tests__/VideoGenerationService.test.ts:54:71
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1240:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1206:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4mvitest[24m/dist/chunks/test.BT8LKgU9.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1650:12[90m)[39m
+
+ [32m✓[39m src/services/image/__tests__/VideoGenerationService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/modules/marketing/components/BrandManager.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/modules/marketing/MarketingDashboard.test.tsx[2m [ src/modules/marketing/MarketingDashboard.test.tsx ][22m
+[31m[1mError[22m: Failed to resolve import "react-router-dom" from "src/modules/marketing/MarketingDashboard.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/src/modules/marketing/MarketingDashboard.tsx[39m:4:28
+[33m  3  |  import { Megaphone, Plus, TrendingUp, Users, Calendar, MoreHorizontal } from "lucide-react";
+  4  |  import { useToast } from "@/core/context/ToastContext";
+  5  |  import { useNavigate } from "react-router-dom";
+     |                               ^
+  6  |  import BrandManager from "./components/BrandManager";
+  7  |  export default function MarketingDashboard() {[39m
+[90m [2m❯[22m TransformPluginContext._formatLog ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m42528:41[22m[39m
+[90m [2m❯[22m TransformPluginContext.error ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m42525:16[22m[39m
+[90m [2m❯[22m normalizeUrl ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m40504:23[22m[39m
+[90m [2m❯[22m ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m40623:37[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m40550:7[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m42323:18[22m[39m
+[90m [2m❯[22m loadAndTransform ../../../../../X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:[2m35739:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m functions/lib/agents/road-manager/index.test.js[2m [ functions/lib/agents/road-manager/index.test.js ][22m
+[31m[1mError[22m: Vitest cannot be imported in a CommonJS module using require(). Please use "import" instead.
+
+If you are using "import" in your source code, then it's possible it was bundled into require() automatically by your bundler. In that case, do not bundle CommonJS output since it will never work with Vitest, or use dynamic import() which is available in all CommonJS modules.[39m
+[90m [2m❯[22m Object.<anonymous> node_modules/vitest/index.cjs:[2m1:7[22m[39m
+[36m [2m❯[22m functions/src/agents/road-manager/index.test.ts:[2m1:1[22m[39m
+    [90m  1| [39m[35mimport[39m { describe[33m,[39m it[33m,[39m expect[33m,[39m vi[33m,[39m beforeEach } [35mfrom[39m [32m'vitest'[39m[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m  2| [39m[35mimport[39m { [33mRoadManagerAgent[39m } [35mfrom[39m [32m'./index'[39m[33m;[39m
+    [90m  3| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 6 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/services/onboarding/onboardingService.test.ts[2m > [22monboardingService[2m > [22mcalculateProfileStatus[2m > [22mshould calculate core progress correctly
+[31m[1mAssertionError[22m: expected 33 to be 50 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 50[39m
+[31m+ 33[39m
+
+[36m [2m❯[22m src/services/onboarding/onboardingService.test.ts:[2m68:34[22m[39m
+    [90m 66| [39m            const { coreProgress, coreMissing } = calculateProfileStat…
+    [90m 67| [39m            [90m// Bio (1) + Brand Description (1) = 2/4 = 50%[39m
+    [90m 68| [39m            [34mexpect[39m(coreProgress)[33m.[39m[34mtoBe[39m([34m50[39m)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m 69| [39m            [34mexpect[39m(coreMissing)[33m.[39m[34mtoContain[39m([32m'socials'[39m)[33m;[39m
+    [90m 70| [39m            [34mexpect[39m(coreMissing)[33m.[39m[34mtoContain[39m([32m'visuals'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/onboarding/onboardingService.test.ts[2m > [22monboardingService[2m > [22mcalculateProfileStatus[2m > [22mshould return 100% when all fields are present
+[31m[1mAssertionError[22m: expected 67 to be 100 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 100[39m
+[31m+ 67[39m
+
+[36m [2m❯[22m src/services/onboarding/onboardingService.test.ts:[2m134:34[22m[39m
+    [90m132| [39m
+    [90m133| [39m            const { coreProgress, releaseProgress } = calculateProfile…
+    [90m134| [39m            [34mexpect[39m(coreProgress)[33m.[39m[34mtoBe[39m([34m100[39m)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m135| [39m            [34mexpect[39m(releaseProgress)[33m.[39m[34mtoBe[39m([34m100[39m)[33m;[39m
+    [90m136| [39m        })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/image/__tests__/EditingService.test.ts[2m > [22mEditingService[2m > [22meditImage[2m > [22mshould edit image successfully
+[41m[1m FAIL [22m[49m src/services/image/__tests__/EditingService.test.ts[2m > [22mEditingService[2m > [22meditImage[2m > [22mshould handle masking
+[41m[1m FAIL [22m[49m src/services/image/__tests__/ImageGenerationService.test.ts[2m > [22mImageGenerationService[2m > [22mgenerateImages[2m > [22mshould generate images successfully
+[31m[1mFirebaseError[22m: not-found[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/image/__tests__/ImageGenerationService.test.ts[2m > [22mImageGenerationService[2m > [22mgenerateImages[2m > [22mshould handle errors gracefully
+[31m[1mAssertionError[22m: expected [Function] to throw error including 'AI Error' but got 'not-found'[39m
+
+Expected: [32m"AI Error"[39m
+Received: [31m"not-found"[39m
+
+[36m [2m❯[22m src/services/image/__tests__/ImageGenerationService.test.ts:[2m45:13[22m[39m
+    [90m 43| [39m            (AI.generateContent as any).mockRejectedValue(new Error('A…
+    [90m 44| [39m
+    [90m 45| [39m            await expect(ImageGeneration.generateImages({ prompt: 'tes…
+    [90m   | [39m            [31m^[39m
+    [90m 46| [39m                [33m.[39mrejects[33m.[39m[34mtoThrow[39m([32m'AI Error'[39m)[33m;[39m
+    [90m 47| [39m        })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m11 passed[39m[22m[90m (16)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m46 passed[39m[22m[90m (52)[39m
+[2m   Start at [22m 07:59:44
+[2m   Duration [22m 3.60s[2m (transform 1.08s, setup 1.36s, import 3.15s, tests 2.35s, environment 14.17s)[22m
+

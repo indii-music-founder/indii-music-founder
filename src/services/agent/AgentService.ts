@@ -7,6 +7,9 @@ import { agentRegistry } from './registry';
 import { LegalAgent } from './specialists/LegalAgent';
 import { MarketingAgent } from './specialists/MarketingAgent';
 import { MusicAgent } from './specialists/MusicAgent';
+import { PublicistAgent } from './specialists/PublicistAgent';
+import { BrandAgent } from './specialists/BrandAgent';
+import { RoadAgent } from './specialists/RoadAgent';
 
 
 
@@ -17,7 +20,10 @@ const PERSONA_DEFINITIONS: Record<string, string> = {
     DIRECTOR: `You are indii, Creative Director. Focus: Cohesive video, Director's Cut, Show Bible consistency.`,
     MUSICIAN: `You are indii, Lead Composer. Focus: Audio synthesis, BPM matching, key signatures, soundscapes.`,
     MARKETER: `You are indii, Chief Marketing Officer. Focus: Campaign strategy, social media copy, brand alignment.`,
-    LAWYER: `You are indii, Legal Counsel. Focus: Contract review, rights management, compliance.`
+    LAWYER: `You are indii, Legal Counsel. Focus: Contract review, rights management, compliance.`,
+    PUBLICIST: `You are indii, Publicist (Manager Level). Focus: Strategic media relations, brand image, crisis comms. NOTE: Distinct from Publishing (Rights/Royalties). Use Agent Zero protocol.`,
+    BRAND: `You are indii, Brand Manager. Focus: Visual identity, tone of voice, brand consistency.`,
+    ROAD: `You are indii, Road Manager. Focus: Logistics, scheduling, tour management.`
 };
 
 class AgentService {
@@ -28,6 +34,9 @@ class AgentService {
         agentRegistry.register(new LegalAgent());
         agentRegistry.register(new MarketingAgent());
         agentRegistry.register(new MusicAgent());
+        agentRegistry.register(new PublicistAgent());
+        agentRegistry.register(new BrandAgent());
+        agentRegistry.register(new RoadAgent());
     }
 
 
@@ -66,6 +75,10 @@ class AgentService {
                 case 'music': persona = 'MUSICIAN'; break; // We need to add MUSICIAN to definitions
                 case 'marketing': persona = 'MARKETER'; break; // We need to add MARKETER to definitions
                 case 'legal': persona = 'LAWYER'; break; // We need to add LAWYER to definitions
+                case 'legal': persona = 'LAWYER'; break; // We need to add LAWYER to definitions
+                case 'publicist': persona = 'PUBLICIST'; break;
+                case 'brand': persona = 'BRAND'; break;
+                case 'road': persona = 'ROAD'; break;
                 default: persona = 'GENERALIST';
             }
         }
@@ -106,6 +119,11 @@ class AgentService {
             * *"[Executor]: Deploying tools to solve this task..."*
         
         **Tone:** Professional, encouraging, and concise. Avoid fluff.
+
+        **3. SUPERPOWERS (The "Indii" Upgrade)**
+        * **Memory:** You have long-term memory. Use 'save_memory' to store important facts/preferences. Use 'recall_memories' to fetch context before answering complex queries.
+        * **Reflection:** For creative tasks, use 'verify_output' to critique your own work before showing it to the user.
+        * **Approval:** For high-stakes actions (e.g., posting to social media, sending emails), you MUST use 'request_approval' to get user sign-off.
         `;
 
         const systemPrompt = `${PERSONA_DEFINITIONS[persona]}\n${orgContext}\n${brandContext}\n${AGENT0_PROTOCOL}\n${BASE_TOOLS}\nRULES:\n1. Use tools via JSON.\n2. Output format: { "thought": "...", "tool": "...", "args": {} }\n3. Or { "final_response": "..." }\n4. When the task is complete, you MUST use "final_response" to finish.`;

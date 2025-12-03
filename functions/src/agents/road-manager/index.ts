@@ -143,5 +143,95 @@ export class RoadManagerAgent {
             };
         }
     }
+
+    async findNearbyPlaces(location: string, type: string, keyword?: string): Promise<any> {
+        try {
+            // First, geocode the location string to get lat/lng
+            const geocodeRes = await this.mapsClient.geocode({
+                params: {
+                    address: location,
+                    key: process.env.GOOGLE_MAPS_API_KEY || ''
+                }
+            });
+
+            if (geocodeRes.data.status !== 'OK' || !geocodeRes.data.results[0]) {
+                throw new Error("Could not find location coordinates.");
+            }
+
+            const { lat, lng } = geocodeRes.data.results[0].geometry.location;
+
+            // Search for places nearby
+            const placesRes = await this.mapsClient.placesNearby({
+                params: {
+                    location: { lat, lng },
+                    radius: 5000, // 5km radius
+                    type: type as any,
+                    keyword: keyword,
+                    key: process.env.GOOGLE_MAPS_API_KEY || ''
+                }
+            });
+
+            if (placesRes.data.status !== 'OK') {
+                return { places: [], message: "No places found or API error." };
+            }
+
+            // Map results to a cleaner format
+            const places = placesRes.data.results.map(place => ({
+                name: place.name,
+                address: place.vicinity,
+                rating: place.rating,
+                user_ratings_total: place.user_ratings_total,
+                open_now: place.opening_hours?.open_now,
+                geometry: place.geometry
+            })).slice(0, 10); // Limit to top 10
+
+            return { places, location: { lat, lng } };
+
+        } catch (error) {
+            console.error("Find Nearby Places Error:", error);
+            throw new Error("Failed to find nearby places.");
+        }
+    }
+
+    async calculateFuelLogistics(data: {
+        milesDriven: number,
+        fuelLevelPercent: number,
+        tankSizeGallons: number,
+        mpg: number,
+        gasPricePerGallon: number
+    }): Promise<any> {
+        const { milesDriven, fuelLevelPercent, tankSizeGallons, mpg, gasPricePerGallon } = data;
+
+        const currentFuelGallons = (fuelLevelPercent / 100) * tankSizeGallons;
+        const rangeRemaining = currentFuelGallons * mpg;
+        const fuelUsed = milesDriven / mpg;
+
+        const gallonsToFill = tankSizeGallons - currentFuelGallons;
+        const costToFill = gallonsToFill * gasPricePerGallon;
+
+        // AI Commentary
+        const prompt = `
+            You are a gritty, experienced Road Manager.
+            The band is on the road.
+            Current Status:
+            - Fuel Level: ${fuelLevelPercent}%
+            - Range Remaining: ${rangeRemaining.toFixed(1)} miles
+            - Cost to Fill Up: $${costToFill.toFixed(2)}
+            - Miles Driven recently: ${milesDriven}
+
+            Give a short, punchy assessment of the situation. Should they panic? Stop now? Keep driving?
+            Be realistic but have some personality.
+        `;
+
+        const result = await this.model.generateContent(prompt);
+        const commentary = result.response.text();
+
+        return {
+            rangeRemaining: Math.round(rangeRemaining),
+            gallonsToFill: parseFloat(gallonsToFill.toFixed(2)),
+            costToFill: parseFloat(costToFill.toFixed(2)),
+            commentary: commentary.trim()
+        };
+    }
 }
 

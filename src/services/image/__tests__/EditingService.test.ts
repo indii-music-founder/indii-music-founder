@@ -3,11 +3,22 @@ import { Editing } from '../EditingService';
 import { AI } from '../../ai/AIService';
 
 // Mock AI service
+// Mock AI service
 vi.mock('../../ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
         parseJSON: vi.fn(),
     }
+}));
+
+// Mock Firebase Functions
+const mockHttpsCallable = vi.fn();
+vi.mock('firebase/functions', () => ({
+    httpsCallable: (functions: any, name: string) => mockHttpsCallable
+}));
+
+vi.mock('@/services/firebase', () => ({
+    functions: {}
 }));
 
 describe('EditingService', () => {
@@ -18,18 +29,20 @@ describe('EditingService', () => {
     describe('editImage', () => {
         it('should edit image successfully', async () => {
             const mockResponse = {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'image/png',
-                                data: 'editedData'
-                            }
-                        }]
-                    }
-                }]
+                data: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: 'editedData'
+                                }
+                            }]
+                        }
+                    }]
+                }
             };
-            (AI.generateContent as any).mockResolvedValue(mockResponse);
+            mockHttpsCallable.mockResolvedValue(mockResponse);
 
             const result = await Editing.editImage({
                 image: { mimeType: 'image/png', data: 'data' },
@@ -42,18 +55,20 @@ describe('EditingService', () => {
 
         it('should handle masking', async () => {
             const mockResponse = {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'image/png',
-                                data: 'editedData'
-                            }
-                        }]
-                    }
-                }]
+                data: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: 'editedData'
+                                }
+                            }]
+                        }
+                    }]
+                }
             };
-            (AI.generateContent as any).mockResolvedValue(mockResponse);
+            mockHttpsCallable.mockResolvedValue(mockResponse);
 
             await Editing.editImage({
                 image: { mimeType: 'image/png', data: 'data' },
@@ -61,8 +76,10 @@ describe('EditingService', () => {
                 prompt: 'edit'
             });
 
-            const callArgs = (AI.generateContent as any).mock.calls[0][0];
-            expect(callArgs.contents.parts).toHaveLength(4); // Image, Mask, Instruction, Prompt
+            const callArgs = mockHttpsCallable.mock.calls[0][0];
+            expect(callArgs.image).toBeDefined();
+            expect(callArgs.mask).toBeDefined();
+            expect(callArgs.prompt).toContain('edit');
         });
     });
 

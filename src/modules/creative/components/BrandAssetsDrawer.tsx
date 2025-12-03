@@ -5,9 +5,10 @@ import { useToast } from '@/core/context/ToastContext';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
+    onSelect?: (asset: any) => void; // Optional prop for selection mode
 }
 
-export default function BrandAssetsDrawer({ onClose }: BrandAssetsDrawerProps) {
+export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDrawerProps) {
     const { userProfile, updateBrandKit, addUploadedImage, currentProjectId, setActiveReferenceImage } = useStore();
     const toast = useToast();
     const [isDragging, setIsDragging] = useState(false);
@@ -126,23 +127,33 @@ export default function BrandAssetsDrawer({ onClose }: BrandAssetsDrawerProps) {
                                     <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 p-1 group relative">
                                         <img src={asset.url} alt={asset.description} className="w-full h-full object-contain" />
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                                            <button
-                                                className="p-1 bg-gray-700 rounded hover:bg-white hover:text-black text-white transition-colors"
-                                                title="Use as Reference"
-                                                onClick={() => {
-                                                    setActiveReferenceImage({
-                                                        id: crypto.randomUUID(),
-                                                        type: 'image',
-                                                        url: asset.url,
-                                                        prompt: asset.description,
-                                                        timestamp: Date.now(),
-                                                        projectId: currentProjectId
-                                                    });
-                                                    toast.success("Added to Reference Image");
-                                                }}
-                                            >
-                                                <Plus size={12} />
-                                            </button>
+                                            {onSelect ? (
+                                                <button
+                                                    className="p-1 bg-blue-600 rounded hover:bg-blue-500 text-white transition-colors"
+                                                    title="Select Asset"
+                                                    onClick={() => onSelect(asset)}
+                                                >
+                                                    <Plus size={12} /> Select
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="p-1 bg-gray-700 rounded hover:bg-white hover:text-black text-white transition-colors"
+                                                    title="Use as Reference"
+                                                    onClick={() => {
+                                                        setActiveReferenceImage({
+                                                            id: crypto.randomUUID(),
+                                                            type: 'image',
+                                                            url: asset.url,
+                                                            prompt: asset.description,
+                                                            timestamp: Date.now(),
+                                                            projectId: currentProjectId
+                                                        });
+                                                        toast.success("Added to Reference Image");
+                                                    }}
+                                                >
+                                                    <Plus size={12} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

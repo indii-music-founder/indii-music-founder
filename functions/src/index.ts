@@ -199,16 +199,54 @@ export const inngestFn = functions.https.onRequest(serve({
 interface TriggerVideoGenerationRequestData {
     prompt: string;
     image?: string;
+    endImage?: string;
     model?: string;
 }
 
 export const triggerVideoGeneration = functions.https.onCall(async (data: TriggerVideoGenerationRequestData, context) => {
-    const { prompt, image, model } = data;
-    await inngest.send({
-        name: "creative/generate-video",
-        data: { prompt, image, model }
-    });
-    return { success: true, message: "Video generation triggered" };
+    const { prompt, model } = data;
+    let { image, endImage } = data;
+
+    try {
+        const bucket = admin.storage().bucket();
+        const uniqueId = context.auth?.uid || 'anonymous';
+        const timestamp = Date.now();
+
+        const uploadImage = async (imgData: string, suffix: string) => {
+            if (imgData.startsWith('data:')) {
+                const base64Image = imgData.split(';base64,').pop();
+                if (base64Image) {
+                    const buffer = Buffer.from(base64Image, 'base64');
+                    const filePath = `temp/videos/${uniqueId}_${timestamp}_${suffix}.png`;
+                    const file = bucket.file(filePath);
+                    await file.save(buffer, {
+                        metadata: { contentType: 'image/png' }
+                    });
+                    // Use the bucket name from the file object if bucket.name is not available
+                    const bucketName = bucket.name || process.env.GCLOUD_PROJECT + '.appspot.com';
+                    return `gs://${bucketName}/${filePath}`;
+                }
+            }
+            return imgData;
+        };
+
+        if (image) {
+            image = await uploadImage(image, 'start');
+        }
+
+        if (endImage) {
+            endImage = await uploadImage(endImage, 'end');
+        }
+
+        await inngest.send({
+            name: "creative/generate-video",
+            data: { prompt, image, endImage, model }
+        });
+        return { success: true, message: "Video generation triggered" };
+    } catch (error: any) {
+        console.error("Trigger Video Generation Error:", error);
+        throw new functions.https.HttpsError('internal', `Failed to trigger video generation: ${error.message}`);
+    }
 });
 
 import { legalAdvisor } from './agents/legal-advisor';
@@ -410,6 +448,51 @@ export const checkLogistics = functions.https.onCall(async (data: CheckLogistics
         }
 
         const result = await roadManager.checkLogistics(itinerary);
+        return result;
+    } catch (error: unknown) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+
+interface FindPlacesRequestData {
+    location: string;
+    type: string;
+    keyword?: string;
+}
+
+export const findPlaces = functions.https.onCall(async (data: FindPlacesRequestData, context) => {
+    try {
+        const { location, type, keyword } = data;
+        if (!location || !type) {
+            throw new functions.https.HttpsError('invalid-argument', 'location and type are required');
+        }
+
+        const result = await roadManager.findNearbyPlaces(location, type, keyword);
+        return result;
+    } catch (error: unknown) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+
+interface CalculateFuelLogisticsRequestData {
+    milesDriven: number;
+    fuelLevelPercent: number;
+    tankSizeGallons: number;
+    mpg: number;
+    gasPricePerGallon: number;
+}
+
+export const calculateFuelLogistics = functions.https.onCall(async (data: CalculateFuelLogisticsRequestData, context) => {
+    try {
+        const result = await roadManager.calculateFuelLogistics(data);
         return result;
     } catch (error: unknown) {
         console.error("Function Error:", error);

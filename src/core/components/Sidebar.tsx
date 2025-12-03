@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule } = useStore();
@@ -10,6 +10,7 @@ export default function Sidebar() {
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
+        { id: 'publicist', icon: Mic, label: 'Publicist' },
     ];
 
     const departmentItems = [

@@ -148,12 +148,46 @@ exports.inngestFn = functions.https.onRequest((0, express_1.serve)({
     functions: [functions_1.helloWorldFn, functions_1.magicFillFn, functions_1.generateVideoFn],
 }));
 exports.triggerVideoGeneration = functions.https.onCall(async (data, context) => {
-    const { prompt, image, model } = data;
-    await client_1.inngest.send({
-        name: "creative/generate-video",
-        data: { prompt, image, model }
-    });
-    return { success: true, message: "Video generation triggered" };
+    var _a;
+    const { prompt, model } = data;
+    let { image, endImage } = data;
+    try {
+        const bucket = admin.storage().bucket();
+        const uniqueId = ((_a = context.auth) === null || _a === void 0 ? void 0 : _a.uid) || 'anonymous';
+        const timestamp = Date.now();
+        const uploadImage = async (imgData, suffix) => {
+            if (imgData.startsWith('data:')) {
+                const base64Image = imgData.split(';base64,').pop();
+                if (base64Image) {
+                    const buffer = Buffer.from(base64Image, 'base64');
+                    const filePath = `temp/videos/${uniqueId}_${timestamp}_${suffix}.png`;
+                    const file = bucket.file(filePath);
+                    await file.save(buffer, {
+                        metadata: { contentType: 'image/png' }
+                    });
+                    // Use the bucket name from the file object if bucket.name is not available
+                    const bucketName = bucket.name || process.env.GCLOUD_PROJECT + '.appspot.com';
+                    return `gs://${bucketName}/${filePath}`;
+                }
+            }
+            return imgData;
+        };
+        if (image) {
+            image = await uploadImage(image, 'start');
+        }
+        if (endImage) {
+            endImage = await uploadImage(endImage, 'end');
+        }
+        await client_1.inngest.send({
+            name: "creative/generate-video",
+            data: { prompt, image, endImage, model }
+        });
+        return { success: true, message: "Video generation triggered" };
+    }
+    catch (error) {
+        console.error("Trigger Video Generation Error:", error);
+        throw new functions.https.HttpsError('internal', `Failed to trigger video generation: ${error.message}`);
+    }
 });
 const legal_advisor_1 = require("./agents/legal-advisor");
 const campaign_manager_1 = require("./agents/campaign-manager");
