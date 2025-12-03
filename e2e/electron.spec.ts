@@ -11,7 +11,7 @@ test.describe('Electron IPC', () => {
             const electronPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron');
 
             // Debug: Check if preload script exists
-            const preloadPath = path.join(process.cwd(), 'dist-electron', 'preload.js');
+            const preloadPath = path.join(process.cwd(), 'dist-electron', 'preload.mjs');
             console.log('Test: Checking preload path:', preloadPath);
             if (fs.existsSync(preloadPath)) {
                 console.log('Test: Preload file exists');
@@ -42,20 +42,19 @@ test.describe('Electron IPC', () => {
 
             // Verify IPC calls
             // We execute this in the context of the browser window
-            const platform = await window.evaluate(async () => {
+            const { platform, version } = await window.evaluate(async () => {
                 // Debug: check if electronAPI is available
                 // @ts-ignore
                 if (!window.electronAPI) {
                     console.error('Window context: window.electronAPI is UNDEFINED');
-                    return 'undefined-api';
+                    throw new Error('window.electronAPI is UNDEFINED');
                 }
-                // @ts-ignore
-                return await window.electronAPI.getPlatform();
-            });
-
-            const version = await window.evaluate(async () => {
-                // @ts-ignore
-                return await window.electronAPI.getAppVersion();
+                return {
+                    // @ts-ignore
+                    platform: await window.electronAPI.getPlatform(),
+                    // @ts-ignore
+                    version: await window.electronAPI.getAppVersion()
+                };
             });
 
             console.log('Platform:', platform);
