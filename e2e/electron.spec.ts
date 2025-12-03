@@ -13,7 +13,7 @@ test.describe('Electron IPC', () => {
         // We point to the current directory because package.json "main" points to the compiled main.js
         const electronApp = await electron.launch({
             executablePath: electronPath,
-            args: ['.'],
+            args: ['.', '--no-sandbox', '--disable-gpu'],
         });
 
         // Get the first window
