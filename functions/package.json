@@ -1,3 +1,4 @@
+ Dr-MCP
 {
     "name": "functions",
     "scripts": {
@@ -29,3 +30,6 @@
     },
     "private": true
 }
+
+{\n    "name": "functions",\n    "scripts": {\n        "build": "tsc",\n        "serve": "npm run build && firebase emulators:start --only functions",\n        "shell": "npm run build && firebase functions:shell",\n        "start": "npm run shell",\n        "deploy": "firebase deploy --only functions",\n        "logs": "firebase functions:log"\n    },\n    "engines": {\n        "node": "22"\n    },\n    "main": "lib/index.js",\n    "dependencies": {\n        "@ai-sdk/google": "^2.0.44",\n        "@google-cloud/vertexai": "^0.4.0",\n        "@google/generative-ai": "^0.24.1",\n        "@mastra/core": "^0.24.6",\n        "@mastra/mcp": "^0.14.4",\n        "cors": "^2.8.5",\n        "firebase-admin": "^11.8.0",\n        "firebase-functions": "^4.3.1",\n        "google-auth-library": "^9.0.0",\n        "inngest": "^3.46.0",\n        "zod": "^4.1.13",\n        "@googlemaps/google-maps-services-js": "^3.3.0"\n    },\n    "devDependencies": {\n        "@types/cors": "^2.8.12",\n        "typescript": "^5.0.0"\n    },\n    "private": true\n}
+ main
