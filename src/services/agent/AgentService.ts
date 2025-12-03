@@ -75,7 +75,7 @@ class AgentService {
                 case 'music': persona = 'MUSICIAN'; break; // We need to add MUSICIAN to definitions
                 case 'marketing': persona = 'MARKETER'; break; // We need to add MARKETER to definitions
                 case 'legal': persona = 'LAWYER'; break; // We need to add LAWYER to definitions
-                case 'legal': persona = 'LAWYER'; break; // We need to add LAWYER to definitions
+
                 case 'publicist': persona = 'PUBLICIST'; break;
                 case 'brand': persona = 'BRAND'; break;
                 case 'road': persona = 'ROAD'; break;
