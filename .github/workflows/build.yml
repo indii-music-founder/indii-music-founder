@@ -40,7 +40,7 @@ jobs:
       # So we need to compile typescript first.
       run: |
         npm run electron:build
-        npx playwright test
+        xvfb-run --auto-servernum npx playwright test
 
   build:
     needs: test
