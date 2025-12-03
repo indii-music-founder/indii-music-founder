@@ -11,7 +11,7 @@ test.describe('Electron IPC', () => {
             const electronPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron');
 
             // Debug: Check if preload script exists
-            const preloadPath = path.join(process.cwd(), 'dist-electron', 'electron', 'preload.js');
+            const preloadPath = path.join(process.cwd(), 'dist-electron', 'preload.js');
             console.log('Test: Checking preload path:', preloadPath);
             if (fs.existsSync(preloadPath)) {
                 console.log('Test: Preload file exists');

@@ -23,13 +23,13 @@ const createWindow = () => {
         width: 1280,
         height: 800,
         webPreferences: {
-            preload: path.join(process.cwd(), 'dist-electron', 'electron', 'preload.js'),
+            preload: path.join(process.cwd(), 'dist-electron', 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: false, // Try disabling sandbox
         },
     });
-    console.log('Main process: Preload path configured as:', path.join(process.cwd(), 'dist-electron', 'electron', 'preload.js'));
+    console.log('Main process: Preload path configured as:', path.join(process.cwd(), 'dist-electron', 'preload.js'));
 
     // In production, load the index.html.
     // In development, load the Vite dev server URL.

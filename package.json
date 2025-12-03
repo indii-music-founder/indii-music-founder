@@ -12,7 +12,7 @@
     "test": "vitest",
     "test:e2e": "playwright test"
   },
-  "main": "dist-electron/electron/main.js",
+  "main": "dist-electron/main.js",
   "dependencies": {
     "@google/genai": "^1.30.0",
     "@google/generative-ai": "^0.24.1",
