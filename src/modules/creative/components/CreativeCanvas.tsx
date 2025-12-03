@@ -4,6 +4,8 @@ import { X, Download, Share2, Wand2, Brush, Eraser, Save, RotateCcw, Trash2, Pla
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
 import * as fabric from 'fabric';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 interface CreativeCanvasProps {
     item: { id: string; url: string; prompt: string; type: 'image' | 'video'; mask?: string } | null;
@@ -216,19 +218,14 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
             canvas.renderAll();
 
             // 3. Call API
-            const response = await fetch('http://127.0.0.1:5001/indiios-v-1-1/us-central1/editImage', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    image,
-                    mask,
-                    prompt: magicFillPrompt
-                })
+            const editImage = httpsCallable(functions, 'editImage');
+            const response = await editImage({
+                image,
+                mask,
+                prompt: magicFillPrompt
             });
 
-            if (!response.ok) throw new Error("Magic Fill failed");
-
-            const data = await response.json();
+            const data = response.data as any;
 
             // 4. Update Canvas
             if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
@@ -265,27 +262,26 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
 
         try {
             // Call the triggerVideoGeneration Cloud Function
-            const response = await fetch('http://127.0.0.1:5001/indiios-v-1-1/us-central1/triggerVideoGeneration', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    image: item.url,
-                    prompt: item.prompt || "Animate this scene",
-                    model: "veo-3.1-generate-preview"
-                })
+            const triggerVideoGeneration = httpsCallable(functions, 'triggerVideoGeneration');
+            const response = await triggerVideoGeneration({
+                image: item.url,
+                prompt: item.prompt || "Animate this scene",
+                model: "veo-3.1-generate-preview"
             });
 
-            if (!response.ok) throw new Error("Failed to trigger video generation");
-
-            const result = await response.json();
+            const result = response.data as any;
             if (result.success) {
                 toast.success("Video generation started in background!");
             } else {
                 throw new Error(result.error || "Unknown error");
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Animation Error:", error);
-            toast.error(`Animation failed: ${error.message}`);
+            if (error instanceof Error) {
+                toast.error(`Animation failed: ${error.message}`);
+            } else {
+                toast.error("Animation failed: Unknown error");
+            }
         }
     };
 

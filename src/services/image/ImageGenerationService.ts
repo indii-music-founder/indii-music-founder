@@ -1,5 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -24,62 +26,40 @@ export class ImageGenerationService {
         const results: { id: string, url: string, prompt: string }[] = [];
         const count = options.count || 1;
 
-        const baseConfig: any = {
-            ...AI_CONFIG.IMAGE.DEFAULT,
-            imageConfig: {
-                ...AI_CONFIG.IMAGE.DEFAULT.imageConfig,
-                imageSize: options.resolution || '2K',
-                aspectRatio: options.aspectRatio
+        try {
+            const generateImage = httpsCallable(functions, 'generateImage');
+
+            const fullPrompt = options.prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '');
+
+            const result = await generateImage({
+                prompt: fullPrompt,
+                aspectRatio: options.aspectRatio,
+                count: count,
+                images: options.sourceImages
+            });
+
+            const data = result.data as any;
+
+            if (!data.candidates || data.candidates.length === 0) {
+                console.warn("No candidates in response");
+                return [];
             }
-        };
 
-        for (let i = 0; i < count; i++) {
-            try {
-                const iterConfig = JSON.parse(JSON.stringify(baseConfig));
-                if (options.seed !== undefined) iterConfig.seed = options.seed + i;
-
-                const contents: any = { parts: [] };
-
-                // Add Reference Images
-                if (options.sourceImages) {
-                    options.sourceImages.forEach(img => {
-                        contents.parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
-                    });
-                }
-
-                const fullPrompt = options.prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '');
-                contents.parts.push({ text: fullPrompt });
-
-                const response = await AI.generateContent({
-                    model: AI_MODELS.IMAGE.GENERATION,
-                    contents,
-                    config: iterConfig
-                });
-
-                console.log("AI Response:", response);
-
-                if (!response.candidates || response.candidates.length === 0) {
-                    console.warn("No candidates in response");
-                }
-
-                for (const part of response.candidates?.[0]?.content?.parts || []) {
+            for (const candidate of data.candidates) {
+                for (const part of candidate.content?.parts || []) {
                     if (part.inlineData) {
                         const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                        // ID generation should ideally happen here or in the store. 
-                        // We'll return the data and let the caller handle ID/Store.
                         results.push({
                             id: crypto.randomUUID(),
                             url,
                             prompt: options.prompt
                         });
-                    } else {
-                        console.warn("Part has no inlineData:", part);
                     }
                 }
-            } catch (err) {
-                console.error("Image Generation Error:", err);
-                throw err;
             }
+        } catch (err) {
+            console.error("Image Generation Error:", err);
+            throw err;
         }
         return results;
     }
@@ -89,6 +69,7 @@ export class ImageGenerationService {
             const response = await AI.generateContent({
                 model: AI_MODELS.IMAGE.GENERATION,
                 contents: {
+                    role: 'user',
                     parts: [
                         { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } }, { text: "Content Ref" },
                         { inlineData: { mimeType: options.styleImage.mimeType, data: options.styleImage.data } }, { text: "Style Ref" },
@@ -114,6 +95,7 @@ export class ImageGenerationService {
             const response = await AI.generateContent({
                 model: AI_MODELS.TEXT.FAST,
                 contents: {
+                    role: 'user',
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
                         { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
@@ -125,7 +107,7 @@ export class ImageGenerationService {
                 }
             });
 
-            return AI.parseJSON(response.text);
+            return AI.parseJSON(response.text());
         } catch (e) {
             console.error("Style Extraction Error:", e);
             throw e;
@@ -143,6 +125,7 @@ export class ImageGenerationService {
                 const response = await AI.generateContent({
                     model: AI_MODELS.IMAGE.GENERATION,
                     contents: {
+                        role: 'user',
                         parts: [
                             { inlineData: { mimeType: target.mimeType, data: target.data } },
                             { text: "[Content Reference]" },

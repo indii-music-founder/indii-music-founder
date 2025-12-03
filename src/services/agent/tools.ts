@@ -184,8 +184,8 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     },
     create_project: async (args: { name: string, type: 'creative' | 'music' | 'marketing' | 'legal' }) => {
         try {
-            const { createNewProject } = useStore.getState();
-            await createNewProject(args.name, args.type || 'creative');
+            const { createNewProject, currentOrganizationId } = useStore.getState();
+            await createNewProject(args.name, args.type || 'creative', currentOrganizationId);
             return `Successfully created project "${args.name}" (${args.type}) and switched to it.`;
         } catch (e: unknown) {
             if (e instanceof Error) {
@@ -275,13 +275,14 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
                 }
             }
 
-            const uri = await VideoGeneration.generateVideo({
+            const results = await VideoGeneration.generateVideo({
                 prompt: args.prompt,
-                image: imageInput,
-                durationSeconds: args.duration
+                firstFrame: args.image, // Assuming args.image is the first frame
+                // durationSeconds: args.duration // VideoGenerationService doesn't support durationSeconds directly yet, it supports totalDuration for long form
             });
 
-            if (uri) {
+            if (results.length > 0) {
+                const uri = results[0].url;
                 const { addToHistory, currentProjectId } = useStore.getState();
                 // We might want to fetch the blob here to store it properly or just store the URI
                 // For now, let's assume URI is sufficient or we fetch it
@@ -306,7 +307,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     },
     generate_motion_brush: async (args: { image: string, mask: string, prompt?: string }) => {
         try {
-            const { Editing } = await import('../../services/image/EditingService'); // Motion brush is more like an editing task
+            const { Video } = await import('../../services/video/VideoService'); // Motion brush is in VideoService
 
             const imgMatch = args.image.match(/^data:(.+);base64,(.+)$/);
             const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
@@ -319,7 +320,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             const mask = { mimeType: maskMatch[1], data: maskMatch[2] };
 
             // Assuming Editing service has a generateMotionBrush method
-            const uri = await Editing.generateMotionBrush(image, mask);
+            const uri = await Video.generateMotionBrush(image, mask);
 
             if (uri) {
                 const { addToHistory, currentProjectId } = useStore.getState();
@@ -371,6 +372,62 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             }
             return `Audio analysis failed: An unknown error occurred.`;
         }
+    },
+    analyze_contract: async (args: { file_data: string, mime_type: string }) => {
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const analyzeContract = httpsCallable(functions, 'analyzeContract');
+            const result = await analyzeContract({ fileData: args.file_data, mimeType: args.mime_type });
+            const data = result.data as any;
+            return `Contract Analysis:\nScore: ${data.score}\nSummary: ${data.summary}\nRisks: ${data.risks.join('\n- ')}`;
+        } catch (e: any) {
+            return `Contract analysis failed: ${e.message}`;
+        }
+    },
+    generate_social_post: async (args: { platform: string, topic: string, tone?: string }) => {
+        try {
+            const { AI } = await import('@/services/ai/AIService');
+            const prompt = `Generate a ${args.tone || 'professional'} social media post for ${args.platform} about ${args.topic}. Include hashtags.`;
+            const result = await AI.generateContent({
+                model: 'gemini-2.0-flash-exp',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const text = result.text();
+
+            const { addToHistory, currentProjectId } = useStore.getState();
+            addToHistory({
+                id: crypto.randomUUID(),
+                url: '', // Text content doesn't have a URL usually, or we could save to a blob
+                prompt: args.topic,
+                type: 'text',
+                timestamp: Date.now(),
+                projectId: currentProjectId,
+                meta: text
+            });
+
+            return `Generated Post for ${args.platform}:\n${text}`;
+        } catch (e: any) {
+            return `Social post generation failed: ${e.message}`;
+        }
+    },
+    generate_music: async (args: { prompt: string, duration?: number }) => {
+        try {
+            const { addToHistory, currentProjectId } = useStore.getState();
+            // Placeholder for actual music generation
+            const id = crypto.randomUUID();
+            addToHistory({
+                id,
+                url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Placeholder MP3
+                prompt: args.prompt,
+                type: 'music',
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            });
+            return `Music generated for "${args.prompt}". (Placeholder audio used)`;
+        } catch (e: any) {
+            return `Music generation failed: ${e.message}`;
+        }
     }
 };
 
@@ -391,4 +448,7 @@ AVAILABLE TOOLS:
 12. generate_video(prompt: string, image?: string, duration?: number) - Generate a video from text or image.
 13. generate_motion_brush(image: string, mask: string, prompt?: string) - Animate a specific area of an image.
 14. analyze_audio(audio: string) - Analyze an audio file (base64) for BPM, key, and energy.
+15. analyze_contract(file_data: string, mime_type: string) - Analyze a legal contract (base64).
+16. generate_social_post(platform: string, topic: string, tone?: string) - Generate a social media post.
+17. generate_music(prompt: string, duration?: number) - Generate a music track.
 `;

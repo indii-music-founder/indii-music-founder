@@ -13,6 +13,7 @@ const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
 const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
+const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
 
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
@@ -63,6 +64,7 @@ export default function App() {
                                 {currentModule === 'video' && <VideoStudio />}
                                 {currentModule === 'workflow' && <WorkflowLab />}
                                 {currentModule === 'knowledge' && <KnowledgeBase />}
+                                {currentModule === 'road' && <RoadManager />}
                             </Suspense>
                         </div>
 

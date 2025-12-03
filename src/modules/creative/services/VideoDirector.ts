@@ -30,6 +30,7 @@ export class VideoDirector {
                 const critique = await AI.generateContent({
                     model: 'gemini-3-pro-preview',
                     contents: {
+                        role: 'user',
                         parts: [
                             { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
                             { text: `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it. Return JSON: {score, refined_prompt}` }
@@ -38,7 +39,7 @@ export class VideoDirector {
                     config: { responseMimeType: 'application/json' }
                 });
 
-                const feedback = AI.parseJSON(critique.text);
+                const feedback = AI.parseJSON(critique.text());
                 console.log("🎬 Director Feedback:", feedback);
 
                 if (feedback.score < 8) {

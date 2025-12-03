@@ -1,0 +1,1183 @@
+
+> indii-os@0.0.0 test
+> vitest src/modules/touring/RoadManager.test.tsx
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1[39m
+
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mgenerates itinerary when inputs are valid
+[22m[39mMock httpsCallable called for: generateItinerary
+Mock function executed for generateItinerary with data: {
+  locations: [ [32m'New York'[39m ],
+  dates: { start: [32m'2023-10-01'[39m, end: [32m'2023-10-10'[39m }
+}
+
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mchecks logistics after generating itinerary
+[22m[39mMock httpsCallable called for: generateItinerary
+Mock function executed for generateItinerary with data: {
+  locations: [ [32m'New York'[39m ],
+  dates: { start: [32m'2023-10-01'[39m, end: [32m'2023-10-10'[39m }
+}
+
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mchecks logistics after generating itinerary
+[22m[39mMock httpsCallable called for: checkLogistics
+Mock function executed for checkLogistics with data: {
+  itinerary: {
+    tourName: [32m'Test Tour'[39m,
+    stops: [ [36m[Object][39m ],
+    totalDistance: [32m'1000 km'[39m,
+    estimatedBudget: [32m'$50000'[39m
+  }
+}
+
+ [31m❯[39m src/modules/touring/RoadManager.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 1154[2mms[22m[39m
+     [32m✓[39m renders input fields[32m 17[2mms[22m[39m
+[31m     [31m×[31m allows adding and removing locations[39m[32m 93[2mms[22m[39m
+     [32m✓[39m generates itinerary when inputs are valid[32m 26[2mms[22m[39m
+[31m     [31m×[31m checks logistics after generating itinerary[39m[33m 1017[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/modules/touring/RoadManager.test.tsx[2m > [22mRoadManager[2m > [22mallows adding and removing locations
+[31m[1mTestingLibraryElementError[22m[39m: Found multiple elements with the role "button" and name ""
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"p-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition-colors"[39m
+[36m>[39m
+  [36m<svg[39m
+    [33maria-hidden[39m=[32m"true"[39m
+    [33mclass[39m=[32m"lucide lucide-plus"[39m
+    [33mfill[39m=[32m"none"[39m
+    [33mheight[39m=[32m"20"[39m
+    [33mstroke[39m=[32m"currentColor"[39m
+    [33mstroke-linecap[39m=[32m"round"[39m
+    [33mstroke-linejoin[39m=[32m"round"[39m
+    [33mstroke-width[39m=[32m"2"[39m
+    [33mviewBox[39m=[32m"0 0 24 24"[39m
+    [33mwidth[39m=[32m"20"[39m
+    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+  [36m>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M5 12h14"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M12 5v14"[39m
+    [36m/>[39m
+  [36m</svg>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"hover:text-red-400"[39m
+[36m>[39m
+  [36m<svg[39m
+    [33maria-hidden[39m=[32m"true"[39m
+    [33mclass[39m=[32m"lucide lucide-trash2 lucide-trash-2"[39m
+    [33mfill[39m=[32m"none"[39m
+    [33mheight[39m=[32m"14"[39m
+    [33mstroke[39m=[32m"currentColor"[39m
+    [33mstroke-linecap[39m=[32m"round"[39m
+    [33mstroke-linejoin[39m=[32m"round"[39m
+    [33mstroke-width[39m=[32m"2"[39m
+    [33mviewBox[39m=[32m"0 0 24 24"[39m
+    [33mwidth[39m=[32m"14"[39m
+    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+  [36m>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M10 11v6"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M14 11v6"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M3 6h18"[39m
+    [36m/>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"[39m
+    [36m/>[39m
+  [36m</svg>[39m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-8"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-3xl font-bold mb-2 flex items-center gap-3"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-truck text-yellow-500"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 18H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"17"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"7"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRoad Manager[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-gray-400"[39m
+          [36m>[39m
+            [0mPlan your tour logistics and itineraries.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"lg:col-span-1 space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-[#161b22] border border-gray-800 rounded-xl p-6"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-lg font-semibold text-white mb-4 flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-map-pin text-blue-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"20"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"20"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"10"[39m
+                  [33mr[39m=[32m"3"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mTour Details[0m
+            [36m</h3>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"space-y-4"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-sm text-gray-400 mb-1"[39m
+                [36m>[39m
+                  [0mDates[0m
+                [36m</label>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"grid grid-cols-2 gap-2"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                    [33mtype[39m=[32m"date"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                    [33mtype[39m=[32m"date"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-sm text-gray-400 mb-1"[39m
+                [36m>[39m
+                  [0mLocations[0m
+                [36m</label>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-2 mb-2"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex-1 bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                    [33mplaceholder[39m=[32m"Add a city..."[39m
+                    [33mtype[39m=[32m"text"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"p-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition-colors"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-plus"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"20"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"20"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M5 12h14"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M12 5v14"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-1 bg-gray-800 px-2 py-1 rounded text-sm text-gray-300"[39m
+                  [36m>[39m
+                    [0mNew York[0m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"hover:text-red-400"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-trash2 lucide-trash-2"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mheight[39m=[32m"14"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"14"[39m
+                        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M10 11v6"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M14 11v6"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M3 6h18"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"[39m
+                [33mdisabled[39m=[32m""[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-truck"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15 18H9"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"17"[39m
+                    [33mcy[39m=[32m"18"[39m
+                    [33mr[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"7"[39m
+                    [33mcy[39m=[32m"18"[39m
+                    [33mr[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mGenerate Itinerary[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"lg:col-span-2 space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"h-full flex flex-col items-center justify-center text-gray-500 border-2 border-dashed border-gray-800 rounded-xl p-12"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-truck mb-4 opacity-20"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"48"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"48"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 18H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"17"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"7"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<p>[39m
+              [0mEnter tour details to generate an itinerary.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+[90m [2m❯[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m getElementError node_modules/@testing-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2m❯[22m getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:[2m23:10[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m55:13[22m[39m
+[90m [2m❯[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/modules/touring/RoadManager.test.tsx:[2m80:37[22m[39m
+    [90m 78| [39m
+    [90m 79| [39m        [90m// Remove location[39m
+    [90m 80| [39m        const removeButton = screen.getByRole('button', { name: '' });…
+    [90m   | [39m                                    [31m^[39m
+    [90m 81| [39m        [90m// This is tricky because there are multiple buttons.[39m
+    [90m 82| [39m        // Let's rely on the fact that the remove button is inside the…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/modules/touring/RoadManager.test.tsx[2m > [22mRoadManager[2m > [22mchecks logistics after generating itinerary
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: Looks good. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-8"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-3xl font-bold mb-2 flex items-center gap-3"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-truck text-yellow-500"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 18H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"17"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"7"[39m
+                [33mcy[39m=[32m"18"[39m
+                [33mr[39m=[32m"2"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mRoad Manager[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-gray-400"[39m
+          [36m>[39m
+            [0mPlan your tour logistics and itineraries.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"lg:col-span-1 space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-[#161b22] border border-gray-800 rounded-xl p-6"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-lg font-semibold text-white mb-4 flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-map-pin text-blue-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"20"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"20"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"10"[39m
+                  [33mr[39m=[32m"3"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mTour Details[0m
+            [36m</h3>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"space-y-4"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-sm text-gray-400 mb-1"[39m
+                [36m>[39m
+                  [0mDates[0m
+                [36m</label>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"grid grid-cols-2 gap-2"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                    [33mtype[39m=[32m"date"[39m
+                    [33mvalue[39m=[32m"2023-10-01"[39m
+                  [36m/>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                    [33mtype[39m=[32m"date"[39m
+                    [33mvalue[39m=[32m"2023-10-10"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"block text-sm text-gray-400 mb-1"[39m
+                [36m>[39m
+                  [0mLocations[0m
+                [36m</label>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-2 mb-2"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex-1 bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                    [33mplaceholder[39m=[32m"Add a city..."[39m
+                    [33mtype[39m=[32m"text"[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m/>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"p-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition-colors"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-plus"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"20"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"20"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M5 12h14"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M12 5v14"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</button>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-1 bg-gray-800 px-2 py-1 rounded text-sm text-gray-300"[39m
+                  [36m>[39m
+                    [0mNew York[0m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"hover:text-red-400"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-trash2 lucide-trash-2"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mheight[39m=[32m"14"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"14"[39m
+                        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M10 11v6"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M14 11v6"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M3 6h18"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-truck"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15 18H9"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"17"[39m
+                    [33mcy[39m=[32m"18"[39m
+                    [33mr[39m=[32m"2"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"7"[39m
+                    [33mcy[39m=[32m"18"[39m
+                    [33mr[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mGenerate Itinerary[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"lg:col-span-2 space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-[#161b22] border border-gray-800 rounded-xl p-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<h2[39m
+                  [33mclass[39m=[32m"text-2xl font-bold text-white"[39m
+                [36m>[39m
+                  [0mTest Tour[0m
+                [36m</h2>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-gray-400 text-sm"[39m
+                [36m>[39m
+                  [0mTotal Distance: [0m
+                  [0m1000 km[0m
+                  [0m • Est. Budget: [0m
+                  [0m$50000[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-circle-check-big"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"16"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"16"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M21.801 10A10 10 0 1 1 17 3.335"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m9 11 3 3L22 4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mCheck Logistics[0m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"mb-6 p-4 rounded-xl border bg-green-900/10 border-green-900/30"[39m
+            [36m>[39m
+              [36m<h4[39m
+                [33mclass[39m=[32m"font-semibold mb-2 flex items-center gap-2 text-green-400"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-circle-check-big"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"18"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"18"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M21.801 10A10 10 0 1 1 17 3.335"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m9 11 3 3L22 4"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mLogistics Report[0m
+              [36m</h4>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"space-y-4"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex gap-4 p-4 bg-black/20 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-shrink-0 w-16 text-center"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-sm text-gray-400"[39m
+                  [36m>[39m
+                    [0mSep[0m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"text-xl font-bold text-white"[39m
+                  [36m>[39m
+                    [0m30[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center justify-between mb-1"[39m
+                  [36m>[39m
+                    [36m<h4[39m
+                      [33mclass[39m=[32m"font-semibold text-white"[39m
+                    [36m>[39m
+                      [0mNew York[0m
+                    [36m</h4>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400"[39m
+                    [36m>[39m
+                      [0mShow[0m
+                    [36m</span>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-sm text-gray-400 mb-1"[39m
+                  [36m>[39m
+                    [0mMSG[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-xs text-gray-500 italic"[39m
+                  [36m>[39m
+                    [0mSold out[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center justify-between mb-8"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<h1[39m
+              [33mclass[39m=[32m"text-3xl font-bold mb-2 flex items-center gap-3"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-truck text-yellow-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 18H9"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"17"[39m
+                  [33mcy[39m=[32m"18"[39m
+                  [33mr[39m=[32m"2"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"7"[39m
+                  [33mcy[39m=[32m"18"[39m
+                  [33mr[39m=[32m"2"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mRoad Manager[0m
+            [36m</h1>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-gray-400"[39m
+            [36m>[39m
+              [0mPlan your tour logistics and itineraries.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-1 lg:grid-cols-3 gap-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"lg:col-span-1 space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-[#161b22] border border-gray-800 rounded-xl p-6"[39m
+            [36m>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"text-lg font-semibold text-white mb-4 flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-map-pin text-blue-500"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"[39m
+                  [36m/>[39m
+                  [36m<circle[39m
+                    [33mcx[39m=[32m"12"[39m
+                    [33mcy[39m=[32m"10"[39m
+                    [33mr[39m=[32m"3"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mTour Details[0m
+              [36m</h3>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-4"[39m
+              [36m>[39m
+                [36m<div>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block text-sm text-gray-400 mb-1"[39m
+                  [36m>[39m
+                    [0mDates[0m
+                  [36m</label>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"grid grid-cols-2 gap-2"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                      [33mtype[39m=[32m"date"[39m
+                      [33mvalue[39m=[32m"2023-10-01"[39m
+                    [36m/>[39m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                      [33mtype[39m=[32m"date"[39m
+                      [33mvalue[39m=[32m"2023-10-10"[39m
+                    [36m/>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"block text-sm text-gray-400 mb-1"[39m
+                  [36m>[39m
+                    [0mLocations[0m
+                  [36m</label>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex gap-2 mb-2"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mclass[39m=[32m"flex-1 bg-black/20 border border-gray-700 rounded-lg p-2 text-sm text-gray-300 focus:border-blue-500 outline-none"[39m
+                      [33mplaceholder[39m=[32m"Add a city..."[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m""[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33mclass[39m=[32m"p-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition-colors"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-plus"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mheight[39m=[32m"20"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"20"[39m
+                        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M5 12h14"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M12 5v14"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-1 bg-gray-800 px-2 py-1 rounded text-sm text-gray-300"[39m
+                    [36m>[39m
+                      [0mNew York[0m
+                      [36m<button[39m
+                        [33mclass[39m=[32m"hover:text-red-400"[39m
+                      [36m>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-trash2 lucide-trash-2"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"14"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"14"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M10 11v6"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M14 11v6"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M3 6h18"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-truck"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"20"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"20"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M15 18H9"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"[39m
+                    [36m/>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"17"[39m
+                      [33mcy[39m=[32m"18"[39m
+                      [33mr[39m=[32m"2"[39m
+                    [36m/>[39m
+                    [36m<circle[39m
+                      [33mcx[39m=[32m"7"[39m
+                      [33mcy[39m=[32m"18"[39m
+                      [33mr[39m=[32m"2"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mGenerate Itinerary[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"lg:col-span-2 space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-[#161b22] border border-gray-800 rounded-xl p-6"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+              [36m>[39m
+                [36m<div>[39m
+                  [36m<h2[39m
+                    [33mclass[39m=[32m"text-2xl font-bold text-white"[39m
+                  [36m>[39m
+                    [0mTest Tour[0m
+                  [36m</h2>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-gray-400 text-sm"[39m
+                  [36m>[39m
+                    [0mTotal Distance: [0m
+                    [0m1000 km[0m
+                    [0m • Est. Budget: [0m
+                    [0m$50000[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle-check-big"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"16"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"16"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21.801 10A10 10 0 1 1 17 3.335"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m9 11 3 3L22 4"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mCheck Logistics[0m
+                [36m</button>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"mb-6 p-4 rounded-xl border bg-green-900/10 border-green-900/30"[39m
+              [36m>[39m
+                [36m<h4[39m
+                  [33mclass[39m=[32m"font-semibold mb-2 flex items-center gap-2 text-green-400"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-circle-check-big"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"18"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"18"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21.801 10A10 10 0 1 1 17 3.335"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"m9 11 3 3L22 4"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mLogistics Report[0m
+                [36m</h4>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"space-y-4"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex gap-4 p-4 bg-black/20 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex-shrink-0 w-16 text-center"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"text-sm text-gray-400"[39m
+                    [36m>[39m
+                      [0mSep[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"text-xl font-bold text-white"[39m
+                    [36m>[39m
+                      [0m30[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex-1"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center justify-between mb-1"[39m
+                    [36m>[39m
+                      [36m<h4[39m
+                        [33mclass[39m=[32m"font-semibold text-white"[39m
+                      [36m>[39m
+                        [0mNew York[0m
+                      [36m</h4>[39m
+                      [36m<span[39m
+                        [33mclass[39m=[32m"text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-400"[39m
+                      [36m>[39m
+                        [0mShow[0m
+                      [36m</span>[39m
+                    [36m</div>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-sm text-gray-400 mb-1"[39m
+                    [36m>[39m
+                      [0mMSG[0m
+                    [36m</p>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-xs text-gray-500 italic"[39m
+                    [36m>[39m
+                      [0mSold out[0m
+                    [36m</p>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+[90m [2m❯[22m Proxy.waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[36m [2m❯[22m src/modules/touring/RoadManager.test.tsx:[2m132:15[22m[39m
+    [90m130| [39m        fireEvent[33m.[39m[34mclick[39m(checkButton)[33m;[39m
+    [90m131| [39m
+    [90m132| [39m        [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+    [90m   | [39m              [31m^[39m
+    [90m133| [39m            expect(screen.getByText('Logistics Report')).toBeInTheDocu…
+    [90m134| [39m            [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Looks good'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 23:24:46
+[2m   Duration [22m 1.75s[2m (transform 90ms, setup 45ms, import 167ms, tests 1.15s, environment 321ms)[22m
+

@@ -13,11 +13,9 @@
     },
     "main": "lib/index.js",
     "dependencies": {
-        "@ai-sdk/google": "^2.0.44",
         "@google-cloud/vertexai": "^0.4.0",
         "@google/generative-ai": "^0.24.1",
-        "@mastra/core": "^0.24.6",
-        "@mastra/mcp": "^0.14.4",
+        "@googlemaps/google-maps-services-js": "^3.4.2",
         "cors": "^2.8.5",
         "firebase-admin": "^11.8.0",
         "firebase-functions": "^4.3.1",

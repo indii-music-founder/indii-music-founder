@@ -24,9 +24,9 @@ export default function Sidebar() {
     ];
 
     const toolItems = [
-        { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
-        { id: 'image-studio', icon: Palette, label: 'Image Studio' },
-        { id: 'video-studio', icon: Film, label: 'Video Studio' },
+        { id: 'music', icon: Radio, label: 'Audio Analyzer' },
+        { id: 'creative', icon: Palette, label: 'Image Studio' },
+        { id: 'video', icon: Film, label: 'Video Studio' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
     ];
 
@@ -34,8 +34,8 @@ export default function Sidebar() {
         <button
             onClick={() => setModule(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${isActive
-                    ? 'text-teal-400 bg-teal-400/10 border-r-2 border-teal-400'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                ? 'text-teal-400 bg-teal-400/10 border-r-2 border-teal-400'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                 }`}
         >
             <item.icon size={16} />

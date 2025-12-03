@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { Megaphone, Calendar, Plus, TrendingUp, Users, BarChart2, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
+import BrandManager from './components/BrandManager';
+
 export default function MarketingDashboard() {
     const toast = useToast();
     const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [activeTab, setActiveTab] = useState<'overview' | 'brand'>('overview');
 
     const handleCreateCampaign = () => {
         toast.info("Create Campaign modal would open here.");
@@ -61,87 +64,109 @@ export default function MarketingDashboard() {
                     </h1>
                     <p className="text-gray-400">Plan, execute, and track your campaigns.</p>
                 </div>
-                <button
-                    onClick={handleCreateCampaign}
-                    className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
-                >
-                    <Plus size={20} /> Create Campaign
-                </button>
-            </div>
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
-                    <div>
-                        <p className="text-gray-400 text-sm mb-1">Total Reach</p>
-                        <h3 className="text-2xl font-bold">124.5K</h3>
-                        <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                            <TrendingUp size={12} /> +12% this month
-                        </span>
-                    </div>
-                    <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400">
-                        <Users size={24} />
-                    </div>
-                </div>
-                <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
-                    <div>
-                        <p className="text-gray-400 text-sm mb-1">Engagement Rate</p>
-                        <h3 className="text-2xl font-bold">4.8%</h3>
-                        <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                            <TrendingUp size={12} /> +0.5% this month
-                        </span>
-                    </div>
-                    <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
-                        <ActivityIcon size={24} />
-                    </div>
-                </div>
-                <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
-                    <div>
-                        <p className="text-gray-400 text-sm mb-1">Active Campaigns</p>
-                        <h3 className="text-2xl font-bold">3</h3>
-                        <span className="text-gray-500 text-xs mt-1">
-                            2 scheduled
-                        </span>
-                    </div>
-                    <div className="p-3 bg-pink-500/10 rounded-lg text-pink-400">
-                        <Megaphone size={24} />
-                    </div>
-                </div>
-            </div>
-
-            {/* Calendar Section */}
-            <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <Calendar size={18} className="text-gray-400" />
-                        Campaign Calendar
-                    </h3>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <span className="w-2 h-2 rounded-full bg-blue-500"></span> Social
-                            <span className="w-2 h-2 rounded-full bg-purple-500 ml-2"></span> Email
-                            <span className="w-2 h-2 rounded-full bg-green-500 ml-2"></span> Content
-                        </div>
-                        <button className="p-2 hover:bg-gray-800 rounded text-gray-400">
-                            <MoreHorizontal size={20} />
+                <div className="flex items-center gap-4">
+                    <div className="flex bg-[#161b22] p-1 rounded-lg border border-gray-800">
+                        <button
+                            onClick={() => setActiveTab('overview')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Overview
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('brand')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'brand' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Brand Manager
                         </button>
                     </div>
-                </div>
-
-                {/* Calendar Grid Header */}
-                <div className="grid grid-cols-7 bg-[#0d1117] border-b border-gray-800">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            {day}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Calendar Grid Body */}
-                <div className="grid grid-cols-7 bg-[#0d1117]">
-                    {renderCalendarGrid()}
+                    <button
+                        onClick={handleCreateCampaign}
+                        className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+                    >
+                        <Plus size={20} /> Create Campaign
+                    </button>
                 </div>
             </div>
+
+            {activeTab === 'overview' ? (
+                <>
+                    {/* Stats Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-400 text-sm mb-1">Total Reach</p>
+                                <h3 className="text-2xl font-bold">124.5K</h3>
+                                <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                                    <TrendingUp size={12} /> +12% this month
+                                </span>
+                            </div>
+                            <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400">
+                                <Users size={24} />
+                            </div>
+                        </div>
+                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-400 text-sm mb-1">Engagement Rate</p>
+                                <h3 className="text-2xl font-bold">4.8%</h3>
+                                <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
+                                    <TrendingUp size={12} /> +0.5% this month
+                                </span>
+                            </div>
+                            <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
+                                <ActivityIcon size={24} />
+                            </div>
+                        </div>
+                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-400 text-sm mb-1">Active Campaigns</p>
+                                <h3 className="text-2xl font-bold">3</h3>
+                                <span className="text-gray-500 text-xs mt-1">
+                                    2 scheduled
+                                </span>
+                            </div>
+                            <div className="p-3 bg-pink-500/10 rounded-lg text-pink-400">
+                                <Megaphone size={24} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Calendar Section */}
+                    <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden">
+                        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                <Calendar size={18} className="text-gray-400" />
+                                Campaign Calendar
+                            </h3>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Social
+                                    <span className="w-2 h-2 rounded-full bg-purple-500 ml-2"></span> Email
+                                    <span className="w-2 h-2 rounded-full bg-green-500 ml-2"></span> Content
+                                </div>
+                                <button className="p-2 hover:bg-gray-800 rounded text-gray-400">
+                                    <MoreHorizontal size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Calendar Grid Header */}
+                        <div className="grid grid-cols-7 bg-[#0d1117] border-b border-gray-800">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    {day}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Calendar Grid Body */}
+                        <div className="grid grid-cols-7 bg-[#0d1117]">
+                            {renderCalendarGrid()}
+                        </div>
+                    </div>
+                </>
+            ) : (
+                <BrandManager />
+            )}
         </div>
     );
 }

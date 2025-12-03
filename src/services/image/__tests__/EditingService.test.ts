@@ -70,8 +70,8 @@ describe('EditingService', () => {
         it('should generate story chain successfully', async () => {
             // Mock Planner Response
             (AI.generateContent as any)
-                .mockResolvedValueOnce({ text: JSON.stringify({ scenes: ['Scene 1', 'Scene 2'] }) }) // Planner
-                .mockResolvedValueOnce({ text: 'Visual Context' }) // Context Analysis
+                .mockResolvedValueOnce({ text: () => JSON.stringify({ scenes: ['Scene 1', 'Scene 2'] }) }) // Planner
+                .mockResolvedValueOnce({ text: () => 'Visual Context' }) // Context Analysis
                 .mockResolvedValueOnce({ // Frame 1
                     candidates: [{
                         content: {
@@ -81,7 +81,7 @@ describe('EditingService', () => {
                         }
                     }]
                 })
-                .mockResolvedValueOnce({ text: 'Visual Context 2' }) // Context Analysis 2
+                .mockResolvedValueOnce({ text: () => 'Visual Context 2' }) // Context Analysis 2
                 .mockResolvedValueOnce({ // Frame 2
                     candidates: [{
                         content: {

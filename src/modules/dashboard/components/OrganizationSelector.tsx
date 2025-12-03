@@ -75,6 +75,17 @@ export const OrganizationSelector = () => {
                                         {currentOrganizationId === org.id && <Check size={16} />}
                                     </button>
                                 ))}
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        // @ts-ignore - dynamic module setting
+                                        useStore.getState().setModule('select-org');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 transition-colors border-t border-gray-800 mt-1"
+                                >
+                                    <Building2 size={16} />
+                                    <span className="font-medium">Manage Organizations</span>
+                                </button>
                             </div>
 
                             <div className="border-t border-gray-800 p-2">
@@ -119,6 +130,6 @@ export const OrganizationSelector = () => {
                     </>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };

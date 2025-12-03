@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export default function LegalDashboard() {
     const [isDragging, setIsDragging] = useState(false);
@@ -30,7 +32,7 @@ export default function LegalDashboard() {
         }
     };
 
-    const handleFileUpload = (file: File) => {
+    const handleFileUpload = async (file: File) => {
         if (file.type !== 'application/pdf' && !file.type.includes('text')) {
             toast.error("Please upload a PDF or text document.");
             return;
@@ -40,20 +42,37 @@ export default function LegalDashboard() {
         setAnalysisResult(null);
         toast.info(`Analyzing ${file.name}...`);
 
-        // Simulate analysis delay
-        setTimeout(() => {
-            setIsAnalyzing(false);
+        try {
+            const readFile = (file: File): Promise<string> => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const dataUrl = await readFile(file);
+            const base64Data = dataUrl.split(',')[1];
+            const mimeType = file.type || 'text/plain';
+
+            const analyzeContract = httpsCallable(functions, 'analyzeContract');
+            const result = await analyzeContract({ fileData: base64Data, mimeType });
+
+            const data = result.data as any;
+
             setAnalysisResult({
-                score: 85,
-                summary: "This contract appears to be a standard freelance agreement. Most clauses are fair, but there are a few points to review regarding IP ownership.",
-                risks: [
-                    "Clause 4.2: IP assignment is broad. Ensure you retain rights to pre-existing work.",
-                    "Clause 8.1: Indemnification clause is uncapped.",
-                    "Missing: No clear payment schedule defined."
-                ]
+                score: data.score,
+                summary: data.summary,
+                risks: data.risks
             });
             toast.success("Analysis complete!");
-        }, 2500);
+        } catch (error) {
+            console.error("Analysis failed:", error);
+            toast.error("Analysis failed. Please try again.");
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     return (
@@ -75,19 +94,43 @@ export default function LegalDashboard() {
                     </h3>
 
                     {!analysisResult && !isAnalyzing && (
-                        <div
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={`border-2 border-dashed rounded-xl p-12 flex flex-col items-center justify-center transition-colors cursor-pointer ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
-                                }`}
-                        >
-                            <Upload size={48} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
-                            <p className="text-lg font-medium mb-2">Drop your contract here</p>
-                            <p className="text-sm text-gray-500">Supports PDF, DOCX, TXT</p>
-                            <button className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
-                                Browse Files
-                            </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                                    }`}
+                            >
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                                    accept=".pdf,.docx,.txt"
+                                />
+                                <Upload size={48} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
+                                <p className="text-lg font-medium mb-2 text-center">Drop contract here</p>
+                                <p className="text-sm text-gray-500 text-center">PDF, DOCX, TXT</p>
+                                <button className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
+                                    Browse Files
+                                </button>
+                            </div>
+
+                            <div className="border-2 border-dashed border-gray-700 hover:border-gray-600 hover:bg-gray-800/50 rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                                />
+                                <Camera size={48} className="mb-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                                <p className="text-lg font-medium mb-2 text-center">Scan Document</p>
+                                <p className="text-sm text-gray-500 text-center">Take a photo of a contract</p>
+                                <button className="mt-6 px-6 py-2 bg-gray-700 group-hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
+                                    Open Camera
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -106,8 +149,8 @@ export default function LegalDashboard() {
                                     <p className="text-gray-400 text-sm">Generated by LegalAI Agent</p>
                                 </div>
                                 <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${analysisResult.score >= 80 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                                        analysisResult.score >= 60 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                                    analysisResult.score >= 60 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                        'bg-red-500/10 text-red-400 border border-red-500/20'
                                     }`}>
                                     <span className="text-2xl font-bold">{analysisResult.score}</span>
                                     <span className="text-xs uppercase font-bold tracking-wider">Safety Score</span>

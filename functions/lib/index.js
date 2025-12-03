@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.triggerVideoGeneration = exports.inngestFn = exports.editImage = exports.creativeDirectorAgent = exports.generateVideo = void 0;
+exports.checkLogistics = exports.generateItinerary = exports.generateBrandAsset = exports.analyzeBrand = exports.executeCampaign = exports.generateImage = exports.analyzeContract = exports.triggerVideoGeneration = exports.inngestFn = exports.editImage = exports.creativeDirectorAgent = exports.generateVideo = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors");
@@ -154,5 +154,163 @@ exports.triggerVideoGeneration = functions.https.onCall(async (data, context) =>
         data: { prompt, image, model }
     });
     return { success: true, message: "Video generation triggered" };
+});
+const legal_advisor_1 = require("./agents/legal-advisor");
+const campaign_manager_1 = require("./agents/campaign-manager");
+exports.analyzeContract = functions.https.onCall(async (data, context) => {
+    try {
+        const { fileData, mimeType } = data;
+        if (!fileData || !mimeType) {
+            throw new functions.https.HttpsError('invalid-argument', 'fileData and mimeType are required');
+        }
+        const result = await legal_advisor_1.legalAdvisor.analyzeContract(fileData, mimeType);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+exports.generateImage = functions.https.onCall(async (data, context) => {
+    try {
+        const { prompt, aspectRatio, count, images } = data;
+        const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
+        const location = "us-central1";
+        const modelId = "gemini-3-pro-image-preview";
+        const auth = new google_auth_library_1.GoogleAuth({
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+        });
+        const client = await auth.getClient();
+        const accessToken = await client.getAccessToken();
+        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+        const parts = [{ text: prompt + (aspectRatio ? ` --aspect_ratio ${aspectRatio}` : '') }];
+        if (images) {
+            images.forEach(img => {
+                parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+            });
+        }
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken.token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [{
+                        role: "user",
+                        parts: parts
+                    }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    candidateCount: count || 1
+                }
+            }),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Vertex API Error:", errorText);
+            throw new functions.https.HttpsError('internal', errorText);
+        }
+        const result = await response.json();
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+exports.executeCampaign = functions.https.onCall(async (data, context) => {
+    try {
+        const { posts } = data;
+        if (!posts || !Array.isArray(posts)) {
+            throw new functions.https.HttpsError('invalid-argument', 'posts array is required');
+        }
+        const result = await campaign_manager_1.campaignManager.executeCampaign(posts);
+        return { posts: result };
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+const brand_manager_1 = require("./agents/brand-manager");
+exports.analyzeBrand = functions.https.onCall(async (data, context) => {
+    try {
+        const { content, guidelines } = data;
+        if (!content || !guidelines) {
+            throw new functions.https.HttpsError('invalid-argument', 'content and guidelines are required');
+        }
+        const result = await brand_manager_1.brandManager.analyzeBrandConsistency(content, guidelines);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+exports.generateBrandAsset = functions.https.onCall(async (data, context) => {
+    try {
+        const { type, prompt } = data;
+        if (!type || !prompt) {
+            throw new functions.https.HttpsError('invalid-argument', 'type and prompt are required');
+        }
+        const result = await brand_manager_1.brandManager.generateBrandAsset(type, prompt);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+const road_manager_1 = require("./agents/road-manager");
+const roadManager = new road_manager_1.RoadManagerAgent();
+exports.generateItinerary = functions.https.onCall(async (data, context) => {
+    try {
+        const { locations, dates } = data;
+        if (!locations || !dates) {
+            throw new functions.https.HttpsError('invalid-argument', 'locations and dates are required');
+        }
+        const result = await roadManager.generateItinerary(locations, dates);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+exports.checkLogistics = functions.https.onCall(async (data, context) => {
+    try {
+        const { itinerary } = data;
+        if (!itinerary) {
+            throw new functions.https.HttpsError('invalid-argument', 'itinerary is required');
+        }
+        const result = await roadManager.checkLogistics(itinerary);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
 });
 //# sourceMappingURL=index.js.map

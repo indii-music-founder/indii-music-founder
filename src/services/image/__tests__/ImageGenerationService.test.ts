@@ -92,7 +92,7 @@ describe('ImageGenerationService', () => {
                 style_context: 'A style',
                 negative_prompt: 'Avoid this'
             };
-            (AI.generateContent as any).mockResolvedValue({ text: JSON.stringify(mockJSON) });
+            (AI.generateContent as any).mockResolvedValue({ text: () => JSON.stringify(mockJSON) });
             (AI.parseJSON as any).mockReturnValue(mockJSON);
 
             const result = await ImageGeneration.extractStyle({ mimeType: 'image/png', data: 'data' });

@@ -21,12 +21,14 @@ export default function PromptTools({ currentPrompt, onUpdatePrompt }: PromptToo
         try {
             const response = await AI.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: currentPrompt ? `Enhance: "${currentPrompt}"` : "Generate 8 artistic adjectives.",
-                systemInstruction: "Return a simple comma-separated list of 6-8 descriptive adjectives. Do not use Markdown. Do not use JSON.",
-                config: { temperature: 1.0 }
+                contents: { role: 'user', parts: [{ text: currentPrompt ? `Enhance: "${currentPrompt}"` : "Generate 8 artistic adjectives." }] },
+                config: {
+                    systemInstruction: "Return a simple comma-separated list of 6-8 descriptive adjectives. Do not use Markdown. Do not use JSON.",
+                    temperature: 1.0
+                }
             });
 
-            const words = (response.text || '').replace(/```[\s\S]*?```/g, '').replace(/[\{\}\[\]"]/g, '').trim();
+            const words = (response.text() || '').replace(/```[\s\S]*?```/g, '').replace(/[\{\}\[\]"]/g, '').trim();
             if (words) {
                 onUpdatePrompt(currentPrompt + (currentPrompt ? ', ' : '') + words);
             }
@@ -49,12 +51,14 @@ export default function PromptTools({ currentPrompt, onUpdatePrompt }: PromptToo
 
             const response = await AI.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: `Original Concept: "${promptToImprove}"`,
-                systemInstruction,
-                config: { responseMimeType: 'application/json' }
+                contents: { role: 'user', parts: [{ text: `Original Concept: "${promptToImprove}"` }] },
+                config: {
+                    systemInstruction,
+                    responseMimeType: 'application/json'
+                }
             });
 
-            const text = response.text || "{}";
+            const text = response.text() || "{}";
             // Clean up markdown code blocks if present
             const jsonStr = text.replace(/```json\n?|\n?```/g, '');
             const data = JSON.parse(jsonStr);

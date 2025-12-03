@@ -99,10 +99,11 @@ export default function MusicStudio() {
                         <div className="flex flex-col gap-8">
                             <div className="flex items-center justify-center p-12 bg-[#0d1117] rounded-lg border border-gray-800">
                                 <button
+                                    data-testid="play-button"
                                     onClick={playNote}
                                     className={`w-32 h-32 rounded-full flex items-center justify-center transition-all duration-200 ${isPlaying
-                                            ? 'bg-red-500 hover:bg-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)]'
-                                            : 'bg-green-600 hover:bg-green-500 shadow-lg'
+                                        ? 'bg-red-500 hover:bg-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)]'
+                                        : 'bg-green-600 hover:bg-green-500 shadow-lg'
                                         }`}
                                 >
                                     {isPlaying ? <Square size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}

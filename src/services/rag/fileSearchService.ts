@@ -244,8 +244,8 @@ export async function localQueryStore(
         const response = await AI.generateContent({
             model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] },
-            systemInstruction: systemInstruction,
             config: {
+                systemInstruction: systemInstruction,
                 ...AI_CONFIG.THINKING.HIGH
             }
         });

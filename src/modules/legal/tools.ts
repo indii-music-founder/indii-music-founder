@@ -12,9 +12,9 @@ export const LEGAL_TOOLS = {
         `;
         const res = await AI.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: { parts: [{ text: prompt }] }
+            contents: { role: 'user', parts: [{ text: prompt }] }
         });
-        return res.text || "Analysis failed.";
+        return res.text() || "Analysis failed.";
     },
     check_compliance: async (args: { region: string }) => {
         const prompt = `
@@ -24,9 +24,9 @@ export const LEGAL_TOOLS = {
         `;
         const res = await AI.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: { parts: [{ text: prompt }] }
+            contents: { role: 'user', parts: [{ text: prompt }] }
         });
-        return res.text || "Compliance check failed.";
+        return res.text() || "Compliance check failed.";
     }
 };
 

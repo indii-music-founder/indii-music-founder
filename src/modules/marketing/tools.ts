@@ -22,9 +22,9 @@ export const MARKETING_TOOLS = {
         try {
             const res = await AI.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: { parts: [{ text: prompt }] }
+                contents: { role: 'user', parts: [{ text: prompt }] }
             });
-            return res.text || "Failed to generate strategy.";
+            return res.text() || "Failed to generate strategy.";
         } catch (e) {
             return JSON.stringify({ error: "AI Service Unavailable" });
         }
@@ -43,9 +43,9 @@ export const MARKETING_TOOLS = {
         try {
             const res = await AI.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: { parts: [{ text: prompt }] }
+                contents: { role: 'user', parts: [{ text: prompt }] }
             });
-            return res.text || "Failed to generate copy.";
+            return res.text() || "Failed to generate copy.";
         } catch (e) {
             return "Error generating copy.";
         }

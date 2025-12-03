@@ -4,17 +4,12 @@ import { Building2, Plus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SelectOrg() {
-    console.log('SelectOrg: Component Mounting');
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
-    console.log('SelectOrg: State loaded', { organizations, currentOrganizationId });
 
     if (!organizations) {
         console.error('SelectOrg: Critical Error - organizations is undefined');
-        return <div className="text-red-500 p-10 border-4 border-red-500">Error: Store not initialized correctly.</div>;
+        return <div className="text-red-500 p-10">Error: Store not initialized correctly.</div>;
     }
-
-    // DEBUG: Force visible render
-    console.log('SelectOrg: Rendering main UI');
 
     const [isCreating, setIsCreating] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
@@ -64,7 +59,7 @@ export default function SelectOrg() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-black text-white p-4 border-4 border-red-500" data-testid="select-org-container">
+        <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

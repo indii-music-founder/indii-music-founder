@@ -19,6 +19,7 @@ export class VideoService {
             const analysisRes = await AI.generateContent({
                 model: AI_MODELS.TEXT.AGENT,
                 contents: {
+                    role: 'user',
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
                         { inlineData: { mimeType: 'image/png', data: mask.data } },
@@ -27,7 +28,7 @@ export class VideoService {
                 },
                 config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
             });
-            const plan = AI.parseJSON(analysisRes.text);
+            const plan = AI.parseJSON(analysisRes.text());
 
             // Step 2: Generate Video
             const uri = await AI.generateVideo({
