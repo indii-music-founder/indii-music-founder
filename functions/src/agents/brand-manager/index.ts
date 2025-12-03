@@ -13,7 +13,7 @@ export class BrandManagerAgent {
     async analyzeBrandConsistency(content: string, guidelines: string): Promise<any> {
         const prompt = `
             You are a strict Brand Manager. Analyze the following content against the provided brand guidelines.
-            
+
             Brand Guidelines:
             ${guidelines}
 

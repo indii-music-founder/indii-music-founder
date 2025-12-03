@@ -189,7 +189,7 @@ export async function runOnboardingConversation(
     - Who are they? What is their core brand? This rarely changes.
     - **Career Stage**: Where are they in their journey?
     - **Goals**: What are they trying to achieve?
-    
+
     
     **LAYER 2: CURRENT RELEASE** (Progress: ${releaseProgress}%)
     Missing: [${releaseMissing.join(', ').toUpperCase()}]
