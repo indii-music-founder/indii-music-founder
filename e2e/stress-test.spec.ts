@@ -41,9 +41,15 @@ test.describe('Stress Testing', () => {
                 // We call addToHistory which updates local state and fires async save.
                 // We don't necessarily need to wait for save to complete for local rendering,
                 // but for "reload" test we do.
+<<<<<<< HEAD
                 // Since addToHistory doesn't return the promise of save, we might rely on the fact that 
                 // StorageService is called.
                 // However, for this test, let's just update the local state and assume persistence works 
+=======
+                // Since addToHistory doesn't return the promise of save, we might rely on the fact that
+                // StorageService is called.
+                // However, for this test, let's just update the local state and assume persistence works
+>>>>>>> fix/functions-indexeddb-googlemaps-1
                 // or just test the rendering performance of 100 items.
 
                 // If we want to test "Loading from Firestore", we need them in Firestore.
@@ -84,7 +90,11 @@ test.describe('Stress Testing', () => {
         console.log(`Time to Interactive (Gallery Load): ${tti}ms`);
 
         // Fail if > 3000ms (soft assertion or hard)
+<<<<<<< HEAD
         // expect(tti).toBeLessThan(3000); 
+=======
+        // expect(tti).toBeLessThan(3000);
+>>>>>>> fix/functions-indexeddb-googlemaps-1
         // We log it for now as performance tests can be flaky in CI.
     });
 
@@ -144,6 +154,10 @@ test.describe('Stress Testing', () => {
 
         // Assertions
         // Expect no massive frame drops (this might be flaky in CI, so we log it)
+<<<<<<< HEAD
         // expect(metrics.drops).toBeLessThan(10); 
+=======
+        // expect(metrics.drops).toBeLessThan(10);
+>>>>>>> fix/functions-indexeddb-googlemaps-1
     });
 });

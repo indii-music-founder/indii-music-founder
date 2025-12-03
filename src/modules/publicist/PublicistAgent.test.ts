@@ -11,6 +11,17 @@ vi.mock('../../services/ai/AIService', () => ({
     }
 }));
 
+<<<<<<< HEAD
+=======
+// Mock MemoryService to avoid IndexedDB issues
+vi.mock('../../services/agent/MemoryService', () => ({
+    memoryService: {
+        saveMemory: vi.fn(),
+        retrieveRelevantMemories: vi.fn()
+    }
+}));
+
+>>>>>>> fix/functions-indexeddb-googlemaps-1
 describe('PublicistAgent', () => {
     it('should be instantiated with correct properties', () => {
         const agent = new PublicistAgent();
