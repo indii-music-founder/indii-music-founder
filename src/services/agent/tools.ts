@@ -31,8 +31,8 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             CRITIQUE REQUEST:
             Goal: "${args.goal}"
             Content to Verify: "${args.content}"
-            
-            Task: Rate this content on a scale of 1-10 based on how well it meets the goal. 
+
+            Task: Rate this content on a scale of 1-10 based on how well it meets the goal.
             If score < 7, provide specific improvements.
             Output JSON: { "score": number, "reason": "string", "pass": boolean }
             `;

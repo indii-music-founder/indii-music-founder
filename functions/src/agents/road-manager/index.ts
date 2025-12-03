@@ -35,8 +35,8 @@ export class RoadManagerAgent {
 
             let travelInfo = "Travel Estimates:\n";
 
-            // Note: Distance Matrix returns a grid. For a sequential tour A->B->C, 
-            // we want A->B, B->C. 
+            // Note: Distance Matrix returns a grid. For a sequential tour A->B->C,
+            // we want A->B, B->C.
             // The API returns rows (origins) x elements (destinations).
             // This simple implementation assumes a direct sequence and might need refinement for complex matrices,
             // but for A->B, B->C logic:
@@ -62,7 +62,7 @@ export class RoadManagerAgent {
 
         const prompt = `
             You are an expert Road Manager for a touring band. Plan a detailed itinerary for a tour.
-            
+
             Locations: ${locations.join(', ')}
             Dates: ${dates.start} to ${dates.end}
 
@@ -70,7 +70,7 @@ export class RoadManagerAgent {
             ${travelData}
 
             Consider travel time between cities, load-in/load-out times, and rest days.
-            
+
             Provide a JSON response with the following structure:
             {
                 "tourName": string,

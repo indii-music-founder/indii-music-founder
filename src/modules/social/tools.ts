@@ -7,7 +7,7 @@ export const SOCIAL_TOOLS = {
         Write a social media post for ${args.platform}.
         Topic: ${args.topic}
         Tone: ${args.tone}
-        
+
         Include hashtags and emojis.
         `;
 
@@ -28,7 +28,7 @@ export const SOCIAL_TOOLS = {
         Generate 5 creative handle/username ideas and 3 bio options for a new ${args.platform} account.
         Brand Name: ${args.brand_name}
         Industry: ${args.industry}
-        
+
         OUTPUT JSON:
         {
             "handles": ["@handle1", "@handle2", ...],
