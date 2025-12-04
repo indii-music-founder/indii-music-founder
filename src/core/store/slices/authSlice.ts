@@ -49,7 +49,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
         knowledgeBase: [],
         savedWorkflows: []
     },
-    setOrganization: (id) => set({ currentOrganizationId: id }),
+    setOrganization: (id) => {
+        localStorage.setItem('currentOrgId', id);
+        set({ currentOrganizationId: id });
+    },
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => set({ userProfile: profile }),
     updateBrandKit: (updates) => set((state) => ({

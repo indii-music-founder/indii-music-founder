@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore } from '@/core/store';
+import { useStore, HistoryItem } from '@/core/store';
 import { X, Download, Share2, Wand2, Brush, Eraser, Save, RotateCcw, Trash2, Play, Type, Square, Circle as CircleIcon, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
@@ -8,7 +8,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 
 interface CreativeCanvasProps {
-    item: { id: string; url: string; prompt: string; type: 'image' | 'video'; mask?: string } | null;
+    item: HistoryItem | null;
     onClose: () => void;
 }
 

@@ -198,34 +198,7 @@ export default function Dashboard() {
                     </div>
                 </section>
 
-                {/* Modules Grid */}
-                <section>
-                    <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Layout size={20} className="text-neon-blue" /> Quick Access
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <button onClick={() => setModule('creative')} className="p-6 glass-panel rounded-xl hover:border-neon-blue/50 hover:bg-white/5 transition-all text-left group">
-                            <Layout size={24} className="text-neon-blue mb-4 group-hover:scale-110 transition-transform" />
-                            <h3 className="font-bold text-white">Creative Studio</h3>
-                            <p className="text-xs text-white/40 mt-1">Image & Video Generation</p>
-                        </button>
-                        <button onClick={() => setModule('music')} className="p-6 glass-panel rounded-xl hover:border-neon-purple/50 hover:bg-white/5 transition-all text-left group">
-                            <Music size={24} className="text-neon-purple mb-4 group-hover:scale-110 transition-transform" />
-                            <h3 className="font-bold text-white">Music Studio</h3>
-                            <p className="text-xs text-white/40 mt-1">Audio Synthesis</p>
-                        </button>
-                        <button onClick={() => setModule('marketing')} className="p-6 glass-panel rounded-xl hover:border-signal-green/50 hover:bg-white/5 transition-all text-left group">
-                            <MessageSquare size={24} className="text-signal-green mb-4 group-hover:scale-110 transition-transform" />
-                            <h3 className="font-bold text-white">Marketing</h3>
-                            <p className="text-xs text-white/40 mt-1">Campaign Management</p>
-                        </button>
-                        <button onClick={() => setModule('legal')} className="p-6 glass-panel rounded-xl hover:border-yellow-500/50 hover:bg-white/5 transition-all text-left group">
-                            <Scale size={24} className="text-yellow-500 mb-4 group-hover:scale-110 transition-transform" />
-                            <h3 className="font-bold text-white">Legal</h3>
-                            <p className="text-xs text-white/40 mt-1">Contracts & Rights</p>
-                        </button>
-                    </div>
-                </section>
+
             </div>
 
             {/* Brand Kit Modal */}
@@ -267,8 +240,8 @@ export default function Dashboard() {
                                             key={type}
                                             onClick={() => setNewProjectType(type as 'creative' | 'music' | 'marketing' | 'legal')}
                                             className={`p - 3 rounded - lg border text - sm font - medium capitalize transition - all ${newProjectType === type
-                                                    ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
-                                                    : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'
+                                                ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
+                                                : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'
                                                 } `}
                                         >
                                             {type}

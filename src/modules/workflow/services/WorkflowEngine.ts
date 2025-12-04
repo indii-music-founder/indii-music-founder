@@ -158,6 +158,40 @@ export class WorkflowEngine {
         return inputs.data;
     }
 
+    public async saveWorkflow(id: string, name: string, description: string, viewport: { x: number; y: number; zoom: number }): Promise<void> {
+        const { saveWorkflowToStorage } = await import('@/services/storage/repository');
+
+        const workflowData = {
+            id,
+            name,
+            description,
+            nodes: this.nodes,
+            edges: this.edges,
+            viewport,
+            createdAt: new Date().toISOString(), // In a real app, preserve original creation time
+            updatedAt: new Date().toISOString()
+        };
+
+        await saveWorkflowToStorage(workflowData);
+        console.log(`Workflow ${id} saved.`);
+    }
+
+    public async loadWorkflow(id: string): Promise<any | null> {
+        const { getWorkflowFromStorage } = await import('@/services/storage/repository');
+        const data = await getWorkflowFromStorage(id);
+
+        if (data) {
+            this.nodes = data.nodes;
+            this.edges = data.edges;
+            this.setNodes([...this.nodes]);
+            // Note: Edges and Viewport handling should be done by the consumer (ReactFlow component)
+            // or we need a setEdges callback too. 
+            // For now, we just return the data so the UI can update.
+            return data;
+        }
+        return null;
+    }
+
     private updateNodeStatus(nodeId: string, status: Status) {
         // We need to update the store's state. 
         // Since we passed setNodes in constructor, we can use it.

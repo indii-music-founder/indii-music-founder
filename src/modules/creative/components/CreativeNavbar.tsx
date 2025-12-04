@@ -186,38 +186,8 @@ export default function CreativeNavbar() {
 
                     {/* Prompt Input Area */}
                     <div className="flex-1 w-full flex items-center gap-2 order-3 md:order-2">
-                        <div className="flex-1 relative flex items-end gap-2 bg-[#0f0f0f] border border-gray-700 rounded-xl pr-2 focus-within:ring-1 focus-within:ring-purple-500 transition-all shadow-inner">
-                            <textarea
-                                value={prompt}
-                                onChange={(e) => {
-                                    setPrompt(e.target.value);
-                                    e.target.style.height = 'auto';
-                                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleGenerate();
-                                    }
-                                }}
-                                placeholder={`Describe what you want to create in ${generationMode} mode...`}
-                                className="flex-1 bg-transparent border-none rounded-l-xl pl-4 py-3 text-sm text-white placeholder-gray-500 focus:ring-0 outline-none min-w-0 resize-none overflow-y-auto custom-scrollbar leading-relaxed"
-                                style={{ height: '44px', minHeight: '44px', maxHeight: '120px' }}
-                            />
-
-                            {/* Tools inside input */}
-                            <div className="flex items-center gap-1 border-l border-gray-700 pl-2 mb-2 flex-shrink-0">
-                                <PromptTools currentPrompt={prompt} onUpdatePrompt={setPrompt} />
-                                <PromptLibrary currentPrompt={prompt} onLoadPrompt={setPrompt} />
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setShowPromptBuilder(!showPromptBuilder); }}
-                                    className={`p-1.5 rounded transition-colors ${showPromptBuilder ? 'text-white bg-gray-700' : 'text-gray-500 hover:text-white'}`}
-                                    title="Toggle Prompt Builder"
-                                >
-                                    {showPromptBuilder ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                            </div>
-                        </div>
+                        {/* Prompt Input Removed - Use CommandBar */}
+                        <div className="hidden"></div>
 
                         {/* Studio Controls (Desktop) */}
                         <div className="hidden md:block">

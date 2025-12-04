@@ -92,13 +92,7 @@ export interface CreativeSlice {
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     generatedHistory: [],
     addToHistory: (item) => {
-        // Access the full store state to get currentOrganizationId
-        // Note: 'get()' here returns the slice state if not typed correctly, but in zustand 'get' usually gives full state if used in a combined store.
-        // However, StateCreator<CreativeSlice> might limit it.
-        // Let's use a dynamic import of the store for safety or assume the item has it.
-        // OR better: use the store instance directly if we can't get it here.
-
-        // Let's try to get it from the store module to be safe and avoid type issues with 'get' in partial slices.
+        // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
             const { currentOrganizationId } = useStore.getState();
             const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
@@ -131,6 +125,8 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                 } else {
                     try {
                         await signInAnonymously(auth);
+                        // The onAuthStateChanged will fire again, so we don't need to do anything here
+                        // but for safety in this specific promise logic:
                         if (auth.currentUser) {
                             const history = await StorageService.loadHistory();
                             set({ generatedHistory: history });

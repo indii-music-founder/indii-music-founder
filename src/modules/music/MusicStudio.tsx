@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
-import { Play, Square, Activity, Music, Volume2, VolumeX } from 'lucide-react';
+import { Play, Activity, Music } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 export default function MusicStudio() {
     const [isStarted, setIsStarted] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [volume, setVolume] = useState(-10); // dB
-    const [isMuted, setIsMuted] = useState(false);
     const synthRef = useRef<Tone.Synth | null>(null);
     const toast = useToast();
 
@@ -25,41 +22,15 @@ export default function MusicStudio() {
             await Tone.start();
             setIsStarted(true);
 
-            // Initialize Synth
-            synthRef.current = new Tone.Synth().toDestination();
-            synthRef.current.volume.value = volume;
+            // Initialize Synth (still needed for Tone context to start properly?)
+            // Actually Tone.start() is enough for context. 
+            // We can keep the synth init if we plan to use it for analysis feedback later, 
+            // but for now let's keep it minimal.
 
             toast.success("Audio Engine Started");
         } catch (error) {
             console.error("Failed to start audio engine:", error);
             toast.error("Failed to start audio engine");
-        }
-    };
-
-    const playNote = () => {
-        if (!synthRef.current) return;
-
-        if (isPlaying) {
-            synthRef.current.triggerRelease();
-            setIsPlaying(false);
-        } else {
-            synthRef.current.triggerAttack("C4");
-            setIsPlaying(true);
-        }
-    };
-
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVolume = parseFloat(e.target.value);
-        setVolume(newVolume);
-        if (synthRef.current) {
-            synthRef.current.volume.value = isMuted ? -Infinity : newVolume;
-        }
-    };
-
-    const toggleMute = () => {
-        setIsMuted(!isMuted);
-        if (synthRef.current) {
-            synthRef.current.volume.value = !isMuted ? -Infinity : volume;
         }
     };
 
@@ -89,47 +60,15 @@ export default function MusicStudio() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Synthesizer Controls */}
+                    {/* Audio Analysis Placeholder */}
                     <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                         <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                             <Activity size={18} className="text-blue-400" />
-                            Basic Synthesizer
+                            Audio Analysis
                         </h3>
-
-                        <div className="flex flex-col gap-8">
-                            <div className="flex items-center justify-center p-12 bg-[#0d1117] rounded-lg border border-gray-800">
-                                <button
-                                    data-testid="play-button"
-                                    onClick={playNote}
-                                    className={`w-32 h-32 rounded-full flex items-center justify-center transition-all duration-200 ${isPlaying
-                                        ? 'bg-red-500 hover:bg-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)]'
-                                        : 'bg-green-600 hover:bg-green-500 shadow-lg'
-                                        }`}
-                                >
-                                    {isPlaying ? <Square size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium text-gray-300">Master Volume</label>
-                                    <span className="text-xs text-gray-500">{volume.toFixed(0)} dB</span>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <button onClick={toggleMute} className="text-gray-400 hover:text-white">
-                                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                                    </button>
-                                    <input
-                                        type="range"
-                                        min="-60"
-                                        max="0"
-                                        step="1"
-                                        value={volume}
-                                        onChange={handleVolumeChange}
-                                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                    />
-                                </div>
-                            </div>
+                        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                            <p>Upload an audio file to analyze BPM, Key, and Energy.</p>
+                            <p className="text-sm mt-2 text-gray-600">(Use the Agent to analyze files)</p>
                         </div>
                     </div>
 

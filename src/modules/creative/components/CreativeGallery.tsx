@@ -4,7 +4,7 @@ import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToL
 import CreativeCanvas from './CreativeCanvas';
 import { useToast } from '@/core/context/ToastContext';
 
-export default function CreativeGallery() {
+export default function CreativeGallery({ compact = false }: { compact?: boolean }) {
     const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem } = useStore();
     // const [selectedItem, setSelectedItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video'; mask?: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +128,10 @@ export default function CreativeGallery() {
         </div>
     );
 
+    const gridClass = compact
+        ? "grid grid-cols-2 gap-2"
+        : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
+
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             {/* Assets Section */}
@@ -213,7 +217,7 @@ export default function CreativeGallery() {
                     />
                 </div>
                 {uploadedImages.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className={gridClass}>
                         {/* Add New Card */}
                         <button
                             onClick={() => fileInputRef.current?.click()}
@@ -242,7 +246,7 @@ export default function CreativeGallery() {
             {/* Gallery Section */}
             <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Generation History</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className={gridClass}>
                     {generatedHistory.map(item => renderGridItem(item, removeFromHistory))}
                 </div>
             </div>

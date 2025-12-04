@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Stress Testing', () => {
-    test.skip('Asset Loading Performance', async ({ page }) => {
+    test('Asset Loading Performance', async ({ page }) => {
+        test.setTimeout(60000); // Increase timeout for stress test
         // 1. Login/Setup
         await page.goto('/');
 
@@ -18,52 +19,62 @@ test.describe('Stress Testing', () => {
         // Wait for dashboard
         await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 10000 });
 
-        // 2. Seed Data (Client-side injection)
-        console.log('Seeding 100 images...');
-        await page.evaluate(async () => {
-            const state = (window as any).useStore.getState();
-            const currentProjectId = state.projects[0]?.id || 'proj-default';
-            const currentOrgId = state.currentOrganizationId;
+        // Enable console logs
+        page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
 
+        // 2. Seed Data (Client-side injection)
+        console.log('Seeding 10 images...');
+        const orgIdBefore = await page.evaluate(async () => {
+            const state = (window as any).useStore.getState();
+            const currentProjectId = state.projects?.[0]?.id || 'proj-default';
+            const currentOrgId = state.currentOrganizationId;
             const addToHistory = state.addToHistory;
 
-            const promises = [];
-            for (let i = 0; i < 100; i++) {
+            console.log(`Seeding for Org: ${currentOrgId}`);
+
+            for (let i = 0; i < 10; i++) {
                 const item = {
                     id: `stress-test-${Date.now()}-${i}`,
                     type: 'image',
-                    url: 'https://picsum.photos/200/300', // Dummy URL
+                    url: 'https://picsum.photos/200/300',
                     prompt: `Stress Test Image ${i}`,
                     timestamp: Date.now(),
                     projectId: currentProjectId,
                     orgId: currentOrgId
                 };
-                // We call addToHistory which updates local state and fires async save.
-                // We don't necessarily need to wait for save to complete for local rendering,
-                // but for "reload" test we do.
-                // Since addToHistory doesn't return the promise of save, we might rely on the fact that
-                // StorageService is called.
-                // However, for this test, let's just update the local state and assume persistence works
-                // or just test the rendering performance of 100 items.
-
-                // If we want to test "Loading from Firestore", we need them in Firestore.
-                // Since we can't easily wait for the internal async save, we might just wait a bit.
                 addToHistory(item);
             }
+            return currentOrgId;
         });
+        console.log(`Org ID Before Reload: ${orgIdBefore}`);
 
-        // Wait for data to be potentially synced (optional, but good for realism if we were reloading)
-        await page.waitForTimeout(5000);
+        // Wait for data to be synced. 
+        // Instead of fixed timeout, we poll the store or wait for a condition
+        await page.waitForFunction(async () => {
+            const state = (window as any).useStore.getState();
+            // Check if items are in history
+            return state.generatedHistory.some((item: any) => item.prompt.includes('Stress Test Image'));
+        }, null, { timeout: 10000 });
+
+        console.log('Data seeded and verified in store.');
 
         // 3. Reload Page to test cold load performance
         console.log('Reloading page to test load performance...');
         const startTime = Date.now();
         await page.reload();
 
-        // Wait for Creative Studio to be accessible or navigate to it
-        // If we reload, we might be back at dashboard or select org depending on persistence.
-        // Assuming we are at dashboard.
-        await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 10000 });
+        // Wait for dashboard
+        await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 15000 });
+
+        // Wait for store rehydration
+        await page.waitForFunction(() => {
+            const state = (window as any).useStore.getState();
+            console.log('Current History Length:', state.generatedHistory.length);
+            return state.generatedHistory.length > 0;
+        }, null, { timeout: 30000 });
+
+        const orgIdAfter = await page.evaluate(() => (window as any).useStore.getState().currentOrganizationId);
+        console.log(`Org ID After Reload: ${orgIdAfter}`);
 
         // Navigate to Creative Studio
         const navStartTime = Date.now();

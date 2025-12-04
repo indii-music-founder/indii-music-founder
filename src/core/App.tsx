@@ -23,9 +23,10 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 
+import AgentWindow from './components/AgentWindow';
+
 export default function App() {
     const { currentModule, initializeHistory, initializeAuth, loadProjects } = useStore();
-    console.log('App: Render, currentModule:', currentModule);
 
     useEffect(() => {
         initializeAuth();
@@ -44,6 +45,7 @@ export default function App() {
             <ErrorBoundary>
                 <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
                     <ApiKeyErrorModal />
+                    <AgentWindow />
 
                     {/* Left Sidebar */}
                     {currentModule !== 'select-org' && (
@@ -58,7 +60,7 @@ export default function App() {
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
                                 {currentModule === 'select-org' && <SelectOrg />}
                                 {currentModule === 'dashboard' && <Dashboard />}
-                                {currentModule === 'creative' && <CreativeStudio />}
+                                {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
                                 {currentModule === 'legal' && <LegalDashboard />}
                                 {currentModule === 'music' && <MusicStudio />}
                                 {currentModule === 'marketing' && <MarketingDashboard />}

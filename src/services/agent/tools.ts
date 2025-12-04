@@ -258,12 +258,26 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
         return orgProjects.map(p => `- ${p.name} (${p.type}) [ID: ${p.id}]`).join('\n');
     },
     switch_module: async (args: { module: string }) => {
-        const validModules = ['creative', 'legal', 'music', 'marketing', 'video', 'workflow', 'dashboard'];
+        const validModules = ['creative', 'legal', 'music', 'marketing', 'video', 'workflow', 'dashboard', 'knowledge', 'road', 'brand', 'publicist', 'social', 'select-org'];
         if (validModules.includes(args.module)) {
             useStore.getState().setModule(args.module as any);
             return `Switched to ${args.module} module.`;
         }
         return `Invalid module. Available: ${validModules.join(', ')}`;
+    },
+    open_project: async (args: { projectId: string }) => {
+        try {
+            const store = useStore.getState();
+            const project = store.projects.find(p => p.id === args.projectId);
+            if (!project) {
+                return `Error: Project with ID ${args.projectId} not found.`;
+            }
+            store.setProject(args.projectId);
+            store.setModule(project.type);
+            return `Opened project "${project.name}" (${project.type}) and switched module.`;
+        } catch (e: any) {
+            return `Failed to open project: ${e.message}`;
+        }
     },
     search_knowledge: async (args: { query: string }) => {
         try {
@@ -464,24 +478,6 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
             return `Social post generation failed: ${e.message}`;
         }
     },
-    generate_music: async (args: { prompt: string, duration?: number }) => {
-        try {
-            const { addToHistory, currentProjectId } = useStore.getState();
-            // Placeholder for actual music generation
-            const id = crypto.randomUUID();
-            addToHistory({
-                id,
-                url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Placeholder MP3
-                prompt: args.prompt,
-                type: 'music',
-                timestamp: Date.now(),
-                projectId: currentProjectId
-            });
-            return `Music generated for "${args.prompt}". (Placeholder audio used)`;
-        } catch (e: any) {
-            return `Music generation failed: ${e.message}`;
-        }
-    },
     ...PUBLICIST_TOOLS
 };
 
@@ -497,15 +493,13 @@ AVAILABLE TOOLS:
 8. list_projects() - List all projects in the current organization.
 9. switch_module(module: string) - Navigate to a specific module.
 10. search_knowledge(query: string) - Search the knowledge base for answers.
-
-11. delegate_task(agent_id: string, task: string, context?: any) - Delegate a sub-task to a specialized agent (ids: legal, marketing, music).
-12. generate_video(prompt: string, image?: string, duration?: number) - Generate a video from text or image.
-13. generate_motion_brush(image: string, mask: string, prompt?: string) - Animate a specific area of an image.
-14. analyze_audio(audio: string) - Analyze an audio file (base64) for BPM, key, and energy.
-15. analyze_contract(file_data: string, mime_type: string) - Analyze a legal contract (base64).
-15. analyze_contract(file_data: string, mime_type: string) - Analyze a legal contract (base66).
-16. generate_social_post(platform: string, topic: string, tone?: string) - Generate a social media post.
-17. generate_music(prompt: string, duration?: number) - Generate a music track.
+11. open_project(projectId: string) - Open a specific project by ID.
+12. delegate_task(agent_id: string, task: string, context?: any) - Delegate a sub-task to a specialized agent (ids: legal, marketing, music).
+13. generate_video(prompt: string, image?: string, duration?: number) - Generate a video from text or image.
+14. generate_motion_brush(image: string, mask: string, prompt?: string) - Animate a specific area of an image.
+15. analyze_audio(audio: string) - Analyze an audio file (base64) for BPM, key, and energy.
+16. analyze_contract(file_data: string, mime_type: string) - Analyze a legal contract (base64).
+17. generate_social_post(platform: string, topic: string, tone?: string) - Generate a social media post.
 18. save_memory(content: string, type?: 'fact' | 'summary' | 'rule') - Save a fact or rule to long-term memory.
 19. recall_memories(query: string) - Search long-term memory for relevant info.
 20. verify_output(goal: string, content: string) - Critique generated content against a goal.

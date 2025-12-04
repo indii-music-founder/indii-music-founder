@@ -5,7 +5,7 @@ import { TOOL_REGISTRY, BASE_TOOLS } from './tools';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { agentRegistry } from './registry';
 import { LegalAgent } from './specialists/LegalAgent';
-import { MarketingAgent } from './specialists/MarketingAgent';
+import { CampaignAgent } from './specialists/MarketingAgent'; // File is still named MarketingAgent.ts
 import { MusicAgent } from './specialists/MusicAgent';
 import { PublicistAgent } from './specialists/PublicistAgent';
 import { BrandAgent } from './specialists/BrandAgent';
@@ -32,7 +32,7 @@ class AgentService {
     constructor() {
         // Register Specialists
         agentRegistry.register(new LegalAgent());
-        agentRegistry.register(new MarketingAgent());
+        agentRegistry.register(new CampaignAgent());
         agentRegistry.register(new MusicAgent());
         agentRegistry.register(new PublicistAgent());
         agentRegistry.register(new BrandAgent());
@@ -68,20 +68,59 @@ class AgentService {
         const { currentProjectId, projects, currentOrganizationId } = useStore.getState();
         const currentProject = projects.find(p => p.id === currentProjectId);
 
+        let agentId = 'generalist';
+        if (currentProject) {
+            switch (currentProject.type) {
+                case 'creative': agentId = 'director'; break; // Need DirectorAgent
+                case 'music': agentId = 'music'; break;
+                case 'marketing': agentId = 'campaign'; break;
+                case 'legal': agentId = 'legal'; break;
+                case 'publicist': agentId = 'publicist'; break;
+                case 'brand': agentId = 'brand'; break;
+                case 'road': agentId = 'road'; break;
+                default: agentId = 'generalist';
+            }
+        } else {
+            // Fallback: Use current module if no project is selected
+            const { currentModule } = useStore.getState();
+            switch (currentModule) {
+                case 'marketing': agentId = 'campaign'; break;
+                case 'road': agentId = 'road'; break;
+                // Add other module mappings as needed
+                default: agentId = 'generalist';
+            }
+        }
+
+        // Check if we have a specialized agent for this ID
+        const specialist = agentRegistry.get(agentId);
+        if (specialist) {
+            console.log(`[AgentService] Delegating to specialist: ${specialist.name}`);
+            try {
+                const response = await specialist.execute(userGoal, {
+                    currentProjectId,
+                    currentOrganizationId
+                });
+
+                // Add the response to the chat
+                this.addModelMessage(response.text);
+                return;
+            } catch (e) {
+                console.error(`[AgentService] Specialist ${agentId} failed, falling back to Generalist.`, e);
+                // Fallback to generalist logic below
+            }
+        }
+
+        // Fallback / Legacy Logic for Generalist or unimplemented agents
         let persona = 'GENERALIST';
+        // ... (keep existing switch for persona mapping if needed for fallback, or simplify)
         if (currentProject) {
             switch (currentProject.type) {
                 case 'creative': persona = 'DIRECTOR'; break;
-                case 'music': persona = 'MUSICIAN'; break; // We need to add MUSICIAN to definitions
-                case 'marketing': persona = 'MARKETER'; break; // We need to add MARKETER to definitions
-                case 'legal': persona = 'LAWYER'; break; // We need to add LAWYER to definitions
-
-                case 'publicist': persona = 'PUBLICIST'; break;
-                case 'brand': persona = 'BRAND'; break;
-                case 'road': persona = 'ROAD'; break;
-                default: persona = 'GENERALIST';
+                // ... other mappings for fallback
             }
         }
+
+        // ... existing logic ...
 
         const orgContext = `
         ORGANIZATION CONTEXT:

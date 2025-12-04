@@ -14,8 +14,6 @@ export default function Sidebar() {
     ];
 
     const departmentItems = [
-        { id: 'creative', icon: Palette, label: 'Art Department' },
-        { id: 'video', icon: Film, label: 'Video Department' },
         { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
         { id: 'social', icon: Network, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },

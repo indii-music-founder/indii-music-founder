@@ -7,7 +7,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 
 export default function VideoWorkflow() {
-    const { generatedHistory, selectedItem, uploadedImages, pendingPrompt, setPendingPrompt, addToHistory } = useStore();
+    const { generatedHistory, selectedItem, uploadedImages, pendingPrompt, setPendingPrompt, addToHistory, setPrompt, studioControls, videoInputs } = useStore();
     const toast = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -16,44 +16,52 @@ export default function VideoWorkflow() {
 
     useEffect(() => {
         if (pendingPrompt) {
+            setPrompt(pendingPrompt); // Sync to global prompt state
             handleGenerate(pendingPrompt);
             setPendingPrompt(null);
         }
     }, [pendingPrompt]);
 
-    const handleGenerate = async (prompt: string) => {
+    const handleGenerate = async (promptText: string) => {
         setIsGenerating(true);
         toast.info('Directing scene...');
         try {
-            // Call the Creative Director Agent via Firebase Functions
-            const creativeDirectorAgent = httpsCallable(functions, 'creativeDirectorAgent');
-            const response = await creativeDirectorAgent({ prompt });
-            const data = response.data as any;
-            const result = data.result;
+            // Use the client-side VideoGeneration service to respect studio controls
+            const { VideoGeneration } = await import('@/services/image/VideoGenerationService');
 
-            if (result.success && result.data) {
-                // Handle different response types (image vs video)
-                // The agent might return a video URL or an image URL (storyboard)
-                // For now, let's assume it returns a standard format we can adapt
+            const results = await VideoGeneration.generateVideo({
+                prompt: promptText,
+                resolution: studioControls.resolution,
+                aspectRatio: studioControls.aspectRatio,
+                negativePrompt: studioControls.negativePrompt,
+                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                firstFrame: videoInputs.firstFrame?.url,
+                lastFrame: videoInputs.lastFrame?.url,
+                timeOffset: videoInputs.timeOffset
+            });
 
-                // Note: The agent tool returns { success, data }
-                // We need to parse the inner data
-
-                const assetUrl = result.data.url || result.mockUrl; // Fallback to mockUrl if provided by tool stub
-
+            if (results.length > 0) {
                 const newAsset = {
-                    id: Date.now().toString(),
-                    type: (assetUrl.includes('.mp4') ? 'video' : 'image') as 'video' | 'image',
-                    url: assetUrl,
-                    prompt: prompt,
+                    ...results[0],
+                    type: 'video' as const,
                     timestamp: Date.now(),
                     projectId: 'default'
                 };
 
+                // If it's a storyboard preview (image), set type to image
+                if (newAsset.url.startsWith('data:image') || !newAsset.url.endsWith('.mp4')) {
+                    // Check if it's actually an image data URI or just a non-mp4 URL
+                    if (newAsset.url.startsWith('data:image')) {
+                        // It's an image (storyboard)
+                        // @ts-ignore
+                        newAsset.type = 'image';
+                    }
+                }
+
                 addToHistory(newAsset);
                 toast.success('Scene generated!');
             } else {
-                throw new Error(result.error || 'Generation failed');
+                throw new Error('No video generated');
             }
 
         } catch (error: any) {
@@ -127,11 +135,6 @@ export default function VideoWorkflow() {
                 <div className="flex-1">
                     {renderStage()}
                 </div>
-            </div>
-
-            {/* Right Sidebar - Gallery */}
-            <div className="w-80 border-l border-gray-800 bg-[#111] flex flex-col z-10">
-                <CreativeGallery />
             </div>
         </div>
     );

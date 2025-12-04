@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { agentService } from '@/services/agent/AgentService';
-import { X, Minimize2, Trash2, Send, Paperclip } from 'lucide-react';
+import { X, Minimize2, Trash2, Send, Paperclip, Camera, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface AgentWindowProps {
     agent?: { sendMessage: (text: string) => void };
@@ -16,7 +18,9 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
     const [isMinimized, setIsMinimized] = useState(false);
     const [size, setSize] = useState({ width: 320, height: 500 });
     const [pendingAttachments, setPendingAttachments] = useState<{ mimeType: string; base64: string; preview: string }[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const activeAgent = agent || agentService;
     const windowTitle = title || "indii";
@@ -46,9 +50,22 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
         setPendingAttachments([]);
     };
 
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        setIsDragging(false);
 
         // 1. Handle Internal Drag (History/Assets)
         const id = e.dataTransfer.getData('text/plain');
@@ -66,6 +83,10 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
 
         // 2. Handle External Files
         const files = Array.from(e.dataTransfer.files);
+        processFiles(files);
+    };
+
+    const processFiles = (files: File[]) => {
         files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (ev) => {
@@ -79,6 +100,12 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
             };
             reader.readAsDataURL(file);
         });
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            processFiles(Array.from(e.target.files));
+        }
     };
 
     const handleResizeStart = (e: React.MouseEvent) => {
@@ -136,10 +163,13 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                 <div className="w-6 h-6 rounded bg-purple-600 flex items-center justify-center text-[10px] flex-shrink-0 font-bold">AI</div>
                             )}
                             <div className={`p-2 rounded-lg text-xs max-w-[90%] ${msg.role === 'user' ? 'bg-blue-900/30 text-blue-100 border border-blue-800' :
-                                msg.role === 'system' ? 'text-gray-500 italic text-center w-full' :
-                                    'bg-[#1a1a1a] text-gray-300 border border-gray-800'
+                                'bg-[#1a1a1a] text-gray-300 border border-gray-800'
                                 }`}>
-                                {msg.text}
+                                <div className="prose prose-invert prose-xs max-w-none break-words">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {msg.text}
+                                    </ReactMarkdown>
+                                </div>
                                 {msg.isStreaming && (
                                     <span className="inline-block w-2 h-4 ml-1 bg-purple-500 animate-pulse align-middle"></span>
                                 )}
@@ -206,9 +236,26 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                     }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
                     className={`fixed top-28 left-20 bg-[#0f0f0f] border border-gray-700 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden`}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={handleDragEnter}
+                    onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
+                    {/* Drag Overlay */}
+                    <AnimatePresence>
+                        {isDragging && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 z-50 bg-black/80 flex flex-col items-center justify-center border-2 border-dashed border-purple-500 rounded-xl backdrop-blur-sm pointer-events-none"
+                            >
+                                <Upload size={48} className="text-purple-500 mb-4" />
+                                <p className="text-white font-bold text-lg">Drop files here</p>
+                                <p className="text-gray-400 text-sm">to attach to chat</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     {/* Header */}
                     <div className="bg-[#1a1a1a] p-2 border-b border-gray-800 flex justify-between items-center cursor-move select-none">
                         <AgentHeader />
@@ -271,7 +318,27 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                     </div>
                                 )}
                                 <div className="flex gap-2">
-                                    <button className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"><Paperclip size={14} /></button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        multiple
+                                        onChange={handleFileSelect}
+                                    />
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"
+                                        title="Attach file"
+                                    >
+                                        <Paperclip size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"
+                                        title="Take photo"
+                                    >
+                                        <Camera size={14} />
+                                    </button>
                                     <input
                                         type="text"
                                         className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none"

@@ -1,12 +1,9 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from './registry';
-import { BrandAgent } from './specialists/BrandAgent';
-import { RoadAgent } from './specialists/RoadAgent';
-import { MarketingAgent } from './specialists/MarketingAgent';
 import { BrandAgent } from './BrandAgent';
 import { RoadAgent } from './RoadAgent';
-import { MarketingAgent } from './MarketingAgent';
+import { CampaignAgent } from './MarketingAgent';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
 vi.mock('../tools', () => ({
@@ -44,11 +41,11 @@ describe('Specialist Agents Connection', () => {
         // Let's instantiate them to check inheritance
         const brandAgent = new BrandAgent();
         const roadAgent = new RoadAgent();
-        const marketingAgent = new MarketingAgent();
+        const campaignAgent = new CampaignAgent();
 
         expect(brandAgent).toBeInstanceOf(BrandAgent);
         expect(roadAgent).toBeInstanceOf(RoadAgent);
-        expect(marketingAgent).toBeInstanceOf(MarketingAgent);
+        expect(campaignAgent).toBeInstanceOf(CampaignAgent);
     });
 
     it('should inherit Agent Zero superpowers via BaseAgent', async () => {

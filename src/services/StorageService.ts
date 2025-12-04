@@ -37,11 +37,12 @@ export const StorageService = {
 
     async loadHistory(limitCount = 50): Promise<HistoryItem[]> {
         try {
-            const orgId = OrganizationService.getCurrentOrgId();
+            const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
             // Query with Org Filter
             // Note: This requires a composite index in Firestore (orgId + timestamp)
             if (!orgId) {
+                // This block is now unreachable if we default to 'personal', but keeping for safety if logic changes
                 console.warn("No organization selected, returning empty history.");
                 return [];
             }
@@ -51,12 +52,12 @@ export const StorageService = {
             const q = query(
                 collection(db, 'history'),
                 where('orgId', '==', orgId),
-                orderBy('timestamp', 'desc'),
+                // orderBy('timestamp', 'desc'), // Requires index, sorting client-side instead
                 limit(limitCount)
             );
 
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => {
+            const items = querySnapshot.docs.map(doc => {
                 const data = doc.data();
                 let ts = Date.now();
                 if (data.timestamp) {
@@ -73,6 +74,9 @@ export const StorageService = {
                     timestamp: ts
                 } as HistoryItem;
             });
+
+            // Sort client-side
+            return items.sort((a, b) => b.timestamp - a.timestamp);
         } catch (e) {
             console.error("Error loading history: ", e);
             return [];

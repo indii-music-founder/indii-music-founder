@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image } from 'lucide-react';
 import { Orchestrator } from '@/services/agent/OrchestratorService';
+import { useStore } from '@/core/store';
 
 export default function CommandBar() {
     const [input, setInput] = useState('');
@@ -54,8 +55,12 @@ export default function CommandBar() {
                                     <Camera size={14} />
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
-                                <button type="button" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
-                                    <span>Delegate to Orchestrator AI</span>
+                                <button
+                                    type="button"
+                                    onClick={() => useStore.getState().toggleAgentWindow()}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                >
+                                    <span>Delegate to Indii</span>
                                 </button>
                             </div>
 

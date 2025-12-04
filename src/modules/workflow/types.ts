@@ -70,8 +70,12 @@ export interface SavedWorkflow {
     description: string;
     nodes: CustomNode[];
     edges: CustomEdge[];
+    viewport: { x: number; y: number; zoom: number };
     createdAt: string;
+    updatedAt: string;
 }
+
+export type WorkflowData = Omit<SavedWorkflow, 'id' | 'createdAt' | 'updatedAt'>;
 
 export type KnowledgeDocumentIndexingStatus = 'pending' | 'indexing' | 'ready' | 'error';
 

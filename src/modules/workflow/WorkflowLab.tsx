@@ -86,6 +86,32 @@ export default function WorkflowLab() {
         }
     };
 
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+    // Auto-save logic
+    useEffect(() => {
+        if (!currentWorkflowId || !currentUser || nodes.length === 0) return;
+
+        setSaveStatus('unsaved');
+
+        const saveTimer = setTimeout(async () => {
+            setSaveStatus('saving');
+            try {
+                const engine = new WorkflowEngine(nodes, edges, setNodes);
+                // Mock viewport for now, ideally get from ReactFlow instance
+                const viewport = { x: 0, y: 0, zoom: 1 };
+                await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
+                console.log("Auto-saved workflow");
+                setSaveStatus('saved');
+            } catch (error) {
+                console.error("Auto-save failed:", error);
+                setSaveStatus('unsaved'); // Revert to unsaved on error
+            }
+        }, 2000); // Debounce 2s
+
+        return () => clearTimeout(saveTimer);
+    }, [nodes, edges, workflowName, currentWorkflowId, currentUser]);
+
     const handleSaveWorkflow = async () => {
         if (!currentUser) {
             alert("Please wait for login...");
@@ -93,21 +119,25 @@ export default function WorkflowLab() {
         }
         setIsSaving(true);
         try {
-            const id = await saveWorkflow({
-                id: currentWorkflowId,
-                name: workflowName,
-                description: 'Saved workflow',
-                nodes,
-                edges,
-                createdAt: new Date().toISOString()
-            }, currentUser.uid);
+            const engine = new WorkflowEngine(nodes, edges, setNodes);
+            const id = currentWorkflowId || uuidv4();
+            // Mock viewport for now
+            const viewport = { x: 0, y: 0, zoom: 1 };
+
+            await engine.saveWorkflow(
+                id,
+                workflowName,
+                'Saved workflow',
+                viewport
+            );
             setCurrentWorkflowId(id);
-            alert("Workflow saved successfully!");
+            // alert("Workflow saved successfully!"); // Removed alert for smoother experience
         } catch (error) {
             console.error("Failed to save workflow:", error);
             alert(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
+            setSaveStatus('saved');
         }
     };
 
@@ -144,13 +174,24 @@ export default function WorkflowLab() {
                 </div>
 
                 <div className="p-4 space-y-2">
-                    <input
-                        type="text"
-                        value={workflowName}
-                        onChange={(e) => setWorkflowName(e.target.value)}
-                        className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg mb-2 border border-gray-700 focus:border-purple-500 outline-none text-sm"
-                        placeholder="Workflow Name"
-                    />
+                    <div className="mb-2">
+                        <input
+                            type="text"
+                            value={workflowName}
+                            onChange={(e) => setWorkflowName(e.target.value)}
+                            className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-purple-500 outline-none text-sm"
+                            placeholder="Workflow Name"
+                        />
+                        <div className="flex justify-end mt-1">
+                            <span className={`text-xs font-medium flex items-center gap-1 ${saveStatus === 'saved' ? 'text-green-500' :
+                                saveStatus === 'saving' ? 'text-yellow-500' :
+                                    'text-gray-500'
+                                }`}>
+                                {saveStatus === 'saving' && <Loader2 size={10} className="animate-spin" />}
+                                {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved changes'}
+                            </span>
+                        </div>
+                    </div>
 
                     <button
                         onClick={handleRunWorkflow}
