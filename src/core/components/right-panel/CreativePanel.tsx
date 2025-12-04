@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Image as ImageIcon, Wand2, History, ChevronRight, Zap, ChevronDown, Sliders, Plus } from 'lucide-react';
+import { Image as ImageIcon, Wand2, History, ChevronRight, Zap, ChevronDown, Sliders, Plus, Loader2 } from 'lucide-react';
 import { useStore } from '../../store';
 import { motion } from 'framer-motion';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { useToast } from '@/core/context/ToastContext';
 
 interface CreativePanelProps {
     toggleRightPanel: () => void;
@@ -9,6 +11,51 @@ interface CreativePanelProps {
 
 export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) {
     const [activeTab, setActiveTab] = useState('create');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const {
+        prompt, setPrompt,
+        studioControls, setStudioControls,
+        addToHistory, currentProjectId
+    } = useStore();
+    const toast = useToast();
+
+    const handleGenerate = async () => {
+        if (!prompt.trim()) {
+            toast.error("Please enter a prompt");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const results = await ImageGeneration.generateImages({
+                prompt: prompt,
+                count: 1,
+                aspectRatio: studioControls.aspectRatio,
+                resolution: studioControls.resolution,
+                negativePrompt: studioControls.negativePrompt,
+                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
+            });
+
+            if (results.length > 0) {
+                results.forEach(res => {
+                    addToHistory({
+                        id: res.id,
+                        url: res.url,
+                        prompt: res.prompt,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
+                });
+                toast.success("Image generated!");
+            }
+        } catch (e) {
+            console.error("Generation failed:", e);
+            toast.error("Generation failed");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-gradient-to-b from-[#0d1117] to-[#0d1117]/90">
@@ -50,6 +97,8 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                         </button>
                     </div>
                     <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
                         className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all h-28 resize-none placeholder:text-gray-600 shadow-inner"
                         placeholder="Describe your imagination..."
                     />
@@ -59,6 +108,8 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                 <div className="space-y-3">
                     <label className="text-[10px] font-bold text-gray-500 tracking-wider">NEGATIVE PROMPT</label>
                     <textarea
+                        value={studioControls.negativePrompt}
+                        onChange={(e) => setStudioControls({ negativePrompt: e.target.value })}
                         className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 transition-all h-20 resize-none placeholder:text-gray-600 shadow-inner"
                         placeholder="Blurry, low quality, distorted..."
                     />
@@ -69,11 +120,15 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-500 tracking-wider">ASPECT RATIO</label>
                         <div className="relative group">
-                            <select className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all">
-                                <option>16:9 Landscape</option>
-                                <option>1:1 Square</option>
-                                <option>9:16 Portrait</option>
-                                <option>21:9 Ultrawide</option>
+                            <select
+                                value={studioControls.aspectRatio}
+                                onChange={(e) => setStudioControls({ aspectRatio: e.target.value })}
+                                className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                            >
+                                <option value="16:9">16:9 Landscape</option>
+                                <option value="1:1">1:1 Square</option>
+                                <option value="9:16">9:16 Portrait</option>
+                                <option value="21:9">21:9 Ultrawide</option>
                             </select>
                             <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
                         </div>
@@ -106,10 +161,12 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2 group border border-purple-400/20"
+                        onClick={handleGenerate}
+                        disabled={isGenerating}
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2 group border border-purple-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <Wand2 size={16} className="group-hover:rotate-12 transition-transform" />
-                        Generate
+                        {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} className="group-hover:rotate-12 transition-transform" />}
+                        {isGenerating ? 'Generating...' : 'Generate'}
                     </motion.button>
                     <motion.button
                         whileHover={{ scale: 1.05 }}

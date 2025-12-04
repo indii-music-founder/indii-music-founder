@@ -188,14 +188,15 @@ export const editImage = functions.https.onCall(async (data: EditImageRequestDat
     }
 });
 
-import { inngest } from "./inngest/client";
-import { helloWorldFn, magicFillFn, generateVideoFn } from "./inngest/functions";
-import { serve } from "inngest/express";
-
-export const inngestFn = functions.https.onRequest(serve({
-    client: inngest,
-    functions: [helloWorldFn, magicFillFn, generateVideoFn],
-}));
+// Old Inngest handler removed in favor of consolidated inngestServe
+// import { inngest } from "./inngest/client";
+// import { helloWorldFn, magicFillFn, generateVideoFn } from "./inngest/functions";
+// import { serve } from "inngest/express";
+// 
+// export const inngestFn = functions.https.onRequest(serve({
+//     client: inngest,
+//     functions: [helloWorldFn, magicFillFn, generateVideoFn],
+// }));
 
 interface TriggerVideoGenerationRequestData {
     prompt: string;
@@ -506,3 +507,19 @@ export const calculateFuelLogistics = functions.https.onCall(async (data: Calcul
 
 export * from './ai/gemini';
 export * from './rag/retrieval';
+
+import { inngest } from "./jobs/inngest/client";
+import { generateVideoJob } from "./jobs/videoJobs";
+import { helloWorldFn, magicFillFn, generateVideoFn } from "./inngest/functions";
+import { serve } from "inngest/express";
+
+export const inngestServe = functions.https.onRequest(serve({
+    client: inngest,
+    functions: [
+        helloWorldFn,
+        magicFillFn,
+        generateVideoFn,
+        generateVideoJob
+    ],
+}));
+

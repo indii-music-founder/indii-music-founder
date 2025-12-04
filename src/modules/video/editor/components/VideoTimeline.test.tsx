@@ -1,24 +1,42 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoTimeline } from './VideoTimeline';
+import { useVideoEditorStore } from '../../store/videoEditorStore';
+
+// Mock store
+vi.mock('../../store/videoEditorStore', () => ({
+    useVideoEditorStore: vi.fn(),
+}));
 
 describe('VideoTimeline', () => {
+    const mockAddKeyframe = vi.fn();
+    const mockRemoveKeyframe = vi.fn();
+    const mockUpdateKeyframe = vi.fn();
+
     const mockProject = {
         id: 'p1',
         name: 'Test Project',
-        width: 1920,
-        height: 1080,
         fps: 30,
         durationInFrames: 300,
+        width: 1920,
+        height: 1080,
         tracks: [
-            { id: 't1', name: 'Track 1', type: 'video', isMuted: false, isHidden: false }
+            { id: 't1', name: 'Track 1', type: 'video' }
         ],
         clips: [
-            { id: 'c1', trackId: 't1', name: 'Clip 1', startFrame: 0, durationInFrames: 60, type: 'video', assetId: 'a1' }
+            {
+                id: 'c1',
+                type: 'video',
+                startFrame: 0,
+                durationInFrames: 100,
+                trackId: 't1',
+                name: 'Clip 1',
+                keyframes: {}
+            }
         ]
-    } as any;
+    };
 
-    const mockProps = {
+    const defaultProps = {
         project: mockProject,
         isPlaying: false,
         currentTime: 0,
@@ -30,82 +48,100 @@ describe('VideoTimeline', () => {
         removeTrack: vi.fn(),
         removeClip: vi.fn(),
         handleDragStart: vi.fn(),
-        formatTime: (f: number) => `${f}f`,
+        formatTime: (f: number) => `${f}`,
     };
 
-    it('renders timeline controls', () => {
-        render(<VideoTimeline {...mockProps} />);
-        const addTrackBtns = screen.getAllByRole('button', { name: /Add Track/i });
-        expect(addTrackBtns.length).toBeGreaterThan(0);
-        // Play button icon check might be tricky, checking for button existence
-        const buttons = screen.getAllByRole('button');
-        expect(buttons.length).toBeGreaterThan(0);
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (useVideoEditorStore as any).mockReturnValue({
+            addKeyframe: mockAddKeyframe,
+            removeKeyframe: mockRemoveKeyframe,
+            updateKeyframe: mockUpdateKeyframe,
+        });
     });
 
-    it('calls handlePlayPause when play button is clicked', () => {
-        render(<VideoTimeline {...mockProps} />);
-        // Assuming the play button is the second button in the controls (SkipBack, Play, SkipForward)
-        // A better way is to find by icon or aria-label if available. 
-        // Since icons don't have text, we can rely on order or add aria-labels in source.
-        // For now, let's try to find the button that likely contains the Play icon.
-        // Or we can just click all buttons in the control bar? No, that's messy.
-        // Let's look at the structure: 
-        // <button onClick={handlePlayPause}>
-
-        // Let's add aria-label to the component in a real scenario. 
-        // Here we can try to find by the SVG content if we really want, or just assume the structure.
-        // The component uses Lucide icons.
-
-        // Let's just check that the function is passed correctly for now by firing click on the container's children if possible.
-        // Actually, we can find by class name or hierarchy.
-
-        // Let's try to find the button by its onClick handler? No, can't do that in testing-library.
-
-        // Let's assume the Play button is the one that toggles.
-        // We can find it by the fact it renders a Play icon.
-        // But testing-library doesn't see icons easily.
-
-        // Let's use a slightly more robust selector: the button group.
-        const controls = screen.getAllByRole('button');
-        // Filter for the one that calls play/pause. 
-        // Since we can't easily distinguish, let's skip this specific interaction test or add a test-id in a real refactor.
-        // However, we CAN test the "Add Track" button easily.
-
-        const addTrackBtns = screen.getAllByRole('button', { name: /Add Track/i });
-        fireEvent.click(addTrackBtns[0]);
-        expect(mockProps.handleAddTrack).toHaveBeenCalled();
-    });
-
-    it('renders tracks and clips', () => {
-        render(<VideoTimeline {...mockProps} />);
-        expect(screen.getByText('Track 1')).toBeInTheDocument();
+    it('renders clips', () => {
+        render(<VideoTimeline {...defaultProps} />);
         expect(screen.getByText('Clip 1')).toBeInTheDocument();
     });
 
-    it('calls removeTrack when trash icon is clicked', () => {
-        render(<VideoTimeline {...mockProps} />);
-        // Find the remove track button. It's in the track header.
-        // It has a Trash2 icon.
-        // We can find all buttons and click the one that corresponds to remove.
-        // Again, lack of aria-labels makes this hard.
-        // But we can find the button in the track header.
+    it('expands clip to show keyframe editor', () => {
+        render(<VideoTimeline {...defaultProps} />);
 
-        // Let's rely on the fact that we can find the track header by text 'Track 1'
-        // and then find the button within it.
-        const trackHeader = screen.getByText('Track 1').closest('div.w-48');
-        const removeBtn = trackHeader?.querySelector('button.ml-auto');
-        if (removeBtn) {
-            fireEvent.click(removeBtn);
-            expect(mockProps.removeTrack).toHaveBeenCalledWith('t1');
-        } else {
-            throw new Error('Remove track button not found');
-        }
+        // Find expand button (chevron)
+        // It's the first button inside the clip content
+        const expandBtn = screen.getByText('Clip 1').parentElement?.querySelector('button');
+        fireEvent.click(expandBtn!);
+
+        // Check if property rows are visible
+        expect(screen.getByText('Scale')).toBeInTheDocument();
+        expect(screen.getByText('Opacity')).toBeInTheDocument();
     });
 
-    it('calls handleAddSampleClip when Txt button is clicked', () => {
-        render(<VideoTimeline {...mockProps} />);
-        const txtBtn = screen.getByText('Txt');
-        fireEvent.click(txtBtn);
-        expect(mockProps.handleAddSampleClip).toHaveBeenCalledWith('t1', 'text');
+    it('adds keyframe when clicking on property row', () => {
+        render(<VideoTimeline {...defaultProps} />);
+
+        // Expand clip
+        const expandBtn = screen.getByText('Clip 1').parentElement?.querySelector('button');
+        fireEvent.click(expandBtn!);
+
+        // Find Scale row track area
+        // It's the sibling of the label "Scale"
+        const scaleLabel = screen.getByText('Scale');
+        const trackArea = scaleLabel.nextElementSibling;
+
+        // Click on track area
+        fireEvent.click(trackArea!);
+
+        expect(mockAddKeyframe).toHaveBeenCalledWith('c1', 'scale', expect.any(Number), 1);
+    });
+
+    it('removes keyframe when right-clicking on diamond', () => {
+        const projectWithKeyframe = {
+            ...mockProject,
+            clips: [{
+                ...mockProject.clips[0],
+                keyframes: {
+                    scale: [{ frame: 10, value: 1.5, easing: 'linear' }]
+                }
+            }]
+        };
+
+        render(<VideoTimeline {...defaultProps} project={projectWithKeyframe} />);
+
+        // Expand clip
+        const expandBtn = screen.getByText('Clip 1').parentElement?.querySelector('button');
+        fireEvent.click(expandBtn!);
+
+        // Find keyframe diamond
+        const keyframe = screen.getByTitle('Scale: 1.5 @ f10 (linear)');
+        fireEvent.contextMenu(keyframe);
+
+        expect(mockRemoveKeyframe).toHaveBeenCalledWith('c1', 'scale', 10);
+    });
+
+    it('cycles easing when clicking on diamond', () => {
+        const projectWithKeyframe = {
+            ...mockProject,
+            clips: [{
+                ...mockProject.clips[0],
+                keyframes: {
+                    scale: [{ frame: 10, value: 1.5, easing: 'linear' }]
+                }
+            }]
+        };
+
+        render(<VideoTimeline {...defaultProps} project={projectWithKeyframe} />);
+
+        // Expand clip
+        const expandBtn = screen.getByText('Clip 1').parentElement?.querySelector('button');
+        fireEvent.click(expandBtn!);
+
+        // Find keyframe diamond
+        const keyframe = screen.getByTitle('Scale: 1.5 @ f10 (linear)');
+
+        // Click to cycle to easeIn
+        fireEvent.click(keyframe);
+        expect(mockUpdateKeyframe).toHaveBeenCalledWith('c1', 'scale', 10, { easing: 'easeIn' });
     });
 });

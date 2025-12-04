@@ -204,7 +204,7 @@ export class RoadManagerAgent {
 
         const currentFuelGallons = (fuelLevelPercent / 100) * tankSizeGallons;
         const rangeRemaining = currentFuelGallons * mpg;
-        const fuelUsed = milesDriven / mpg;
+        // const fuelUsed = milesDriven / mpg;
 
         const gallonsToFill = tankSizeGallons - currentFuelGallons;
         const costToFill = gallonsToFill * gasPricePerGallon;

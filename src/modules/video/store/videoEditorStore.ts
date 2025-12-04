@@ -30,6 +30,7 @@ export interface VideoClip {
         [key: string]: Array<{
             frame: number; // Relative to clip start
             value: number;
+            easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
         }>;
     };
 }
@@ -72,6 +73,15 @@ interface VideoEditorState {
     addClip: (clip: Omit<VideoClip, 'id'>) => void;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
     removeClip: (id: string) => void;
+    addKeyframe: (clipId: string, property: string, frame: number, value: number) => void;
+    removeKeyframe: (clipId: string, property: string, frame: number) => void;
+    updateKeyframe: (clipId: string, property: string, frame: number, updates: Partial<{ value: number, easing: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }>) => void;
+
+    // Job Tracking
+    jobId: string | null;
+    status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed';
+    setJobId: (id: string | null) => void;
+    setStatus: (status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed') => void;
 }
 
 const INITIAL_PROJECT: VideoProject = {
@@ -107,6 +117,11 @@ export const useVideoEditorStore = create<VideoEditorState>((set) => ({
     currentTime: 0,
     isPlaying: false,
     selectedClipId: null,
+    jobId: null,
+    status: 'idle',
+
+    setJobId: (id) => set({ jobId: id }),
+    setStatus: (status) => set({ status }),
 
     setProject: (project) => set({ project }),
     updateProjectSettings: (settings) => set((state) => {
@@ -178,4 +193,63 @@ export const useVideoEditorStore = create<VideoEditorState>((set) => ({
             clips: state.project.clips.filter(c => c.id !== id)
         }
     })),
+
+    addKeyframe: (clipId: string, property: string, frame: number, value: number) => set((state) => {
+        const clip = state.project.clips.find(c => c.id === clipId);
+        if (!clip) return state;
+
+        const currentKeyframes = clip.keyframes?.[property] || [];
+        // Remove existing keyframe at same frame if any
+        const filtered = currentKeyframes.filter(k => k.frame !== frame);
+        const newKeyframes = [...filtered, { frame, value }].sort((a, b) => a.frame - b.frame);
+
+        return {
+            project: {
+                ...state.project,
+                clips: state.project.clips.map(c => c.id === clipId ? {
+                    ...c,
+                    keyframes: {
+                        ...c.keyframes,
+                        [property]: newKeyframes
+                    }
+                } : c)
+            }
+        };
+    }),
+
+    removeKeyframe: (clipId: string, property: string, frame: number) => set((state) => {
+        const clip = state.project.clips.find(c => c.id === clipId);
+        if (!clip || !clip.keyframes || !clip.keyframes[property]) return state;
+
+        return {
+            project: {
+                ...state.project,
+                clips: state.project.clips.map(c => c.id === clipId ? {
+                    ...c,
+                    keyframes: {
+                        ...c.keyframes,
+                        [property]: clip.keyframes![property].filter(k => k.frame !== frame)
+                    }
+                } : c)
+            }
+        };
+    }),
+
+    updateKeyframe: (clipId: string, property: string, frame: number, updates: Partial<{ value: number, easing: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }>) => set((state) => {
+        const clip = state.project.clips.find(c => c.id === clipId);
+        if (!clip || !clip.keyframes || !clip.keyframes[property]) return state;
+
+        return {
+            project: {
+                ...state.project,
+                clips: state.project.clips.map(c => c.id === clipId ? {
+                    ...c,
+                    keyframes: {
+                        ...c.keyframes,
+                        [property]: clip.keyframes![property].map(k => k.frame === frame ? { ...k, ...updates } : k)
+                    }
+                } : c)
+            }
+        };
+    }),
 }));

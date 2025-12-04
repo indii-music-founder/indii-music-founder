@@ -70,10 +70,22 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             const inputRange = sortedKeyframes.map(k => k.frame);
             const outputRange = sortedKeyframes.map(k => k.value);
 
+            // Map easing strings to Remotion Easing functions
+            // The easing on keyframe[i] applies to the segment from i to i+1
+            const easingFunctions = sortedKeyframes.slice(0, -1).map(k => {
+                switch (k.easing) {
+                    case 'easeIn': return Easing.in(Easing.quad);
+                    case 'easeOut': return Easing.out(Easing.quad);
+                    case 'easeInOut': return Easing.inOut(Easing.quad);
+                    case 'linear':
+                    default: return Easing.linear;
+                }
+            });
+
             const value = interpolate(frame, inputRange, outputRange, {
                 extrapolateLeft: 'clamp',
                 extrapolateRight: 'clamp',
-                easing: Easing.linear // Default to linear for now
+                easing: easingFunctions as any
             });
 
             switch (property) {

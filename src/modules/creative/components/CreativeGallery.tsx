@@ -247,7 +247,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         {filteredUploaded.map(item => renderGridItem(item, removeUploadedImage))}
                     </div>
                 ) : (
-                    <div className="p-10 border-2 border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-900/10 rounded-xl flex flex-col items-center justify-center text-gray-400 gap-4 transition-all duration-300 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                    <div className="p-10 border-2 border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-900/10 rounded-xl flex flex-col items-center justify-center text-gray-400 gap-4 transition-all duration-300 group cursor-pointer relative" onClick={() => fileInputRef.current?.click()}>
                         <div className="w-16 h-16 rounded-full bg-gray-800 group-hover:bg-purple-500/20 flex items-center justify-center transition-colors shadow-lg">
                             <Upload size={24} className="opacity-70 group-hover:text-purple-400 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                         </div>
@@ -255,6 +255,22 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <p className="text-base font-bold text-gray-300 mb-1 group-hover:text-white">Drop files here</p>
                             <p className="text-xs text-gray-500 group-hover:text-gray-400">or click to browse</p>
                         </div>
+
+                        {/* Mobile Camera Button in Empty State */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (fileInputRef.current) {
+                                    fileInputRef.current.setAttribute('capture', 'environment');
+                                    fileInputRef.current.click();
+                                    setTimeout(() => fileInputRef.current?.removeAttribute('capture'), 100);
+                                }
+                            }}
+                            className="md:hidden mt-4 flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg active:scale-95 transition-transform"
+                        >
+                            <ImageIcon size={16} />
+                            <span>Take Picture</span>
+                        </button>
                     </div>
                 )}
             </div>

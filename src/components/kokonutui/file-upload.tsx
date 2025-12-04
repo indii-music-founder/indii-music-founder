@@ -322,12 +322,12 @@ const UploadingAnimation = ({ progress }: { progress: number }) => (
 );
 
 export default function FileUpload({
-    onUploadSuccess = () => {},
-    onUploadError = () => {},
+    onUploadSuccess = () => { },
+    onUploadError = () => { },
     acceptedFileTypes = [],
     maxFileSize = DEFAULT_MAX_FILE_SIZE,
     currentFile: initialFile = null,
-    onFileRemove = () => {},
+    onFileRemove = () => { },
     uploadDelay = 2000,
     validateFile = () => null,
     className,
@@ -582,14 +582,14 @@ export default function FileUpload({
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                                 {acceptedFileTypes?.length
                                                     ? `${acceptedFileTypes
-                                                          .map(
-                                                              (t) =>
-                                                                  t.split(
-                                                                      "/"
-                                                                  )[1]
-                                                          )
-                                                          .join(", ")
-                                                          .toUpperCase()}`
+                                                        .map(
+                                                            (t) =>
+                                                                t.split(
+                                                                    "/"
+                                                                )[1]
+                                                        )
+                                                        .join(", ")
+                                                        .toUpperCase()}`
                                                     : "SVG, PNG, JPG or GIF"}{" "}
                                                 {maxFileSize &&
                                                     `up to ${formatBytes(
@@ -598,14 +598,47 @@ export default function FileUpload({
                                             </p>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={triggerFileInput}
-                                            className="w-4/5 flex items-center justify-center gap-2 rounded-lg bg-gray-100 dark:bg-white/10 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-white transition-all duration-200 hover:bg-gray-200 dark:hover:bg-white/20 group"
-                                        >
-                                            <span>Upload File</span>
-                                            <UploadCloud className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                                        </button>
+                                        <div className="flex flex-col gap-2 w-4/5">
+                                            <button
+                                                type="button"
+                                                onClick={triggerFileInput}
+                                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-100 dark:bg-white/10 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-white transition-all duration-200 hover:bg-gray-200 dark:hover:bg-white/20 group"
+                                            >
+                                                <span>Upload File</span>
+                                                <UploadCloud className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                                            </button>
+
+                                            {/* Mobile Camera Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (fileInputRef.current) {
+                                                        fileInputRef.current.setAttribute('capture', 'environment');
+                                                        fileInputRef.current.click();
+                                                        // Reset after click
+                                                        setTimeout(() => fileInputRef.current?.removeAttribute('capture'), 100);
+                                                    }
+                                                }}
+                                                className="md:hidden w-full flex items-center justify-center gap-2 rounded-lg bg-blue-500/10 px-4 py-2.5 text-sm font-semibold text-blue-600 dark:text-blue-400 transition-all duration-200 hover:bg-blue-500/20 group"
+                                            >
+                                                <span>Take Photo</span>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className="group-hover:scale-110 transition-transform duration-200"
+                                                >
+                                                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                                                    <circle cx="12" cy="13" r="3" />
+                                                </svg>
+                                            </button>
+                                        </div>
 
                                         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
                                             or drag and drop your file here

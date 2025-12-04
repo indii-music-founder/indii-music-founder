@@ -6,15 +6,35 @@ import IdeaStep from './components/IdeaStep';
 import ReviewStep from './components/ReviewStep';
 import FrameSelectionModal from './components/FrameSelectionModal';
 import { VideoEditor } from './editor/VideoEditor';
+import { useVideoEditorStore } from './store/videoEditorStore';
 
 type WorkflowStep = 'idea' | 'review' | 'generating' | 'result' | 'editor';
 
 export default function VideoWorkflow() {
-    const { generatedHistory, selectedItem, pendingPrompt, setPendingPrompt, addToHistory, setPrompt, studioControls, videoInputs, setVideoInput } = useStore();
+    const {
+        generatedHistory,
+        selectedItem,
+        pendingPrompt,
+        setPendingPrompt,
+        addToHistory,
+        setPrompt,
+        studioControls,
+        videoInputs,
+        setVideoInput,
+        currentOrganizationId
+    } = useStore();
+
+    // Use local store for job tracking
+    const {
+        jobId,
+        status: jobStatus,
+        setJobId,
+        setStatus: setJobStatus
+    } = useVideoEditorStore();
+
     const toast = useToast();
     const [step, setStep] = useState<WorkflowStep>('idea');
     const [localPrompt, setLocalPrompt] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTarget, setModalTarget] = useState<'firstFrame' | 'lastFrame' | 'ingredient'>('firstFrame');
 
@@ -30,55 +50,89 @@ export default function VideoWorkflow() {
         }
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
+    // Listen for job updates
+    useEffect(() => {
+        if (!jobId) return;
+
+        // Import Firestore dynamically to avoid SSR issues if any (though this is client side)
+        let unsubscribe: () => void;
+
+        const setupListener = async () => {
+            const { getFirestore, doc, onSnapshot } = await import('firebase/firestore');
+            const db = getFirestore();
+
+            unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    const newStatus = data?.status;
+
+                    if (newStatus && newStatus !== jobStatus) {
+                        setJobStatus(newStatus);
+
+                        if (newStatus === 'completed' && data.videoUrl) {
+                            const newAsset = {
+                                id: jobId,
+                                url: data.videoUrl,
+                                prompt: data.prompt || localPrompt,
+                                type: 'video' as const,
+                                timestamp: Date.now(),
+                                projectId: 'default',
+                                orgId: currentOrganizationId // Add orgId to history item
+                            };
+                            addToHistory(newAsset);
+                            toast.success('Scene generated!');
+                            setStep('result');
+                            setJobId(null); // Clear job
+                            setJobStatus('idle');
+                        } else if (newStatus === 'failed') {
+                            toast.error('Generation failed');
+                            setJobId(null);
+                            setJobStatus('failed');
+                            setStep('review');
+                        }
+                    }
+                }
+            });
+        };
+
+        setupListener();
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [jobId, addToHistory, toast, localPrompt, setJobId, setJobStatus, jobStatus, currentOrganizationId]);
+
     const handleGenerate = async () => {
-        setIsGenerating(true);
         setStep('generating');
-        toast.info('Directing scene...');
+        setJobStatus('queued');
+        toast.info('Queuing scene generation...');
+
         try {
-            // Use the client-side VideoGeneration service to respect studio controls
             const { VideoGeneration } = await import('@/services/image/VideoGenerationService');
 
-            const results = await VideoGeneration.generateVideo({
+            const { jobId: newJobId } = await VideoGeneration.triggerVideoGeneration({
                 prompt: localPrompt,
                 resolution: studioControls.resolution,
                 aspectRatio: studioControls.aspectRatio,
-                negativePrompt: studioControls.negativePrompt,
-                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                firstFrame: videoInputs.firstFrame?.url,
-                lastFrame: videoInputs.lastFrame?.url,
-                timeOffset: videoInputs.timeOffset,
-                ingredients: videoInputs.ingredients?.map(i => i.url)
+                // negativePrompt: studioControls.negativePrompt, // Not supported in trigger yet, need to update backend if needed
+                // seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                // firstFrame: videoInputs.firstFrame?.url, // Not supported in trigger yet
+                // lastFrame: videoInputs.lastFrame?.url, // Not supported in trigger yet
+                // timeOffset: videoInputs.timeOffset, // Not supported in trigger yet
+                // ingredients: videoInputs.ingredients?.map(i => i.url) // Not supported in trigger yet
+                duration: 5, // Default for now
+                fps: 30, // Default for now
+                userId: 'user-id-placeholder', // Should get from auth
+                orgId: currentOrganizationId
             });
 
-            if (results.length > 0) {
-                const newAsset = {
-                    ...results[0],
-                    type: 'video' as const,
-                    timestamp: Date.now(),
-                    projectId: 'default'
-                };
-
-                // If it's a storyboard preview (image), set type to image
-                if (newAsset.url.startsWith('data:image') || !newAsset.url.endsWith('.mp4')) {
-                    if (newAsset.url.startsWith('data:image')) {
-                        // @ts-ignore
-                        newAsset.type = 'image';
-                    }
-                }
-
-                addToHistory(newAsset);
-                toast.success('Scene generated!');
-                setStep('result');
-            } else {
-                throw new Error('No video generated');
-            }
+            setJobId(newJobId);
 
         } catch (error: any) {
-            console.error("Video generation failed:", error);
-            toast.error(`Generation failed: ${error.message}`);
-            setStep('review'); // Go back to review on failure
-        } finally {
-            setIsGenerating(false);
+            console.error("Video generation trigger failed:", error);
+            toast.error(`Trigger failed: ${error.message}`);
+            setStep('review');
+            setJobStatus('failed');
         }
     };
 
@@ -136,7 +190,7 @@ export default function VideoWorkflow() {
                         finalPrompt={localPrompt}
                         onBack={() => setStep('idea')}
                         onGenerate={handleGenerate}
-                        isGenerating={isGenerating}
+                        isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
                         startFrameData={videoInputs.firstFrame?.url || null}
                         endFrameData={videoInputs.lastFrame?.url || null}
                         onDesignFrame={handleDesignFrame}
@@ -248,11 +302,38 @@ export default function VideoWorkflow() {
             <FrameSelectionModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSelect={(image) => {
+                onSelect={async (image) => {
+                    let imageUrl = image.url;
+
+                    // If selecting a video, extract the relevant frame
+                    if (image.type === 'video') {
+                        try {
+                            const { extractVideoFrame } = await import('../../utils/video');
+                            // If target is firstFrame, we want the LAST frame of the video (Extension)
+                            // If target is lastFrame, we want the FIRST frame (Bridging) - though usually bridging uses images
+                            // If target is ingredient, we probably want a representative frame (e.g. first)
+
+                            const offset = modalTarget === 'firstFrame' ? -1 : 0; // -1 signals last frame in our util (implicitly)
+                            imageUrl = await extractVideoFrame(image.url, offset);
+
+                            toast.success("Extracted frame from video for extension");
+                        } catch (e) {
+                            console.error("Failed to extract frame", e);
+                            toast.error("Failed to use video as input");
+                            return;
+                        }
+                    }
+
                     if (modalTarget === 'ingredient') {
-                        setVideoInput('ingredients', [...(videoInputs.ingredients || []), image]);
+                        // For ingredients, we need to construct a HistoryItem-like object if we extracted a frame
+                        // But setVideoInput expects HistoryItem[] or HistoryItem
+                        // If we extracted a frame, imageUrl is a data URI. We need to wrap it.
+                        const ingredientItem = { ...image, url: imageUrl, type: 'image' as const };
+                        setVideoInput('ingredients', [...(videoInputs.ingredients || []), ingredientItem]);
                     } else {
-                        setVideoInput(modalTarget, image);
+                        // For frames, we also need to wrap it if it was a video
+                        const frameItem = { ...image, url: imageUrl, type: 'image' as const };
+                        setVideoInput(modalTarget, frameItem);
                     }
                 }}
                 target={modalTarget}

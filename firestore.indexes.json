@@ -1,4 +1,47 @@
 {
-    "indexes": [],
+    "indexes": [
+        {
+            "collectionGroup": "projects",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "orgId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "date",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "videoJobs",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "orgId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "history",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "orgId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "timestamp",
+                    "order": "DESCENDING"
+                }
+            ]
+        }
+    ],
     "fieldOverrides": []
 }

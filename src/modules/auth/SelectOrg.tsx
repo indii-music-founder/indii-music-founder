@@ -6,9 +6,11 @@ import { motion } from 'framer-motion';
 export default function SelectOrg() {
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
+    console.log('SelectOrg: Rendering', { organizations });
+
     if (!organizations) {
         console.error('SelectOrg: Critical Error - organizations is undefined');
-        return <div className="text-red-500 p-10">Error: Store not initialized correctly.</div>;
+        return <div className="text-red-500 p-10 bg-black min-h-screen">Error: Store not initialized correctly.</div>;
     }
 
     const [isCreating, setIsCreating] = useState(false);
@@ -60,12 +62,7 @@ export default function SelectOrg() {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                className="w-full max-w-md"
-            >
+            <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center">
                         <span className="text-3xl font-bold text-black tracking-tighter">ii</span>
@@ -100,11 +97,7 @@ export default function SelectOrg() {
                 </div>
 
                 {isCreating ? (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="bg-[#111] border border-[#222] rounded-xl p-4"
-                    >
+                    <div className="bg-[#111] border border-[#222] rounded-xl p-4">
                         <h3 className="font-bold mb-4">Create New Organization</h3>
                         <input
                             type="text"
@@ -130,7 +123,7 @@ export default function SelectOrg() {
                                 Create
                             </button>
                         </div>
-                    </motion.div>
+                    </div>
                 ) : (
                     <button
                         onClick={() => setIsCreating(true)}
@@ -140,7 +133,7 @@ export default function SelectOrg() {
                         Create New Organization
                     </button>
                 )}
-            </motion.div>
+            </div>
         </div>
     );
 }

@@ -151,20 +151,22 @@ class AIService {
         model: string;
         content: { role?: string; parts: { text: string }[] };
     }) {
-        // For now, we'll skip implementing the backend for embedding if it's not strictly required by the user request,
-        // but to be consistent, we should. However, the user request focused on "Gemini & Vertex calls".
-        // Let's implement it to be safe.
-        // Actually, let's just throw or log for now as I didn't create an embed function in the backend yet.
-        // Wait, I should have created it. I missed it in the backend creation step.
-        // I will use the generateContent function for now as a placeholder or leave it as is if it's not critical.
-        // Re-reading the plan: "Replace generateContent and embedContent with calls to the new Cloud Functions."
-        // I missed creating the `embedContent` function in `functions/src/ai/gemini.ts`.
-        // I will leave this as is for this step and fix it in the next step by adding the function to the backend.
-        // For now, I will just return a mock or error to avoid build issues if I remove the import.
-        // Actually, I can't remove the import if I leave this here.
-        // I will comment out the implementation and throw an error "Not implemented" for now, 
-        // and then immediately add the backend function and update this.
-        throw new Error("embedContent is moving to backend. Please wait for the next update.");
+        const functionUrl = `${env.VITE_FUNCTIONS_URL}/embedContent`;
+
+        const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: options.model,
+                content: options.content
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Embed Content Failed: ${await response.text()}`);
+        }
+
+        return await response.json();
     }
 
     parseJSON(text: string | undefined) {

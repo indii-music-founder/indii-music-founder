@@ -10,7 +10,7 @@ class BrandManagerAgent {
     async analyzeBrandConsistency(content, guidelines) {
         const prompt = `
             You are a strict Brand Manager. Analyze the following content against the provided brand guidelines.
-            
+
             Brand Guidelines:
             ${guidelines}
 

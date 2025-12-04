@@ -27,8 +27,8 @@ class RoadManagerAgent {
                 return "Could not fetch travel data.";
             }
             let travelInfo = "Travel Estimates:\n";
-            // Note: Distance Matrix returns a grid. For a sequential tour A->B->C, 
-            // we want A->B, B->C. 
+            // Note: Distance Matrix returns a grid. For a sequential tour A->B->C,
+            // we want A->B, B->C.
             // The API returns rows (origins) x elements (destinations).
             // This simple implementation assumes a direct sequence and might need refinement for complex matrices,
             // but for A->B, B->C logic:
@@ -50,7 +50,7 @@ class RoadManagerAgent {
         const travelData = await this.calculateDistances(locations);
         const prompt = `
             You are an expert Road Manager for a touring band. Plan a detailed itinerary for a tour.
-            
+
             Locations: ${locations.join(', ')}
             Dates: ${dates.start} to ${dates.end}
 
@@ -58,7 +58,7 @@ class RoadManagerAgent {
             ${travelData}
 
             Consider travel time between cities, load-in/load-out times, and rest days.
-            
+
             Provide a JSON response with the following structure:
             {
                 "tourName": string,
@@ -126,6 +126,80 @@ class RoadManagerAgent {
                 suggestions: []
             };
         }
+    }
+    async findNearbyPlaces(location, type, keyword) {
+        try {
+            // First, geocode the location string to get lat/lng
+            const geocodeRes = await this.mapsClient.geocode({
+                params: {
+                    address: location,
+                    key: process.env.GOOGLE_MAPS_API_KEY || ''
+                }
+            });
+            if (geocodeRes.data.status !== 'OK' || !geocodeRes.data.results[0]) {
+                throw new Error("Could not find location coordinates.");
+            }
+            const { lat, lng } = geocodeRes.data.results[0].geometry.location;
+            // Search for places nearby
+            const placesRes = await this.mapsClient.placesNearby({
+                params: {
+                    location: { lat, lng },
+                    radius: 5000, // 5km radius
+                    type: type,
+                    keyword: keyword,
+                    key: process.env.GOOGLE_MAPS_API_KEY || ''
+                }
+            });
+            if (placesRes.data.status !== 'OK') {
+                return { places: [], message: "No places found or API error." };
+            }
+            // Map results to a cleaner format
+            const places = placesRes.data.results.map(place => {
+                var _a;
+                return ({
+                    name: place.name,
+                    address: place.vicinity,
+                    rating: place.rating,
+                    user_ratings_total: place.user_ratings_total,
+                    open_now: (_a = place.opening_hours) === null || _a === void 0 ? void 0 : _a.open_now,
+                    geometry: place.geometry
+                });
+            }).slice(0, 10); // Limit to top 10
+            return { places, location: { lat, lng } };
+        }
+        catch (error) {
+            console.error("Find Nearby Places Error:", error);
+            throw new Error("Failed to find nearby places.");
+        }
+    }
+    async calculateFuelLogistics(data) {
+        const { milesDriven, fuelLevelPercent, tankSizeGallons, mpg, gasPricePerGallon } = data;
+        const currentFuelGallons = (fuelLevelPercent / 100) * tankSizeGallons;
+        const rangeRemaining = currentFuelGallons * mpg;
+        // const fuelUsed = milesDriven / mpg;
+        const gallonsToFill = tankSizeGallons - currentFuelGallons;
+        const costToFill = gallonsToFill * gasPricePerGallon;
+        // AI Commentary
+        const prompt = `
+            You are a gritty, experienced Road Manager.
+            The band is on the road.
+            Current Status:
+            - Fuel Level: ${fuelLevelPercent}%
+            - Range Remaining: ${rangeRemaining.toFixed(1)} miles
+            - Cost to Fill Up: $${costToFill.toFixed(2)}
+            - Miles Driven recently: ${milesDriven}
+
+            Give a short, punchy assessment of the situation. Should they panic? Stop now? Keep driving?
+            Be realistic but have some personality.
+        `;
+        const result = await this.model.generateContent(prompt);
+        const commentary = result.response.text();
+        return {
+            rangeRemaining: Math.round(rangeRemaining),
+            gallonsToFill: parseFloat(gallonsToFill.toFixed(2)),
+            costToFill: parseFloat(costToFill.toFixed(2)),
+            commentary: commentary.trim()
+        };
     }
 }
 exports.RoadManagerAgent = RoadManagerAgent;

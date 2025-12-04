@@ -1,5 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { v4 as uuidv4 } from 'uuid';
+import { env } from '@/config/env';
 import { extractVideoFrame } from '@/utils/video';
 import { ImageGeneration } from './ImageGenerationService';
 
@@ -233,6 +235,37 @@ export class VideoGenerationService {
 
         return results;
     }
-}
+    async triggerVideoGeneration(options: {
+        prompt: string;
+        duration: number;
+        fps: number;
+        resolution: string;
+        aspectRatio: string;
+        userId: string;
+        orgId: string;
+    }) {
+        const jobId = uuidv4();
+        const functionUrl = `${env.VITE_FUNCTIONS_URL}/inngestServe`;
+    async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise < { jobId: string } > {
+            try {
+                const { functions } = await import('../firebase');
+                const { httpsCallable } = await import('firebase/functions');
 
-export const VideoGeneration = new VideoGenerationService();
+                const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+
+                const jobId = uuidv4();
+
+                await triggerVideoJob({
+                    ...options,
+                    jobId,
+                    // userId is handled by context.auth in the backend
+                });
+
+                return { jobId };
+            } catch(error) {
+                console.error("Failed to trigger video generation:", error);
+                throw error;
+            }
+        }
+
+        export const VideoGeneration = new VideoGenerationService();

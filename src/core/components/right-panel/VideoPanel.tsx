@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus, Move } from 'lucide-react';
+import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus, Move, Loader2 } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { motion } from 'framer-motion';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { useStore } from '../../store';
+import { useToast } from '@/core/context/ToastContext';
 
 interface VideoPanelProps {
     toggleRightPanel: () => void;
@@ -9,6 +12,48 @@ interface VideoPanelProps {
 
 export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     const [activeTab, setActiveTab] = useState('create');
+    const [isGenerating, setIsGenerating] = useState(false);
+    // Use local state for video prompt since it might differ from image prompt
+    const [videoPrompt, setVideoPrompt] = useState('');
+    const { addToHistory, currentProjectId, studioControls } = useStore();
+    const toast = useToast();
+
+    const handleRender = async () => {
+        if (!videoPrompt.trim()) {
+            toast.error("Please enter a video description");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const results = await VideoGeneration.generateVideo({
+                prompt: videoPrompt,
+                aspectRatio: studioControls.aspectRatio,
+                resolution: studioControls.resolution,
+                negativePrompt: studioControls.negativePrompt,
+                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
+            });
+
+            if (results.length > 0) {
+                results.forEach(res => {
+                    addToHistory({
+                        id: res.id,
+                        url: res.url,
+                        prompt: res.prompt,
+                        type: 'video',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
+                });
+                toast.success("Video generation started!");
+            }
+        } catch (e) {
+            console.error("Video generation failed:", e);
+            toast.error("Video generation failed");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-gradient-to-b from-[#0d1117] to-[#0d1117]/90">
@@ -48,6 +93,17 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                    {/* Video Prompt Input (Added) */}
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">VIDEO DESCRIPTION</label>
+                        <textarea
+                            value={videoPrompt}
+                            onChange={(e) => setVideoPrompt(e.target.value)}
+                            className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all h-24 resize-none placeholder:text-gray-600 shadow-inner"
+                            placeholder="Describe the video you want to generate..."
+                        />
+                    </div>
+
                     {/* Shot List */}
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
@@ -124,10 +180,12 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20"
+                            onClick={handleRender}
+                            disabled={isGenerating}
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Film size={16} />
-                            Render Sequence
+                            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}
+                            {isGenerating ? 'Rendering...' : 'Render Sequence'}
                         </motion.button>
                     </div>
                 </div>

@@ -1,19 +1,34 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkLogistics = exports.generateItinerary = exports.generateBrandAsset = exports.analyzeBrand = exports.executeCampaign = exports.generateImage = exports.analyzeContract = exports.triggerVideoGeneration = exports.inngestFn = exports.editImage = exports.creativeDirectorAgent = exports.generateVideo = void 0;
+exports.inngestServe = exports.calculateFuelLogistics = exports.findPlaces = exports.checkLogistics = exports.generateItinerary = exports.generateBrandAsset = exports.analyzeBrand = exports.executeCampaign = exports.generateImage = exports.analyzeContract = exports.triggerVideoGeneration = exports.editImage = exports.creativeDirectorAgent = exports.generateVideo = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors");
 const google_auth_library_1 = require("google-auth-library");
+const config_1 = require("./config");
 admin.initializeApp();
 const corsHandler = cors({ origin: true });
 exports.generateVideo = functions.https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
         try {
-            const { prompt, model, image, config } = req.body;
-            const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
-            const location = "us-central1";
-            const modelId = model || "veo-3.1-generate-preview";
+            const { prompt, model, image, config: videoConfig } = req.body;
+            const projectId = config_1.config.GCLOUD_PROJECT;
+            const location = config_1.config.LOCATION;
+            const modelId = model || config_1.config.MODEL_ID;
             // Get Access Token
             const auth = new google_auth_library_1.GoogleAuth({
                 scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -24,8 +39,8 @@ exports.generateVideo = functions.https.onRequest(async (req, res) => {
             const instance = { prompt };
             if (image)
                 instance.image = image;
-            if (config === null || config === void 0 ? void 0 : config.lastFrame)
-                instance.lastFrame = config.lastFrame;
+            if (videoConfig === null || videoConfig === void 0 ? void 0 : videoConfig.lastFrame)
+                instance.lastFrame = videoConfig.lastFrame;
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
@@ -84,9 +99,9 @@ exports.creativeDirectorAgent = functions.https.onRequest(async (req, res) => {
 exports.editImage = functions.https.onCall(async (data, context) => {
     try {
         const { image, mask, prompt } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview";
+        const projectId = config_1.config.GCLOUD_PROJECT;
+        const location = config_1.config.LOCATION;
+        const modelId = config_1.config.GEMINI_MODEL_ID;
         const auth = new google_auth_library_1.GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
         });
@@ -140,13 +155,6 @@ exports.editImage = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', "An unknown error occurred");
     }
 });
-const client_1 = require("./inngest/client");
-const functions_1 = require("./inngest/functions");
-const express_1 = require("inngest/express");
-exports.inngestFn = functions.https.onRequest((0, express_1.serve)({
-    client: client_1.inngest,
-    functions: [functions_1.helloWorldFn, functions_1.magicFillFn, functions_1.generateVideoFn],
-}));
 exports.triggerVideoGeneration = functions.https.onCall(async (data, context) => {
     var _a;
     const { prompt, model } = data;
@@ -166,7 +174,7 @@ exports.triggerVideoGeneration = functions.https.onCall(async (data, context) =>
                         metadata: { contentType: 'image/png' }
                     });
                     // Use the bucket name from the file object if bucket.name is not available
-                    const bucketName = bucket.name || process.env.GCLOUD_PROJECT + '.appspot.com';
+                    const bucketName = bucket.name || config_1.config.GCLOUD_PROJECT + '.appspot.com';
                     return `gs://${bucketName}/${filePath}`;
                 }
             }
@@ -211,9 +219,9 @@ exports.analyzeContract = functions.https.onCall(async (data, context) => {
 exports.generateImage = functions.https.onCall(async (data, context) => {
     try {
         const { prompt, aspectRatio, count, images } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview";
+        const projectId = config_1.config.GCLOUD_PROJECT;
+        const location = config_1.config.LOCATION;
+        const modelId = config_1.config.GEMINI_MODEL_ID;
         const auth = new google_auth_library_1.GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
         });
@@ -347,4 +355,49 @@ exports.checkLogistics = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', "An unknown error occurred");
     }
 });
+exports.findPlaces = functions.https.onCall(async (data, context) => {
+    try {
+        const { location, type, keyword } = data;
+        if (!location || !type) {
+            throw new functions.https.HttpsError('invalid-argument', 'location and type are required');
+        }
+        const result = await roadManager.findNearbyPlaces(location, type, keyword);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+exports.calculateFuelLogistics = functions.https.onCall(async (data, context) => {
+    try {
+        const result = await roadManager.calculateFuelLogistics(data);
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+__exportStar(require("./ai/gemini"), exports);
+__exportStar(require("./rag/retrieval"), exports);
+const client_1 = require("./jobs/inngest/client");
+const videoJobs_1 = require("./jobs/videoJobs");
+const functions_1 = require("./inngest/functions");
+const express_1 = require("inngest/express");
+exports.inngestServe = functions.https.onRequest((0, express_1.serve)({
+    client: client_1.inngest,
+    functions: [
+        functions_1.helloWorldFn,
+        functions_1.magicFillFn,
+        functions_1.generateVideoFn,
+        videoJobs_1.generateVideoJob
+    ],
+}));
 //# sourceMappingURL=index.js.map
