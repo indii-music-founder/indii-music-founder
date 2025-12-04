@@ -1,0 +1,41 @@
+{
+    "type": "object",
+    "properties": {
+        "VITE_API_KEY": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VITE_VERTEX_PROJECT_ID": {
+            "type": "string",
+            "minLength": 1
+        },
+        "VITE_VERTEX_LOCATION": {
+            "type": "string",
+            "default": "us-central1"
+        },
+        "VITE_USE_VERTEX": {
+            "type": "string",
+            "enum": [
+                "true",
+                "false"
+            ],
+            "default": "false"
+        },
+        "VITE_FUNCTIONS_URL": {
+            "type": "string",
+            "format": "uri"
+        },
+        "VITE_RAG_PROXY_URL": {
+            "type": "string",
+            "format": "uri"
+        },
+        "GCLOUD_PROJECT": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "VITE_API_KEY",
+        "VITE_VERTEX_PROJECT_ID"
+    ],
+    "additionalProperties": true
+}

@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as cors from "cors";
 import { GoogleAuth } from "google-auth-library";
+import { config } from "./config";
 
 
 admin.initializeApp();
@@ -25,10 +26,10 @@ interface VertexVideoInstance {
 export const generateVideo = functions.https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
         try {
-            const { prompt, model, image, config } = req.body as GenerateVideoRequestBody;
-            const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
-            const location = "us-central1";
-            const modelId = model || "veo-3.1-generate-preview";
+            const { prompt, model, image, config: videoConfig } = req.body as GenerateVideoRequestBody;
+            const projectId = config.GCLOUD_PROJECT;
+            const location = config.LOCATION;
+            const modelId = model || config.MODEL_ID;
 
             // Get Access Token
             const auth = new GoogleAuth({
@@ -41,7 +42,7 @@ export const generateVideo = functions.https.onRequest(async (req, res) => {
 
             const instance: VertexVideoInstance = { prompt };
             if (image) instance.image = image;
-            if (config?.lastFrame) instance.lastFrame = config.lastFrame;
+            if (videoConfig?.lastFrame) instance.lastFrame = videoConfig.lastFrame;
 
             const response = await fetch(endpoint, {
                 method: "POST",
@@ -123,9 +124,9 @@ interface Part {
 export const editImage = functions.https.onCall(async (data: EditImageRequestData, context) => {
     try {
         const { image, mask, prompt } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview";
+        const projectId = config.GCLOUD_PROJECT;
+        const location = config.LOCATION;
+        const modelId = config.GEMINI_MODEL_ID;
 
         const auth = new GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -223,7 +224,7 @@ export const triggerVideoGeneration = functions.https.onCall(async (data: Trigge
                         metadata: { contentType: 'image/png' }
                     });
                     // Use the bucket name from the file object if bucket.name is not available
-                    const bucketName = bucket.name || process.env.GCLOUD_PROJECT + '.appspot.com';
+                    const bucketName = bucket.name || config.GCLOUD_PROJECT + '.appspot.com';
                     return `gs://${bucketName}/${filePath}`;
                 }
             }
@@ -285,9 +286,9 @@ interface GenerateImageRequestData {
 export const generateImage = functions.https.onCall(async (data: GenerateImageRequestData, context) => {
     try {
         const { prompt, aspectRatio, count, images } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "architexture-ai-api";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview";
+        const projectId = config.GCLOUD_PROJECT;
+        const location = config.LOCATION;
+        const modelId = config.GEMINI_MODEL_ID;
 
         const auth = new GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -502,3 +503,6 @@ export const calculateFuelLogistics = functions.https.onCall(async (data: Calcul
         throw new functions.https.HttpsError('internal', "An unknown error occurred");
     }
 });
+
+export * from './ai/gemini';
+export * from './rag/retrieval';

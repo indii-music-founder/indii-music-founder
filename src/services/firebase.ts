@@ -3,11 +3,13 @@ import { getFirestore, enableIndexedDbPersistence, initializeFirestore, persiste
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
+import { env } from '../config/env';
+
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_API_KEY,
-    authDomain: `${import.meta.env.VITE_VERTEX_PROJECT_ID}.firebaseapp.com`,
-    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID,
-    storageBucket: `${import.meta.env.VITE_VERTEX_PROJECT_ID}.firebasestorage.app`,
+    apiKey: env.VITE_API_KEY,
+    authDomain: `${env.VITE_VERTEX_PROJECT_ID}.firebaseapp.com`,
+    projectId: env.VITE_VERTEX_PROJECT_ID,
+    storageBucket: `${env.VITE_VERTEX_PROJECT_ID}.firebasestorage.app`,
     messagingSenderId: "563584335869",
     appId: "1:563584335869:web:321321321"
 };
@@ -41,6 +43,6 @@ import { signInAnonymously } from 'firebase/auth';
 signInAnonymously(auth).catch(console.error);
 export const functions = getFunctions(app);
 
-if (import.meta.env.DEV) {
+if (env.DEV) {
     // connectFunctionsEmulator(functions, "127.0.0.1", 5001);
 }

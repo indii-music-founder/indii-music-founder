@@ -1,6 +1,7 @@
 
 
 import { smartChunk } from '@/utils/textChunker';
+import { env } from '@/config/env';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -25,27 +26,32 @@ interface Chunk {
 export class GeminiRetrievalService {
     private apiKey: string;
 
+
     constructor(apiKey?: string) {
-        const env = import.meta.env || {};
-        this.apiKey = apiKey || env.VITE_API_KEY || '';
+        this.apiKey = apiKey || env.VITE_API_KEY;
         if (!this.apiKey) {
             console.error("GeminiRetrievalService: Missing API Key");
         }
     }
 
     private async fetch(endpoint: string, options: RequestInit = {}) {
-        const proxyUrl = import.meta.env?.VITE_RAG_PROXY_URL;
-        let url: string;
+        // Always use the backend proxy
+        // The proxy expects the path to be relative to /v1beta/
+        // Our endpoint argument is like 'corpora' or 'corpora/123/documents'
+        // The backend function is at /ragProxy
+        // We need to pass the endpoint as the path to the proxy function?
+        // No, the proxy function `ragProxy` handles the path.
+        // If we deploy `ragProxy` to `https://.../ragProxy`, we can append the path.
+        // But Firebase Functions usually work as `https://.../ragProxy`.
+        // If we want to use it as a proxy, we might need to send the target endpoint in the body or query,
+        // OR use a rewrite in firebase.json.
+        // Given the current setup in `functions/src/rag/retrieval.ts`:
+        // `const path = req.path;`
+        // `const endpoint = path.replace(/^\/v1beta\//, '').replace(/^\//, '');`
+        // So if we call `https://.../ragProxy/v1beta/corpora`, it will extract `corpora`.
 
-        if (proxyUrl) {
-            // Use Proxy: http://localhost:3001/v1beta/...
-            // Endpoint is like 'corpora' or 'corpora/123/documents'
-            // Proxy expects /v1beta/...
-            url = `${proxyUrl}/v1beta/${endpoint}`;
-        } else {
-            // Direct: https://generativelanguage.googleapis.com/v1beta/...
-            url = `${BASE_URL}/${endpoint}?key=${this.apiKey}`;
-        }
+        const functionUrl = `${env.VITE_FUNCTIONS_URL}/ragProxy`;
+        const url = `${functionUrl}/v1beta/${endpoint}`;
 
         const response = await fetch(url, {
             ...options,

@@ -9,7 +9,7 @@ interface FrameSelectionModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (image: HistoryItem) => void;
-    target: 'firstFrame' | 'lastFrame';
+    target: 'firstFrame' | 'lastFrame' | 'ingredient';
 }
 
 export default function FrameSelectionModal({ isOpen, onClose, onSelect, target }: FrameSelectionModalProps) {
@@ -21,6 +21,22 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
     const toast = useToast();
 
     if (!isOpen) return null;
+
+    const getTitle = () => {
+        switch (target) {
+            case 'firstFrame': return 'Select First Frame';
+            case 'lastFrame': return 'Select Last Frame';
+            case 'ingredient': return 'Select Reference Ingredient';
+        }
+    };
+
+    const getSubtitle = () => {
+        switch (target) {
+            case 'firstFrame': return 'Start of Video';
+            case 'lastFrame': return 'End of Video';
+            case 'ingredient': return 'Character/Style Reference';
+        }
+    };
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -64,9 +80,9 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        Select {target === 'firstFrame' ? 'First' : 'Last'} Frame
+                        {getTitle()}
                         <span className="text-xs font-normal text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
-                            {target === 'firstFrame' ? 'Start of Video' : 'End of Video'}
+                            {getSubtitle()}
                         </span>
                     </h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
@@ -125,7 +141,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                             </div>
                             <h3 className="text-lg font-bold text-white mb-2">Generate a New Frame</h3>
                             <p className="text-gray-400 text-sm mb-6">
-                                Describe the image you want to use as your {target === 'firstFrame' ? 'starting' : 'ending'} point.
+                                Describe the image you want to use as your {target === 'ingredient' ? 'reference' : (target === 'firstFrame' ? 'starting' : 'ending')} point.
                             </p>
 
                             <div className="w-full relative">

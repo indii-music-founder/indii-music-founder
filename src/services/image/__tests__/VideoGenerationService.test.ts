@@ -59,5 +59,44 @@ describe('VideoGenerationService', () => {
             expect(result[0].url).toContain('BigBuckBunny.mp4');
             expect(result[0].prompt).toContain('[ERROR:');
         });
+        it('should include ingredients in the prompt', async () => {
+            (AI.generateVideo as any).mockResolvedValue('http://video.url');
+
+            await VideoGeneration.generateVideo({
+                prompt: 'test video',
+                ingredients: ['data:image/png;base64,1', 'data:image/png;base64,2']
+            });
+
+            const callArgs = (AI.generateVideo as any).mock.calls[0][0];
+            expect(callArgs.prompt).toContain('Reference Ingredients');
+            expect(callArgs.prompt).toContain('2 reference images');
+        });
+
+        it('should handle empty ingredients array gracefully', async () => {
+            (AI.generateVideo as any).mockResolvedValue('http://video.url');
+
+            await VideoGeneration.generateVideo({
+                prompt: 'test video',
+                ingredients: []
+            });
+
+            const callArgs = (AI.generateVideo as any).mock.calls[0][0];
+            expect(callArgs.prompt).not.toContain('Reference Ingredients');
+        });
+
+        it('should handle mixed inputs (firstFrame + ingredients)', async () => {
+            (AI.generateVideo as any).mockResolvedValue('http://video.url');
+
+            await VideoGeneration.generateVideo({
+                prompt: 'test video',
+                firstFrame: 'data:image/png;base64,start',
+                ingredients: ['data:image/png;base64,ref1']
+            });
+
+            const callArgs = (AI.generateVideo as any).mock.calls[0][0];
+            expect(callArgs.image).toBeDefined(); // firstFrame
+            expect(callArgs.prompt).toContain('Reference Ingredients');
+            expect(callArgs.prompt).toContain('1 reference images');
+        });
     });
 });

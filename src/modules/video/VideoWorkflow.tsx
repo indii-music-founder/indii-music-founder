@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Film, X } from 'lucide-react';
-import { useStore } from '../../core/store';
+import { useStore, HistoryItem } from '../../core/store';
 import { useToast } from '../../core/context/ToastContext';
 import IdeaStep from './components/IdeaStep';
 import ReviewStep from './components/ReviewStep';
@@ -16,7 +16,7 @@ export default function VideoWorkflow() {
     const [localPrompt, setLocalPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalTarget, setModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
+    const [modalTarget, setModalTarget] = useState<'firstFrame' | 'lastFrame' | 'ingredient'>('firstFrame');
 
     // Find the most recent video or the selected item if it's a video
     const activeVideo = selectedItem?.type === 'video' ? selectedItem : generatedHistory.find(item => item.type === 'video');
@@ -46,7 +46,8 @@ export default function VideoWorkflow() {
                 seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                 firstFrame: videoInputs.firstFrame?.url,
                 lastFrame: videoInputs.lastFrame?.url,
-                timeOffset: videoInputs.timeOffset
+                timeOffset: videoInputs.timeOffset,
+                ingredients: videoInputs.ingredients?.map(i => i.url)
             });
 
             if (results.length > 0) {
@@ -84,6 +85,17 @@ export default function VideoWorkflow() {
     const handleDesignFrame = (type: 'start' | 'end') => {
         setModalTarget(type === 'start' ? 'firstFrame' : 'lastFrame');
         setIsModalOpen(true);
+    };
+
+    const handleAddIngredient = () => {
+        setModalTarget('ingredient');
+        setIsModalOpen(true);
+    };
+
+    const handleRemoveIngredient = (index: number) => {
+        const newIngredients = [...(videoInputs.ingredients || [])];
+        newIngredients.splice(index, 1);
+        setVideoInput('ingredients', newIngredients);
     };
 
     const handleClearFrame = (type: 'start' | 'end') => {
@@ -129,6 +141,9 @@ export default function VideoWorkflow() {
                         endFrameData={videoInputs.lastFrame?.url || null}
                         onDesignFrame={handleDesignFrame}
                         onClearFrame={handleClearFrame}
+                        ingredients={videoInputs.ingredients || []}
+                        onAddIngredient={handleAddIngredient}
+                        onRemoveIngredient={handleRemoveIngredient}
                     />
                 </div>
             );
@@ -233,7 +248,13 @@ export default function VideoWorkflow() {
             <FrameSelectionModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSelect={(image) => setVideoInput(modalTarget, image)}
+                onSelect={(image) => {
+                    if (modalTarget === 'ingredient') {
+                        setVideoInput('ingredients', [...(videoInputs.ingredients || []), image]);
+                    } else {
+                        setVideoInput(modalTarget, image);
+                    }
+                }}
                 target={modalTarget}
             />
         </div>
