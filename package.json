@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:landing": "cd landing-page && npm install && npm run build",
+    "build:studio": "vite build",
+    "build:all": "npm run build:landing && npm run build:studio",
     "preview": "vite preview",
     "electron:dev": "tsc -p tsconfig.electron.json && mv dist-electron/preload.js dist-electron/preload.mjs && electron .",
     "electron:build": "tsc -p tsconfig.electron.json && mv dist-electron/preload.js dist-electron/preload.mjs && vite build && electron-builder",
