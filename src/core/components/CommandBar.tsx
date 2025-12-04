@@ -3,11 +3,14 @@ import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image } from 'lucide-react
 import { useToast } from '@/core/context/ToastContext';
 import { Orchestrator } from '@/services/agent/OrchestratorService';
 import { useStore } from '@/core/store';
+import { getColorForModule } from '../theme/moduleColors';
 
 export default function CommandBar() {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [status, setStatus] = useState('');
+    const { currentModule } = useStore();
+    const colors = getColorForModule(currentModule);
 
     const toast = useToast();
 
@@ -40,7 +43,7 @@ export default function CommandBar() {
         <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
-                <div className="bg-[#161b22] border border-white/10 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-teal-500/50 transition-all">
+                <div className={`bg-[#161b22] border rounded-xl overflow-hidden transition-all ${colors.border} ${colors.ring} focus-within:ring-1`}>
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"

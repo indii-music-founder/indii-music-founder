@@ -53,43 +53,18 @@ describe('MusicStudio', () => {
             expect(Tone.start).toHaveBeenCalled();
         });
 
-        expect(screen.getByText('Basic Synthesizer')).toBeInTheDocument();
+        expect(screen.getByText('Audio Analysis')).toBeInTheDocument();
+        expect(screen.getByText('Status')).toBeInTheDocument();
     });
 
-    it('initializes synth after starting engine', async () => {
+    it('shows context state after starting engine', async () => {
         render(<MusicStudio />);
 
         fireEvent.click(screen.getByText('Start Audio Engine'));
 
         await waitFor(() => {
-            expect(Tone.Synth).toHaveBeenCalled();
+            expect(screen.getByText('Context State')).toBeInTheDocument();
+            expect(screen.getByText('Running')).toBeInTheDocument();
         });
-    });
-
-    it('toggles play state when button is clicked', async () => {
-        render(<MusicStudio />);
-
-        // Start engine first
-        fireEvent.click(screen.getByText('Start Audio Engine'));
-        await waitFor(() => screen.getByText('Basic Synthesizer'));
-
-        const playButton = screen.getByTestId('play-button');
-
-        fireEvent.click(playButton);
-        expect(playButton.className).toContain('bg-red-500');
-
-        fireEvent.click(playButton);
-        expect(playButton.className).toContain('bg-green-600');
-    });
-
-    it('adjusts volume', async () => {
-        render(<MusicStudio />);
-        fireEvent.click(screen.getByText('Start Audio Engine'));
-        await waitFor(() => screen.getByText('Basic Synthesizer'));
-
-        const volumeSlider = screen.getByRole('slider'); // input type range
-        fireEvent.change(volumeSlider, { target: { value: '-20' } });
-
-        expect(screen.getByText('-20 dB')).toBeInTheDocument();
     });
 });

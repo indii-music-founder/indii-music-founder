@@ -97,13 +97,22 @@ export default function VideoWorkflow() {
     const renderStage = () => {
         if (step === 'idea') {
             return (
-                <div className="max-w-2xl mx-auto pt-20">
+                <div className="max-w-2xl mx-auto pt-20 relative">
                     <IdeaStep
                         initialPrompt={localPrompt}
                         onPromptChange={setLocalPrompt}
                         onNext={() => setStep('review')}
                         isThinking={false}
                     />
+                    <div className="absolute top-0 right-0 mt-4 mr-4">
+                        <button
+                            onClick={() => setStep('editor')}
+                            className="text-xs text-gray-500 hover:text-white flex items-center gap-1 transition-colors"
+                        >
+                            <Film size={14} />
+                            Open Editor
+                        </button>
+                    </div>
                 </div>
             );
         }

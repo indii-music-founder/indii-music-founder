@@ -51,6 +51,7 @@ export class VideoGenerationService {
         firstFrame?: string; // Data URI
         lastFrame?: string; // Data URI
         timeOffset?: number;
+        ingredients?: string[]; // Data URIs (Ingredients to Video)
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         const model = options.model || AI_MODELS.VIDEO.GENERATION;
         let fullPrompt = options.negativePrompt
@@ -73,7 +74,11 @@ export class VideoGenerationService {
             ? ` (Time Offset: ${options.timeOffset > 0 ? '+' : ''}${options.timeOffset}s)`
             : '';
 
-        const finalPrompt = fullPrompt + timeContext;
+        const ingredientsContext = options.ingredients && options.ingredients.length > 0
+            ? `\n\n[Reference Ingredients: The video should incorporate the style/characters from the provided ${options.ingredients.length} reference images.]`
+            : '';
+
+        const finalPrompt = fullPrompt + timeContext + ingredientsContext;
 
         try {
             const videoUri = await AI.generateVideo({

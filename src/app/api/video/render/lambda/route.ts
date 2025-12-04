@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { renderMediaOnLambda, getOrCreateBucket } from '@remotion/lambda';
-import { RemotionLambdaConfig } from '../../../../../remotion.lambda';
+import { RemotionLambdaConfig } from '../../../../../../remotion.lambda';
 
 export async function POST(req: NextRequest) {
     try {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
         // Or we can use the serveUrl passed in the body if we want to be flexible.
         // For now, let's assume a placeholder serveUrl or require it in the request.
 
-        // NOTE: You must run `npx tsx scripts/deploy-lambda.ts` to get a serveUrl first!
+        // NOTE: You must run `npx tsx scripts / deploy - lambda.ts` to get a serveUrl first!
         const serveUrl = process.env.REMOTION_LAMBDA_SERVE_URL;
 
         if (!serveUrl) {
@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
             inputProps: { project },
             codec: 'h264',
             downloadBehavior: {
-                type: 'download-on-complete',
-                fileName: `project-${project.name || 'video'}.mp4`,
+                type: 'download',
+                fileName: `project - ${project.name || 'video'}.mp4`,
             },
         });
 

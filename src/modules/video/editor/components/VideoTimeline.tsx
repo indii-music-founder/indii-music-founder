@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Volume2, Eye } from 'lucide-react';
 import { VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { AudioWaveform } from './AudioWaveform';
 
 const PIXELS_PER_FRAME = 2;
 
@@ -20,7 +21,7 @@ interface VideoTimelineProps {
     handlePlayPause: () => void;
     handleSeek: (frame: number) => void;
     handleAddTrack: () => void;
-    handleAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image') => void;
+    handleAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
     removeTrack: (id: string) => void;
     removeClip: (id: string) => void;
     handleDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => void;
@@ -96,6 +97,9 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                                 <button onClick={() => handleAddSampleClip(track.id, 'video')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Video">
                                     <Plus size={10} /> Vid
                                 </button>
+                                <button onClick={() => handleAddSampleClip(track.id, 'audio')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Audio">
+                                    <Plus size={10} /> Aud
+                                </button>
                                 <button onClick={() => removeTrack(track.id)} className="text-gray-600 hover:text-red-400 ml-auto">
                                     <Trash2 size={12} />
                                 </button>
@@ -122,7 +126,8 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                                     }}
                                     onMouseDown={(e) => handleDragStart(e, clip, 'move')}
                                 >
-                                    <div className="px-2 py-1 flex items-center justify-between h-full overflow-hidden pointer-events-none">
+                                    {/* Clip Content */}
+                                    <div className="px-2 py-1 flex items-center justify-between h-full overflow-hidden pointer-events-none relative z-10">
                                         <span className="text-[10px] text-white truncate font-medium drop-shadow-md">{clip.name}</span>
                                         <button
                                             onClick={(e) => {
@@ -134,6 +139,18 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                                             <XIcon size={12} />
                                         </button>
                                     </div>
+
+                                    {/* Audio Waveform */}
+                                    {clip.type === 'audio' && clip.src && (
+                                        <div className="absolute inset-0 z-0 opacity-50">
+                                            <AudioWaveform
+                                                src={clip.src}
+                                                width={clip.durationInFrames * PIXELS_PER_FRAME}
+                                                height={64}
+                                                color="rgba(255, 255, 255, 0.6)"
+                                            />
+                                        </div>
+                                    )}
 
                                     {/* Resize Handle */}
                                     <div
@@ -147,8 +164,8 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 ))}
 
                 {/* Add Track Button (Bottom) */}
-                <div className="h-10 flex items-center justify-center border-2 border-dashed border-gray-800 rounded hover:border-gray-700 hover:bg-gray-900/50 cursor-pointer transition-all" onClick={handleAddTrack}>
-                    <span className="text-xs text-gray-500 flex items-center gap-2"><Plus size={14} /> Add New Track</span>
+                <div className="h-10 flex items-center justify-center border-2 border-dashed border-gray-800 rounded hover:border-gray-700 hover:bg-gray-900/50 cursor-pointer transition-all m-4" onClick={handleAddTrack} role="button">
+                    <span className="text-xs text-gray-500 flex items-center gap-2"><Plus size={14} /> Add Track</span>
                 </div>
             </div>
         </div>

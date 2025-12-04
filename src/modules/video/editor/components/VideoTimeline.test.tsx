@@ -16,7 +16,7 @@ describe('VideoTimeline', () => {
         clips: [
             { id: 'c1', trackId: 't1', name: 'Clip 1', startFrame: 0, durationInFrames: 60, type: 'video', assetId: 'a1' }
         ]
-    };
+    } as any;
 
     const mockProps = {
         project: mockProject,
@@ -35,7 +35,8 @@ describe('VideoTimeline', () => {
 
     it('renders timeline controls', () => {
         render(<VideoTimeline {...mockProps} />);
-        expect(screen.getByText('Add Track')).toBeInTheDocument();
+        const addTrackBtns = screen.getAllByRole('button', { name: /Add Track/i });
+        expect(addTrackBtns.length).toBeGreaterThan(0);
         // Play button icon check might be tricky, checking for button existence
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toBeGreaterThan(0);
@@ -70,8 +71,8 @@ describe('VideoTimeline', () => {
         // Since we can't easily distinguish, let's skip this specific interaction test or add a test-id in a real refactor.
         // However, we CAN test the "Add Track" button easily.
 
-        const addTrackBtn = screen.getByText('Add Track');
-        fireEvent.click(addTrackBtn);
+        const addTrackBtns = screen.getAllByRole('button', { name: /Add Track/i });
+        fireEvent.click(addTrackBtns[0]);
         expect(mockProps.handleAddTrack).toHaveBeenCalled();
     });
 

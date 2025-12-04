@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
+import { getColorForModule } from '../theme/moduleColors';
 import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Sidebar() {
@@ -27,19 +28,23 @@ export default function Sidebar() {
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
     ];
 
-    const NavItem = ({ item, isActive }: { item: any, isActive: boolean }) => (
-        <button
-            onClick={() => setModule(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${isActive
-                ? 'text-teal-400 bg-teal-400/10 border-r-2 border-teal-400'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                } ${!isSidebarOpen ? 'justify-center px-2' : ''}`}
-            title={!isSidebarOpen ? item.label : ''}
-        >
-            <item.icon size={16} />
-            {isSidebarOpen && <span className="truncate">{item.label}</span>}
-        </button>
-    );
+    const NavItem = ({ item, isActive }: { item: any, isActive: boolean }) => {
+        const colors = getColorForModule(item.id);
+
+        return (
+            <button
+                onClick={() => setModule(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${isActive
+                    ? `${colors.text} ${colors.bg} border-r-2 ${colors.border}`
+                    : `text-gray-400 ${colors.hoverText} ${colors.hoverBg}`
+                    } ${!isSidebarOpen ? 'justify-center px-2' : ''}`}
+                title={!isSidebarOpen ? item.label : ''}
+            >
+                <item.icon size={16} />
+                {isSidebarOpen && <span className="truncate">{item.label}</span>}
+            </button>
+        );
+    };
 
     return (
         <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} h-full bg-[#0d1117] border-r border-white/5 flex flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300`}>

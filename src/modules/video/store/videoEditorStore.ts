@@ -26,6 +26,12 @@ export interface VideoClip {
     };
     transitionIn?: { type: 'fade' | 'slide' | 'wipe' | 'zoom'; duration: number };
     transitionOut?: { type: 'fade' | 'slide' | 'wipe' | 'zoom'; duration: number };
+    keyframes?: {
+        [key: string]: Array<{
+            frame: number; // Relative to clip start
+            value: number;
+        }>;
+    };
 }
 
 export interface VideoTrack {
@@ -93,6 +99,9 @@ const INITIAL_PROJECT: VideoProject = {
     ]
 };
 
+const MAX_DURATION_FRAMES_STANDARD = 30 * 60 * 8; // 8 minutes at 30fps
+const MAX_DURATION_FRAMES_PRO = 30 * 60 * 60; // 60 minutes at 30fps
+
 export const useVideoEditorStore = create<VideoEditorState>((set) => ({
     project: INITIAL_PROJECT,
     currentTime: 0,
@@ -100,9 +109,23 @@ export const useVideoEditorStore = create<VideoEditorState>((set) => ({
     selectedClipId: null,
 
     setProject: (project) => set({ project }),
-    updateProjectSettings: (settings) => set((state) => ({
-        project: { ...state.project, ...settings }
-    })),
+    updateProjectSettings: (settings) => set((state) => {
+        let newSettings = { ...settings };
+
+        // Enforce duration limits
+        if (newSettings.durationInFrames) {
+            // TODO: check user membership level. For now, defaulting to standard limit.
+            const maxDuration = MAX_DURATION_FRAMES_STANDARD;
+            if (newSettings.durationInFrames > maxDuration) {
+                newSettings.durationInFrames = maxDuration;
+                console.warn(`Project duration limited to ${maxDuration / 30 / 60} minutes.`);
+            }
+        }
+
+        return {
+            project: { ...state.project, ...newSettings }
+        };
+    }),
     setCurrentTime: (time) => set({ currentTime: time }),
     setIsPlaying: (isPlaying) => set({ isPlaying }),
     setSelectedClipId: (id) => set({ selectedClipId: id }),

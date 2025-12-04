@@ -31,7 +31,10 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentModule: 'dashboard',
     currentProjectId: 'default',
     projects: [],
-    setModule: (module) => set({ currentModule: module }),
+    setModule: (module) => set({
+        currentModule: module,
+        isRightPanelOpen: module === 'creative' || module === 'video'
+    }),
     setProject: (id) => set({ currentProjectId: id }),
     addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
     loadProjects: async () => {
@@ -49,7 +52,8 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         set((state) => ({
             projects: [newProject, ...state.projects],
             currentProjectId: newProject.id,
-            currentModule: type
+            currentModule: type,
+            isRightPanelOpen: type === 'creative' || type === 'video'
         }));
         return newProject.id;
     },
@@ -58,7 +62,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     apiKeyError: false,
     setApiKeyError: (error) => set({ apiKeyError: error }),
     isSidebarOpen: true,
-    isRightPanelOpen: true,
+    isRightPanelOpen: false,
     toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
     toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
 });

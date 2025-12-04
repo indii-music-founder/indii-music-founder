@@ -23,18 +23,26 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         addClip,
         removeClip,
         addTrack,
-        togglePlayback,
+        removeTrack,
+        setIsPlaying,
         setCurrentTime,
-        setSelectedClip
+        setSelectedClipId, // Action from store to set selected clip ID
+        isPlaying,
+        currentTime
     } = useVideoEditorStore();
     const playerRef = useRef<PlayerRef>(null);
     const initializedRef = useRef(false);
     const toast = useToast();
 
     const [activeTab, setActiveTab] = useState<'project' | 'tracks' | 'assets'>('project');
-    const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+    const [selectedClipIdState, setSelectedClipIdState] = useState<string | null>(null); // Local state for UI selection if needed, or sync with store
     const [isExporting, setIsExporting] = useState(false);
     const [renderMode, setRenderMode] = useState<'local' | 'cloud'>('local');
+
+    // Sync local selection with store
+    useEffect(() => {
+        setSelectedClipId(selectedClipIdState);
+    }, [selectedClipIdState, setSelectedClipId]);
 
     // Drag & Drop / Resize State
     const [dragState, setDragState] = useState<{
@@ -45,7 +53,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         originalDuration: number;
     } | null>(null);
 
-    const selectedClip = project.clips.find(c => c.id === selectedClipId);
+    const selectedClip = project.clips.find(c => c.id === selectedClipIdState);
 
     // Initialize with passed video if available
     useEffect(() => {
@@ -69,16 +77,16 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     // Sync player state with store
     useEffect(() => {
         if (playerRef.current) {
-            if (project.isPlaying) {
+            if (isPlaying) {
                 playerRef.current.play();
             } else {
                 playerRef.current.pause();
             }
         }
-    }, [project.isPlaying]);
+    }, [isPlaying]);
 
     const handlePlayPause = () => {
-        togglePlayback();
+        setIsPlaying(!isPlaying);
     };
 
     const handleSeek = (frame: number) => {
@@ -313,6 +321,25 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     {activeTab === 'project' && (
                         <div className="p-4 space-y-4">
                             <h3 className="text-lg font-semibold">Project Settings</h3>
+
+                            <div className="bg-purple-900/20 border border-purple-500/30 p-3 rounded-md">
+                                <h4 className="text-xs font-bold text-purple-400 uppercase mb-2">Veo 3.1 Presets</h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => updateProject({ width: 1920, height: 1080, fps: 24 })}
+                                        className="text-xs bg-purple-600 hover:bg-purple-500 text-white py-1 px-2 rounded transition-colors"
+                                    >
+                                        1080p Landscape (24fps)
+                                    </button>
+                                    <button
+                                        onClick={() => updateProject({ width: 1080, height: 1920, fps: 24 })}
+                                        className="text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded transition-colors"
+                                    >
+                                        1080p Portrait (24fps)
+                                    </button>
+                                </div>
+                            </div>
+
                             <div>
                                 <label htmlFor="projectName" className="block text-sm font-medium text-gray-400">Project Name</label>
                                 <input
@@ -391,6 +418,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     project={project}
                     selectedClip={selectedClip}
                     updateClip={updateClip}
+                    currentTime={currentTime} // Pass current time for keyframing
                 />
             </div>
 
@@ -402,9 +430,9 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             >
                 <VideoTimeline
                     project={project}
-                    isPlaying={project.isPlaying}
-                    currentTime={project.currentTime}
-                    selectedClipId={selectedClipId}
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    selectedClipId={selectedClipIdState}
                     handlePlayPause={handlePlayPause}
                     handleSeek={handleSeek}
                     handleAddTrack={handleAddTrack}

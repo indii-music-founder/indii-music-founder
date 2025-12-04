@@ -17,6 +17,7 @@ const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
 const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
 const BrandManager = lazy(() => import('../modules/marketing/components/BrandManager'));
 const CampaignDashboard = lazy(() => import('../modules/marketing/components/CampaignDashboard'));
+const CampaignManager = lazy(() => import('../modules/marketing/components/CampaignManager'));
 const PublicistDashboard = lazy(() => import('../modules/publicist/PublicistDashboard'));
 const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingDashboard'));
 const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
@@ -76,7 +77,7 @@ export default function App() {
                                 {currentModule === 'road' && <RoadManager />}
                                 {currentModule === 'social' && <SocialDashboard />}
                                 {currentModule === 'brand' && <BrandManager />}
-                                {currentModule === 'campaign' && <CampaignManager />}
+                                {currentModule === 'campaign' && <CampaignDashboard />}
                                 {currentModule === 'publicist' && <PublicistDashboard />}
                                 {currentModule === 'publishing' && <PublishingDashboard />}
                                 {currentModule === 'finance' && <FinanceDashboard />}

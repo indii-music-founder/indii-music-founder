@@ -72,6 +72,7 @@ export interface CreativeSlice {
         lastFrame: HistoryItem | null;
         isDaisyChain: boolean;
         timeOffset: number;
+        ingredients: HistoryItem[];
     };
     setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
 
@@ -178,7 +179,8 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         firstFrame: null,
         lastFrame: null,
         isDaisyChain: false,
-        timeOffset: 0
+        timeOffset: 0,
+        ingredients: []
     },
     setVideoInput: (key, value) => set(state => ({
         videoInputs: { ...state.videoInputs, [key]: value }

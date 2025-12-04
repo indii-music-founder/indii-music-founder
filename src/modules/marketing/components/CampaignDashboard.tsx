@@ -33,7 +33,18 @@ const CampaignDashboard: React.FC = () => {
                             brief: 'A demo campaign',
                             startDate: new Date().toISOString().split('T')[0],
                             durationDays: 7,
-                            posts: []
+                            posts: [
+                                {
+                                    id: 'post-1',
+                                    day: 1,
+                                    platform: 'Twitter',
+                                    content: 'Hello world',
+                                    copy: 'Excited to announce our new campaign! #launch',
+                                    imageAsset: { title: 'Launch Image', imageUrl: '' },
+                                    status: 'pending',
+                                    time: '10:00'
+                                }
+                            ]
                         } as any);
                     }}
                 >

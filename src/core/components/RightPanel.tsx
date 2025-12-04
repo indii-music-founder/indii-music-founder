@@ -39,9 +39,7 @@ export default function RightPanel() {
 
     const handleToolClick = (module: 'creative' | 'video') => {
         setModule(module);
-        if (!isRightPanelOpen) {
-            toggleRightPanel();
-        }
+        // setModule now handles opening the panel automatically
     };
 
     return (

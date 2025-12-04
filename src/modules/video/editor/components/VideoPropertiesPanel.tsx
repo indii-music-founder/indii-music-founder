@@ -5,9 +5,50 @@ interface VideoPropertiesPanelProps {
     project: VideoProject;
     selectedClip: VideoClip | undefined;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
+    currentTime: number;
 }
 
-export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip }) => {
+export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip, currentTime }) => {
+
+    const handleAddKeyframe = (property: string, value: number) => {
+        if (!selectedClip) return;
+
+        const relativeFrame = Math.max(0, currentTime - selectedClip.startFrame);
+        if (relativeFrame > selectedClip.durationInFrames) return; // Can't add keyframe outside clip
+
+        const currentKeyframes = selectedClip.keyframes?.[property] || [];
+        // Remove existing keyframe at this frame if any
+        const filteredKeyframes = currentKeyframes.filter(k => k.frame !== relativeFrame);
+
+        const newKeyframes = [
+            ...filteredKeyframes,
+            { frame: relativeFrame, value }
+        ].sort((a, b) => a.frame - b.frame);
+
+        updateClip(selectedClip.id, {
+            keyframes: {
+                ...selectedClip.keyframes,
+                [property]: newKeyframes
+            }
+        });
+    };
+
+    const hasKeyframeAtCurrentTime = (property: string) => {
+        if (!selectedClip || !selectedClip.keyframes?.[property]) return false;
+        const relativeFrame = currentTime - selectedClip.startFrame;
+        return selectedClip.keyframes[property].some(k => Math.abs(k.frame - relativeFrame) < 1); // Allow 1 frame tolerance
+    };
+
+    const KeyframeButton = ({ property, value }: { property: string, value: number }) => (
+        <button
+            onClick={() => handleAddKeyframe(property, value)}
+            className={`p-1 rounded hover:bg-gray-700 ${hasKeyframeAtCurrentTime(property) ? 'text-purple-400' : 'text-gray-500'}`}
+            title="Add/Update Keyframe"
+        >
+            <div className="w-2 h-2 transform rotate-45 border border-current bg-current" />
+        </button>
+    );
+
     return (
         <div className="w-80 border-l border-gray-800 bg-gray-900 p-4 overflow-y-auto">
             <h3 className="text-sm font-semibold text-gray-400 uppercase mb-4">Properties</h3>
@@ -64,7 +105,10 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                 <label className="text-xs font-bold text-gray-400 block mb-2">Transform</label>
                                 <div className="grid grid-cols-2 gap-2 mb-2">
                                     <div>
-                                        <label className="text-xs text-gray-500 block mb-1">Scale</label>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs text-gray-500">Scale</label>
+                                            <KeyframeButton property="scale" value={selectedClip.scale ?? 1} />
+                                        </div>
                                         <input
                                             type="number"
                                             step="0.1"
@@ -74,7 +118,10 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-500 block mb-1">Rotation</label>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs text-gray-500">Rotation</label>
+                                            <KeyframeButton property="rotation" value={selectedClip.rotation ?? 0} />
+                                        </div>
                                         <input
                                             type="number"
                                             className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
@@ -84,7 +131,10 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-500 block mb-1">Opacity</label>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="text-xs text-gray-500">Opacity</label>
+                                        <KeyframeButton property="opacity" value={selectedClip.opacity ?? 1} />
+                                    </div>
                                     <input
                                         type="range"
                                         min="0"
@@ -94,6 +144,32 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                         value={selectedClip.opacity ?? 1}
                                         onChange={(e) => updateClip(selectedClip.id, { opacity: parseFloat(e.target.value) })}
                                     />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs text-gray-500">X</label>
+                                            <KeyframeButton property="x" value={selectedClip.x ?? 0} />
+                                        </div>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                            value={selectedClip.x ?? 0}
+                                            onChange={(e) => updateClip(selectedClip.id, { x: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="text-xs text-gray-500">Y</label>
+                                            <KeyframeButton property="y" value={selectedClip.y ?? 0} />
+                                        </div>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                            value={selectedClip.y ?? 0}
+                                            onChange={(e) => updateClip(selectedClip.id, { y: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

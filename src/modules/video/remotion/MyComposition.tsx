@@ -61,6 +61,31 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
         clipPath = `inset(0 0 0 ${percentage}%)`;
     }
 
+    // --- Keyframe Interpolation ---
+    if (clip.keyframes) {
+        Object.entries(clip.keyframes).forEach(([property, keyframes]) => {
+            if (keyframes.length < 2) return;
+
+            const sortedKeyframes = [...keyframes].sort((a, b) => a.frame - b.frame);
+            const inputRange = sortedKeyframes.map(k => k.frame);
+            const outputRange = sortedKeyframes.map(k => k.value);
+
+            const value = interpolate(frame, inputRange, outputRange, {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+                easing: Easing.linear // Default to linear for now
+            });
+
+            switch (property) {
+                case 'opacity': opacity = value; break;
+                case 'scale': scale = value; break;
+                case 'rotation': rotation = value; break;
+                case 'x': translateX = value; break;
+                case 'y': translateY = value; break;
+            }
+        });
+    }
+
     // --- Filters ---
     let filter = '';
     if (clip.filter) {

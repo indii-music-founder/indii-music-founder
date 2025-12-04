@@ -1,6 +1,6 @@
 import { deploySite, getOrCreateBucket } from '@remotion/lambda';
 import path from 'path';
-import { RemotionLambdaConfig } from './remotion.lambda';
+import { RemotionLambdaConfig } from '../remotion.lambda';
 
 const deploy = async () => {
     const { region } = RemotionLambdaConfig;
