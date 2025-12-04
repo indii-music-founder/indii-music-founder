@@ -23,12 +23,13 @@ const createWindow = () => {
         width: 1280,
         height: 800,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false,
-            contextIsolation: true,
-            sandbox: false, // Try disabling sandbox
+            preload: path.join(__dirname, 'preload.mjs'),
+            nodeIntegration: true,
+            contextIsolation: false,
+            sandbox: false,
         },
     });
+    console.log('Main process: Preload path configured as:', path.join(__dirname, 'preload.mjs'));
 
     // In production, load the index.html.
     // In development, load the Vite dev server URL.
@@ -36,7 +37,7 @@ const createWindow = () => {
         mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
+        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
 };
 
