@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
-import { X, Download, Share2, Wand2, Brush, Eraser, Save, RotateCcw, Trash2, Play, Type, Square, Circle as CircleIcon, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
 import * as fabric from 'fabric';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { CanvasHeader } from './CanvasHeader';
+import { CanvasToolbar } from './CanvasToolbar';
+import { EndFrameSelector } from './EndFrameSelector';
 
 interface CreativeCanvasProps {
     item: HistoryItem | null;
@@ -311,105 +313,35 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                     onClick={e => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1a1a1a]">
-                        <div className="flex-1 mr-4 flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-white mb-1">
-                                {isEditing ? "Fabric.js Editor" : "Preview"}
-                            </h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {!isEditing ? (
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                    <Brush size={14} /> Edit in Canvas
-                                </button>
-                            ) : (
-                                <>
-                                    {isMagicFillMode && (
-                                        <div className="flex items-center gap-2 mr-4 bg-gray-800 p-1 rounded-lg">
-                                            <input
-                                                type="text"
-                                                value={magicFillPrompt}
-                                                onChange={(e) => setMagicFillPrompt(e.target.value)}
-                                                placeholder="Describe changes..."
-                                                className="bg-transparent border-none text-white text-sm px-2 focus:ring-0 outline-none w-48"
-                                            />
-                                            <button
-                                                onClick={handleMagicFill}
-                                                disabled={isProcessing}
-                                                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded flex items-center gap-1"
-                                            >
-                                                {isProcessing ? <Wand2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                                                Generate
-                                            </button>
-                                        </div>
-                                    )}
-                                    <button
-                                        onClick={saveCanvas}
-                                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                                    >
-                                        <Save size={14} /> Save / Export
-                                    </button>
-                                </>
-                            )}
-                            {!isEditing && item.type === 'image' && (
-                                <>
-                                    {endFrameItem ? (
-                                        <div className="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded-lg">
-                                            <img src={endFrameItem.url} alt="End Frame" className="w-6 h-6 rounded object-cover" />
-                                            <span className="text-xs text-gray-300">End Frame</span>
-                                            <button onClick={() => setEndFrameItem(null)} className="text-gray-400 hover:text-white">
-                                                <X size={12} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => setIsSelectingEndFrame(true)}
-                                            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                                        >
-                                            <ImageIcon size={14} /> Set End Frame
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => handleAnimate()}
-                                        className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                                    >
-                                        <Play size={14} /> Animate
-                                    </button>
-                                </>
-                            )}
-                            <button onClick={onClose} className="p-2 hover:bg-red-900/50 rounded-lg text-gray-400 hover:text-red-400 transition-colors">
-                                <X size={18} />
-                            </button>
-                        </div>
-                    </div>
+                    <CanvasHeader
+                        isEditing={isEditing}
+                        setIsEditing={setIsEditing}
+                        isMagicFillMode={isMagicFillMode}
+                        magicFillPrompt={magicFillPrompt}
+                        setMagicFillPrompt={setMagicFillPrompt}
+                        handleMagicFill={handleMagicFill}
+                        isProcessing={isProcessing}
+                        saveCanvas={saveCanvas}
+                        item={item}
+                        endFrameItem={endFrameItem}
+                        setEndFrameItem={setEndFrameItem}
+                        setIsSelectingEndFrame={setIsSelectingEndFrame}
+                        handleAnimate={handleAnimate}
+                        onClose={onClose}
+                    />
 
                     {/* Content */}
                     <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">
                         {isEditing ? (
                             <div className="flex h-full w-full">
                                 {/* Toolbar */}
-                                <div className="w-16 bg-[#1a1a1a] border-r border-gray-800 flex flex-col items-center py-4 gap-4">
-                                    <button onClick={addRectangle} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Add Rectangle">
-                                        <Square size={20} />
-                                    </button>
-                                    <button onClick={addCircle} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Add Circle">
-                                        <CircleIcon size={20} />
-                                    </button>
-                                    <button onClick={addText} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Add Text">
-                                        <Type size={20} />
-                                    </button>
-                                    <div className="w-8 h-px bg-gray-800 my-2" />
-                                    <button
-                                        onClick={toggleMagicFill}
-                                        className={`p-2 rounded transition-colors ${isMagicFillMode ? 'bg-purple-600 text-white' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`}
-                                        title="Magic Fill"
-                                    >
-                                        <Wand2 size={20} />
-                                    </button>
-                                </div>
+                                <CanvasToolbar
+                                    addRectangle={addRectangle}
+                                    addCircle={addCircle}
+                                    addText={addText}
+                                    toggleMagicFill={toggleMagicFill}
+                                    isMagicFillMode={isMagicFillMode}
+                                />
                                 {/* Canvas Area */}
                                 <div className="flex-1 flex items-center justify-center bg-gray-900 overflow-auto p-8">
                                     <canvas ref={canvasEl} />
@@ -424,38 +356,16 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                         )}
 
                         {/* End Frame Selection Overlay */}
-                        {isSelectingEndFrame && (
-                            <div className="absolute inset-0 bg-black/80 z-10 flex flex-col p-8">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-bold text-white">Select End Frame</h3>
-                                    <button onClick={() => setIsSelectingEndFrame(false)} className="text-gray-400 hover:text-white">
-                                        <X size={24} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-4 gap-4 overflow-y-auto">
-                                    {generatedHistory.filter(i => i.type === 'image' && i.id !== item.id).map(histItem => (
-                                        <button
-                                            key={histItem.id}
-                                            onClick={() => {
-                                                setEndFrameItem(histItem as any);
-                                                setIsSelectingEndFrame(false);
-                                            }}
-                                            className="relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-purple-500 transition-colors group"
-                                        >
-                                            <img src={histItem.url} alt={histItem.prompt} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <span className="text-white font-bold">Select</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                    {generatedHistory.filter(i => i.type === 'image' && i.id !== item.id).length === 0 && (
-                                        <div className="col-span-4 text-center text-gray-500 py-12">
-                                            No other images found in history.
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                        <EndFrameSelector
+                            isOpen={isSelectingEndFrame}
+                            onClose={() => setIsSelectingEndFrame(false)}
+                            generatedHistory={generatedHistory}
+                            currentItemId={item.id}
+                            onSelect={(histItem) => {
+                                setEndFrameItem(histItem as any);
+                                setIsSelectingEndFrame(false);
+                            }}
+                        />
                     </div>
                 </motion.div>
             </motion.div>

@@ -1,36 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Film, X } from 'lucide-react';
 import { useStore } from '../../core/store';
-import CreativeGallery from '../creative/components/CreativeGallery';
 import { useToast } from '../../core/context/ToastContext';
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
+import IdeaStep from './components/IdeaStep';
+import ReviewStep from './components/ReviewStep';
+import FrameSelectionModal from './components/FrameSelectionModal';
+import { VideoEditor } from './editor/VideoEditor';
+
+type WorkflowStep = 'idea' | 'review' | 'generating' | 'result' | 'editor';
 
 export default function VideoWorkflow() {
-    const { generatedHistory, selectedItem, uploadedImages, pendingPrompt, setPendingPrompt, addToHistory, setPrompt, studioControls, videoInputs } = useStore();
+    const { generatedHistory, selectedItem, pendingPrompt, setPendingPrompt, addToHistory, setPrompt, studioControls, videoInputs, setVideoInput } = useStore();
     const toast = useToast();
+    const [step, setStep] = useState<WorkflowStep>('idea');
+    const [localPrompt, setLocalPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalTarget, setModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     // Find the most recent video or the selected item if it's a video
     const activeVideo = selectedItem?.type === 'video' ? selectedItem : generatedHistory.find(item => item.type === 'video');
 
     useEffect(() => {
         if (pendingPrompt) {
+            setLocalPrompt(pendingPrompt);
             setPrompt(pendingPrompt); // Sync to global prompt state
-            handleGenerate(pendingPrompt);
+            setStep('review'); // Skip to review if prompt is provided via command bar
             setPendingPrompt(null);
         }
-    }, [pendingPrompt]);
+    }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
-    const handleGenerate = async (promptText: string) => {
+    const handleGenerate = async () => {
         setIsGenerating(true);
+        setStep('generating');
         toast.info('Directing scene...');
         try {
             // Use the client-side VideoGeneration service to respect studio controls
             const { VideoGeneration } = await import('@/services/image/VideoGenerationService');
 
             const results = await VideoGeneration.generateVideo({
-                prompt: promptText,
+                prompt: localPrompt,
                 resolution: studioControls.resolution,
                 aspectRatio: studioControls.aspectRatio,
                 negativePrompt: studioControls.negativePrompt,
@@ -50,9 +59,7 @@ export default function VideoWorkflow() {
 
                 // If it's a storyboard preview (image), set type to image
                 if (newAsset.url.startsWith('data:image') || !newAsset.url.endsWith('.mp4')) {
-                    // Check if it's actually an image data URI or just a non-mp4 URL
                     if (newAsset.url.startsWith('data:image')) {
-                        // It's an image (storyboard)
                         // @ts-ignore
                         newAsset.type = 'image';
                     }
@@ -60,6 +67,7 @@ export default function VideoWorkflow() {
 
                 addToHistory(newAsset);
                 toast.success('Scene generated!');
+                setStep('result');
             } else {
                 throw new Error('No video generated');
             }
@@ -67,13 +75,57 @@ export default function VideoWorkflow() {
         } catch (error: any) {
             console.error("Video generation failed:", error);
             toast.error(`Generation failed: ${error.message}`);
+            setStep('review'); // Go back to review on failure
         } finally {
             setIsGenerating(false);
         }
     };
 
+    const handleDesignFrame = (type: 'start' | 'end') => {
+        setModalTarget(type === 'start' ? 'firstFrame' : 'lastFrame');
+        setIsModalOpen(true);
+    };
+
+    const handleClearFrame = (type: 'start' | 'end') => {
+        if (type === 'start') {
+            setVideoInput('firstFrame', null);
+        } else {
+            setVideoInput('lastFrame', null);
+        }
+    };
+
     const renderStage = () => {
-        if (isGenerating) {
+        if (step === 'idea') {
+            return (
+                <div className="max-w-2xl mx-auto pt-20">
+                    <IdeaStep
+                        initialPrompt={localPrompt}
+                        onPromptChange={setLocalPrompt}
+                        onNext={() => setStep('review')}
+                        isThinking={false}
+                    />
+                </div>
+            );
+        }
+
+        if (step === 'review') {
+            return (
+                <div className="max-w-4xl mx-auto pt-10">
+                    <ReviewStep
+                        finalPrompt={localPrompt}
+                        onBack={() => setStep('idea')}
+                        onGenerate={handleGenerate}
+                        isGenerating={isGenerating}
+                        startFrameData={videoInputs.firstFrame?.url || null}
+                        endFrameData={videoInputs.lastFrame?.url || null}
+                        onDesignFrame={handleDesignFrame}
+                        onClearFrame={handleClearFrame}
+                    />
+                </div>
+            );
+        }
+
+        if (step === 'generating') {
             return (
                 <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-pulse">
                     <div className="w-24 h-24 bg-neon-purple/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(176,38,255,0.3)]">
@@ -87,7 +139,7 @@ export default function VideoWorkflow() {
             );
         }
 
-        if (activeVideo) {
+        if (step === 'result' && activeVideo) {
             return (
                 <div className="flex flex-col items-center justify-center h-full p-8">
                     <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800 relative group">
@@ -108,22 +160,54 @@ export default function VideoWorkflow() {
                             />
                         )}
                     </div>
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-400 text-sm max-w-2xl mx-auto italic">"{activeVideo.prompt}"</p>
+                    <div className="mt-6 text-center flex gap-4 justify-center">
+                        <button
+                            onClick={() => setStep('idea')}
+                            className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                        >
+                            New Scene
+                        </button>
+                        <button
+                            onClick={() => setStep('review')}
+                            className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
+                        >
+                            Remix / Edit
+                        </button>
+                        <button
+                            onClick={() => setStep('editor')}
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <Film size={16} />
+                            Open in Studio
+                        </button>
                     </div>
                 </div>
             );
         }
 
+        if (step === 'editor') {
+            return <VideoEditor initialVideo={activeVideo} />;
+        }
+
+        // Fallback for result state if no active video
         return (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
                 <div className="w-24 h-24 bg-gray-800/50 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-purple-900/10">
                     <Film size={48} className="text-gray-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Ready to Direct</h2>
-                <p className="text-gray-500 max-w-md">
-                    Enter a prompt in the command bar (Cmd+K) to generate a video.
-                </p>
+                <button
+                    onClick={() => setStep('idea')}
+                    className="mt-4 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold transition-all"
+                >
+                    Start New Project
+                </button>
+                <button
+                    onClick={() => setStep('editor')}
+                    className="mt-4 ml-4 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold transition-all"
+                >
+                    Open Studio Editor
+                </button>
             </div>
         );
     };
@@ -136,6 +220,13 @@ export default function VideoWorkflow() {
                     {renderStage()}
                 </div>
             </div>
+
+            <FrameSelectionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSelect={(image) => setVideoInput(modalTarget, image)}
+                target={modalTarget}
+            />
         </div>
     );
 }

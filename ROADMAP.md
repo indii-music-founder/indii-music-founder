@@ -22,6 +22,7 @@ This document tracks the implementation of technical improvements and architectu
 
 - [x] **Tool Validation**: Implement strict schema validation for Agent tool outputs.
 - [x] **Multi-Agent Architecture**: Implement Hub-and-Spoke model with specialized agents.
+- [x] **Specialist Agents**: Added Road Manager, Brand Manager, and Legal Advisor.
 - [ ] **Semantic Memory**: Implement Long-Term Memory retrieval for Agent Zero.
 
 ## Phase 5: UI Polish
@@ -33,3 +34,10 @@ This document tracks the implementation of technical improvements and architectu
 
 - [ ] **Stress Testing**: Execute the [Stress Test Plan](./STRESS_TEST_PLAN.md).
 - [x] **E2E Testing**: Implement Playwright flows for critical paths.
+- [x] **Backend Migration**: Migrated Image Generation and heavy tasks to Firebase Functions.
+
+## Phase 7: New Capabilities
+
+- [x] **Road Manager**: Logistics and itinerary planning.
+- [x] **Brand Manager**: Brand consistency and asset generation.
+- [ ] **Voice Control**: Audio-in prompts.

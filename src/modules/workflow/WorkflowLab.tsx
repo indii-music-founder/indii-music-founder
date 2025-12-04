@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import WorkflowEditor from './components/WorkflowEditor';
 import NodePanel from './components/NodePanel';
 import WorkflowNodeInspector from './components/WorkflowNodeInspector';
+import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
+import WorkflowTemplateModal from './components/WorkflowTemplateModal';
+import WorkflowLoadModal from './components/WorkflowLoadModal';
 import { useStore } from '../../core/store';
 import { Play, Loader2, GitBranch, Sparkles, LayoutTemplate, X, ArrowRight, Save, FolderOpen } from 'lucide-react';
 import { WorkflowEngine } from './services/WorkflowEngine';
@@ -252,115 +255,30 @@ export default function WorkflowLab() {
 
             {/* Generator Modal */}
             {showGenerator && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-                        <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Sparkles className="text-purple-500" /> AI Workflow Architect
-                        </h2>
-                        <p className="text-gray-400 mb-4 text-sm">
-                            Describe what you want to build (e.g., "Take a song, analyze it, generate a music video, and create a marketing campaign").
-                        </p>
-                        <textarea
-                            value={generatorPrompt}
-                            onChange={(e) => setGeneratorPrompt(e.target.value)}
-                            placeholder="Describe your workflow..."
-                            className="w-full h-32 bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 text-white focus:border-purple-500 outline-none resize-none mb-4"
-                            autoFocus
-                        />
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowGenerator(false)}
-                                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleGenerateWorkflow}
-                                disabled={isGenerating || !generatorPrompt.trim()}
-                                className="flex-1 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={16} />}
-                                {isGenerating ? 'Designing...' : 'Generate Workflow'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <WorkflowGeneratorModal
+                    onClose={() => setShowGenerator(false)}
+                    onGenerate={(prompt) => {
+                        setGeneratorPrompt(prompt);
+                        return handleGenerateWorkflow();
+                    }}
+                />
             )}
 
             {/* Templates Modal */}
             {showTemplates && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 w-full max-w-4xl shadow-2xl max-h-[80vh] flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                <LayoutTemplate className="text-blue-500" /> Workflow Templates
-                            </h2>
-                            <button onClick={() => setShowTemplates(false)} className="text-gray-400 hover:text-white">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto p-1">
-                            {WORKFLOW_TEMPLATES.map((template) => (
-                                <button
-                                    key={template.id}
-                                    onClick={() => handleLoadTemplate(template.id)}
-                                    className="flex flex-col text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-blue-500/50 rounded-xl transition-all group"
-                                >
-                                    <h3 className="font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                                        {template.name}
-                                    </h3>
-                                    <p className="text-sm text-gray-400 mb-4 line-clamp-2">
-                                        {template.description}
-                                    </p>
-                                    <div className="mt-auto flex items-center text-xs text-blue-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Load Template <ArrowRight size={12} className="ml-1" />
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                <WorkflowTemplateModal
+                    onClose={() => setShowTemplates(false)}
+                    onLoadTemplate={handleLoadTemplate}
+                />
             )}
 
             {/* Load Saved Workflows Modal */}
             {showLoadModal && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[80vh] flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                <FolderOpen className="text-blue-500" /> Saved Workflows
-                            </h2>
-                            <button onClick={() => setShowLoadModal(false)} className="text-gray-400 hover:text-white">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-2 overflow-y-auto p-1">
-                            {savedWorkflows.length === 0 ? (
-                                <p className="text-gray-500 text-center py-8">No saved workflows found.</p>
-                            ) : (
-                                savedWorkflows.map((workflow) => (
-                                    <button
-                                        key={workflow.id}
-                                        onClick={() => handleLoadSavedWorkflow(workflow)}
-                                        className="w-full flex items-center justify-between p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-blue-500/50 rounded-xl transition-all group"
-                                    >
-                                        <div className="text-left">
-                                            <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors">
-                                                {workflow.name}
-                                            </h3>
-                                            <p className="text-xs text-gray-500">
-                                                Last updated: {new Date(workflow.createdAt).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        <ArrowRight size={16} className="text-gray-500 group-hover:text-blue-500 transition-colors" />
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
+                <WorkflowLoadModal
+                    onClose={() => setShowLoadModal(false)}
+                    onLoadWorkflow={handleLoadSavedWorkflow}
+                    savedWorkflows={savedWorkflows}
+                />
             )}
         </div>
     );

@@ -11,6 +11,14 @@ indiiOS is a comprehensive, multi-tenant creative platform powered by a multi-ag
 - **Landing Page:** [https://indiios-v-1-1.web.app](https://indiios-v-1-1.web.app)
 - **Studio App:** [https://indiios-studio.web.app](https://indiios-studio.web.app)
 
+## 📚 Documentation
+
+- [Features](./features.md) - Detailed breakdown of current capabilities.
+- [Roadmap](./ROADMAP.md) - Future plans and technical improvements.
+- [Agent System Architecture](./docs/AGENT_SYSTEM_ARCHITECTURE.md) - Deep dive into the "Hub-and-Spoke" AI model.
+- [Backend Architecture](./docs/BACKEND_ARCHITECTURE.md) - Cloud Functions and Vertex AI integration.
+- [UI State & Branding](./docs/UI_STATE.md) - Design system and branding guidelines.
+
 ## ✨ Key Features
 
 ### 🏢 Multi-Tenancy & Collaboration
@@ -25,6 +33,8 @@ indiiOS is a comprehensive, multi-tenant creative platform powered by a multi-ag
 - **Specialist Agents:**
   - **LegalAgent:** Contract review, rights management, and compliance.
   - **MarketingAgent:** Campaign strategy, copywriting, and brand alignment.
+  - **BrandAgent:** Brand consistency analysis and asset generation.
+  - **RoadManager:** Tour logistics, fuel calculations, and itinerary planning.
   - **MusicAgent:** Audio synthesis theory and composition.
 - **Context Awareness:** Agents are aware of your current Organization, Project, and Brand Kit.
 

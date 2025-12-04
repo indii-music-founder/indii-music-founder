@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image } from 'lucide-react';
+import { useToast } from '@/core/context/ToastContext';
 import { Orchestrator } from '@/services/agent/OrchestratorService';
 import { useStore } from '@/core/store';
 
@@ -7,6 +8,8 @@ export default function CommandBar() {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [status, setStatus] = useState('');
+
+    const toast = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,6 +21,7 @@ export default function CommandBar() {
         try {
             const target = await Orchestrator.executeRouting(input);
             setStatus(`Routing to ${target.toUpperCase()}...`);
+            toast.success(`Routed to ${target.toUpperCase()}`);
 
             setTimeout(() => {
                 setInput('');
@@ -25,7 +29,9 @@ export default function CommandBar() {
                 setIsProcessing(false);
             }, 1000);
         } catch (error) {
+            console.error("CommandBar routing error:", error);
             setStatus('Routing failed.');
+            toast.error("Failed to route command. Please try again.");
             setIsProcessing(false);
         }
     };

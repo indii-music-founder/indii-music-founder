@@ -7,9 +7,9 @@ import { Editing } from '@/services/image/EditingService'; // For completeness
 import { auth } from '@/services/firebase';
 import { MonitorPlay, Sparkles, Loader2, ChevronDown, ChevronUp, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
-import PromptTools from './PromptTools';
-import PromptLibrary from './PromptLibrary';
 import StudioNavControls from './StudioNavControls';
+import ImageSubMenu from './ImageSubMenu';
+import DaisyChainControls from './DaisyChainControls';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -242,179 +242,56 @@ export default function CreativeNavbar() {
 
             {/* Sub-Menu Bar */}
             <div className="bg-[#111] border-b border-gray-800 py-1 px-4">
-                <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
-                    {generationMode === 'image' ? (
-                        <>
+                {generationMode === 'image' ? (
+                    <ImageSubMenu
+                        onShowBrandAssets={() => setShowBrandAssets(!showBrandAssets)}
+                        showBrandAssets={showBrandAssets}
+                    />
+                ) : (
+                    <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
+                        <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Video</button>
+
+                        <DaisyChainControls
+                            onOpenFrameModal={(target) => {
+                                setFrameModalTarget(target);
+                                setShowFrameModal(true);
+                            }}
+                        />
+
+                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Motion Brush</button>
+                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Director's Cut</button>
+
+                        {/* Brand Palette Section */}
+                        <div className="h-4 w-px bg-gray-700 mx-2 flex-shrink-0"></div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
                             <button
-                                onClick={() => setViewMode('gallery')}
-                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                                onClick={() => setShowBrandAssets(!showBrandAssets)}
+                                className={`text-[10px] uppercase font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${showBrandAssets ? 'bg-yellow-900/30 text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
                             >
-                                Gallery
+                                <Sparkles size={10} className={showBrandAssets ? "text-yellow-500" : "text-gray-500"} /> Brand
                             </button>
-                            <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Image</button>
-                            <button
-                                onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0])}
-                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (generatedHistory.length > 0) {
-                                        setActiveReferenceImage(generatedHistory[0]);
-                                        toast.success("Latest image set as reference");
-                                    }
-                                }}
-                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
-                            >
-                                Reference
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (generatedHistory.length > 0) {
-                                        setPrompt(generatedHistory[0].prompt);
-                                        toast.success("Prompt copied from latest image");
-                                    }
-                                }}
-                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
-                            >
-                                Remix
-                            </button>
-                            <button
-                                onClick={() => setViewMode('showroom')}
-                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
-                            >
-                                Showroom
-                            </button>
-                            <button
-                                onClick={() => setViewMode('canvas')}
-                                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
-                            >
-                                Canvas
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Video</button>
-
-                            {/* Daisy Chain Controls */}
-                            <div className="flex items-center gap-2 border-l border-r border-gray-800 px-3 mx-2">
-                                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Composition</span>
-
-                                {/* First Frame Slot */}
-                                <div className="flex items-center gap-2">
-                                    <div
-                                        onClick={() => {
-                                            setFrameModalTarget('firstFrame');
-                                            setShowFrameModal(true);
-                                        }}
-                                        className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.firstFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
-                                    >
-                                        {videoInputs.firstFrame ? (
-                                            <>
-                                                <img src={videoInputs.firstFrame.url} className="w-full h-full object-cover" alt="First Frame" />
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', null); }}
-                                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <span className="text-white text-xs">×</span>
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <span className="text-[9px] text-gray-600 text-center leading-none select-none">First<br />Frame</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Link Icon */}
-                                <div className={`h-px w-4 ${videoInputs.isDaisyChain ? 'bg-purple-500' : 'bg-gray-700'}`}></div>
-
-                                {/* Last Frame Slot */}
-                                <div className="flex items-center gap-2">
-                                    <div
-                                        onClick={() => {
-                                            setFrameModalTarget('lastFrame');
-                                            setShowFrameModal(true);
-                                        }}
-                                        className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.lastFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
-                                    >
-                                        {videoInputs.lastFrame ? (
-                                            <>
-                                                <img src={videoInputs.lastFrame.url} className="w-full h-full object-cover" alt="Last Frame" />
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', null); }}
-                                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <span className="text-white text-xs">×</span>
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <span className="text-[9px] text-gray-600 text-center leading-none select-none">Last<br />Frame</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Daisy Chain Toggle */}
-                                <button
-                                    onClick={() => setVideoInput('isDaisyChain', !videoInputs.isDaisyChain)}
-                                    className={`ml-2 text-[10px] px-2 py-0.5 rounded border transition-colors ${videoInputs.isDaisyChain ? 'bg-purple-900/30 border-purple-500 text-purple-300' : 'bg-transparent border-gray-700 text-gray-500 hover:text-gray-300'}`}
-                                >
-                                    Daisy Chain
-                                </button>
-
-                                {/* Time Offset Slider */}
-                                <div className="flex items-center gap-2 ml-4 border-l border-gray-800 pl-4">
-                                    <span className="text-[9px] text-gray-500 uppercase font-bold">Time</span>
-                                    <input
-                                        type="range"
-                                        min="-8"
-                                        max="8"
-                                        step="1"
-                                        value={videoInputs.timeOffset}
-                                        onChange={(e) => setVideoInput('timeOffset', parseInt(e.target.value))}
-                                        className="w-20 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                    />
-                                    <span className={`text-[10px] font-mono w-8 text-right ${videoInputs.timeOffset > 0 ? 'text-green-400' : videoInputs.timeOffset < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                                        {videoInputs.timeOffset > 0 ? '+' : ''}{videoInputs.timeOffset}s
-                                    </span>
-                                </div>
-                            </div>
-
-                            <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Motion Brush</button>
-                            <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Director's Cut</button>
-                        </>
-                    )}
-
-                    {/* Brand Palette Section */}
-                    <div className="h-4 w-px bg-gray-700 mx-2 flex-shrink-0"></div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                            onClick={() => setShowBrandAssets(!showBrandAssets)}
-                            className={`text-[10px] uppercase font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${showBrandAssets ? 'bg-yellow-900/30 text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Sparkles size={10} className={showBrandAssets ? "text-yellow-500" : "text-gray-500"} /> Brand
-                        </button>
-                        {useStore.getState().userProfile.brandKit?.colors?.length > 0 && !showBrandAssets && (
-                            <div className="flex gap-1">
-                                {useStore.getState().userProfile.brandKit.colors.map((color, i) => (
-                                    <div
-                                        key={i}
-                                        className="w-4 h-4 rounded-full border border-gray-600 cursor-pointer hover:scale-110 transition-transform relative group"
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(color);
-                                            toast.success(`Copied ${color}`);
-                                        }}
-                                    >
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                                            {color}
+                            {useStore.getState().userProfile.brandKit?.colors?.length > 0 && !showBrandAssets && (
+                                <div className="flex gap-1">
+                                    {useStore.getState().userProfile.brandKit.colors.map((color, i) => (
+                                        <div
+                                            key={i}
+                                            className="w-4 h-4 rounded-full border border-gray-600 cursor-pointer hover:scale-110 transition-transform relative group"
+                                            style={{ backgroundColor: color }}
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(color);
+                                                toast.success(`Copied ${color}`);
+                                            }}
+                                        >
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                                                {color}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Mobile Controls Drawer */}

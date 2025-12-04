@@ -5,6 +5,8 @@ import { X, Minimize2, Trash2, Send, Paperclip, Camera, Upload } from 'lucide-re
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from '@/components/ui/prompt-input';
+import { TextEffect } from '@/components/motion-primitives/text-effect';
 
 interface AgentWindowProps {
     agent?: { sendMessage: (text: string) => void };
@@ -154,7 +156,9 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                 <div ref={scrollRef} className="flex-1 p-3 overflow-y-auto space-y-3 custom-scrollbar bg-[#0f0f0f]">
                     {agentHistory.length === 0 && (
                         <div className="text-center text-xs text-gray-600 italic mt-4">
-                            I am {windowTitle}. How can I help you?
+                            <TextEffect per='char' preset='fade'>
+                                {`I am ${windowTitle}. How can I help you?`}
+                            </TextEffect>
                         </div>
                     )}
                     {agentHistory.map((msg) => (
@@ -272,7 +276,9 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                             <div ref={scrollRef} className="flex-1 p-3 overflow-y-auto space-y-3 custom-scrollbar bg-[#0f0f0f]" onPointerDownCapture={e => e.stopPropagation()}>
                                 {agentHistory.length === 0 && (
                                     <div className="text-center text-xs text-gray-600 italic mt-4">
-                                        I am {windowTitle}. How can I help you?
+                                        <TextEffect per='char' preset='fade'>
+                                            {`I am ${windowTitle}. How can I help you?`}
+                                        </TextEffect>
                                     </div>
                                 )}
                                 {agentHistory.map((msg) => (
@@ -325,29 +331,47 @@ export default function AgentWindow({ agent, title, className }: AgentWindowProp
                                         multiple
                                         onChange={handleFileSelect}
                                     />
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"
-                                        title="Attach file"
-                                    >
-                                        <Paperclip size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="p-2 bg-gray-800 text-gray-400 rounded hover:text-white"
-                                        title="Take photo"
-                                    >
-                                        <Camera size={14} />
-                                    </button>
-                                    <input
-                                        type="text"
-                                        className="flex-1 bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none"
-                                        placeholder="Command the agent..."
+                                    <PromptInput
                                         value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                    />
-                                    <button onClick={handleSend} className="p-2 bg-purple-600 hover:bg-purple-500 text-white rounded"><Send size={14} /></button>
+                                        onValueChange={setInput}
+                                        onSubmit={handleSend}
+                                        className="bg-[#0f0f0f] border-gray-700 text-white"
+                                    >
+                                        <PromptInputTextarea
+                                            placeholder="Command the agent..."
+                                            className="text-white placeholder:text-gray-500 min-h-[40px]"
+                                        />
+                                        <PromptInputActions className="justify-between p-2 pt-0">
+                                            <div className="flex gap-2">
+                                                <PromptInputAction
+                                                    tooltip="Attach file"
+                                                >
+                                                    <button
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="p-2 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white transition-colors"
+                                                    >
+                                                        <Paperclip size={16} />
+                                                    </button>
+                                                </PromptInputAction>
+                                                <PromptInputAction
+                                                    tooltip="Take photo"
+                                                >
+                                                    <button
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="p-2 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white transition-colors"
+                                                    >
+                                                        <Camera size={16} />
+                                                    </button>
+                                                </PromptInputAction>
+                                            </div>
+                                            <button
+                                                onClick={handleSend}
+                                                className="p-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-md transition-colors"
+                                            >
+                                                <Send size={16} />
+                                            </button>
+                                        </PromptInputActions>
+                                    </PromptInput>
                                 </div>
 
                                 {/* Resize Handle */}

@@ -9,7 +9,7 @@ export interface Project {
 }
 
 export interface AppSlice {
-    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social';
+    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing';
     currentProjectId: string;
     projects: Project[];
     setModule: (module: AppSlice['currentModule']) => void;
@@ -21,6 +21,10 @@ export interface AppSlice {
     setPendingPrompt: (prompt: string | null) => void;
     apiKeyError: boolean;
     setApiKeyError: (error: boolean) => void;
+    isSidebarOpen: boolean;
+    isRightPanelOpen: boolean;
+    toggleSidebar: () => void;
+    toggleRightPanel: () => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -53,4 +57,8 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
     apiKeyError: false,
     setApiKeyError: (error) => set({ apiKeyError: error }),
+    isSidebarOpen: true,
+    isRightPanelOpen: true,
+    toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+    toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
 });

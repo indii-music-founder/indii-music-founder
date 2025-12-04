@@ -7,12 +7,13 @@ import ReactFlow, {
     applyNodeChanges,
     applyEdgeChanges,
     Connection,
-    Edge
+    Edge,
+    Node
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useStore } from '../../../core/store';
 import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from './CustomNodes';
-import { Status } from '../types';
+import { createNodeFromDrop } from '../utils/dndUtils';
 
 const nodeTypes = {
     departmentNode: DepartmentNode,
@@ -44,9 +45,49 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
 
     // --- STRICT CONNECTION VALIDATION ---
     const isValidConnection = useCallback((connection: Connection) => {
-        // Mock validation for now
-        return true;
-    }, []);
+        const sourceNode = nodes.find((n) => n.id === connection.source);
+        const targetNode = nodes.find((n) => n.id === connection.target);
+
+        if (!sourceNode || !targetNode) return false;
+
+        const sourceType = sourceNode.type;
+        const targetType = targetNode.type;
+
+        // 1. Input Node can only connect to Department or Logic nodes
+        if (sourceType === 'inputNode') {
+            return targetType === 'departmentNode' || targetType === 'logicNode';
+        }
+
+        // 2. Audio Segment Node can only connect to Department nodes (e.g., Music, Video)
+        if (sourceType === 'audioSegmentNode') {
+            return targetType === 'departmentNode';
+        }
+
+        // 3. Department Node can connect to Department, Logic, or Output nodes
+        if (sourceType === 'departmentNode') {
+            return (
+                targetType === 'departmentNode' ||
+                targetType === 'logicNode' ||
+                targetType === 'outputNode'
+            );
+        }
+
+        // 4. Logic Node can connect to Department, Logic, or Output nodes
+        if (sourceType === 'logicNode') {
+            return (
+                targetType === 'departmentNode' ||
+                targetType === 'logicNode' ||
+                targetType === 'outputNode'
+            );
+        }
+
+        // 5. Output Node cannot be a source
+        if (sourceType === 'outputNode') {
+            return false;
+        }
+
+        return false;
+    }, [nodes]);
 
     const onConnect = useCallback((params: Connection | Edge) => {
         if (readOnly) return;
@@ -71,90 +112,7 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
             y: event.clientY - reactFlowBounds.top,
         });
 
-        const nodeType = event.dataTransfer.getData('application/reactflow');
-
-        if (nodeType === 'departmentNode') {
-            const departmentName = event.dataTransfer.getData('application/departmentName');
-            const newNode: any = {
-                id: `${departmentName.replace(/\s+/g, '')}-${+new Date()}`,
-                type: 'departmentNode',
-                position,
-                data: {
-                    nodeType: 'department',
-                    departmentName: departmentName,
-                    status: Status.PENDING
-                },
-            };
-            addNode(newNode);
-            return;
-        }
-
-        if (nodeType === 'logicNode') {
-            const departmentName = event.dataTransfer.getData('application/departmentName'); // 'Logic'
-            const jobId = event.dataTransfer.getData('application/jobId');
-            const newNode: any = {
-                id: `logic-${jobId}-${+new Date()}`,
-                type: 'logicNode',
-                position,
-                data: {
-                    nodeType: 'logic',
-                    departmentName: departmentName, // Used by UniversalNode to look up registry
-                    selectedJobId: jobId,
-                    label: jobId === 'router' ? 'Router' : 'Gatekeeper',
-                    status: Status.PENDING,
-                    config: {}
-                },
-            };
-            addNode(newNode);
-            return;
-        }
-
-        if (nodeType === 'inputNode') {
-            const newNode: any = {
-                id: `input-${+new Date()}`,
-                type: 'inputNode',
-                position,
-                data: {
-                    nodeType: 'input',
-                    prompt: 'Enter your prompt here...',
-                    status: Status.PENDING
-                },
-            };
-            addNode(newNode);
-            return;
-        }
-
-        if (nodeType === 'outputNode') {
-            const newNode: any = {
-                id: `output-${+new Date()}`,
-                type: 'outputNode',
-                position,
-                data: {
-                    nodeType: 'output',
-                    status: Status.PENDING
-                },
-            };
-            addNode(newNode);
-            return;
-        }
-
-        const audioSegmentData = event.dataTransfer.getData('application/audiosegment');
-        if (audioSegmentData) {
-            const { label, start, end } = JSON.parse(audioSegmentData);
-            const newNode: any = {
-                id: `audio-segment-${+new Date()}`,
-                type: 'audioSegmentNode',
-                position,
-                data: {
-                    nodeType: 'audioSegment',
-                    segmentLabel: label,
-                    startTime: start,
-                    endTime: end,
-                },
-            };
-            addNode(newNode);
-            return;
-        }
+        createNodeFromDrop(event, position, addNode);
 
     }, [reactFlowInstance, addNode, readOnly]);
 

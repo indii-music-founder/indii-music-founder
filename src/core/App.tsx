@@ -15,6 +15,12 @@ const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
 const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
 const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
+const BrandManager = lazy(() => import('../modules/marketing/components/BrandManager'));
+const CampaignDashboard = lazy(() => import('../modules/marketing/components/CampaignDashboard'));
+const PublicistDashboard = lazy(() => import('../modules/publicist/PublicistDashboard'));
+const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingDashboard'));
+const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
+const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDashboard'));
 
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
@@ -69,6 +75,12 @@ export default function App() {
                                 {currentModule === 'knowledge' && <KnowledgeBase />}
                                 {currentModule === 'road' && <RoadManager />}
                                 {currentModule === 'social' && <SocialDashboard />}
+                                {currentModule === 'brand' && <BrandManager />}
+                                {currentModule === 'campaign' && <CampaignManager />}
+                                {currentModule === 'publicist' && <PublicistDashboard />}
+                                {currentModule === 'publishing' && <PublishingDashboard />}
+                                {currentModule === 'finance' && <FinanceDashboard />}
+                                {currentModule === 'licensing' && <LicensingDashboard />}
                             </Suspense>
                         </div>
 

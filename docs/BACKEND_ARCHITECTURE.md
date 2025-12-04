@@ -1,22 +1,23 @@
 # Backend Architecture & Vertex AI Strategy
 
-**Last Updated:** 2025-12-01
+**Last Updated:** 2025-12-03
 **Status:** Production Ready
 
 ## 1. Current Architecture
 
-The system currently uses a hybrid approach:
+The system uses a hybrid approach, with a strategic shift towards backend processing for heavy AI tasks:
 
 * **Frontend (Client-Side)**:
-  * **Text/Chat**: Uses `GoogleGenerativeAI` SDK (Gemini API) directly from the browser.
-  * **Image Generation**: Uses `GoogleGenerativeAI` SDK (Gemini API) directly from the browser.
+  * **Text/Chat**: Uses `GoogleGenerativeAI` SDK (Gemini API) directly from the browser for low-latency interactions.
+  * **Lightweight Image Ops**: Some remix/style extraction tasks still run client-side (transitioning).
 * **Backend (Firebase Functions)**:
   * **Video Generation**: Uses `Vertex AI API` via Google Cloud REST endpoint.
-  * **Creative Director Agent**: Uses `@mastra/core` wrapping `Vertex AI` (via AI SDK).
+  * **Image Generation**: Migrated to `generateImage` Cloud Function using Vertex AI.
+  * **Agent Execution**: Specialized agents (Creative Director, Road Manager, Brand Manager) run on server-side functions.
 
 ## 2. Strategic Decision: Image Generation Migration
 
-**Decision:** **MIGRATE IMAGE GENERATION TO BACKEND (VERTEX AI).**
+**Decision:** **MIGRATE IMAGE GENERATION TO BACKEND (VERTEX AI).** (Completed)
 
 ### Rationale: The "1 Million User" Scale
 
@@ -37,23 +38,22 @@ When scaling from 1 user to 1,000 or 1,000,000 users, client-side generation fai
 4. **Observability:**
     * *Backend:* We can log every generation request, success rate, and latency to BigQuery for analytics.
 
-### Implementation Plan
+### Implementation Status
 
-1. **Create Cloud Function:** `generateImage` in `functions/src/index.ts`.
-2. **Logic:**
-    * Auth Check (Firebase Auth).
-    * Quota Check (Firestore).
-    * Call Vertex AI (`gemini-3-pro-image-preview`).
-    * Log Result.
-3. **Client Update:** Update `ImageService.ts` to call this function.
+* **Cloud Function:** `generateImage` in `functions/src/index.ts` is live.
+* **Logic:** Auth Check -> Vertex AI Call -> Response.
+* **Client:** `ImageGenerationService.ts` uses `httpsCallable` for generation.
 
 ## 3. Backend Service Map
 
 | Service | Function Name | Trigger | Model | Scaling Strategy |
 | :--- | :--- | :--- | :--- | :--- |
 | **Video** | `generateVideo` | HTTPS | `veo-3.1-generate-preview` | Async Queue (Long running) |
-| **Image** | `generateImage` | HTTPS | `gemini-3-pro-image-preview` | **Migrate to Backend** |
-| **Agent** | `creativeDirectorAgent` | HTTPS | `gemini-3-pro-preview` | Stateless / Auto-scaling |
+| **Image** | `generateImage` | Callable | `gemini-3-pro-image-preview` | Stateless / Auto-scaling |
+| **Director** | `creativeDirectorAgent` | HTTPS | `gemini-3-pro-preview` | Stateless |
+| **Brand** | `analyzeBrand`, `generateBrandAsset` | Callable | `gemini-3-pro-preview` | Stateless |
+| **Road** | `generateItinerary`, `checkLogistics` | Callable | `gemini-3-pro-preview` | Stateless |
+| **Campaign** | `executeCampaign` | Callable | `gemini-3-pro-preview` | Stateless |
 
 ## 4. Code Standards
 

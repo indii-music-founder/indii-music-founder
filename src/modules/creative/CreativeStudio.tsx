@@ -8,10 +8,11 @@ import VideoWorkflow from '../video/VideoWorkflow';
 import { LayoutGrid, Maximize2, Store, Film } from 'lucide-react';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
     const { viewMode, setViewMode, selectedItem, setSelectedItem, generationMode, setGenerationMode, pendingPrompt, setPendingPrompt, setPrompt, studioControls, addToHistory, currentProjectId } = useStore();
-    const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
+    // const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
     const toast = useToast();
 
     useEffect(() => {

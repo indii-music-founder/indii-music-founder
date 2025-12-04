@@ -4,6 +4,7 @@ import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Cam
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
+import NewProjectModal from './components/NewProjectModal';
 import { auth } from '@/services/firebase';
 
 
@@ -24,13 +25,13 @@ export default function Dashboard() {
     const [newProjectType, setNewProjectType] = React.useState<'creative' | 'music' | 'marketing' | 'legal'>('creative');
     const [error, setError] = React.useState<string | null>(null);
 
-    const handleCreateProject = async () => {
-        if (!newProjectName.trim()) return;
+    const handleCreateProject = async (name: string, type: 'creative' | 'music' | 'marketing' | 'legal') => {
+        if (!name.trim()) return;
         setError(null);
 
         try {
             const { createNewProject } = useStore.getState();
-            await createNewProject(newProjectName, newProjectType, currentOrganizationId);
+            await createNewProject(name, type, currentOrganizationId);
             setShowNewProjectModal(false);
             setNewProjectName(''); // Reset name on success
         } catch (e: any) {
@@ -205,70 +206,16 @@ export default function Dashboard() {
             <OnboardingModal isOpen={showBrandKit} onClose={() => setShowBrandKit(false)} />
 
             {/* New Project Modal */}
-            {showNewProjectModal && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="glass-panel rounded-2xl p-6 w-full max-w-md shadow-2xl"
-                    >
-                        <h2 className="text-2xl font-bold text-white mb-6">Create New Project</h2>
-                        {error && (
-                            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-white/50 uppercase mb-1">Project Name</label>
-                                <input
-                                    type="text"
-                                    value={newProjectName}
-                                    onChange={(e) => setNewProjectName(e.target.value)}
-                                    placeholder="Enter project name..."
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-neon-purple outline-none"
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-white/50 uppercase mb-1">Project Type</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {['creative', 'music', 'marketing', 'legal'].map((type) => (
-                                        <button
-                                            key={type}
-                                            onClick={() => setNewProjectType(type as 'creative' | 'music' | 'marketing' | 'legal')}
-                                            className={`p - 3 rounded - lg border text - sm font - medium capitalize transition - all ${newProjectType === type
-                                                ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
-                                                : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'
-                                                } `}
-                                        >
-                                            {type}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 mt-6">
-                                <button
-                                    onClick={() => setShowNewProjectModal(false)}
-                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleCreateProject}
-                                    disabled={!newProjectName.trim()}
-                                    className="flex-1 py-3 bg-white hover:bg-neon-blue hover:text-black text-black rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Create Project
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
+            <NewProjectModal
+                isOpen={showNewProjectModal}
+                onClose={() => setShowNewProjectModal(false)}
+                onCreate={async (name, type) => {
+                    setNewProjectName(name);
+                    setNewProjectType(type);
+                    await handleCreateProject(name, type);
+                }}
+                error={error}
+            />
         </div>
     );
 }

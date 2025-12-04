@@ -1,14 +1,30 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine } from 'lucide-react';
-import CreativeCanvas from './CreativeCanvas';
+
 import { useToast } from '@/core/context/ToastContext';
 
-export default function CreativeGallery({ compact = false }: { compact?: boolean }) {
+interface CreativeGalleryProps {
+    compact?: boolean;
+    onSelect?: (item: any) => void;
+    className?: string;
+    searchQuery?: string;
+}
+
+export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
     const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem } = useStore();
     // const [selectedItem, setSelectedItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video'; mask?: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
+
+    // Filter items based on search query
+    const filteredUploaded = searchQuery
+        ? uploadedImages.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedImages;
+
+    const filteredGenerated = searchQuery
+        ? generatedHistory.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : generatedHistory;
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -66,7 +82,7 @@ export default function CreativeGallery({ compact = false }: { compact?: boolean
             key={item.id}
             draggable
             onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
-            onClick={() => setSelectedItem(item)}
+            onClick={() => onSelect ? onSelect(item) : setSelectedItem(item)}
             className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer"
         >
             {item.type === 'video' ? (
@@ -133,7 +149,7 @@ export default function CreativeGallery({ compact = false }: { compact?: boolean
         : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
 
     return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className={`flex-1 flex flex-col h-full overflow-hidden ${className}`}>
             {/* Assets Section */}
             <div
                 className="flex-shrink-0 p-4 border-b border-gray-800 max-h-[40%] overflow-y-auto custom-scrollbar transition-colors"
@@ -216,7 +232,7 @@ export default function CreativeGallery({ compact = false }: { compact?: boolean
                         onChange={handleFileUpload}
                     />
                 </div>
-                {uploadedImages.length > 0 ? (
+                {filteredUploaded.length > 0 ? (
                     <div className={gridClass}>
                         {/* Add New Card */}
                         <button
@@ -228,7 +244,7 @@ export default function CreativeGallery({ compact = false }: { compact?: boolean
                             </div>
                             <span className="text-[10px] font-medium text-gray-500 group-hover:text-purple-300 uppercase tracking-wide">Add Asset</span>
                         </button>
-                        {uploadedImages.map(item => renderGridItem(item, removeUploadedImage))}
+                        {filteredUploaded.map(item => renderGridItem(item, removeUploadedImage))}
                     </div>
                 ) : (
                     <div className="p-10 border-2 border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-900/10 rounded-xl flex flex-col items-center justify-center text-gray-400 gap-4 transition-all duration-300 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -247,7 +263,7 @@ export default function CreativeGallery({ compact = false }: { compact?: boolean
             <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Generation History</h2>
                 <div className={gridClass}>
-                    {generatedHistory.map(item => renderGridItem(item, removeFromHistory))}
+                    {filteredGenerated.map(item => renderGridItem(item, removeFromHistory))}
                 </div>
             </div>
         </div>

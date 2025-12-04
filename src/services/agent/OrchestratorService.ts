@@ -70,7 +70,8 @@ class OrchestratorService {
             }
             return 'creative';
         } catch (e) {
-            console.error("Orchestrator routing failed:", e);
+            console.error("[Orchestrator] Routing failed. Falling back to 'creative'. Error:", e);
+            // TODO: Integrate with a monitoring service (e.g., Sentry)
             return 'creative'; // Fallback
         }
     }

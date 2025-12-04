@@ -15,6 +15,8 @@
 * **Specialist Agents:**
   * **LegalAgent:** Contract analysis and risk assessment.
   * **MarketingAgent:** Campaign generation and brand voice alignment.
+  * **BrandAgent:** Brand consistency analysis and asset generation.
+  * **RoadManager:** Tour logistics, fuel calculations, and itinerary planning.
   * **MusicAgent:** Audio theory and composition assistance.
 * **Server-Side Agents (Mastra):** "Creative Director" agent running on Cloud Functions for high-fidelity asset generation.
 * **Context Injection:** Agents automatically receive Organization, Project, and Brand Kit context.
