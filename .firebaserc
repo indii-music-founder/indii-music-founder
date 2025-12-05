@@ -3,13 +3,13 @@
     "default": "architexture-ai-api"
   },
   "targets": {
-    "indiios-v-1-1": {
+    "architexture-ai-api": {
       "hosting": {
         "landing": [
-          "indiios-v-1-1"
+          "architexture-ai-api"
         ],
         "app": [
-          "indiios-studio"
+          "architexture-ai-studio"
         ]
       }
     }
