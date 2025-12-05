@@ -6,7 +6,7 @@ const corsHandler = cors({ origin: true });
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
 async function fetchGemini(endpoint: string, options: RequestInit = {}) {
-    const url = `${BASE_URL}/${endpoint}?key=${config.VITE_API_KEY}`;
+    const url = `${BASE_URL}/${endpoint}?key=${config.apiKey}`;
     const response = await fetch(url, {
         ...options,
         headers: {

@@ -12,72 +12,75 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     const { userProfile, updateBrandKit, addUploadedImage, currentProjectId, setActiveReferenceImage } = useStore();
     const toast = useToast();
     const [isDragging, setIsDragging] = useState(false);
+    const [activeTab, setActiveTab] = useState<'upload' | 'generate'>('upload');
+    const [prompt, setPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
+    // ... handleDragOver, handleDrop ...
 
-    const handleDragLeave = () => {
-        setIsDragging(false);
-    };
+    const handleGenerate = async () => {
+        if (!prompt.trim()) return;
+        setIsGenerating(true);
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const generateImage = httpsCallable(functions, 'generateImage');
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files);
-        handleFiles(files);
-    };
+            const response = await generateImage({
+                prompt: prompt + " -- style: high quality, professional brand asset",
+                count: 1,
+                aspectRatio: '1:1'
+            });
 
-    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            handleFiles(Array.from(e.target.files));
+            const data = response.data as any;
+
+            // Parse Gemini response for images
+            const candidate = data.candidates?.[0];
+            const part = candidate?.content?.parts?.find((p: any) => p.inlineData);
+
+            if (part && part.inlineData) {
+                const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+
+                const newAsset = {
+                    url: base64Url,
+                    description: prompt
+                };
+
+                updateBrandKit({
+                    brandAssets: [...(userProfile.brandKit.brandAssets || []), newAsset]
+                });
+
+                addUploadedImage({
+                    id: crypto.randomUUID(),
+                    type: 'image',
+                    url: base64Url,
+                    prompt: prompt,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+
+                toast.success("Asset generated and added");
+                setPrompt('');
+                setActiveTab('upload'); // Switch back to view it
+            } else {
+                console.error("No image data in response", data);
+                toast.error("Failed to generate image");
+            }
+
+        } catch (error) {
+            console.error("Generation failed:", error);
+            toast.error("Generation failed");
+        } finally {
+            setIsGenerating(false);
         }
     };
-
-    const handleFiles = (files: File[]) => {
-        files.forEach(file => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    if (event.target?.result) {
-                        const newAsset = {
-                            url: event.target.result as string,
-                            description: file.name
-                        };
-
-                        // Add to Brand Kit
-                        const currentAssets = userProfile.brandKit.brandAssets || [];
-                        updateBrandKit({
-                            brandAssets: [...currentAssets, newAsset]
-                        });
-
-                        // Also add to global uploads for immediate use
-                        addUploadedImage({
-                            id: crypto.randomUUID(),
-                            type: 'image',
-                            url: event.target.result as string,
-                            prompt: file.name,
-                            timestamp: Date.now(),
-                            projectId: currentProjectId
-                        });
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        toast.success(`Added ${files.length} asset(s) to Brand Kit`);
-    };
-
-    const assets = userProfile.brandKit.brandAssets || [];
-    const refImages = userProfile.brandKit.referenceImages || [];
 
     return (
         <div className="absolute top-full right-0 mt-2 w-80 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-top-2 fade-in duration-200">
             {/* Header */}
             <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-[#111]">
                 <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
-                    <ImageIcon size={14} className="text-yellow-500" />
+                    <ImageIcon size={14} className="text-white" />
                     Brand Assets
                 </h3>
                 <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
@@ -85,34 +88,69 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 </button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex p-2 gap-2 border-b border-gray-800 bg-[#151515]">
+                <button
+                    onClick={() => setActiveTab('upload')}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${activeTab === 'upload' ? 'bg-[#333] text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    Upload
+                </button>
+                <button
+                    onClick={() => setActiveTab('generate')}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${activeTab === 'generate' ? 'bg-[#333] text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                    Generate AI
+                </button>
+            </div>
+
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
 
-                {/* Upload Area */}
-                <div
-                    className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors mb-6 ${isDragging ? 'border-yellow-500 bg-yellow-900/10' : 'border-gray-700 hover:border-gray-500 bg-[#0f0f0f]'}`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                >
-                    <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                        id="brand-asset-upload"
-                        onChange={handleFileInput}
-                    />
-                    <label htmlFor="brand-asset-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
-                            <Upload size={18} />
-                        </div>
-                        <span className="text-xs text-gray-400 font-medium">
-                            Drag & Drop or <span className="text-yellow-500 hover:underline">Browse</span>
-                        </span>
-                        <span className="text-[10px] text-gray-600">Logos, textures, style refs</span>
-                    </label>
-                </div>
+                {activeTab === 'upload' ? (
+                    /* Upload Area */
+                    <div
+                        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors mb-6 ${isDragging ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500 bg-[#0f0f0f]'}`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
+                        <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="hidden"
+                            id="brand-asset-upload"
+                            onChange={handleFileInput}
+                        />
+                        <label htmlFor="brand-asset-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
+                                <Upload size={18} />
+                            </div>
+                            <span className="text-xs text-gray-400 font-medium">
+                                Drag & Drop or <span className="text-white hover:underline">Browse</span>
+                            </span>
+                            <span className="text-[10px] text-gray-600">Logos, textures, style refs</span>
+                        </label>
+                    </div>
+                ) : (
+                    /* Generate Area */
+                    <div className="mb-6 space-y-3">
+                        <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Describe the asset..."
+                            className="w-full h-24 bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 text-xs text-white focus:border-white outline-none resize-none"
+                        />
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isGenerating || !prompt.trim()}
+                            className="w-full py-2 bg-white text-black text-xs font-bold rounded hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                            {isGenerating ? 'Generating...' : 'Generate New Asset'}
+                        </button>
+                    </div>
+                )}
 
                 {/* Assets Grid */}
                 <div className="space-y-6">
@@ -129,7 +167,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                                             {onSelect ? (
                                                 <button
-                                                    className="p-1 bg-blue-600 rounded hover:bg-blue-500 text-white transition-colors"
+                                                    className="p-1 bg-white rounded hover:bg-gray-200 text-black transition-colors"
                                                     title="Select Asset"
                                                     onClick={() => onSelect(asset)}
                                                 >

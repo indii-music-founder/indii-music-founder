@@ -116,7 +116,7 @@ CONTEXT:
 ${JSON.stringify(enrichedContext, null, 2)}
 
 HISTORY:
-${context.chatHistory || ''}
+${context.chatHistoryString || ''}
 
 TASK:
 ${task}

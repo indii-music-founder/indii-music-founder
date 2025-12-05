@@ -39,15 +39,36 @@ const ThoughtChain = ({ thoughts }: { thoughts: AgentThought[] }) => {
     );
 };
 
+import { voiceService } from '@/services/ai/VoiceService';
+import { Volume2, VolumeX } from 'lucide-react';
+
 export default function ChatOverlay() {
-    const { agentHistory, isAgentOpen } = useStore();
+    const store = useStore();
+    const agentHistory = store?.agentHistory || [];
+    const isAgentOpen = store?.isAgentOpen || false;
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [isMuted, setIsMuted] = useState(true);
+    const lastSpokenIdRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [agentHistory, isAgentOpen, agentHistory.map(m => m.thoughts?.length).join(',')]);
+    }, [agentHistory, isAgentOpen, agentHistory.length, agentHistory.map(m => m.thoughts?.length).join(',')]);
+
+    // Auto-speak effect
+    useEffect(() => {
+        if (isMuted || !isAgentOpen) {
+            voiceService.stopSpeaking();
+            return;
+        }
+
+        const lastMsg = agentHistory[agentHistory.length - 1];
+        if (lastMsg && lastMsg.role === 'model' && !lastMsg.isStreaming && lastMsg.text && lastMsg.id !== lastSpokenIdRef.current) {
+            lastSpokenIdRef.current = lastMsg.id;
+            voiceService.speak(lastMsg.text);
+        }
+    }, [agentHistory, isMuted, isAgentOpen]);
 
     if (!isAgentOpen) return null;
 
@@ -60,7 +81,16 @@ export default function ChatOverlay() {
                 className="absolute bottom-full left-0 right-0 max-h-[60vh] overflow-y-auto custom-scrollbar bg-gradient-to-t from-[#0d1117] via-[#0d1117]/95 to-transparent p-4 pb-2"
                 ref={scrollRef}
             >
-                <div className="max-w-4xl mx-auto space-y-4">
+                <div className="max-w-4xl mx-auto space-y-4 relative">
+                    {/* Voice Toggle */}
+                    <button
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="fixed top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white transition-colors z-50 backdrop-blur-sm border border-white/10"
+                        title={isMuted ? "Unmute Text-to-Speech" : "Mute Text-to-Speech"}
+                    >
+                        {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
+
                     {agentHistory.map((msg) => (
                         <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'model' && (

@@ -9,6 +9,7 @@ import { BrandAgent } from './specialists/BrandAgent';
 import { RoadAgent } from './specialists/RoadAgent';
 import { DirectorAgent } from './specialists/DirectorAgent';
 import { VideoAgent } from './specialists/VideoAgent';
+import { GeneralistAgent } from './specialists/GeneralistAgent';
 import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -29,6 +30,7 @@ export class AgentService {
         agentRegistry.register(new RoadAgent());
         agentRegistry.register(new DirectorAgent());
         agentRegistry.register(new VideoAgent());
+        agentRegistry.register(new GeneralistAgent());
 
         // Initialize Components
         this.contextPipeline = new ContextPipeline();

@@ -8,14 +8,7 @@ import { config } from "./config";
 admin.initializeApp();
 const corsHandler = cors({ origin: true });
 
-interface GenerateVideoRequestBody {
-    prompt: string;
-    model?: string;
-    image?: string;
-    config?: {
-        lastFrame?: boolean;
-    };
-}
+import { GenerateVideoRequest } from "./shared/types/ai.dto";
 
 interface VertexVideoInstance {
     prompt: string;
@@ -23,12 +16,21 @@ interface VertexVideoInstance {
     lastFrame?: boolean;
 }
 
+// NOTE: GenerateVideoRequest is for internal consistency, but here we are parsing
+// raw JSON body from an onRequest (HTTP), so strictly speaking req.body is any.
+// We can cast it.
+// However, looking at the code, it defines `GenerateVideoRequestBody` interface right there.
+// We should replace that legacy interface with our shared DTO if they match.
+// The DTO has: model, prompt, image?, config?
+// The local interface has: prompt, model?, image?, config?
+// They are compatible. I will replace the local interface with the import.
+
 export const generateVideo = functions.https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
         try {
-            const { prompt, model, image, config: videoConfig } = req.body as GenerateVideoRequestBody;
+            const { prompt, model, image, config: videoConfig } = req.body as GenerateVideoRequest;
             const projectId = config.GCLOUD_PROJECT;
-            const location = config.LOCATION;
+            const location = config.location;
             const modelId = model || config.MODEL_ID;
 
             // Get Access Token
@@ -41,8 +43,16 @@ export const generateVideo = functions.https.onRequest(async (req, res) => {
             const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
             const instance: VertexVideoInstance = { prompt };
-            if (image) instance.image = image;
-            if (videoConfig?.lastFrame) instance.lastFrame = videoConfig.lastFrame;
+            if (image) {
+                if (typeof image === 'string') {
+                    instance.image = image;
+                } else if ((image as any).imageBytes) {
+                    instance.image = (image as any).imageBytes;
+                }
+            }
+            if (videoConfig && (videoConfig as any).lastFrame) {
+                instance.lastFrame = Boolean((videoConfig as any).lastFrame);
+            }
 
             const response = await fetch(endpoint, {
                 method: "POST",
@@ -125,7 +135,7 @@ export const editImage = functions.https.onCall(async (data: EditImageRequestDat
     try {
         const { image, mask, prompt } = data;
         const projectId = config.GCLOUD_PROJECT;
-        const location = config.LOCATION;
+        const location = config.location;
         const modelId = config.GEMINI_MODEL_ID;
 
         const auth = new GoogleAuth({
@@ -288,7 +298,7 @@ export const generateImage = functions.https.onCall(async (data: GenerateImageRe
     try {
         const { prompt, aspectRatio, count, images } = data;
         const projectId = config.GCLOUD_PROJECT;
-        const location = config.LOCATION;
+        const location = config.location;
         const modelId = config.GEMINI_MODEL_ID;
 
         const auth = new GoogleAuth({

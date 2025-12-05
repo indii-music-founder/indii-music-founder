@@ -10,7 +10,10 @@ import { agentRegistry } from './registry';
 // Mock dependencies
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
-        generateContent: vi.fn()
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => "Mock Response",
+            functionCalls: () => []
+        })
     }
 }));
 

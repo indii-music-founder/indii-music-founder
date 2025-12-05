@@ -22,12 +22,20 @@ const google_auth_library_1 = require("google-auth-library");
 const config_1 = require("./config");
 admin.initializeApp();
 const corsHandler = cors({ origin: true });
+// NOTE: GenerateVideoRequest is for internal consistency, but here we are parsing
+// raw JSON body from an onRequest (HTTP), so strictly speaking req.body is any.
+// We can cast it.
+// However, looking at the code, it defines `GenerateVideoRequestBody` interface right there.
+// We should replace that legacy interface with our shared DTO if they match.
+// The DTO has: model, prompt, image?, config?
+// The local interface has: prompt, model?, image?, config?
+// They are compatible. I will replace the local interface with the import.
 exports.generateVideo = functions.https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
         try {
             const { prompt, model, image, config: videoConfig } = req.body;
             const projectId = config_1.config.GCLOUD_PROJECT;
-            const location = config_1.config.LOCATION;
+            const location = config_1.config.location;
             const modelId = model || config_1.config.MODEL_ID;
             // Get Access Token
             const auth = new google_auth_library_1.GoogleAuth({
@@ -37,10 +45,17 @@ exports.generateVideo = functions.https.onRequest(async (req, res) => {
             const accessToken = await client.getAccessToken();
             const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
             const instance = { prompt };
-            if (image)
-                instance.image = image;
-            if (videoConfig === null || videoConfig === void 0 ? void 0 : videoConfig.lastFrame)
-                instance.lastFrame = videoConfig.lastFrame;
+            if (image) {
+                if (typeof image === 'string') {
+                    instance.image = image;
+                }
+                else if (image.imageBytes) {
+                    instance.image = image.imageBytes;
+                }
+            }
+            if (videoConfig && videoConfig.lastFrame) {
+                instance.lastFrame = Boolean(videoConfig.lastFrame);
+            }
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
@@ -100,7 +115,7 @@ exports.editImage = functions.https.onCall(async (data, context) => {
     try {
         const { image, mask, prompt } = data;
         const projectId = config_1.config.GCLOUD_PROJECT;
-        const location = config_1.config.LOCATION;
+        const location = config_1.config.location;
         const modelId = config_1.config.GEMINI_MODEL_ID;
         const auth = new google_auth_library_1.GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -220,7 +235,7 @@ exports.generateImage = functions.https.onCall(async (data, context) => {
     try {
         const { prompt, aspectRatio, count, images } = data;
         const projectId = config_1.config.GCLOUD_PROJECT;
-        const location = config_1.config.LOCATION;
+        const location = config_1.config.location;
         const modelId = config_1.config.GEMINI_MODEL_ID;
         const auth = new google_auth_library_1.GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],

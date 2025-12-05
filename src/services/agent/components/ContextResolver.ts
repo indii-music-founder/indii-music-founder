@@ -13,6 +13,7 @@ export interface AgentContext {
     userProfile?: any;
     brandKit?: any;
     currentModule?: string;
+    chatHistory?: any[]; // Agent messages
 }
 
 export class ContextResolver {
@@ -37,7 +38,8 @@ export class ContextResolver {
             projectHandle,
             userProfile,
             brandKit,
-            currentModule
+            currentModule,
+            chatHistory: state.agentHistory || []
         };
     }
 }

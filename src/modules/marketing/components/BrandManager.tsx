@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useStore } from '@/core/store';
 import { Shield, Upload, CheckCircle, AlertTriangle, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
@@ -12,11 +13,28 @@ interface AnalysisResult {
 }
 
 const BrandManager: React.FC = () => {
+    const { userProfile } = useStore();
     const toast = useToast();
     const [guidelines, setGuidelines] = useState<string>('');
     const [contentToCheck, setContentToCheck] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+
+    React.useEffect(() => {
+        if (!guidelines && userProfile?.brandKit) {
+            const { bio, brandKit } = userProfile;
+            const parts = [];
+            if (bio) parts.push(`BIO:\n${bio}`);
+            if (brandKit.brandDescription) parts.push(`BRAND DESCRIPTION:\n${brandKit.brandDescription}`);
+            if (brandKit.releaseDetails?.title) parts.push(`CURRENT RELEASE:\n${brandKit.releaseDetails.title} (${brandKit.releaseDetails.type})`);
+            if (brandKit.releaseDetails?.mood) parts.push(`MOOD:\n${brandKit.releaseDetails.mood}`);
+            if (brandKit.releaseDetails?.themes) parts.push(`THEMES:\n${brandKit.releaseDetails.themes}`);
+
+            if (parts.length > 0) {
+                setGuidelines(parts.join('\n\n'));
+            }
+        }
+    }, [userProfile, guidelines]);
 
     const handleAnalyze = async () => {
         if (!guidelines || !contentToCheck) {
@@ -48,34 +66,34 @@ const BrandManager: React.FC = () => {
                 <div className="space-y-4">
                     <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <Shield className="text-pink-500" size={20} />
+                            <Shield className="text-white" size={20} />
                             Brand Guidelines
                         </h3>
                         <textarea
                             value={guidelines}
                             onChange={(e) => setGuidelines(e.target.value)}
                             placeholder="Paste your brand guidelines here (e.g., tone of voice, forbidden words, core values)..."
-                            className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none resize-none"
+                            className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-white focus:ring-1 focus:ring-white outline-none resize-none"
                         />
                     </div>
 
                     <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <FileText className="text-blue-500" size={20} />
+                            <FileText className="text-white" size={20} />
                             Content to Check
                         </h3>
                         <textarea
                             value={contentToCheck}
                             onChange={(e) => setContentToCheck(e.target.value)}
                             placeholder="Paste the content you want to review (e.g., social media post, blog draft)..."
-                            className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+                            className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-white focus:ring-1 focus:ring-white outline-none resize-none"
                         />
                     </div>
 
                     <button
                         onClick={handleAnalyze}
                         disabled={isAnalyzing || !guidelines || !contentToCheck}
-                        className="w-full py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 bg-white hover:bg-gray-200 text-black font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isAnalyzing ? (
                             <>
@@ -94,7 +112,7 @@ const BrandManager: React.FC = () => {
                 {/* Results Section */}
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 h-full">
                     <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                        <CheckCircle className="text-green-500" size={20} />
+                        <CheckCircle className="text-white" size={20} />
                         Analysis Report
                     </h3>
 
@@ -109,7 +127,7 @@ const BrandManager: React.FC = () => {
                                     </h2>
                                 </div>
                                 <div className={`p-3 rounded-full ${analysisResult.isConsistent ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                    {analysisResult.isConsistent ? <CheckCircle size={32} /> : <AlertTriangle size={32} />}
+                                    {analysisResult.isConsistent ? <CheckCircle size={32} className="text-white" /> : <AlertTriangle size={32} className="text-red-500" />}
                                 </div>
                             </div>
 

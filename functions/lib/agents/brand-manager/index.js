@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.brandManager = exports.BrandManagerAgent = void 0;
 const generative_ai_1 = require("@google/generative-ai");
-const genAI = new generative_ai_1.GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+const config_1 = require("../../config");
+const genAI = new generative_ai_1.GoogleGenerativeAI(config_1.config.apiKey || '');
 class BrandManagerAgent {
     constructor() {
         this.model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });

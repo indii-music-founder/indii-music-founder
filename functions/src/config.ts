@@ -1,28 +1,35 @@
 import * as dotenv from 'dotenv';
 import { z } from 'zod';
+import { CommonEnvSchema } from './shared/schemas/env.schema';
 
 dotenv.config();
 
-const envSchema = z.object({
+// Common schema + any backend specific overrides/additions
+const BackendEnvSchema = CommonEnvSchema.extend({
+    // Backend specific
     GCLOUD_PROJECT: z.string().default('architexture-ai-api'),
-    LOCATION: z.string().default('us-central1'),
     MODEL_ID: z.string().default('veo-3.1-generate-preview'),
     GEMINI_MODEL_ID: z.string().default('gemini-3-pro-image-preview'),
-    VITE_API_KEY: z.string().min(1, "VITE_API_KEY is required"),
 });
 
 const processEnv = {
+    // Map process.env to common schema keys
+    apiKey: process.env.VITE_API_KEY,
+    projectId: process.env.GCLOUD_PROJECT,
+    location: process.env.LOCATION || 'us-central1',
+    useVertex: false, // functions usually run on server, can be false or environment driven if needed
+
+    // Pass through backend specific
     GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,
-    LOCATION: process.env.LOCATION || 'us-central1',
     MODEL_ID: process.env.MODEL_ID,
     GEMINI_MODEL_ID: process.env.GEMINI_MODEL_ID,
-    VITE_API_KEY: process.env.VITE_API_KEY,
+    VITE_API_KEY: process.env.VITE_API_KEY, // Keep raw key for compat if needed, though apiKey should suffice
 };
 
-const parsed = envSchema.safeParse(processEnv);
+const parsed = BackendEnvSchema.safeParse(processEnv);
 
 if (!parsed.success) {
     console.warn("Invalid backend environment configuration:", parsed.error.format());
 }
 
-export const config = parsed.success ? parsed.data : processEnv as z.infer<typeof envSchema>;
+export const config = parsed.success ? parsed.data : processEnv as z.infer<typeof BackendEnvSchema>;

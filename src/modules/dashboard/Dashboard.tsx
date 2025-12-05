@@ -95,7 +95,7 @@ export default function Dashboard() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">Welcome back to <span className="neon-text-blue">indiiOS</span>.</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">Welcome back to <span className="text-white">indiiOS</span>.</h1>
                         <div className="flex items-center gap-4">
                             <OrganizationSelector />
                             <p className="text-white/50 hidden md:block">Manage your creative projects and workflows.</p>
@@ -114,7 +114,7 @@ export default function Dashboard() {
                         <ThreeDButton
                             onClick={() => setShowBrandKit(true)}
                             variant="secondary"
-                            className="rounded-full flex items-center justify-center gap-2 border-neon-purple/50 text-neon-purple hover:shadow-[0_0_15px_rgba(176,38,255,0.3)]"
+                            className="rounded-full flex items-center justify-center gap-2 border-white/20 text-white hover:shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                             title="Brand Kit"
                         >
                             <Sparkles size={20} />
@@ -123,7 +123,7 @@ export default function Dashboard() {
                         <ThreeDButton
                             onClick={() => setShowNewProjectModal(true)}
                             variant="primary"
-                            className="rounded-full flex items-center justify-center gap-2 hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,243,255,0.5)]"
+                            className="rounded-full flex items-center justify-center gap-2 hover:bg-white hover:text-black hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]"
                             title="New Project"
                         >
                             <Plus size={20} />
@@ -135,19 +135,19 @@ export default function Dashboard() {
                 {/* Recent Projects */}
                 <section className="mb-12">
                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Clock size={20} className="text-neon-purple" /> Recent Projects
+                        <Clock size={20} className="text-white" /> Recent Projects
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredProjects.map((project, index) => (
                             <ThreeDCardContainer key={project.id} className="inter-var w-full" onClick={() => handleOpenProject(project.id, project.type)}>
-                                <ThreeDCardBody className="bg-white/5 relative group/card border-white/10 w-full h-auto rounded-xl p-6 border hover:border-neon-blue/50 hover:bg-white/10 transition-all cursor-pointer">
+                                <ThreeDCardBody className="bg-white/5 relative group/card border-white/10 w-full h-auto rounded-xl p-6 border hover:border-white/50 hover:bg-white/10 transition-all cursor-pointer">
                                     <ThreeDCardItem
                                         translateZ="50"
                                         className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 border border-white/10"
                                     >
-                                        {project.type === 'creative' && <Layout className="text-neon-blue" />}
-                                        {project.type === 'music' && <Music className="text-neon-purple" />}
-                                        {project.type === 'marketing' && <MessageSquare className="text-signal-green" />}
+                                        {project.type === 'creative' && <Layout className="text-white" />}
+                                        {project.type === 'music' && <Music className="text-gray-400" />}
+                                        {project.type === 'marketing' && <MessageSquare className="text-gray-400" />}
                                     </ThreeDCardItem>
 
                                     <ThreeDCardItem
@@ -166,7 +166,7 @@ export default function Dashboard() {
 
                                     <div className="absolute top-0 right-0 p-4 opacity-0 group-hover/card:opacity-100 transition-opacity">
                                         <ThreeDCardItem translateZ="80">
-                                            <div className="w-8 h-8 rounded-full bg-neon-blue text-black flex items-center justify-center shadow-[0_0_10px_rgba(0,243,255,0.5)]">
+                                            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.5)]">
                                                 <ArrowUpRight size={16} />
                                             </div>
                                         </ThreeDCardItem>
@@ -180,18 +180,18 @@ export default function Dashboard() {
                 {/* Knowledge Base Upload */}
                 <section className="mb-12">
                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Folder size={20} className="text-signal-green" /> Knowledge Base
+                        <Folder size={20} className="text-white" /> Knowledge Base
                     </h2>
                     <div className="glass-panel p-4 md:p-8 rounded-3xl shadow-2xl">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                             {/* Drop Zone */}
-                            <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-signal-green hover:bg-signal-green/5 transition-all cursor-pointer relative group min-h-[250px]">
+                            <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-white/50 hover:bg-white/5 transition-all cursor-pointer relative group min-h-[250px]">
                                 <input
                                     type="file"
                                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                     onChange={handleFileUpload}
                                 />
-                                <div className="w-16 h-16 bg-signal-green/10 text-signal-green rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(0,255,157,0.2)]">
+                                <div className="w-16 h-16 bg-white/10 text-white rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                                     <Plus size={32} />
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">Upload Knowledge Assets</h3>
@@ -199,7 +199,7 @@ export default function Dashboard() {
                             </div>
 
                             {/* Mobile Camera Option */}
-                            <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-neon-blue hover:bg-neon-blue/5 transition-all cursor-pointer relative group min-h-[250px]">
+                            <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-white/50 hover:bg-white/5 transition-all cursor-pointer relative group min-h-[250px]">
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -207,7 +207,7 @@ export default function Dashboard() {
                                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                     onChange={handleFileUpload}
                                 />
-                                <div className="w-16 h-16 bg-neon-blue/10 text-neon-blue rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+                                <div className="w-16 h-16 bg-white/10 text-white rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                                     <Camera size={32} />
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">Scan Document</h3>

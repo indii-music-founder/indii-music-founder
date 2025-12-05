@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { Building2, Plus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 // import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 
 export default function SelectOrg() {
-    const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
+    const { organizations = [], currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
-    console.log('SelectOrg: Rendering', { organizations });
+    useEffect(() => {
+        console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
+    }, [organizations]);
 
     if (!organizations) {
         console.error('SelectOrg: Critical Error - organizations is undefined');
@@ -68,7 +70,7 @@ export default function SelectOrg() {
                     <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center">
                         <span className="text-3xl font-bold text-black tracking-tighter">ii</span>
                     </div>
-                    <h1 className="text-2xl font-bold mb-2">Select Organization (Debug Mode)</h1>
+                    <h1 className="text-2xl font-bold mb-2">Select Organization</h1>
                     <p className="text-gray-500">Choose a workspace to continue</p>
                 </div>
 

@@ -1,7 +1,7 @@
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { config } from '../../config';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+const genAI = new GoogleGenerativeAI(config.apiKey || '');
 
 export class BrandManagerAgent {
     private model: any;

@@ -7,7 +7,7 @@ const config_1 = require("../config");
 const corsHandler = cors({ origin: true });
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 async function fetchGemini(endpoint, options = {}) {
-    const url = `${BASE_URL}/${endpoint}?key=${config_1.config.VITE_API_KEY}`;
+    const url = `${BASE_URL}/${endpoint}?key=${config_1.config.apiKey}`;
     const response = await fetch(url, Object.assign(Object.assign({}, options), { headers: Object.assign({ 'Content-Type': 'application/json' }, options.headers) }));
     if (!response.ok) {
         const errorText = await response.text();

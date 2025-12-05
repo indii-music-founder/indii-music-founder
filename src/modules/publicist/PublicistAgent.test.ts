@@ -25,7 +25,7 @@ describe('PublicistAgent', () => {
         const agent = new PublicistAgent();
         expect(agent.id).toBe('publicist');
         expect(agent.name).toBe('Publicist');
-        expect(agent.description).toContain('press releases');
+        expect(agent.description).toContain('public relations');
     });
 });
 

@@ -1,5 +1,6 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { env } from '@/config/env';
 
 export interface VideoGenerationOptions {
     prompt: string;
@@ -104,7 +105,7 @@ export class VideoService {
     async fetchVideoBlob(uri: string): Promise<string> {
 
         // We need to handle the API key injection if it's not already in the URI
-        const apiKey = import.meta.env.VITE_API_KEY;
+        const apiKey = env.apiKey;
         const fetchUrl = uri.includes('key=') ? uri : `${uri}&key=${apiKey}`;
 
         const res = await fetch(fetchUrl);

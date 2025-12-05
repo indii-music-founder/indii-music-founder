@@ -7,10 +7,13 @@ import { useStore } from '@/core/store';
 import { getColorForModule } from '../theme/moduleColors';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { voiceService } from '@/services/ai/VoiceService';
+
 export default function CommandBar() {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [openDelegate, setOpenDelegate] = useState(false);
+    const [isListening, setIsListening] = useState(false);
     const [attachments, setAttachments] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -154,7 +157,7 @@ export default function CommandBar() {
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, y: 10 }}
-                                                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-96"
+                                                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[300px]"
                                                 >
                                                     <div className="overflow-y-auto custom-scrollbar">
                                                         <div className="p-1">
@@ -211,7 +214,26 @@ export default function CommandBar() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <button type="button" className="p-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (isListening) {
+                                            voiceService.stopListening();
+                                            setIsListening(false);
+                                        } else {
+                                            if (voiceService.isSupported()) {
+                                                setIsListening(true);
+                                                voiceService.startListening((text) => {
+                                                    setInput(prev => prev + (prev ? ' ' : '') + text);
+                                                    setIsListening(false);
+                                                }, () => setIsListening(false));
+                                            } else {
+                                                toast.error("Voice input not supported in this browser.");
+                                            }
+                                        }
+                                    }}
+                                    className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+                                >
                                     <Mic size={14} />
                                 </button>
                                 <button

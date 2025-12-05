@@ -2,7 +2,7 @@ import { ContextResolver, AgentContext } from './ContextResolver';
 import { HistoryManager } from './HistoryManager';
 
 export interface PipelineContext extends AgentContext {
-    chatHistory: string;
+    chatHistoryString: string;
 }
 
 export class ContextPipeline {
@@ -19,12 +19,12 @@ export class ContextPipeline {
         const stateContext = await this.resolver.resolveContext();
 
         // 2. Fetch History (The "Session")
-        const chatHistory = this.historyManager.getCompiledView();
+        const chatHistoryString = this.historyManager.getCompiledView();
 
         // 3. Assemble Pipeline Context
         return {
             ...stateContext,
-            chatHistory
+            chatHistoryString
         };
     }
 }

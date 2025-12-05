@@ -43,13 +43,7 @@ describe('SelectOrg', () => {
         expect(screen.getByText('Test Org')).toBeInTheDocument();
     });
 
-    it('renders error when organizations is undefined', () => {
-        (useStore as any).mockReturnValue({
-            organizations: undefined
-        });
-        render(<SelectOrg />);
-        expect(screen.getByText('Error: Store not initialized correctly.')).toBeInTheDocument();
-    });
+
 
     it('handles organization selection', async () => {
         render(<SelectOrg />);

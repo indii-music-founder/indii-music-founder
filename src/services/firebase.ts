@@ -6,10 +6,10 @@ import { getAuth } from 'firebase/auth';
 import { env } from '../config/env';
 
 const firebaseConfig = {
-    apiKey: env.VITE_API_KEY,
-    authDomain: `${env.VITE_VERTEX_PROJECT_ID}.firebaseapp.com`,
-    projectId: env.VITE_VERTEX_PROJECT_ID,
-    storageBucket: `${env.VITE_VERTEX_PROJECT_ID}.firebasestorage.app`,
+    apiKey: env.apiKey,
+    authDomain: `${env.projectId}.firebaseapp.com`,
+    projectId: env.projectId,
+    storageBucket: `${env.projectId}.firebasestorage.app`,
     messagingSenderId: "563584335869",
     appId: "1:563584335869:web:321321321"
 };

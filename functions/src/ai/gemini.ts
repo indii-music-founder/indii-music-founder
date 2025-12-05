@@ -1,14 +1,15 @@
 import * as functions from "firebase-functions";
 import * as cors from "cors";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content } from "@google/generative-ai";
 import { config } from "../config";
+import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest } from "../shared/types/ai.dto";
 
 const corsHandler = cors({ origin: true });
 
 // Initialize GenAI with server-side API key
-const genAI = new GoogleGenerativeAI(config.VITE_API_KEY);
+const genAI = new GoogleGenerativeAI(config.apiKey);
 
-export const generateContent = functions.https.onCall(async (data, context) => {
+export const generateContent = functions.https.onCall(async (data: GenerateContentRequest, context): Promise<GenerateContentResponse> => {
     try {
         const { model: modelName, contents, config: generationConfig } = data;
 
@@ -21,14 +22,29 @@ export const generateContent = functions.https.onCall(async (data, context) => {
             generationConfig
         });
 
-        const result = await model.generateContent({ contents });
+        // Ensure contents is an array conforms to Content[]
+        const contentArray = (Array.isArray(contents) ? contents : [contents]) as Content[];
+
+        const result = await model.generateContent({ contents: contentArray });
         const response = result.response;
 
-        // Return the raw response object. The client will wrap it.
-        return response;
+        return response as unknown as GenerateContentResponse;
     } catch (error: any) {
         console.error("Generate Content Error:", error);
-        throw new functions.https.HttpsError('internal', error.message);
+
+        // Standardize Error Mapping
+        const message = error.message || '';
+        if (message.includes('429') || message.includes('quota')) {
+            throw new functions.https.HttpsError('resource-exhausted', 'Quota Exceeded', { code: 'QUOTA_EXCEEDED' });
+        }
+        if (message.includes('safety') || message.includes('blocked')) {
+            throw new functions.https.HttpsError('failed-precondition', 'Safety Violation', { code: 'SAFETY_VIOLATION' });
+        }
+        if (message.includes('400')) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid Request', { code: 'INVALID_ARGUMENT' });
+        }
+
+        throw new functions.https.HttpsError('internal', error.message, { code: 'INTERNAL_ERROR' });
     }
 });
 
@@ -47,7 +63,10 @@ export const generateContentStream = functions.https.onRequest(async (req, res) 
                 generationConfig
             });
 
-            const result = await model.generateContentStream({ contents });
+            // Ensure contents is an array
+            const contentArray = (Array.isArray(contents) ? contents : [contents]) as Content[];
+
+            const result = await model.generateContentStream({ contents: contentArray });
 
             // Set headers for streaming
             res.setHeader('Content-Type', 'application/x-ndjson');
@@ -88,5 +107,14 @@ export const embedContent = functions.https.onCall(async (data, context) => {
     } catch (error: any) {
         console.error("Embed Content Error:", error);
         throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+export const generateVideo = functions.https.onCall(async (data: GenerateVideoRequest, context) => {
+    try {
+        // Mock Implementation or placeholder
+        return {};
+    } catch (e: any) {
+        throw new functions.https.HttpsError('internal', e.message);
     }
 });

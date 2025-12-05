@@ -31,44 +31,39 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            const newFiles: ConversationFile[] = [];
-            for (let i = 0; i < e.target.files.length; i++) {
-                const file = e.target.files[i];
-                const isImage = file.type.startsWith('image/');
-                const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
+            const filePromises = Array.from(e.target.files).map(file => {
+                return new Promise<ConversationFile>((resolve) => {
+                    const isImage = file.type.startsWith('image/');
+                    const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
 
-                if (isImage) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        newFiles.push({
-                            id: uuidv4(),
-                            file,
-                            preview: e.target?.result as string,
-                            type: 'image',
-                            base64: (e.target?.result as string).split(',')[1]
+                    if (isImage) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            resolve({
+                                id: uuidv4(),
+                                file,
+                                preview: e.target?.result as string,
+                                type: 'image',
+                                base64: (e.target?.result as string)?.split(',')[1]
+                            });
+                        };
+                        reader.readAsDataURL(file);
+                    } else if (isText) {
+                        file.text().then(text => {
+                            resolve({
+                                id: uuidv4(),
+                                file,
+                                preview: '',
+                                type: 'document',
+                                content: text
+                            });
                         });
-                        if (newFiles.length === 1) setFiles(prev => [...prev, ...newFiles]); // Update state after first file (simplified)
-                    };
-                    reader.readAsDataURL(file);
-                } else if (isText) {
-                    const text = await file.text();
-                    newFiles.push({
-                        id: uuidv4(),
-                        file,
-                        preview: '',
-                        type: 'document',
-                        content: text
-                    });
-                }
-            }
-            // Note: The async nature of FileReader inside a loop is tricky. 
-            // For simplicity in this step, we'll just wait for the text ones and let images load async.
-            // A better approach would be Promise.all but let's stick to this for now as it's a quick fix.
-            // We'll update state for text files immediately.
-            const textFiles = newFiles.filter(f => f.type === 'document');
-            if (textFiles.length > 0) {
-                setFiles(prev => [...prev, ...textFiles]);
-            }
+                    }
+                });
+            });
+
+            const newFiles = await Promise.all(filePromises);
+            setFiles(prev => [...prev, ...newFiles]);
         }
     };
 
@@ -144,7 +139,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 <div className="flex-1 flex flex-col border-r border-gray-800">
                     <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#111]">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="text-purple-500" size={20} />
+                            <Sparkles className="text-white" size={20} />
                             <h2 className="font-bold text-white">Brand Kit Builder</h2>
                         </div>
                         <button onClick={onClose} className="text-gray-400 hover:text-white">
@@ -156,8 +151,8 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                         {history.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-xl ${msg.role === 'user'
-                                    ? 'bg-purple-600 text-white rounded-tr-none'
-                                    : 'bg-gray-800 text-gray-200 rounded-tl-none'
+                                    ? 'bg-white text-black rounded-tr-none'
+                                    : 'bg-[#222] text-gray-200 rounded-tl-none'
                                     }`}>
                                     {msg.parts[0].text}
                                 </div>
@@ -218,13 +213,13 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                 placeholder="Type your answer..."
-                                className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                className="flex-1 bg-black border border-[#333] rounded-lg px-4 py-2 text-white focus:border-white outline-none"
                                 autoFocus
                             />
                             <button
                                 onClick={handleSend}
                                 disabled={isProcessing || (!input.trim() && files.length === 0)}
-                                className="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="bg-white hover:bg-gray-200 text-black p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 <Send size={20} />
                             </button>
@@ -240,11 +235,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     <div className="mb-8">
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-gray-400">Artist Identity</span>
-                            <span className="text-purple-400 font-bold">{coreProgress}%</span>
+                            <span className="text-white font-bold">{coreProgress}%</span>
                         </div>
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-purple-500 transition-all duration-500"
+                                className="h-full bg-white transition-all duration-500"
                                 style={{ width: `${coreProgress}%` }}
                             />
                         </div>
@@ -256,7 +251,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                         {isMissing ? (
                                             <Circle size={14} className="text-gray-600" />
                                         ) : (
-                                            <CheckCircle size={14} className="text-green-500" />
+                                            <CheckCircle size={14} className="text-white" />
                                         )}
                                         <span className={isMissing ? 'text-gray-500' : 'text-gray-300 capitalize'}>
                                             {key.replace(/([A-Z])/g, ' $1').trim()}
@@ -271,11 +266,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     <div>
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-gray-400">Current Release</span>
-                            <span className="text-blue-400 font-bold">{releaseProgress}%</span>
+                            <span className="text-gray-400 font-bold">{releaseProgress}%</span>
                         </div>
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-blue-500 transition-all duration-500"
+                                className="h-full bg-gray-500 transition-all duration-500"
                                 style={{ width: `${releaseProgress}%` }}
                             />
                         </div>
@@ -287,7 +282,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                         {isMissing ? (
                                             <Circle size={14} className="text-gray-600" />
                                         ) : (
-                                            <CheckCircle size={14} className="text-green-500" />
+                                            <CheckCircle size={14} className="text-white" />
                                         )}
                                         <span className={isMissing ? 'text-gray-500' : 'text-gray-300 capitalize'}>
                                             {key}

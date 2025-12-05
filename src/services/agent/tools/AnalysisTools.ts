@@ -58,5 +58,23 @@ export const AnalysisTools = {
             }
             return `Knowledge search failed: An unknown error occurred.`;
         }
+    },
+    verify_output: async (args: { goal: string, content: string }) => {
+        try {
+            const { AI } = await import('@/services/ai/AIService');
+            const prompt = `CRITIQUE REQUEST:
+            GOAL: ${args.goal}
+            CONTENT: ${args.content}
+            
+            Evaluate if the content meets the goal. Provide a score (1-10) and specific feedback.`;
+
+            const res = await AI.generateContent({
+                model: 'gemini-2.0-flash-exp',
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            return res.text();
+        } catch (e: any) {
+            return `Verification failed: ${e.message}`;
+        }
     }
 };

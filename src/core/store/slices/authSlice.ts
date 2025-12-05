@@ -54,17 +54,32 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
         set({ currentOrganizationId: id });
     },
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
-    setUserProfile: (profile) => set({ userProfile: profile }),
-    updateBrandKit: (updates) => set((state) => ({
-        userProfile: {
+    setUserProfile: (profile) => {
+        localStorage.setItem('userProfile', JSON.stringify(profile));
+        set({ userProfile: profile });
+    },
+    updateBrandKit: (updates) => set((state) => {
+        const newProfile = {
             ...state.userProfile,
             brandKit: { ...state.userProfile.brandKit, ...updates }
-        }
-    })),
+        };
+        localStorage.setItem('userProfile', JSON.stringify(newProfile));
+        return { userProfile: newProfile };
+    }),
     initializeAuth: () => {
         const storedOrgId = localStorage.getItem('currentOrgId');
         if (storedOrgId) {
             set({ currentOrganizationId: storedOrgId });
+        }
+
+        const storedProfile = localStorage.getItem('userProfile');
+        if (storedProfile) {
+            try {
+                const parsed = JSON.parse(storedProfile);
+                set({ userProfile: parsed });
+            } catch (e) {
+                console.error("Failed to parse stored profile", e);
+            }
         }
     }
 });

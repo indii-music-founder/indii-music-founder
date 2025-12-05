@@ -33,6 +33,10 @@ function wrapResponse(rawResponse: any) {
 import { env } from '@/config/env';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { endpointService } from '@/core/config/EndpointService';
+import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest, GenerateVideoResponse } from '@/shared/types/ai.dto';
+import { AppErrorCode } from '@/shared/types/errors';
+import { AppErrorCode } from '@/shared/types/errors';
 
 class AIService {
     private apiKey: string;
@@ -42,10 +46,10 @@ class AIService {
 
 
     constructor() {
-        this.apiKey = env.VITE_API_KEY;
-        this.projectId = env.VITE_VERTEX_PROJECT_ID;
-        this.location = env.VITE_VERTEX_LOCATION;
-        this.useVertex = env.VITE_USE_VERTEX;
+        this.apiKey = env.apiKey;
+        this.projectId = env.projectId;
+        this.location = env.location;
+        this.useVertex = env.useVertex;
 
         if (!this.apiKey && !this.projectId) {
             console.warn("Missing VITE_API_KEY or VITE_VERTEX_PROJECT_ID");
@@ -57,16 +61,46 @@ class AIService {
         contents: { role: string; parts: any[] } | { role: string; parts: any[] }[];
         config?: Record<string, unknown>;
     }) {
+        return this.withRetry(async () => {
+            try {
+                const generateContentFn = httpsCallable<GenerateContentRequest, GenerateContentResponse>(functions, 'generateContent');
+                const response = await generateContentFn({
+                    model: options.model,
+                    contents: options.contents,
+                    config: options.config
+                });
+                return wrapResponse(response.data);
+            } catch (error: any) {
+                console.error("Generate Content Failed:", error);
+                if (error.details && error.details.code) {
+                    // Forward the standardized error code if available
+                    const newError = new Error(`[${error.details.code}] ${error.message}`);
+                    (newError as any).code = error.details.code; // Attach code for retry logic check
+                    throw newError;
+                }
+                throw new Error(`Generate Content Failed: ${error.message}`);
+            }
+        });
+    }
+
+    private async withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
         try {
-            const generateContentFn = httpsCallable(functions, 'generateContent');
-            const response = await generateContentFn({
-                model: options.model,
-                contents: options.contents,
-                config: options.config
-            });
-            return wrapResponse(response.data);
+            return await operation();
         } catch (error: any) {
-            throw new Error(`Generate Content Failed: ${error.message}`);
+            // Check for retryable errors: 429 (Resource Exhausted), 503 (Unavailable), or specific app codes
+            const isRetryable =
+                error.code === 'resource-exhausted' ||
+                error.code === 'unavailable' ||
+                error.message.includes('QUOTA_EXCEEDED') ||
+                error.message.includes('503') ||
+                error.message.includes('429');
+
+            if (retries > 0 && isRetryable) {
+                console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.withRetry(operation, retries - 1, delay * 2); // Exponential backoff
+            }
+            throw error;
         }
     }
 
@@ -75,19 +109,7 @@ class AIService {
         contents: { role: string; parts: { text: string }[] }[];
         config?: Record<string, unknown>;
     }) {
-        let functionUrl: string;
-
-        if (env.DEV) {
-            // Emulator URL
-            const projectId = this.projectId || 'architexture-ai-api';
-            const region = this.location || 'us-central1';
-            functionUrl = `http://127.0.0.1:5001/${projectId}/${region}/generateContentStream`;
-        } else {
-            // Production URL
-            const projectId = this.projectId || 'architexture-ai-api';
-            const region = this.location || 'us-central1';
-            functionUrl = `https://${region}-${projectId}.cloudfunctions.net/generateContentStream`;
-        }
+        const functionUrl = endpointService.getFunctionUrl('generateContentStream');
 
         const response = await fetch(functionUrl, {
             method: 'POST',
@@ -144,7 +166,7 @@ class AIService {
         config?: Record<string, unknown>;
     }) {
         try {
-            const generateVideoFn = httpsCallable(functions, 'generateVideo');
+            const generateVideoFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'generateVideo');
             const response = await generateVideoFn({
                 prompt: options.prompt,
                 model: options.model,

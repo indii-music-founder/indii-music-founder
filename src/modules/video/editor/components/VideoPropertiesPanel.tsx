@@ -50,7 +50,7 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
     );
 
     return (
-        <div className="w-80 border-l border-gray-800 bg-gray-900 p-4 overflow-y-auto">
+        <div className="w-80 border-l border-gray-800 bg-gray-900 p-4 overflow-y-auto custom-scrollbar">
             <h3 className="text-sm font-semibold text-gray-400 uppercase mb-4">Properties</h3>
             <div className="space-y-4">
                 <div className="bg-gray-800 p-3 rounded border border-gray-700">

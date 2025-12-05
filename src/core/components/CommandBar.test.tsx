@@ -13,6 +13,14 @@ vi.mock('@/services/agent/AgentService', () => ({
         sendMessage: vi.fn(),
     },
 }));
+vi.mock('@/services/ai/VoiceService', () => ({
+    voiceService: {
+        isSupported: vi.fn(() => false),
+        startListening: vi.fn(),
+        stopListening: vi.fn(),
+    }
+}));
+
 vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAll: () => [

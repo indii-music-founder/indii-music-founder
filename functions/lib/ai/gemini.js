@@ -7,35 +7,45 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.embedContent = exports.generateContentStream = exports.generateContent = void 0;
+exports.generateVideo = exports.embedContent = exports.generateContentStream = exports.generateContent = void 0;
 const functions = require("firebase-functions");
 const cors = require("cors");
 const generative_ai_1 = require("@google/generative-ai");
 const config_1 = require("../config");
 const corsHandler = cors({ origin: true });
 // Initialize GenAI with server-side API key
-const genAI = new generative_ai_1.GoogleGenerativeAI(config_1.config.VITE_API_KEY);
-exports.generateContent = functions.https.onRequest(async (req, res) => {
-    corsHandler(req, res, async () => {
-        try {
-            const { model: modelName, contents, config: generationConfig } = req.body;
-            if (!modelName || !contents) {
-                res.status(400).send({ error: "Missing model or contents" });
-                return;
-            }
-            const model = genAI.getGenerativeModel({
-                model: modelName,
-                generationConfig
-            });
-            const result = await model.generateContent({ contents });
-            const response = result.response;
-            res.json(response);
+const genAI = new generative_ai_1.GoogleGenerativeAI(config_1.config.apiKey);
+exports.generateContent = functions.https.onCall(async (data, context) => {
+    try {
+        const { model: modelName, contents, config: generationConfig } = data;
+        if (!modelName || !contents) {
+            throw new functions.https.HttpsError('invalid-argument', "Missing model or contents");
         }
-        catch (error) {
-            console.error("Generate Content Error:", error);
-            res.status(500).send({ error: error.message });
+        const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig
+        });
+        // Ensure contents is an array conforms to Content[]
+        const contentArray = (Array.isArray(contents) ? contents : [contents]);
+        const result = await model.generateContent({ contents: contentArray });
+        const response = result.response;
+        return response;
+    }
+    catch (error) {
+        console.error("Generate Content Error:", error);
+        // Standardize Error Mapping
+        const message = error.message || '';
+        if (message.includes('429') || message.includes('quota')) {
+            throw new functions.https.HttpsError('resource-exhausted', 'Quota Exceeded', { code: 'QUOTA_EXCEEDED' });
         }
-    });
+        if (message.includes('safety') || message.includes('blocked')) {
+            throw new functions.https.HttpsError('failed-precondition', 'Safety Violation', { code: 'SAFETY_VIOLATION' });
+        }
+        if (message.includes('400')) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid Request', { code: 'INVALID_ARGUMENT' });
+        }
+        throw new functions.https.HttpsError('internal', error.message, { code: 'INTERNAL_ERROR' });
+    }
 });
 exports.generateContentStream = functions.https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
@@ -50,7 +60,9 @@ exports.generateContentStream = functions.https.onRequest(async (req, res) => {
                 model: modelName,
                 generationConfig
             });
-            const result = await model.generateContentStream({ contents });
+            // Ensure contents is an array
+            const contentArray = (Array.isArray(contents) ? contents : [contents]);
+            const result = await model.generateContentStream({ contents: contentArray });
             // Set headers for streaming
             res.setHeader('Content-Type', 'application/x-ndjson');
             res.setHeader('Transfer-Encoding', 'chunked');
@@ -86,22 +98,28 @@ exports.generateContentStream = functions.https.onRequest(async (req, res) => {
         }
     });
 });
-exports.embedContent = functions.https.onRequest(async (req, res) => {
-    corsHandler(req, res, async () => {
-        try {
-            const { model: modelName, content } = req.body;
-            if (!modelName || !content) {
-                res.status(400).send({ error: "Missing model or content" });
-                return;
-            }
-            const model = genAI.getGenerativeModel({ model: modelName });
-            const result = await model.embedContent({ content });
-            res.json(result);
+exports.embedContent = functions.https.onCall(async (data, context) => {
+    try {
+        const { model: modelName, content } = data;
+        if (!modelName || !content) {
+            throw new functions.https.HttpsError('invalid-argument', "Missing model or content");
         }
-        catch (error) {
-            console.error("Embed Content Error:", error);
-            res.status(500).send({ error: error.message });
-        }
-    });
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.embedContent({ content });
+        return result;
+    }
+    catch (error) {
+        console.error("Embed Content Error:", error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+exports.generateVideo = functions.https.onCall(async (data, context) => {
+    try {
+        // Mock Implementation or placeholder
+        return {};
+    }
+    catch (e) {
+        throw new functions.https.HttpsError('internal', e.message);
+    }
 });
 //# sourceMappingURL=gemini.js.map

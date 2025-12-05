@@ -47,6 +47,10 @@ export default function App() {
         }
     }, []);
 
+    useEffect(() => {
+        console.log(`[App] Current Module Changed: ${currentModule}`);
+    }, [currentModule]);
+
     return (
         <ToastProvider>
             <ErrorBoundary>

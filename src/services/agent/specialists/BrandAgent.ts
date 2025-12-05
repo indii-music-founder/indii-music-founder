@@ -1,6 +1,7 @@
 
 import { BaseAgent } from './BaseAgent';
 
+
 export class BrandAgent extends BaseAgent {
     id = 'brand';
     name = 'Brand Manager';
@@ -17,5 +18,18 @@ export class BrandAgent extends BaseAgent {
 
     Always reference the Brand Context provided in the prompt.`;
 
-    tools = []; // Uses inherited superpowers
+    tools = [{
+        functionDeclarations: [{
+            name: 'verify_output',
+            description: 'Critique and verify generated content against a goal (Brand Bible).',
+            parameters: {
+                type: 'OBJECT',
+                properties: {
+                    goal: { type: 'STRING', description: 'The original goal or brand guideline.' },
+                    content: { type: 'STRING', description: 'The content to verify.' }
+                },
+                required: ['goal', 'content']
+            }
+        }]
+    }];
 }
