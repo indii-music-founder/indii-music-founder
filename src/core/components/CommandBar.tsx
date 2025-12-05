@@ -1,40 +1,84 @@
-import React, { useState } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image, ChevronUp, X } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { Orchestrator } from '@/services/agent/OrchestratorService';
+import { agentService } from '@/services/agent/AgentService';
+import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
 import { getColorForModule } from '../theme/moduleColors';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CommandBar() {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [status, setStatus] = useState('');
-    const { currentModule } = useStore();
+    const [openDelegate, setOpenDelegate] = useState(false);
+    const [attachments, setAttachments] = useState<File[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { currentModule, setModule, toggleAgentWindow, isAgentOpen } = useStore();
     const colors = getColorForModule(currentModule);
 
     const toast = useToast();
 
+    const handleDelegate = (moduleId: string) => {
+        if (moduleId !== 'dashboard') {
+            setModule(moduleId as any);
+        }
+
+        if (!isAgentOpen) {
+            toggleAgentWindow();
+        }
+        setOpenDelegate(false);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+        }
+    };
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        if (!input.trim() && attachments.length === 0) return;
 
         setIsProcessing(true);
-        setStatus('Orchestrator is thinking...');
+        // Ensure agent window (chat overlay) is open when sending a message
+        if (!isAgentOpen) {
+            toggleAgentWindow();
+        }
 
         try {
-            const target = await Orchestrator.executeRouting(input);
-            setStatus(`Routing to ${target.toUpperCase()}...`);
-            toast.success(`Routed to ${target.toUpperCase()}`);
+            // Check if current module is a known agent
+            const knownAgents = agentRegistry.getAll().map(a => a.id);
+            const targetAgent = knownAgents.includes(currentModule) ? currentModule : undefined;
 
-            setTimeout(() => {
-                setInput('');
-                setStatus('');
-                setIsProcessing(false);
-            }, 1000);
+            // Process attachments
+            const processedAttachments = await Promise.all(attachments.map(async (file) => {
+                return new Promise<{ mimeType: string; base64: string }>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = (reader.result as string).split(',')[1];
+                        resolve({
+                            mimeType: file.type,
+                            base64
+                        });
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }));
+
+            await agentService.sendMessage(input, processedAttachments.length > 0 ? processedAttachments : undefined, targetAgent);
+
+            setInput('');
+            setAttachments([]);
+            setIsProcessing(false);
         } catch (error) {
-            console.error("CommandBar routing error:", error);
-            setStatus('Routing failed.');
-            toast.error("Failed to route command. Please try again.");
+            console.error("CommandBar error:", error);
+            toast.error("Failed to send message.");
             setIsProcessing(false);
         }
     };
@@ -43,20 +87,45 @@ export default function CommandBar() {
         <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
-                <div className={`bg-[#161b22] border rounded-xl overflow-hidden transition-all ${colors.border} ${colors.ring} focus-within:ring-1`}>
+                <div className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1`}>
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Describe your creative task or goal..."
-                            className="w-full bg-transparent text-gray-200 placeholder-gray-600 px-4 py-3 outline-none"
+                            className="w-full bg-transparent text-gray-200 placeholder-gray-600 px-4 py-3 outline-none rounded-t-xl"
                         />
+
+                        {/* Attachments Preview */}
+                        {attachments.length > 0 && (
+                            <div className="px-4 pb-2 flex gap-2 flex-wrap">
+                                {attachments.map((file, index) => (
+                                    <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300">
+                                        <span className="max-w-[150px] truncate">{file.name}</span>
+                                        <button type="button" onClick={() => removeAttachment(index)} className="hover:text-white">
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Toolbar */}
                         <div className="flex items-center justify-between px-2 pb-2">
                             <div className="flex items-center gap-1">
-                                <button type="button" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                    multiple
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                >
                                     <Paperclip size={14} />
                                     Attach Files
                                 </button>
@@ -64,13 +133,81 @@ export default function CommandBar() {
                                     <Camera size={14} />
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
-                                <button
-                                    type="button"
-                                    onClick={() => useStore.getState().toggleAgentWindow()}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
-                                >
-                                    <span>Delegate to Indii</span>
-                                </button>
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenDelegate(!openDelegate)}
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                    >
+                                        <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'Indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
+                                        <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {openDelegate && (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-40"
+                                                    onClick={() => setOpenDelegate(false)}
+                                                />
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: 10 }}
+                                                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-96"
+                                                >
+                                                    <div className="overflow-y-auto custom-scrollbar">
+                                                        <div className="p-1">
+                                                            <button
+                                                                onClick={() => handleDelegate('dashboard')}
+                                                                className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                                            >
+                                                                <div className="w-2 h-2 rounded-full bg-gray-500" />
+                                                                Indii (Chief of Staff)
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="border-t border-gray-800 my-1" />
+
+                                                        <div className="p-2">
+                                                            <p className="text-[10px] font-bold text-gray-500 uppercase px-2 mb-1">Manager's Office</p>
+                                                            {agentRegistry.getAll()
+                                                                .filter(agent => agent.category === 'manager' || agent.category === 'specialist')
+                                                                .map(agent => (
+                                                                    <button
+                                                                        key={agent.id}
+                                                                        onClick={() => handleDelegate(agent.id)}
+                                                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                                                    >
+                                                                        <div className={`w-1.5 h-1.5 rounded-full ${agent.color}`} />
+                                                                        {agent.name}
+                                                                    </button>
+                                                                ))}
+                                                        </div>
+
+                                                        <div className="border-t border-gray-800 my-1" />
+
+                                                        <div className="p-2">
+                                                            <p className="text-[10px] font-bold text-gray-500 uppercase px-2 mb-1">Departments</p>
+                                                            {agentRegistry.getAll()
+                                                                .filter(agent => agent.category === 'department')
+                                                                .map(dept => (
+                                                                    <button
+                                                                        key={dept.id}
+                                                                        onClick={() => handleDelegate(dept.id)}
+                                                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                                                    >
+                                                                        <div className={`w-1.5 h-1.5 rounded-full ${dept.color}`} />
+                                                                        {dept.name}
+                                                                    </button>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            </>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -79,7 +216,7 @@ export default function CommandBar() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={!input.trim() || isProcessing}
+                                    disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
                                 >
                                     {isProcessing ? (

@@ -1,9 +1,15 @@
 import { useStore } from '@/core/store';
 
+export interface ProjectHandle {
+    id: string;
+    name: string;
+    type: string;
+}
+
 export interface AgentContext {
     currentProjectId?: string;
     currentOrganizationId?: string;
-    currentProject?: any;
+    projectHandle?: ProjectHandle;
     userProfile?: any;
     brandKit?: any;
     currentModule?: string;
@@ -16,10 +22,19 @@ export class ContextResolver {
         const currentProject = projects.find(p => p.id === currentProjectId);
         const brandKit = userProfile?.brandKit;
 
+        let projectHandle: ProjectHandle | undefined;
+        if (currentProject) {
+            projectHandle = {
+                id: currentProject.id,
+                name: currentProject.name,
+                type: currentProject.type
+            };
+        }
+
         return {
             currentProjectId,
             currentOrganizationId,
-            currentProject,
+            projectHandle,
             userProfile,
             brandKit,
             currentModule

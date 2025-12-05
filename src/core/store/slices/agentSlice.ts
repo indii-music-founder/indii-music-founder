@@ -7,6 +7,15 @@ export interface AgentMessage {
     timestamp: number;
     attachments?: { mimeType: string; base64: string }[];
     isStreaming?: boolean;
+    thoughts?: AgentThought[];
+}
+
+export interface AgentThought {
+    id: string;
+    text: string;
+    timestamp: number;
+    type?: 'tool' | 'logic' | 'error';
+    toolName?: string;
 }
 
 export interface AgentSlice {

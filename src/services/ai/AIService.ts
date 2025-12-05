@@ -3,7 +3,36 @@ function cleanJSON(text: string): string {
     return text.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
 }
 
+// Helper to wrap raw JSON response to match GoogleGenerativeAI SDK response format
+function wrapResponse(rawResponse: any) {
+    return {
+        response: rawResponse,
+        text: () => {
+            if (rawResponse.candidates && rawResponse.candidates.length > 0) {
+                const candidate = rawResponse.candidates[0];
+                if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                    return candidate.content.parts[0].text;
+                }
+            }
+            return "";
+        },
+        functionCalls: () => {
+            if (rawResponse.candidates && rawResponse.candidates.length > 0) {
+                const candidate = rawResponse.candidates[0];
+                if (candidate.content && candidate.content.parts) {
+                    return candidate.content.parts
+                        .filter((p: any) => p.functionCall)
+                        .map((p: any) => p.functionCall);
+                }
+            }
+            return [];
+        }
+    };
+}
+
 import { env } from '@/config/env';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 class AIService {
     private apiKey: string;
@@ -28,23 +57,17 @@ class AIService {
         contents: { role: string; parts: any[] } | { role: string; parts: any[] }[];
         config?: Record<string, unknown>;
     }) {
-        const functionUrl = `${env.VITE_FUNCTIONS_URL}/generateContent`;
-
-        const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        try {
+            const generateContentFn = httpsCallable(functions, 'generateContent');
+            const response = await generateContentFn({
                 model: options.model,
                 contents: options.contents,
                 config: options.config
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Generate Content Failed: ${await response.text()}`);
+            });
+            return wrapResponse(response.data);
+        } catch (error: any) {
+            throw new Error(`Generate Content Failed: ${error.message}`);
         }
-
-        return await response.json();
     }
 
     async generateContentStream(options: {
@@ -52,7 +75,19 @@ class AIService {
         contents: { role: string; parts: { text: string }[] }[];
         config?: Record<string, unknown>;
     }) {
-        const functionUrl = `${env.VITE_FUNCTIONS_URL}/generateContentStream`;
+        let functionUrl: string;
+
+        if (env.DEV) {
+            // Emulator URL
+            const projectId = this.projectId || 'architexture-ai-api';
+            const region = this.location || 'us-central1';
+            functionUrl = `http://127.0.0.1:5001/${projectId}/${region}/generateContentStream`;
+        } else {
+            // Production URL
+            const projectId = this.projectId || 'architexture-ai-api';
+            const region = this.location || 'us-central1';
+            functionUrl = `https://${region}-${projectId}.cloudfunctions.net/generateContentStream`;
+        }
 
         const response = await fetch(functionUrl, {
             method: 'POST',
@@ -108,33 +143,16 @@ class AIService {
         image?: { imageBytes: string; mimeType: string };
         config?: Record<string, unknown>;
     }) {
-        // Call Firebase Cloud Function
-        const functionUrl = env.VITE_FUNCTIONS_URL;
-
-        if (!functionUrl) {
-            throw new Error("VITE_FUNCTIONS_URL is not defined in environment variables.");
-        }
-
         try {
-            const response = await fetch(functionUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    prompt: options.prompt,
-                    model: options.model,
-                    image: options.image,
-                    config: options.config
-                })
+            const generateVideoFn = httpsCallable(functions, 'generateVideo');
+            const response = await generateVideoFn({
+                prompt: options.prompt,
+                model: options.model,
+                image: options.image,
+                config: options.config
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Video Generation Failed: ${errText}`);
-            }
-
-            const data = await response.json();
+            const data = response.data as any;
             const prediction = data.predictions?.[0];
 
             if (!prediction) throw new Error("No prediction returned from backend");
@@ -151,22 +169,16 @@ class AIService {
         model: string;
         content: { role?: string; parts: { text: string }[] };
     }) {
-        const functionUrl = `${env.VITE_FUNCTIONS_URL}/embedContent`;
-
-        const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        try {
+            const embedContentFn = httpsCallable(functions, 'embedContent');
+            const response = await embedContentFn({
                 model: options.model,
                 content: options.content
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Embed Content Failed: ${await response.text()}`);
+            });
+            return response.data;
+        } catch (error: any) {
+            throw new Error(`Embed Content Failed: ${error.message}`);
         }
-
-        return await response.json();
     }
 
     parseJSON(text: string | undefined) {

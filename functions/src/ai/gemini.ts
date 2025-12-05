@@ -8,30 +8,28 @@ const corsHandler = cors({ origin: true });
 // Initialize GenAI with server-side API key
 const genAI = new GoogleGenerativeAI(config.VITE_API_KEY);
 
-export const generateContent = functions.https.onRequest(async (req, res) => {
-    corsHandler(req, res, async () => {
-        try {
-            const { model: modelName, contents, config: generationConfig } = req.body;
+export const generateContent = functions.https.onCall(async (data, context) => {
+    try {
+        const { model: modelName, contents, config: generationConfig } = data;
 
-            if (!modelName || !contents) {
-                res.status(400).send({ error: "Missing model or contents" });
-                return;
-            }
-
-            const model = genAI.getGenerativeModel({
-                model: modelName,
-                generationConfig
-            });
-
-            const result = await model.generateContent({ contents });
-            const response = result.response;
-
-            res.json(response);
-        } catch (error: any) {
-            console.error("Generate Content Error:", error);
-            res.status(500).send({ error: error.message });
+        if (!modelName || !contents) {
+            throw new functions.https.HttpsError('invalid-argument', "Missing model or contents");
         }
-    });
+
+        const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig
+        });
+
+        const result = await model.generateContent({ contents });
+        const response = result.response;
+
+        // Return the raw response object. The client will wrap it.
+        return response;
+    } catch (error: any) {
+        console.error("Generate Content Error:", error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
 });
 
 export const generateContentStream = functions.https.onRequest(async (req, res) => {
@@ -75,23 +73,20 @@ export const generateContentStream = functions.https.onRequest(async (req, res) 
     });
 });
 
-export const embedContent = functions.https.onRequest(async (req, res) => {
-    corsHandler(req, res, async () => {
-        try {
-            const { model: modelName, content } = req.body;
+export const embedContent = functions.https.onCall(async (data, context) => {
+    try {
+        const { model: modelName, content } = data;
 
-            if (!modelName || !content) {
-                res.status(400).send({ error: "Missing model or content" });
-                return;
-            }
-
-            const model = genAI.getGenerativeModel({ model: modelName });
-            const result = await model.embedContent({ content });
-
-            res.json(result);
-        } catch (error: any) {
-            console.error("Embed Content Error:", error);
-            res.status(500).send({ error: error.message });
+        if (!modelName || !content) {
+            throw new functions.https.HttpsError('invalid-argument', "Missing model or content");
         }
-    });
+
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.embedContent({ content });
+
+        return result;
+    } catch (error: any) {
+        console.error("Embed Content Error:", error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
 });

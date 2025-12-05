@@ -12,6 +12,8 @@ export default function Sidebar() {
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
+        { id: 'creative', icon: Palette, label: 'Creative Director' },
+        { id: 'video', icon: Film, label: 'Video Producer' },
     ];
 
     const departmentItems = [

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CreativeNavbar from './components/CreativeNavbar';
 import CreativeGallery from './components/CreativeGallery';
-import AgentWindow from '../../core/components/AgentWindow';
 import InfiniteCanvas from './components/InfiniteCanvas';
 import Showroom from './components/Showroom';
 import VideoWorkflow from '../video/VideoWorkflow';
@@ -64,6 +63,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             });
                         });
                         toast.success("Image generated!");
+                    } else {
+                        toast.error("Generation returned no images. Please try again.");
                     }
                 } catch (e) {
                     console.error("Image generation failed:", e);
@@ -80,7 +81,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
 
 
-            <AgentWindow />
             <div className="flex-1 flex overflow-hidden relative">
                 {/* Main Workspace */}
                 <div className="flex-1 flex flex-col relative min-w-0 bg-[#0f0f0f]">

@@ -55,7 +55,7 @@ describe('Specialist Agents Connection', () => {
         // But we can check if the tools are being passed correctly
 
         const { AI } = await import('@/services/ai/AIService');
-        await brandAgent.execute('Test Task');
+        await brandAgent.execute('Test Task', {});
 
         const callArgs = (AI.generateContent as any).mock.calls[0][0];
         const tools = callArgs.config.tools;

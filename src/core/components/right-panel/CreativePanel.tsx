@@ -3,6 +3,8 @@ import { Image as ImageIcon, Wand2, History, ChevronRight, Zap, ChevronDown, Sli
 import { useStore } from '../../store';
 import { motion } from 'framer-motion';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { AI } from '@/services/ai/AIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useToast } from '@/core/context/ToastContext';
 
 interface CreativePanelProps {
@@ -48,12 +50,41 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                     });
                 });
                 toast.success("Image generated!");
+            } else {
+                toast.error("Generation returned no images. Please try again.");
             }
         } catch (e) {
             console.error("Generation failed:", e);
             toast.error("Generation failed");
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleEnhance = async () => {
+        if (!prompt.trim()) return;
+
+        toast.info("Enhancing prompt...");
+        try {
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.FAST,
+                contents: {
+                    role: 'user',
+                    parts: [{ text: `Enhance this image generation prompt to be more descriptive, artistic, and detailed. Keep it under 50 words. Return ONLY the enhanced prompt. Prompt: "${prompt}"` }]
+                },
+                config: AI_CONFIG.THINKING.LOW
+            });
+
+            const enhancedPrompt = response.text();
+            if (enhancedPrompt) {
+                setPrompt(enhancedPrompt.trim());
+                toast.success("Prompt enhanced!");
+            } else {
+                toast.error("Failed to enhance prompt");
+            }
+        } catch (e) {
+            console.error("Enhance failed:", e);
+            toast.error("Enhance failed");
         }
     };
 
@@ -92,7 +123,10 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                 <div className="space-y-3">
                     <div className="flex justify-between items-center">
                         <label className="text-[10px] font-bold text-gray-500 tracking-wider">POSITIVE PROMPT</label>
-                        <button className="text-[10px] text-purple-400 hover:text-purple-300 flex items-center gap-1 px-2 py-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 transition-colors">
+                        <button
+                            onClick={handleEnhance}
+                            className="text-[10px] text-purple-400 hover:text-purple-300 flex items-center gap-1 px-2 py-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                        >
                             <Zap size={10} /> Enhance
                         </button>
                     </div>
@@ -176,7 +210,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                         <Plus size={18} />
                     </motion.button>
                 </div>
-                <p className="text-[10px] text-center text-gray-600 font-mono">Cost: 2 Credits • Est. Time: 4.2s</p>
+                <p className="text-[10px] text-center text-gray-600 font-mono">Est. Cost: 2 Credits • Est. Time: 4.2s</p>
             </div>
         </div>
     );

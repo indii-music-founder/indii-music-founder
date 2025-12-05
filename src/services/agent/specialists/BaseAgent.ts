@@ -50,6 +50,17 @@ const SUPERPOWER_TOOLS = [
             },
             required: ['content']
         }
+    },
+    {
+        name: 'get_project_details',
+        description: 'Fetch full details of a project by ID.',
+        parameters: {
+            type: 'object',
+            properties: {
+                projectId: { type: 'string', description: 'The ID of the project to fetch.' }
+            },
+            required: ['projectId']
+        }
     }
 ];
 
@@ -57,13 +68,26 @@ export abstract class BaseAgent implements SpecializedAgent {
     abstract id: string;
     abstract name: string;
     abstract description: string;
+    abstract color: string;
+    abstract category: 'manager' | 'department' | 'specialist';
     abstract systemPrompt: string;
     abstract tools?: any[]; // Define tools for the specialist
 
-    protected functions: Record<string, (args: any) => Promise<any>> = {};
+    protected functions: Record<string, (args: any) => Promise<any>> = {
+        get_project_details: async ({ projectId }) => {
+            const { useStore } = await import('@/core/store');
+            const { projects } = useStore.getState();
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return { error: 'Project not found' };
+            return project;
+        }
+    };
 
-    async execute(task: string, context?: any): Promise<AgentResponse> {
+    async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<AgentResponse> {
         console.log(`[${this.name}] Received task: ${task}`);
+
+        // Report thinking start
+        onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         // Dynamically import store to avoid circular deps if any
         const { useStore } = await import('@/core/store');
@@ -75,8 +99,6 @@ export abstract class BaseAgent implements SpecializedAgent {
             projectId: currentProjectId
         };
 
-        const contextStr = `\nCONTEXT:\n${JSON.stringify(enrichedContext, null, 2)}`;
-
         const SUPERPOWER_PROMPT = `
         **SUPERPOWERS (Agent Zero Protocol):**
         - **Memory:** Use 'save_memory' to remember important details. Use 'recall_memories' to check for past context.
@@ -84,12 +106,29 @@ export abstract class BaseAgent implements SpecializedAgent {
         - **Approval:** Use 'request_approval' before taking any public or irreversible action.
         `;
 
-        const fullPrompt = `${this.systemPrompt}\n${contextStr}\n${SUPERPOWER_PROMPT}\n\nTASK: ${task}`;
+        // Prefix Caching Strategy: Stable -> Semi-Stable -> Variable
+        const fullPrompt = `
+${this.systemPrompt}
+
+${SUPERPOWER_PROMPT}
+
+CONTEXT:
+${JSON.stringify(enrichedContext, null, 2)}
+
+HISTORY:
+${context.chatHistory || ''}
+
+TASK:
+${task}
+`;
 
         // Merge specialist tools with superpowers
         const allTools = [...(this.tools || []), ...SUPERPOWER_TOOLS];
 
         try {
+            onProgress?.({ type: 'thought', content: 'Generating response...' });
+
+            // TODO: Switch to generateContentStream for token streaming in Phase 2
             const response = await AI.generateContent({
                 model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
@@ -105,8 +144,11 @@ export abstract class BaseAgent implements SpecializedAgent {
                 const { name, args } = functionCall;
                 console.log(`[${this.name}] Tool Call: ${name}`, args);
 
+                onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
+
                 if (this.functions[name]) {
                     const result = await this.functions[name](args);
+                    onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
                     return {
                         text: `[Tool: ${name}] Output: ${JSON.stringify(result)}`,
                         data: result
@@ -114,6 +156,7 @@ export abstract class BaseAgent implements SpecializedAgent {
                 } else if (TOOL_REGISTRY[name]) {
                     // Fallback to global registry for superpowers
                     const result = await TOOL_REGISTRY[name](args);
+                    onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
                     return {
                         text: `[Tool: ${name}] Output: ${result}`, // Registry returns string
                         data: result
@@ -130,6 +173,7 @@ export abstract class BaseAgent implements SpecializedAgent {
             };
         } catch (error: any) {
             console.error(`[${this.name}] Error executing task:`, error);
+            onProgress?.({ type: 'thought', content: `Error: ${error.message}` });
             return {
                 text: `Error executing task: ${error.message}`
             };

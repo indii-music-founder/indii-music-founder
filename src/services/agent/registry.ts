@@ -6,11 +6,15 @@ export interface AgentResponse {
     data?: any;
 }
 
+export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;
+
 export interface SpecializedAgent {
     id: string;
     name: string;
     description: string;
-    execute(task: string, context?: any): Promise<AgentResponse>;
+    color: string;
+    category: 'manager' | 'department' | 'specialist';
+    execute(task: string, context?: any, onProgress?: AgentProgressCallback): Promise<AgentResponse>;
 }
 
 export class AgentRegistry {

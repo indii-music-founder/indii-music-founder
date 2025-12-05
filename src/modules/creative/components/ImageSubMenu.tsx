@@ -1,14 +1,16 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Tags } from 'lucide-react';
 
 interface ImageSubMenuProps {
     onShowBrandAssets: () => void;
     showBrandAssets: boolean;
+    onTogglePromptBuilder: () => void;
+    showPromptBuilder: boolean;
 }
 
-export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets }: ImageSubMenuProps) {
+export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTogglePromptBuilder, showPromptBuilder }: ImageSubMenuProps) {
     const { generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode, setPrompt, userProfile } = useStore();
     const toast = useToast();
 
@@ -21,6 +23,14 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets }: Ima
                 Gallery
             </button>
             <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Image</button>
+
+            <button
+                onClick={onTogglePromptBuilder}
+                className={`text-xs px-2 py-1 rounded transition-colors flex items-center gap-1 ${showPromptBuilder ? 'bg-purple-500/20 text-purple-300' : 'text-gray-400 hover:text-white'}`}
+            >
+                <Tags size={12} /> Chips
+            </button>
+
             <button
                 onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0])}
                 className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"

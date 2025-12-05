@@ -2,8 +2,10 @@ import { BaseAgent } from './BaseAgent';
 
 export class LegalAgent extends BaseAgent {
     id = 'legal';
-    name = 'Legal Assistant';
-    description = 'Handles contracts, rights management, and compliance checks.';
+    name = 'Legal Department';
+    description = 'Handles contracts, compliance, and legal reviews.';
+    color = 'bg-emerald-500';
+    category = 'department' as const;
     systemPrompt = `You are the Legal Assistant for a creative studio.
     Your role is to review contracts, advise on intellectual property rights, and ensure compliance.
     Be precise, formal, and risk-averse.

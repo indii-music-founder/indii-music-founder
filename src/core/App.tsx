@@ -30,7 +30,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 
-import AgentWindow from './components/AgentWindow';
+import ChatOverlay from './components/ChatOverlay';
 
 export default function App() {
     const { currentModule, initializeHistory, initializeAuth, loadProjects } = useStore();
@@ -52,8 +52,6 @@ export default function App() {
             <ErrorBoundary>
                 <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
                     <ApiKeyErrorModal />
-                    <AgentWindow />
-
                     {/* Left Sidebar */}
                     {currentModule !== 'select-org' && (
                         <div className="hidden md:block h-full">
@@ -89,7 +87,8 @@ export default function App() {
 
                         {/* Command Bar at Bottom */}
                         {currentModule !== 'select-org' && (
-                            <div className="flex-shrink-0 z-10">
+                            <div className="flex-shrink-0 z-10 relative">
+                                <ChatOverlay />
                                 <CommandBar />
                             </div>
                         )}

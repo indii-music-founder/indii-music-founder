@@ -246,6 +246,8 @@ export default function CreativeNavbar() {
                     <ImageSubMenu
                         onShowBrandAssets={() => setShowBrandAssets(!showBrandAssets)}
                         showBrandAssets={showBrandAssets}
+                        onTogglePromptBuilder={() => setShowPromptBuilder(!showPromptBuilder)}
+                        showPromptBuilder={showPromptBuilder}
                     />
                 ) : (
                     <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
