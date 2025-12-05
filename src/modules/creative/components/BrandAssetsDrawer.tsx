@@ -16,7 +16,58 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
 
-    // ... handleDragOver, handleDrop ...
+    // Derived state for assets
+    const assets = userProfile?.brandKit?.brandAssets || [];
+    const refImages = userProfile?.brandKit?.referenceImages || [];
+
+    // Drag and drop handlers
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        await processFiles(files);
+    };
+
+    const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            await processFiles(files);
+        }
+    };
+
+    const processFiles = async (files: File[]) => {
+        for (const file of files) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64Url = reader.result as string;
+                const newAsset = { url: base64Url, description: file.name };
+                updateBrandKit({
+                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), newAsset]
+                });
+                addUploadedImage({
+                    id: crypto.randomUUID(),
+                    type: 'image',
+                    url: base64Url,
+                    prompt: file.name,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+        if (files.length > 0) {
+            toast.success(`${files.length} asset(s) uploaded`);
+        }
+    };
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;

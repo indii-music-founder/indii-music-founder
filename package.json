@@ -13,7 +13,9 @@
     "electron:dev": "tsc -p tsconfig.electron.json && mv dist-electron/preload.js dist-electron/preload.mjs && electron .",
     "electron:build": "tsc -p tsconfig.electron.json && mv dist-electron/preload.js dist-electron/preload.mjs && vite build && electron-builder",
     "test": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "main": "dist-electron/main.js",
   "dependencies": {

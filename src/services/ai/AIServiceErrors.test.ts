@@ -39,13 +39,14 @@ describe('AIService Error Handling', () => {
     it('should forward standardized QUOTA_EXCEEDED error', async () => {
         const error: any = new Error('Quota exceeded');
         error.details = { code: AppErrorCode.QUOTA_EXCEEDED };
+        // Always reject to exhaust all retries (3 retries with exponential backoff: 1s + 2s + 4s = 7s)
         mockHttpsCallable.mockRejectedValue(error);
 
         await expect(AI.generateContent({
             model: 'gemini-pro',
             contents: { role: 'user', parts: [] }
         })).rejects.toThrow('[QUOTA_EXCEEDED] Quota exceeded');
-    });
+    }, 15000); // Increase timeout to allow retries to exhaust
 
     it('should forward standardized SAFETY_VIOLATION error', async () => {
         const error: any = new Error('Safety violation');
