@@ -132,20 +132,20 @@ export default function ThreeDOrbs() {
             <Instances range={COUNT} ref={meshRef}>
                 <sphereGeometry args={[1, 32, 32]} />
                 <meshPhysicalMaterial
-                    roughness={0.15}
-                    metalness={0.2}
-                    transmission={0.95}
-                    thickness={2.0}
-                    ior={1.45}
+                    roughness={0.05} // Smoother surface
+                    metalness={0.6} // More metallic
+                    transmission={0.9} // High transmission for glass look
+                    thickness={3.0} // Thicker glass
+                    ior={1.5} // Standard glass IOR
                     clearcoat={1}
-                    clearcoatRoughness={0.1}
-                    attenuationDistance={0.8}
+                    clearcoatRoughness={0.05}
+                    attenuationDistance={1.0}
                     attenuationColor="#ffffff"
                     color="#ffffff"
                     iridescence={1}
                     iridescenceIOR={1.3}
                     iridescenceThicknessRange={[0, 1400]}
-                    dispersion={5} // Chromatic aberration
+                    dispersion={8} // Higher dispersion for more rainbows
                 />
                 {particles.map((_, i) => (
                     <Instance key={i} />

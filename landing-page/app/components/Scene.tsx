@@ -17,101 +17,122 @@ import Overlays from './Overlays';
 import AudioManager from './AudioManager';
 
 import TheRemix from './TheRemix';
+import { audioStore } from '../store/audioStore';
+
+import ThreeDOrbs from './ThreeDOrbs';
+import AudioRing from './AudioRing';
+import OrigamiParticles from './OrigamiParticles';
 
 function CameraRig() {
     const scroll = useScroll();
+    // const { frequencyData } = useAudioStore(); // Removed
+
     useFrame((state) => {
         // Move camera down as we scroll
         // Total height compressed to ~130 units (extended for Remix)
         // scroll.offset goes from 0 to 1
         const targetY = -scroll.offset * 130;
+        const { frequencyData } = audioStore.getState(); // Updated
+        const { bass } = frequencyData;
 
         // Smoothly interpolate camera position
-        state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetY, 0.1);
+        // Add bass kick to Y position for a "bump" effect
+        const bassOffset = bass * 0.25;
+
+        // Add subtle shake on X/Z based on bass
+        const shakeX = (Math.random() - 0.5) * bass * 0.05;
+        const shakeZ = (Math.random() - 0.5) * bass * 0.05;
+
+        const currentY = THREE.MathUtils.lerp(state.camera.position.y, targetY - bassOffset, 0.1);
+
+        state.camera.position.set(
+            shakeX,
+            currentY,
+            5 + shakeZ // Base Z is 5
+        );
 
         // Optional: Add some subtle mouse parallax or rotation here later
     });
     return null;
 }
 
-import { useAudioStore } from '../store/audioStore';
-
 function NeuralAether() {
     const count = 1000;
     const meshRef = useRef<THREE.InstancedMesh>(null!);
     const scroll = useScroll();
-    const { frequencyData } = useAudioStore();
 
+    // Generate particles with band assignments
     const particles = useMemo(() => {
-        return new Array(count).fill(0).map((_, i) => ({
-            position: [
-                (Math.random() - 0.5) * 20,
-                (Math.random() - 0.5) * 120, // Reduced spread
-                (Math.random() - 0.5) * 20
-            ] as [number, number, number],
-            scale: Math.random() * 0.05 + 0.02,
-            speed: Math.random() * 0.2 + 0.1,
-            phase: Math.random() * Math.PI * 2,
-            bandIndex: i % 31 // Assign each particle to one of the 31 bands
-        }));
-    }, []);
+        const temp = [];
+        for (let i = 0; i < count; i++) {
+            const t = Math.random() * 100;
+            const factor = 20 + Math.random() * 100;
+            const speed = 0.01 + Math.random() / 200;
+            const xFactor = -50 + Math.random() * 100;
+            const yFactor = -50 + Math.random() * 100;
+            const zFactor = -50 + Math.random() * 100;
+            // Assign each particle to a band (0-30)
+            const bandIndex = i % 31;
+            temp.push({ t, factor, speed, xFactor, yFactor, zFactor, mx: 0, my: 0, bandIndex });
+        }
+        return temp;
+    }, [count]);
+
+    const dummy = useMemo(() => new THREE.Object3D(), []);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
         const scrollOffset = scroll.offset; // 0 to 1
+        const { frequencyData } = audioStore.getState();
         const { bands } = frequencyData;
 
-        const dummy = new THREE.Object3D();
-        const color = new THREE.Color();
-
         // Base color based on scroll
-        if (meshRef.current.material instanceof THREE.MeshBasicMaterial) {
+        if (meshRef.current && meshRef.current.material instanceof THREE.MeshBasicMaterial) {
             const targetColor = new THREE.Color();
             if (scrollOffset < 0.1) targetColor.set('#00f3ff'); // Hero
-            else if (scrollOffset < 0.2) targetColor.set('#b026ff'); // Deep Listening
-            else if (scrollOffset < 0.3) targetColor.set('#ff00ff'); // Agent Zero
-            else if (scrollOffset < 0.4) targetColor.set('#ff0088'); // Neural Forge
-            else if (scrollOffset < 0.5) targetColor.set('#ff0000'); // Security Grid (Empire)
-            else if (scrollOffset < 0.6) targetColor.set('#00ff9d'); // Business (Global Network)
-            else if (scrollOffset < 0.7) targetColor.set('#ffd700'); // Commerce (Value Stream)
-            else if (scrollOffset < 0.8) targetColor.set('#ffffff'); // The Titan (Monolith)
-            else if (scrollOffset < 0.9) targetColor.set('#0088ff'); // The Remix (Deep Blue)
+            else if (scrollOffset < 0.3) targetColor.set('#ffffff'); // Deep Listening
+            else if (scrollOffset < 0.5) targetColor.set('#00f3ff'); // Agent Zero
+            else if (scrollOffset < 0.7) targetColor.set('#ffffff'); // The Remix
             else targetColor.set('#ffffff'); // Final Fade (Platinum)
 
+            // Audio reactive color shift
+            // Use the average of high bands to shift towards purple/pink
+            const highEnergy = bands.slice(20).reduce((a, b) => a + b, 0) / 11;
+            if (highEnergy > 0.1) {
+                targetColor.lerp(new THREE.Color('#ff00ff'), highEnergy * 0.8);
+            }
+
             meshRef.current.material.color.lerp(targetColor, 0.05);
-            color.copy(meshRef.current.material.color);
         }
 
         particles.forEach((p, i) => {
-            // Get audio value for this particle's band
-            const bandValue = bands[p.bandIndex] || 0; // 0 to 1
-
             // Base movement
-            const y = p.position[1] + Math.sin(t * p.speed + p.phase) * 0.5;
+            const y = p.yFactor + Math.sin(t * p.speed + p.t) * 0.5;
 
             // Scroll reactivity
             const turbulence = Math.abs(scroll.delta) * 50;
-            const x = p.position[0] + Math.cos(t * 0.5 + p.phase) * (0.5 + turbulence);
-            const z = p.position[2] + Math.sin(t * 0.3 + p.phase) * (0.5 + turbulence);
+            const x = p.xFactor + Math.cos(t * 0.5 + p.t) * (0.5 + turbulence);
+            const z = p.zFactor + Math.sin(t * 0.3 + p.t) * (0.5 + turbulence);
+
+            // Audio Reactivity
+            // Get the band value for this particle
+            const bandValue = bands[p.bandIndex] || 0;
+
+            // Modulate scale based on band value
+            const audioScale = 1 + (bandValue * 5); // Scale up to 6x
 
             dummy.position.set(x, y, z);
+            dummy.scale.setScalar(audioScale);
 
-            // Twinkle effect + Audio Reactivity
-            // Audio boosts the scale significantly
-            const audioBoost = bandValue * 5.0; // Amplify audio effect
-            const twinkle = Math.sin(t * 5 + p.phase * 10) * 0.5 + 0.5;
-
-            // Combine factors
-            const scale = p.scale * (1 + turbulence + audioBoost) * (0.5 + twinkle);
-
-            dummy.scale.setScalar(scale);
-
-            // Audio affects rotation speed too
-            dummy.rotation.x += 0.02 + (bandValue * 0.2);
-            dummy.rotation.z += 0.02 + (bandValue * 0.2);
+            // Continuous rotation
+            dummy.rotation.set(
+                t * p.speed,
+                t * p.speed,
+                t * p.speed
+            );
 
             dummy.updateMatrix();
-            meshRef.current.setMatrixAt(i, dummy.matrix);
+            meshRef.current!.setMatrixAt(i, dummy.matrix);
         });
         meshRef.current.instanceMatrix.needsUpdate = true;
     });
@@ -131,7 +152,7 @@ function NeuralAether() {
     );
 }
 
-import ThreeDOrbs from './ThreeDOrbs';
+
 
 export default function Scene() {
     return (
@@ -140,6 +161,8 @@ export default function Scene() {
             <Canvas camera={{ position: [0, 0, 5], fov: 75 }} dpr={[1, 2]}>
                 <Suspense fallback={null}>
                     <ThreeDOrbs />
+                    <AudioRing />
+                    <OrigamiParticles />
                     <ScrollControls pages={11} damping={0.2}>
                         <CameraRig />
 
