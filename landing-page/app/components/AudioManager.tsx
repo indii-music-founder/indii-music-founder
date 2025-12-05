@@ -51,7 +51,7 @@ export default function AudioManager() {
             audioContextRef.current = ctx;
 
             const analyser = ctx.createAnalyser();
-            analyser.fftSize = 256;
+            analyser.fftSize = 2048; // Higher resolution for 31 bands
             analyserRef.current = analyser;
 
             const source = ctx.createMediaElementSource(audioRef.current);
@@ -68,34 +68,78 @@ export default function AudioManager() {
     const analyzeLoop = () => {
         if (!analyserRef.current) return;
 
-        const bufferLength = analyserRef.current.frequencyBinCount;
+        const bufferLength = analyserRef.current.frequencyBinCount; // 1024
         const dataArray = new Uint8Array(bufferLength);
         analyserRef.current.getByteFrequencyData(dataArray);
 
-        // Calculate bands (Approximation)
-        // fftSize 256 -> 128 bins. 
-        // 44.1kHz / 2 = 22kHz max. 22000 / 128 = ~172Hz per bin.
+        // Calculate 31 Bands (Logarithmic-ish approximation)
+        // 1024 bins spread across 0-22kHz.
+        // We want 31 bands.
+        const bands: number[] = [];
+        const bandCount = 31;
 
-        // Bass: 0-3 (~0-500Hz)
+        // Simple linear-to-log mapping
+        // We can use a multiplier to widen the bin range for higher frequencies
+        let currentBin = 0;
+
+        for (let i = 0; i < bandCount; i++) {
+            // Determine start and end bin for this band
+            // Using a power function to distribute bins: bin = floor(base ^ i)
+            // Or simpler: just hardcode ranges or use a geometric progression.
+
+            // Geometric progression:
+            // start = 0
+            // next = start * factor
+            // factor = (1024)^(1/31) ~= 1.25
+
+            // Let's use a simpler approach for visualizer:
+            // Low bands need fewer bins, high bands need more.
+
+            // Total bins = 1024.
+            // Let's try to grab chunks.
+
+            const startBin = Math.floor(Math.pow(i / bandCount, 2) * (bufferLength * 0.8)); // Use mostly lower/mid range, ignore very top
+            const endBin = Math.floor(Math.pow((i + 1) / bandCount, 2) * (bufferLength * 0.8));
+
+            let sum = 0;
+            let count = 0;
+
+            // Ensure at least one bin
+            const actualStart = Math.max(startBin, currentBin);
+            const actualEnd = Math.max(endBin, actualStart + 1);
+
+            for (let j = actualStart; j < actualEnd && j < bufferLength; j++) {
+                sum += dataArray[j];
+                count++;
+            }
+
+            currentBin = actualEnd;
+
+            const avg = count > 0 ? sum / count : 0;
+            bands.push(avg / 255);
+        }
+
+        // Legacy 3-band calculation (kept for compatibility)
+        // Bass: 0-3 (~0-500Hz) -> rough mapping to new bins
+        // We can re-calculate from dataArray for accuracy
         let bass = 0;
-        for (let i = 0; i < 4; i++) bass += dataArray[i];
-        bass /= 4;
+        for (let i = 0; i < 10; i++) bass += dataArray[i]; // First ~200Hz
+        bass /= 10;
 
-        // Mid: 4-20 (~500Hz - 3.5kHz)
         let mid = 0;
-        for (let i = 4; i < 20; i++) mid += dataArray[i];
-        mid /= 16;
+        for (let i = 10; i < 100; i++) mid += dataArray[i]; // ~200Hz - 2kHz
+        mid /= 90;
 
-        // High: 20-127 (~3.5kHz - 22kHz)
         let high = 0;
-        for (let i = 20; i < 128; i++) high += dataArray[i];
-        high /= 108;
+        for (let i = 100; i < 500; i++) high += dataArray[i]; // ~2kHz - 10kHz
+        high /= 400;
 
         // Normalize 0-1
         setFrequencyData({
             bass: bass / 255,
             mid: mid / 255,
-            high: high / 255
+            high: high / 255,
+            bands: bands
         });
 
         rafRef.current = requestAnimationFrame(analyzeLoop);

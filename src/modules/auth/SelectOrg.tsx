@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Building2, Plus, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 
 export default function SelectOrg() {
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
@@ -72,32 +73,28 @@ export default function SelectOrg() {
                 </div>
 
                 <div className="space-y-3 mb-8">
-                    {organizations.map(org => (
-                        <button
-                            key={org.id}
-                            onClick={() => handleSelect(org.id)}
-                            className="w-full p-4 bg-[#111] border border-[#222] rounded-xl hover:border-white/20 hover:bg-[#1a1a1a] transition-all flex items-center justify-between group"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-lg bg-[#222] flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
-                                    <Building2 size={20} />
-                                </div>
-                                <div className="text-left">
-                                    <div className="font-bold text-white">{org.name}</div>
-                                    <div className="text-xs text-gray-500">{org.members.length} members</div>
-                                </div>
-                            </div>
-                            {currentOrganizationId === org.id && (
-                                <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center">
-                                    <Check size={14} />
-                                </div>
-                            )}
-                        </button>
-                    ))}
                 </div>
+                <div className="text-left">
+                    <div className="font-bold text-white">{org.name}</div>
+                    <div className="text-xs text-gray-500">{org.members.length} members</div>
+                </div>
+            </ThreeDCardItem>
+            {currentOrganizationId === org.id && (
+                <ThreeDCardItem translateZ="40">
+                    <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                        <Check size={14} />
+                    </div>
+                </ThreeDCardItem>
+            )}
+        </ThreeDCardBody>
+                                </ThreeDCardContainer >
+                            ))
+}
+                </div >
 
-                {isCreating ? (
-                    <div className="bg-[#111] border border-[#222] rounded-xl p-4">
+{
+    isCreating?(
+                    <div className = "bg-[#111] border border-[#222] rounded-xl p-4" >
                         <h3 className="font-bold mb-4">Create New Organization</h3>
                         <input
                             type="text"
@@ -125,15 +122,15 @@ export default function SelectOrg() {
                         </div>
                     </div>
                 ) : (
-                    <button
-                        onClick={() => setIsCreating(true)}
-                        className="w-full py-3 border border-dashed border-[#333] rounded-xl text-gray-500 hover:text-white hover:border-gray-500 transition-all flex items-center justify-center gap-2 font-medium"
-                    >
-                        <Plus size={18} />
-                        Create New Organization
-                    </button>
-                )}
-            </div>
-        </div>
+    <button
+        onClick={() => setIsCreating(true)}
+        className="w-full py-3 border border-dashed border-[#333] rounded-xl text-gray-500 hover:text-white hover:border-gray-500 transition-all flex items-center justify-center gap-2 font-medium"
+    >
+        <Plus size={18} />
+        Create New Organization
+    </button>
+)}
+            </div >
+        </div >
     );
 }

@@ -12,8 +12,10 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useStore } from '../../../core/store';
+import { validateConnection } from '../utils/validationUtils';
 import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from './CustomNodes';
 import { createNodeFromDrop } from '../utils/dndUtils';
+import { getJobDefinition } from '../services/nodeRegistry';
 
 const nodeTypes = {
     departmentNode: DepartmentNode,
@@ -50,43 +52,7 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
 
         if (!sourceNode || !targetNode) return false;
 
-        const sourceType = sourceNode.type;
-        const targetType = targetNode.type;
-
-        // 1. Input Node can only connect to Department or Logic nodes
-        if (sourceType === 'inputNode') {
-            return targetType === 'departmentNode' || targetType === 'logicNode';
-        }
-
-        // 2. Audio Segment Node can only connect to Department nodes (e.g., Music, Video)
-        if (sourceType === 'audioSegmentNode') {
-            return targetType === 'departmentNode';
-        }
-
-        // 3. Department Node can connect to Department, Logic, or Output nodes
-        if (sourceType === 'departmentNode') {
-            return (
-                targetType === 'departmentNode' ||
-                targetType === 'logicNode' ||
-                targetType === 'outputNode'
-            );
-        }
-
-        // 4. Logic Node can connect to Department, Logic, or Output nodes
-        if (sourceType === 'logicNode') {
-            return (
-                targetType === 'departmentNode' ||
-                targetType === 'logicNode' ||
-                targetType === 'outputNode'
-            );
-        }
-
-        // 5. Output Node cannot be a source
-        if (sourceType === 'outputNode') {
-            return false;
-        }
-
-        return false;
+        return validateConnection(sourceNode, targetNode, connection.sourceHandle, connection.targetHandle);
     }, [nodes]);
 
     const onConnect = useCallback((params: Connection | Edge) => {

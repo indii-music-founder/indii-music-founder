@@ -6,6 +6,8 @@ import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
 import NewProjectModal from './components/NewProjectModal';
 import { auth } from '@/services/firebase';
+import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
+import { ThreeDButton } from '@/components/ui/ThreeDButton';
 
 
 export default function Dashboard() {
@@ -100,30 +102,33 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="flex gap-3 w-full md:w-auto justify-end md:justify-start">
-                        <button
+                        <ThreeDButton
                             onClick={() => auth.signOut()}
-                            className="p-3 md:px-4 md:py-3 bg-red-500/10 text-red-500 border border-red-500/50 rounded-full font-bold hover:bg-red-500/20 transition-all flex items-center justify-center"
+                            variant="danger"
+                            className="rounded-full flex items-center justify-center"
                             title="Sign Out"
                         >
                             <LogOut size={20} />
                             <span className="hidden md:inline ml-2">Sign Out</span>
-                        </button>
-                        <button
+                        </ThreeDButton>
+                        <ThreeDButton
                             onClick={() => setShowBrandKit(true)}
-                            className="p-3 md:px-6 md:py-3 bg-neon-purple/10 text-neon-purple border border-neon-purple/50 rounded-full font-bold hover:bg-neon-purple/20 hover:shadow-[0_0_15px_rgba(176,38,255,0.3)] transition-all flex items-center justify-center gap-2"
+                            variant="secondary"
+                            className="rounded-full flex items-center justify-center gap-2 border-neon-purple/50 text-neon-purple hover:shadow-[0_0_15px_rgba(176,38,255,0.3)]"
                             title="Brand Kit"
                         >
                             <Sparkles size={20} />
                             <span className="hidden md:inline">Brand Kit</span>
-                        </button>
-                        <button
+                        </ThreeDButton>
+                        <ThreeDButton
                             onClick={() => setShowNewProjectModal(true)}
-                            className="p-3 md:px-6 md:py-3 bg-white text-black rounded-full font-bold hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,243,255,0.5)] transition-all flex items-center justify-center gap-2"
+                            variant="primary"
+                            className="rounded-full flex items-center justify-center gap-2 hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,243,255,0.5)]"
                             title="New Project"
                         >
                             <Plus size={20} />
                             <span className="hidden md:inline">New Project</span>
-                        </button>
+                        </ThreeDButton>
                     </div>
                 </div>
 
@@ -134,27 +139,40 @@ export default function Dashboard() {
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredProjects.map((project, index) => (
-                            <motion.div
-                                key={project.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                onClick={() => handleOpenProject(project.id, project.type)}
-                                className="group glass-panel p-6 rounded-2xl hover:border-neon-blue/50 hover:bg-white/5 transition-all cursor-pointer relative overflow-hidden"
-                            >
-                                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <div className="w-8 h-8 rounded-full bg-neon-blue text-black flex items-center justify-center shadow-[0_0_10px_rgba(0,243,255,0.5)]">
-                                        <ArrowUpRight size={16} />
+                            <ThreeDCardContainer key={project.id} className="inter-var w-full" onClick={() => handleOpenProject(project.id, project.type)}>
+                                <ThreeDCardBody className="bg-white/5 relative group/card border-white/10 w-full h-auto rounded-xl p-6 border hover:border-neon-blue/50 hover:bg-white/10 transition-all cursor-pointer">
+                                    <ThreeDCardItem
+                                        translateZ="50"
+                                        className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 border border-white/10"
+                                    >
+                                        {project.type === 'creative' && <Layout className="text-neon-blue" />}
+                                        {project.type === 'music' && <Music className="text-neon-purple" />}
+                                        {project.type === 'marketing' && <MessageSquare className="text-signal-green" />}
+                                    </ThreeDCardItem>
+
+                                    <ThreeDCardItem
+                                        translateZ="60"
+                                        className="text-lg font-bold text-white mb-1"
+                                    >
+                                        {project.name}
+                                    </ThreeDCardItem>
+
+                                    <ThreeDCardItem
+                                        translateZ="40"
+                                        className="text-xs text-white/40"
+                                    >
+                                        Last edited {new Date(project.date).toLocaleDateString()}
+                                    </ThreeDCardItem>
+
+                                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                        <ThreeDCardItem translateZ="80">
+                                            <div className="w-8 h-8 rounded-full bg-neon-blue text-black flex items-center justify-center shadow-[0_0_10px_rgba(0,243,255,0.5)]">
+                                                <ArrowUpRight size={16} />
+                                            </div>
+                                        </ThreeDCardItem>
                                     </div>
-                                </div>
-                                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-white/10">
-                                    {project.type === 'creative' && <Layout className="text-neon-blue" />}
-                                    {project.type === 'music' && <Music className="text-neon-purple" />}
-                                    {project.type === 'marketing' && <MessageSquare className="text-signal-green" />}
-                                </div>
-                                <h3 className="text-lg font-bold text-white mb-1">{project.name}</h3>
-                                <p className="text-xs text-white/40">Last edited {new Date(project.date).toLocaleDateString()}</p>
-                            </motion.div>
+                                </ThreeDCardBody>
+                            </ThreeDCardContainer>
                         ))}
                     </div>
                 </section>

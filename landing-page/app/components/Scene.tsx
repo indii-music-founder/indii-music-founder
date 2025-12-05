@@ -34,13 +34,16 @@ function CameraRig() {
     return null;
 }
 
+import { useAudioStore } from '../store/audioStore';
+
 function NeuralAether() {
     const count = 1000;
     const meshRef = useRef<THREE.InstancedMesh>(null!);
     const scroll = useScroll();
+    const { frequencyData } = useAudioStore();
 
     const particles = useMemo(() => {
-        return new Array(count).fill(0).map(() => ({
+        return new Array(count).fill(0).map((_, i) => ({
             position: [
                 (Math.random() - 0.5) * 20,
                 (Math.random() - 0.5) * 120, // Reduced spread
@@ -48,13 +51,15 @@ function NeuralAether() {
             ] as [number, number, number],
             scale: Math.random() * 0.05 + 0.02,
             speed: Math.random() * 0.2 + 0.1,
-            phase: Math.random() * Math.PI * 2
+            phase: Math.random() * Math.PI * 2,
+            bandIndex: i % 31 // Assign each particle to one of the 31 bands
         }));
     }, []);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
         const scrollOffset = scroll.offset; // 0 to 1
+        const { bands } = frequencyData;
 
         const dummy = new THREE.Object3D();
         const color = new THREE.Color();
@@ -78,6 +83,9 @@ function NeuralAether() {
         }
 
         particles.forEach((p, i) => {
+            // Get audio value for this particle's band
+            const bandValue = bands[p.bandIndex] || 0; // 0 to 1
+
             // Base movement
             const y = p.position[1] + Math.sin(t * p.speed + p.phase) * 0.5;
 
@@ -88,18 +96,22 @@ function NeuralAether() {
 
             dummy.position.set(x, y, z);
 
-            // Twinkle effect
+            // Twinkle effect + Audio Reactivity
+            // Audio boosts the scale significantly
+            const audioBoost = bandValue * 5.0; // Amplify audio effect
             const twinkle = Math.sin(t * 5 + p.phase * 10) * 0.5 + 0.5;
-            const scale = p.scale * (1 + turbulence) * (0.5 + twinkle); // Pulse size
+
+            // Combine factors
+            const scale = p.scale * (1 + turbulence + audioBoost) * (0.5 + twinkle);
 
             dummy.scale.setScalar(scale);
-            dummy.rotation.x += 0.02;
-            dummy.rotation.z += 0.02;
+
+            // Audio affects rotation speed too
+            dummy.rotation.x += 0.02 + (bandValue * 0.2);
+            dummy.rotation.z += 0.02 + (bandValue * 0.2);
+
             dummy.updateMatrix();
             meshRef.current.setMatrixAt(i, dummy.matrix);
-
-            // We could set instance color here for individual twinkling if we switched to instanceColor
-            // But scaling is a good enough "sparkle" effect for now combined with the shape
         });
         meshRef.current.instanceMatrix.needsUpdate = true;
     });

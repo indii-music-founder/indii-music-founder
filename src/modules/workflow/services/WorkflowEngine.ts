@@ -133,7 +133,7 @@ export class WorkflowEngine {
                 contents: [{ role: 'user', parts: [{ text: `Write marketing copy for: ${prompt}` }] }]
             });
             return response.candidates?.[0]?.content?.parts?.[0]?.text;
-        } else if (data.departmentName === 'Research Department') {
+        } else if (data.departmentName === 'Knowledge Base') {
             // RAG / Knowledge Base
             const { runAgenticWorkflow } = await import('@/services/rag/ragService');
             const { useStore } = await import('@/core/store');
