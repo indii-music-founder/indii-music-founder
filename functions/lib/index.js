@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.inngestServe = exports.calculateFuelLogistics = exports.findPlaces = exports.checkLogistics = exports.generateItinerary = exports.generateBrandAsset = exports.analyzeBrand = exports.executeCampaign = exports.generateImage = exports.analyzeContract = exports.triggerVideoGeneration = exports.editImage = exports.creativeDirectorAgent = exports.generateVideo = void 0;
+exports.triggerVideoJob = exports.inngestServe = exports.calculateFuelLogistics = exports.findPlaces = exports.checkLogistics = exports.generateItinerary = exports.generateBrandAsset = exports.analyzeBrand = exports.executeCampaign = exports.generateImage = exports.analyzeContract = exports.triggerVideoGeneration = exports.editImage = exports.creativeDirectorAgent = exports.generateVideo = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors");
@@ -400,4 +400,6 @@ exports.inngestServe = functions.https.onRequest((0, express_1.serve)({
         videoJobs_1.generateVideoJob
     ],
 }));
+var videoJobs_2 = require("./jobs/videoJobs");
+Object.defineProperty(exports, "triggerVideoJob", { enumerable: true, get: function () { return videoJobs_2.triggerVideoJob; } });
 //# sourceMappingURL=index.js.map

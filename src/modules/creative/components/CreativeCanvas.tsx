@@ -348,19 +348,18 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                                 </div>
                             </div>
                         ) : (
-                        ): (
-                                (item.type === 'video' && !item.url.startsWith('data:image')) ? (
-                        <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl" />
-                        ) : (
-                        <div className="relative max-w-full max-h-full">
-                            <img src={item.url} alt={item.prompt} className="max-w-full max-h-full object-contain shadow-2xl" />
-                            {item.type === 'video' && item.url.startsWith('data:image') && (
-                                <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20">
-                                    STORYBOARD PREVIEW
+                            (item.type === 'video' && !item.url.startsWith('data:image')) ? (
+                                <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl" />
+                            ) : (
+                                <div className="relative max-w-full max-h-full">
+                                    <img src={item.url} alt={item.prompt} className="max-w-full max-h-full object-contain shadow-2xl" />
+                                    {item.type === 'video' && item.url.startsWith('data:image') && (
+                                        <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20">
+                                            STORYBOARD PREVIEW
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                        )
+                            )
                         )}
 
                         {/* End Frame Selection Overlay */}

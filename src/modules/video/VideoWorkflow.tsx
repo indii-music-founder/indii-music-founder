@@ -7,6 +7,7 @@ import ReviewStep from './components/ReviewStep';
 import FrameSelectionModal from './components/FrameSelectionModal';
 import { VideoEditor } from './editor/VideoEditor';
 import { useVideoEditorStore } from './store/videoEditorStore';
+import { ErrorBoundary } from '../../core/components/ErrorBoundary';
 
 type WorkflowStep = 'idea' | 'review' | 'generating' | 'result' | 'editor';
 
@@ -58,41 +59,49 @@ export default function VideoWorkflow() {
         let unsubscribe: () => void;
 
         const setupListener = async () => {
-            const { getFirestore, doc, onSnapshot } = await import('firebase/firestore');
-            const db = getFirestore();
+            try {
+                const { getFirestore, doc, onSnapshot } = await import('firebase/firestore');
+                const db = getFirestore();
 
-            unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                    const data = docSnapshot.data();
-                    const newStatus = data?.status;
+                unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+                        const newStatus = data?.status;
 
-                    if (newStatus && newStatus !== jobStatus) {
-                        setJobStatus(newStatus);
+                        if (newStatus && newStatus !== jobStatus) {
+                            setJobStatus(newStatus);
 
-                        if (newStatus === 'completed' && data.videoUrl) {
-                            const newAsset = {
-                                id: jobId,
-                                url: data.videoUrl,
-                                prompt: data.prompt || localPrompt,
-                                type: 'video' as const,
-                                timestamp: Date.now(),
-                                projectId: 'default',
-                                orgId: currentOrganizationId // Add orgId to history item
-                            };
-                            addToHistory(newAsset);
-                            toast.success('Scene generated!');
-                            setStep('result');
-                            setJobId(null); // Clear job
-                            setJobStatus('idle');
-                        } else if (newStatus === 'failed') {
-                            toast.error('Generation failed');
-                            setJobId(null);
-                            setJobStatus('failed');
-                            setStep('review');
+                            if (newStatus === 'completed' && data.videoUrl) {
+                                const newAsset = {
+                                    id: jobId,
+                                    url: data.videoUrl,
+                                    prompt: data.prompt || localPrompt,
+                                    type: 'video' as const,
+                                    timestamp: Date.now(),
+                                    projectId: 'default',
+                                    orgId: currentOrganizationId // Add orgId to history item
+                                };
+                                addToHistory(newAsset);
+                                toast.success('Scene generated!');
+                                setStep('result');
+                                setJobId(null); // Clear job
+                                setJobStatus('idle');
+                            } else if (newStatus === 'failed') {
+                                toast.error('Generation failed');
+                                setJobId(null);
+                                setJobStatus('failed');
+                                setStep('review');
+                            }
                         }
                     }
-                }
-            });
+                }, (error) => {
+                    console.error("Job listener error:", error);
+                    toast.error("Lost connection to job status.");
+                });
+            } catch (e) {
+                console.error("Failed to setup job listener:", e);
+                toast.error("Failed to track job status.");
+            }
         };
 
         setupListener();
@@ -264,7 +273,11 @@ export default function VideoWorkflow() {
         }
 
         if (step === 'editor') {
-            return <VideoEditor initialVideo={activeVideo} />;
+            return (
+                <ErrorBoundary fallback={<div className="p-10 text-red-500">Video Editor encountered an error.</div>}>
+                    <VideoEditor initialVideo={activeVideo} />
+                </ErrorBoundary>
+            );
         }
 
         // Fallback for result state if no active video

@@ -41,4 +41,6 @@ AVAILABLE TOOLS:
 21. request_approval(content: string) - Pause and ask the user for approval.
 22. write_press_release(headline: string, company_name: string, key_points: string[], contact_info: string) - Write a press release.
 23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate a crisis response.
+24. extend_video(videoUrl: string, prompt: string, direction: 'start' | 'end') - Extend a video clip forwards or backwards.
+25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing?: string) - Add or update a keyframe for a video clip.
 `;

@@ -1,7 +1,7 @@
 import { inngest } from "./inngest/client";
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import * as cors from "cors";
+// import * as cors from "cors";
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 // import { config } from "../config";
 

@@ -45,10 +45,13 @@ vi.mock('./components/FrameSelectionModal', () => ({
 }));
 
 // Mock VideoGenerationService
-const mockTriggerVideoGeneration = vi.fn();
+const { mockTriggerVideoGeneration } = vi.hoisted(() => ({
+    mockTriggerVideoGeneration: vi.fn().mockResolvedValue({ jobId: 'test-job-id' })
+}));
+
 vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
-        triggerVideoGeneration: (...args: any[]) => mockTriggerVideoGeneration(...args)
+        triggerVideoGeneration: mockTriggerVideoGeneration
     }
 }));
 

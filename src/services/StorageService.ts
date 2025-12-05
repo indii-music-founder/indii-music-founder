@@ -52,7 +52,7 @@ export const StorageService = {
             const q = query(
                 collection(db, 'history'),
                 where('orgId', '==', orgId),
-                // orderBy('timestamp', 'desc'), // Requires index, sorting client-side instead
+                orderBy('timestamp', 'desc'),
                 limit(limitCount)
             );
 
@@ -75,8 +75,7 @@ export const StorageService = {
                 } as HistoryItem;
             });
 
-            // Sort client-side
-            return items.sort((a, b) => b.timestamp - a.timestamp);
+            return items;
         } catch (e) {
             console.error("Error loading history: ", e);
             return [];

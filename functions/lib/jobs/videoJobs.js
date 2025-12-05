@@ -4,6 +4,7 @@ exports.triggerVideoJob = exports.generateVideoJob = void 0;
 const client_1 = require("./inngest/client");
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
+// import * as cors from "cors";
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 // import { config } from "../config";
 // const corsHandler = cors({ origin: true });

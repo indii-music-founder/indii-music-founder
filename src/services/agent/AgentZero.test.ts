@@ -92,4 +92,45 @@ describe('AgentZero', () => {
         expect(mockUpdateAgentMessage).toHaveBeenCalledWith(expect.any(String), { text: '{"final_' });
         expect(mockUpdateAgentMessage).toHaveBeenCalledWith(expect.any(String), { text: '{"final_response": "Done"}' });
     });
+
+    it('handles tool execution errors gracefully', async () => {
+        // Mock tool failure
+        (TOOL_REGISTRY.test_tool as any).mockRejectedValueOnce(new Error('Tool failed'));
+
+        const streamMock1 = {
+            getReader: () => {
+                let count = 0;
+                return {
+                    read: async () => {
+                        count++;
+                        if (count === 1) return { done: false, value: { text: () => JSON.stringify({ tool: 'test_tool', args: {} }) } };
+                        return { done: true, value: undefined };
+                    }
+                };
+            }
+        };
+
+        const streamMock2 = {
+            getReader: () => {
+                let count = 0;
+                return {
+                    read: async () => {
+                        count++;
+                        if (count === 1) return { done: false, value: { text: () => JSON.stringify({ final_response: 'Tool failed, but I handled it.' }) } };
+                        return { done: true, value: undefined };
+                    }
+                };
+            }
+        };
+
+        (AI.generateContentStream as any)
+            .mockResolvedValueOnce(streamMock1)
+            .mockResolvedValueOnce(streamMock2);
+
+        await agentZero.execute('Fail tool', { currentOrganizationId: 'org1', currentProjectId: 'proj1' } as any);
+
+        // Verify that the error was logged or handled (in this case, we expect the agent to continue to the next turn)
+        expect(TOOL_REGISTRY.test_tool).toHaveBeenCalled();
+        expect(mockUpdateAgentMessage).toHaveBeenCalledWith(expect.any(String), { text: 'Tool failed, but I handled it.' });
+    });
 });

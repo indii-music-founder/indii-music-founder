@@ -139,5 +139,83 @@ export const VideoTools = {
             }
             return `Batch video processing failed: An unknown error occurred.`;
         }
+    },
+    extend_video: async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
+        try {
+            const { extractVideoFrame } = await import('@/utils/video');
+            const frameData = await extractVideoFrame(args.videoUrl);
+
+            if (!frameData) {
+                return "Failed to extract frame from the provided video URL.";
+            }
+
+            const options: any = {
+                prompt: args.prompt,
+            };
+
+            if (args.direction === 'start') {
+                options.lastFrame = frameData; // If extending start, the video frame becomes the END of the new clip
+            } else {
+                options.firstFrame = frameData; // If extending end, the video frame becomes the START of the new clip
+            }
+
+            const results = await VideoGeneration.generateVideo(options);
+
+            if (results.length > 0) {
+                const uri = results[0].url;
+                const { addToHistory, currentProjectId } = useStore.getState();
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: uri,
+                    prompt: args.prompt,
+                    type: 'video',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+                return `Video extended successfully: ${uri}`;
+            }
+            return "Video extension failed (no URI returned).";
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Video extension failed: ${e.message}`;
+            }
+            return `Video extension failed: An unknown error occurred.`;
+        }
+    },
+    update_keyframe: async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
+        try {
+            const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
+            const { updateKeyframe, addKeyframe, project } = useVideoEditorStore.getState();
+            const clip = project.clips.find(c => c.id === args.clipId);
+
+            if (!clip) {
+                return `Clip with ID ${args.clipId} not found.`;
+            }
+
+            // If easing is provided, we might need to update after adding, or just use update if it exists.
+            // Since addKeyframe doesn't take easing in the interface I saw (wait, let me check the file content again),
+            // I need to be careful.
+
+            // Looking at videoEditorStore.ts:
+            // addKeyframe: (clipId, property, frame, value) => void;
+            // updateKeyframe: (clipId, property, frame, updates) => void;
+
+            // So addKeyframe only sets value. If I want to set easing, I need to call updateKeyframe afterwards.
+
+            // 1. Add/Overwrite value
+            addKeyframe(args.clipId, args.property, args.frame, args.value);
+
+            // 2. Update easing if provided
+            if (args.easing) {
+                updateKeyframe(args.clipId, args.property, args.frame, { easing: args.easing });
+            }
+
+            return `Keyframe updated for clip ${args.clipId} on property ${args.property} at frame ${args.frame} with value ${args.value}${args.easing ? ` and easing ${args.easing}` : ''}.`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Keyframe update failed: ${e.message}`;
+            }
+            return `Keyframe update failed: An unknown error occurred.`;
+        }
     }
 };

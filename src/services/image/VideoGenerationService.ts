@@ -235,37 +235,27 @@ export class VideoGenerationService {
 
         return results;
     }
-    async triggerVideoGeneration(options: {
-        prompt: string;
-        duration: number;
-        fps: number;
-        resolution: string;
-        aspectRatio: string;
-        userId: string;
-        orgId: string;
-    }) {
-        const jobId = uuidv4();
-        const functionUrl = `${env.VITE_FUNCTIONS_URL}/inngestServe`;
-    async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise < { jobId: string } > {
-            try {
-                const { functions } = await import('../firebase');
-                const { httpsCallable } = await import('firebase/functions');
+    async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
+        try {
+            const { functions } = await import('../firebase');
+            const { httpsCallable } = await import('firebase/functions');
 
-                const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+            const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
-                const jobId = uuidv4();
+            const jobId = uuidv4();
 
-                await triggerVideoJob({
-                    ...options,
-                    jobId,
-                    // userId is handled by context.auth in the backend
-                });
+            await triggerVideoJob({
+                ...options,
+                jobId,
+                // userId is handled by context.auth in the backend
+            });
 
-                return { jobId };
-            } catch(error) {
-                console.error("Failed to trigger video generation:", error);
-                throw error;
-            }
+            return { jobId };
+        } catch (error) {
+            console.error("Failed to trigger video generation:", error);
+            throw error;
         }
+    }
+}
 
-        export const VideoGeneration = new VideoGenerationService();
+export const VideoGeneration = new VideoGenerationService();
