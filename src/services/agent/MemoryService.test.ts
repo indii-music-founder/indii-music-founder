@@ -8,7 +8,15 @@ vi.mock('../FirestoreService', () => ({
     firestoreService: {
         add: vi.fn(),
         list: vi.fn(),
-        delete: vi.fn()
+        delete: vi.fn(),
+        update: vi.fn()
+    }
+}));
+
+// Mock AIService - embedContent returns empty to use keyword fallback in tests
+vi.mock('../ai/AIService', () => ({
+    AI: {
+        embedContent: vi.fn().mockResolvedValue({ embedding: { values: [] } })
     }
 }));
 
