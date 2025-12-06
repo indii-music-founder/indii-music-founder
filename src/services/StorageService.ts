@@ -49,33 +49,78 @@ export const StorageService = {
 
             // Query with Org Filter
             // Note: This requires a composite index in Firestore (orgId + timestamp)
-            const q = query(
-                collection(db, 'history'),
-                where('orgId', '==', orgId),
-                orderBy('timestamp', 'desc'),
-                limit(limitCount)
-            );
+            let q;
+            try {
+                q = query(
+                    collection(db, 'history'),
+                    where('orgId', '==', orgId),
+                    orderBy('timestamp', 'desc'),
+                    limit(limitCount)
+                );
+            } catch (e) {
+                // Fallback if query construction fails (unlikely)
+                console.warn("Query construction failed:", e);
+                q = query(collection(db, 'history'), where('orgId', '==', orgId), limit(limitCount));
+            }
 
-            const querySnapshot = await getDocs(q);
-            const items = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                let ts = Date.now();
-                if (data.timestamp) {
-                    if (typeof data.timestamp.toMillis === 'function') {
-                        ts = data.timestamp.toMillis();
-                    } else if (typeof data.timestamp === 'number') {
-                        ts = data.timestamp;
+            try {
+                const querySnapshot = await getDocs(q);
+                let items = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    let ts = Date.now();
+                    if (data.timestamp) {
+                        if (typeof data.timestamp.toMillis === 'function') {
+                            ts = data.timestamp.toMillis();
+                        } else if (typeof data.timestamp === 'number') {
+                            ts = data.timestamp;
+                        }
                     }
+
+                    return {
+                        ...data,
+                        id: doc.id,
+                        timestamp: ts
+                    } as HistoryItem;
+                });
+
+                return items;
+            } catch (error: any) {
+                // Check if it's the index error
+                if (error.code === 'failed-precondition' || error.message.includes('index')) {
+                    console.warn("Firestore index missing for sorting. Falling back to client-side sorting.");
+
+                    // Fallback to simple filtering (Firebase can do single field filter without composite index)
+                    // We might need to remove orderBy and do it manually
+                    const fallbackQuery = query(
+                        collection(db, 'history'),
+                        where('orgId', '==', orgId),
+                        limit(limitCount)
+                    );
+
+                    const fallbackSnapshot = await getDocs(fallbackQuery);
+                    const items = fallbackSnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        let ts = Date.now();
+                        if (data.timestamp) {
+                            if (typeof data.timestamp.toMillis === 'function') {
+                                ts = data.timestamp.toMillis();
+                            } else if (typeof data.timestamp === 'number') {
+                                ts = data.timestamp;
+                            }
+                        }
+
+                        return {
+                            ...data,
+                            id: doc.id,
+                            timestamp: ts
+                        } as HistoryItem;
+                    });
+
+                    // Sort client-side
+                    return items.sort((a, b) => b.timestamp - a.timestamp);
                 }
-
-                return {
-                    ...data,
-                    id: doc.id,
-                    timestamp: ts
-                } as HistoryItem;
-            });
-
-            return items;
+                throw error;
+            }
         } catch (e) {
             console.error("Error loading history: ", e);
             return [];
