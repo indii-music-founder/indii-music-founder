@@ -8,6 +8,14 @@ interface ToastContextType {
     success: (message: string, duration?: number) => void;
     error: (message: string, duration?: number) => void;
     info: (message: string, duration?: number) => void;
+    warning: (message: string, duration?: number) => void;
+    loading: (message: string) => string; // Returns toast ID for updating/dismissing
+    updateProgress: (id: string, progress: number, message?: string) => void;
+    dismiss: (id: string) => void;
+    promise: <T>(
+        promise: Promise<T>,
+        messages: { loading: string; success: string; error: string }
+    ) => Promise<T>;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -23,20 +31,55 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-    const addToast = useCallback((message: string, type: ToastType, duration?: number) => {
+    const addToast = useCallback((message: string, type: ToastType, duration?: number, progress?: number) => {
         const id = uuidv4();
-        setToasts(prev => [...prev, { id, message, type, duration }]);
+        setToasts(prev => [...prev, { id, message, type, duration, progress }]);
+        return id;
     }, []);
 
     const removeToast = useCallback((id: string) => {
         setToasts(prev => prev.filter(t => t.id !== id));
     }, []);
 
-    const contextValue = {
+    const updateToast = useCallback((id: string, updates: Partial<ToastMessage>) => {
+        setToasts(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    }, []);
+
+    const loadingToast = useCallback((message: string) => {
+        return addToast(message, 'loading', undefined, 0);
+    }, [addToast]);
+
+    const updateProgress = useCallback((id: string, progress: number, message?: string) => {
+        updateToast(id, { progress, ...(message ? { message } : {}) });
+    }, [updateToast]);
+
+    const promiseToast = useCallback(async <T,>(
+        promise: Promise<T>,
+        messages: { loading: string; success: string; error: string }
+    ): Promise<T> => {
+        const id = addToast(messages.loading, 'loading');
+        try {
+            const result = await promise;
+            removeToast(id);
+            addToast(messages.success, 'success');
+            return result;
+        } catch (error) {
+            removeToast(id);
+            addToast(messages.error, 'error');
+            throw error;
+        }
+    }, [addToast, removeToast]);
+
+    const contextValue: ToastContextType = {
         showToast: addToast,
-        success: (msg: string, dur?: number) => addToast(msg, 'success', dur),
-        error: (msg: string, dur?: number) => addToast(msg, 'error', dur),
-        info: (msg: string, dur?: number) => addToast(msg, 'info', dur),
+        success: (msg: string, dur?: number) => { addToast(msg, 'success', dur); },
+        error: (msg: string, dur?: number) => { addToast(msg, 'error', dur); },
+        info: (msg: string, dur?: number) => { addToast(msg, 'info', dur); },
+        warning: (msg: string, dur?: number) => { addToast(msg, 'warning', dur); },
+        loading: loadingToast,
+        updateProgress,
+        dismiss: removeToast,
+        promise: promiseToast,
     };
 
     return (

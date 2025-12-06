@@ -1,12 +1,58 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { Upload, X, Image as ImageIcon, Video, Wand2, Loader2, Play, MonitorPlay, Box, ArrowRight, Shirt, Coffee, Smartphone, Framer } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { Editing } from '@/services/image/EditingService';
+
+// Placement options for different product types
+const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {
+    't-shirt': [
+        { id: 'center-chest', label: 'Center Chest', icon: <Target size={14} /> },
+        { id: 'left-chest', label: 'Left Chest', icon: <Target size={14} /> },
+        { id: 'full-front', label: 'Full Front', icon: <Maximize size={14} /> },
+        { id: 'back-print', label: 'Back Print', icon: <LayoutGrid size={14} /> },
+    ],
+    'hoodie': [
+        { id: 'center-chest', label: 'Center Chest', icon: <Target size={14} /> },
+        { id: 'kangaroo-pocket', label: 'Pocket Area', icon: <Target size={14} /> },
+        { id: 'full-front', label: 'Full Front', icon: <Maximize size={14} /> },
+        { id: 'hood', label: 'Hood', icon: <LayoutGrid size={14} /> },
+    ],
+    'mug': [
+        { id: 'wrap-around', label: 'Wrap Around', icon: <Maximize size={14} /> },
+        { id: 'front-center', label: 'Front Center', icon: <Target size={14} /> },
+        { id: 'both-sides', label: 'Both Sides', icon: <LayoutGrid size={14} /> },
+    ],
+    'bottle': [
+        { id: 'label-wrap', label: 'Label Wrap', icon: <Maximize size={14} /> },
+        { id: 'front-label', label: 'Front Label', icon: <Target size={14} /> },
+    ],
+    'phone': [
+        { id: 'full-back', label: 'Full Back', icon: <Maximize size={14} /> },
+        { id: 'center-logo', label: 'Center Logo', icon: <Target size={14} /> },
+    ],
+    'poster': [
+        { id: 'full-bleed', label: 'Full Bleed', icon: <Maximize size={14} /> },
+        { id: 'centered', label: 'Centered', icon: <Target size={14} /> },
+        { id: 'bordered', label: 'With Border', icon: <LayoutGrid size={14} /> },
+    ],
+};
+
+// Motion presets for video generation
+const motionPresets = [
+    { id: 'slow-pan-right', label: 'Slow Pan Right', prompt: 'Slow camera pan to the right, smooth cinematic movement' },
+    { id: 'slow-pan-left', label: 'Slow Pan Left', prompt: 'Slow camera pan to the left, smooth cinematic movement' },
+    { id: 'orbit-360', label: '360° Orbit', prompt: 'Camera slowly orbits around the product in a full 360 degree rotation' },
+    { id: 'zoom-in', label: 'Zoom In', prompt: 'Smooth zoom in towards the product, focusing on details' },
+    { id: 'zoom-out', label: 'Zoom Out', prompt: 'Smooth zoom out revealing the full scene' },
+    { id: 'model-turn', label: 'Model Turn', prompt: 'Model slowly turns to face the camera with a confident look' },
+    { id: 'walk-forward', label: 'Walk Forward', prompt: 'Subject walks confidently towards the camera' },
+    { id: 'dramatic-reveal', label: 'Dramatic Reveal', prompt: 'Dramatic lighting shift reveals the product with cinematic flair' },
+    { id: 'gentle-breeze', label: 'Gentle Breeze', prompt: 'Fabric moves gently in a soft breeze, natural flowing motion' },
+    { id: 'static-hero', label: 'Static Hero', prompt: 'Subtle ambient movement, hero product shot with slight camera drift' },
+];
 
 export default function Showroom() {
     const { addToHistory, currentProjectId } = useStore();
@@ -15,6 +61,7 @@ export default function Showroom() {
     // State
     const [productAsset, setProductAsset] = useState<string | null>(null);
     const [productType, setProductType] = useState('t-shirt');
+    const [placement, setPlacement] = useState('center-chest');
     const [scenePrompt, setScenePrompt] = useState('');
     const [motionPrompt, setMotionPrompt] = useState('');
 
@@ -25,6 +72,9 @@ export default function Showroom() {
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Get current placement options based on product type
+    const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'];
 
     // Handlers
     const handleAssetUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +91,43 @@ export default function Showroom() {
         reader.readAsDataURL(file);
     };
 
+    // Get placement description for prompt
+    const getPlacementDescription = (productType: string, placement: string): string => {
+        const descriptions: Record<string, Record<string, string>> = {
+            't-shirt': {
+                'center-chest': 'centered on the chest area',
+                'left-chest': 'on the left chest like a logo placement',
+                'full-front': 'as a full-front print covering the entire front',
+                'back-print': 'on the back of the shirt',
+            },
+            'hoodie': {
+                'center-chest': 'centered on the chest area',
+                'kangaroo-pocket': 'above the kangaroo pocket',
+                'full-front': 'as a full-front print',
+                'hood': 'on the hood area',
+            },
+            'mug': {
+                'wrap-around': 'wrapping around the entire mug surface',
+                'front-center': 'on the front center of the mug',
+                'both-sides': 'visible on both sides of the mug',
+            },
+            'bottle': {
+                'label-wrap': 'as a wrap-around label',
+                'front-label': 'as a front-facing label',
+            },
+            'phone': {
+                'full-back': 'covering the entire back of the phone case',
+                'center-logo': 'as a centered logo on the back',
+            },
+            'poster': {
+                'full-bleed': 'as a full-bleed edge-to-edge print',
+                'centered': 'centered with margins',
+                'bordered': 'with a decorative border frame',
+            },
+        };
+        return descriptions[productType]?.[placement] || 'prominently displayed';
+    };
+
     const handleGenerateMockup = async () => {
         if (!productAsset || !scenePrompt) {
             toast.error("Please upload an asset and describe the scene.");
@@ -48,24 +135,47 @@ export default function Showroom() {
         }
 
         setIsGeneratingMockup(true);
+        const loadingId = toast.loading("Generating product mockup...");
+
         try {
             // Extract mimeType and data from Data URL
             const match = productAsset.match(/^data:(.+);base64,(.+)$/);
             if (!match) throw new Error("Invalid asset data");
 
             const assetImage = { mimeType: match[1], data: match[2] };
+            const placementDesc = getPlacementDescription(productType, placement);
 
-            // Construct a specialized prompt for texture mapping
-            const fullPrompt = `Product Visualization: ${productType}. ${scenePrompt}. 
-            Task: Apply the provided graphic design (Reference 1) onto the ${productType}. 
-            Requirements: Photorealistic texture mapping, correct perspective, fabric folds, lighting interaction. 
-            The graphic should look like it is physically printed on the object.`;
+            // Enhanced texture mapping prompt with placement awareness
+            const fullPrompt = `PRODUCT VISUALIZATION TASK:
+
+Product Type: ${productType.replace('-', ' ').toUpperCase()}
+Placement: The graphic design should be applied ${placementDesc}.
+
+Scene Description: ${scenePrompt}
+
+CRITICAL INSTRUCTIONS:
+1. You are a professional product visualizer and 3D texture mapping expert.
+2. Apply the provided graphic design (Reference Image 1) onto the ${productType} with photorealistic accuracy.
+3. The graphic MUST:
+   - Conform perfectly to the surface geometry and curvature of the ${productType}
+   - Follow natural fabric folds, wrinkles, and creases (if applicable)
+   - Respect the lighting and shadows of the scene
+   - Appear as if it was physically printed/applied to the product
+   - Maintain proper perspective distortion based on viewing angle
+4. The final image should look like a professional commercial product photograph.
+5. Preserve the exact colors and details of the original graphic design.
+
+Style: High-end commercial product photography, 8K resolution, professional studio or environmental lighting.`;
+
+            toast.updateProgress(loadingId, 30, "Compositing scene...");
 
             const result = await Editing.generateComposite({
                 images: [assetImage],
                 prompt: fullPrompt,
-                projectContext: "High-end commercial product photography."
+                projectContext: "Premium commercial product visualization with accurate texture mapping."
             });
+
+            toast.updateProgress(loadingId, 90, "Finalizing mockup...");
 
             if (result) {
                 setMockupResult(result.url);
@@ -74,18 +184,21 @@ export default function Showroom() {
                 addToHistory({
                     id: result.id,
                     url: result.url,
-                    prompt: `Showroom Mockup: ${productType} - ${scenePrompt}`,
+                    prompt: `Showroom Mockup: ${productType} (${placement}) - ${scenePrompt}`,
                     type: 'image',
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
 
+                toast.dismiss(loadingId);
                 toast.success("Mockup generated successfully!");
             } else {
+                toast.dismiss(loadingId);
                 toast.error("Failed to generate mockup.");
             }
         } catch (error: unknown) {
             console.error(error);
+            toast.dismiss(loadingId);
             if (error instanceof Error) {
                 toast.error(`Failed to generate mockup: ${error.message}`);
             } else {
@@ -103,13 +216,34 @@ export default function Showroom() {
         }
 
         setIsGeneratingVideo(true);
+        const loadingId = toast.loading("Rendering video...");
+
         try {
+            toast.updateProgress(loadingId, 20, "Analyzing scene...");
+
+            const enhancedPrompt = `CINEMATIC PRODUCT VIDEO:
+
+Motion: ${motionPrompt}
+
+REQUIREMENTS:
+- Smooth, professional camera movement
+- Maintain consistent lighting throughout
+- Keep product as the focal point
+- High production value, commercial quality
+- Natural motion physics
+
+Style: Premium brand commercial, 4K cinematic quality.`;
+
+            toast.updateProgress(loadingId, 40, "Generating video frames...");
+
             const results = await VideoGeneration.generateVideo({
-                prompt: `Cinematic product showcase. ${motionPrompt}`,
+                prompt: enhancedPrompt,
                 firstFrame: mockupResult,
-                resolution: '720p', // Veo default
+                resolution: '720p',
                 aspectRatio: '16:9'
             });
+
+            toast.updateProgress(loadingId, 90, "Finalizing video...");
 
             if (results && results.length > 0) {
                 setVideoResult(results[0].url);
@@ -124,12 +258,15 @@ export default function Showroom() {
                     projectId: currentProjectId
                 });
 
+                toast.dismiss(loadingId);
                 toast.success("Scene animated successfully!");
             } else {
+                toast.dismiss(loadingId);
                 toast.error("Failed to animate scene.");
             }
         } catch (error: unknown) {
             console.error(error);
+            toast.dismiss(loadingId);
             if (error instanceof Error) {
                 toast.error(`Failed to animate scene: ${error.message}`);
             }
@@ -139,6 +276,11 @@ export default function Showroom() {
         } finally {
             setIsGeneratingVideo(false);
         }
+    };
+
+    // Handle motion preset selection
+    const handleMotionPreset = (preset: typeof motionPresets[0]) => {
+        setMotionPrompt(prev => prev ? `${prev} ${preset.prompt}` : preset.prompt);
     };
 
     const productTypes = [
@@ -215,11 +357,37 @@ export default function Showroom() {
                             {productTypes.map(type => (
                                 <button
                                     key={type.id}
-                                    onClick={() => setProductType(type.id)}
+                                    onClick={() => {
+                                        setProductType(type.id);
+                                        // Reset placement to first option for new product type
+                                        const newPlacements = placementOptions[type.id];
+                                        if (newPlacements && newPlacements.length > 0) {
+                                            setPlacement(newPlacements[0].id);
+                                        }
+                                    }}
                                     className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-purple-900/20 border-purple-500 text-purple-300' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'}`}
                                 >
                                     <type.icon size={16} />
                                     <span className="text-sm font-medium">{type.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Placement Selector */}
+                    <div className="space-y-3 mt-6">
+                        <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                            <Target size={12} /> Placement
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {currentPlacements.map(option => (
+                                <button
+                                    key={option.id}
+                                    onClick={() => setPlacement(option.id)}
+                                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${placement === option.id ? 'bg-blue-900/20 border-blue-500 text-blue-300' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'}`}
+                                >
+                                    {option.icon}
+                                    {option.label}
                                 </button>
                             ))}
                         </div>
@@ -266,21 +434,52 @@ export default function Showroom() {
                             )}
                         </div>
 
-                        {/* Presets (Placeholder) */}
+                        {/* Scene Presets */}
                         <div className="pt-4 border-t border-gray-800">
-                            <p className="text-xs font-bold text-gray-500 uppercase mb-3">Quick Presets</p>
+                            <p className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                                <Sparkles size={12} /> Scene Presets
+                            </p>
                             <div className="flex flex-wrap gap-2">
-                                {['Studio Minimal', 'Urban Street', 'Nature', 'Cyberpunk'].map(preset => (
+                                {[
+                                    { label: 'Studio Minimal', prompt: 'Clean white studio background with soft professional lighting' },
+                                    { label: 'Urban Street', prompt: 'Urban street scene with graffiti walls and city atmosphere' },
+                                    { label: 'Nature', prompt: 'Outdoor natural setting with greenery and soft sunlight' },
+                                    { label: 'Cyberpunk', prompt: 'Neon-lit cyberpunk cityscape with futuristic atmosphere' },
+                                    { label: 'Beach Sunset', prompt: 'Golden hour beach setting with warm sunset lighting' },
+                                    { label: 'Industrial', prompt: 'Industrial warehouse setting with dramatic lighting' },
+                                    { label: 'Fashion Runway', prompt: 'High fashion runway setting with dramatic spotlights' },
+                                    { label: 'Cozy Interior', prompt: 'Warm cozy interior setting with ambient lighting' },
+                                ].map(preset => (
                                     <button
-                                        key={preset}
-                                        onClick={() => setScenePrompt(prev => prev + (prev ? ' ' : '') + preset + " style.")}
+                                        key={preset.label}
+                                        onClick={() => setScenePrompt(prev => prev ? `${prev}. ${preset.prompt}` : preset.prompt)}
                                         className="px-3 py-1.5 bg-[#1a1a1a] border border-gray-700 rounded-full text-xs text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
                                     >
-                                        {preset}
+                                        {preset.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
+
+                        {/* Motion Presets */}
+                        {mockupResult && (
+                            <div className="pt-4 border-t border-gray-800">
+                                <p className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                                    <Video size={12} /> Motion Presets
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {motionPresets.map(preset => (
+                                        <button
+                                            key={preset.id}
+                                            onClick={() => handleMotionPreset(preset)}
+                                            className="px-3 py-1.5 bg-purple-900/10 border border-purple-900/30 rounded-full text-xs text-purple-300 hover:text-white hover:border-purple-500 hover:bg-purple-900/20 transition-colors"
+                                        >
+                                            {preset.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
