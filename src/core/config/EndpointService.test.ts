@@ -28,11 +28,14 @@ describe('EndpointService', () => {
         expect(url).toBe('https://test-region-test-project.cloudfunctions.net/myFunction');
     });
 
-    it('generates Emulator URL when DEV is true', () => {
-        // Temporarily modify the mocked env
+    it('always generates Production URL (emulator support disabled)', () => {
+        // Note: Emulator URL generation is intentionally disabled in EndpointService
+        // See comment in EndpointService.ts - emulator code is commented out
+        // Setting DEV=true should NOT change the URL behavior
         (env as any).DEV = true;
 
         const url = endpointService.getFunctionUrl('myFunction');
-        expect(url).toBe('http://127.0.0.1:5001/test-project/test-region/myFunction');
+        // Still returns production URL since emulator support is disabled
+        expect(url).toBe('https://test-region-test-project.cloudfunctions.net/myFunction');
     });
 });
