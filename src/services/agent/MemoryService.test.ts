@@ -1,16 +1,26 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { memoryService } from './MemoryService';
 import { firestoreService } from '../FirestoreService';
 
-// Mock FirestoreService
+// Mock FirestoreService Class using vi.hoisted to avoid reference errors
+const { mockAdd, mockList, mockDelete, mockUpdate } = vi.hoisted(() => ({
+    mockAdd: vi.fn(),
+    mockList: vi.fn(),
+    mockDelete: vi.fn(),
+    mockUpdate: vi.fn()
+}));
+
 vi.mock('../FirestoreService', () => ({
-    firestoreService: {
-        add: vi.fn(),
-        list: vi.fn(),
-        delete: vi.fn(),
-        update: vi.fn()
-    }
+    FirestoreService: vi.fn(function () {
+        return {
+            add: mockAdd,
+            list: mockList,
+            delete: mockDelete,
+            update: mockUpdate
+        };
+    }),
+    // KEEPING this for backward compatibility if other tests rely on it, but checking usage
+    firestoreService: {}
 }));
 
 // Mock AIService - embedContent returns empty to use keyword fallback in tests
@@ -30,12 +40,11 @@ describe('MemoryService Tests', () => {
     describe('saveMemory', () => {
         it('should add memory to firestore if not duplicate', async () => {
             // Mock list to return empty, so it's not a duplicate
-            (firestoreService.list as any).mockResolvedValue([]);
+            mockList.mockResolvedValue([]);
 
             await memoryService.saveMemory(projectId, 'The sky is blue', 'fact');
 
-            expect(firestoreService.add).toHaveBeenCalledWith(
-                `projects/${projectId}/memories`,
+            expect(mockAdd).toHaveBeenCalledWith(
                 expect.objectContaining({
                     projectId,
                     content: 'The sky is blue',
@@ -46,13 +55,13 @@ describe('MemoryService Tests', () => {
 
         it('should NOT add memory if duplicate exists', async () => {
             // Mock list to return existing memory
-            (firestoreService.list as any).mockResolvedValue([
+            mockList.mockResolvedValue([
                 { id: '1', content: 'The sky is blue', projectId, type: 'fact', timestamp: 123 }
             ]);
 
             await memoryService.saveMemory(projectId, 'The sky is blue', 'fact');
 
-            expect(firestoreService.add).not.toHaveBeenCalled();
+            expect(mockAdd).not.toHaveBeenCalled();
         });
     });
 
@@ -63,7 +72,7 @@ describe('MemoryService Tests', () => {
                 { id: '2', content: 'Grass is green', projectId, type: 'fact', timestamp: 2 },
                 { id: '3', content: 'Water is blue', projectId, type: 'fact', timestamp: 3 }
             ];
-            (firestoreService.list as any).mockResolvedValue(mockMemories);
+            mockList.mockResolvedValue(mockMemories);
 
             const results = await memoryService.retrieveRelevantMemories(projectId, 'blue sky');
 
@@ -78,7 +87,7 @@ describe('MemoryService Tests', () => {
                 { id: '1', content: 'Always check the weather', projectId, type: 'rule', timestamp: 1 },
                 { id: '2', content: 'Weather is nice', projectId, type: 'fact', timestamp: 2 }
             ];
-            (firestoreService.list as any).mockResolvedValue(mockMemories);
+            mockList.mockResolvedValue(mockMemories);
 
             // Searching for "weather"
             // Both contain "weather".
@@ -96,13 +105,13 @@ describe('MemoryService Tests', () => {
                 { id: 'm1', content: 'A', projectId },
                 { id: 'm2', content: 'B', projectId }
             ];
-            (firestoreService.list as any).mockResolvedValue(mockMemories);
+            mockList.mockResolvedValue(mockMemories);
 
             await memoryService.clearProjectMemory(projectId);
 
-            expect(firestoreService.delete).toHaveBeenCalledTimes(2);
-            expect(firestoreService.delete).toHaveBeenCalledWith(`projects/${projectId}/memories`, 'm1');
-            expect(firestoreService.delete).toHaveBeenCalledWith(`projects/${projectId}/memories`, 'm2');
+            expect(mockDelete).toHaveBeenCalledTimes(2);
+            expect(mockDelete).toHaveBeenCalledWith('m1');
+            expect(mockDelete).toHaveBeenCalledWith('m2');
         });
     });
 });

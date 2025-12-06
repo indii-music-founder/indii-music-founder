@@ -1,4 +1,4 @@
-import { BaseAgent } from './BaseAgent';
+import { BaseAgent } from '../BaseAgent';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '@/core/store';
 import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
@@ -57,7 +57,15 @@ export class GeneralistAgent extends BaseAgent {
     tools = []; // Generalist uses the global TOOL_REGISTRY for now.
 
     constructor() {
-        super();
+        super({
+            id: 'generalist',
+            name: 'Agent Zero',
+            description: 'General assistance, complex reasoning, fallback.',
+            color: 'bg-stone-500',
+            category: 'manager',
+            systemPrompt: 'You are Indii, the Autonomous Studio Manager (Agent Zero).',
+            tools: []
+        });
         this.functions = TOOL_REGISTRY;
     }
 

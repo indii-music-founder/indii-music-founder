@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore, AppSlice } from '@/core/store';
-import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera, ArrowUpRight, LogOut } from 'lucide-react';
+import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera, ArrowUpRight, LogOut, Download, MoreVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
@@ -8,10 +8,13 @@ import NewProjectModal from './components/NewProjectModal';
 import { auth } from '@/services/firebase';
 import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 import { ThreeDButton } from '@/components/ui/ThreeDButton';
+import { ExportService } from '@/services/ExportService';
+import { useToast } from '@/core/context/ToastContext';
 
 
 export default function Dashboard() {
     const { setModule, setProject, currentOrganizationId, projects, addProject } = useStore();
+    const toast = useToast();
     console.log("Dashboard Render. Current User:", auth.currentUser?.uid, "Is Anonymous:", auth.currentUser?.isAnonymous);
 
     const filteredProjects = projects.filter(p => p.orgId === currentOrganizationId);
@@ -19,6 +22,26 @@ export default function Dashboard() {
     const handleOpenProject = (id: string, type: AppSlice['currentModule']) => {
         setProject(id);
         setModule(type);
+    };
+
+    const handleExportProject = async (e: React.MouseEvent, projectId: string, projectName: string) => {
+        e.stopPropagation(); // Prevent card click
+        const toastId = toast.loading(`Exporting ${projectName}...`);
+
+        try {
+            await ExportService.exportAndDownloadProject(projectId, projectName, {
+                onProgress: (progress) => {
+                    const percent = Math.round((progress.current / progress.total) * 100);
+                    toast.updateProgress(toastId, percent, progress.message);
+                }
+            });
+            toast.dismiss(toastId);
+            toast.success(`Exported ${projectName} successfully!`);
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.dismiss(toastId);
+            toast.error(`Failed to export ${projectName}`);
+        }
     };
 
     const [showNewProjectModal, setShowNewProjectModal] = React.useState(false);
@@ -164,7 +187,16 @@ export default function Dashboard() {
                                         Last edited {new Date(project.date).toLocaleDateString()}
                                     </ThreeDCardItem>
 
-                                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center gap-2">
+                                        <ThreeDCardItem translateZ="80">
+                                            <button
+                                                onClick={(e) => handleExportProject(e, project.id, project.name)}
+                                                className="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-white hover:text-black flex items-center justify-center transition-all shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                                title="Export Project"
+                                            >
+                                                <Download size={14} />
+                                            </button>
+                                        </ThreeDCardItem>
                                         <ThreeDCardItem translateZ="80">
                                             <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.5)]">
                                                 <ArrowUpRight size={16} />

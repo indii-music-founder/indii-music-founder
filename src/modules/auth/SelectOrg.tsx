@@ -87,7 +87,7 @@ export default function SelectOrg() {
                                 </div>
                                 <div className="text-left">
                                     <div className="font-bold text-white">{org.name}</div>
-                                    <div className="text-xs text-gray-500">{org.members.length} members</div>
+                                    <div className="text-xs text-gray-500">{org.members?.length || 0} members</div>
                                 </div>
                             </div>
 

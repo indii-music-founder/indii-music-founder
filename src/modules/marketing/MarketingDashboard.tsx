@@ -1,21 +1,38 @@
 import React, { useState } from 'react';
-import { Megaphone, LayoutGrid, Plus, TrendingUp, Users, Calendar, MoreHorizontal } from 'lucide-react';
+import { Megaphone, TrendingUp, Users, Calendar, MoreHorizontal, Plus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 
 import BrandManager from './components/BrandManager';
 
 export default function MarketingDashboard() {
     const toast = useToast();
-    const { currentModule } = useStore(); // Access store to change module if needed, though we write to it directly usually via useStore.setState or a setter
-    // Actually, looking at App.tsx, it reads from useStore.
-    // We can use useStore.setState or a helper from the store.
+    const { currentModule } = useStore();
 
     const [activeTab, setActiveTab] = useState<'overview' | 'brand'>('overview');
 
     const handleCreateCampaign = () => {
         toast.info("Create Campaign modal would open here.");
     };
+
+    // Actions Component
+    const DashboardActions = (
+        <>
+            <button
+                onClick={() => useStore.setState({ currentModule: 'social' })}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
+            >
+                <Megaphone size={18} /> Social Media
+            </button>
+            <button
+                onClick={handleCreateCampaign}
+                className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+            >
+                <Plus size={20} /> Create Campaign
+            </button>
+        </>
+    );
 
     // Mock Calendar Data
     const daysInMonth = 30; // Simplified
@@ -59,45 +76,18 @@ export default function MarketingDashboard() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <Megaphone className="text-pink-500" />
-                        Marketing Dashboard
-                    </h1>
-                    <p className="text-gray-400">Plan, execute, and track your campaigns.</p>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex bg-[#161b22] p-1 rounded-lg border border-gray-800">
-                        <button
-                            onClick={() => setActiveTab('overview')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Overview
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('brand')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'brand' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Brand Manager
-                        </button>
-                    </div>
-                    <button
-                        onClick={() => useStore.setState({ currentModule: 'social' })}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
-                    >
-                        <Megaphone size={18} /> Social Media
-                    </button>
-                    <button
-                        onClick={handleCreateCampaign}
-                        className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
-                    >
-                        <Plus size={20} /> Create Campaign
-                    </button>
-                </div>
-            </div>
-
+        <ModuleDashboard
+            title="Marketing Dashboard"
+            description="Plan, execute, and track your campaigns."
+            icon={<Megaphone className="text-pink-500" />}
+            actions={DashboardActions}
+            tabs={[
+                { label: 'Overview', value: 'overview' },
+                { label: 'Brand Manager', value: 'brand' }
+            ]}
+            activeTab={activeTab}
+            onTabChange={(val) => setActiveTab(val as any)}
+        >
             {activeTab === 'overview' ? (
                 <>
                     {/* Stats Row */}
@@ -177,9 +167,7 @@ export default function MarketingDashboard() {
             ) : (
                 <BrandManager />
             )}
-
-
-        </div>
+        </ModuleDashboard>
     );
 }
 

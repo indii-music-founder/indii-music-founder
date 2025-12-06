@@ -91,7 +91,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     // Map to ensure 'plan' is present
                     const mappedOrgs = orgs.map(o => ({
                         ...o,
-                        plan: (o as any).plan || 'free'
+                        plan: (o as any).plan || 'free',
+                        members: (o as any).members || ['me']
                     }));
 
                     const defaultOrg = { id: 'org-default', name: 'Personal Workspace', plan: 'free' as const, members: ['me'] };

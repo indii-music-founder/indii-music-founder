@@ -1,9 +1,6 @@
 
 import { describe, it, expect, vi } from 'vitest';
-import { agentRegistry } from './registry';
-import { BrandAgent } from './BrandAgent';
-import { RoadAgent } from './RoadAgent';
-import { MarketingAgent } from './MarketingAgent';
+import { agentRegistry } from '../registry';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
 vi.mock('../tools', () => ({
@@ -35,21 +32,24 @@ vi.mock('@/services/ai/AIService', () => ({
 }));
 
 describe('Specialist Agents Connection', () => {
-    it('should have Brand and Road agents registered', () => {
-        // We need to manually register them for the test if the service isn't instantiated
-        // But since we are testing the classes themselves or the registry...
-        // Let's instantiate them to check inheritance
-        const brandAgent = new BrandAgent();
-        const roadAgent = new RoadAgent();
-        const marketingAgent = new MarketingAgent();
+    it('should have Brand, Road, and Marketing agents registered', () => {
+        const brandAgent = agentRegistry.get('brand');
+        const roadAgent = agentRegistry.get('road');
+        const marketingAgent = agentRegistry.get('marketing');
 
-        expect(brandAgent).toBeInstanceOf(BrandAgent);
-        expect(roadAgent).toBeInstanceOf(RoadAgent);
-        expect(marketingAgent).toBeInstanceOf(MarketingAgent);
+        expect(brandAgent).toBeDefined();
+        expect(brandAgent?.id).toBe('brand');
+
+        expect(roadAgent).toBeDefined();
+        expect(roadAgent?.id).toBe('road');
+
+        expect(marketingAgent).toBeDefined();
+        expect(marketingAgent?.id).toBe('marketing');
     });
 
     it('should inherit Agent Zero superpowers via BaseAgent', async () => {
-        const brandAgent = new BrandAgent();
+        const brandAgent = agentRegistry.get('brand');
+        if (!brandAgent) throw new Error('Brand agent not found');
 
         // We can't easily inspect the private/protected execution logic without spying on AI.generateContent
         // But we can check if the tools are being passed correctly

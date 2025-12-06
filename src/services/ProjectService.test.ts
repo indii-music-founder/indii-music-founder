@@ -54,12 +54,13 @@ describe('ProjectService', () => {
             ]
         });
 
-        await ProjectService.getProjectsForOrg('org-123');
+        const projects = await ProjectService.getProjectsForOrg('org-123');
 
-        // Verify orderBy was called
-        expect(mockOrderBy).toHaveBeenCalledWith('date', 'desc');
+        // Verify result is sorted by date descending (2000 > 1000)
+        expect(projects[0].id).toBe('2');
+        expect(projects[1].id).toBe('1');
 
-        // Verify query construction
+        // Verify query construction (orderBy is NOT called on server in new impl)
         expect(mockQuery).toHaveBeenCalled();
         expect(mockWhere).toHaveBeenCalledWith('orgId', '==', 'org-123');
     });

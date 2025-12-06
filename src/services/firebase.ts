@@ -43,6 +43,6 @@ import { signInAnonymously } from 'firebase/auth';
 signInAnonymously(auth).catch(console.error);
 export const functions = getFunctions(app);
 
-if (env.DEV) {
-    connectFunctionsEmulator(functions, "127.0.0.1", 5001);
-}
+// if (env.DEV) {
+//     connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+// }

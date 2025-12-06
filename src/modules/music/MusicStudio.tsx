@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
 import { Play, Activity, Music } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 
 export default function MusicStudio() {
     const [isStarted, setIsStarted] = useState(false);
@@ -21,12 +22,6 @@ export default function MusicStudio() {
         try {
             await Tone.start();
             setIsStarted(true);
-
-            // Initialize Synth (still needed for Tone context to start properly?)
-            // Actually Tone.start() is enough for context. 
-            // We can keep the synth init if we plan to use it for analysis feedback later, 
-            // but for now let's keep it minimal.
-
             toast.success("Audio Engine Started");
         } catch (error) {
             console.error("Failed to start audio engine:", error);
@@ -35,17 +30,13 @@ export default function MusicStudio() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                    <Music className="text-purple-500" />
-                    Music Studio
-                </h1>
-                <p className="text-gray-400">Create and synthesize audio with Tone.js</p>
-            </div>
-
+        <ModuleDashboard
+            title="Music Studio"
+            description="Create and synthesize audio with Tone.js"
+            icon={<Music className="text-purple-500" />}
+        >
             {!isStarted ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-xl bg-[#161b22]">
+                <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-xl bg-[#161b22] h-full min-h-[400px]">
                     <Activity size={64} className="text-gray-600 mb-6" />
                     <h2 className="text-xl font-semibold mb-4">Audio Engine Not Started</h2>
                     <p className="text-gray-400 mb-8 text-center max-w-md">
@@ -102,6 +93,6 @@ export default function MusicStudio() {
                     </div>
                 </div>
             )}
-        </div>
+        </ModuleDashboard>
     );
 }

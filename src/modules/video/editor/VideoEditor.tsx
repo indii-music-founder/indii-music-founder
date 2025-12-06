@@ -10,6 +10,7 @@ import { EditorAssetLibrary } from './components/EditorAssetLibrary';
 import { VideoPreview } from './components/VideoPreview';
 import { VideoPropertiesPanel } from './components/VideoPropertiesPanel';
 import { VideoTimeline } from './components/VideoTimeline';
+import { StudioToolbar } from '@/components/studio/StudioToolbar';
 
 const PIXELS_PER_FRAME = 2;
 
@@ -278,12 +279,15 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     return (
         <div className="flex flex-col h-full bg-gray-950 text-white">
             {/* Header / Toolbar */}
-            <div className="h-14 border-b border-gray-800 flex items-center px-4 justify-between bg-gray-900">
-                <div className="flex items-center gap-4">
-                    <h2 className="font-bold text-lg">Studio Editor</h2>
-                    <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">{project.width}x{project.height} @ {project.fps}fps</span>
-                </div>
-                <div className="flex gap-2">
+            <StudioToolbar
+                className="bg-gray-900 border-gray-800"
+                left={
+                    <div className="flex items-center gap-4">
+                        <h2 className="font-bold text-lg">Studio Editor</h2>
+                        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">{project.width}x{project.height} @ {project.fps}fps</span>
+                    </div>
+                }
+                right={
                     <button
                         onClick={handleExport}
                         disabled={isExporting}
@@ -294,8 +298,10 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     >
                         {isExporting ? 'Exporting...' : 'Export Video'}
                     </button>
-                </div>
-            </div>
+                }
+            >
+                {/* Center Content Empty */}
+            </StudioToolbar>
 
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden">

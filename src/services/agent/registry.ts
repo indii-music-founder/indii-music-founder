@@ -1,5 +1,8 @@
-import { AI } from '@/services/ai/AIService';
+import { AI } from '@/services/ai/AIService'; // Keep if needed for types, though not used in registry directly in original
 import { AI_MODELS } from '@/core/config/ai-models';
+import { BaseAgent } from './BaseAgent';
+import { AGENT_CONFIGS } from './agentConfig';
+import { GeneralistAgent } from './specialists/GeneralistAgent'; // Import the "Agent Zero" explicitly
 
 export interface AgentResponse {
     text: string;
@@ -19,6 +22,30 @@ export interface SpecializedAgent {
 
 export class AgentRegistry {
     private agents: Map<string, SpecializedAgent> = new Map();
+
+    constructor() {
+        this.initializeAgents();
+    }
+
+    private initializeAgents() {
+        // Register Config-based Agents
+        AGENT_CONFIGS.forEach(config => {
+            const agent = new BaseAgent(config);
+            this.register(agent);
+        });
+
+        // Register Complex Agents (Agent Zero)
+        // We handle this one manually because it overrides execute() with complex logic
+        try {
+            const generalistKey = 'generalist';
+            if (!this.agents.has(generalistKey)) {
+                const generalist = new GeneralistAgent();
+                this.register(generalist);
+            }
+        } catch (e) {
+            console.warn("Failed to register GeneralistAgent:", e);
+        }
+    }
 
     register(agent: SpecializedAgent) {
         this.agents.set(agent.id, agent);
@@ -41,3 +68,4 @@ export class AgentRegistry {
 }
 
 export const agentRegistry = new AgentRegistry();
+

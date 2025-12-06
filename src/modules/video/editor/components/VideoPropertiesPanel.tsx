@@ -1,5 +1,6 @@
 import React from 'react';
 import { VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { PropertiesPanel, PanelSection, PropertyRow } from '@/components/studio/PropertiesPanel';
 
 interface VideoPropertiesPanelProps {
     project: VideoProject;
@@ -50,266 +51,247 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
     );
 
     return (
-        <div className="w-80 border-l border-gray-800 bg-gray-900 p-4 overflow-y-auto custom-scrollbar">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase mb-4">Properties</h3>
-            <div className="space-y-4">
-                <div className="bg-gray-800 p-3 rounded border border-gray-700">
-                    <label className="text-xs text-gray-500 block mb-1">Project Name</label>
+        <PropertiesPanel title="Properties">
+            <PanelSection title="Project Settings" defaultOpen={true}>
+                <PropertyRow label="Project Name">
                     <input
                         type="text"
                         className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
                         value={project.name}
                         readOnly
                     />
-                </div>
+                </PropertyRow>
+            </PanelSection>
 
-                {selectedClip ? (
-                    <div className="space-y-4 border-t border-gray-800 pt-4">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase">Selected Clip</h4>
-
-                        <div className="bg-gray-800 p-3 rounded border border-gray-700 space-y-3">
-                            {/* Basic Properties */}
-                            <div>
-                                <label className="text-xs text-gray-500 block mb-1">Name</label>
+            {selectedClip ? (
+                <>
+                    <PanelSection title="Clip Basics">
+                        <PropertyRow label="Name">
+                            <input
+                                type="text"
+                                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                value={selectedClip.name}
+                                onChange={(e) => updateClip(selectedClip.id, { name: e.target.value })}
+                            />
+                        </PropertyRow>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                            <PropertyRow label="Start Frame">
                                 <input
-                                    type="text"
+                                    type="number"
                                     className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                    value={selectedClip.name}
-                                    onChange={(e) => updateClip(selectedClip.id, { name: e.target.value })}
+                                    value={selectedClip.startFrame}
+                                    onChange={(e) => updateClip(selectedClip.id, { startFrame: parseInt(e.target.value) || 0 })}
                                 />
-                            </div>
+                            </PropertyRow>
+                            <PropertyRow label="Duration">
+                                <input
+                                    type="number"
+                                    className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                    value={selectedClip.durationInFrames}
+                                    onChange={(e) => updateClip(selectedClip.id, { durationInFrames: parseInt(e.target.value) || 1 })}
+                                />
+                            </PropertyRow>
+                        </div>
+                    </PanelSection>
 
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="text-xs text-gray-500 block mb-1">Start Frame</label>
+                    <PanelSection title="Transform">
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                            <PropertyRow label="Scale">
+                                <div className="flex items-center gap-1">
                                     <input
                                         type="number"
-                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                        value={selectedClip.startFrame}
-                                        onChange={(e) => updateClip(selectedClip.id, { startFrame: parseInt(e.target.value) || 0 })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 block mb-1">Duration</label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                        value={selectedClip.durationInFrames}
-                                        onChange={(e) => updateClip(selectedClip.id, { durationInFrames: parseInt(e.target.value) || 1 })}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Transform Properties */}
-                            <div className="border-t border-gray-700 pt-3">
-                                <label className="text-xs font-bold text-gray-400 block mb-2">Transform</label>
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs text-gray-500">Scale</label>
-                                            <KeyframeButton property="scale" value={selectedClip.scale ?? 1} />
-                                        </div>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                            value={selectedClip.scale ?? 1}
-                                            onChange={(e) => updateClip(selectedClip.id, { scale: parseFloat(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs text-gray-500">Rotation</label>
-                                            <KeyframeButton property="rotation" value={selectedClip.rotation ?? 0} />
-                                        </div>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                            value={selectedClip.rotation ?? 0}
-                                            onChange={(e) => updateClip(selectedClip.id, { rotation: parseFloat(e.target.value) })}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <label className="text-xs text-gray-500">Opacity</label>
-                                        <KeyframeButton property="opacity" value={selectedClip.opacity ?? 1} />
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="1"
                                         step="0.1"
-                                        className="w-full"
-                                        value={selectedClip.opacity ?? 1}
-                                        onChange={(e) => updateClip(selectedClip.id, { opacity: parseFloat(e.target.value) })}
+                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.scale ?? 1}
+                                        onChange={(e) => updateClip(selectedClip.id, { scale: parseFloat(e.target.value) })}
                                     />
+                                    <KeyframeButton property="scale" value={selectedClip.scale ?? 1} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 mt-2">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs text-gray-500">X</label>
-                                            <KeyframeButton property="x" value={selectedClip.x ?? 0} />
-                                        </div>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                            value={selectedClip.x ?? 0}
-                                            onChange={(e) => updateClip(selectedClip.id, { x: parseFloat(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="text-xs text-gray-500">Y</label>
-                                            <KeyframeButton property="y" value={selectedClip.y ?? 0} />
-                                        </div>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                            value={selectedClip.y ?? 0}
-                                            onChange={(e) => updateClip(selectedClip.id, { y: parseFloat(e.target.value) })}
-                                        />
-                                    </div>
+                            </PropertyRow>
+                            <PropertyRow label="Rotation">
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="number"
+                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.rotation ?? 0}
+                                        onChange={(e) => updateClip(selectedClip.id, { rotation: parseFloat(e.target.value) })}
+                                    />
+                                    <KeyframeButton property="rotation" value={selectedClip.rotation ?? 0} />
                                 </div>
+                            </PropertyRow>
+                        </div>
+                        <PropertyRow label="Opacity">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    className="w-full"
+                                    value={selectedClip.opacity ?? 1}
+                                    onChange={(e) => updateClip(selectedClip.id, { opacity: parseFloat(e.target.value) })}
+                                />
+                                <KeyframeButton property="opacity" value={selectedClip.opacity ?? 1} />
                             </div>
+                        </PropertyRow>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                            <PropertyRow label="X Position">
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="number"
+                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.x ?? 0}
+                                        onChange={(e) => updateClip(selectedClip.id, { x: parseFloat(e.target.value) })}
+                                    />
+                                    <KeyframeButton property="x" value={selectedClip.x ?? 0} />
+                                </div>
+                            </PropertyRow>
+                            <PropertyRow label="Y Position">
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="number"
+                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.y ?? 0}
+                                        onChange={(e) => updateClip(selectedClip.id, { y: parseFloat(e.target.value) })}
+                                    />
+                                    <KeyframeButton property="y" value={selectedClip.y ?? 0} />
+                                </div>
+                            </PropertyRow>
+                        </div>
+                    </PanelSection>
 
-                            {/* Filters */}
-                            <div className="border-t border-gray-700 pt-3">
-                                <label className="text-xs font-bold text-gray-400 block mb-2">Filter</label>
+                    <PanelSection title="Filters">
+                        <PropertyRow label="Type">
+                            <select
+                                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none mb-2"
+                                value={selectedClip.filter?.type || 'none'}
+                                onChange={(e) => {
+                                    const type = e.target.value as any;
+                                    if (type === 'none') {
+                                        updateClip(selectedClip.id, { filter: undefined });
+                                    } else {
+                                        updateClip(selectedClip.id, { filter: { type, intensity: 50 } });
+                                    }
+                                }}
+                            >
+                                <option value="none">None</option>
+                                <option value="blur">Blur</option>
+                                <option value="grayscale">Grayscale</option>
+                                <option value="sepia">Sepia</option>
+                                <option value="contrast">Contrast</option>
+                                <option value="brightness">Brightness</option>
+                            </select>
+                        </PropertyRow>
+                        {selectedClip.filter && (
+                            <PropertyRow label="Intensity">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    className="w-full"
+                                    value={selectedClip.filter.intensity}
+                                    onChange={(e) => updateClip(selectedClip.id, { filter: { ...selectedClip.filter!, intensity: parseInt(e.target.value) } })}
+                                />
+                            </PropertyRow>
+                        )}
+                    </PanelSection>
+
+                    <PanelSection title="Transitions">
+                        <PropertyRow label="In">
+                            <div className="flex gap-2">
                                 <select
-                                    className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none mb-2"
-                                    value={selectedClip.filter?.type || 'none'}
+                                    className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                    value={selectedClip.transitionIn?.type || 'none'}
                                     onChange={(e) => {
                                         const type = e.target.value as any;
                                         if (type === 'none') {
-                                            updateClip(selectedClip.id, { filter: undefined });
+                                            updateClip(selectedClip.id, { transitionIn: undefined });
                                         } else {
-                                            updateClip(selectedClip.id, { filter: { type, intensity: 50 } });
+                                            updateClip(selectedClip.id, { transitionIn: { type, duration: 15 } });
                                         }
                                     }}
                                 >
                                     <option value="none">None</option>
-                                    <option value="blur">Blur</option>
-                                    <option value="grayscale">Grayscale</option>
-                                    <option value="sepia">Sepia</option>
-                                    <option value="contrast">Contrast</option>
-                                    <option value="brightness">Brightness</option>
+                                    <option value="fade">Fade</option>
+                                    <option value="slide">Slide</option>
+                                    <option value="wipe">Wipe</option>
+                                    <option value="zoom">Zoom</option>
                                 </select>
-                                {selectedClip.filter && (
-                                    <div>
-                                        <label className="text-xs text-gray-500 block mb-1">Intensity</label>
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            className="w-full"
-                                            value={selectedClip.filter.intensity}
-                                            onChange={(e) => updateClip(selectedClip.id, { filter: { ...selectedClip.filter!, intensity: parseInt(e.target.value) } })}
-                                        />
-                                    </div>
+                                {selectedClip.transitionIn && (
+                                    <input
+                                        type="number"
+                                        className="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.transitionIn.duration}
+                                        onChange={(e) => updateClip(selectedClip.id, { transitionIn: { ...selectedClip.transitionIn!, duration: parseInt(e.target.value) } })}
+                                        title="Duration (frames)"
+                                    />
                                 )}
                             </div>
-
-                            {/* Transitions */}
-                            <div className="border-t border-gray-700 pt-3">
-                                <label className="text-xs font-bold text-gray-400 block mb-2">Transitions</label>
-                                <div className="mb-2">
-                                    <label className="text-xs text-gray-500 block mb-1">In</label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                            value={selectedClip.transitionIn?.type || 'none'}
-                                            onChange={(e) => {
-                                                const type = e.target.value as any;
-                                                if (type === 'none') {
-                                                    updateClip(selectedClip.id, { transitionIn: undefined });
-                                                } else {
-                                                    updateClip(selectedClip.id, { transitionIn: { type, duration: 15 } });
-                                                }
-                                            }}
-                                        >
-                                            <option value="none">None</option>
-                                            <option value="fade">Fade</option>
-                                            <option value="slide">Slide</option>
-                                            <option value="wipe">Wipe</option>
-                                            <option value="zoom">Zoom</option>
-                                        </select>
-                                        {selectedClip.transitionIn && (
-                                            <input
-                                                type="number"
-                                                className="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                                value={selectedClip.transitionIn.duration}
-                                                onChange={(e) => updateClip(selectedClip.id, { transitionIn: { ...selectedClip.transitionIn!, duration: parseInt(e.target.value) } })}
-                                                title="Duration (frames)"
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 block mb-1">Out</label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                            value={selectedClip.transitionOut?.type || 'none'}
-                                            onChange={(e) => {
-                                                const type = e.target.value as any;
-                                                if (type === 'none') {
-                                                    updateClip(selectedClip.id, { transitionOut: undefined });
-                                                } else {
-                                                    updateClip(selectedClip.id, { transitionOut: { type, duration: 15 } });
-                                                }
-                                            }}
-                                        >
-                                            <option value="none">None</option>
-                                            <option value="fade">Fade</option>
-                                            <option value="slide">Slide</option>
-                                            <option value="wipe">Wipe</option>
-                                            <option value="zoom">Zoom</option>
-                                        </select>
-                                        {selectedClip.transitionOut && (
-                                            <input
-                                                type="number"
-                                                className="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                                value={selectedClip.transitionOut.duration}
-                                                onChange={(e) => updateClip(selectedClip.id, { transitionOut: { ...selectedClip.transitionOut!, duration: parseInt(e.target.value) } })}
-                                                title="Duration (frames)"
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Content Specific */}
-                            {selectedClip.type === 'text' && (
-                                <div className="border-t border-gray-700 pt-3">
-                                    <label className="text-xs text-gray-500 block mb-1">Text Content</label>
-                                    <textarea
-                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none min-h-[60px]"
-                                        value={selectedClip.text || ''}
-                                        onChange={(e) => updateClip(selectedClip.id, { text: e.target.value })}
-                                    />
-                                </div>
-                            )}
-
-                            {(selectedClip.type === 'video' || selectedClip.type === 'image' || selectedClip.type === 'audio') && (
-                                <div className="border-t border-gray-700 pt-3">
-                                    <label className="text-xs text-gray-500 block mb-1">Source URL</label>
+                        </PropertyRow>
+                        <PropertyRow label="Out">
+                            <div className="flex gap-2">
+                                <select
+                                    className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                    value={selectedClip.transitionOut?.type || 'none'}
+                                    onChange={(e) => {
+                                        const type = e.target.value as any;
+                                        if (type === 'none') {
+                                            updateClip(selectedClip.id, { transitionOut: undefined });
+                                        } else {
+                                            updateClip(selectedClip.id, { transitionOut: { type, duration: 15 } });
+                                        }
+                                    }}
+                                >
+                                    <option value="none">None</option>
+                                    <option value="fade">Fade</option>
+                                    <option value="slide">Slide</option>
+                                    <option value="wipe">Wipe</option>
+                                    <option value="zoom">Zoom</option>
+                                </select>
+                                {selectedClip.transitionOut && (
                                     <input
-                                        type="text"
-                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                        value={selectedClip.src || ''}
-                                        onChange={(e) => updateClip(selectedClip.id, { src: e.target.value })}
+                                        type="number"
+                                        className="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.transitionOut.duration}
+                                        onChange={(e) => updateClip(selectedClip.id, { transitionOut: { ...selectedClip.transitionOut!, duration: parseInt(e.target.value) } })}
+                                        title="Duration (frames)"
                                     />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="bg-gray-800 p-3 rounded border border-gray-700">
-                        <p className="text-xs text-gray-400 italic">Select a clip to edit properties</p>
-                    </div>
-                )}
-            </div>
-        </div>
+                                )}
+                            </div>
+                        </PropertyRow>
+                    </PanelSection>
+
+                    {/* Content Specific */}
+                    {selectedClip.type === 'text' && (
+                        <PanelSection title="Content">
+                            <PropertyRow label="Text Content">
+                                <textarea
+                                    className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none min-h-[60px]"
+                                    value={selectedClip.text || ''}
+                                    onChange={(e) => updateClip(selectedClip.id, { text: e.target.value })}
+                                />
+                            </PropertyRow>
+                        </PanelSection>
+                    )}
+
+                    {(selectedClip.type === 'video' || selectedClip.type === 'image' || selectedClip.type === 'audio') && (
+                        <PanelSection title="Source">
+                            <PropertyRow label="Source URL">
+                                <input
+                                    type="text"
+                                    className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                    value={selectedClip.src || ''}
+                                    onChange={(e) => updateClip(selectedClip.id, { src: e.target.value })}
+                                />
+                            </PropertyRow>
+                        </PanelSection>
+                    )}
+                </>
+            ) : (
+                <div className="p-4 bg-gray-800/50 m-4 rounded border border-gray-800 text-center">
+                    <p className="text-xs text-gray-500 italic">Select a clip to edit properties</p>
+                </div>
+            )}
+        </PropertiesPanel>
     );
 };

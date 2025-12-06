@@ -1,20 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage } from '@/core/store';
 import { agentRegistry } from './registry';
-import { LegalAgent } from './specialists/LegalAgent';
-import { MarketingAgent } from './specialists/MarketingAgent';
-
-import { MusicAgent } from './specialists/MusicAgent';
-import { PublicistAgent } from './specialists/PublicistAgent';
-import { BrandAgent } from './specialists/BrandAgent';
-import { RoadAgent } from './specialists/RoadAgent';
-import { DirectorAgent } from './specialists/DirectorAgent';
-import { VideoAgent } from './specialists/VideoAgent';
-import { GeneralistAgent } from './specialists/GeneralistAgent';
-import { SocialAgent } from './specialists/SocialAgent';
-import { PublishingAgent } from './specialists/PublishingAgent';
-import { FinanceAgent } from './specialists/FinanceAgent';
-import { LicensingAgent } from './specialists/LicensingAgent';
 import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -26,22 +12,7 @@ export class AgentService {
     private executor: AgentExecutor;
 
     constructor() {
-        // Register Specialists
-        agentRegistry.register(new LegalAgent());
-        agentRegistry.register(new MarketingAgent());
-        agentRegistry.register(new MusicAgent());
-        agentRegistry.register(new PublicistAgent());
-        agentRegistry.register(new BrandAgent());
-        agentRegistry.register(new RoadAgent());
-        agentRegistry.register(new DirectorAgent());
-        agentRegistry.register(new VideoAgent());
-        agentRegistry.register(new GeneralistAgent());
-        agentRegistry.register(new SocialAgent());
-        agentRegistry.register(new PublishingAgent());
-        agentRegistry.register(new FinanceAgent());
-        agentRegistry.register(new LicensingAgent());
-
-        // Initialize Components
+        // Components initialized. Agents are auto-registered in AgentRegistry singleton.
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
         this.executor = new AgentExecutor();

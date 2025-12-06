@@ -48,9 +48,25 @@ describe('SelectOrg', () => {
     it('handles organization selection', async () => {
         render(<SelectOrg />);
         fireEvent.click(screen.getByText('Test Org'));
+    });
 
-        // Since handleSelect is async and imports dynamically, we might need to wait or mock the dynamic import.
-        // For now, let's just check if the button is clickable.
-        // The dynamic import might fail in test environment if not mocked.
+    it('renders organization without members field without crashing', () => {
+        (useStore as any).mockReturnValue({
+            organizations: [
+                { id: 'org-2', name: 'Corrupt Org', plan: 'free' } // Missing members
+            ],
+            currentOrganizationId: 'org-1',
+            setOrganization: mockSetOrganization,
+            addOrganization: mockAddOrganization,
+            setModule: mockSetModule,
+            initializeHistory: mockInitializeHistory,
+            loadProjects: mockLoadProjects,
+            getState: () => ({ loadProjects: mockLoadProjects })
+        });
+
+        render(<SelectOrg />);
+        expect(screen.getByText('Corrupt Org')).toBeInTheDocument();
+        // Should default to 0 members
+        expect(screen.getByText('0 members')).toBeInTheDocument();
     });
 });

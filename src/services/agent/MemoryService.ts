@@ -1,5 +1,5 @@
 
-import { firestoreService } from '../FirestoreService';
+import { FirestoreService } from '../FirestoreService';
 import { AI } from '../ai/AIService';
 
 export interface MemoryItem {
@@ -32,6 +32,10 @@ class MemoryService {
         return `projects/${projectId}/memories`;
     }
 
+    private getService(projectId: string): FirestoreService<MemoryItem> {
+        return new FirestoreService<MemoryItem>(this.getCollectionPath(projectId));
+    }
+
     private async getEmbedding(text: string): Promise<number[]> {
         try {
             const result = await AI.embedContent({
@@ -48,8 +52,10 @@ class MemoryService {
     }
 
     async saveMemory(projectId: string, content: string, type: 'fact' | 'summary' | 'rule' = 'fact'): Promise<void> {
+        const service = this.getService(projectId);
+
         // Check for duplicates using vector similarity
-        const existingMemories = await firestoreService.list<MemoryItem>(this.getCollectionPath(projectId));
+        const existingMemories = await service.list();
 
         // Simple content match for exact duplicates
         if (existingMemories.some(m => m.content === content)) {
@@ -67,12 +73,13 @@ class MemoryService {
             embedding: embedding.length > 0 ? embedding : undefined
         };
 
-        await firestoreService.add(this.getCollectionPath(projectId), item);
+        await service.add(item);
     }
 
     async retrieveRelevantMemories(projectId: string, query: string, limit = 5): Promise<string[]> {
         try {
-            const memories = await firestoreService.list<MemoryItem>(this.getCollectionPath(projectId));
+            const service = this.getService(projectId);
+            const memories = await service.list();
 
             if (memories.length === 0) return [];
 
@@ -129,22 +136,22 @@ class MemoryService {
     }
 
     async clearProjectMemory(projectId: string): Promise<void> {
-        const path = this.getCollectionPath(projectId);
-        const memories = await firestoreService.list<MemoryItem>(path);
-        await Promise.all(memories.map(m => firestoreService.delete(path, m.id)));
+        const service = this.getService(projectId);
+        const memories = await service.list();
+        await Promise.all(memories.map(m => service.delete(m.id)));
     }
 
     // Utility to regenerate embeddings for existing memories (migration helper)
     async regenerateEmbeddings(projectId: string): Promise<number> {
-        const path = this.getCollectionPath(projectId);
-        const memories = await firestoreService.list<MemoryItem>(path);
+        const service = this.getService(projectId);
+        const memories = await service.list();
 
         let updated = 0;
         for (const memory of memories) {
             if (!memory.embedding || memory.embedding.length === 0) {
                 const embedding = await this.getEmbedding(memory.content);
                 if (embedding.length > 0) {
-                    await firestoreService.update(path, memory.id, { embedding });
+                    await service.update(memory.id, { embedding });
                     updated++;
                 }
             }

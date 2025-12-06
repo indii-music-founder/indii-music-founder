@@ -1,7 +1,18 @@
-import { SpecializedAgent, AgentResponse } from '../registry';
-import { AI } from '@/services/ai/AIService';
+import { SpecializedAgent, AgentResponse, AgentProgressCallback } from './registry';
+// import { AI } from '@/services/ai/AIService'; // Avoid circular dependency if possible, or import lazily
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { TOOL_REGISTRY } from '../tools';
+import { TOOL_REGISTRY } from './tools';
+
+export interface AgentConfig {
+    id: string;
+    name: string;
+    description: string;
+    color: string;
+    category: 'manager' | 'department' | 'specialist';
+    systemPrompt: string;
+    tools?: any[]; // Tool definitions (JSON schema)
+    functions?: Record<string, (args: any) => Promise<any>>; // Implementations
+}
 
 const SUPERPOWER_TOOLS = [
     {
@@ -64,32 +75,46 @@ const SUPERPOWER_TOOLS = [
     }
 ];
 
-export abstract class BaseAgent implements SpecializedAgent {
-    abstract id: string;
-    abstract name: string;
-    abstract description: string;
-    abstract color: string;
-    abstract category: 'manager' | 'department' | 'specialist';
-    abstract systemPrompt: string;
-    abstract tools?: any[]; // Define tools for the specialist
+export class BaseAgent implements SpecializedAgent {
+    public id: string;
+    public name: string;
+    public description: string;
+    public color: string;
+    public category: 'manager' | 'department' | 'specialist';
+    public systemPrompt: string;
+    public tools: any[];
+    protected functions: Record<string, (args: any) => Promise<any>>;
 
-    protected functions: Record<string, (args: any) => Promise<any>> = {
-        get_project_details: async ({ projectId }) => {
-            const { useStore } = await import('@/core/store');
-            const { projects } = useStore.getState();
-            const project = projects.find(p => p.id === projectId);
-            if (!project) return { error: 'Project not found' };
-            return project;
-        }
-    };
+    constructor(config: AgentConfig) {
+        this.id = config.id;
+        this.name = config.name;
+        this.description = config.description;
+        this.color = config.color;
+        this.category = config.category;
+        this.systemPrompt = config.systemPrompt;
+        this.tools = config.tools || [];
+        this.functions = {
+            get_project_details: async ({ projectId }) => {
+                const { useStore } = await import('@/core/store');
+                const { projects } = useStore.getState();
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return { error: 'Project not found' };
+                return project;
+            },
+            ...config.functions
+        };
+    }
 
-    async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<AgentResponse> {
+    async execute(task: string, context?: any, onProgress?: AgentProgressCallback): Promise<AgentResponse> {
         console.log(`[${this.name}] Received task: ${task}`);
+
+        // Lazy import AI Service to prevent circular deps during registry loading
+        const { AI } = await import('@/services/ai/AIService');
 
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
-        // Dynamically import store to avoid circular deps if any
+        // Dynamically import store to avoid circular deps
         const { useStore } = await import('@/core/store');
         const { currentOrganizationId, currentProjectId } = useStore.getState();
 
@@ -106,7 +131,6 @@ export abstract class BaseAgent implements SpecializedAgent {
         - **Approval:** Use 'request_approval' before taking any public or irreversible action.
         `;
 
-        // Prefix Caching Strategy: Stable -> Semi-Stable -> Variable
         const fullPrompt = `
 ${this.systemPrompt}
 
@@ -116,14 +140,13 @@ CONTEXT:
 ${JSON.stringify(enrichedContext, null, 2)}
 
 HISTORY:
-${context.chatHistoryString || ''}
+${context?.chatHistoryString || ''}
 
 TASK:
 ${task}
 `;
 
         // Merge specialist tools with superpowers
-        // Ensure superpowers are wrapped in a Tool object structure
         const allTools = [
             ...(this.tools || []),
             { functionDeclarations: SUPERPOWER_TOOLS }
@@ -132,7 +155,6 @@ ${task}
         try {
             onProgress?.({ type: 'thought', content: 'Generating response...' });
 
-            // TODO: Switch to generateContentStream for token streaming in Phase 2
             const response = await AI.generateContent({
                 model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
@@ -150,6 +172,7 @@ ${task}
 
                 onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
 
+                // Check local functions first (specialist specific)
                 if (this.functions[name]) {
                     const result = await this.functions[name](args);
                     onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
@@ -157,12 +180,13 @@ ${task}
                         text: `[Tool: ${name}] Output: ${JSON.stringify(result)}`,
                         data: result
                     };
-                } else if (TOOL_REGISTRY[name]) {
-                    // Fallback to global registry for superpowers
+                }
+                // Then check global tool registry
+                else if (TOOL_REGISTRY[name]) {
                     const result = await TOOL_REGISTRY[name](args);
                     onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
                     return {
-                        text: `[Tool: ${name}] Output: ${result}`, // Registry returns string
+                        text: `[Tool: ${name}] Output: ${result}`,
                         data: result
                     };
                 } else {

@@ -10,6 +10,7 @@ import PromptBuilder from './PromptBuilder';
 import StudioNavControls from './StudioNavControls';
 import ImageSubMenu from './ImageSubMenu';
 import DaisyChainControls from './DaisyChainControls';
+import { StudioToolbar } from '@/components/studio/StudioToolbar';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -129,49 +130,47 @@ export default function CreativeNavbar() {
 
     return (
         <div className="flex flex-col z-20">
-            {/* Main Navbar */}
-            <div className="bg-[#1a1a1a] border-b border-gray-800 py-2 px-4 flex-shrink-0">
-                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 w-full">
-                    <div className="flex items-center justify-between md:justify-start gap-4 flex-shrink-0">
-                        <div className="flex items-center gap-4">
-                            {/* Branding */}
-                            <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">indiiOS</h1>
-                            <div className="h-4 w-px bg-gray-700"></div>
-                            <span className="text-[10px] text-gray-500 font-mono" id="debug-uid">
-                                {auth.currentUser?.uid || 'No User'}
-                            </span>
+            <StudioToolbar
+                className="bg-[#1a1a1a]"
+                left={
+                    <div className="flex items-center gap-4">
+                        {/* Branding */}
+                        <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">indiiOS</h1>
+                        <div className="h-4 w-px bg-gray-700"></div>
+                        <span className="text-[10px] text-gray-500 font-mono" id="debug-uid">
+                            {auth.currentUser?.uid || 'No User'}
+                        </span>
 
-                            {/* Mode Dropdown */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowModeDropdown(!showModeDropdown)}
-                                    className="flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 text-xs rounded px-3 py-1.5 text-gray-300 hover:border-gray-500 transition-colors whitespace-nowrap"
-                                >
-                                    {generationMode === 'image' ? (
-                                        <><ImageIcon size={12} /> Image</>
-                                    ) : (
-                                        <><Video size={12} /> Video</>
-                                    )}
-                                    <ChevronDown size={12} />
-                                </button>
-
-                                {showModeDropdown && (
-                                    <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                                        <button
-                                            onClick={() => { setGenerationMode('image'); setShowModeDropdown(false); }}
-                                            className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                                        >
-                                            <ImageIcon size={12} /> Image Mode
-                                        </button>
-                                        <button
-                                            onClick={() => { setGenerationMode('video'); setShowModeDropdown(false); }}
-                                            className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                                        >
-                                            <Video size={12} /> Video Mode
-                                        </button>
-                                    </div>
+                        {/* Mode Dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowModeDropdown(!showModeDropdown)}
+                                className="flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 text-xs rounded px-3 py-1.5 text-gray-300 hover:border-gray-500 transition-colors whitespace-nowrap"
+                            >
+                                {generationMode === 'image' ? (
+                                    <><ImageIcon size={12} /> Image</>
+                                ) : (
+                                    <><Video size={12} /> Video</>
                                 )}
-                            </div>
+                                <ChevronDown size={12} />
+                            </button>
+
+                            {showModeDropdown && (
+                                <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                                    <button
+                                        onClick={() => { setGenerationMode('image'); setShowModeDropdown(false); }}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                                    >
+                                        <ImageIcon size={12} /> Image Mode
+                                    </button>
+                                    <button
+                                        onClick={() => { setGenerationMode('video'); setShowModeDropdown(false); }}
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                                    >
+                                        <Video size={12} /> Video Mode
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Mobile: Agent Toggle in top row */}
@@ -183,38 +182,9 @@ export default function CreativeNavbar() {
                             Agent
                         </button>
                     </div>
-
-                    {/* Prompt Input Area */}
-                    <div className="flex-1 w-full flex items-center gap-2 order-3 md:order-2">
-                        {/* Prompt Input Removed - Use CommandBar */}
-                        <div className="hidden"></div>
-
-                        {/* Studio Controls (Desktop) */}
-                        <div className="hidden md:block">
-                            <StudioNavControls />
-                        </div>
-
-                        {/* Studio Controls Toggle (Mobile) */}
-                        <div className="md:hidden">
-                            <button
-                                onClick={() => setShowMobileControls(!showMobileControls)}
-                                className={`p-2 rounded transition-colors ${showMobileControls ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                <Settings2 size={18} />
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isGenerating || !prompt.trim()}
-                            className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-1.5 px-4 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-purple-900/20 whitespace-nowrap"
-                        >
-                            {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                            {generationMode === 'video' ? 'Generate Video' : 'Generate Image'}
-                        </button>
-                    </div>
-
-                    <div className="hidden md:flex gap-2 flex-shrink-0 order-2 md:order-3">
+                }
+                right={
+                    <div className="hidden md:flex gap-2">
                         <button
                             onClick={async () => {
                                 const granted = await ScreenControl.requestPermission();
@@ -237,8 +207,34 @@ export default function CreativeNavbar() {
                             indii
                         </button>
                     </div>
+                }
+            >
+                <div className="flex-1 w-full flex items-center gap-2 justify-center md:justify-end pr-4">
+                    {/* Studio Controls (Desktop) */}
+                    <div className="hidden md:block">
+                        <StudioNavControls />
+                    </div>
+
+                    {/* Studio Controls Toggle (Mobile) */}
+                    <div className="md:hidden">
+                        <button
+                            onClick={() => setShowMobileControls(!showMobileControls)}
+                            className={`p-2 rounded transition-colors ${showMobileControls ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            <Settings2 size={18} />
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={handleGenerate}
+                        disabled={isGenerating || !prompt.trim()}
+                        className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-1.5 px-4 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-purple-900/20 whitespace-nowrap"
+                    >
+                        {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                        {generationMode === 'video' ? 'Generate Video' : 'Generate Image'}
+                    </button>
                 </div>
-            </div>
+            </StudioToolbar>
 
             {/* Sub-Menu Bar */}
             <div className="bg-[#111] border-b border-gray-800 py-1 px-4">

@@ -1,5 +1,7 @@
+
+import { where, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { FirestoreService } from './FirestoreService';
 import { db, auth } from './firebase';
-import { collection, doc, getDoc, setDoc, query, where, getDocs, addDoc, updateDoc } from 'firebase/firestore';
 
 export interface Organization {
     id: string;
@@ -9,7 +11,11 @@ export interface Organization {
     createdAt: number;
 }
 
-export const OrganizationService = {
+class OrganizationServiceImpl extends FirestoreService<Organization> {
+    constructor() {
+        super('organizations');
+    }
+
     async createOrganization(name: string): Promise<string> {
         const user = auth.currentUser;
         if (!user) throw new Error("User must be logged in to create an organization");
@@ -21,36 +27,28 @@ export const OrganizationService = {
             createdAt: Date.now()
         };
 
-        const docRef = await addDoc(collection(db, 'organizations'), orgData);
+        const id = await this.add(orgData);
 
-        // Also update the user's profile to include this org
-        await this.addUserToOrg(user.uid, docRef.id);
+        // Also update the user's profile to include this org (legacy requirement)
+        await this.addUserToOrg(user.uid, id);
 
-        return docRef.id;
-    },
+        return id;
+    }
 
+    // getOrganization(id) is already provided by super.get(id) 
+    // but we can alias it if preferred, or just let consumers use .get()
+    // To match existing API exactly:
     async getOrganization(orgId: string): Promise<Organization | null> {
-        const docRef = doc(db, 'organizations', orgId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as Organization;
-        } else {
-            return null;
-        }
-    },
+        return this.get(orgId);
+    }
 
     async getUserOrganizations(userId: string): Promise<Organization[]> {
-        // This assumes we have a way to query orgs by member. 
-        // For scalability, we should store orgIds on the user document, but for now query is okay if array-contains is used.
-        const q = query(collection(db, 'organizations'), where('members', 'array-contains', userId));
-        const querySnapshot = await getDocs(q);
-
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Organization));
-    },
+        return this.list([where('members', 'array-contains', userId)]);
+    }
 
     async addUserToOrg(userId: string, orgId: string) {
         // 1. Add user to Org members
+        // Using direct references here as this is specific business logic not covered by generic update
         const orgRef = doc(db, 'organizations', orgId);
         const orgSnap = await getDoc(orgRef);
         if (orgSnap.exists()) {
@@ -60,18 +58,16 @@ export const OrganizationService = {
                 await updateDoc(orgRef, { members: [...members, userId] });
             }
         }
-
-        // 2. Add Org to User's list (Optional but recommended for fast lookup)
-        // We'll skip this for now to keep it simple and rely on the 'members' array query
-    },
+    }
 
     async switchOrganization(orgId: string) {
-        // In a real app, this would update a local state or user preference
         localStorage.setItem('currentOrgId', orgId);
         return orgId;
-    },
+    }
 
     getCurrentOrgId(): string | null {
         return localStorage.getItem('currentOrgId');
     }
-};
+}
+
+export const OrganizationService = new OrganizationServiceImpl();

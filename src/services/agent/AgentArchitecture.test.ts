@@ -129,7 +129,7 @@ describe('Multi-Agent Architecture Tests', () => {
 
     describe('4. Specialist Agents Verification', () => {
         const agents = [
-            'legal', 'campaign', 'music', 'publicist', 'brand', 'road', 'creative', 'video'
+            'legal', 'marketing', 'music', 'publicist', 'brand', 'road', 'director', 'video'
         ];
 
         agents.forEach(agentId => {
@@ -155,7 +155,7 @@ describe('Multi-Agent Architecture Tests', () => {
             // Specialist execute calls AI.generateContent which IS mocked.
             // So it works.
 
-            await service.sendMessage(userQuery, undefined, 'creative');
+            await service.sendMessage(userQuery, undefined, 'director');
             expect(true).toBe(true);
         });
     });
@@ -203,7 +203,7 @@ describe('Multi-Agent Architecture Tests', () => {
             };
             (service as any).executor = executorMock;
 
-            await service.sendMessage('Test Message', undefined, 'creative');
+            await service.sendMessage('Test Message', undefined, 'director');
 
             // Verify updateAgentMessage was called with thoughts
             expect(updateSpy).toHaveBeenCalled();
