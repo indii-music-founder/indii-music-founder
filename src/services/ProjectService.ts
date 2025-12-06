@@ -6,12 +6,15 @@ import { OrganizationService } from './OrganizationService';
 export const ProjectService = {
     async getProjectsForOrg(orgId: string): Promise<Project[]> {
         try {
-            const q = query(collection(db, 'projects'), where('orgId', '==', orgId), orderBy('date', 'desc'));
+            const q = query(collection(db, 'projects'), where('orgId', '==', orgId));
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({
+            const projects = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             } as Project));
+
+            // Client-side sort to avoid composite index requirement
+            return projects.sort((a, b) => b.date - a.date);
         } catch (e) {
             console.error("Error loading projects:", e);
             return [];

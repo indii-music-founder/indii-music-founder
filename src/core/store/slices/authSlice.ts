@@ -19,7 +19,7 @@ export interface AuthSlice {
     initializeAuth: () => void;
 }
 
-export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
+export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     currentOrganizationId: 'org-default',
     organizations: [
         { id: 'org-default', name: 'Personal Workspace', plan: 'free', members: ['me'] }
@@ -80,6 +80,31 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => ({
             } catch (e) {
                 console.error("Failed to parse stored profile", e);
             }
+        }
+
+        // Fetch user's organizations
+        const { auth } = require('@/services/firebase');
+        const user = auth.currentUser;
+        if (user) {
+            import('@/services/OrganizationService').then(({ OrganizationService }) => {
+                OrganizationService.getUserOrganizations(user.uid).then(orgs => {
+                    // Map to ensure 'plan' is present
+                    const mappedOrgs = orgs.map(o => ({
+                        ...o,
+                        plan: (o as any).plan || 'free'
+                    }));
+
+                    const defaultOrg = { id: 'org-default', name: 'Personal Workspace', plan: 'free' as const, members: ['me'] };
+                    set({ organizations: [defaultOrg, ...mappedOrgs] });
+
+                    // If current org is not found in list (and not default), switch to default
+                    const currentId = get().currentOrganizationId;
+                    if (currentId !== 'org-default' && !mappedOrgs.find(o => o.id === currentId)) {
+                        set({ currentOrganizationId: 'org-default' });
+                        localStorage.setItem('currentOrgId', 'org-default');
+                    }
+                });
+            });
         }
     }
 });

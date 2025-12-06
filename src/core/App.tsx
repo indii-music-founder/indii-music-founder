@@ -45,6 +45,17 @@ export default function App() {
         if (window.location.pathname === '/select-org') {
             useStore.setState({ currentModule: 'select-org' });
         }
+
+        // Listen for Auth Changes to reload orgs
+        import('@/services/firebase').then(({ auth }) => {
+            const { onAuthStateChanged } = require('firebase/auth');
+            onAuthStateChanged(auth, (user: any) => {
+                if (user) {
+                    // Re-run init to fetch orgs now that user is logged in
+                    initializeAuth();
+                }
+            });
+        });
     }, []);
 
     useEffect(() => {
