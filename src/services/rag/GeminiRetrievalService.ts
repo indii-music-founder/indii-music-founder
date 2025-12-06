@@ -53,29 +53,50 @@ export class GeminiRetrievalService {
         const functionUrl = `${env.VITE_FUNCTIONS_URL}/ragProxy`;
         const url = `${functionUrl}/v1beta/${endpoint}`;
 
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            }
-        });
+        const maxRetries = 3;
+        let attempt = 0;
 
-        if (!response.ok) {
-            // Handle 404/429 with simple retry at service level if needed, 
-            // but usually we want to control this.
-            // However, for 429 (Too Many Requests) or 503, we should definitely auto-retry.
-            if (response.status === 429 || response.status >= 500) {
-                const retryAfter = response.headers.get('Retry-After');
-                // Only retry if we haven't exceeded a limit (passed in options? or hardcoded)
-                // content-specific retries are better handled in `waitForState` or similar.
-                // For now, simpler is just validation.
+        while (attempt < maxRetries) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 429 || response.status >= 500) {
+                        attempt++;
+                        if (attempt >= maxRetries) {
+                            const errorText = await response.text();
+                            throw new Error(`Gemini API Error (${endpoint}): ${response.status} ${response.statusText} - ${errorText}`);
+                        }
+
+                        // Exponential backoff
+                        const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
+                        console.warn(`Gemini API 429/5xx (${endpoint}). Retrying in ${waitTime}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        continue;
+                    }
+
+                    const errorText = await response.text();
+                    throw new Error(`Gemini API Error (${endpoint}): ${response.status} ${response.statusText} - ${errorText}`);
+                }
+
+
+            } catch (error: any) {
+                // If network error (fetch throws), retry
+                attempt++;
+                if (attempt >= maxRetries) throw error;
+
+                const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
+                console.warn(`Gemini Network Error (${endpoint}). Retrying in ${waitTime}ms...`, error);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
             }
-            const errorText = await response.text();
-            throw new Error(`Gemini API Error (${endpoint}): ${response.status} ${response.statusText} - ${errorText}`);
         }
-
-        return response.json();
+        throw new Error("Gemini API request failed after retries");
     }
 
     // Helper for reliable waiting on resource propagation
