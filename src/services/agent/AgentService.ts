@@ -2,7 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage } from '@/core/store';
 import { agentRegistry } from './registry';
 import { LegalAgent } from './specialists/LegalAgent';
-import { CampaignAgent } from './specialists/MarketingAgent';
+import { MarketingAgent } from './specialists/MarketingAgent';
+
 import { MusicAgent } from './specialists/MusicAgent';
 import { PublicistAgent } from './specialists/PublicistAgent';
 import { BrandAgent } from './specialists/BrandAgent';
@@ -27,7 +28,7 @@ export class AgentService {
     constructor() {
         // Register Specialists
         agentRegistry.register(new LegalAgent());
-        agentRegistry.register(new CampaignAgent());
+        agentRegistry.register(new MarketingAgent());
         agentRegistry.register(new MusicAgent());
         agentRegistry.register(new PublicistAgent());
         agentRegistry.register(new BrandAgent());

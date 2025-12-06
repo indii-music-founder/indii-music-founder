@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from './registry';
 import { BrandAgent } from './BrandAgent';
 import { RoadAgent } from './RoadAgent';
-import { CampaignAgent } from './MarketingAgent';
+import { MarketingAgent } from './MarketingAgent';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
 vi.mock('../tools', () => ({
@@ -41,11 +41,11 @@ describe('Specialist Agents Connection', () => {
         // Let's instantiate them to check inheritance
         const brandAgent = new BrandAgent();
         const roadAgent = new RoadAgent();
-        const campaignAgent = new CampaignAgent();
+        const marketingAgent = new MarketingAgent();
 
         expect(brandAgent).toBeInstanceOf(BrandAgent);
         expect(roadAgent).toBeInstanceOf(RoadAgent);
-        expect(campaignAgent).toBeInstanceOf(CampaignAgent);
+        expect(marketingAgent).toBeInstanceOf(MarketingAgent);
     });
 
     it('should inherit Agent Zero superpowers via BaseAgent', async () => {
@@ -60,8 +60,11 @@ describe('Specialist Agents Connection', () => {
         const callArgs = (AI.generateContent as any).mock.calls[0][0];
         const tools = callArgs.config.tools;
 
-        const hasSaveMemory = tools.some((t: any) => t.name === 'save_memory');
-        const hasVerifyOutput = tools.some((t: any) => t.name === 'verify_output');
+        // Create a flat list of all function declarations from all tool objects
+        const allFunctionDeclarations = tools.flatMap((t: any) => t.functionDeclarations || []);
+
+        const hasSaveMemory = allFunctionDeclarations.some((f: any) => f.name === 'save_memory');
+        const hasVerifyOutput = allFunctionDeclarations.some((f: any) => f.name === 'verify_output');
 
         expect(hasSaveMemory).toBe(true);
         expect(hasVerifyOutput).toBe(true);

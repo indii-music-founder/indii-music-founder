@@ -14,6 +14,7 @@ export class EndpointService {
      * handling Emulator (DEV) vs. Production URL construction automatically.
      */
     getFunctionUrl(functionName: string): string {
+        // Force production URL for verification
         if (env.DEV) {
             // Emulator URL
             return `http://127.0.0.1:5001/${this.projectId}/${this.region}/${functionName}`;

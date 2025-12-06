@@ -86,6 +86,7 @@ export class GeminiRetrievalService {
                 }
 
 
+                return response.json();
             } catch (error: any) {
                 // If network error (fetch throws), retry
                 attempt++;

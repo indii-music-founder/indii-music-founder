@@ -9,7 +9,13 @@ do
    echo "Run #$i"
    echo "----------------------------------------"
    
-   npx vitest run src/core/components/CommandBar.test.tsx src/services/agent/components/AgentOrchestrator.test.ts src/services/agent/specialists/specialists.test.ts > "test-results/stress/run-$i.log" 2>&1
+      npx vitest run \
+        src/modules/command/CommandBar.test.tsx \
+        src/services/agent/AgentOrchestrator.test.ts \
+        src/services/agent/specialists.test.ts \
+        src/services/rag/GeminiRetrievalService.test.ts \
+        src/services/storage/repository.test.ts \
+        --reporter=verbose > "test-results/stress/run_$i.log" 2>&1
    
    if [ $? -ne 0 ]; then
      echo "❌ Failed on run #$i - Check test-results/stress/run-$i.log"

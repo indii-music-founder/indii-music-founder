@@ -5,7 +5,7 @@ import { useToast } from '../../core/context/ToastContext';
 import IdeaStep from './components/IdeaStep';
 import ReviewStep from './components/ReviewStep';
 import FrameSelectionModal from './components/FrameSelectionModal';
-import { VideoEditor } from './editor/VideoEditor';
+const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { ErrorBoundary } from '../../core/components/ErrorBoundary';
 
@@ -275,7 +275,9 @@ export default function VideoWorkflow() {
         if (step === 'editor') {
             return (
                 <ErrorBoundary fallback={<div className="p-10 text-red-500">Video Editor encountered an error.</div>}>
-                    <VideoEditor initialVideo={activeVideo} />
+                    <React.Suspense fallback={<div className="flex items-center justify-center h-full text-purple-500">Loading Studio Engine...</div>}>
+                        <VideoEditor initialVideo={activeVideo} />
+                    </React.Suspense>
                 </ErrorBoundary>
             );
         }

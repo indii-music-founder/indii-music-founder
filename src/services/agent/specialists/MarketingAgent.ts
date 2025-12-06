@@ -1,8 +1,8 @@
 import { BaseAgent } from './BaseAgent';
 
-export class CampaignAgent extends BaseAgent {
-    id = 'campaign';
-    name = 'Campaign Manager';
+export class MarketingAgent extends BaseAgent {
+    id = 'marketing';
+    name = 'Marketing Department';
     description = 'Orchestrates multi-channel marketing campaigns, strategy, and content calendars.';
     color = 'bg-orange-500';
     category = 'manager' as const;

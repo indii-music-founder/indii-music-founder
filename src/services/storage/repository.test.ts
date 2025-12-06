@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { syncWorkflows, initDB } from './repository';
+import { openDB } from 'idb';
 import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
@@ -14,7 +15,7 @@ vi.mock('idb', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-    doc: vi.fn(),
+    doc: vi.fn().mockReturnValue({ id: 'mock-doc-ref' }),
     setDoc: vi.fn(), // We check this call
     collection: vi.fn()
 }));
@@ -37,8 +38,7 @@ describe('repository syncWorkflows', () => {
         mockGet = vi.fn();
         mockGetAll = vi.fn();
 
-        const idb = require('idb');
-        idb.openDB.mockResolvedValue({
+        (openDB as any).mockResolvedValue({
             put: mockPut,
             get: mockGet,
             getAll: mockGetAll

@@ -123,7 +123,11 @@ ${task}
 `;
 
         // Merge specialist tools with superpowers
-        const allTools = [...(this.tools || []), ...SUPERPOWER_TOOLS];
+        // Ensure superpowers are wrapped in a Tool object structure
+        const allTools = [
+            ...(this.tools || []),
+            { functionDeclarations: SUPERPOWER_TOOLS }
+        ];
 
         try {
             onProgress?.({ type: 'thought', content: 'Generating response...' });
