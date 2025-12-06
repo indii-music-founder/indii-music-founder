@@ -36,7 +36,6 @@ import { httpsCallable } from 'firebase/functions';
 import { endpointService } from '@/core/config/EndpointService';
 import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest, GenerateVideoResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode } from '@/shared/types/errors';
-import { AppErrorCode } from '@/shared/types/errors';
 
 class AIService {
     private apiKey: string;
@@ -72,13 +71,27 @@ class AIService {
                 return wrapResponse(response.data);
             } catch (error: any) {
                 console.error("Generate Content Failed:", error);
-                if (error.details && error.details.code) {
+
+                // Extract the actual error message from Firebase HttpsError
+                // Firebase HttpsError structure: { code, message, details }
+                // The message is often more descriptive than just the code
+                const errorCode = error.code || error.details?.code || 'UNKNOWN';
+                const errorMessage = error.details?.originalMessage
+                    || error.details?.message
+                    || (error.message && error.message !== error.code ? error.message : null)
+                    || 'Unknown error';
+
+                console.error("Extracted error details:", { errorCode, errorMessage, fullError: error });
+
+                if (error.details?.code) {
                     // Forward the standardized error code if available
-                    const newError = new Error(`[${error.details.code}] ${error.message}`);
-                    (newError as any).code = error.details.code; // Attach code for retry logic check
+                    const newError = new Error(`[${error.details.code}] ${errorMessage}`);
+                    (newError as any).code = error.details.code;
                     throw newError;
                 }
-                throw new Error(`Generate Content Failed: ${error.message}`);
+
+                // Ensure we have a meaningful message, not just the error code
+                throw new Error(`Generate Content Failed: ${errorMessage}`);
             }
         });
     }
