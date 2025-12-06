@@ -1,9 +1,18 @@
-
-import { GeminiRetrievalService } from '../src/services/rag/GeminiRetrievalService';
+// Load environment variables BEFORE other imports
 import * as dotenv from 'dotenv';
-
-// Load environment variables
 dotenv.config();
+
+// Mock Proxy URL if missing for test
+if (!process.env.VITE_FUNCTIONS_URL) {
+    process.env.VITE_FUNCTIONS_URL = 'http://localhost:5001/rndr-ai-v1/us-central1';
+    console.log("⚠️ VITE_FUNCTIONS_URL missing, using mock: http://localhost:5001/rndr-ai-v1/us-central1");
+}
+if (!process.env.VITE_RAG_PROXY_URL) {
+    process.env.VITE_RAG_PROXY_URL = 'http://localhost:3000';
+}
+
+// Dynamic import to ensure env vars are loaded
+const { GeminiRetrievalService } = await import('../src/services/rag/GeminiRetrievalService');
 
 const MOCK_DOCS = [
     {
@@ -96,24 +105,47 @@ async function runTest() {
         const corpusName = await GeminiRetrieval.initCorpus(`Music Biz Test ${Date.now()}`);
         console.log(`1. Initialized Corpus: ${corpusName}`);
 
-        // Wait for corpus propagation
-        console.log("   Waiting 10s for corpus propagation...");
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        // Helper for reliable waiting
+        const waitForPropagation = async (attempt: number) => {
+            console.log(`   Waiting for propagation (Attempt ${attempt})...`);
+            // Exponential backoff: 2s, 4s, 8s...
+            const waitTime = Math.min(2000 * Math.pow(2, attempt), 10000);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        };
 
-        // 2. Ingest Documents
+        // 2. Ingest Documents with Retry
         console.log("2. Ingesting Documents...");
         for (const doc of MOCK_DOCS) {
             console.log(`   Processing: ${doc.name}...`);
-            const d = await GeminiRetrieval.createDocument(corpusName, doc.name, { source: 'script' });
-            await GeminiRetrieval.ingestText(d.name, doc.content);
+            let retries = 0;
+            let success = false;
+
+            while (!success && retries < 5) {
+                try {
+                    const d = await GeminiRetrieval.createDocument(corpusName, doc.name, { source: 'script' });
+                    await GeminiRetrieval.ingestText(d.name, doc.content);
+                    success = true;
+                } catch (e: any) {
+                    if (e.message?.includes('404') || e.message?.includes('429')) {
+                        console.warn(`   ⚠️ Error initializing document (404/429). Retrying...`);
+                        await waitForPropagation(retries);
+                        retries++;
+                    } else {
+                        throw e; // Fatal error
+                    }
+                }
+            }
+            if (!success) {
+                console.error(`   ❌ Failed to ingest ${doc.name} after 5 retries.`);
+            }
         }
         console.log("   All documents ingested.");
 
-        // Wait for propagation
-        console.log("   Waiting 10s for propagation...");
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        // Wait for final index propagation
+        console.log("   Waiting for final index propagation...");
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
-        // 3. Run Queries
+        // 3. Run Queries with Retry
         console.log("3. Running Queries...");
 
         const queries = [
@@ -124,21 +156,32 @@ async function runTest() {
 
         for (const q of queries) {
             console.log(`\n❓ Q: ${q}`);
-            try {
-                const result = await GeminiRetrieval.query(corpusName, q);
-                const answer = result.answer?.content?.parts?.[0]?.text;
-                console.log(`💡 A: ${answer}`);
+            let queryRetries = 0;
+            let querySuccess = false;
 
-                // Print Citations if any
-                if (result.answer?.groundingAttributions?.length) {
-                    console.log("   📚 Sources:");
-                    result.answer.groundingAttributions.forEach((attr: any) => {
-                        console.log(`      - ${attr.sourceId} (Confidence: ${attr.content?.parts?.[0]?.text})`);
-                        // Note: The structure of attribution content might vary, just printing what we have
-                    });
+            while (!querySuccess && queryRetries < 3) {
+                try {
+                    const result = await GeminiRetrieval.query(corpusName, q);
+                    const answer = result.answer?.content?.parts?.[0]?.text;
+                    console.log(`💡 A: ${answer}`);
+
+                    if (result.answer?.groundingAttributions?.length) {
+                        console.log("   📚 Sources:");
+                        result.answer.groundingAttributions.forEach((attr: any) => {
+                            console.log(`      - ${attr.sourceId} (Confidence: ${attr.content?.parts?.[0]?.text})`);
+                        });
+                    }
+                    querySuccess = true;
+                } catch (e: any) {
+                    if (e.message?.includes('404') || e.message?.includes('429')) {
+                        console.warn(`   ⚠️ Query failed (404/429). Retrying...`);
+                        await waitForPropagation(queryRetries);
+                        queryRetries++;
+                    } else {
+                        console.error(`   ❌ Query failed fatal: ${e}`);
+                        break;
+                    }
                 }
-            } catch (e) {
-                console.error(`   ❌ Query failed: ${e}`);
             }
         }
 

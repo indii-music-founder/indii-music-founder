@@ -138,4 +138,46 @@ describe('CommandBar', () => {
             expect(agentService.sendMessage).toHaveBeenCalledWith('Hello agent', undefined, undefined);
         });
     });
+    it('handles drag and drop events', () => {
+        render(<CommandBar />);
+        const dropZone = screen.getByPlaceholderText('Describe your creative task or goal...').closest('div');
+
+        // Initial state
+        expect(dropZone).not.toHaveClass('ring-2');
+
+        // Drag over
+        fireEvent.dragOver(dropZone!);
+        expect(screen.getByPlaceholderText('Drop files here...')).toBeInTheDocument();
+        expect(dropZone).toHaveClass('ring-2');
+
+        // Drag leave
+        fireEvent.dragLeave(dropZone!);
+        expect(screen.getByPlaceholderText('Describe your creative task or goal...')).toBeInTheDocument();
+        expect(dropZone).not.toHaveClass('ring-2');
+
+        // Drop
+        fireEvent.dragOver(dropZone!);
+        const file = new File(['hello'], 'hello.png', { type: 'image/png' });
+        fireEvent.drop(dropZone!, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        expect(dropZone).not.toHaveClass('ring-2');
+        // Check if attachment is added (rendered in preview)
+        expect(screen.getByText('hello.png')).toBeInTheDocument();
+    });
+
+    it('triggers camera input when camera button is clicked', () => {
+        render(<CommandBar />);
+        const cameraButton = screen.getByTitle('Take a picture');
+        const cameraInput = document.querySelector('input[capture="environment"]');
+
+        // Mock click on input
+        const clickSpy = vi.spyOn(cameraInput as HTMLInputElement, 'click');
+
+        fireEvent.click(cameraButton);
+        expect(clickSpy).toHaveBeenCalled();
+    });
 });

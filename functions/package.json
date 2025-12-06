@@ -16,12 +16,14 @@
         "@google-cloud/vertexai": "^0.4.0",
         "@google/generative-ai": "^0.24.1",
         "@googlemaps/google-maps-services-js": "^3.4.2",
+        "@remotion/lambda": "^4.0.382",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "firebase-admin": "^11.8.0",
         "firebase-functions": "^4.3.1",
         "google-auth-library": "^9.0.0",
         "inngest": "^3.46.0",
+        "remotion": "^4.0.382",
         "zod": "^4.1.13"
     },
     "devDependencies": {

@@ -8,16 +8,27 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     DEV: z.boolean().default(false),
 });
 
+// Helper to safely get env vars in both Vite (browser) and Node (scripts) output
+const getEnv = (key: string) => {
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+        return import.meta.env[key];
+    }
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env[key];
+    }
+    return undefined;
+};
+
 const processEnv = {
-    apiKey: import.meta.env.VITE_API_KEY,
-    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID,
-    location: import.meta.env.VITE_VERTEX_LOCATION,
-    useVertex: import.meta.env.VITE_USE_VERTEX === 'true', // Transform string to boolean here for mapping
+    apiKey: getEnv('VITE_API_KEY'),
+    projectId: getEnv('VITE_VERTEX_PROJECT_ID'),
+    location: getEnv('VITE_VERTEX_LOCATION'),
+    useVertex: getEnv('VITE_USE_VERTEX') === 'true',
 
     // Pass through frontend specific
-    VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL,
-    VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL,
-    DEV: import.meta.env.DEV,
+    VITE_FUNCTIONS_URL: getEnv('VITE_FUNCTIONS_URL'),
+    VITE_RAG_PROXY_URL: getEnv('VITE_RAG_PROXY_URL'),
+    DEV: getEnv('DEV') || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);

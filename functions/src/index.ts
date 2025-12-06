@@ -535,3 +535,4 @@ export const inngestServe = functions.https.onRequest(serve({
 
 
 export { triggerVideoJob } from './jobs/videoJobs';
+export { renderVideo } from './video/render';

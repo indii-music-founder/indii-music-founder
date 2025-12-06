@@ -15,7 +15,9 @@ export default function CommandBar() {
     const [openDelegate, setOpenDelegate] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [attachments, setAttachments] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const { currentModule, setModule, toggleAgentWindow, isAgentOpen } = useStore();
     const colors = getColorForModule(currentModule);
@@ -41,6 +43,24 @@ export default function CommandBar() {
 
     const removeAttachment = (index: number) => {
         setAttachments(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files) {
+            setAttachments(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -90,13 +110,18 @@ export default function CommandBar() {
         <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
-                <div className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1`}>
+                <div
+                    className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1 ${isDragging ? 'ring-2 ring-blue-500 bg-blue-500/10' : ''}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Describe your creative task or goal..."
+                            placeholder={isDragging ? "Drop files here..." : "Describe your creative task or goal..."}
                             className="w-full bg-transparent text-gray-200 placeholder-gray-600 px-4 py-3 outline-none rounded-t-xl"
                         />
 
@@ -124,6 +149,14 @@ export default function CommandBar() {
                                     className="hidden"
                                     multiple
                                 />
+                                <input
+                                    type="file"
+                                    ref={cameraInputRef}
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                    accept="image/*"
+                                    capture="environment"
+                                />
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
@@ -132,7 +165,12 @@ export default function CommandBar() {
                                     <Paperclip size={14} />
                                     Attach Files
                                 </button>
-                                <button type="button" className="p-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={() => cameraInputRef.current?.click()}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                    title="Take a picture"
+                                >
                                     <Camera size={14} />
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>

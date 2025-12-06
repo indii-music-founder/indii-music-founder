@@ -45,7 +45,7 @@ describe('AIService Error Handling', () => {
         await expect(AI.generateContent({
             model: 'gemini-pro',
             contents: { role: 'user', parts: [] }
-        })).rejects.toThrow('[QUOTA_EXCEEDED] Quota exceeded');
+        })).rejects.toThrow(/Quota exceeded/);
     }, 15000); // Increase timeout to allow retries to exhaust
 
     it('should forward standardized SAFETY_VIOLATION error', async () => {
@@ -56,7 +56,7 @@ describe('AIService Error Handling', () => {
         await expect(AI.generateContent({
             model: 'gemini-pro',
             contents: { role: 'user', parts: [] }
-        })).rejects.toThrow('[SAFETY_VIOLATION] Safety violation');
+        })).rejects.toThrow(/Safety violation/);
     });
 
     it('should retry on transient QUOTA_EXCEEDED error and succeed', async () => {

@@ -62,12 +62,36 @@ export class GeminiRetrievalService {
         });
 
         if (!response.ok) {
+            // Handle 404/429 with simple retry at service level if needed, 
+            // but usually we want to control this.
+            // However, for 429 (Too Many Requests) or 503, we should definitely auto-retry.
+            if (response.status === 429 || response.status >= 500) {
+                const retryAfter = response.headers.get('Retry-After');
+                // Only retry if we haven't exceeded a limit (passed in options? or hardcoded)
+                // content-specific retries are better handled in `waitForState` or similar.
+                // For now, simpler is just validation.
+            }
             const errorText = await response.text();
             throw new Error(`Gemini API Error (${endpoint}): ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         return response.json();
     }
+
+    // Helper for reliable waiting on resource propagation
+    private async waitForResource(checkFn: () => Promise<boolean>, maxRetries = 5, initialDelay = 2000): Promise<void> {
+        let retries = 0;
+        while (retries < maxRetries) {
+            if (await checkFn()) return;
+
+            console.log(`GeminiRetrievalService: Waiting for resource propagation (Attempt ${retries + 1}/${maxRetries})...`);
+            const waitTime = Math.min(initialDelay * Math.pow(2, retries), 10000); // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            retries++;
+        }
+        throw new Error("Resource failed to propagate within time limit.");
+    }
+
 
     /**
      * Creates a new Corpus (Knowledge Base).

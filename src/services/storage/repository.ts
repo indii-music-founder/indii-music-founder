@@ -1,4 +1,7 @@
 import { openDB } from 'idb';
+import { db, storage, auth } from '../firebase'; // Ensure firebase.ts exports these
+import { ref, uploadBytes, getBlob } from 'firebase/storage';
+import { doc, setDoc, getDoc, collection, getDocs, Timestamp } from 'firebase/firestore';
 
 const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
@@ -17,31 +20,170 @@ export async function initDB() {
     });
 }
 
+// --- Assets (Blobs) ---
+
 export async function saveAssetToStorage(blob: Blob): Promise<string> {
-    const db = await initDB();
+    const dbLocal = await initDB();
     const id = crypto.randomUUID();
-    await db.put(STORE_NAME, blob, id);
+
+    // 1. Save locally first (Optimistic)
+    await dbLocal.put(STORE_NAME, blob, id);
+
+    // 2. Sync to Cloud if logged in
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
+            // Fire and forget upload to not block UI? 
+            // Better to await to ensure data safety, or return early. 
+            // For this implementation, we'll await but catch errors so app doesn't crash if offline.
+            await uploadBytes(storageRef, blob);
+        } catch (error) {
+            console.warn(`Failed to sync asset ${id} to cloud:`, error);
+            // TODO: Queue for sync later
+        }
+    }
+
     return id;
 }
 
 export async function getAssetFromStorage(id: string): Promise<string> {
-    const db = await initDB();
-    const blob = await db.get(STORE_NAME, id);
-    if (!blob) throw new Error(`Asset ${id} not found`);
-    return URL.createObjectURL(blob);
+    const dbLocal = await initDB();
+
+    // 1. Try Local
+    const localBlob = await dbLocal.get(STORE_NAME, id);
+    if (localBlob) {
+        return URL.createObjectURL(localBlob);
+    }
+
+    // 2. Try Cloud if missing locally
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
+            const cloudBlob = await getBlob(storageRef);
+
+            // Save to local cache
+            await dbLocal.put(STORE_NAME, cloudBlob, id);
+
+            return URL.createObjectURL(cloudBlob);
+        } catch (error) {
+            console.warn(`Failed to fetch asset ${id} from cloud:`, error);
+        }
+    }
+
+    throw new Error(`Asset ${id} not found locally or in cloud`);
 }
 
+// --- Workflows (JSON) ---
+
 export async function saveWorkflowToStorage(workflow: any): Promise<void> {
-    const db = await initDB();
-    await db.put(WORKFLOWS_STORE, workflow);
+    const dbLocal = await initDB();
+    const workflowId = workflow.id || crypto.randomUUID();
+    const workflowWithId = { ...workflow, id: workflowId, updatedAt: new Date().toISOString() };
+
+    // 1. Save locally
+    await dbLocal.put(WORKFLOWS_STORE, workflowWithId);
+
+    // 2. Sync to Cloud
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const docRef = doc(db, 'users', user.uid, 'workflows', workflowId);
+            await setDoc(docRef, { ...workflowWithId, synced: true }, { merge: true });
+        } catch (error) {
+            console.warn(`Failed to sync workflow ${workflowId} to cloud:`, error);
+        }
+    }
 }
 
 export async function getWorkflowFromStorage(id: string): Promise<any> {
-    const db = await initDB();
-    return db.get(WORKFLOWS_STORE, id);
+    const dbLocal = await initDB();
+
+    // 1. Try Cloud first for Workflows (to get latest version across devices)
+    // Only if online and logged in. Otherwise fallback to local.
+    // Actually, for speed, Strategy: Read Local, Check Cloud in background?
+    // Let's go with: Try Local. If not found, Try Cloud.
+    // User requested "Sync". So we probably want the latest. 
+    // Let's standard: Try Local, but maybe we should have a 'sync' method.
+    // For now, simple fallback.
+
+    let workflow = await dbLocal.get(WORKFLOWS_STORE, id);
+
+    if (workflow) return workflow;
+
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const docRef = doc(db, 'users', user.uid, 'workflows', id);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                workflow = snap.data();
+                await dbLocal.put(WORKFLOWS_STORE, workflow);
+                return workflow;
+            }
+        } catch (error) {
+            console.warn("Failed to fetch workflow from cloud", error);
+        }
+    }
+
+    // Return undefined if not found
+    return undefined;
 }
 
 export async function getAllWorkflowsFromStorage(): Promise<any[]> {
-    const db = await initDB();
-    return db.getAll(WORKFLOWS_STORE);
+    const dbLocal = await initDB();
+
+    // 1. Get Local
+    const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
+
+    // 2. Merge with Cloud if logged in
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const collectionRef = collection(db, 'users', user.uid, 'workflows');
+            const snap = await getDocs(collectionRef);
+
+            const cloudWorkflows = snap.docs.map(d => d.data());
+
+            // Simple merge: Cloud wins if exists, else keep local (if local has ones not in cloud)
+            // Or just update local with cloud items
+            for (const cw of cloudWorkflows) {
+                await dbLocal.put(WORKFLOWS_STORE, cw);
+            }
+
+            return await dbLocal.getAll(WORKFLOWS_STORE); // Return updated local
+        } catch (error) {
+            console.warn("Failed to fetch workflows from cloud", error);
+        }
+    }
+
+    return localWorkflows;
+}
+
+export async function syncWorkflows(): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const dbLocal = await initDB();
+    const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
+
+    // Naive Sync: Push all local workflows that aren't marked as 'synced' (or just all of them, relying on merge)
+    // For efficiency, we should track a 'synced' flag locally.
+    // For now, let's just push everything to ensure cloud has latest.
+
+    console.log(`Syncing ${localWorkflows.length} workflows to cloud...`);
+
+    const batchPromises = localWorkflows.map(async (wf) => {
+        try {
+            const docRef = doc(db, 'users', user.uid, 'workflows', wf.id);
+            // We use setDoc with merge to update cloud 
+            await setDoc(docRef, { ...wf, synced: true }, { merge: true });
+        } catch (e) {
+            console.warn(`Failed to sync workflow ${wf.id}`, e);
+        }
+    });
+
+    await Promise.all(batchPromises);
+    console.log("Workflow sync complete.");
 }

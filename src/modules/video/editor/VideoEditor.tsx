@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { PlayerRef } from '@remotion/player';
 import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Volume2, VolumeX, Eye, EyeOff, Settings, Layers, Image as ImageIcon } from 'lucide-react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../../services/firebase';
 import { useVideoEditorStore, VideoClip } from '../store/videoEditorStore';
 import { HistoryItem } from '../../../core/store/slices/creativeSlice';
 import { useToast } from '../../../core/context/ToastContext';
@@ -177,21 +179,31 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     const handleExport = async () => {
         setIsExporting(true);
-        const endpoint = renderMode === 'cloud' ? '/api/video/render/lambda' : '/api/video/render';
         toast.info(`Starting ${renderMode} export... This may take a while.`);
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ project }),
-            });
+            let data: any;
 
-            const data = await response.json();
+            if (renderMode === 'cloud') {
+                const render = httpsCallable(functions, 'renderVideo');
+                const result = await render({
+                    compositionId: project.id, // Dynamic Composition ID
+                    inputProps: { project }
+                });
+                data = result.data;
+            } else {
+                const endpoint = '/api/video/render';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ project }),
+                });
+                data = await response.json();
+            }
 
-            if (data.success) {
+            if (data.success || data.renderId) { // generic check
                 if (renderMode === 'cloud') {
                     toast.success('Cloud render started! (Check console for ID)');
                     console.log('Render ID:', data.renderId);

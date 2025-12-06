@@ -5,6 +5,10 @@ import { DirectorAgent } from './DirectorAgent';
 import { BrandAgent } from './BrandAgent';
 import { RoadAgent } from './RoadAgent';
 import { PublicistAgent } from './PublicistAgent';
+import { SocialAgent } from './SocialAgent';
+import { PublishingAgent } from './PublishingAgent';
+import { FinanceAgent } from './FinanceAgent';
+import { LicensingAgent } from './LicensingAgent';
 
 describe('Specialist Agent Tools', () => {
     it('MusicAgent should have analyze_audio tool', () => {
@@ -51,5 +55,40 @@ describe('Specialist Agent Tools', () => {
 
         expect(decls.some(f => f.name === 'write_press_release')).toBe(true);
         expect(decls.some(f => f.name === 'generate_crisis_response')).toBe(true);
+    });
+
+    it('SocialAgent should have social and trend tools', () => {
+        const agent = new SocialAgent();
+        const tools = agent.tools || [];
+        const decls = tools.flatMap(t => t.functionDeclarations || []);
+
+        expect(decls.some(f => f.name === 'generate_social_post')).toBe(true);
+        expect(decls.some(f => f.name === 'analyze_trends')).toBe(true);
+    });
+
+    it('FinanceAgent should have budget tools', () => {
+        const agent = new FinanceAgent();
+        const tools = agent.tools || [];
+        const decls = tools.flatMap(t => t.functionDeclarations || []);
+
+        expect(decls.some(f => f.name === 'analyze_budget')).toBe(true);
+    });
+
+    it('PublishingAgent should have registration tools', () => {
+        const agent = new PublishingAgent();
+        const tools = agent.tools || [];
+        const decls = tools.flatMap(t => t.functionDeclarations || []);
+
+        expect(decls.some(f => f.name === 'register_work')).toBe(true);
+        expect(decls.some(f => f.name === 'analyze_contract')).toBe(true);
+    });
+
+    it('LicensingAgent should have clearance tools', () => {
+        const agent = new LicensingAgent();
+        const tools = agent.tools || [];
+        const decls = tools.flatMap(t => t.functionDeclarations || []);
+
+        expect(decls.some(f => f.name === 'check_availability')).toBe(true);
+        expect(decls.some(f => f.name === 'analyze_contract')).toBe(true);
     });
 });

@@ -128,7 +128,8 @@ export class GeneralistAgent extends BaseAgent {
                 // The BaseAgent uses `AI.generateContent` which isn't streaming in the `check` implementation but `AgentZero` used streaming.
                 // For this refactor, we will stick to unary calls to ensure stability first, then upgrade to streaming later (Task 2).
 
-                const res = await AI.generateContent({
+                // STREAMING IMPLEMENTATION
+                const stream = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{ role: 'user', parts }],
                     config: {
@@ -137,7 +138,20 @@ export class GeneralistAgent extends BaseAgent {
                     }
                 });
 
-                const fullText = res.text();
+                let fullText = "";
+                const reader = stream.getReader();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = value.text();
+                    fullText += chunk;
+                    // Emit token for real-time UI typing effect
+                    onProgress?.({ type: 'token', content: chunk });
+                }
+
+                // Parse the accumulated full text
                 const result = AI.parseJSON(fullText);
 
                 if (result.thought) {
