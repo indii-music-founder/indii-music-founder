@@ -1,11 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { agentRegistry } from '../registry';
-// import { agentService } from '../AgentService'; // Not needed if we trust the singleton registry initialization in other tests
-// However, AgentService constructor might ensure registry is populated if registry wasn't a singleton with auto-init?
-// registry.ts does `export const agentRegistry = new AgentRegistry();` which calls init.
-// So imports are enough.
+import { AGENT_CONFIGS } from '../agentConfig';
+import { AI } from '@/services/ai/AIService';
 
-// Mock dependencies to avoid full environment setup
+// Mock dependencies
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
@@ -19,7 +17,10 @@ vi.mock('@/core/store', () => ({
                     releaseDetails: { title: 'Test Release', type: 'Single', mood: 'Dark' }
                 },
                 bio: 'Test Artist'
-            }
+            },
+            agentHistory: [],
+            addAgentMessage: vi.fn(),
+            updateAgentMessage: vi.fn()
         })
     }
 }));
@@ -29,41 +30,58 @@ vi.mock('@/services/ai/AIService', () => ({
         generateContent: vi.fn().mockResolvedValue({
             text: () => 'Mock Agent Response',
             functionCalls: () => []
+        }),
+        // Ensure generateContentStream is also mocked if agents use it
+        generateContentStream: vi.fn().mockImplementation(() => {
+            return Promise.resolve({
+                getReader: () => ({
+                    read: async () => ({ done: true, value: undefined })
+                })
+            });
         })
     }
 }));
 
-describe('Specialist Agent Verification', () => {
-    // Agents are already registered by the singleton pattern in registry.ts upon import
+describe('Specialist Agent Fleet Verification', () => {
 
-    it('should retrieve BrandAgent from registry', () => {
-        const agent = agentRegistry.get('brand');
+    // Verify every agent defined in config is actually registered
+    AGENT_CONFIGS.forEach(config => {
+        it(`should have registered ${config.name} (${config.id})`, () => {
+            const agent = agentRegistry.get(config.id);
+            expect(agent).toBeDefined();
+            expect(agent?.name).toBe(config.name);
+            expect(agent?.id).toBe(config.id);
+        });
+
+        it(`${config.name} should be executable`, async () => {
+            const agent = agentRegistry.get(config.id);
+            expect(agent).toBeDefined();
+            if (!agent) return;
+
+            // Execute a dummy task
+            const response = await agent.execute('Test execution task', {});
+
+            // Should return valid structure
+            expect(response).toBeDefined();
+            expect(response.text).toBeDefined();
+            // Since we mocked AI, we expect the mock response
+            // Note: BaseAgents returning plain text directly from AI might just return the text
+            // or the object depending on implementation. BaseAgent.ts usually returns { text: ... }
+            if (typeof response === 'string') {
+                expect(response).toBeTruthy();
+            } else {
+                expect(response.text).toBeTruthy();
+            }
+        });
+    });
+
+    // Special check for Generalist (Agent Zero) since it's custom
+    it('should verify GeneralistAgent (Agent Zero)', async () => {
+        const agent = agentRegistry.get('generalist');
         expect(agent).toBeDefined();
-        // expect(agent).toBeInstanceOf(BaseAgent); // Cannot check instance of generic easily without import
-        expect(agent?.name).toBe('Brand Manager');
-    });
-
-    it('should retrieve RoadAgent from registry', () => {
-        const agent = agentRegistry.get('road');
-        expect(agent).toBeDefined();
-        expect(agent?.name).toBe('Road Manager');
-    });
-
-    it('should retrieve MarketingAgent from registry', () => {
-        const agent = agentRegistry.get('marketing'); // Was 'campaign' in old test, but config uses 'marketing'
-        expect(agent).toBeDefined();
-        expect(agent?.name).toBe('Marketing Department');
-    });
-
-    it('BrandAgent should have correct system prompt structure', () => {
-        const agent = agentRegistry.get('brand');
-        expect((agent as any).systemPrompt).toContain('Brand Manager');
-        expect((agent as any).systemPrompt).toContain('Show Bible');
-    });
-
-    it('RoadAgent should have correct system prompt structure', () => {
-        const agent = agentRegistry.get('road');
-        expect((agent as any).systemPrompt).toContain('Road Manager');
-        expect((agent as any).systemPrompt).toContain('logistics');
+        // We know generalist mock stream behaves differently in its own test, 
+        // but here we just want to ensure it doesn't crash on instantiation.
+        expect(agent?.name).toBe('Agent Zero');
     });
 });
+

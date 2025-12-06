@@ -78,6 +78,7 @@ export class GeneralistAgent extends BaseAgent {
         const { useStore } = await import('@/core/store');
         const { currentOrganizationId, currentProjectId } = useStore.getState();
 
+
         const orgContext = `
         ORGANIZATION CONTEXT:
         - Organization ID: ${currentOrganizationId}
@@ -145,6 +146,7 @@ export class GeneralistAgent extends BaseAgent {
                         ...AI_CONFIG.THINKING.HIGH
                     }
                 });
+
 
                 let fullText = "";
                 const reader = stream.getReader();

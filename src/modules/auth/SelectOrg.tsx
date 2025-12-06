@@ -16,6 +16,9 @@ export default function SelectOrg() {
         return <div className="text-red-500 p-10 bg-black min-h-screen">Error: Store not initialized correctly.</div>;
     }
 
+    console.log('SelectOrg: Rendering', { organizationsCount: organizations.length, currentOrganizationId });
+
+
     const [isCreating, setIsCreating] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
     const [error, setError] = useState<string | null>(null);

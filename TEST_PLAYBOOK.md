@@ -72,3 +72,48 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   ```bash
   npx playwright test e2e/cross-platform.spec.ts
   ```
+
+---
+
+## 5. The Librarian 📚
+
+**Scope:** RAG, Knowledge Base, & File Processing  
+**Status:** Planned  
+**File:** `e2e/the-librarian.spec.ts`
+
+"The Librarian" validates the entire Intelligence Pipeline using **REAL DATA**.
+
+1. **Ingest**: Uploads a unique "Test Manifesto" text file to the Knowledge Base.
+2. **Index**: Waits for the backend to vector-embed the document (Real Cloud Function).
+3. **Retrieve**: Asks the Agent a question *only* answerable by that document.
+4. **Verify**: Ensures the Agent quotes the document. **NO MOCKS.**
+
+---
+
+## 6. The Paparazzi 📸
+
+**Scope:** Media, Storage, & Generation  
+**Status:** Planned  
+**File:** `e2e/the-paparazzi.spec.ts`
+
+"The Paparazzi" tests the heavy media pipelines.
+
+1. **Shoot**: Uploads a real image file to Storage.
+2. **Process**: Triggers the AI Vision analysis.
+3. **Print**: Requests an image generation based on the analysis.
+4. **Gallery**: Verifies the generated image URL is valid and publicly accessible.
+
+---
+
+## 7. The Time Traveler ⏳
+
+**Scope:** Data Integrity, Undo/Redo, Persistence  
+**Status:** Planned  
+**File:** `e2e/time-traveler.spec.ts`
+
+"The Time Traveler" ensures that what we write to the database *actually stays there* and implies correct ordering.
+
+1. **The Timeline**: Creates a Project, adds 5 distinct items (history events).
+2. **The Jump**: Reloads the page (clears local state).
+3. **The Paradox**: Verifies all 5 items load in the correct order.
+4. **The Correction**: Deletes item #3. Reloads. Verifies #3 is gone but #1, #2, #4, #5 remain.
