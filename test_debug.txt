@@ -2995,3 +2995,121 @@ DEBUG: mockStoreState.agentHistory: [
 
 [1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/core/config/EndpointService.ts [22m[34mx9 [34m[39m
+       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39mUsing partial/invalid config due to validation errors.
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
+[AgentRegistry] Registered: Legal Department (legal)
+[AgentRegistry] Registered: Finance Department (finance)
+[AgentRegistry] Registered: Music Supervisor (music)
+[AgentRegistry] Registered: Creative Director (director)
+[AgentRegistry] Registered: Video Department (video)
+[AgentRegistry] Registered: Social Media Department (social)
+[AgentRegistry] Registered: Publicist (publicist)
+[AgentRegistry] Registered: Road Manager (road)
+[AgentRegistry] Registered: Publishing Department (publishing)
+[AgentRegistry] Registered: Licensing Department (licensing)
+[AgentRegistry] Registered: Brand Manager (brand)
+[AgentRegistry] Registered: Agent Zero (generalist)
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[2025-12-06T14:45:01.307Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[AgentService] Selected Agent: marketing (Auto)
+[AgentExecutor] Executing with agent: Marketing Department (marketing)
+[Marketing Department] Received task: Analyze market trends
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[AgentService] Selected Agent: finance (Auto)
+[AgentExecutor] Executing with agent: Finance Department (finance)
+[Finance Department] Received task: Check this budget
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39m[AgentService] Selected Agent: generalist (Auto)
+[AgentExecutor] Executing with agent: Agent Zero (generalist)
+[Agent Zero] Received task: Request 1
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
+    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at async Promise.all (index 0)
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:119:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[AgentService] Selected Agent: marketing (Auto)
+[AgentExecutor] Executing with agent: Marketing Department (marketing)
+[Marketing Department] Received task: New Message
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[Marketing Department] Error executing task: TypeError: response.functionCalls is not a function
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/BaseAgent.ts:172:43[90m)[39m
+[90m    at runNextTicks (node:internal/process/task_queues:65:5)[39m
+[90m    at processTimers (node:internal/timers:540:9)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:135:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[AgentService] Selected Agent: finance (Auto)
+[AgentExecutor] Executing with agent: Finance Department (finance)
+[Finance Department] Received task: Get rich
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[Finance Department] Tool Call: make_money_fast {}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39m[AgentService] Selected Agent: generalist (Auto)
+[AgentExecutor] Executing with agent: Agent Zero (generalist)
+[Agent Zero] Received task: Do something crazy
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
+    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:173:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
+[22m[39m[AgentService] Selected Agent: brand (Auto)
+[AgentExecutor] Executing with agent: Brand Manager (brand)
+[Brand Manager] Received task: Verify this
+
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 3739[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1716[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle tool execution cycles (Thinking -> Tool -> Response) [33m 658[2mms[22m[39m
+       [33m[2m✓[22m[39m should route to Generalist if Orchestrator hallucinations an invalid ID [33m 534[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 09:44:45
+[2m   Duration [22m 8.71s
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

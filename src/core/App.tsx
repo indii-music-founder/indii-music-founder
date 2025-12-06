@@ -64,60 +64,60 @@ export default function App() {
 
     return (
         <ToastProvider>
-            <ErrorBoundary>
-                <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
-                    <ApiKeyErrorModal />
-                    {/* Left Sidebar */}
-                    {currentModule !== 'select-org' && (
-                        <div className="hidden md:block h-full">
-                            <Sidebar />
-                        </div>
-                    )}
+            <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
+                <ApiKeyErrorModal />
+                {/* Left Sidebar */}
+                {currentModule !== 'select-org' && (
+                    <div className="hidden md:block h-full">
+                        <Sidebar />
+                    </div>
+                )}
 
-                    {/* Main Content Area */}
-                    <main className="flex-1 flex flex-col min-w-0 bg-[#0d1117] relative">
-                        <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                {/* Main Content Area */}
+                <main className="flex-1 flex flex-col min-w-0 bg-[#0d1117] relative">
+                    <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                        <ErrorBoundary>
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
-                                <ErrorBoundary>
-                                    {currentModule === 'select-org' && <SelectOrg />}
-                                    {currentModule === 'dashboard' && <Dashboard />}
-                                    {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
-                                    {currentModule === 'legal' && <LegalDashboard />}
-                                    {currentModule === 'music' && <MusicStudio />}
-                                    {currentModule === 'marketing' && <MarketingDashboard />}
-                                    {currentModule === 'video' && <VideoStudio />}
-                                    {currentModule === 'workflow' && <WorkflowLab />}
-                                    {currentModule === 'knowledge' && <KnowledgeBase />}
-                                    {currentModule === 'road' && <RoadManager />}
-                                    {currentModule === 'social' && <SocialDashboard />}
-                                    {currentModule === 'brand' && <BrandManager />}
-                                    {currentModule === 'campaign' && <CampaignDashboard />}
-                                    {currentModule === 'publicist' && <PublicistDashboard />}
-                                    {currentModule === 'publishing' && <PublishingDashboard />}
-                                    {currentModule === 'finance' && <FinanceDashboard />}
-                                    {currentModule === 'licensing' && <LicensingDashboard />}
-                                </ErrorBoundary>
+                                {currentModule === 'select-org' && <SelectOrg />}
+                                {currentModule === 'dashboard' && <Dashboard />}
+                                {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
+                                {currentModule === 'legal' && <LegalDashboard />}
+                                {currentModule === 'music' && <MusicStudio />}
+                                {currentModule === 'marketing' && <MarketingDashboard />}
+                                {currentModule === 'video' && <VideoStudio />}
+                                {currentModule === 'workflow' && <WorkflowLab />}
+                                {currentModule === 'knowledge' && <KnowledgeBase />}
+                                {currentModule === 'road' && <RoadManager />}
+                                {currentModule === 'social' && <SocialDashboard />}
+                                {currentModule === 'brand' && <BrandManager />}
+                                {currentModule === 'campaign' && <CampaignDashboard />}
+                                {currentModule === 'publicist' && <PublicistDashboard />}
+                                {currentModule === 'publishing' && <PublishingDashboard />}
+                                {currentModule === 'finance' && <FinanceDashboard />}
+                                {currentModule === 'licensing' && <LicensingDashboard />}
                             </Suspense>
-                        </div>
+                        </ErrorBoundary>
+                    </div>
 
-                        {/* Command Bar at Bottom */}
-                        {currentModule !== 'select-org' && (
-                            <div className="flex-shrink-0 z-10 relative">
+                    {/* Command Bar at Bottom */}
+                    {currentModule !== 'select-org' && (
+                        <div className="flex-shrink-0 z-10 relative">
+                            <ErrorBoundary>
                                 <ChatOverlay />
                                 <CommandBar />
-                            </div>
-                        )}
-                    </main>
-
-                    {/* Right Panel */}
-                    {currentModule !== 'select-org' && (
-                        <RightPanel />
+                            </ErrorBoundary>
+                        </div>
                     )}
+                </main>
 
-                    {/* Mobile Navigation */}
-                    {currentModule !== 'select-org' && <MobileNav />}
-                </div>
-            </ErrorBoundary>
+                {/* Right Panel */}
+                {currentModule !== 'select-org' && (
+                    <RightPanel />
+                )}
+
+                {/* Mobile Navigation */}
+                {currentModule !== 'select-org' && <MobileNav />}
+            </div>
         </ToastProvider>
     );
 }

@@ -33,18 +33,36 @@ exports.generateContent = functions.https.onCall(async (data, context) => {
     }
     catch (error) {
         console.error("Generate Content Error:", error);
+        // Extract detailed error message from Gemini SDK error
+        const errorMessage = error.message || error.toString() || 'Unknown error';
+        const errorDetails = error.errorDetails || error.details || null;
+        // Log full error for debugging
+        console.error("Full error details:", {
+            message: errorMessage,
+            details: errorDetails,
+            stack: error.stack,
+            name: error.name,
+            cause: error.cause
+        });
         // Standardize Error Mapping
-        const message = error.message || '';
-        if (message.includes('429') || message.includes('quota')) {
-            throw new functions.https.HttpsError('resource-exhausted', 'Quota Exceeded', { code: 'QUOTA_EXCEEDED' });
+        const messageLower = errorMessage.toLowerCase();
+        if (messageLower.includes('429') || messageLower.includes('quota') || messageLower.includes('resource exhausted')) {
+            throw new functions.https.HttpsError('resource-exhausted', `Quota Exceeded: ${errorMessage}`, { code: 'QUOTA_EXCEEDED', originalMessage: errorMessage });
         }
-        if (message.includes('safety') || message.includes('blocked')) {
-            throw new functions.https.HttpsError('failed-precondition', 'Safety Violation', { code: 'SAFETY_VIOLATION' });
+        if (messageLower.includes('safety') || messageLower.includes('blocked')) {
+            throw new functions.https.HttpsError('failed-precondition', `Safety Violation: ${errorMessage}`, { code: 'SAFETY_VIOLATION', originalMessage: errorMessage });
         }
-        if (message.includes('400')) {
-            throw new functions.https.HttpsError('invalid-argument', 'Invalid Request', { code: 'INVALID_ARGUMENT' });
+        if (messageLower.includes('400') || messageLower.includes('invalid')) {
+            throw new functions.https.HttpsError('invalid-argument', `Invalid Request: ${errorMessage}`, { code: 'INVALID_ARGUMENT', originalMessage: errorMessage });
         }
-        throw new functions.https.HttpsError('internal', error.message, { code: 'INTERNAL_ERROR' });
+        if (messageLower.includes('not found') || messageLower.includes('404') || messageLower.includes('model')) {
+            throw new functions.https.HttpsError('not-found', `Model or resource not found: ${errorMessage}`, { code: 'NOT_FOUND', originalMessage: errorMessage });
+        }
+        if (messageLower.includes('auth') || messageLower.includes('api key') || messageLower.includes('permission') || messageLower.includes('401') || messageLower.includes('403')) {
+            throw new functions.https.HttpsError('unauthenticated', `Authentication error: ${errorMessage}`, { code: 'AUTH_ERROR', originalMessage: errorMessage });
+        }
+        // Default: forward the actual error message
+        throw new functions.https.HttpsError('internal', `Internal error: ${errorMessage}`, { code: 'INTERNAL_ERROR', originalMessage: errorMessage });
     }
 });
 exports.generateContentStream = functions.https.onRequest(async (req, res) => {
