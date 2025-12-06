@@ -3,7 +3,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  // Use a fallback key for build time to prevent "invalid-api-key" errors
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDummyKeyForBuildProcess",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "architexture-ai-api.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "architexture-ai-api",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "architexture-ai-api.firebasestorage.app",
