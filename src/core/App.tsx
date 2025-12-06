@@ -54,8 +54,8 @@ export default function App() {
             // Redirect to Landing Page Login
             // Ideally use env var for landing page URL
             const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login'; // Adjust default
-            // window.location.href = landingPageUrl; 
-            // Commenting out for now to prevent loop if running locally and URLs mismatch
+            // Redirect to Landing Page Login
+            window.location.href = landingPageUrl;
             console.log("Not authenticated, should redirect to:", landingPageUrl);
         }
     }, [isAuthReady, isAuthenticated]);
