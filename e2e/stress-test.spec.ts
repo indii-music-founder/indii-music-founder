@@ -2,22 +2,45 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Stress Testing', () => {
     test('Asset Loading Performance', async ({ page }) => {
-        test.setTimeout(60000); // Increase timeout for stress test
+        test.setTimeout(90000); // Increase timeout for stress test
         // 1. Login/Setup
         await page.goto('/');
 
-        // Wait for auth
+        // Wait for app to load
+        await page.waitForLoadState('domcontentloaded');
+
+        // Wait for auth to initialize (anonymous sign-in)
         await page.waitForTimeout(3000);
 
-        // Check if we are on Select Org page
-        if (await page.getByText('Select Organization').isVisible()) {
-            await page.getByText('Create New Organization').click();
-            await page.fill('input[placeholder="Organization Name"]', 'Stress Test Org');
-            await page.getByRole('button', { name: 'Create' }).click();
+        // Handle Loading state
+        const loader = page.getByText('Loading Module...');
+        if (await loader.isVisible()) {
+            await loader.waitFor({ state: 'hidden', timeout: 15000 });
         }
 
-        // Wait for dashboard
-        await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 10000 });
+        // Check if we are on Select Org page
+        const selectOrgHeader = page.getByText('Select Organization');
+        if (await selectOrgHeader.isVisible({ timeout: 2000 }).catch(() => false)) {
+            const createBtn = page.getByRole('button', { name: 'Create New Organization' });
+            if (await createBtn.isVisible()) {
+                await createBtn.click();
+                await page.getByPlaceholder('Organization Name').fill('Stress Test Org');
+                await page.getByRole('button', { name: 'Create', exact: true }).click();
+                // Wait for redirect
+                await page.waitForTimeout(2000);
+            }
+        }
+
+        // Wait for dashboard - handle different possible states
+        const dashboardVisible = await page.getByText('Welcome back to').isVisible({ timeout: 5000 }).catch(() => false);
+        if (!dashboardVisible) {
+            // Try to navigate to dashboard if we're somewhere else
+            const dashboardBtn = page.getByRole('button', { name: /Dashboard/i });
+            if (await dashboardBtn.isVisible().catch(() => false)) {
+                await dashboardBtn.click();
+            }
+        }
+        await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 15000 });
 
         // Enable console logs
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));

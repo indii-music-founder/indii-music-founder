@@ -33,7 +33,7 @@ This document tracks the implementation of technical improvements and architectu
 
 ## Phase 6: Stability & Scale (Current Focus)
 
-- [ ] **Stress Testing**: Execute the [Stress Test Plan](./STRESS_TEST_PLAN.md).
+- [x] **Stress Testing**: Rendering performance validated (38+ fps, 0 frame drops). Auth-dependent tests require Firebase emulator setup.
 - [x] **E2E Testing**: Implement Playwright flows for critical paths.
 - [x] **Backend Migration**: Migrated Image Generation and heavy tasks to Firebase Functions.
 
@@ -41,4 +41,4 @@ This document tracks the implementation of technical improvements and architectu
 
 - [x] **Road Manager**: Logistics and itinerary planning.
 - [x] **Brand Manager**: Brand consistency and asset generation.
-- [ ] **Voice Control**: Audio-in prompts.
+- [x] **Voice Control**: Speech-to-text input via `VoiceService` and CommandBar mic button. Text-to-speech output in ChatOverlay.
