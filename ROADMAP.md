@@ -15,15 +15,16 @@ This document tracks the implementation of technical improvements and architectu
 
 ## Phase 3: Data Integrity & Safety
 
-- [ ] **ZIP Export**: Add `JSZip` and implement full project export (assets + JSON).
-- [ ] **Database Vacuum**: Implement Garbage Collection for orphaned Firestore records.
+- [x] **ZIP Export**: Implemented full project export with `ExportService` (assets + metadata JSON). Includes progress tracking via Toast system.
+- [x] **Cloud Sync**: Multi-device sync via Firestore + Firebase Storage. Offline persistence enabled automatically.
+- [x] **Database Vacuum**: Implemented `CleanupService` with dry-run scan and confirm-before-delete workflow. Accessible via Dashboard "Cleanup" button.
 
 ## Phase 4: AI Hardening
 
 - [x] **Tool Validation**: Implement strict schema validation for Agent tool outputs.
 - [x] **Multi-Agent Architecture**: Implement Hub-and-Spoke model with specialized agents.
 - [x] **Specialist Agents**: Added Road Manager, Brand Manager, and Legal Advisor.
-- [ ] **Semantic Memory**: Implement Long-Term Memory retrieval for Agent Zero.
+- [x] **Semantic Memory**: Implemented via `MemoryService` with vector embeddings. `ContextPipeline` auto-retrieves relevant memories and `BaseAgent` injects them into prompts.
 
 ## Phase 5: UI Polish
 

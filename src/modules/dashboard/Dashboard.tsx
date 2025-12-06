@@ -1,7 +1,6 @@
 import React from 'react';
 import { useStore, AppSlice } from '@/core/store';
-import { Folder, Plus, Clock, Layout, Music, Scale, MessageSquare, Sparkles, Camera, ArrowUpRight, LogOut, Download, MoreVertical } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Folder, Plus, Clock, Layout, Music, MessageSquare, Sparkles, Camera, ArrowUpRight, LogOut, Download, Trash2 } from 'lucide-react';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { OrganizationSelector } from './components/OrganizationSelector';
 import NewProjectModal from './components/NewProjectModal';
@@ -9,6 +8,7 @@ import { auth } from '@/services/firebase';
 import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 import { ThreeDButton } from '@/components/ui/ThreeDButton';
 import { ExportService } from '@/services/ExportService';
+import { CleanupService } from '@/services/CleanupService';
 import { useToast } from '@/core/context/ToastContext';
 
 
@@ -41,6 +41,63 @@ export default function Dashboard() {
             console.error('Export failed:', error);
             toast.dismiss(toastId);
             toast.error(`Failed to export ${projectName}`);
+        }
+    };
+
+    const handleDatabaseCleanup = async () => {
+        const toastId = toast.loading('Scanning for orphaned records...');
+
+        try {
+            // First, do a dry run scan
+            const { report } = await CleanupService.vacuum({
+                dryRun: true,
+                onProgress: (message, current, total) => {
+                    const percent = Math.round((current / total) * 100);
+                    toast.updateProgress(toastId, percent, message);
+                }
+            });
+
+            toast.dismiss(toastId);
+
+            if (report.summary.totalOrphaned === 0) {
+                toast.success('Database is clean! No orphaned records found.');
+                return;
+            }
+
+            // Show what was found and confirm deletion
+            const confirmed = window.confirm(
+                `Found ${report.summary.totalOrphaned} orphaned records:\n\n` +
+                `• ${report.summary.historyItemsFound} history items\n` +
+                `• ${report.summary.projectsFound} projects\n\n` +
+                `Do you want to delete these orphaned records?`
+            );
+
+            if (confirmed) {
+                const cleanupToastId = toast.loading('Cleaning up orphaned records...');
+
+                const result = await CleanupService.execute(report, {
+                    onProgress: (message, current, total) => {
+                        const percent = Math.round((current / total) * 100);
+                        toast.updateProgress(cleanupToastId, percent, message);
+                    }
+                });
+
+                toast.dismiss(cleanupToastId);
+
+                if (result.errors.length > 0) {
+                    toast.warning(`Cleanup completed with ${result.errors.length} errors`);
+                } else {
+                    toast.success(
+                        `Cleaned up ${result.deletedHistory + result.deletedProjects} orphaned records!`
+                    );
+                }
+            } else {
+                toast.info('Cleanup cancelled');
+            }
+        } catch (error) {
+            console.error('Cleanup failed:', error);
+            toast.dismiss(toastId);
+            toast.error('Database cleanup failed');
         }
     };
 
@@ -133,6 +190,15 @@ export default function Dashboard() {
                         >
                             <LogOut size={20} />
                             <span className="hidden md:inline ml-2">Sign Out</span>
+                        </ThreeDButton>
+                        <ThreeDButton
+                            onClick={handleDatabaseCleanup}
+                            variant="secondary"
+                            className="rounded-full flex items-center justify-center gap-2 border-white/20 text-white hover:shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                            title="Clean Up Database"
+                        >
+                            <Trash2 size={20} />
+                            <span className="hidden lg:inline">Cleanup</span>
                         </ThreeDButton>
                         <ThreeDButton
                             onClick={() => setShowBrandKit(true)}

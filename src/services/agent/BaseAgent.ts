@@ -131,6 +131,11 @@ export class BaseAgent implements SpecializedAgent {
         - **Approval:** Use 'request_approval' before taking any public or irreversible action.
         `;
 
+        // Build memory section if memories were retrieved
+        const memorySection = context?.memoryContext
+            ? `\nRELEVANT MEMORIES (from past conversations):\n${context.memoryContext}\n`
+            : '';
+
         const fullPrompt = `
 ${this.systemPrompt}
 
@@ -141,7 +146,7 @@ ${JSON.stringify(enrichedContext, null, 2)}
 
 HISTORY:
 ${context?.chatHistoryString || ''}
-
+${memorySection}
 TASK:
 ${task}
 `;

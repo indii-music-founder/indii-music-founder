@@ -76,8 +76,12 @@ export class AgentService {
                 }
             });
 
-            if (typeof result === 'string' && !result.includes("Agent Zero")) {
-                updateAgentMessage(responseId, { text: result, isStreaming: false });
+            if (typeof result === 'string') {
+                if (!result.includes("Agent Zero")) {
+                    updateAgentMessage(responseId, { text: result, isStreaming: false });
+                }
+            } else if (result && typeof result === 'object' && 'text' in result) {
+                updateAgentMessage(responseId, { text: result.text, isStreaming: false });
             } else {
                 updateAgentMessage(responseId, { isStreaming: false });
             }

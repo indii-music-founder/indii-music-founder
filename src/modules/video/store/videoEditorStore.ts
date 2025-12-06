@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
+import { MembershipService, MembershipTier } from '@/services/MembershipService';
 
 export type ClipType = 'video' | 'image' | 'text' | 'audio';
 
@@ -82,6 +83,11 @@ interface VideoEditorState {
     status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed';
     setJobId: (id: string | null) => void;
     setStatus: (status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed') => void;
+
+    // Membership
+    membershipTier: MembershipTier;
+    setMembershipTier: (tier: MembershipTier) => void;
+    getMaxDurationFrames: () => number;
 }
 
 const INITIAL_PROJECT: VideoProject = {
@@ -109,31 +115,43 @@ const INITIAL_PROJECT: VideoProject = {
     ]
 };
 
-const MAX_DURATION_FRAMES_STANDARD = 30 * 60 * 8; // 8 minutes at 30fps
-const MAX_DURATION_FRAMES_PRO = 30 * 60 * 60; // 60 minutes at 30fps
-
-export const useVideoEditorStore = create<VideoEditorState>((set) => ({
+export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     project: INITIAL_PROJECT,
     currentTime: 0,
     isPlaying: false,
     selectedClipId: null,
     jobId: null,
     status: 'idle',
+    membershipTier: 'free',
 
     setJobId: (id) => set({ jobId: id }),
     setStatus: (status) => set({ status }),
+    setMembershipTier: (tier) => set({ membershipTier: tier }),
+
+    getMaxDurationFrames: () => {
+        const { membershipTier, project } = get();
+        return MembershipService.getMaxVideoDurationFrames(membershipTier, project.fps);
+    },
 
     setProject: (project) => set({ project }),
     updateProjectSettings: (settings) => set((state) => {
-        let newSettings = { ...settings };
+        const newSettings = { ...settings };
 
-        // Enforce duration limits
+        // Enforce duration limits based on membership tier
         if (newSettings.durationInFrames) {
-            // TODO: check user membership level. For now, defaulting to standard limit.
-            const maxDuration = MAX_DURATION_FRAMES_STANDARD;
-            if (newSettings.durationInFrames > maxDuration) {
-                newSettings.durationInFrames = maxDuration;
-                console.warn(`Project duration limited to ${maxDuration / 30 / 60} minutes.`);
+            const maxDurationFrames = MembershipService.getMaxVideoDurationFrames(
+                state.membershipTier,
+                newSettings.fps || state.project.fps
+            );
+
+            if (newSettings.durationInFrames > maxDurationFrames) {
+                newSettings.durationInFrames = maxDurationFrames;
+                const maxSeconds = MembershipService.getMaxVideoDurationSeconds(state.membershipTier);
+                const formattedDuration = MembershipService.formatDuration(maxSeconds);
+                console.warn(
+                    `Project duration limited to ${formattedDuration} (${MembershipService.getTierDisplayName(state.membershipTier)} tier). ` +
+                    MembershipService.getUpgradeMessage(state.membershipTier, 'video')
+                );
             }
         }
 

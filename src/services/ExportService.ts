@@ -2,7 +2,6 @@ import JSZip from 'jszip';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import { ProjectService } from './ProjectService';
-import { Project } from '@/core/store/slices/appSlice';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 
 export interface ExportProgress {
