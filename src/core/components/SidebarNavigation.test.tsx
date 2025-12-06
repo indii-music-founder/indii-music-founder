@@ -170,4 +170,27 @@ describe('Sidebar Navigation Integration', () => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
         });
     });
+
+    it('renders user profile and logout button', () => {
+        const mockLogout = vi.fn();
+        (useStore as any).mockReturnValue({
+            currentModule: 'dashboard',
+            setModule: mockSetModule,
+            isSidebarOpen: true,
+            user: {
+                displayName: 'Test User',
+                email: 'test@example.com'
+            },
+            logout: mockLogout
+        });
+
+        render(<Sidebar />);
+
+        expect(screen.getByText('Test User')).toBeInTheDocument();
+        expect(screen.getByText('test@example.com')).toBeInTheDocument();
+        expect(screen.getByTitle('Sign Out')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTitle('Sign Out'));
+        expect(mockLogout).toHaveBeenCalled();
+    });
 });

@@ -35,6 +35,9 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   // Update display name
   await updateProfile(result.user, { displayName });
 
+  // Force token refresh to ensure Firestore picks up the new auth state
+  await result.user.getIdToken(true);
+
   // Create user document in Firestore
   await createUserDocument(result.user, displayName);
 
@@ -79,7 +82,6 @@ export async function resetPassword(email: string) {
  * Create user document in Firestore
  */
 async function createUserDocument(user: User, displayName?: string) {
-  console.log('[DEBUG] Creating user doc for UID:', user.uid);
   const userRef = doc(db, 'users', user.uid);
   await setDoc(userRef, {
     uid: user.uid,

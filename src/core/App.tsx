@@ -31,6 +31,7 @@ import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 
 import ChatOverlay from './components/ChatOverlay';
+import TestPlaybookPanel from './dev/TestPlaybookPanel';
 
 export default function App() {
     const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
@@ -118,6 +119,9 @@ export default function App() {
 
                 {/* Mobile Navigation */}
                 {currentModule !== 'select-org' && <MobileNav />}
+
+                {/* DevTools HUD - Only in Development */}
+                {import.meta.env.DEV && <TestPlaybookPanel />}
             </div>
         </ToastProvider>
     );

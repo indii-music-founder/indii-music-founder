@@ -137,3 +137,66 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   ```bash
   npx playwright test e2e/auth-flow.spec.ts
   ```
+
+---
+
+## 9. The Bouncer 🦍
+
+**Scope:** Landing Page UI Logic
+**Components:** `landing-page/app/page.tsx`
+**File:** `landing-page/app/TheBouncer.test.tsx`
+
+"The Bouncer" checks the front door. It ensures that the Landing Page recognizes VIPs (authenticated users) and rolls out the "Launch Studio" carpet, while directing guests to the "Sign In" line.
+
+- **Scenarios:**
+  - **The Guest**: Unauthenticated user sees "Sign In" / "Get Started".
+  - **The VIP**: Authenticated user sees "Launch Studio".
+
+- **Command:**
+
+  ```bash
+  cd landing-page && npx vitest run app/TheBouncer.test.tsx
+  ```
+
+---
+
+## 10. The Architect 📐
+
+**Scope:** `src/modules/workflow` (Node Editor Logic)
+**Status:** Planned
+**File:** `src/modules/workflow/TheArchitect.test.tsx`
+
+"The Architect" verifies the structural integrity of the Workflow Engine. It ensures that nodes connect correctly, data flows downstream, and invalid connections are rejected.
+
+- **Scenarios:**
+  - **The Blueprint**: Create a valid workflow (Trigger -> Action -> Output).
+  - **The Structural Failure**: Connect incompatible types and verify validation error.
+
+---
+
+## 11. The Director 🎬
+
+**Scope:** `src/modules/video` (Video Editor State)
+**Status:** Planned
+**File:** `src/modules/video/TheDirector.test.tsx`
+
+"The Director" puts the Video Editor through a stress test. It manages the timeline, clips, and ensures that the edit decision list (EDL) remains stable under rapid changes.
+
+- **Scenarios:**
+  - **The Rough Cut**: Add clips to timeline -> Reorder them.
+  - **The Undo/Redo**: Perform edits and revert them, verifying state integrity.
+
+---
+
+## 12. The Anarchist Ⓐ
+
+**Scope:** `src/modules/video` (Chaos & Error Handling)
+**Status:** Planned
+**File:** `src/modules/video/TheAnarchist.test.tsx`
+
+"The Anarchist" attempts to break the system by ignoring rules, injecting chaos, and simulating state corruption.
+
+- **Scenarios:**
+  - **The Riot (Input Chaos)**: Inject wildly invalid data (NaN, Infinity, Negative numbers) into Store actions. Verify graceful handling.
+  - **The Squatter (Permission Defiance)**: Attempt to modify non-existent (or "unowned") resources.
+  - **The Mutiny (State Rebellion)**: Force the store into impossible states (e.g. `completed` status without result data) and verify UI resilience.

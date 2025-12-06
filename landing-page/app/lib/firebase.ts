@@ -4,11 +4,11 @@ import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: "indiios-v-1-1.firebaseapp.com",
-  projectId: "indiios-v-1-1",
-  storageBucket: "indiios-v-1-1.firebasestorage.app",
-  messagingSenderId: "563584335869",
-  appId: "1:563584335869:web:321321321"
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "architexture-ai-api.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "architexture-ai-api",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "architexture-ai-api.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "30372908784",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:30372908784:web:placeholder"
 };
 
 // Initialize Firebase (prevent duplicate initialization in dev)

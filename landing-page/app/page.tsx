@@ -61,8 +61,13 @@ const features = [
   },
 ];
 
+import { useAuth } from './components/auth/AuthProvider';
+import { getStudioUrl } from './lib/auth';
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const studioUrl = getStudioUrl();
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -90,18 +95,29 @@ export default function LandingPage() {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center gap-4">
-              <Link
-                href="/login"
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-white/90 transition-colors"
-              >
-                Get Started
-              </Link>
+              {!loading && user ? (
+                <a
+                  href={studioUrl}
+                  className="px-4 py-2 text-sm font-medium text-black bg-white rounded-full hover:bg-white/90 transition-colors"
+                >
+                  Launch Studio
+                </a>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-sm text-white/80 hover:text-white transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="px-4 py-2 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -182,13 +198,23 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/login"
-                className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all hover:scale-105"
-              >
-                Launch Studio
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+              {!loading && user ? (
+                <a
+                  href={studioUrl}
+                  className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all hover:scale-105"
+                >
+                  Launch Studio
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+              ) : (
+                <Link
+                  href="/signup"
+                  className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all hover:scale-105"
+                >
+                  Get Started Free
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              )}
               <Link
                 href="/teaser"
                 className="group flex items-center gap-2 px-8 py-4 bg-white/5 text-white border border-white/10 rounded-lg hover:bg-white/10 transition-all"
@@ -269,13 +295,23 @@ export default function LandingPage() {
               <p className="text-xl text-white/60 mb-10 max-w-2xl mx-auto">
                 Join the next generation of independent artists taking control of their careers.
               </p>
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-lg hover:bg-white/90 transition-all hover:scale-105"
-              >
-                Get Started Free
-                <ArrowRight size={24} />
-              </Link>
+              {!loading && user ? (
+                <a
+                  href={studioUrl}
+                  className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-lg hover:bg-white/90 transition-all hover:scale-105"
+                >
+                  Launch Studio
+                  <ArrowRight size={24} />
+                </a>
+              ) : (
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-lg hover:bg-white/90 transition-all hover:scale-105"
+                >
+                  Get Started Free
+                  <ArrowRight size={24} />
+                </Link>
+              )}
               <p className="text-white/40 mt-6 text-sm">
                 No credit card required
               </p>

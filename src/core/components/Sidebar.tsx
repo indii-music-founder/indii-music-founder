@@ -4,7 +4,7 @@ import { getColorForModule } from '../theme/moduleColors';
 import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Sidebar() {
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar } = useStore();
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, user, logout } = useStore();
 
     // Grouped navigation items based on the screenshot
     const managerItems = [
@@ -97,6 +97,35 @@ export default function Sidebar() {
                             <NavItem key={item.id} item={item} isActive={currentModule === item.id} />
                         ))}
                     </div>
+                </div>
+            </div>
+            {/* User Profile Section */}
+            <div className="p-4 border-t border-white/5">
+                <div className={`flex items-center gap-3 ${!isSidebarOpen ? 'justify-center' : ''}`}>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-white">
+                            {user?.email?.[0].toUpperCase() || 'U'}
+                        </span>
+                    </div>
+                    {isSidebarOpen && (
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-200 truncate">
+                                {user?.displayName || 'User'}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                                {user?.email}
+                            </p>
+                        </div>
+                    )}
+                    {isSidebarOpen && (
+                        <button
+                            onClick={() => logout()}
+                            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                            title="Sign Out"
+                        >
+                            <ChevronLeft size={14} className="rotate-180" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
