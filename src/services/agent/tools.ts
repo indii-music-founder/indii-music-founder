@@ -7,6 +7,9 @@ import { SocialTools } from './tools/SocialTools';
 import { CoreTools } from './tools/CoreTools';
 import { OrganizationTools } from './tools/OrganizationTools';
 import { StorageTools } from './tools/StorageTools';
+import { KnowledgeTools } from './tools/KnowledgeTools';
+import { ProjectTools } from './tools/ProjectTools';
+import { NavigationTools } from './tools/NavigationTools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -17,6 +20,9 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...SocialTools,
     ...OrganizationTools,
     ...StorageTools,
+    ...KnowledgeTools,
+    ...ProjectTools,
+    ...NavigationTools,
     ...PUBLICIST_TOOLS
 };
 

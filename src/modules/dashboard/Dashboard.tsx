@@ -6,6 +6,7 @@ import { OrganizationSelector } from './components/OrganizationSelector';
 import NewProjectModal from './components/NewProjectModal';
 import { auth } from '@/services/firebase';
 import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
+import { KnowledgeBaseList } from './components/KnowledgeBaseList';
 import { ThreeDButton } from '@/components/ui/ThreeDButton';
 import { ExportService } from '@/services/ExportService';
 import { CleanupService } from '@/services/CleanupService';
@@ -143,10 +144,31 @@ export default function Dashboard() {
                 let textContent = '';
 
                 if (file.type.startsWith('image/')) {
-                    // Placeholder for OCR or Image Description
-                    // Future implementation: Use AI service to describe image content
-                    textContent = `[Image Upload: ${file.name}]`;
-                    alert("Image upload detected. OCR would run here.");
+                    // OCR Implementation
+                    let toastId = toast.loading("Initializing OCR Engine...");
+                    try {
+                        const { OCRService } = await import('@/services/ai/OCRService');
+
+                        textContent = await OCRService.recognizeText(file, (status) => {
+                            // Status format: "status message (50%)"
+                            const match = status.match(/\((\d+)%\)/);
+                            const percent = match ? parseInt(match[1]) : 0;
+                            // Use updateProgress, fallback to displaying raw status if parsing fails
+                            toast.updateProgress(toastId, percent, status);
+                        });
+
+                        toast.dismiss(toastId);
+                        toast.success("Text extracted successfully!");
+                        // Append original filename context
+                        textContent = `[scanned_image: ${file.name}]\n\n${textContent}`;
+                        // toast.dismiss(toastId); // Success dismisses automatically or replaces loading
+                    } catch (err) {
+                        console.error("OCR Failed:", err);
+                        // Soft error: Notify but continue uploading the file
+                        toast.error("OCR timed out. Uploading as image only.", { id: toastId });
+                        textContent = `[Image: ${file.name}] (OCR Unavailable)`;
+                        // Proceed to add to store...
+                    }
                 } else {
                     textContent = await file.text();
                 }

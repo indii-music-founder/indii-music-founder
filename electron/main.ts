@@ -6,8 +6,58 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // IPC Handlers
+// IPC Handlers
 ipcMain.handle('get-platform', () => process.platform);
 ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.handle('open-external', (_, url) => import('electron').then(({ shell }) => shell.openExternal(url)));
+
+// Protocol Registration
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('indii-os', process.execPath, [path.resolve(process.argv[1])]);
+    }
+} else {
+    app.setAsDefaultProtocolClient('indii-os');
+}
+
+// Handle Deep Links (macOS)
+app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url);
+});
+
+// Handle Deep Links (Windows/Linux - Second Instance)
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine) => {
+        // Someone tried to run a second instance, we should focus our window.
+        if (BrowserWindow.getAllWindows().length > 0) {
+            const win = BrowserWindow.getAllWindows()[0];
+            if (win.isMinimized()) win.restore();
+            win.focus();
+        }
+        // Find the protocol url in commandLine
+        const url = commandLine.find(arg => arg.startsWith('indii-os://'));
+        if (url) handleDeepLink(url);
+    });
+}
+
+function handleDeepLink(url: string) {
+    console.log("Deep link received:", url);
+    // Expected format: indii-os://auth/callback?token=XYZ
+    try {
+        const urlObj = new URL(url);
+        const token = urlObj.searchParams.get('token');
+        if (token) {
+            const wins = BrowserWindow.getAllWindows();
+            wins.forEach(w => w.webContents.send('auth-token', token));
+        }
+    } catch (e) {
+        console.error("Failed to parse deep link:", e);
+    }
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -16,6 +66,9 @@ const squirrelStartup = process.platform === 'win32' ? await import('electron-sq
 if (squirrelStartup && squirrelStartup.default) {
     app.quit();
 }
+
+// Disable site isolation to allow cross-origin auth flows
+app.commandLine.appendSwitch('disable-site-isolation-trials');
 
 const createWindow = () => {
     // Create the browser window.
@@ -27,8 +80,28 @@ const createWindow = () => {
             nodeIntegration: true,
             contextIsolation: false,
             sandbox: false,
+            webSecurity: false, // TEMPORARY: Disable web security for local dev auth
         },
     });
+
+    // Handle Auth Popups
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        return {
+            action: 'allow',
+            overrideBrowserWindowOptions: {
+                frame: true,
+                fullscreenable: false,
+                backgroundColor: 'black',
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: false, // MATCH Main Window setting to allow window.opener access
+                    sandbox: false, // Ensure sandbox doesn't block access
+                    webSecurity: false
+                }
+            }
+        };
+    });
+
     console.log('Main process: Preload path configured as:', path.join(__dirname, 'preload.mjs'));
 
     // In production, load the index.html.

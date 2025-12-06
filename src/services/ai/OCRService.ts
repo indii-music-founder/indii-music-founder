@@ -1,0 +1,42 @@
+
+import { createWorker } from 'tesseract.js';
+
+export const OCRService = {
+    /**
+     * Recognize text from an image file using Tesseract.js
+     * @param file The image file to process
+     * @param onProgress Optional callback for status updates
+     * @returns The extracted text
+     */
+    recognizeText: async (file: File, onProgress?: (status: string) => void): Promise<string> => {
+        // Tesseract v6: Simplified worker creation with explicit CDN path
+        const worker = await createWorker('eng', 1, {
+            langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int',
+            logger: m => {
+                if (onProgress) {
+                    // Normalize progress to 0-100
+                    const p = m.progress || 0;
+                    const percent = Math.round(p * 100);
+                    onProgress(`${m.status} (${percent}%)`);
+                }
+                console.log(m);
+            }
+        });
+
+        // Add timeout to prevent infinite hanging
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('OCR Metadata Download Timed Out')), 60000)
+        );
+
+        try {
+            const result = await Promise.race([
+                worker.recognize(file),
+                timeoutPromise
+            ]) as any;
+
+            return result.data.text;
+        } finally {
+            await worker.terminate();
+        }
+    }
+};

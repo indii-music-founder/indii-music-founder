@@ -7,14 +7,28 @@ import { motion } from 'framer-motion';
 export default function SelectOrg() {
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
+    // Verify Store Connection
     useEffect(() => {
-        console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
-    }, [organizations]);
+        console.log('SelectOrg: Mounted', {
+            foundOrgs: !!organizations,
+            count: organizations?.length,
+            currentId: currentOrganizationId
+        });
+    }, [organizations, currentOrganizationId]);
 
-    if (!organizations) {
-        console.error('SelectOrg: Critical Error - organizations is undefined');
-        return <div className="text-red-500 p-10 bg-black min-h-screen">Error: Store not initialized correctly.</div>;
+    // Robust Loading State
+    if (organizations === undefined) {
+        console.warn("SelectOrg: Store 'organizations' is undefined. Waiting for hydration...");
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-black text-white">
+                <div className="text-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading your workspace...</p>
+                </div>
+            </div>
+        );
     }
+
 
 
     const [isCreating, setIsCreating] = useState(false);

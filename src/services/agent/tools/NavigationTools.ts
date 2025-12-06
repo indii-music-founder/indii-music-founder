@@ -1,26 +1,13 @@
-import { genkit } from 'genkit';
-import { z } from 'zod';
 import { useStore } from '@/core/store';
 
-const ai = genkit({});
-
-export const navigateTool = ai.defineTool(
-    {
-        name: 'navigate',
-        description: 'Navigates the user to a specific module or section of the application.',
-        inputSchema: z.object({
-            module: z.enum([
-                'dashboard', 'creative', 'legal', 'music', 'marketing',
-                'video', 'workflow', 'knowledge', 'road', 'brand',
-                'publicist', 'social', 'select-org'
-            ]).describe('The module to navigate to')
-        }),
-        outputSchema: z.boolean()
-    },
-    async ({ module }: { module: any }) => {
-        useStore.getState().setModule(module);
-        return true;
+export const NavigationTools = {
+    switch_module: async (args: { module: any }) => {
+        try {
+            useStore.getState().setModule(args.module);
+            return `Navigated to module: ${args.module}`;
+        } catch (error) {
+            console.error("Navigation failed:", error);
+            return `Failed to navigate: ${error}`;
+        }
     }
-);
-
-export const navigationTools = [navigateTool];
+};

@@ -9,8 +9,20 @@ class ProjectServiceImpl extends FirestoreService<Project> {
     }
 
     async getProjectsForOrg(orgId: string): Promise<Project[]> {
+        const constraints = [where('orgId', '==', orgId)];
+
+        // If it's the personal workspace, we MUST filter by userId to satisfy security rules
+        if (orgId === 'org-default' || orgId === 'personal') {
+            const { auth } = await import('./firebase');
+            if (auth.currentUser) {
+                constraints.push(where('userId', '==', auth.currentUser.uid));
+            } else {
+                return []; // No user, no personal projects
+            }
+        }
+
         return this.query(
-            [where('orgId', '==', orgId)],
+            constraints,
             (a, b) => b.date - a.date
         );
     }
@@ -18,21 +30,23 @@ class ProjectServiceImpl extends FirestoreService<Project> {
     async createProject(name: string, type: Project['type'], orgId: string): Promise<Project> {
         if (!orgId) throw new Error("No organization selected");
 
-        const id = await this.add({
+        const { auth } = await import('./firebase');
+        const user = auth.currentUser;
+        if (!user) throw new Error("User must be logged in to create a project");
+
+        const newProjectData = {
             name,
             type,
             date: Date.now(),
-            orgId
-        } as Project); // Casting as Project for convenience, though strictly it's Omit<Project, 'id'> which matches
+            orgId,
+            userId: user.uid // Ensure userId is attached for ownership checks
+        };
 
-        // We need to return the full object. 'add' returns just the ID.
-        // We can construct it optimistically since we just created it.
+        const id = await this.add(newProjectData as unknown as Project);
+
         return {
             id,
-            name,
-            type,
-            date: Date.now(), // slight drift risk but acceptable for UI display immediately
-            orgId
+            ...newProjectData
         } as Project;
     }
 }

@@ -50,6 +50,9 @@ export class AgentOrchestrator {
         User: "How do I create a new project?"
         Agent: generalist
 
+        User: "Search the docs for venue capacity."
+        Agent: generalist
+
         User: "What's the weather like?"
         Agent: generalist
         `;

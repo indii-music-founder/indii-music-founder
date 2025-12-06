@@ -33,6 +33,42 @@ export default function LoginForm() {
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         setError(null);
+
+        // Electron Bridge: Use System Browser + Deep Link
+        if (window.electronAPI) {
+            try {
+                // Open the independent bridge page in system browser
+                // In dev, assuming localhost:3000. In prod, this should be the deployed URL.
+                const bridgeUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+                    ? 'http://localhost:3000/login-bridge'
+                    : 'https://architexture-ai-api.web.app/login-bridge';
+
+                await window.electronAPI.openExternal(bridgeUrl);
+                setError("Please complete sign in in your browser...");
+
+                // Wait for token from Main Process
+                window.electronAPI.onAuthToken(async (token) => {
+                    try {
+                        const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                        const { app } = await import('@/app/lib/firebase');
+                        const auth = getAuth(app);
+                        const credential = GoogleAuthProvider.credential(token);
+                        await signInWithCredential(auth, credential);
+                        window.location.href = getStudioUrl();
+                    } catch (e: any) {
+                        console.error("Bridge auth failed:", e);
+                        setError(e.message);
+                        setIsLoading(false);
+                    }
+                });
+            } catch (err: any) {
+                console.error(err);
+                setError(err.message || 'Failed to open details.');
+                setIsLoading(false);
+            }
+            return;
+        }
+
         try {
             await signInWithGoogle();
             window.location.href = getStudioUrl();

@@ -57,7 +57,14 @@ export class AgentService {
                 thoughts: []
             });
 
+            let currentStreamedText = '';
+
             const result = await this.executor.execute(agentId, text, context, (event) => {
+                if (event.type === 'token') {
+                    currentStreamedText += event.content;
+                    updateAgentMessage(responseId, { text: currentStreamedText });
+                }
+
                 if (event.type === 'thought' || event.type === 'tool') {
                     const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
                     const newThought = {

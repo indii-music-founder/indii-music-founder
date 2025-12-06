@@ -25,6 +25,8 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
             // Get Current Org ID
             const orgId = OrganizationService.getCurrentOrgId();
 
+            const { auth } = await import('./firebase');
+
             // Ensure timestamp is a number or Firestore Timestamp
             // We use Omit<HistoryItem, 'id'> to match add method signature, 
             // but we need to override the type check slightly or construct manually
@@ -32,7 +34,8 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                 ...item,
                 url: imageUrl,
                 timestamp: Timestamp.fromMillis(item.timestamp),
-                orgId: orgId || 'personal' // Default to 'personal' if no org selected
+                orgId: orgId || 'personal', // Default to 'personal' if no org selected
+                userId: auth.currentUser?.uid // Explicitly save userId
             };
 
             // Casting as specific data to satisfy TS, assuming FirestoreService handles ID generation
@@ -62,19 +65,45 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
 
             // Try standard query with server-side sort
             try {
-                return await this.query([
+                const { auth } = await import('./firebase');
+                const constraints = [
                     where('orgId', '==', orgId),
                     orderBy('timestamp', 'desc'),
                     limit(limitCount)
-                ]);
+                ];
+
+                // Add userId constraint for personal workspace
+                if (orgId === 'org-default' || orgId === 'personal') {
+                    if (auth.currentUser) {
+                        constraints.push(where('userId', '==', auth.currentUser.uid));
+                        // Note: Mixed where/orderBy involving different fields requires an index.
+                        // where(orgId) + where(userId) + orderBy(timestamp)
+                        // If index is missing, we catch it below.
+                    } else {
+                        return [];
+                    }
+                }
+
+                return await this.query(constraints);
             } catch (error: any) {
                 // Check if it's the index error
                 if (error.code === 'failed-precondition' || error.message?.includes('index')) {
                     console.warn("Firestore index missing for sorting. Falling back to client-side sorting.");
 
+                    const { auth } = await import('./firebase');
+                    const constraints = [where('orgId', '==', orgId), limit(limitCount)];
+
+                    if (orgId === 'org-default' || orgId === 'personal') {
+                        if (auth.currentUser) {
+                            constraints.push(where('userId', '==', auth.currentUser.uid));
+                        } else {
+                            return [];
+                        }
+                    }
+
                     // Fallback to client-side sort using inherited query method's sorter
                     return await this.query(
-                        [where('orgId', '==', orgId), limit(limitCount)],
+                        constraints,
                         (a, b) => b.timestamp - a.timestamp
                     );
                 }

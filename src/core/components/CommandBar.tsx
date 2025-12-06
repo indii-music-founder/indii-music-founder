@@ -120,14 +120,17 @@ export default function CommandBar() {
                     <AnimatePresence>
                         {isDragging && (
                             <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="absolute inset-0 z-50 flex items-center justify-center bg-[#0d1117]/80 backdrop-blur-sm"
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md border-2 border-dashed border-blue-500/50 rounded-xl m-1"
                             >
-                                <div className="text-blue-400 font-bold text-lg flex items-center gap-3">
-                                    <Paperclip size={24} />
-                                    Drop files to attach
+                                <div className="text-center animate-pulse">
+                                    <div className="bg-blue-500/20 p-4 rounded-full mx-auto mb-2 w-16 h-16 flex items-center justify-center">
+                                        <Paperclip size={32} className="text-blue-400" />
+                                    </div>
+                                    <p className="text-blue-200 font-bold text-lg">Drop files to attach</p>
+                                    <p className="text-blue-400/60 text-sm">Images, Documents, Audio</p>
                                 </div>
                             </motion.div>
                         )}
@@ -190,7 +193,7 @@ export default function CommandBar() {
                                     title="Take a picture"
                                 >
                                     <Camera size={14} />
-                                    <span className="inline sm:hidden text-xs font-medium">Camera</span>
+                                    <span className="text-xs font-medium">Camera</span>
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
                                 <div className="relative">

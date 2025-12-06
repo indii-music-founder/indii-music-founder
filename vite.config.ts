@@ -61,6 +61,10 @@ export default defineConfig({
     port: 5173,
     watch: {
       ignored: ['**/temp_comparison_repo_backup/**']
+    },
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none'
     }
   },
   optimizeDeps: {
