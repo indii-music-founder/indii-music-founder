@@ -8,11 +8,18 @@ export default defineConfig({
     use: {
         trace: 'on-first-retry',
     },
-    webServer: {
-        command: 'npm run dev',
-        port: 5173,
-        reuseExistingServer: !process.env.CI,
-    },
+    webServer: [
+        {
+            command: 'npm run dev',
+            port: 5173,
+            reuseExistingServer: !process.env.CI,
+        },
+        {
+            command: 'cd landing-page && npm run dev',
+            port: 3000,
+            reuseExistingServer: !process.env.CI,
+        }
+    ],
     projects: [
         {
             name: 'electron',

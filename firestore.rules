@@ -7,6 +7,13 @@ service cloud.firestore {
       return request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
     }
 
+    // Users - only owner can read/write
+    match /users/{userId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // DEBUG: Temporarily allowing any auth user to create to check for UID mismatch
+      allow create: if request.auth != null;
+    }
+
     // Organizations
     match /organizations/{orgId} {
       // Allow reading if the user is a member

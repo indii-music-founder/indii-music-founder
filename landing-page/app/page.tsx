@@ -91,13 +91,13 @@ export default function LandingPage() {
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center gap-4">
               <Link
-                href="https://indiios-studio.web.app"
+                href="/login"
                 className="text-sm text-white/80 hover:text-white transition-colors"
               >
                 Sign In
               </Link>
               <Link
-                href="https://indiios-studio.web.app"
+                href="/signup"
                 className="px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-white/90 transition-colors"
               >
                 Get Started
@@ -133,13 +133,13 @@ export default function LandingPage() {
               </Link>
               <div className="pt-4 border-t border-white/10 space-y-3">
                 <Link
-                  href="https://indiios-studio.web.app"
+                  href="/login"
                   className="block text-center py-2 text-white/80"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="https://indiios-studio.web.app"
+                  href="/signup"
                   className="block text-center py-2 bg-white text-black font-medium rounded-lg"
                 >
                   Get Started
@@ -183,7 +183,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="https://indiios-studio.web.app"
+                href="/login"
                 className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all hover:scale-105"
               >
                 Launch Studio
@@ -270,7 +270,7 @@ export default function LandingPage() {
                 Join the next generation of independent artists taking control of their careers.
               </p>
               <Link
-                href="https://indiios-studio.web.app"
+                href="/signup"
                 className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-lg hover:bg-white/90 transition-all hover:scale-105"
               >
                 Get Started Free
@@ -308,7 +308,7 @@ export default function LandingPage() {
               <ul className="space-y-3 text-white/60">
                 <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
                 <li><Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="https://indiios-studio.web.app" className="hover:text-white transition-colors">Studio</Link></li>
+                <li><Link href="/login" className="hover:text-white transition-colors">Studio</Link></li>
               </ul>
             </div>
 

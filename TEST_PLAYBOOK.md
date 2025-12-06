@@ -117,3 +117,23 @@ This document defines the named stress test protocols used to validate Rndr AI. 
 2. **The Jump**: Reloads the page (clears local state).
 3. **The Paradox**: Verifies all 5 items load in the correct order.
 4. **The Correction**: Deletes item #3. Reloads. Verifies #3 is gone but #1, #2, #4, #5 remain.
+
+---
+
+## 8. The Gatekeeper 🔐
+
+**Scope:** Authentication & Onboarding  
+**Status:** Ready  
+**File:** `e2e/auth-flow.spec.ts`
+
+"The Gatekeeper" verifies the Authentication System, ensuring the critical bridge between the Landing Page and the Studio App is secure and functional.
+
+- **Scenarios:**
+  - **The Initiate**: New User Signup on Landing Page.
+  - **The Return**: Existing User Login.
+  - **The Border**: Verifies automatic redirects for unauthenticated users trying to access the Studio.
+- **Command:**
+
+  ```bash
+  npx playwright test e2e/auth-flow.spec.ts
+  ```

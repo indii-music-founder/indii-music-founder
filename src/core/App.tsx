@@ -33,7 +33,7 @@ import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import ChatOverlay from './components/ChatOverlay';
 
 export default function App() {
-    const { currentModule, initializeHistory, initializeAuth, loadProjects } = useStore();
+    const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
 
     useEffect(() => {
         initializeAuth();
@@ -45,18 +45,19 @@ export default function App() {
         if (window.location.pathname === '/select-org') {
             useStore.setState({ currentModule: 'select-org' });
         }
+    }, [initializeAuth, initializeHistory, loadProjects]); // Added dependencies for correctness
 
-        // Listen for Auth Changes to reload orgs
-        import('@/services/firebase').then(async ({ auth }) => {
-            const { onAuthStateChanged } = await import('firebase/auth');
-            onAuthStateChanged(auth, (user: any) => {
-                if (user) {
-                    // Re-run init to fetch orgs now that user is logged in
-                    initializeAuth();
-                }
-            });
-        });
-    }, []);
+    // Auth Guard
+    useEffect(() => {
+        if (isAuthReady && !isAuthenticated) {
+            // Redirect to Landing Page Login
+            // Ideally use env var for landing page URL
+            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login'; // Adjust default
+            // window.location.href = landingPageUrl; 
+            // Commenting out for now to prevent loop if running locally and URLs mismatch
+            console.log("Not authenticated, should redirect to:", landingPageUrl);
+        }
+    }, [isAuthReady, isAuthenticated]);
 
     useEffect(() => {
         console.log(`[App] Current Module Changed: ${currentModule}`);

@@ -79,6 +79,7 @@ export async function resetPassword(email: string) {
  * Create user document in Firestore
  */
 async function createUserDocument(user: User, displayName?: string) {
+  console.log('[DEBUG] Creating user doc for UID:', user.uid);
   const userRef = doc(db, 'users', user.uid);
   await setDoc(userRef, {
     uid: user.uid,

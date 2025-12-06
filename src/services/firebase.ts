@@ -44,8 +44,7 @@ export const db = initializeFirestore(app, {
 });
 export const storage = getStorage(app);
 export const auth = getAuth(app);
-import { signInAnonymously } from 'firebase/auth';
-signInAnonymously(auth).catch(console.error);
+// signInAnonymously(auth).catch(console.error);
 export const functions = getFunctions(app);
 
 // if (env.DEV) {
