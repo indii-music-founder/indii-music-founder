@@ -54,7 +54,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // F. Verify Response (Not "Failed to fetch")
         // Wait for ANY response bubble
-        const response = page.locator('.agent-message').last();
+        const response = page.getByTestId('agent-message').last();
         await expect(response).toBeVisible({ timeout: 20000 }); // Give cloud function time to warm up
         await expect(response).not.toContainText('Failed to fetch');
         await expect(response).not.toContainText('error');

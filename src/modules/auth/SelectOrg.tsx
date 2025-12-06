@@ -9,14 +9,13 @@ export default function SelectOrg() {
 
     useEffect(() => {
         console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
+        // console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
     }, [organizations]);
 
     if (!organizations) {
         console.error('SelectOrg: Critical Error - organizations is undefined');
         return <div className="text-red-500 p-10 bg-black min-h-screen">Error: Store not initialized correctly.</div>;
     }
-
-    console.log('SelectOrg: Rendering', { organizationsCount: organizations.length, currentOrganizationId });
 
 
     const [isCreating, setIsCreating] = useState(false);

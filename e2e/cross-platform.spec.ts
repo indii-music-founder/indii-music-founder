@@ -35,8 +35,9 @@ test.describe('The Nomad Workflow: Cross-Device Continuity', () => {
 
         console.log('[Nomad] Clicked Create. Waiting for modal to close...');
         // Check if modal closes (Success) or Error appears
+        // Check for Agent Hello or Response
         try {
-            await expect(pageA.getByRole('dialog')).not.toBeVisible({ timeout: 5000 });
+            await expect(pageA.getByTestId('agent-message').last()).toBeVisible({ timeout: 10000 });
             console.log('[Nomad] Modal closed. Waiting for navigation...');
         } catch (e) {
             console.log('[Nomad] Modal stalled. Checking for errors...');

@@ -99,12 +99,14 @@ export default function ChatOverlay() {
                                 </div>
                             )}
 
-                            <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user'
-                                ? 'bg-blue-600/20 text-blue-100 border border-blue-500/30 rounded-tr-sm'
-                                : msg.role === 'system'
-                                    ? 'bg-transparent text-gray-500 text-sm italic border border-transparent w-full text-center'
-                                    : 'bg-[#1a1a1a] text-gray-200 border border-gray-800 rounded-tl-sm shadow-xl'
-                                }`}>
+                            <div
+                                data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
+                                className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user'
+                                    ? 'bg-blue-600/20 text-blue-100 border border-blue-500/30 rounded-tr-sm'
+                                    : msg.role === 'system'
+                                        ? 'bg-transparent text-gray-500 text-sm italic border border-transparent w-full text-center'
+                                        : 'bg-[#1a1a1a] text-gray-200 border border-gray-800 rounded-tl-sm shadow-xl'
+                                    }`}>
 
                                 {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} />}
 

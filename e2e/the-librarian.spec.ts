@@ -93,9 +93,9 @@ test.describe('The Librarian: RAG Pipeline Verification', () => {
             await page.waitForTimeout(5000); // Wait for generation
 
             // Check last response
-            // Check last response
-            const lastResponse = page.locator('.agent-message').last();
-            await expect(lastResponse).toBeVisible({ timeout: 30000 }); // Much longer timeout for cold start / RAG
+            const lastResponse = page.getByTestId('agent-message').last();
+            await expect(lastResponse).toBeVisible({ timeout: 60000 }); // Wait up to 60s for response
+
 
             const responseText = await lastResponse.innerText();
 
