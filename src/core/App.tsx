@@ -47,8 +47,8 @@ export default function App() {
         }
 
         // Listen for Auth Changes to reload orgs
-        import('@/services/firebase').then(({ auth }) => {
-            const { onAuthStateChanged } = require('firebase/auth');
+        import('@/services/firebase').then(async ({ auth }) => {
+            const { onAuthStateChanged } = await import('firebase/auth');
             onAuthStateChanged(auth, (user: any) => {
                 if (user) {
                     // Re-run init to fetch orgs now that user is logged in

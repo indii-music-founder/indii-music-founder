@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('New User Flow', () => {
     test('should complete the new user onboarding flow', async ({ page }) => {
+        // Enable console log forwarding
+        page.on('console', msg => console.log(`[Browser] ${msg.text()}`));
+
         // 1. Land on Homepage
         await page.goto('/');
 
@@ -56,12 +59,14 @@ test.describe('New User Flow', () => {
         // 3. Generate 1 Image
         // We should be redirected to Creative Studio (Art Department)
         // Check for prompt input to confirm we are there
-        const promptInput = page.getByPlaceholder(/Describe what you want to create/i);
+        // Check for prompt input to confirm we are there
+        const promptInput = page.getByPlaceholder(/Describe your creative task/i);
         await expect(promptInput).toBeVisible({ timeout: 10000 });
         await promptInput.fill('A futuristic city skyline at sunset');
 
         // Click Generate
-        await page.getByRole('button', { name: /Generate Image/i }).click();
+        // Click Generate (CommandBar "Run" button)
+        await page.getByRole('button', { name: /Run/i }).click();
 
         // Wait for generation (mocked or real?)
         // Since we are running against the real app, it might try to call the API.
