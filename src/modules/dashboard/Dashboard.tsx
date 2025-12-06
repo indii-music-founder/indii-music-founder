@@ -9,6 +9,7 @@ import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/component
 import { ThreeDButton } from '@/components/ui/ThreeDButton';
 import { ExportService } from '@/services/ExportService';
 import { CleanupService } from '@/services/CleanupService';
+import { ProjectService } from '@/services/ProjectService';
 import { useToast } from '@/core/context/ToastContext';
 
 
@@ -112,12 +113,21 @@ export default function Dashboard() {
         setError(null);
 
         try {
-            const { createNewProject } = useStore.getState();
-            await createNewProject(name, type, currentOrganizationId);
+            // Using ProjectService directly to ensure we get the ID for navigation
+            const newProj = await ProjectService.createProject(name, type, currentOrganizationId);
+
+            // Update store
+            const { addProject } = useStore.getState();
+            addProject(newProj);
+
+            // Navigate using Global State (App.tsx switches module based on this)
+            setProject(newProj.id);
+            setModule(type === 'creative' ? 'creative' : 'project-view' as any);
+
             setShowNewProjectModal(false);
-            setNewProjectName(''); // Reset name on success
+            setNewProjectName('');
         } catch (e: any) {
-            console.error("Project creation failed:", e);
+            console.error('[Dashboard] Failed to create project:', e);
             setError(e.message || "Failed to create project");
         }
     };

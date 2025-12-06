@@ -146,14 +146,19 @@ class AIService {
         return new ReadableStream({
             async start(controller) {
                 try {
+                    let buffer = '';
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
 
                         const chunk = decoder.decode(value, { stream: true });
-                        const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                        buffer += chunk;
+                        const lines = buffer.split('\n');
+                        // Keep the last part in the buffer (it might be incomplete)
+                        buffer = lines.pop() || '';
 
                         for (const line of lines) {
+                            if (line.trim() === '') continue;
                             try {
                                 const parsed = JSON.parse(line);
                                 if (parsed.text) {
@@ -164,6 +169,7 @@ class AIService {
                             }
                         }
                     }
+
                     controller.close();
                 } catch (err) {
                     controller.error(err);
