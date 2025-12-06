@@ -5,6 +5,8 @@ import { MemoryTools } from './tools/MemoryTools';
 import { AnalysisTools } from './tools/AnalysisTools';
 import { SocialTools } from './tools/SocialTools';
 import { CoreTools } from './tools/CoreTools';
+import { OrganizationTools } from './tools/OrganizationTools';
+import { StorageTools } from './tools/StorageTools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -13,6 +15,8 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...MemoryTools,
     ...AnalysisTools,
     ...SocialTools,
+    ...OrganizationTools,
+    ...StorageTools,
     ...PUBLICIST_TOOLS
 };
 
@@ -43,4 +47,12 @@ AVAILABLE TOOLS:
 23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate a crisis response.
 24. extend_video(videoUrl: string, prompt: string, direction: 'start' | 'end') - Extend a video clip forwards or backwards.
 25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing?: string) - Add or update a keyframe for a video clip.
+26. list_organizations() - List all organizations.
+27. switch_organization(orgId: string) - Switch to a different organization context.
+28. create_organization(name: string) - Create a new organization.
+29. get_organization_details() - Get details of current organization.
+30. list_files(limit?: number, type?: string) - List recently generated files/history.
+31. search_files(query: string) - Search filtered files by prompt or type.
 `;
+
+

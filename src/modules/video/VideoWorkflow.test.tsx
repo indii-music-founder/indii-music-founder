@@ -4,6 +4,7 @@ import VideoWorkflow from './VideoWorkflow';
 import { useStore } from '@/core/store';
 import { extractVideoFrame } from '../../utils/video';
 import { useVideoEditorStore } from './store/videoEditorStore';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 
 // Mock Store
 vi.mock('@/core/store', () => ({
@@ -45,13 +46,9 @@ vi.mock('./components/FrameSelectionModal', () => ({
 }));
 
 // Mock VideoGenerationService
-const { mockTriggerVideoGeneration } = vi.hoisted(() => ({
-    mockTriggerVideoGeneration: vi.fn().mockResolvedValue({ jobId: 'test-job-id' })
-}));
-
 vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
-        triggerVideoGeneration: mockTriggerVideoGeneration
+        triggerVideoGeneration: vi.fn()
     }
 }));
 
@@ -128,7 +125,7 @@ describe('VideoWorkflow', () => {
             setStatus: mockSetStatus,
         });
 
-        mockTriggerVideoGeneration.mockResolvedValue({ jobId: 'test-job-id' });
+        (VideoGeneration.triggerVideoGeneration as any).mockResolvedValue({ jobId: 'test-job-id' });
         mockOnSnapshot.mockReturnValue(() => { }); // Unsubscribe function
     });
 
@@ -157,7 +154,7 @@ describe('VideoWorkflow', () => {
         fireEvent.click(generateBtn);
 
         await waitFor(() => {
-            expect(mockTriggerVideoGeneration).toHaveBeenCalledWith(expect.objectContaining({
+            expect(VideoGeneration.triggerVideoGeneration).toHaveBeenCalledWith(expect.objectContaining({
                 prompt: 'Test Prompt',
                 resolution: '1080p',
                 aspectRatio: '16:9',

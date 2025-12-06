@@ -1,110 +1,73 @@
-import { genkit } from 'genkit';
-import { z } from 'zod';
 import { useStore } from '@/core/store';
 import { OrganizationService } from '@/services/OrganizationService';
+import { auth } from '@/services/firebase';
 
-const ai = genkit({});
-
-export const listOrganizationsTool = ai.defineTool(
-    {
-        name: 'listOrganizations',
-        description: 'Lists all organizations the current user belongs to.',
-        inputSchema: z.object({}),
-        outputSchema: z.object({
-            organizations: z.array(z.object({
-                id: z.string(),
-                name: z.string(),
-                plan: z.string(),
-                membersCount: z.number()
-            }))
-        })
-    },
-    async () => {
+export const OrganizationTools = {
+    list_organizations: async () => {
         const store = useStore.getState();
-        // Return from store if populated, or fetch? Store is source of truth for UI
         const orgs = store.organizations || [];
 
-        return {
-            organizations: orgs.map(org => ({
-                id: org.id,
-                name: org.name,
-                plan: org.plan,
-                membersCount: org.members ? org.members.length : 0
-            }))
-        };
-    }
-);
+        if (orgs.length === 0) {
+            return "No organizations found.";
+        }
 
-export const switchOrganizationTool = ai.defineTool(
-    {
-        name: 'switchOrganization',
-        description: 'Switches the current active organization context.',
-        inputSchema: z.object({
-            orgId: z.string().describe('The ID of the organization to switch to')
-        }),
-        outputSchema: z.object({
-            success: z.boolean(),
-            message: z.string()
-        })
+        return orgs.map(org => `- ${org.name} [ID: ${org.id}] (Plan: ${org.plan})`).join('\n');
     },
-    async ({ orgId }) => {
+
+    switch_organization: async (args: { orgId: string }) => {
         const store = useStore.getState();
-        const org = store.organizations.find(o => o.id === orgId);
+        const org = store.organizations.find(o => o.id === args.orgId);
 
         if (!org) {
-            throw new Error(`Organization with ID ${orgId} not found.`);
+            return `Error: Organization with ID ${args.orgId} not found.`;
         }
 
         try {
-            await OrganizationService.switchOrganization(orgId);
-            store.setOrganization(orgId);
-            await store.initializeHistory();
+            await OrganizationService.switchOrganization(args.orgId);
+            // The service updates localStorage, but we might need to trigger store update if not reactive
+            // store.setOrganization is not always enough if it needs full reload
+            store.setOrganization(args.orgId);
+
+            // Reload projects for new org
             await store.loadProjects();
 
-            return {
-                success: true,
-                message: `Switched to organization: ${org.name}`
-            };
+            return `Successfully switched to organization: ${org.name}`;
         } catch (e: any) {
-            throw new Error(`Failed to switch organization: ${e.message}`);
+            return `Failed to switch organization: ${e.message}`;
         }
-    }
-);
-
-export const createOrganizationTool = ai.defineTool(
-    {
-        name: 'createOrganization',
-        description: 'Creates a new organization.',
-        inputSchema: z.object({
-            name: z.string().describe('The name of the new organization')
-        }),
-        outputSchema: z.object({
-            orgId: z.string(),
-            success: z.boolean()
-        })
     },
-    async ({ name }) => {
+
+    create_organization: async (args: { name: string }) => {
         try {
-            const orgId = await OrganizationService.createOrganization(name);
+            const orgId = await OrganizationService.createOrganization(args.name);
             const store = useStore.getState();
 
-            // We need to refetch or manually update store. 
-            // The service creates it, but store might not know immediately unless we call addOrganization
-            // Ideally we re-initialize auth or explicitly add it.
-
+            // Manually add to store to reflect immediate change
             const newOrg = {
                 id: orgId,
-                name: name,
+                name: args.name,
                 plan: 'free' as const,
-                members: ['me'] // Simplified, real backend might add actual user ID
+                members: [auth.currentUser?.uid || 'me']
             };
             store.addOrganization(newOrg);
+            store.setOrganization(orgId);
 
-            return { orgId, success: true };
+            return `Successfully created organization "${args.name}" (ID: ${orgId}) and switched to it.`;
         } catch (e: any) {
-            throw new Error(`Failed to create organization: ${e.message}`);
+            return `Failed to create organization: ${e.message}`;
         }
-    }
-);
+    },
 
-export const organizationTools = [listOrganizationsTool, switchOrganizationTool, createOrganizationTool];
+    get_organization_details: async () => {
+        const store = useStore.getState();
+        const org = store.organizations.find(o => o.id === store.currentOrganizationId);
+        if (!org) return "Current organization not found.";
+
+        return `
+        ID: ${org.id}
+        Name: ${org.name}
+        Plan: ${org.plan}
+        Members: ${org.members?.length || 0}
+        `;
+    }
+};

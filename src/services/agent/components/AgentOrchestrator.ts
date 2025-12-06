@@ -33,6 +33,25 @@ export class AgentOrchestrator {
         - Return ONLY the agent ID (e.g., "legal").
         - If the request is ambiguous, default to "generalist".
         - If the request is about the current project's domain, prefer that specialist.
+
+        EXAMPLES:
+        User: "Draft a recording contract for my new artist."
+        Agent: legal
+
+        User: "I need a music video concept for this track."
+        Agent: video
+
+        User: "Create a 30-day rollout plan for Instagram."
+        Agent: marketing
+
+        User: "This mix sounds muddy, can you analyze the EQ?"
+        Agent: music
+
+        User: "How do I create a new project?"
+        Agent: generalist
+
+        User: "What's the weather like?"
+        Agent: generalist
         `;
 
         try {

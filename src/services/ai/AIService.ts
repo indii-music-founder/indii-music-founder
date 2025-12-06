@@ -124,7 +124,7 @@ class AIService {
     }) {
         const functionUrl = endpointService.getFunctionUrl('generateContentStream');
 
-        const response = await fetch(functionUrl, {
+        const response = await this.withRetry(() => fetch(functionUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -132,7 +132,7 @@ class AIService {
                 contents: options.contents,
                 config: options.config
             })
-        });
+        }));
 
         if (!response.ok) {
             throw new Error(`Generate Content Stream Failed: ${await response.text()}`);
@@ -186,12 +186,12 @@ class AIService {
     }) {
         try {
             const generateVideoFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'generateVideo');
-            const response = await generateVideoFn({
+            const response = await this.withRetry(() => generateVideoFn({
                 prompt: options.prompt,
                 model: options.model,
                 image: options.image,
                 config: options.config
-            });
+            }));
 
             const data = response.data as any;
             const prediction = data.predictions?.[0];
@@ -212,10 +212,10 @@ class AIService {
     }) {
         try {
             const embedContentFn = httpsCallable(functions, 'embedContent');
-            const response = await embedContentFn({
+            const response = await this.withRetry(() => embedContentFn({
                 model: options.model,
                 content: options.content
-            });
+            }));
             return response.data;
         } catch (error: any) {
             throw new Error(`Embed Content Failed: ${error.message}`);
