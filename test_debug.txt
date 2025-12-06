@@ -23,1265 +23,8 @@
 [AgentRegistry] Registered: Brand Manager (brand)
 [AgentRegistry] Registered: Agent Zero (generalist)
 
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:24:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:120:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 9[2mms[22m[39m
-[31m       [31m×[31m should correctly orchestrate, execute, and return response for a specialist[39m[32m 5[2mms[22m[39m
-[31m       [31m×[31m should handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)[39m[32m 1[2mms[22m[39m
-       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 1[2mms[22m[39m
-[31m       [31m×[31m should gracefully handle agent execution failure[39m[32m 1[2mms[22m[39m
-
-[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mEnd-to-End Execution Pipeline[2m > [22mshould correctly orchestrate, execute, and return response for a specialist
-[31m[1mAssertionError[22m: expected 2nd "vi.fn()" call to have been called with [ ObjectContaining{…} ][39m
-
-[32m- Expected[39m
-[31m+ Received[39m
-
-[2m  [[22m
-[32m-   ObjectContaining {[39m
-[32m-     "config": ObjectContaining {[39m
-[32m-       "systemInstruction": StringContaining "Campaign Manager",[39m
-[31m+   {[39m
-[31m+     "config": {[39m
-[31m+       "thinkingConfig": {[39m
-[31m+         "thinkingLevel": "LOW",[39m
-[31m+       },[39m
-[31m+       "tools": [[39m
-[31m+         {[39m
-[31m+           "functionDeclarations": [[39m
-[31m+             {[39m
-[31m+               "description": "Save a fact, rule, or preference to long-term memory.",[39m
-[31m+               "name": "save_memory",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "content": {[39m
-[31m+                     "description": "The content to remember.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                   "type": {[39m
-[31m+                     "description": "Type of memory.",[39m
-[31m+                     "enum": [[39m
-[31m+                       "fact",[39m
-[31m+                       "summary",[39m
-[31m+                       "rule",[39m
-[31m+                     ],[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "content",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Search long-term memory for relevant information.",[39m
-[31m+               "name": "recall_memories",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "query": {[39m
-[31m+                     "description": "Search query.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "query",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Critique and verify generated content against a goal.",[39m
-[31m+               "name": "verify_output",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "content": {[39m
-[31m+                     "description": "The content to verify.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                   "goal": {[39m
-[31m+                     "description": "The original goal.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "goal",[39m
-[31m+                   "content",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Request user approval for high-stakes actions.",[39m
-[31m+               "name": "request_approval",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "content": {[39m
-[31m+                     "description": "Content or action requiring approval.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                   "type": {[39m
-[31m+                     "description": "Type of action (e.g., \"post\", \"email\").",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "content",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Fetch full details of a project by ID.",[39m
-[31m+               "name": "get_project_details",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "projectId": {[39m
-[31m+                     "description": "The ID of the project to fetch.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "projectId",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+           ],[39m
-[31m+         },[39m
-[31m+       ],[39m
-[2m      },[22m
-[31m+     "contents": [[39m
-[31m+       {[39m
-[31m+         "parts": [[39m
-[31m+           {[39m
-[31m+             "text": "[39m
-[31m+ You are the Campaign Manager.[39m
-[31m+     Your role is to design and execute comprehensive marketing campaigns.[39m
-[31m+[39m
-[31m+     Responsibilities:[39m
-[31m+     1. Develop strategic campaign concepts.[39m
-[31m+     2. Create content calendars and distribution plans.[39m
-[31m+     3. Coordinate messaging across social, email, and web channels.[39m
-[31m+     4. Analyze campaign performance and adjust strategy.[39m
-[31m+[39m
-[31m+     Think holistically about the brand's narrative and audience engagement.[39m
-[31m+[39m
-[31m+[39m
-[31m+         **SUPERPOWERS (Agent Zero Protocol):**[39m
-[31m+         - **Memory:** Use 'save_memory' to remember important details. Use 'recall_memories' to check for past context.[39m
-[31m+         - **Reflection:** Use 'verify_output' to double-check your work before finalizing.[39m
-[31m+         - **Approval:** Use 'request_approval' before taking any public or irreversible action.[39m
-[31m+         [39m
-[31m+[39m
-[31m+ CONTEXT:[39m
-[31m+ {[39m
-[31m+   \"currentProjectId\": \"p1\",[39m
-[31m+   \"userProfile\": {[39m
-[31m+     \"brandKit\": {[39m
-[31m+       \"tone\": \"Professional\"[39m
-[31m+     }[39m
-[31m+   },[39m
-[31m+   \"brandKit\": {[39m
-[31m+     \"tone\": \"Professional\"[39m
-[31m+   },[39m
-[31m+   \"chatHistory\": [[39m
-[31m+     {[39m
-[31m+       \"id\": \"3bb4b6df-3fa4-4a57-a9d9-85da60f71d6a\",[39m
-[31m+       \"role\": \"user\",[39m
-[31m+       \"text\": \"Analyze market trends\",[39m
-[31m+       \"timestamp\": 1765029116841[39m
-[31m+     },[39m
-[31m+     {[39m
-[31m+       \"id\": \"80c42693-af56-4279-816c-81ef3b29d8ea\",[39m
-[31m+       \"role\": \"model\",[39m
-[31m+       \"text\": \"\",[39m
-[31m+       \"timestamp\": 1765029116841,[39m
-[31m+       \"isStreaming\": true,[39m
-[31m+       \"thoughts\": [[39m
-[31m+         {[39m
-[31m+           \"id\": \"5c4bb39d-a8e6-420d-969d-cd7ac1e7b755\",[39m
-[31m+           \"text\": \"Analyzing request: \\\"Analyze market trends...\\\"\",[39m
-[31m+           \"timestamp\": 1765029116842,[39m
-[31m+           \"type\": \"thought\"[39m
-[31m+         }[39m
-[31m+       ][39m
-[31m+     }[39m
-[31m+   ],[39m
-[31m+   \"projectId\": \"p1\"[39m
-[31m+ }[39m
-[31m+[39m
-[31m+ HISTORY:[39m
-[31m+[39m
-[31m+[39m
-[31m+ TASK:[39m
-[31m+ Analyze market trends[39m
-[31m+ ",[39m
-[31m+           },[39m
-[31m+         ],[39m
-[31m+         "role": "user",[39m
-[31m+       },[39m
-[31m+     ],[39m
-[31m+     "model": "gemini-3-pro-preview",[39m
-[2m    },[22m
-[2m  ][22m
-
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m68:40[22m[39m
-    [90m 66| [39m
-    [90m 67| [39m            [90m// Verify Specialist was called with correct context[39m
-    [90m 68| [39m            expect(AI.generateContent).toHaveBeenNthCalledWith(2, expe…
-    [90m   | [39m                                       [31m^[39m
-    [90m 69| [39m                config[33m:[39m expect[33m.[39m[34mobjectContaining[39m({
-    [90m 70| [39m                    systemInstruction: expect.stringContaining('Campai…
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mEnd-to-End Execution Pipeline[2m > [22mshould handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)
-[31m[1mAssertionError[22m: expected "vi.fn()" to be called 3 times, but got 2 times[39m
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m106:40[22m[39m
-    [90m104| [39m            [90m// 3. Agent -> Final Response[39m
-    [90m105| [39m            [90m// Total 3 calls to generateContent.[39m
-    [90m106| [39m            [34mexpect[39m([33mAI[39m[33m.[39mgenerateContent)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m3[39m)[33m;[39m
-    [90m   | [39m                                       [31m^[39m
-    [90m107| [39m        })[33m;[39m
-    [90m108| [39m    })[33m;[39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mRobustness & Error Handling[2m > [22mshould gracefully handle agent execution failure
-[31m[1mAssertionError[22m: expected 'model' to be 'system' // Object.is equality[39m
-
-Expected: [32m"system"[39m
-Received: [31m"model"[39m
-
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m145:34[22m[39m
-    [90m143| [39m            [90m// Should add a system message with error[39m
-    [90m144| [39m            const lastMsg = mockStoreState.agentHistory[mockStoreState…
-    [90m145| [39m            [34mexpect[39m(lastMsg[33m.[39mrole)[33m.[39m[34mtoBe[39m([32m'system'[39m)[33m;[39m
-    [90m   | [39m                                 [31m^[39m
-    [90m146| [39m            [34mexpect[39m(lastMsg[33m.[39mtext)[33m.[39m[34mtoContain[39m([32m'Simulated API Outage'[39m)[33m;[39m
-    [90m147| [39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
-
-
-[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (4)[39m
-[2m   Start at [22m 08:51:56
-[2m   Duration [22m 488ms[2m (transform 100ms, setup 44ms, import 170ms, tests 9ms, environment 198ms)[22m
-
-[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/AgentService.ts [22m[34mx1 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:24:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:120:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 23[2mms[22m[39m
-[31m       [31m×[31m should correctly orchestrate, execute, and return response for a specialist[39m[32m 16[2mms[22m[39m
-[31m       [31m×[31m should handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)[39m[32m 1[2mms[22m[39m
-       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 3[2mms[22m[39m
-[31m       [31m×[31m should gracefully handle agent execution failure[39m[32m 1[2mms[22m[39m
-
-[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mEnd-to-End Execution Pipeline[2m > [22mshould correctly orchestrate, execute, and return response for a specialist
-[31m[1mAssertionError[22m: expected 2nd "vi.fn()" call to have been called with [ ObjectContaining{…} ][39m
-
-[32m- Expected[39m
-[31m+ Received[39m
-
-[2m  [[22m
-[32m-   ObjectContaining {[39m
-[32m-     "config": ObjectContaining {[39m
-[32m-       "systemInstruction": StringContaining "Campaign Manager",[39m
-[31m+   {[39m
-[31m+     "config": {[39m
-[31m+       "thinkingConfig": {[39m
-[31m+         "thinkingLevel": "LOW",[39m
-[31m+       },[39m
-[31m+       "tools": [[39m
-[31m+         {[39m
-[31m+           "functionDeclarations": [[39m
-[31m+             {[39m
-[31m+               "description": "Save a fact, rule, or preference to long-term memory.",[39m
-[31m+               "name": "save_memory",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "content": {[39m
-[31m+                     "description": "The content to remember.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                   "type": {[39m
-[31m+                     "description": "Type of memory.",[39m
-[31m+                     "enum": [[39m
-[31m+                       "fact",[39m
-[31m+                       "summary",[39m
-[31m+                       "rule",[39m
-[31m+                     ],[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "content",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Search long-term memory for relevant information.",[39m
-[31m+               "name": "recall_memories",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "query": {[39m
-[31m+                     "description": "Search query.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "query",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Critique and verify generated content against a goal.",[39m
-[31m+               "name": "verify_output",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "content": {[39m
-[31m+                     "description": "The content to verify.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                   "goal": {[39m
-[31m+                     "description": "The original goal.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "goal",[39m
-[31m+                   "content",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Request user approval for high-stakes actions.",[39m
-[31m+               "name": "request_approval",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "content": {[39m
-[31m+                     "description": "Content or action requiring approval.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                   "type": {[39m
-[31m+                     "description": "Type of action (e.g., \"post\", \"email\").",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "content",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+             {[39m
-[31m+               "description": "Fetch full details of a project by ID.",[39m
-[31m+               "name": "get_project_details",[39m
-[31m+               "parameters": {[39m
-[31m+                 "properties": {[39m
-[31m+                   "projectId": {[39m
-[31m+                     "description": "The ID of the project to fetch.",[39m
-[31m+                     "type": "string",[39m
-[31m+                   },[39m
-[31m+                 },[39m
-[31m+                 "required": [[39m
-[31m+                   "projectId",[39m
-[31m+                 ],[39m
-[31m+                 "type": "object",[39m
-[31m+               },[39m
-[31m+             },[39m
-[31m+           ],[39m
-[31m+         },[39m
-[31m+       ],[39m
-[2m      },[22m
-[31m+     "contents": [[39m
-[31m+       {[39m
-[31m+         "parts": [[39m
-[31m+           {[39m
-[31m+             "text": "[39m
-[31m+ You are the Campaign Manager.[39m
-[31m+     Your role is to design and execute comprehensive marketing campaigns.[39m
-[31m+[39m
-[31m+     Responsibilities:[39m
-[31m+     1. Develop strategic campaign concepts.[39m
-[31m+     2. Create content calendars and distribution plans.[39m
-[31m+     3. Coordinate messaging across social, email, and web channels.[39m
-[31m+     4. Analyze campaign performance and adjust strategy.[39m
-[31m+[39m
-[31m+     Think holistically about the brand's narrative and audience engagement.[39m
-[31m+[39m
-[31m+[39m
-[31m+         **SUPERPOWERS (Agent Zero Protocol):**[39m
-[31m+         - **Memory:** Use 'save_memory' to remember important details. Use 'recall_memories' to check for past context.[39m
-[31m+         - **Reflection:** Use 'verify_output' to double-check your work before finalizing.[39m
-[31m+         - **Approval:** Use 'request_approval' before taking any public or irreversible action.[39m
-[31m+         [39m
-[31m+[39m
-[31m+ CONTEXT:[39m
-[31m+ {[39m
-[31m+   \"currentProjectId\": \"p1\",[39m
-[31m+   \"userProfile\": {[39m
-[31m+     \"brandKit\": {[39m
-[31m+       \"tone\": \"Professional\"[39m
-[31m+     }[39m
-[31m+   },[39m
-[31m+   \"brandKit\": {[39m
-[31m+     \"tone\": \"Professional\"[39m
-[31m+   },[39m
-[31m+   \"chatHistory\": [[39m
-[31m+     {[39m
-[31m+       \"id\": \"7acb7f4a-b851-4e7d-a52d-05757cf870dd\",[39m
-[31m+       \"role\": \"user\",[39m
-[31m+       \"text\": \"Analyze market trends\",[39m
-[31m+       \"timestamp\": 1765029200138[39m
-[31m+     },[39m
-[31m+     {[39m
-[31m+       \"id\": \"af74aef9-7746-41da-9e0a-cdac0036b6d8\",[39m
-[31m+       \"role\": \"model\",[39m
-[31m+       \"text\": \"\",[39m
-[31m+       \"timestamp\": 1765029200138,[39m
-[31m+       \"isStreaming\": true,[39m
-[31m+       \"thoughts\": [[39m
-[31m+         {[39m
-[31m+           \"id\": \"9aa14327-d8bd-414a-8f1c-e21e1b48a865\",[39m
-[31m+           \"text\": \"Analyzing request: \\\"Analyze market trends...\\\"\",[39m
-[31m+           \"timestamp\": 1765029200139,[39m
-[31m+           \"type\": \"thought\"[39m
-[31m+         }[39m
-[31m+       ][39m
-[31m+     }[39m
-[31m+   ],[39m
-[31m+   \"projectId\": \"p1\"[39m
-[31m+ }[39m
-[31m+[39m
-[31m+ HISTORY:[39m
-[31m+[39m
-[31m+[39m
-[31m+ TASK:[39m
-[31m+ Analyze market trends[39m
-[31m+ ",[39m
-[31m+           },[39m
-[31m+         ],[39m
-[31m+         "role": "user",[39m
-[31m+       },[39m
-[31m+     ],[39m
-[31m+     "model": "gemini-3-pro-preview",[39m
-[2m    },[22m
-[2m  ][22m
-
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m68:40[22m[39m
-    [90m 66| [39m
-    [90m 67| [39m            [90m// Verify Specialist was called with correct context[39m
-    [90m 68| [39m            expect(AI.generateContent).toHaveBeenNthCalledWith(2, expe…
-    [90m   | [39m                                       [31m^[39m
-    [90m 69| [39m                config[33m:[39m expect[33m.[39m[34mobjectContaining[39m({
-    [90m 70| [39m                    systemInstruction: expect.stringContaining('Campai…
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mEnd-to-End Execution Pipeline[2m > [22mshould handle tool execution cycles (Thinking -> Tool -> Thinking -> Response)
-[31m[1mAssertionError[22m: expected "vi.fn()" to be called 3 times, but got 2 times[39m
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m106:40[22m[39m
-    [90m104| [39m            [90m// 3. Agent -> Final Response[39m
-    [90m105| [39m            [90m// Total 3 calls to generateContent.[39m
-    [90m106| [39m            [34mexpect[39m([33mAI[39m[33m.[39mgenerateContent)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m3[39m)[33m;[39m
-    [90m   | [39m                                       [31m^[39m
-    [90m107| [39m        })[33m;[39m
-    [90m108| [39m    })[33m;[39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mRobustness & Error Handling[2m > [22mshould gracefully handle agent execution failure
-[31m[1mAssertionError[22m: expected 'model' to be 'system' // Object.is equality[39m
-
-Expected: [32m"system"[39m
-Received: [31m"model"[39m
-
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m145:34[22m[39m
-    [90m143| [39m            [90m// Should add a system message with error[39m
-    [90m144| [39m            const lastMsg = mockStoreState.agentHistory[mockStoreState…
-    [90m145| [39m            [34mexpect[39m(lastMsg[33m.[39mrole)[33m.[39m[34mtoBe[39m([32m'system'[39m)[33m;[39m
-    [90m   | [39m                                 [31m^[39m
-    [90m146| [39m            [34mexpect[39m(lastMsg[33m.[39mtext)[33m.[39m[34mtoContain[39m([32m'Simulated API Outage'[39m)[33m;[39m
-    [90m147| [39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
-
-
-[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (4)[39m
-[2m   Start at [22m 08:53:17
-[2m   Duration [22m 660ms
-
-[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/AgentIntegration.test.ts [22m[34mx2 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:24:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:115:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
-
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
-[2m   Start at [22m 08:53:26
-[2m   Duration [22m 372ms
-
-[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/ContextPipeline.ts [22m[34mx3 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T13:57:38.841Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:24:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:115:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1022[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 589[2mms[22m[39m
-
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
-[2m   Start at [22m 08:57:36
-[2m   Duration [22m 2.06s
-
-[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/AgentExecutor.ts [22m[34mx4 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T13:57:59.674Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:115:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 635[2mms[22m[39m
-
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
-[2m   Start at [22m 08:57:57
-[2m   Duration [22m 1.37s
-
-[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/BaseAgent.ts [22m[34mx5 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T13:59:34.843Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:115:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1509[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 989[2mms[22m[39m
-
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
-[2m   Start at [22m 08:59:26
-[2m   Duration [22m 4.65s
-
-[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/AgentIntegration.test.ts [22m[34mx6 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:09:06.739Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
-    at createErrorInternal [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:499:41[90m)[39m
-    at _fail [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:474:11[90m)[39m
-    at _performFetchWithErrorHandling [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:961:17[90m)[39m
-[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
-    at _performSignInRequest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:976:28[90m)[39m
-    at signInAnonymously [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:5504:22[90m)[39m {
-  code: [32m'auth/too-many-requests'[39m,
-  customData: {}
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: Analyze market trends
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Check this budget
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
-[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Request 1
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at async Promise.all (index 0)
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:119:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
-[22m[39m[AgentService] Selected Agent: marketing (Auto)
-[AgentExecutor] Executing with agent: Marketing Department (marketing)
-[Marketing Department] Received task: New Message
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
-[22m[39m[Marketing Department] Error executing task: TypeError: response.functionCalls is not a function
-    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/BaseAgent.ts:172:43[90m)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:135:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
-[22m[39m[AgentService] Selected Agent: finance (Auto)
-[AgentExecutor] Executing with agent: Finance Department (finance)
-[Finance Department] Received task: Get rich
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
-[22m[39m[Finance Department] Tool Call: make_money_fast {}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
-  code: [32m'permission-denied'[39m,
-  customData: [90mundefined[39m,
-  toString: [36m[Function (anonymous)][39m
-}
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39m[AgentService] Selected Agent: generalist (Auto)
-[AgentExecutor] Executing with agent: Agent Zero (generalist)
-[Agent Zero] Received task: Do something crazy
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
-[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
-    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
-    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
-    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
-    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:174:13
-    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
-[22m[39m[AgentService] Selected Agent: brand (Auto)
-[AgentExecutor] Executing with agent: Brand Manager (brand)
-[Brand Manager] Received task: Verify this
-
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2576[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1089[2mms[22m[39m
-       [32m✓[39m should handle tool execution cycles (Thinking -> Tool -> Response)[32m 227[2mms[22m[39m
-       [32m✓[39m should prevent concurrent agent executions (Lock Mechanism)[32m 166[2mms[22m[39m
-[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 111[2mms[22m[39m
-       [32m✓[39m should handle hallucinated tool calls gracefully[32m 119[2mms[22m[39m
-       [33m[2m✓[22m[39m should route to Generalist if Orchestrator hallucinations an invalid ID [33m 765[2mms[22m[39m
-       [32m✓[39m should gracefully handle agent execution failure[32m 97[2mms[22m[39m
-
-[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
-
-[41m[1m FAIL [22m[49m src/services/agent/AgentIntegration.test.ts[2m > [22mAgent Architecture Integration (Hardened)[2m > [22mState & Concurrency (Stress Test)[2m > [22mshould accumulate context correctly across multiple turns
-[31m[1mAssertionError[22m: expected '\nYou are the Campaign Manager.\n    …' to contain 'User: Prev User'[39m
-
-[32m- Expected[39m
-[31m+ Received[39m
-
-[32m- [7mUser[27m: Prev User[39m
-[31m+[39m
-[31m+ You are the Campaign Manager.[39m
-[31m+     Your role is to design and execute comprehensive marketing campaigns.[39m
-[31m+[39m
-[31m+     Responsibilities:[39m
-[31m+     1. Develop strategic campaign concepts.[39m
-[31m+     2. Create content calendars and distribution plans.[39m
-[31m+     3. Coordinate messaging across social, email, and web channels.[39m
-[31m+     4. Analyze campaign performance and adjust strategy.[39m
-[31m+[39m
-[31m+     Think holistically about the brand's narrative and audience engagement.[39m
-[31m+[39m
-[31m+[39m
-[31m+         **SUPERPOWERS (Agent Zero Protocol):**[39m
-[31m+         - **Memory:** Use 'save_memory' to remember important details. Use 'recall_memories' to check for past context.[39m
-[31m+         - **Reflection:** Use 'verify_output' to double-check your work before finalizing.[39m
-[31m+         - **Approval:** Use 'request_approval' before taking any public or irreversible action.[39m
-[31m+         [39m
-[31m+[39m
-[31m+ CONTEXT:[39m
-[31m+ {[39m
-[31m+   "currentProjectId": "p1",[39m
-[31m+   "userProfile": {[39m
-[31m+     "brandKit": {[39m
-[31m+       "tone": "Professional"[39m
-[31m+     }[39m
-[31m+   },[39m
-[31m+   "brandKit": {[39m
-[31m+     "tone": "Professional"[39m
-[31m+   },[39m
-[31m+   "chatHistory": [[39m
-[31m+     {[39m
-[31m+       "id": "1",[39m
-[31m+       "role": "user",[39m
-[31m+ [7m      "text"[27m: [7m"[27mPrev User[7m",[27m[39m
-[31m+       "timestamp": 100[39m
-[31m+     },[39m
-[31m+     {[39m
-[31m+       "id": "2",[39m
-[31m+       "role": "model",[39m
-[31m+       "text": "Prev Model",[39m
-[31m+       "timestamp": 200[39m
-[31m+     },[39m
-[31m+     {[39m
-[31m+       "id": "c684a702-73a3-4bda-83c8-aee0ed29ec9b",[39m
-[31m+       "role": "user",[39m
-[31m+       "text": "New Message",[39m
-[31m+       "timestamp": 1765030148217[39m
-[31m+     },[39m
-[31m+     {[39m
-[31m+       "id": "2df21fe5-b145-447b-95c1-958619d47f34",[39m
-[31m+       "role": "model",[39m
-[31m+       "text": "",[39m
-[31m+       "timestamp": 1765030148324,[39m
-[31m+       "isStreaming": true,[39m
-[31m+       "thoughts": [[39m
-[31m+         {[39m
-[31m+           "id": "439e4971-d6ee-4719-a3c4-d0d150957e1c",[39m
-[31m+           "text": "Analyzing request: \"New Message...\"",[39m
-[31m+           "timestamp": 1765030148324,[39m
-[31m+           "type": "thought"[39m
-[31m+         }[39m
-[31m+       ][39m
-[31m+     }[39m
-[31m+   ],[39m
-[31m+   "memoryContext": "",[39m
-[31m+   "relevantMemories": [],[39m
-[31m+   "projectId": "p1"[39m
-[31m+ }[39m
-[31m+[39m
-[31m+ HISTORY:[39m
-[31m+[39m
-[31m+[39m
-[31m+ TASK:[39m
-[31m+ New Message[39m
-[31m+[39m
-
-[36m [2m❯[22m src/services/agent/AgentIntegration.test.ts:[2m144:35[22m[39m
-    [90m142| [39m            // We need to verify that ContextPipeline built the string…
-    [90m143| [39m            // The mock store has the messages, ContextPipeline reads …
-    [90m144| [39m            [34mexpect[39m(historyString)[33m.[39m[34mtoContain[39m([32m'User: Prev User'[39m)[33m;[39m
-    [90m   | [39m                                  [31m^[39m
-    [90m145| [39m            [34mexpect[39m(historyString)[33m.[39m[34mtoContain[39m([32m'Assistant: Prev Model'[39m)[33m;[39m
-    [90m146| [39m        })[33m;[39m
-
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
-
-
-[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
-[2m   Start at [22m 09:09:02
-[2m   Duration [22m 4.79s
-
-[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
-       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/AgentIntegration.test.ts [22m[34mx7 [34m[39m
-       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
-[AgentRegistry] Registered: Legal Department (legal)
-[AgentRegistry] Registered: Finance Department (finance)
-[AgentRegistry] Registered: Music Supervisor (music)
-[AgentRegistry] Registered: Creative Director (director)
-[AgentRegistry] Registered: Video Department (video)
-[AgentRegistry] Registered: Social Media Department (social)
-[AgentRegistry] Registered: Publicist (publicist)
-[AgentRegistry] Registered: Road Manager (road)
-[AgentRegistry] Registered: Publishing Department (publishing)
-[AgentRegistry] Registered: Licensing Department (licensing)
-[AgentRegistry] Registered: Brand Manager (brand)
-[AgentRegistry] Registered: Agent Zero (generalist)
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:10:32.273Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+[22m[39m[2025-12-06T14:10:35.016Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
@@ -1436,22 +179,22 @@ CONTEXT:
       "timestamp": 200
     },
     {
-      "id": "11a05710-38ef-4215-9936-c29c70d8c3a4",
+      "id": "f0063e2d-2fa8-434d-9b17-ac244fac0cb1",
       "role": "user",
       "text": "New Message",
-      "timestamp": 1765030233354
+      "timestamp": 1765030235936
     },
     {
-      "id": "8235f4a8-c1a6-43f5-8216-b207c9088c30",
+      "id": "655e4592-696b-4244-b36c-a789b3b0d657",
       "role": "model",
       "text": "",
-      "timestamp": 1765030233446,
+      "timestamp": 1765030236033,
       "isStreaming": true,
       "thoughts": [
         {
-          "id": "86368f1a-63b0-4e2d-b810-6d6d1a73e5c3",
+          "id": "b4001fce-f4ba-4d38-befd-941dfe3b093c",
           "text": "Analyzing request: \"New Message...\"",
-          "timestamp": 1765030233446,
+          "timestamp": 1765030236033,
           "type": "thought"
         }
       ]
@@ -1482,34 +225,34 @@ DEBUG: mockStoreState.agentHistory: [
     "timestamp": 200
   },
   {
-    "id": "11a05710-38ef-4215-9936-c29c70d8c3a4",
+    "id": "f0063e2d-2fa8-434d-9b17-ac244fac0cb1",
     "role": "user",
     "text": "New Message",
-    "timestamp": 1765030233354
+    "timestamp": 1765030235936
   },
   {
-    "id": "8235f4a8-c1a6-43f5-8216-b207c9088c30",
+    "id": "655e4592-696b-4244-b36c-a789b3b0d657",
     "role": "model",
     "text": "Error executing task: response.functionCalls is not a function",
-    "timestamp": 1765030233446,
+    "timestamp": 1765030236033,
     "isStreaming": false,
     "thoughts": [
       {
-        "id": "86368f1a-63b0-4e2d-b810-6d6d1a73e5c3",
+        "id": "b4001fce-f4ba-4d38-befd-941dfe3b093c",
         "text": "Analyzing request: \"New Message...\"",
-        "timestamp": 1765030233446,
+        "timestamp": 1765030236033,
         "type": "thought"
       },
       {
-        "id": "5e9a2dff-77ff-4f29-b1ea-ecc78140df00",
+        "id": "0f21d5d2-85e0-4cd6-b0d3-d50d8c0ab481",
         "text": "Generating response...",
-        "timestamp": 1765030233446,
+        "timestamp": 1765030236033,
         "type": "thought"
       },
       {
-        "id": "b37e1265-3dbc-470f-834e-f6ed6160f4e1",
+        "id": "95463666-bfee-4088-a735-4c14585a575d",
         "text": "Error: response.functionCalls is not a function",
-        "timestamp": 1765030233447,
+        "timestamp": 1765030236034,
         "type": "thought"
       }
     ]
@@ -1570,14 +313,14 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1465[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 820[2mms[22m[39m
-       [32m✓[39m should handle tool execution cycles (Thinking -> Tool -> Response)[32m 109[2mms[22m[39m
-       [32m✓[39m should prevent concurrent agent executions (Lock Mechanism)[32m 159[2mms[22m[39m
-[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 99[2mms[22m[39m
-       [32m✓[39m should handle hallucinated tool calls gracefully[32m 100[2mms[22m[39m
-       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 102[2mms[22m[39m
-       [32m✓[39m should gracefully handle agent execution failure[32m 73[2mms[22m[39m
+ [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1286[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 693[2mms[22m[39m
+       [32m✓[39m should handle tool execution cycles (Thinking -> Tool -> Response)[32m 86[2mms[22m[39m
+       [32m✓[39m should prevent concurrent agent executions (Lock Mechanism)[32m 142[2mms[22m[39m
+[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 108[2mms[22m[39m
+       [32m✓[39m should handle hallucinated tool calls gracefully[32m 85[2mms[22m[39m
+       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 83[2mms[22m[39m
+       [32m✓[39m should gracefully handle agent execution failure[32m 88[2mms[22m[39m
 
 [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
 
@@ -1632,22 +375,22 @@ DEBUG: mockStoreState.agentHistory: [
 [31m+       "timestamp": 200[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "11a05710-38ef-4215-9936-c29c70d8c3a4",[39m
+[31m+       "id": "f0063e2d-2fa8-434d-9b17-ac244fac0cb1",[39m
 [31m+       "role": "user",[39m
 [31m+       "text": "New Message",[39m
-[31m+       "timestamp": 1765030233354[39m
+[31m+       "timestamp": 1765030235936[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "8235f4a8-c1a6-43f5-8216-b207c9088c30",[39m
+[31m+       "id": "655e4592-696b-4244-b36c-a789b3b0d657",[39m
 [31m+       "role": "model",[39m
 [31m+       "text": "",[39m
-[31m+       "timestamp": 1765030233446,[39m
+[31m+       "timestamp": 1765030236033,[39m
 [31m+       "isStreaming": true,[39m
 [31m+       "thoughts": [[39m
 [31m+         {[39m
-[31m+           "id": "86368f1a-63b0-4e2d-b810-6d6d1a73e5c3",[39m
+[31m+           "id": "b4001fce-f4ba-4d38-befd-941dfe3b093c",[39m
 [31m+           "text": "Analyzing request: \"New Message...\"",[39m
-[31m+           "timestamp": 1765030233446,[39m
+[31m+           "timestamp": 1765030236033,[39m
 [31m+           "type": "thought"[39m
 [31m+         }[39m
 [31m+       ][39m
@@ -1678,12 +421,12 @@ DEBUG: mockStoreState.agentHistory: [
 
 [2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
-[2m   Start at [22m 09:10:28
-[2m   Duration [22m 3.25s
+[2m   Start at [22m 09:10:33
+[2m   Duration [22m 2.88s[2m (transform 171ms, setup 213ms, import 195ms, tests 1.29s, environment 983ms)[22m
 
 [1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/core/store/slices/authSlice.ts [22m[34mx8 [34m[39m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/core/store/slices/authSlice.ts [22m[34mx1 [34m[39m
        [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts
@@ -1705,7 +448,7 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentRegistry] Registered: Agent Zero (generalist)
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:11:24.338Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+[22m[39m[2025-12-06T14:11:24.181Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
@@ -1860,22 +603,22 @@ CONTEXT:
       "timestamp": 200
     },
     {
-      "id": "a0397df3-d2f5-4d57-9aa5-f4b05bb2eb99",
+      "id": "c16e608d-3490-4f49-aec7-ad8e7b0678e3",
       "role": "user",
       "text": "New Message",
-      "timestamp": 1765030286878
+      "timestamp": 1765030286736
     },
     {
-      "id": "390ec7af-185b-4808-a974-1eb4f0a95dba",
+      "id": "6ea6f8d6-3e77-40c2-af8e-41f52ae782d4",
       "role": "model",
       "text": "",
-      "timestamp": 1765030286967,
+      "timestamp": 1765030286838,
       "isStreaming": true,
       "thoughts": [
         {
-          "id": "91b07f83-1caa-4291-b3bc-60296f55d909",
+          "id": "f839e8fa-503c-4a0a-a60f-2589b03115b4",
           "text": "Analyzing request: \"New Message...\"",
-          "timestamp": 1765030286968,
+          "timestamp": 1765030286845,
           "type": "thought"
         }
       ]
@@ -1906,34 +649,34 @@ DEBUG: mockStoreState.agentHistory: [
     "timestamp": 200
   },
   {
-    "id": "a0397df3-d2f5-4d57-9aa5-f4b05bb2eb99",
+    "id": "c16e608d-3490-4f49-aec7-ad8e7b0678e3",
     "role": "user",
     "text": "New Message",
-    "timestamp": 1765030286878
+    "timestamp": 1765030286736
   },
   {
-    "id": "390ec7af-185b-4808-a974-1eb4f0a95dba",
+    "id": "6ea6f8d6-3e77-40c2-af8e-41f52ae782d4",
     "role": "model",
     "text": "Error executing task: response.functionCalls is not a function",
-    "timestamp": 1765030286967,
+    "timestamp": 1765030286838,
     "isStreaming": false,
     "thoughts": [
       {
-        "id": "91b07f83-1caa-4291-b3bc-60296f55d909",
+        "id": "f839e8fa-503c-4a0a-a60f-2589b03115b4",
         "text": "Analyzing request: \"New Message...\"",
-        "timestamp": 1765030286968,
+        "timestamp": 1765030286845,
         "type": "thought"
       },
       {
-        "id": "8e4098e1-5d59-4d2a-a218-07db0cf68a52",
+        "id": "61dea318-a0c4-4a16-a93d-1c92aa91cfe4",
         "text": "Generating response...",
-        "timestamp": 1765030286968,
+        "timestamp": 1765030286845,
         "type": "thought"
       },
       {
-        "id": "ae956934-7238-47dc-8e76-7e7efc4ebaf4",
+        "id": "80d9fe76-9821-4f19-bea7-73d81dfcd661",
         "text": "Error: response.functionCalls is not a function",
-        "timestamp": 1765030286970,
+        "timestamp": 1765030286846,
         "type": "thought"
       }
     ]
@@ -1994,14 +737,14 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 3244[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1781[2mms[22m[39m
-       [33m[2m✓[22m[39m should handle tool execution cycles (Thinking -> Tool -> Response) [33m 485[2mms[22m[39m
-       [32m✓[39m should prevent concurrent agent executions (Lock Mechanism)[32m 281[2mms[22m[39m
-[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 145[2mms[22m[39m
-       [32m✓[39m should handle hallucinated tool calls gracefully[32m 282[2mms[22m[39m
-       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 108[2mms[22m[39m
-       [32m✓[39m should gracefully handle agent execution failure[32m 138[2mms[22m[39m
+ [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 3250[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1515[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle tool execution cycles (Thinking -> Tool -> Response) [33m 356[2mms[22m[39m
+       [33m[2m✓[22m[39m should prevent concurrent agent executions (Lock Mechanism) [33m 693[2mms[22m[39m
+[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 135[2mms[22m[39m
+       [32m✓[39m should handle hallucinated tool calls gracefully[32m 141[2mms[22m[39m
+       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 184[2mms[22m[39m
+       [32m✓[39m should gracefully handle agent execution failure[32m 218[2mms[22m[39m
 
 [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
 
@@ -2056,22 +799,22 @@ DEBUG: mockStoreState.agentHistory: [
 [31m+       "timestamp": 200[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "a0397df3-d2f5-4d57-9aa5-f4b05bb2eb99",[39m
+[31m+       "id": "c16e608d-3490-4f49-aec7-ad8e7b0678e3",[39m
 [31m+       "role": "user",[39m
 [31m+       "text": "New Message",[39m
-[31m+       "timestamp": 1765030286878[39m
+[31m+       "timestamp": 1765030286736[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "390ec7af-185b-4808-a974-1eb4f0a95dba",[39m
+[31m+       "id": "6ea6f8d6-3e77-40c2-af8e-41f52ae782d4",[39m
 [31m+       "role": "model",[39m
 [31m+       "text": "",[39m
-[31m+       "timestamp": 1765030286967,[39m
+[31m+       "timestamp": 1765030286838,[39m
 [31m+       "isStreaming": true,[39m
 [31m+       "thoughts": [[39m
 [31m+         {[39m
-[31m+           "id": "91b07f83-1caa-4291-b3bc-60296f55d909",[39m
+[31m+           "id": "f839e8fa-503c-4a0a-a60f-2589b03115b4",[39m
 [31m+           "text": "Analyzing request: \"New Message...\"",[39m
-[31m+           "timestamp": 1765030286968,[39m
+[31m+           "timestamp": 1765030286845,[39m
 [31m+           "type": "thought"[39m
 [31m+         }[39m
 [31m+       ][39m
@@ -2097,11 +840,11 @@ DEBUG: mockStoreState.agentHistory: [
 [2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
 [2m   Start at [22m 09:11:06
-[2m   Duration [22m 12.50s
+[2m   Duration [22m 12.14s
 
 [1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/HistoryManager.ts [22m[34mx9 [34m[39m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/HistoryManager.ts [22m[34mx2 [34m[39m
        [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts
@@ -2122,7 +865,13 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentRegistry] Registered: Brand Manager (brand)
 [AgentRegistry] Registered: Agent Zero (generalist)
 
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[HistoryManager] agentHistory length: [33m1[39m
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[2025-12-06T14:11:38.851Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
     at createErrorInternal [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:499:41[90m)[39m
     at _fail [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:474:11[90m)[39m
@@ -2133,12 +882,6 @@ DEBUG: mockStoreState.agentHistory: [
   code: [32m'auth/too-many-requests'[39m,
   customData: {}
 }
-
-[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[HistoryManager] agentHistory length: [33m1[39m
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:11:37.949Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
@@ -2290,22 +1033,22 @@ CONTEXT:
       "timestamp": 200
     },
     {
-      "id": "475e732f-4f95-4289-8e7a-d3cc713e3358",
+      "id": "a9771ec2-b4ee-4273-b8ad-b6f0777aa64d",
       "role": "user",
       "text": "New Message",
-      "timestamp": 1765030300312
+      "timestamp": 1765030300621
     },
     {
-      "id": "cf3bcaec-408c-4381-8b91-fc636d8b6d63",
+      "id": "0d280a0c-e4d8-442d-93c0-66030bf62682",
       "role": "model",
       "text": "",
-      "timestamp": 1765030300442,
+      "timestamp": 1765030300722,
       "isStreaming": true,
       "thoughts": [
         {
-          "id": "be9ea5d2-13b8-4380-8248-cc30f9d2066a",
+          "id": "d0047945-9d57-4777-be4f-a61e90e79da3",
           "text": "Analyzing request: \"New Message...\"",
-          "timestamp": 1765030300447,
+          "timestamp": 1765030300722,
           "type": "thought"
         }
       ]
@@ -2336,34 +1079,34 @@ DEBUG: mockStoreState.agentHistory: [
     "timestamp": 200
   },
   {
-    "id": "475e732f-4f95-4289-8e7a-d3cc713e3358",
+    "id": "a9771ec2-b4ee-4273-b8ad-b6f0777aa64d",
     "role": "user",
     "text": "New Message",
-    "timestamp": 1765030300312
+    "timestamp": 1765030300621
   },
   {
-    "id": "cf3bcaec-408c-4381-8b91-fc636d8b6d63",
+    "id": "0d280a0c-e4d8-442d-93c0-66030bf62682",
     "role": "model",
     "text": "Error executing task: response.functionCalls is not a function",
-    "timestamp": 1765030300442,
+    "timestamp": 1765030300722,
     "isStreaming": false,
     "thoughts": [
       {
-        "id": "be9ea5d2-13b8-4380-8248-cc30f9d2066a",
+        "id": "d0047945-9d57-4777-be4f-a61e90e79da3",
         "text": "Analyzing request: \"New Message...\"",
-        "timestamp": 1765030300447,
+        "timestamp": 1765030300722,
         "type": "thought"
       },
       {
-        "id": "9805afae-4560-4cad-a66a-490746370c6a",
+        "id": "68cfd413-3b27-4018-92fb-dd91e0bba6c4",
         "text": "Generating response...",
-        "timestamp": 1765030300447,
+        "timestamp": 1765030300722,
         "type": "thought"
       },
       {
-        "id": "73511843-a451-46c1-9445-25a637529525",
+        "id": "181db0db-d4cf-40e9-9808-1e959dae8667",
         "text": "Error: response.functionCalls is not a function",
-        "timestamp": 1765030300463,
+        "timestamp": 1765030300736,
         "type": "thought"
       }
     ]
@@ -2433,14 +1176,14 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2997[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1336[2mms[22m[39m
-       [33m[2m✓[22m[39m should handle tool execution cycles (Thinking -> Tool -> Response) [33m 680[2mms[22m[39m
-       [33m[2m✓[22m[39m should prevent concurrent agent executions (Lock Mechanism) [33m 334[2mms[22m[39m
-[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 183[2mms[22m[39m
-       [32m✓[39m should handle hallucinated tool calls gracefully[32m 217[2mms[22m[39m
-       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 118[2mms[22m[39m
-       [32m✓[39m should gracefully handle agent execution failure[32m 104[2mms[22m[39m
+ [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 2434[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1385[2mms[22m[39m
+       [32m✓[39m should handle tool execution cycles (Thinking -> Tool -> Response)[32m 241[2mms[22m[39m
+       [32m✓[39m should prevent concurrent agent executions (Lock Mechanism)[32m 168[2mms[22m[39m
+[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 179[2mms[22m[39m
+       [32m✓[39m should handle hallucinated tool calls gracefully[32m 182[2mms[22m[39m
+       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 146[2mms[22m[39m
+       [32m✓[39m should gracefully handle agent execution failure[32m 107[2mms[22m[39m
 
 [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
 
@@ -2495,22 +1238,22 @@ DEBUG: mockStoreState.agentHistory: [
 [31m+       "timestamp": 200[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "475e732f-4f95-4289-8e7a-d3cc713e3358",[39m
+[31m+       "id": "a9771ec2-b4ee-4273-b8ad-b6f0777aa64d",[39m
 [31m+       "role": "user",[39m
 [31m+       "text": "New Message",[39m
-[31m+       "timestamp": 1765030300312[39m
+[31m+       "timestamp": 1765030300621[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "cf3bcaec-408c-4381-8b91-fc636d8b6d63",[39m
+[31m+       "id": "0d280a0c-e4d8-442d-93c0-66030bf62682",[39m
 [31m+       "role": "model",[39m
 [31m+       "text": "",[39m
-[31m+       "timestamp": 1765030300442,[39m
+[31m+       "timestamp": 1765030300722,[39m
 [31m+       "isStreaming": true,[39m
 [31m+       "thoughts": [[39m
 [31m+         {[39m
-[31m+           "id": "be9ea5d2-13b8-4380-8248-cc30f9d2066a",[39m
+[31m+           "id": "d0047945-9d57-4777-be4f-a61e90e79da3",[39m
 [31m+           "text": "Analyzing request: \"New Message...\"",[39m
-[31m+           "timestamp": 1765030300447,[39m
+[31m+           "timestamp": 1765030300722,[39m
 [31m+           "type": "thought"[39m
 [31m+         }[39m
 [31m+       ][39m
@@ -2542,11 +1285,11 @@ DEBUG: mockStoreState.agentHistory: [
 [2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
 [2m   Start at [22m 09:11:27
-[2m   Duration [22m 6.88s
+[2m   Duration [22m 7.45s
 
 [1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/core/store/slices/authSlice.ts [22m[34mx10 [34m[39m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/core/store/slices/authSlice.ts [22m[34mx3 [34m[39m
        [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts
@@ -2583,7 +1326,7 @@ DEBUG: mockStoreState.agentHistory: [
 [22m[39m[HistoryManager] agentHistory length: [33m1[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:12:07.196Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+[22m[39m[2025-12-06T14:12:07.396Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
@@ -2735,22 +1478,22 @@ CONTEXT:
       "timestamp": 200
     },
     {
-      "id": "559ebba7-b35e-41a4-9ffd-d7bfa8d603b4",
+      "id": "02e73f03-89f4-4121-b1ab-f797150db3c8",
       "role": "user",
       "text": "New Message",
-      "timestamp": 1765030329489
+      "timestamp": 1765030329981
     },
     {
-      "id": "aa01ac70-e626-4903-8ea2-6f1c9f22d12a",
+      "id": "74d8c610-5566-4f50-8056-154d7aa413a0",
       "role": "model",
       "text": "",
-      "timestamp": 1765030329715,
+      "timestamp": 1765030330097,
       "isStreaming": true,
       "thoughts": [
         {
-          "id": "acc3094c-3b94-4924-9d1d-953fd7169be6",
+          "id": "eac36b2f-497b-4cd9-9071-e597bf6b040f",
           "text": "Analyzing request: \"New Message...\"",
-          "timestamp": 1765030329716,
+          "timestamp": 1765030330099,
           "type": "thought"
         }
       ]
@@ -2781,34 +1524,34 @@ DEBUG: mockStoreState.agentHistory: [
     "timestamp": 200
   },
   {
-    "id": "559ebba7-b35e-41a4-9ffd-d7bfa8d603b4",
+    "id": "02e73f03-89f4-4121-b1ab-f797150db3c8",
     "role": "user",
     "text": "New Message",
-    "timestamp": 1765030329489
+    "timestamp": 1765030329981
   },
   {
-    "id": "aa01ac70-e626-4903-8ea2-6f1c9f22d12a",
+    "id": "74d8c610-5566-4f50-8056-154d7aa413a0",
     "role": "model",
     "text": "Error executing task: response.functionCalls is not a function",
-    "timestamp": 1765030329715,
+    "timestamp": 1765030330097,
     "isStreaming": false,
     "thoughts": [
       {
-        "id": "acc3094c-3b94-4924-9d1d-953fd7169be6",
+        "id": "eac36b2f-497b-4cd9-9071-e597bf6b040f",
         "text": "Analyzing request: \"New Message...\"",
-        "timestamp": 1765030329716,
+        "timestamp": 1765030330099,
         "type": "thought"
       },
       {
-        "id": "c3a70a28-98d5-443c-b2ae-7731d1554fff",
+        "id": "29c694c3-9aec-444a-85ab-8d89e9146701",
         "text": "Generating response...",
-        "timestamp": 1765030329717,
+        "timestamp": 1765030330099,
         "type": "thought"
       },
       {
-        "id": "cad086fa-ca17-4a54-9014-ca7eadfb1315",
+        "id": "ba034e10-3349-4a5d-9500-4946e760c607",
         "text": "Error: response.functionCalls is not a function",
-        "timestamp": 1765030329719,
+        "timestamp": 1765030330108,
         "type": "thought"
       }
     ]
@@ -2865,6 +1608,8 @@ DEBUG: mockStoreState.agentHistory: [
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
 [22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
     at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+[90m    at runNextTicks (node:internal/process/task_queues:65:5)[39m
+[90m    at processTimers (node:internal/timers:540:9)[39m
     at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
     at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
     at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:176:13
@@ -2878,14 +1623,14 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 3623[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1875[2mms[22m[39m
-       [32m✓[39m should handle tool execution cycles (Thinking -> Tool -> Response)[32m 189[2mms[22m[39m
-       [33m[2m✓[22m[39m should prevent concurrent agent executions (Lock Mechanism) [33m 351[2mms[22m[39m
-[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[32m 251[2mms[22m[39m
-       [32m✓[39m should handle hallucinated tool calls gracefully[32m 282[2mms[22m[39m
-       [33m[2m✓[22m[39m should route to Generalist if Orchestrator hallucinations an invalid ID [33m 541[2mms[22m[39m
-       [32m✓[39m should gracefully handle agent execution failure[32m 118[2mms[22m[39m
+ [31m❯[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 3518[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 2221[2mms[22m[39m
+       [32m✓[39m should handle tool execution cycles (Thinking -> Tool -> Response)[32m 103[2mms[22m[39m
+       [33m[2m✓[22m[39m should prevent concurrent agent executions (Lock Mechanism) [33m 343[2mms[22m[39m
+[31m       [31m×[31m should accumulate context correctly across multiple turns[39m[33m 448[2mms[22m[39m
+       [32m✓[39m should handle hallucinated tool calls gracefully[32m 178[2mms[22m[39m
+       [32m✓[39m should route to Generalist if Orchestrator hallucinations an invalid ID[32m 105[2mms[22m[39m
+       [32m✓[39m should gracefully handle agent execution failure[32m 115[2mms[22m[39m
 
 [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
 
@@ -2940,22 +1685,22 @@ DEBUG: mockStoreState.agentHistory: [
 [31m+       "timestamp": 200[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "559ebba7-b35e-41a4-9ffd-d7bfa8d603b4",[39m
+[31m+       "id": "02e73f03-89f4-4121-b1ab-f797150db3c8",[39m
 [31m+       "role": "user",[39m
 [31m+       "text": "New Message",[39m
-[31m+       "timestamp": 1765030329489[39m
+[31m+       "timestamp": 1765030329981[39m
 [31m+     },[39m
 [31m+     {[39m
-[31m+       "id": "aa01ac70-e626-4903-8ea2-6f1c9f22d12a",[39m
+[31m+       "id": "74d8c610-5566-4f50-8056-154d7aa413a0",[39m
 [31m+       "role": "model",[39m
 [31m+       "text": "",[39m
-[31m+       "timestamp": 1765030329715,[39m
+[31m+       "timestamp": 1765030330097,[39m
 [31m+       "isStreaming": true,[39m
 [31m+       "thoughts": [[39m
 [31m+         {[39m
-[31m+           "id": "acc3094c-3b94-4924-9d1d-953fd7169be6",[39m
+[31m+           "id": "eac36b2f-497b-4cd9-9071-e597bf6b040f",[39m
 [31m+           "text": "Analyzing request: \"New Message...\"",[39m
-[31m+           "timestamp": 1765030329716,[39m
+[31m+           "timestamp": 1765030330099,[39m
 [31m+           "type": "thought"[39m
 [31m+         }[39m
 [31m+       ][39m
@@ -2987,27 +1732,15 @@ DEBUG: mockStoreState.agentHistory: [
 [2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
 [2m   Start at [22m 09:11:51
-[2m   Duration [22m 9.26s
+[2m   Duration [22m 8.72s
 
 [1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/AgentExecutor.ts [22m[34mx11 [34m[39m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/AgentExecutor.ts [22m[34mx4 [34m[39m
        [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts
 [22m[39mUsing partial/invalid config due to validation errors.
-
-[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
-[22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
-    at createErrorInternal [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:499:41[90m)[39m
-    at _fail [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:474:11[90m)[39m
-    at _performFetchWithErrorHandling [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:961:17[90m)[39m
-[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
-    at _performSignInRequest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:976:28[90m)[39m
-    at signInAnonymously [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:5504:22[90m)[39m {
-  code: [32m'auth/too-many-requests'[39m,
-  customData: {}
-}
 
 [90mstdout[2m | src/services/agent/AgentIntegration.test.ts
 [22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
@@ -3024,11 +1757,23 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentRegistry] Registered: Brand Manager (brand)
 [AgentRegistry] Registered: Agent Zero (generalist)
 
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
+    at createErrorInternal [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:499:41[90m)[39m
+    at _fail [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:474:11[90m)[39m
+    at _performFetchWithErrorHandling [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:961:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at _performSignInRequest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:976:28[90m)[39m
+    at signInAnonymously [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:5504:22[90m)[39m {
+  code: [32m'auth/too-many-requests'[39m,
+  customData: {}
+}
+
 [90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39m[HistoryManager] agentHistory length: [33m1[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:13:16.512Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+[22m[39m[2025-12-06T14:13:15.969Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
@@ -3180,22 +1925,22 @@ CONTEXT:
       "timestamp": 200
     },
     {
-      "id": "dc9f53bf-d34a-4256-8c69-7154fbf69dec",
+      "id": "0bbe1746-ce66-49d7-b01e-26851e6cc783",
       "role": "user",
       "text": "New Message",
-      "timestamp": 1765030398027
+      "timestamp": 1765030397675
     },
     {
-      "id": "b055ca68-b4a7-478b-9603-f820d2122e3e",
+      "id": "905ffd8c-f687-4a44-bea2-37754c9abb2d",
       "role": "model",
       "text": "",
-      "timestamp": 1765030398129,
+      "timestamp": 1765030397780,
       "isStreaming": true,
       "thoughts": [
         {
-          "id": "d0801a7e-fd7f-47b9-a682-8b1b79239f4f",
+          "id": "d0b73ad0-f694-474d-970c-05c75f5ea293",
           "text": "Analyzing request: \"New Message...\"",
-          "timestamp": 1765030398129,
+          "timestamp": 1765030397780,
           "type": "thought"
         }
       ]
@@ -3229,34 +1974,34 @@ DEBUG: mockStoreState.agentHistory: [
     "timestamp": 200
   },
   {
-    "id": "dc9f53bf-d34a-4256-8c69-7154fbf69dec",
+    "id": "0bbe1746-ce66-49d7-b01e-26851e6cc783",
     "role": "user",
     "text": "New Message",
-    "timestamp": 1765030398027
+    "timestamp": 1765030397675
   },
   {
-    "id": "b055ca68-b4a7-478b-9603-f820d2122e3e",
+    "id": "905ffd8c-f687-4a44-bea2-37754c9abb2d",
     "role": "model",
     "text": "Error executing task: response.functionCalls is not a function",
-    "timestamp": 1765030398129,
+    "timestamp": 1765030397780,
     "isStreaming": false,
     "thoughts": [
       {
-        "id": "d0801a7e-fd7f-47b9-a682-8b1b79239f4f",
+        "id": "d0b73ad0-f694-474d-970c-05c75f5ea293",
         "text": "Analyzing request: \"New Message...\"",
-        "timestamp": 1765030398129,
+        "timestamp": 1765030397780,
         "type": "thought"
       },
       {
-        "id": "5d0d9d57-7ba3-4000-9dd4-7db1af40e063",
+        "id": "52e2447a-7539-4eb6-8f66-16f73a99a3fa",
         "text": "Generating response...",
-        "timestamp": 1765030398129,
+        "timestamp": 1765030397780,
         "type": "thought"
       },
       {
-        "id": "fff570b5-0aa5-461f-b296-bf536620f3f1",
+        "id": "98598c2f-e3ac-4c8b-94fd-584ed67f4f88",
         "text": "Error: response.functionCalls is not a function",
-        "timestamp": 1765030398131,
+        "timestamp": 1765030397781,
         "type": "thought"
       }
     ]
@@ -3326,18 +2071,17 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2871[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1242[2mms[22m[39m
-       [33m[2m✓[22m[39m should handle hallucinated tool calls gracefully [33m 972[2mms[22m[39m
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2275[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1053[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
 [2m   Start at [22m 09:13:09
-[2m   Duration [22m 5.96s
+[2m   Duration [22m 4.49s
 
 [1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/HistoryManager.ts [22m[34mx12 [34m[39m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/components/HistoryManager.ts [22m[34mx5 [34m[39m
        [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts
@@ -3359,7 +2103,7 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentRegistry] Registered: Agent Zero (generalist)
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:13:28.713Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+[22m[39m[2025-12-06T14:13:21.138Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
@@ -3514,22 +2258,22 @@ CONTEXT:
       "timestamp": 200
     },
     {
-      "id": "8291157a-0164-45c2-95b8-d727c58a4906",
+      "id": "7420559f-5aad-4690-b586-f0874ac1933a",
       "role": "user",
       "text": "New Message",
-      "timestamp": 1765030410378
+      "timestamp": 1765030402636
     },
     {
-      "id": "296940d8-f56b-4517-b513-6a868b5a4ee6",
+      "id": "fb8b1ce2-d3ed-4e39-be15-99e1ecf5d601",
       "role": "model",
       "text": "",
-      "timestamp": 1765030410496,
+      "timestamp": 1765030402762,
       "isStreaming": true,
       "thoughts": [
         {
-          "id": "518619f4-af58-4f21-986a-e33db5118a42",
+          "id": "40a48a13-e8fb-443f-ade9-b643098784fd",
           "text": "Analyzing request: \"New Message...\"",
-          "timestamp": 1765030410496,
+          "timestamp": 1765030402763,
           "type": "thought"
         }
       ]
@@ -3563,34 +2307,34 @@ DEBUG: mockStoreState.agentHistory: [
     "timestamp": 200
   },
   {
-    "id": "8291157a-0164-45c2-95b8-d727c58a4906",
+    "id": "7420559f-5aad-4690-b586-f0874ac1933a",
     "role": "user",
     "text": "New Message",
-    "timestamp": 1765030410378
+    "timestamp": 1765030402636
   },
   {
-    "id": "296940d8-f56b-4517-b513-6a868b5a4ee6",
+    "id": "fb8b1ce2-d3ed-4e39-be15-99e1ecf5d601",
     "role": "model",
     "text": "Error executing task: response.functionCalls is not a function",
-    "timestamp": 1765030410496,
+    "timestamp": 1765030402762,
     "isStreaming": false,
     "thoughts": [
       {
-        "id": "518619f4-af58-4f21-986a-e33db5118a42",
+        "id": "40a48a13-e8fb-443f-ade9-b643098784fd",
         "text": "Analyzing request: \"New Message...\"",
-        "timestamp": 1765030410496,
+        "timestamp": 1765030402763,
         "type": "thought"
       },
       {
-        "id": "40e704bc-299f-4d54-baed-f804dca38064",
+        "id": "bc5d1e67-0057-450a-8dae-376919c33a7e",
         "text": "Generating response...",
-        "timestamp": 1765030410499,
+        "timestamp": 1765030402763,
         "type": "thought"
       },
       {
-        "id": "51d1cc71-ec98-4a86-a3da-14d91698c7de",
+        "id": "b8cfe981-28af-493f-afaf-0bcd42624618",
         "text": "Error: response.functionCalls is not a function",
-        "timestamp": 1765030410506,
+        "timestamp": 1765030402765,
         "type": "thought"
       }
     ]
@@ -3651,17 +2395,17 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2089[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1302[2mms[22m[39m
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2501[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1410[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
-[2m   Start at [22m 09:13:19
-[2m   Duration [22m 5.80s
+[2m   Start at [22m 09:13:18
+[2m   Duration [22m 3.75s
 
 [1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
-c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/AgentIntegration.test.ts [22m[34mx13 [34m[39m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/AgentIntegration.test.ts [22m[34mx6 [34m[39m
        [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts
@@ -3683,7 +2427,7 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentRegistry] Registered: Agent Zero (generalist)
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
-[22m[39m[2025-12-06T14:13:35.337Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+[22m[39m[2025-12-06T14:13:33.091Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
 
 [90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
 [22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
@@ -3847,13 +2591,407 @@ DEBUG: mockStoreState.agentHistory: [
 [AgentExecutor] Executing with agent: Brand Manager (brand)
 [Brand Manager] Received task: Verify this
 
- [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1674[2mms[22m[39m
-       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1025[2mms[22m[39m
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2218[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 1072[2mms[22m[39m
+       [33m[2m✓[22m[39m should prevent concurrent agent executions (Lock Mechanism) [33m 313[2mms[22m[39m
+       [33m[2m✓[22m[39m should gracefully handle agent execution failure [33m 306[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
-[2m   Start at [22m 09:13:30
-[2m   Duration [22m 3.76s
+[2m   Start at [22m 09:13:27
+[2m   Duration [22m 3.61s
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/specialists/verification.test.ts [22m[34mx7 [34m[39m
+       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39mUsing partial/invalid config due to validation errors.
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
+[AgentRegistry] Registered: Legal Department (legal)
+[AgentRegistry] Registered: Finance Department (finance)
+[AgentRegistry] Registered: Music Supervisor (music)
+[AgentRegistry] Registered: Creative Director (director)
+[AgentRegistry] Registered: Video Department (video)
+[AgentRegistry] Registered: Social Media Department (social)
+[AgentRegistry] Registered: Publicist (publicist)
+[AgentRegistry] Registered: Road Manager (road)
+[AgentRegistry] Registered: Publishing Department (publishing)
+[AgentRegistry] Registered: Licensing Department (licensing)
+[AgentRegistry] Registered: Brand Manager (brand)
+[AgentRegistry] Registered: Agent Zero (generalist)
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
+    at createErrorInternal [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:499:41[90m)[39m
+    at _fail [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:474:11[90m)[39m
+    at _performFetchWithErrorHandling [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:961:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at _performSignInRequest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:976:28[90m)[39m
+    at signInAnonymously [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:5504:22[90m)[39m {
+  code: [32m'auth/too-many-requests'[39m,
+  customData: {}
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[2025-12-06T14:21:03.165Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[AgentService] Selected Agent: marketing (Auto)
+[AgentExecutor] Executing with agent: Marketing Department (marketing)
+[Marketing Department] Received task: Analyze market trends
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[AgentService] Selected Agent: finance (Auto)
+[AgentExecutor] Executing with agent: Finance Department (finance)
+[Finance Department] Received task: Check this budget
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39m[AgentService] Selected Agent: generalist (Auto)
+[AgentExecutor] Executing with agent: Agent Zero (generalist)
+[Agent Zero] Received task: Request 1
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
+    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at async Promise.all (index 0)
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:119:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[AgentService] Selected Agent: marketing (Auto)
+[AgentExecutor] Executing with agent: Marketing Department (marketing)
+[Marketing Department] Received task: New Message
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[Marketing Department] Error executing task: TypeError: response.functionCalls is not a function
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/BaseAgent.ts:172:43[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:135:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[AgentService] Selected Agent: finance (Auto)
+[AgentExecutor] Executing with agent: Finance Department (finance)
+[Finance Department] Received task: Get rich
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[Finance Department] Tool Call: make_money_fast {}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39m[AgentService] Selected Agent: generalist (Auto)
+[AgentExecutor] Executing with agent: Agent Zero (generalist)
+[Agent Zero] Received task: Do something crazy
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
+    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:173:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
+[22m[39m[AgentService] Selected Agent: brand (Auto)
+[AgentExecutor] Executing with agent: Brand Manager (brand)
+[Brand Manager] Received task: Verify this
+
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1950[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 954[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 09:20:50
+[2m   Duration [22m 8.18s
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/specialists/verification.test.ts [22m[34mx8 [34m[39m
+       [2m Filename pattern: [22m[34msrc/services/agent/AgentIntegration.test.ts[39m
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39mUsing partial/invalid config due to validation errors.
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39m[AgentRegistry] Registered: Marketing Department (marketing)
+[AgentRegistry] Registered: Legal Department (legal)
+[AgentRegistry] Registered: Finance Department (finance)
+[AgentRegistry] Registered: Music Supervisor (music)
+[AgentRegistry] Registered: Creative Director (director)
+[AgentRegistry] Registered: Video Department (video)
+[AgentRegistry] Registered: Social Media Department (social)
+[AgentRegistry] Registered: Publicist (publicist)
+[AgentRegistry] Registered: Road Manager (road)
+[AgentRegistry] Registered: Publishing Department (publishing)
+[AgentRegistry] Registered: Licensing Department (licensing)
+[AgentRegistry] Registered: Brand Manager (brand)
+[AgentRegistry] Registered: Agent Zero (generalist)
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[2025-12-06T14:21:12.110Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould correctly orchestrate, execute, and return response for a specialist
+[22m[39m[AgentService] Selected Agent: marketing (Auto)
+[AgentExecutor] Executing with agent: Marketing Department (marketing)
+[Marketing Department] Received task: Analyze market trends
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39mFirebaseError: Firebase: Error (auth/too-many-requests).
+    at createErrorInternal [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:499:41[90m)[39m
+    at _fail [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:474:11[90m)[39m
+    at _performFetchWithErrorHandling [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:961:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at _performSignInRequest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:976:28[90m)[39m
+    at signInAnonymously [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@firebase[24m/auth/dist/node-esm/totp-c8d207b9.js:5504:22[90m)[39m {
+  code: [32m'auth/too-many-requests'[39m,
+  customData: {}
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[AgentService] Selected Agent: finance (Auto)
+[AgentExecutor] Executing with agent: Finance Department (finance)
+[Finance Department] Received task: Check this budget
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEnd-to-End Execution Pipeline[2m > [22m[2mshould handle tool execution cycles (Thinking -> Tool -> Response)
+[22m[39m[Finance Department] Tool Call: analyze_budget { amount: [33m1000[39m, breakdown: [32m'Test'[39m }
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39m[AgentService] Selected Agent: generalist (Auto)
+[AgentExecutor] Executing with agent: Agent Zero (generalist)
+[Agent Zero] Received task: Request 1
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould prevent concurrent agent executions (Lock Mechanism)
+[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
+    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at async Promise.all (index 0)
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:119:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[AgentService] Selected Agent: marketing (Auto)
+[AgentExecutor] Executing with agent: Marketing Department (marketing)
+[Marketing Department] Received task: New Message
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mState & Concurrency (Stress Test)[2m > [22m[2mshould accumulate context correctly across multiple turns
+[22m[39m[Marketing Department] Error executing task: TypeError: response.functionCalls is not a function
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/BaseAgent.ts:172:43[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:135:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[AgentService] Selected Agent: finance (Auto)
+[AgentExecutor] Executing with agent: Finance Department (finance)
+[Finance Department] Received task: Get rich
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mEdge Cases & Recovery[2m > [22m[2mshould handle hallucinated tool calls gracefully
+[22m[39m[Finance Department] Tool Call: make_money_fast {}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39m[AgentService] Selected Agent: generalist (Auto)
+[AgentExecutor] Executing with agent: Agent Zero (generalist)
+[Agent Zero] Received task: Do something crazy
+
+[90mstderr[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould route to Generalist if Orchestrator hallucinations an invalid ID
+[22m[39mGeneralist Loop Error: TypeError: __vite_ssr_import_3__.AI.generateContentStream is not a function
+    at GeneralistAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/specialists/GeneralistAgent.ts:140:41[90m)[39m
+    at AgentExecutor.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/components/AgentExecutor.ts:28:30[90m)[39m
+    at AgentService.sendMessage [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentService.ts:60:28[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39msrc/services/agent/AgentIntegration.test.ts:173:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/Rndr-AI-v1/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts[2m > [22m[2mAgent Architecture Integration (Hardened)[2m > [22m[2mRobustness & Error Handling[2m > [22m[2mshould gracefully handle agent execution failure
+[22m[39m[AgentService] Selected Agent: brand (Auto)
+[AgentExecutor] Executing with agent: Brand Manager (brand)
+[Brand Manager] Received task: Verify this
+
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1200[2mms[22m[39m
+       [33m[2m✓[22m[39m should correctly orchestrate, execute, and return response for a specialist [33m 441[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 09:21:05
+[2m   Duration [22m 3.93s
 
 [1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

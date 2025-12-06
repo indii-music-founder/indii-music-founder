@@ -47,6 +47,19 @@ vi.mock('./components/NewProjectModal', () => ({
     ),
 }));
 
+// Mock Toast Context
+const mockToast = {
+    info: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn()
+};
+
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => mockToast,
+    ToastProvider: ({ children }: any) => <div>{children}</div>
+}));
+
 describe('Dashboard', () => {
     it('renders the dashboard header and welcome message', () => {
         render(<Dashboard />);

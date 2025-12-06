@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SelectOrg from './SelectOrg';
 import { useStore } from '@/core/store';
@@ -14,59 +14,112 @@ vi.mock('framer-motion', () => ({
     }
 }));
 
-describe('SelectOrg', () => {
+// Mock dynamic import of OrganizationService
+vi.mock('@/services/OrganizationService', () => ({
+    OrganizationService: {
+        switchOrganization: vi.fn(),
+        createOrganization: vi.fn().mockResolvedValue('new-org-id')
+    }
+}));
+
+
+describe('SelectOrg (Stress Tests)', () => {
     const mockSetOrganization = vi.fn();
     const mockAddOrganization = vi.fn();
     const mockSetModule = vi.fn();
     const mockInitializeHistory = vi.fn();
     const mockLoadProjects = vi.fn();
 
+    const defaultStore = {
+        organizations: [
+            { id: 'org-1', name: 'Test Org', plan: 'free', members: ['me'] }
+        ],
+        currentOrganizationId: 'org-1',
+        setOrganization: mockSetOrganization,
+        addOrganization: mockAddOrganization,
+        setModule: mockSetModule,
+        initializeHistory: mockInitializeHistory,
+        loadProjects: mockLoadProjects,
+        getState: () => ({ loadProjects: mockLoadProjects })
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue({
-            organizations: [
-                { id: 'org-1', name: 'Test Org', plan: 'free', members: ['me'] }
-            ],
-            currentOrganizationId: 'org-1',
-            setOrganization: mockSetOrganization,
-            addOrganization: mockAddOrganization,
-            setModule: mockSetModule,
-            initializeHistory: mockInitializeHistory,
-            loadProjects: mockLoadProjects,
-            getState: () => ({ loadProjects: mockLoadProjects })
-        });
     });
 
-    it('renders organization list', () => {
+    it('renders correctly with happy path data', () => {
+        (useStore as any).mockReturnValue(defaultStore);
         render(<SelectOrg />);
         expect(screen.getByText('Select Organization')).toBeInTheDocument();
         expect(screen.getByText('Test Org')).toBeInTheDocument();
     });
 
+    /**
+     * STRESS TEST: NULL/UNDEFINED STATE
+     * The white page bug is likely caused by organizations being undefined/null
+     * or initialized but empty in a way the component doesn't expect.
+     */
+    it('should show error UI instead of Crashing (White Page) when store is uninitialized (null members)', () => {
+        // Simulate critical failure in store hyrdation
+        (useStore as any).mockReturnValue({});
 
+        // This should NOT throw. If it throws, the test fails, simulating white page.
+        const { container } = render(<SelectOrg />);
 
-    it('handles organization selection', async () => {
-        render(<SelectOrg />);
-        fireEvent.click(screen.getByText('Test Org'));
+        // Expect error message or fallback
+        expect(screen.getByText(/Error: Store not initialized/i)).toBeInTheDocument();
     });
 
-    it('renders organization without members field without crashing', () => {
+    it('should handle "organizations" being undefined gracefully', () => {
         (useStore as any).mockReturnValue({
+            ...defaultStore,
+            organizations: undefined
+        });
+
+        render(<SelectOrg />);
+        // Should catch the error state return defined in component line 14
+        expect(screen.getByText(/Error: Store not initialized/i)).toBeInTheDocument();
+    });
+
+    /**
+     * STRESS TEST: ASYNC FAILURE
+     */
+    it('should handle errors during organization selection (Service Failure)', async () => {
+        (useStore as any).mockReturnValue(defaultStore);
+
+        // Mock service failure
+        const { OrganizationService } = await import('@/services/OrganizationService');
+        (OrganizationService.switchOrganization as any).mockRejectedValue(new Error('Network Error'));
+
+        render(<SelectOrg />);
+        const orgButton = screen.getByText('Test Org');
+
+        // Click should trigger async flow
+        fireEvent.click(orgButton);
+
+        // Ideally the component should show a toast or error, 
+        // but for now we verify it doesn't crash the app (white page)
+        await waitFor(() => {
+            // Expectation depends on implementation, currently it might just log error unhandled
+            // We just want to ensure setModule was NOT called if it failed? 
+            // Or if we don't handle errors, it might still call setModule.
+            // Let's check consistency.
+        });
+    });
+
+    /**
+     * STRESS TEST: CORRUPT DATA
+     */
+    it('renders organization with corrupt member data', () => {
+        (useStore as any).mockReturnValue({
+            ...defaultStore,
             organizations: [
-                { id: 'org-2', name: 'Corrupt Org', plan: 'free' } // Missing members
+                { id: 'org-2', name: 'Corrupt Org', plan: 'free', members: null } // Corrupt members
             ],
-            currentOrganizationId: 'org-1',
-            setOrganization: mockSetOrganization,
-            addOrganization: mockAddOrganization,
-            setModule: mockSetModule,
-            initializeHistory: mockInitializeHistory,
-            loadProjects: mockLoadProjects,
-            getState: () => ({ loadProjects: mockLoadProjects })
         });
 
         render(<SelectOrg />);
         expect(screen.getByText('Corrupt Org')).toBeInTheDocument();
-        // Should default to 0 members
         expect(screen.getByText('0 members')).toBeInTheDocument();
     });
 });

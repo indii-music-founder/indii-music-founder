@@ -31,6 +31,7 @@ export class AgentExecutor {
                 userProfile: context.userProfile,
                 brandKit: context.brandKit,
                 chatHistory: context.chatHistory,
+                chatHistoryString: context.chatHistoryString,
                 // Inject semantic memory context
                 memoryContext: context.memoryContext,
                 relevantMemories: context.relevantMemories

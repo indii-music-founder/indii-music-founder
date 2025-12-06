@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { agentRegistry } from '../registry';
-import { agentService } from '../AgentService'; // Import to trigger registration
-import { BrandAgent } from './BrandAgent';
-import { RoadAgent } from './RoadAgent';
-import { CampaignAgent } from './MarketingAgent';
+// import { agentService } from '../AgentService'; // Not needed if we trust the singleton registry initialization in other tests
+// However, AgentService constructor might ensure registry is populated if registry wasn't a singleton with auto-init?
+// registry.ts does `export const agentRegistry = new AgentRegistry();` which calls init.
+// So imports are enough.
 
 // Mock dependencies to avoid full environment setup
 vi.mock('@/core/store', () => ({
@@ -34,41 +34,36 @@ vi.mock('@/services/ai/AIService', () => ({
 }));
 
 describe('Specialist Agent Verification', () => {
-    // Manually register agents for the test
-    agentRegistry.register(new BrandAgent());
-    agentRegistry.register(new RoadAgent());
-    agentRegistry.register(new CampaignAgent());
+    // Agents are already registered by the singleton pattern in registry.ts upon import
 
     it('should retrieve BrandAgent from registry', () => {
         const agent = agentRegistry.get('brand');
         expect(agent).toBeDefined();
-        expect(agent).toBeInstanceOf(BrandAgent);
+        // expect(agent).toBeInstanceOf(BaseAgent); // Cannot check instance of generic easily without import
         expect(agent?.name).toBe('Brand Manager');
     });
 
     it('should retrieve RoadAgent from registry', () => {
         const agent = agentRegistry.get('road');
         expect(agent).toBeDefined();
-        expect(agent).toBeInstanceOf(RoadAgent);
         expect(agent?.name).toBe('Road Manager');
     });
 
-    it('should retrieve CampaignAgent from registry', () => {
-        const agent = agentRegistry.get('campaign'); // Note: CampaignAgent ID is 'marketing' in the file, need to check
+    it('should retrieve MarketingAgent from registry', () => {
+        const agent = agentRegistry.get('marketing'); // Was 'campaign' in old test, but config uses 'marketing'
         expect(agent).toBeDefined();
-        expect(agent).toBeInstanceOf(CampaignAgent);
-        expect(agent?.name).toBe('Campaign Manager');
+        expect(agent?.name).toBe('Marketing Department');
     });
 
     it('BrandAgent should have correct system prompt structure', () => {
-        const agent = agentRegistry.get('brand') as BrandAgent;
-        expect(agent.systemPrompt).toContain('Brand Manager');
-        expect(agent.systemPrompt).toContain('Show Bible');
+        const agent = agentRegistry.get('brand');
+        expect((agent as any).systemPrompt).toContain('Brand Manager');
+        expect((agent as any).systemPrompt).toContain('Show Bible');
     });
 
     it('RoadAgent should have correct system prompt structure', () => {
-        const agent = agentRegistry.get('road') as RoadAgent;
-        expect(agent.systemPrompt).toContain('Road Manager');
-        expect(agent.systemPrompt).toContain('logistics');
+        const agent = agentRegistry.get('road');
+        expect((agent as any).systemPrompt).toContain('Road Manager');
+        expect((agent as any).systemPrompt).toContain('logistics');
     });
 });

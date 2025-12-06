@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 // import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 
 export default function SelectOrg() {
-    const { organizations = [], currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
+    const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
     useEffect(() => {
         console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
@@ -18,49 +18,71 @@ export default function SelectOrg() {
 
     const [isCreating, setIsCreating] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSelect = async (orgId: string) => {
-        // 1. Update LocalStorage (for Services)
-        const { OrganizationService } = await import('@/services/OrganizationService');
-        await OrganizationService.switchOrganization(orgId);
+        try {
+            setIsLoading(true);
+            setError(null);
 
-        // 2. Update Store
-        setOrganization(orgId);
+            // 1. Update LocalStorage (for Services)
+            const { OrganizationService } = await import('@/services/OrganizationService');
+            await OrganizationService.switchOrganization(orgId);
 
-        // 3. Reload History for new Org
-        await initializeHistory();
-        await useStore.getState().loadProjects();
+            // 2. Update Store
+            setOrganization(orgId);
 
-        // 4. Navigate
-        setModule('dashboard');
+            // 3. Reload History for new Org
+            await initializeHistory();
+            await useStore.getState().loadProjects();
+
+            // 4. Navigate
+            setModule('dashboard');
+        } catch (err: any) {
+            console.error('SelectOrg: Selection Failed', err);
+            setError(err.message || 'Failed to switch organization');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleCreate = async () => {
         if (!newOrgName.trim()) return;
 
-        // 1. Create Org in Backend
-        const { OrganizationService } = await import('@/services/OrganizationService');
-        const newOrgId = await OrganizationService.createOrganization(newOrgName);
+        try {
+            setIsLoading(true);
+            setError(null);
 
-        const newOrg = {
-            id: newOrgId,
-            name: newOrgName,
-            plan: 'free' as const,
-            members: ['me'] // This should ideally come from the created org data
-        };
+            // 1. Create Org in Backend
+            const { OrganizationService } = await import('@/services/OrganizationService');
+            const newOrgId = await OrganizationService.createOrganization(newOrgName);
 
-        // 2. Update Store
-        addOrganization(newOrg);
+            const newOrg = {
+                id: newOrgId,
+                name: newOrgName,
+                plan: 'free' as const,
+                members: ['me']
+            };
 
-        // 3. Switch Context
-        await OrganizationService.switchOrganization(newOrg.id);
-        setOrganization(newOrg.id);
+            // 2. Update Store
+            addOrganization(newOrg);
 
-        // 4. Reload History (will be empty for new org, but good practice)
-        await initializeHistory();
-        await useStore.getState().loadProjects();
+            // 3. Switch Context
+            await OrganizationService.switchOrganization(newOrg.id);
+            setOrganization(newOrg.id);
 
-        setModule('dashboard');
+            // 4. Reload History
+            await initializeHistory();
+            await useStore.getState().loadProjects();
+
+            setModule('dashboard');
+        } catch (err: any) {
+            console.error('SelectOrg: Create Failed', err);
+            setError(err.message || 'Failed to create organization');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -72,6 +94,12 @@ export default function SelectOrg() {
                     </div>
                     <h1 className="text-2xl font-bold mb-2">Select Organization</h1>
                     <p className="text-gray-500">Choose a workspace to continue</p>
+
+                    {error && (
+                        <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-200 text-sm">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-3 mb-8">

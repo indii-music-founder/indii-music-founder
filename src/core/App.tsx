@@ -78,7 +78,7 @@ export default function App() {
                     <main className="flex-1 flex flex-col min-w-0 bg-[#0d1117] relative">
                         <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
-                                <ErrorBoundary fallback={<div className="p-10 text-red-500">Failed to load module.</div>}>
+                                <ErrorBoundary>
                                     {currentModule === 'select-org' && <SelectOrg />}
                                     {currentModule === 'dashboard' && <Dashboard />}
                                     {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
