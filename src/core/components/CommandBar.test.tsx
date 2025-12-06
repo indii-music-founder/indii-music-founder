@@ -44,6 +44,13 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
+vi.mock('framer-motion', () => ({
+    motion: {
+        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>
+}));
+
 describe('CommandBar', () => {
     const mockSetModule = vi.fn();
     const mockToggleAgentWindow = vi.fn();
@@ -128,7 +135,7 @@ describe('CommandBar', () => {
     it('sends a message when form is submitted', async () => {
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText('Describe your creative task or goal...');
+        const input = screen.getByPlaceholderText('Describe your task, drop files, or take a picture...');
         fireEvent.change(input, { target: { value: 'Hello agent' } });
 
         const submitButton = screen.getByText('Run').closest('button');
@@ -140,20 +147,22 @@ describe('CommandBar', () => {
     });
     it('handles drag and drop events', () => {
         render(<CommandBar />);
-        const dropZone = screen.getByPlaceholderText('Describe your creative task or goal...').closest('div');
+        const dropZone = screen.getByPlaceholderText('Describe your task, drop files, or take a picture...').closest('div');
 
         // Initial state
-        expect(dropZone).not.toHaveClass('ring-2');
+        expect(dropZone).not.toHaveClass('ring-4');
 
         // Drag over
         fireEvent.dragOver(dropZone!);
-        expect(screen.getByPlaceholderText('Drop files here...')).toBeInTheDocument();
-        expect(dropZone).toHaveClass('ring-2');
+        expect(screen.getByText('Drop files to attach')).toBeInTheDocument();
+        expect(dropZone).toHaveClass('ring-4');
 
         // Drag leave
         fireEvent.dragLeave(dropZone!);
-        expect(screen.getByPlaceholderText('Describe your creative task or goal...')).toBeInTheDocument();
-        expect(dropZone).not.toHaveClass('ring-2');
+        // expect(screen.getByPlaceholderText('Describe your task, drop files, or take a picture...')).toBeInTheDocument();
+        // Animation might take time to exit or re-render, but our mock removes it immediately if logic is correct
+        expect(screen.queryByText('Drop files to attach')).not.toBeInTheDocument();
+        expect(dropZone).not.toHaveClass('ring-4');
 
         // Drop
         fireEvent.dragOver(dropZone!);

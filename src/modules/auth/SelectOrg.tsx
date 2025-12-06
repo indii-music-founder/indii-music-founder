@@ -9,7 +9,6 @@ export default function SelectOrg() {
 
     useEffect(() => {
         console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
-        // console.log('SelectOrg: Mounted', { organizationsCount: organizations?.length });
     }, [organizations]);
 
     if (!organizations) {

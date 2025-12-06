@@ -111,17 +111,34 @@ export default function CommandBar() {
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
                 <div
-                    className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1 ${isDragging ? 'ring-2 ring-blue-500 bg-blue-500/10' : ''}`}
+                    className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1 relative overflow-hidden ${isDragging ? 'ring-4 ring-blue-500/50 bg-blue-500/20' : ''}`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
+                    {/* Drag Overlay */}
+                    <AnimatePresence>
+                        {isDragging && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 z-50 flex items-center justify-center bg-[#0d1117]/80 backdrop-blur-sm"
+                            >
+                                <div className="text-blue-400 font-bold text-lg flex items-center gap-3">
+                                    <Paperclip size={24} />
+                                    Drop files to attach
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder={isDragging ? "Drop files here..." : "Describe your creative task or goal..."}
+                            placeholder={isDragging ? "" : "Describe your task, drop files, or take a picture..."}
                             className="w-full bg-transparent text-gray-200 placeholder-gray-600 px-4 py-3 outline-none rounded-t-xl"
                         />
 
@@ -129,9 +146,10 @@ export default function CommandBar() {
                         {attachments.length > 0 && (
                             <div className="px-4 pb-2 flex gap-2 flex-wrap">
                                 {attachments.map((file, index) => (
-                                    <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300">
+                                    <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
+                                        {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
                                         <span className="max-w-[150px] truncate">{file.name}</span>
-                                        <button type="button" onClick={() => removeAttachment(index)} className="hover:text-white">
+                                        <button type="button" onClick={() => removeAttachment(index)} className="hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors">
                                             <X size={12} />
                                         </button>
                                     </div>
@@ -163,15 +181,16 @@ export default function CommandBar() {
                                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
                                 >
                                     <Paperclip size={14} />
-                                    Attach Files
+                                    <span className="hidden sm:inline">Attach</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => cameraInputRef.current?.click()}
-                                    className="p-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
                                     title="Take a picture"
                                 >
                                     <Camera size={14} />
+                                    <span className="inline sm:hidden text-xs font-medium">Camera</span>
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
                                 <div className="relative">
