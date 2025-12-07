@@ -14,9 +14,16 @@ export default function LoginBridge() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                handleUser(user);
+                // Determine if we are just landing here or if we just finished a popup flow
+                // Check if this window was opened by window.open (popup)
+                if (window.opener) {
+                    // We are likely inside the popup itself? No, firebase handles popup closure.
+                    // Wait, signInWithPopup opens its OWN window. We are the MAIN window.
+                    setStatus('Session active. Click button to re-sync if needed.');
+                } else {
+                    setStatus('Ready to sign in.');
+                }
             } else {
-                // Removed auto-start of sign-in to prevent popup blocking
                 setStatus('Ready to sign in.');
             }
         });

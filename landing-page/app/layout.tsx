@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: "indiiOS - The Operating System for Independent Artists",
   description: "AI-native creative platform for independent musicians. Create, protect, and profit from your music with intelligent automation.",
   keywords: ["music", "independent artist", "AI", "creative tools", "music production"],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   openGraph: {
     title: "indiiOS - Your Music. Your Rules.",
     description: "The AI-native operating system for independent artists.",
