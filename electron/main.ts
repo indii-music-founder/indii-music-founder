@@ -46,13 +46,16 @@ if (!gotTheLock) {
 
 function handleDeepLink(url: string) {
     console.log("Deep link received:", url);
-    // Expected format: indii-os://auth/callback?token=XYZ
+    // Expected format: indii-os://auth/callback?idToken=XYZ&accessToken=ABC
     try {
         const urlObj = new URL(url);
-        const token = urlObj.searchParams.get('token');
-        if (token) {
+        const idToken = urlObj.searchParams.get('idToken');
+        const accessToken = urlObj.searchParams.get('accessToken');
+
+        if (idToken) {
             const wins = BrowserWindow.getAllWindows();
-            wins.forEach(w => w.webContents.send('auth-token', token));
+            // Send structured token data to renderer
+            wins.forEach(w => w.webContents.send('auth-token', { idToken, accessToken }));
         }
     } catch (e) {
         console.error("Failed to parse deep link:", e);
@@ -60,11 +63,13 @@ function handleDeepLink(url: string) {
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-// @ts-ignore
-const squirrelStartup = process.platform === 'win32' ? await import('electron-squirrel-startup') : null;
-if (squirrelStartup && squirrelStartup.default) {
-    app.quit();
+if (process.platform === 'win32') {
+    // @ts-ignore - no types for electron-squirrel-startup
+    import('electron-squirrel-startup').then((mod: { default?: boolean }) => {
+        if (mod.default) app.quit();
+    }).catch(() => {
+        // electron-squirrel-startup not available, ignore
+    });
 }
 
 // Disable site isolation to allow cross-origin auth flows
@@ -76,9 +81,9 @@ const createWindow = () => {
         width: 1280,
         height: 800,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.mjs'),
-            nodeIntegration: true,
-            contextIsolation: false,
+            preload: path.join(__dirname, 'preload.cjs'),
+            nodeIntegration: false,
+            contextIsolation: true,
             sandbox: false,
             webSecurity: false, // TEMPORARY: Disable web security for local dev auth
         },
@@ -94,15 +99,15 @@ const createWindow = () => {
                 backgroundColor: 'black',
                 webPreferences: {
                     nodeIntegration: false,
-                    contextIsolation: false, // MATCH Main Window setting to allow window.opener access
-                    sandbox: false, // Ensure sandbox doesn't block access
+                    contextIsolation: true,
+                    sandbox: false,
                     webSecurity: false
                 }
             }
         };
     });
 
-    console.log('Main process: Preload path configured as:', path.join(__dirname, 'preload.mjs'));
+    console.log('Main process: Preload path configured as:', path.join(__dirname, 'preload.cjs'));
 
     // In production, load the index.html.
     // In development, load the Vite dev server URL.

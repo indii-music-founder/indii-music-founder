@@ -34,6 +34,46 @@ export default function SignupForm() {
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         setError(null);
+
+        // Electron Bridge: Use System Browser + Deep Link
+        if (window.electronAPI) {
+            try {
+                // Open the independent bridge page in system browser
+                const bridgeUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+                    ? 'http://localhost:3000/login-bridge'
+                    : 'https://architexture-ai-api.web.app/login-bridge';
+
+                await window.electronAPI.openExternal(bridgeUrl);
+                setError("Please complete sign up in your browser...");
+
+                // Wait for token from Main Process
+                window.electronAPI.onAuthToken(async (tokenData) => {
+                    try {
+                        const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                        const firebaseModule = await import('@/app/lib/firebase');
+                        const auth = getAuth(firebaseModule.default);
+                        // Create credential from Google OAuth tokens (not Firebase ID token)
+                        const credential = GoogleAuthProvider.credential(
+                            tokenData.idToken,
+                            tokenData.accessToken || null
+                        );
+                        await signInWithCredential(auth, credential);
+                        window.location.href = getStudioUrl();
+                    } catch (e: any) {
+                        console.error("Bridge auth failed:", e);
+                        setError(e.message);
+                        setIsLoading(false);
+                    }
+                });
+            } catch (err: any) {
+                console.error(err);
+                setError(err.message || 'Failed to open browser.');
+                setIsLoading(false);
+            }
+            return;
+        }
+
+        // Fallback: Direct popup in browser
         try {
             await signInWithGoogle();
             window.location.href = getStudioUrl();

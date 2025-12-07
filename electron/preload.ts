@@ -1,9 +1,14 @@
-import { ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
-// @ts-ignore
-window.electronAPI = {
+interface AuthTokenData {
+    idToken: string;
+    accessToken?: string | null;
+}
+
+contextBridge.exposeInMainWorld('electronAPI', {
     getPlatform: () => ipcRenderer.invoke('get-platform'),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
-    onAuthToken: (callback: (token: string) => void) => ipcRenderer.on('auth-token', (_, token) => callback(token)),
-};
+    onAuthToken: (callback: (tokenData: AuthTokenData) => void) =>
+        ipcRenderer.on('auth-token', (_: unknown, tokenData: AuthTokenData) => callback(tokenData)),
+});

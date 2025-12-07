@@ -10,14 +10,14 @@
     "build:studio": "vite build",
     "build:all": "npm run build:landing && npm run build:studio",
     "preview": "vite preview",
-    "electron:dev": "tsc -p tsconfig.electron.json && mv dist-electron/preload.js dist-electron/preload.mjs && electron .",
-    "electron:build": "tsc -p tsconfig.electron.json && mv dist-electron/preload.js dist-electron/preload.mjs && vite build && electron-builder",
+    "electron:dev": "npx esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.cjs --format=cjs --external:electron && npx esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.cjs --format=cjs --external:electron && electron dist-electron/main.cjs",
+    "electron:build": "npx esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.cjs --format=cjs --external:electron && npx esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.cjs --format=cjs --external:electron && vite build && electron-builder",
     "test": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/main.cjs",
   "dependencies": {
     "@genkit-ai/ai": "^1.25.0",
     "@google/genai": "^1.30.0",

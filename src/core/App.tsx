@@ -48,15 +48,38 @@ export default function App() {
         }
     }, [initializeAuth, initializeHistory, loadProjects]); // Added dependencies for correctness
 
-    // Auth Guard
+    // Auth Guard - Redirect unauthenticated users to login
     useEffect(() => {
         if (isAuthReady && !isAuthenticated) {
-            // Redirect to Landing Page Login
-            // Ideally use env var for landing page URL
-            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login'; // Adjust default
-            // Redirect to Landing Page Login
-            window.location.href = landingPageUrl;
-            console.log("Not authenticated, should redirect to:", landingPageUrl);
+            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login';
+
+            // In Electron: Open login in SYSTEM BROWSER (not inside Electron)
+            // This is required because Google OAuth popups don't work inside Electron due to COOP
+            if (window.electronAPI) {
+                console.log("[App] Electron detected - opening login in system browser");
+                window.electronAPI.openExternal(landingPageUrl);
+
+                // Set up listener for auth token from deep link callback
+                window.electronAPI.onAuthToken(async (tokenData) => {
+                    try {
+                        console.log("[App] Received auth token from deep link");
+                        const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                        const { auth } = await import('@/services/firebase');
+                        const credential = GoogleAuthProvider.credential(
+                            tokenData.idToken,
+                            tokenData.accessToken || null
+                        );
+                        await signInWithCredential(auth, credential);
+                        // Auth state will update and trigger re-render
+                    } catch (e) {
+                        console.error("[App] Bridge auth failed:", e);
+                    }
+                });
+            } else {
+                // In browser: Normal redirect
+                console.log("[App] Browser detected - redirecting to:", landingPageUrl);
+                window.location.href = landingPageUrl;
+            }
         }
     }, [isAuthReady, isAuthenticated]);
 

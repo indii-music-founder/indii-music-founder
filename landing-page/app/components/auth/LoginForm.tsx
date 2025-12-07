@@ -47,12 +47,16 @@ export default function LoginForm() {
                 setError("Please complete sign in in your browser...");
 
                 // Wait for token from Main Process
-                window.electronAPI.onAuthToken(async (token) => {
+                window.electronAPI.onAuthToken(async (tokenData) => {
                     try {
                         const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                        const { app } = await import('@/app/lib/firebase');
-                        const auth = getAuth(app);
-                        const credential = GoogleAuthProvider.credential(token);
+                        const firebaseModule = await import('@/app/lib/firebase');
+                        const auth = getAuth(firebaseModule.default);
+                        // Create credential from Google OAuth tokens (not Firebase ID token)
+                        const credential = GoogleAuthProvider.credential(
+                            tokenData.idToken,
+                            tokenData.accessToken || null
+                        );
                         await signInWithCredential(auth, credential);
                         window.location.href = getStudioUrl();
                     } catch (e: any) {

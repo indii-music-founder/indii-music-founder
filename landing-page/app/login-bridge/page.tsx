@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
-import { app } from '../../lib/firebase'; // Adjust import based on your structure
+import app from '../lib/firebase';
 import { useRouter } from 'next/navigation';
 
 export default function LoginBridge() {
@@ -30,7 +30,27 @@ export default function LoginBridge() {
             // Force account selection to ensure fresh token if needed
             provider.setCustomParameters({ prompt: 'select_account' });
             const result = await signInWithPopup(auth, provider);
-            handleUser(result.user);
+
+            // Get the GOOGLE OAuth credential (not Firebase ID token)
+            // This is required for Electron bridge - GoogleAuthProvider.credential() expects Google OAuth tokens
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const googleIdToken = credential?.idToken;
+            const googleAccessToken = credential?.accessToken;
+
+            if (googleIdToken) {
+                setStatus('Authenticated. Redirecting to Indii OS...');
+                // Pass Google OAuth tokens (not Firebase ID token)
+                const params = new URLSearchParams();
+                params.set('idToken', googleIdToken);
+                if (googleAccessToken) {
+                    params.set('accessToken', googleAccessToken);
+                }
+                window.location.href = `indii-os://auth/callback?${params.toString()}`;
+                setStatus('Sign in complete. You can close this tab.');
+                setTimeout(() => window.close(), 2000);
+            } else {
+                setError('Failed to get Google credential');
+            }
         } catch (e: any) {
             console.error(e);
             setError(e.message || 'Unknown error');
@@ -38,18 +58,11 @@ export default function LoginBridge() {
         }
     };
 
-    const handleUser = async (user: User) => {
-        setStatus('Authenticated. Redirecting to Indii OS...');
-        try {
-            const token = await user.getIdToken();
-            // Redirect to custom protocol
-            window.location.href = `indii-os://auth/callback?token=${token}`;
-            setStatus('Sign in complete. You can close this tab.');
-            // Optional: Close window after delay
-            setTimeout(() => window.close(), 2000);
-        } catch (e: any) {
-            setError('Failed to get token: ' + e.message);
-        }
+    const handleUser = async (_user: User) => {
+        // User is already authenticated - trigger fresh sign-in to get OAuth credentials
+        // (onAuthStateChanged fires for cached sessions, but we need fresh Google OAuth tokens)
+        setStatus('Session found. Re-authenticating...');
+        startSignIn();
     };
 
     return (
