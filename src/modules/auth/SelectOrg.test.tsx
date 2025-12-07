@@ -56,18 +56,17 @@ describe('SelectOrg (Stress Tests)', () => {
 
     /**
      * STRESS TEST: NULL/UNDEFINED STATE
-     * The white page bug is likely caused by organizations being undefined/null
-     * or initialized but empty in a way the component doesn't expect.
+     * When store is not hydrated, component should show loading state (not crash).
      */
-    it('should show error UI instead of Crashing (White Page) when store is uninitialized (null members)', () => {
-        // Simulate critical failure in store hyrdation
+    it('should show loading UI instead of Crashing (White Page) when store is uninitialized', () => {
+        // Simulate store not yet hydrated
         (useStore as any).mockReturnValue({});
 
         // This should NOT throw. If it throws, the test fails, simulating white page.
-        const { container } = render(<SelectOrg />);
+        render(<SelectOrg />);
 
-        // Expect error message or fallback
-        expect(screen.getByText(/Error: Store not initialized/i)).toBeInTheDocument();
+        // Component gracefully shows loading spinner while waiting for hydration
+        expect(screen.getByText(/Loading your workspace/i)).toBeInTheDocument();
     });
 
     it('should handle "organizations" being undefined gracefully', () => {
@@ -77,8 +76,8 @@ describe('SelectOrg (Stress Tests)', () => {
         });
 
         render(<SelectOrg />);
-        // Should catch the error state return defined in component line 14
-        expect(screen.getByText(/Error: Store not initialized/i)).toBeInTheDocument();
+        // Component shows loading state when organizations is undefined (waiting for hydration)
+        expect(screen.getByText(/Loading your workspace/i)).toBeInTheDocument();
     });
 
     /**

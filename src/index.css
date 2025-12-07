@@ -106,6 +106,13 @@
     overscroll-behavior-y: none;
     /* Prevent pull-to-refresh on web app */
   }
+
+  /* Anti-Pixel Thief Hardening */
+  img {
+    filter: none !important;
+    mask: none !important;
+    clip-path: none !important;
+  }
 }
 
 /* Mobile Optimizations */

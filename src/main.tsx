@@ -8,3 +8,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <App />
     </React.StrictMode>,
 );
+
+// Disable Default Drag-and-Drop (HEY Audit Hardening)
+// Prevents the app from navigating to dropped files (potential RCE)
+document.addEventListener('dragover', (event) => event.preventDefault());
+document.addEventListener('drop', (event) => {
+    event.preventDefault();
+});

@@ -16,8 +16,8 @@ export default function LoginBridge() {
             if (user) {
                 handleUser(user);
             } else {
-                setStatus('Signing in with Google...');
-                startSignIn();
+                // Removed auto-start of sign-in to prevent popup blocking
+                setStatus('Ready to sign in.');
             }
         });
 
@@ -26,6 +26,7 @@ export default function LoginBridge() {
 
     const startSignIn = async () => {
         try {
+            setStatus('Signing in with Google...');
             const provider = new GoogleAuthProvider();
             // Force account selection to ensure fresh token if needed
             provider.setCustomParameters({ prompt: 'select_account' });
@@ -86,6 +87,19 @@ export default function LoginBridge() {
                         <p className="text-neutral-400">{status}</p>
                     </div>
                 )}
+
+                <div className="mt-8">
+                    <button
+                        onClick={startSignIn}
+                        className="px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mx-auto"
+                    >
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+                        Sign in with Google
+                    </button>
+                    <p className="mt-4 text-xs text-neutral-500 max-w-xs mx-auto">
+                        This will open a browser window to authenticate securely with Google.
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -31,7 +31,8 @@ import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 
 import ChatOverlay from './components/ChatOverlay';
-import TestPlaybookPanel from './dev/TestPlaybookPanel';
+import TestPlaybookPanel from './dev/TestPlaybookPanel'; // This is in src/core/dev
+import AudioStressTest from '../dev/AudioStressTest'; // This is in src/dev
 
 export default function App() {
     const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
@@ -51,37 +52,38 @@ export default function App() {
     // Auth Guard - Redirect unauthenticated users to login
     useEffect(() => {
         if (isAuthReady && !isAuthenticated) {
-            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login';
+            // Default to local login bridge if env not set
+            // Default to local login bridge if env not set
+            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login-bridge';
 
-            // In Electron: Open login in SYSTEM BROWSER (not inside Electron)
-            // This is required because Google OAuth popups don't work inside Electron due to COOP
-            if (window.electronAPI) {
-                console.log("[App] Electron detected - opening login in system browser");
-                window.electronAPI.openExternal(landingPageUrl);
-
-                // Set up listener for auth token from deep link callback
-                window.electronAPI.onAuthToken(async (tokenData) => {
-                    try {
-                        console.log("[App] Received auth token from deep link");
-                        const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                        const { auth } = await import('@/services/firebase');
-                        const credential = GoogleAuthProvider.credential(
-                            tokenData.idToken,
-                            tokenData.accessToken || null
-                        );
-                        await signInWithCredential(auth, credential);
-                        // Auth state will update and trigger re-render
-                    } catch (e) {
-                        console.error("[App] Bridge auth failed:", e);
-                    }
-                });
+            if (window.electronAPI?.auth) {
+                window.electronAPI.auth.login();
             } else {
-                // In browser: Normal redirect
-                console.log("[App] Browser detected - redirecting to:", landingPageUrl);
+                console.warn("[App] Electron API not found! Falling back to standard redirect:", landingPageUrl);
                 window.location.href = landingPageUrl;
             }
         }
     }, [isAuthReady, isAuthenticated]);
+
+    // Electron Deep Link Auth Listener
+    useEffect(() => {
+        if (window.electronAPI?.auth) {
+            window.electronAPI.auth.onUserUpdate(async (tokens: any) => {
+                console.log("[App] Received tokens from Electron:", tokens);
+                if (tokens.idToken) {
+                    try {
+                        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                        const { auth } = await import('@/services/firebase');
+                        const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
+                        await signInWithCredential(auth, credential);
+                        console.log("[App] Successfully signed in with deep link tokens");
+                    } catch (error) {
+                        console.error("[App] Failed to sign in with deep link tokens:", error);
+                    }
+                }
+            });
+        }
+    }, []);
 
     useEffect(() => {
         console.log(`[App] Current Module Changed: ${currentModule}`);
@@ -144,7 +146,14 @@ export default function App() {
                 {currentModule !== 'select-org' && <MobileNav />}
 
                 {/* DevTools HUD - Only in Development */}
-                {import.meta.env.DEV && <TestPlaybookPanel />}
+                {import.meta.env.DEV && (
+                    <>
+                        <TestPlaybookPanel />
+                        <div className="fixed bottom-4 left-4 z-50">
+                            <AudioStressTest />
+                        </div>
+                    </>
+                )}
             </div>
         </ToastProvider>
     );

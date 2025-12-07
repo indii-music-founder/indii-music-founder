@@ -34,3 +34,5 @@ scripts/configure_secrets.sh
 
 # Test artifacts
 test_logs*.txt
+
+out/

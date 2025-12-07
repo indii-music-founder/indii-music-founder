@@ -12,3 +12,24 @@ interface ImportMetaEnv {
 interface ImportMeta {
     readonly env: ImportMetaEnv
 }
+
+interface Window {
+    electronAPI?: {
+        // General
+        getPlatform: () => Promise<string>;
+        getAppVersion: () => Promise<string>;
+
+        // Auth
+        auth: {
+            login: () => Promise<void>;
+            logout: () => Promise<void>;
+            onUserUpdate: (callback: (user: any) => void) => void;
+        };
+
+        // Audio
+        audio: {
+            analyze: (filePath: string) => Promise<any>;
+            getMetadata: (hash: string) => Promise<any>;
+        };
+    };
+}

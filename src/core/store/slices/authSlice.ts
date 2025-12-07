@@ -89,8 +89,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         }
 
         // Listen for Auth Changes
-        import('@/services/firebase').then(({ auth }) => {
-            const { onAuthStateChanged } = require('firebase/auth'); // Dynamic import for SDK functions if needed, or just use auth instance
+        import('@/services/firebase').then(async ({ auth }) => {
+            const { onAuthStateChanged } = await import('firebase/auth');
             onAuthStateChanged(auth, async (user: User | null) => {
                 if (user) {
                     set({ user, isAuthenticated: true, isAuthReady: true });
@@ -98,11 +98,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     // Sync User Profile from Firestore
                     import('@/services/UserService').then(({ UserService }) => {
                         UserService.syncUserProfile(user).then((fullProfile) => {
-                            // fullProfile is UserContext (User info + App Profile)
-                            // We split it back to userProfile state
                             const appProfile: UserProfile = {
                                 bio: fullProfile.bio || '',
-                                preferences: JSON.stringify(fullProfile.preferences), // Convert back to string if needed by type
+                                preferences: JSON.stringify(fullProfile.preferences),
                                 brandKit: fullProfile.brandKit,
                                 analyzedTrackIds: fullProfile.analyzedTrackIds || [],
                                 knowledgeBase: fullProfile.knowledgeBase || [],
@@ -123,7 +121,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                             const defaultOrg = { id: 'org-default', name: 'Personal Workspace', plan: 'free' as const, members: ['me'] };
                             set({ organizations: [defaultOrg, ...mappedOrgs] });
 
-                            // Check if current org is valid
                             const currentId = get().currentOrganizationId;
                             if (currentId !== 'org-default' && !mappedOrgs.find(o => o.id === currentId)) {
                                 set({ currentOrganizationId: 'org-default' });
@@ -133,8 +130,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
 
                 } else {
                     set({ user: null, isAuthenticated: false, isAuthReady: true });
-                    // Reset to default/anonymous state? 
-                    // Or keep cached profile? For now, keep as is or clear.
                 }
             });
         });
