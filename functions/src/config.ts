@@ -7,7 +7,7 @@ dotenv.config();
 // Common schema + any backend specific overrides/additions
 const BackendEnvSchema = CommonEnvSchema.extend({
     // Backend specific
-    GCLOUD_PROJECT: z.string().default('architexture-ai-api'),
+    GCLOUD_PROJECT: z.string().default('indiios-v-1-1'),
     MODEL_ID: z.string().default('veo-3.1-generate-preview'),
     GEMINI_MODEL_ID: z.string().default('gemini-3-pro-image-preview'),
 });

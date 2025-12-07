@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "architexture-ai-api"
+    "default": "indiios-v-1-1"
   },
   "targets": {
     "architexture-ai-api": {

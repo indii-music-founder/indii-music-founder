@@ -51,8 +51,8 @@
     "keytar": "^7.9.0",
     "lucide-react": "^0.555.0",
     "motion": "^12.23.25",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "react-markdown": "^10.1.0",
     "reactflow": "^11.11.4",
     "remark-gfm": "^4.0.1",
@@ -127,8 +127,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "narrowchannel",
-        "repo": "Rndr-AI-v1",
+        "owner": "the-walking-agency-det",
+        "repo": "indiiOS-Alpha-Electron",
         "private": true
       }
     ],

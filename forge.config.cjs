@@ -1,7 +1,35 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
+  hooks: {
+    // Re-sign after FusesPlugin modifies binaries (fixes code signature invalidation)
+    postPackage: async (_config, options) => {
+      if (process.platform !== 'darwin') return;
+
+      // Find the .app bundle in the output directory
+      const outputDir = options.outputPaths[0];
+      const apps = fs.readdirSync(outputDir).filter(f => f.endsWith('.app'));
+
+      if (apps.length === 0) {
+        console.error('Warning: No .app bundle found to sign');
+        return;
+      }
+
+      const appPath = path.join(outputDir, apps[0]);
+      console.log(`Re-signing ${appPath} after fuse modifications...`);
+
+      try {
+        execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+        console.log('Ad-hoc signing complete.');
+      } catch (err) {
+        console.error('Warning: Ad-hoc signing failed:', err.message);
+      }
+    }
+  },
   packagerConfig: {
     asar: {
       integrity: true // Enforces integrity checksums on the archive (Tamper Resistance)
@@ -21,11 +49,9 @@ module.exports = {
       ];
       return excludeDirs.some(dir => path.startsWith(dir));
     },
-    // macOS Signing - uses ad-hoc signing (-) when no developer cert is available
-    // Required because FusesPlugin modifies the binary, invalidating any existing signatures
-    osxSign: {
-      identity: '-', // Ad-hoc signing (allows local execution without Gatekeeper issues)
-    },
+    // macOS Signing handled in postPackage hook (after FusesPlugin modifies binaries)
+    // For production with Developer ID cert, uncomment and set identity:
+    // osxSign: { identity: 'Developer ID Application: Your Name (TEAM_ID)' },
     // macOS Notarization
     // macOS Notarization (Apple Hardened Runtime)
     osxNotarize: process.env.APPLE_ID && process.env.APPLE_APP_SPECIFIC_PASSWORD ? {

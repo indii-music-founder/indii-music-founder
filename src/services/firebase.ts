@@ -8,8 +8,9 @@ import { env } from '../config/env';
 const firebaseConfig = {
     apiKey: env.apiKey,
     authDomain: `${env.projectId}.firebaseapp.com`,
+    databaseURL: "https://indiios-alpha-electron-1.firebaseio.com",
     projectId: env.projectId,
-    storageBucket: `${env.projectId}.firebasestorage.app`,
+    storageBucket: "indiios-alpha-electron.firebasestorage.app",
     messagingSenderId: "563584335869",
     appId: "1:563584335869:web:321321321"
 };
@@ -18,8 +19,9 @@ const firebaseConfig = {
 if (!firebaseConfig.projectId) {
     console.warn("Firebase config missing env vars, using fallback.");
     firebaseConfig.authDomain = "indiios-v-1-1.firebaseapp.com";
+    firebaseConfig.databaseURL = "https://indiios-alpha-electron-1.firebaseio.com";
     firebaseConfig.projectId = "indiios-v-1-1";
-    firebaseConfig.storageBucket = "indiios-v-1-1.firebasestorage.app";
+    firebaseConfig.storageBucket = "indiios-alpha-electron.firebasestorage.app";
 }
 
 import { getFunctions } from 'firebase/functions';

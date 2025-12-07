@@ -200,3 +200,21 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   - **The Riot (Input Chaos)**: Inject wildly invalid data (NaN, Infinity, Negative numbers) into Store actions. Verify graceful handling.
   - **The Squatter (Permission Defiance)**: Attempt to modify non-existent (or "unowned") resources.
   - **The Mutiny (State Rebellion)**: Force the store into impossible states (e.g. `completed` status without result data) and verify UI resilience.
+
+---
+
+## 13. The Inspector 🕵️
+
+**Scope:** dependency diagnostics & environment verification
+**Status:** Ad-hoc
+**File:** `functions/inspect_genkit.js`
+
+"The Inspector" is a utility script to verifying the installed versions and exports of Genkit packages in the Cloud Functions environment, helpful for debugging dependency issues.
+
+- **Command:**
+
+  ```bash
+  cd functions && node inspect_genkit.js
+  ```
+
+---

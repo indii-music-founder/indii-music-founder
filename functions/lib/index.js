@@ -419,4 +419,5 @@ var videoJobs_2 = require("./jobs/videoJobs");
 Object.defineProperty(exports, "triggerVideoJob", { enumerable: true, get: function () { return videoJobs_2.triggerVideoJob; } });
 var render_1 = require("./video/render");
 Object.defineProperty(exports, "renderVideo", { enumerable: true, get: function () { return render_1.renderVideo; } });
+__exportStar(require("./genkit"), exports);
 //# sourceMappingURL=index.js.map
