@@ -6,23 +6,15 @@ import { getAuth } from 'firebase/auth';
 import { env } from '../config/env';
 
 const firebaseConfig = {
-    apiKey: env.apiKey,
-    authDomain: `${env.projectId}.firebaseapp.com`,
-    databaseURL: "https://indiios-alpha-electron-1.firebaseio.com",
-    projectId: env.projectId,
-    storageBucket: "indiios-alpha-electron.firebasestorage.app",
-    messagingSenderId: "563584335869",
-    appId: "1:563584335869:web:321321321"
+    apiKey: env.apiKey || "AIzaSyCXQDyy5Bc0-ZNoZwI41Zrx9AqhdxUjvQo",
+    authDomain: "indiios-v-1-1.firebaseapp.com",
+    databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
+    projectId: "indiios-v-1-1",
+    storageBucket: "indiios-v-1-1.firebasestorage.app",
+    messagingSenderId: "223837784072",
+    appId: "1:223837784072:web:3af738739465ea4095e9bd",
+    measurementId: "G-7WW3HEHFTF"
 };
-
-// Fallback for production if env vars are missing (though they shouldn't be)
-if (!firebaseConfig.projectId) {
-    console.warn("Firebase config missing env vars, using fallback.");
-    firebaseConfig.authDomain = "indiios-v-1-1.firebaseapp.com";
-    firebaseConfig.databaseURL = "https://indiios-alpha-electron-1.firebaseio.com";
-    firebaseConfig.projectId = "indiios-v-1-1";
-    firebaseConfig.storageBucket = "indiios-alpha-electron.firebasestorage.app";
-}
 
 import { getFunctions } from 'firebase/functions';
 

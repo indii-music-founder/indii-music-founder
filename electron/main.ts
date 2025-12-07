@@ -40,7 +40,7 @@ let pendingVerifier: string | null = null;
 // Auth Handling (Main Process)
 // Auth Handling (Main Process)
 ipcMain.handle('auth:login-google', async () => {
-    const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login-bridge';
+    const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login-bridge';
     console.log("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
     await import('electron').then(({ shell }) => shell.openExternal(LOGIN_BRIDGE_URL));
 });
