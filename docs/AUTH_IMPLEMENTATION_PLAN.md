@@ -27,6 +27,7 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 ## Phases
 
 ### Phase 1: Firebase Auth Setup (Backend)
+
 - [ ] Enable Email/Password provider in Firebase Console
 - [ ] Enable Google OAuth provider in Firebase Console
 - [ ] Configure authorized domains
@@ -34,37 +35,43 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 - [ ] Update Firestore security rules
 
 ### Phase 1.5: Landing Page Firebase SDK ✅ COMPLETE
+
 - [x] Install Firebase SDK
 - [x] Create `lib/firebase.ts`
 - [x] Create `lib/auth.ts` (all auth helper functions)
 - [x] Create `.env.example`
 
-### Phase 2: Landing Page Auth Routes ⬅️ NEXT
+### Phase 2: Landing Page Auth Routes ✅ COMPLETE
+
 - [x] Add Firebase SDK to landing page
-- [ ] Create `/login` page
-- [ ] Create `/signup` page
-- [ ] Create `/reset-password` page
-- [ ] Create auth layout (centered card)
+- [x] Create `/login` page
+- [x] Create `/signup` page
+- [x] Create `/reset-password` page
+- [x] Create auth layout
 
-### Phase 3: Auth Components
-- [ ] AuthProvider (React context)
-- [ ] LoginForm (email/password)
-- [ ] SignupForm (registration)
-- [ ] GoogleAuthButton (OAuth)
-- [ ] PasswordResetForm
+### Phase 3: Auth Components ✅ COMPLETE
 
-### Phase 4: User Service
-- [ ] Create `UserService.ts`
-- [ ] Migrate profiles from localStorage to Firestore
-- [ ] Sync brandKit to Firestore
+- [x] AuthProvider (React context)
+- [x] LoginForm (email/password + Google + Electron Bridge)
+- [x] SignupForm
+- [x] PasswordResetForm
 
-### Phase 5: Studio App Integration
-- [ ] Remove auto `signInAnonymously()`
-- [ ] Add auth state listener
-- [ ] Redirect unauthenticated users to landing
-- [ ] Update authSlice for Firestore profiles
+### Phase 4: User Service ✅ COMPLETE
+
+- [x] Create `UserService.ts` (Integrated in `@/modules/auth/UserService.ts`)
+- [x] Migrate profiles from localStorage to Firestore (Partial - New users go to Firestore)
+- [x] Sync brandKit to Firestore (Implemented in `UserServicesyncUserProfile` and `authSlice`)
+
+### Phase 5: Studio App Integration 🚧 IN PROGRESS
+
+- [x] Remove auto `signInAnonymously()` (Disabled in `firebase.ts`)
+- [x] Add auth state listener (`authSlice` handles this)
+- [x] Redirect unauthenticated users to landing (`App.tsx` handles this)
+- [x] Update authSlice for Firestore profiles (Connected to `UserService`)
+- [ ] Verify End-to-End flow in Production Build
 
 ### Phase 6: Polish
+
 - [ ] Loading states
 - [ ] Error messages
 - [ ] Account settings page
@@ -96,6 +103,7 @@ landing-page/app/
 ## Firestore Schema
 
 ### `users` Collection
+
 ```typescript
 interface UserDocument {
   uid: string;
@@ -135,6 +143,7 @@ match /users/{userId} {
 ## Resume Instructions
 
 When resuming this work:
+
 1. Check which phase is marked "CURRENT" above
 2. Check off completed items
 3. Run `npm run build` in landing-page to verify no breaks

@@ -74,7 +74,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         // Update Firestore if logged in
         const user = state.user;
         if (user) {
-            import('@/services/UserService').then(({ UserService }) => {
+            import('@/modules/auth/UserService').then(({ UserService }) => {
                 // We need to map AppUserProfile back to what Firestore expects if necessary
                 // For now, assume UserService handles Partial<UserContext> which includes AppUserProfile fields
                 UserService.updateProfile(user.uid, { brandKit: newProfile.brandKit } as any);
@@ -96,12 +96,21 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     set({ user, isAuthenticated: true, isAuthReady: true });
 
                     // Sync User Profile from Firestore
-                    import('@/services/UserService').then(({ UserService }) => {
+                    import('@/modules/auth/UserService').then(({ UserService }) => {
                         UserService.syncUserProfile(user).then((fullProfile) => {
                             const appProfile: UserProfile = {
                                 bio: fullProfile.bio || '',
-                                preferences: JSON.stringify(fullProfile.preferences),
-                                brandKit: fullProfile.brandKit,
+                                preferences: typeof fullProfile.preferences === 'string' ? fullProfile.preferences : JSON.stringify(fullProfile.preferences || {}),
+                                brandKit: fullProfile.brandKit || {
+                                    colors: [],
+                                    fonts: '',
+                                    brandDescription: '',
+                                    negativePrompt: '',
+                                    socials: {},
+                                    brandAssets: [],
+                                    referenceImages: [],
+                                    releaseDetails: { title: '', type: 'Single', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
+                                },
                                 analyzedTrackIds: fullProfile.analyzedTrackIds || [],
                                 knowledgeBase: fullProfile.knowledgeBase || [],
                                 savedWorkflows: fullProfile.savedWorkflows || []
