@@ -49,9 +49,11 @@ jobs:
           ls -la dist || echo "Studio build not found!"
 
       - name: Deploy to Firebase Hosting
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           npm install -g firebase-tools
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/firebase-key.json
+          echo "$FIREBASE_SERVICE_ACCOUNT" > /tmp/firebase-key.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-key.json
-          firebase deploy --only hosting -P indiios-v-1-1
+          firebase deploy --only hosting -P indiios-v-1-1 --debug
           rm /tmp/firebase-key.json
