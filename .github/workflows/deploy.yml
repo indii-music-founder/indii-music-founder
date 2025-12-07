@@ -61,10 +61,17 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           firebase projects:list --json || echo "Auth check failed - verify FIREBASE_SERVICE_ACCOUNT secret"
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy landing page to Firebase Hosting
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
-          firebase deploy --only hosting --project indiios-v-1-1 --non-interactive --debug 2>&1 | head -100
+          echo "Deploying landing page to target: landing"
+          firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive --debug 2>&1 | head -100
+
+      - name: Deploy studio app to Firebase Hosting
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
+          echo "Deploying studio app to target: app"
+          firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive --debug 2>&1 | head -100
 
       - name: Cleanup credentials
         if: always()
