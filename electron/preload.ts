@@ -1,6 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
-
-
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 interface AuthTokenData {
     idToken: string;
@@ -17,8 +15,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     auth: {
         login: () => ipcRenderer.invoke('auth:login-google'),
         logout: () => ipcRenderer.invoke('auth:logout'),
-        onUserUpdate: (callback: (user: any) => void) =>
-            ipcRenderer.on('auth:user-update', (_, user) => callback(user))
+        onUserUpdate: (callback: (user: AuthTokenData | null) => void) => {
+            const handler = (_event: IpcRendererEvent, user: AuthTokenData | null) => callback(user);
+            ipcRenderer.on('auth:user-update', handler);
+            // Return unsubscribe function to prevent memory leaks
+            return () => {
+                ipcRenderer.removeListener('auth:user-update', handler);
+            };
+        }
     },
 
     // Audio (Native Processing)

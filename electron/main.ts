@@ -1,6 +1,5 @@
-import { app, BrowserWindow, ipcMain, Session, WebContents } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
 import ffprobePath from 'ffprobe-static';
@@ -175,7 +174,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
     app.quit();
 } else {
-    app.on('second-instance', (event, commandLine) => {
+    app.on('second-instance', (_event, commandLine) => {
         // Someone tried to run a second instance, we should focus our window.
         if (BrowserWindow.getAllWindows().length > 0) {
             const win = BrowserWindow.getAllWindows()[0];
@@ -211,6 +210,7 @@ function handleDeepLink(url: string) {
 
         if (error) {
             console.error("Auth Error:", error);
+            notifyAuthError(error);
             return;
         }
 
@@ -220,14 +220,13 @@ function handleDeepLink(url: string) {
         const refreshToken = urlObj.searchParams.get('refreshToken');
 
         if (refreshToken) {
-            // @ts-ignore
-            import('./services/AuthStorage.ts').then(({ authStorage }) => {
-                authStorage.saveToken(refreshToken);
+            authStorage.saveToken(refreshToken).catch(err => {
+                console.error("Failed to save refresh token:", err);
             });
         }
         if (idToken) {
-            const wins = BrowserWindow.getAllWindows();
-            wins.forEach(w => w.webContents.send('auth:user-update', { idToken, accessToken }));
+            console.log("Received tokens via bridge flow, notifying renderer...");
+            notifyAuthSuccess({ idToken, accessToken });
             return;
         }
 
@@ -238,7 +237,10 @@ function handleDeepLink(url: string) {
 
             console.log("Exchanging code for token...");
 
-            // Standard fetch (available in Electron Node 18+)
+            // Create AbortController for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
             fetch('https://oauth2.googleapis.com/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -248,10 +250,12 @@ function handleDeepLink(url: string) {
                     code_verifier: pendingVerifier,
                     redirect_uri: REDIRECT_URI,
                     grant_type: 'authorization_code'
-                }).toString()
+                }).toString(),
+                signal: controller.signal
             })
                 .then(res => res.json())
                 .then(data => {
+                    clearTimeout(timeoutId);
                     if (data.error) throw new Error(data.error_description || data.error);
 
                     console.log("Token exchange successful!");
@@ -259,26 +263,56 @@ function handleDeepLink(url: string) {
 
                     // Save Refresh Token
                     if (data.refresh_token) {
-                        // @ts-ignore
-                        import('./services/AuthStorage.ts').then(({ authStorage }) => {
-                            authStorage.saveToken(data.refresh_token);
+                        authStorage.saveToken(data.refresh_token).catch(err => {
+                            console.error("Failed to save refresh token:", err);
                         });
                     }
 
                     // Send Access/ID Token to Renderer
-                    const wins = BrowserWindow.getAllWindows();
-                    wins.forEach(w => w.webContents.send('auth:user-update', {
+                    notifyAuthSuccess({
                         idToken: data.id_token,
                         accessToken: data.access_token
-                    }));
+                    });
 
                 }).catch(err => {
+                    clearTimeout(timeoutId);
                     console.error("Token Exchange Failed:", err);
+                    pendingVerifier = null; // Clear stale verifier
+                    notifyAuthError(err.message || 'Token exchange failed');
                 });
+        } else if (code && !pendingVerifier) {
+            console.error("Received auth code but no pending verifier - auth flow state lost");
+            notifyAuthError('Auth flow interrupted. Please try again.');
         }
     } catch (e) {
         console.error("Failed to parse deep link:", e);
+        notifyAuthError('Invalid auth callback');
     }
+}
+
+// Helper to notify all windows of successful auth
+function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
+    const wins = BrowserWindow.getAllWindows();
+    console.log(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
+    wins.forEach(w => {
+        if (!w.isDestroyed()) {
+            w.webContents.send('auth:user-update', tokens);
+            // Focus the window after successful auth
+            if (w.isMinimized()) w.restore();
+            w.focus();
+        }
+    });
+}
+
+// Helper to notify renderer of auth errors
+function notifyAuthError(message: string) {
+    const wins = BrowserWindow.getAllWindows();
+    console.log(`[Auth] Notifying ${wins.length} window(s) of auth error: ${message}`);
+    wins.forEach(w => {
+        if (!w.isDestroyed()) {
+            w.webContents.send('auth:error', { message });
+        }
+    });
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -441,8 +475,8 @@ const createWindow = () => {
         'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='  // Backup (Critical for rotation)
     ];
 
-    session.defaultSession.setCertificateVerifyProc((request, callback) => {
-        const { hostname, certificate, verificationResult } = request;
+    session.defaultSession.setCertificateVerifyProc((request: { hostname: string; certificate: Electron.Certificate; verificationResult: string; errorCode: number }, callback: (verificationResult: number) => void) => {
+        const { hostname, verificationResult } = request;
 
         // 1. Allow Localhost (Dev)
         if (hostname === 'localhost' || hostname === '127.0.0.1') {

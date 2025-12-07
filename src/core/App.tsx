@@ -67,22 +67,49 @@ export default function App() {
 
     // Electron Deep Link Auth Listener
     useEffect(() => {
-        if (window.electronAPI?.auth) {
-            window.electronAPI.auth.onUserUpdate(async (tokens: any) => {
-                console.log("[App] Received tokens from Electron:", tokens);
-                if (tokens.idToken) {
-                    try {
-                        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                        const { auth } = await import('@/services/firebase');
-                        const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
-                        await signInWithCredential(auth, credential);
-                        console.log("[App] Successfully signed in with deep link tokens");
-                    } catch (error) {
-                        console.error("[App] Failed to sign in with deep link tokens:", error);
-                    }
-                }
-            });
+        if (!window.electronAPI?.auth) {
+            return;
         }
+
+        const unsubscribe = window.electronAPI.auth.onUserUpdate(async (tokens) => {
+            console.log("[App] Received tokens from Electron:", tokens ? "tokens present" : "null");
+
+            // Handle logout signal
+            if (!tokens) {
+                console.log("[App] Received logout signal from Electron");
+                return;
+            }
+
+            if (tokens.idToken) {
+                try {
+                    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                    const { auth } = await import('@/services/firebase');
+                    const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
+                    await signInWithCredential(auth, credential);
+                    console.log("[App] Successfully signed in with deep link tokens");
+                } catch (error) {
+                    console.error("[App] Failed to sign in with deep link tokens:", error);
+                    // Retry once after a short delay (handles race conditions)
+                    setTimeout(async () => {
+                        try {
+                            const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                            const { auth } = await import('@/services/firebase');
+                            const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
+                            await signInWithCredential(auth, credential);
+                            console.log("[App] Retry successful - signed in with deep link tokens");
+                        } catch (retryError) {
+                            console.error("[App] Retry also failed:", retryError);
+                        }
+                    }, 1000);
+                }
+            }
+        });
+
+        // Cleanup listener on unmount
+        return () => {
+            console.log("[App] Cleaning up Electron auth listener");
+            unsubscribe();
+        };
     }, []);
 
     useEffect(() => {

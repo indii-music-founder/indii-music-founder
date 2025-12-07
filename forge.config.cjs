@@ -6,8 +6,26 @@ module.exports = {
     asar: {
       integrity: true // Enforces integrity checksums on the archive (Tamper Resistance)
     },
-    // macOS Signing
-    osxSign: {},
+    // Exclude server-side code from Electron bundle
+    ignore: (path) => {
+      // Directories to exclude
+      const excludeDirs = [
+        '/functions',
+        '/landing-page',
+        '/e2e',
+        '/docs',
+        '/.github',
+        '/.agent',
+        '/out',
+        '/.git'
+      ];
+      return excludeDirs.some(dir => path.startsWith(dir));
+    },
+    // macOS Signing - uses ad-hoc signing (-) when no developer cert is available
+    // Required because FusesPlugin modifies the binary, invalidating any existing signatures
+    osxSign: {
+      identity: '-', // Ad-hoc signing (allows local execution without Gatekeeper issues)
+    },
     // macOS Notarization
     // macOS Notarization (Apple Hardened Runtime)
     osxNotarize: process.env.APPLE_ID && process.env.APPLE_APP_SPECIFIC_PASSWORD ? {
@@ -33,12 +51,14 @@ module.exports = {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
     },
-    {
-      name: '@electron-forge/maker-dmg',
-      config: {
-        format: 'ULFO'
-      }
-    }
+    // DMG maker disabled - appdmg native build fails with paths containing spaces
+    // To enable: move project to path without spaces, then run: npm install --save-dev appdmg
+    // {
+    //   name: '@electron-forge/maker-dmg',
+    //   config: {
+    //     format: 'ULFO'
+    //   }
+    // }
   ],
   plugins: [
     {
