@@ -3,15 +3,40 @@ export interface AuthTokenData {
     accessToken?: string | null;
 }
 
+export interface AudioAnalysisResult {
+    status: 'success' | 'error';
+    hash: string;
+    metadata: {
+        duration: number;
+        format: string;
+        bitrate: number;
+    };
+}
+
 export interface ElectronAPI {
+    // General
     getPlatform: () => Promise<string>;
     getAppVersion: () => Promise<string>;
-    openExternal: (url: string) => Promise<void>;
-    onAuthToken: (callback: (tokenData: AuthTokenData) => void) => void;
+    setPrivacyMode: (enabled: boolean) => Promise<void>;
+
+    // Auth (Secure Main Process Flow)
+    auth: {
+        login: () => Promise<void>;
+        logout: () => Promise<void>;
+        onUserUpdate: (callback: (user: AuthTokenData | null) => void) => () => void;
+    };
+
+    // Audio (Native Processing)
+    audio: {
+        analyze: (filePath: string) => Promise<AudioAnalysisResult>;
+        getMetadata: (hash: string) => Promise<any>;
+    };
 }
 
 declare global {
     interface Window {
-        electronAPI: ElectronAPI;
+        electronAPI?: ElectronAPI;
     }
 }
+
+export {};
