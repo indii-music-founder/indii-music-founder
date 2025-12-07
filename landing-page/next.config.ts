@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  output: 'export',  // Always static export for landing page
+  // output: 'export',  // Removed to allow App Hosting SSR
   images: {
     unoptimized: true,
   },
