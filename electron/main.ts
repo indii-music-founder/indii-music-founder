@@ -38,26 +38,11 @@ const generatePKCECodeChallenge = (verifier: string) => {
 let pendingVerifier: string | null = null;
 
 // Auth Handling (Main Process)
+// Auth Handling (Main Process)
 ipcMain.handle('auth:login-google', async () => {
-    // Generate PKCE flow parameters
-    const verifier = generatePKCECodeVerifier();
-    const challenge = generatePKCECodeChallenge(verifier);
-    pendingVerifier = verifier; // Store for callback
-
-    const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID_PLACEHOLDER';
-    const REDIRECT_URI = 'indii-os://auth/callback';
-
-    // Construct OAuth URL
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${CLIENT_ID}&` +
-        `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
-        `response_type=code&` +
-        `scope=openid%20email%20profile&` +
-        `code_challenge=${challenge}&` +
-        `code_challenge_method=S256`;
-
-    console.log("Opening OAuth URL:", authUrl);
-    await import('electron').then(({ shell }) => shell.openExternal(authUrl));
+    const LOGIN_BRIDGE_URL = process.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login-bridge';
+    console.log("[Auth] Redirecting to Login Bridge:", LOGIN_BRIDGE_URL);
+    await import('electron').then(({ shell }) => shell.openExternal(LOGIN_BRIDGE_URL));
 });
 
 ipcMain.handle('privacy:toggle-protection', (event, isEnabled) => {
@@ -335,7 +320,7 @@ const createWindow = () => {
         height: 800,
         webPreferences: {
             devTools: !app.isPackaged, // Disable in production (HEY Audit)
-            preload: path.join(app.getAppPath(), 'dist-electron', 'preload.cjs'),
+            preload: path.join(__dirname, 'preload.cjs'),
             // "HEY" Audit Hardening (Finding #17)
             contextIsolation: true,
             nodeIntegration: false,
@@ -422,23 +407,33 @@ const createWindow = () => {
 
     // CSP Hardening (HEY Audit)
     session.defaultSession.webRequest.onHeadersReceived((details: Electron.OnHeadersReceivedListenerDetails, callback: (headers: Electron.HeadersReceivedResponse) => void) => {
-        const isDev = !app.isPackaged;
+        // Use the same isDev heuristic as loading
+        const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
+
         // Strictly remove 'unsafe-eval' in production to mitigate HEY Audit Findings
+        // Dev needs 'unsafe-inline' for Vite HMR and 'unsafe-eval' for source maps/fast refresh
         const scriptSrc = isDev
-            ? "'self' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com"
+            ? "'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com http://localhost:5173"
             : "'self' https://apis.google.com https://*.firebaseapp.com";
+
+        const defaultSrc = isDev ? "'self'" : "'none'";
+        const styleSrc = isDev
+            ? "'self' 'unsafe-inline' https://fonts.googleapis.com http://localhost:5173"
+            : "'self' 'unsafe-inline' https://fonts.googleapis.com";
 
         callback({
             responseHeaders: {
                 ...details.responseHeaders,
                 'Content-Security-Policy': [
-                    "default-src 'none'",
-                    `script-src ${scriptSrc}`,
-                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-                    "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com",
-                    "font-src 'self' https://fonts.gstatic.com",
-                    "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com", // ws/http needed for Vite HMR
-                    "worker-src 'self' blob:" // For web workers
+                    [
+                        `default-src ${defaultSrc}`,
+                        `script-src ${scriptSrc}`,
+                        `style-src ${styleSrc}`,
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:5173",
+                        "font-src 'self' https://fonts.gstatic.com http://localhost:5173",
+                        "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com http://localhost:5173 ws://localhost:5173",
+                        "worker-src 'self' blob:"
+                    ].join('; ')
                 ],
                 // Cross-Origin Isolation (COOP/COEP)
                 // CRITICAL: 'same-origin-allow-popups' is required for Google Auth Popups to communicate back to the opener
@@ -525,14 +520,26 @@ const createWindow = () => {
     });
 
     console.log('Main process: Preload path configured as:', path.join(__dirname, 'preload.cjs'));
+    console.log('[DEBUG] Application Path:', app.getAppPath());
+    console.log('[DEBUG] Environment VITE_DEV_SERVER_URL:', process.env.VITE_DEV_SERVER_URL);
 
     // In production, load the index.html.
     // In development, load the Vite dev server URL.
-    if (process.env.VITE_DEV_SERVER_URL) {
-        mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+
+    // Check if we are in dev mode (heuristic based on env var or absence of packaged app)
+    const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
+
+    if (isDev) {
+        console.log('[DEBUG] Attempting to load Dev Server URL:', devServerUrl);
+        mainWindow.loadURL(devServerUrl).catch(err => {
+            console.error('[DEBUG] Failed to load URL:', err);
+        });
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+        const indexPath = path.join(__dirname, '../dist/index.html');
+        console.log('[DEBUG] Loading Production File:', indexPath);
+        mainWindow.loadFile(indexPath);
         // Disable DevTools in Production (HEY Audit)
         mainWindow.webContents.on('devtools-opened', () => {
             mainWindow.webContents.closeDevTools();

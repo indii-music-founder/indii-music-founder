@@ -7,14 +7,28 @@ import { motion } from 'framer-motion';
 export default function SelectOrg() {
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
+    const [isCreating, setIsCreating] = useState(false);
+    const [newOrgName, setNewOrgName] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
     // Verify Store Connection
     useEffect(() => {
-        console.log('SelectOrg: Mounted', {
+        console.log('[SelectOrg] Mounted', {
             foundOrgs: !!organizations,
             count: organizations?.length,
-            currentId: currentOrganizationId
+            currentId: currentOrganizationId,
+            loading: organizations === undefined
         });
+        return () => console.log('[SelectOrg] Unmounting');
     }, [organizations, currentOrganizationId]);
+
+    // Render Logging
+    console.log('[SelectOrg] Render Cycle', {
+        organizationsType: typeof organizations,
+        organizationsValue: organizations,
+        isCreating
+    });
 
     // Robust Loading State
     if (organizations === undefined) {
@@ -28,13 +42,6 @@ export default function SelectOrg() {
             </div>
         );
     }
-
-
-
-    const [isCreating, setIsCreating] = useState(false);
-    const [newOrgName, setNewOrgName] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
 
     const handleSelect = async (orgId: string) => {
         try {
@@ -118,6 +125,19 @@ export default function SelectOrg() {
                 </div>
 
                 <div className="space-y-3 mb-8">
+                    {/* Debug Watermark */}
+                    {import.meta.env.DEV && (
+                        <div className="fixed top-2 right-2 text-[10px] text-green-500 font-mono z-50 bg-black/50 p-1 pointer-events-none">
+                            [SelectOrg Mounted]
+                        </div>
+                    )}
+
+                    {(!organizations || organizations.length === 0) && (
+                        <div className="text-center py-4 text-gray-500 border border-dashed border-[#333] rounded-xl mb-4">
+                            No organizations found. Create one below.
+                        </div>
+                    )}
+
                     {(organizations || []).map(org => (
                         <div
                             key={org.id}

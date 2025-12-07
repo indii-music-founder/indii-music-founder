@@ -93,7 +93,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             const { onAuthStateChanged } = await import('firebase/auth');
             onAuthStateChanged(auth, async (user: User | null) => {
                 if (user) {
-                    set({ user, isAuthenticated: true, isAuthReady: true });
+                    // Only consider non-anonymous users as fully authenticated for the Dashboard
+                    // Anonymous users (if any) need to upgrade/sign-in to access protected data
+                    const isAuthenticated = !user.isAnonymous;
+                    set({ user, isAuthenticated, isAuthReady: true });
 
                     // Sync User Profile from Firestore
                     import('@/modules/auth/UserService').then(({ UserService }) => {

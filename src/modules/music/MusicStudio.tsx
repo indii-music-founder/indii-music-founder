@@ -30,19 +30,36 @@ export default function MusicStudio() {
     const playerRef = useRef<Tone.Player | null>(null);
     const toast = useToast();
 
-    // ... existing useEffect ...
+    const loadSavedLibraries = async () => {
+        try {
+            const libs = await fileSystemService.listSavedHandles();
+            setSavedLibraries(libs.filter(l => l.kind === 'directory'));
+        } catch (err) {
+            console.error('Failed to load saved libraries:', err);
+        }
+    };
+
+    useEffect(() => {
+        setFsSupported(fileSystemService.isSupported());
+        loadSavedLibraries();
+    }, []);
 
     // ... existing loadSavedLibraries ...
 
-    // ... existing startAudioEngine ...
+    const startAudioEngine = async () => {
+        await Tone.start();
+        setIsStarted(true);
+        console.log('Audio Engine Started');
+        toast.success('Audio Engine Started');
+    };
 
     const analyzeAudioFile = async (file: File): Promise<any> => {
         if (window.electronAPI?.audio && 'path' in file) {
             try {
                 // @ts-ignore - Electron File object has path property
-                const path = file.path;
+                const path = (file as any).path;
                 console.log("Analyzing local file:", path);
-                return await window.electronAPI.audio.analyze(path);
+                return await window.electronAPI.audio.analyze(path as string);
             } catch (err) {
                 console.error("Analysis failed:", err);
                 return null;

@@ -12,13 +12,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
     // Source Code Obfuscation (HEY Audit Appendix D)
-    process.env.NODE_ENV === 'production' && WebpackObfuscator({
-      rotateStringArray: true,
-      stringArray: true,
-      target: 'browser',
-      debugProtection: true,
-      controlFlowFlattening: true
-    }, ['node_modules/**']),
+    // process.env.NODE_ENV === 'production' && WebpackObfuscator({
+    //   rotateStringArray: true,
+    //   stringArray: true,
+    //   target: 'browser',
+    //   debugProtection: true,
+    //   controlFlowFlattening: true
+    // }, ['node_modules/**']),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],

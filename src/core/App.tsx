@@ -12,6 +12,15 @@ const VideoStudio = lazy(() => import('../modules/video/VideoStudio'));
 const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
 const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
+
+// Auth Loading Component
+const AuthLoading = () => (
+    <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+        <h2 className="text-xl font-semibold">Authenticating...</h2>
+        <p className="text-gray-400 mt-2">Please complete sign-in in your browser.</p>
+    </div>
+);
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
 const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
 const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
@@ -39,15 +48,26 @@ export default function App() {
 
     useEffect(() => {
         initializeAuth();
-        initializeHistory();
-        loadProjects();
-        useStore.setState({ isAgentOpen: false });
 
         // Handle direct navigation to /select-org
         if (window.location.pathname === '/select-org') {
             useStore.setState({ currentModule: 'select-org' });
         }
-    }, [initializeAuth, initializeHistory, loadProjects]); // Added dependencies for correctness
+    }, [initializeAuth]);
+
+    // Data Load Effect - Only load when authenticated
+    useEffect(() => {
+        if (isAuthenticated && isAuthReady) {
+            console.log("[App] User authenticated, loading data...", { isAuthenticated, isAuthReady });
+            initializeHistory();
+            loadProjects();
+        }
+    }, [isAuthenticated, isAuthReady, initializeHistory, loadProjects]);
+
+    // Reset agent open state on mount
+    useEffect(() => {
+        useStore.setState({ isAgentOpen: false });
+    }, []);
 
     // Auth Guard - Redirect unauthenticated users to login
     useEffect(() => {
@@ -132,23 +152,30 @@ export default function App() {
                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                         <ErrorBoundary>
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
-                                {currentModule === 'select-org' && <SelectOrg />}
-                                {currentModule === 'dashboard' && <Dashboard />}
-                                {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
-                                {currentModule === 'legal' && <LegalDashboard />}
-                                {currentModule === 'music' && <MusicStudio />}
-                                {currentModule === 'marketing' && <MarketingDashboard />}
-                                {currentModule === 'video' && <VideoStudio />}
-                                {currentModule === 'workflow' && <WorkflowLab />}
-                                {currentModule === 'knowledge' && <KnowledgeBase />}
-                                {currentModule === 'road' && <RoadManager />}
-                                {currentModule === 'social' && <SocialDashboard />}
-                                {currentModule === 'brand' && <BrandManager />}
-                                {currentModule === 'campaign' && <CampaignDashboard />}
-                                {currentModule === 'publicist' && <PublicistDashboard />}
-                                {currentModule === 'publishing' && <PublishingDashboard />}
-                                {currentModule === 'finance' && <FinanceDashboard />}
-                                {currentModule === 'licensing' && <LicensingDashboard />}
+                                {/* Auth Gate */}
+                                {(!isAuthReady || !isAuthenticated) ? (
+                                    <AuthLoading />
+                                ) : (
+                                    <>
+                                        {currentModule === 'select-org' && <SelectOrg />}
+                                        {currentModule === 'dashboard' && <Dashboard />}
+                                        {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
+                                        {currentModule === 'legal' && <LegalDashboard />}
+                                        {currentModule === 'music' && <MusicStudio />}
+                                        {currentModule === 'marketing' && <MarketingDashboard />}
+                                        {currentModule === 'video' && <VideoStudio />}
+                                        {currentModule === 'workflow' && <WorkflowLab />}
+                                        {currentModule === 'knowledge' && <KnowledgeBase />}
+                                        {currentModule === 'road' && <RoadManager />}
+                                        {currentModule === 'social' && <SocialDashboard />}
+                                        {currentModule === 'brand' && <BrandManager />}
+                                        {currentModule === 'campaign' && <CampaignDashboard />}
+                                        {currentModule === 'publicist' && <PublicistDashboard />}
+                                        {currentModule === 'publishing' && <PublishingDashboard />}
+                                        {currentModule === 'finance' && <FinanceDashboard />}
+                                        {currentModule === 'licensing' && <LicensingDashboard />}
+                                    </>
+                                )}
                             </Suspense>
                         </ErrorBoundary>
                     </div>
