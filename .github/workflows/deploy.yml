@@ -43,9 +43,13 @@ jobs:
 
       - name: Verify build outputs
         run: |
-          echo "Checking landing page build..."
+          echo "=== Landing Page Build ==="
           ls -la landing-page/out || echo "Landing page build not found!"
-          echo "Checking studio build..."
+          echo ""
+          echo "=== Landing Page index.html (first 20 lines) ==="
+          head -20 landing-page/out/index.html || echo "index.html not found!"
+          echo ""
+          echo "=== Studio Build ==="
           ls -la dist || echo "Studio build not found!"
 
       - name: Setup Firebase CLI

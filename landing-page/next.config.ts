@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
-const isDev = process.env.NODE_ENV !== 'production';
-
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  output: isDev ? undefined : 'export',
+  output: 'export',  // Always static export for landing page
   images: {
     unoptimized: true,
   },
