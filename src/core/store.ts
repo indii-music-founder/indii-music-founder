@@ -30,5 +30,6 @@ declare global {
 
 // Expose store for debugging/automation
 if (typeof window !== 'undefined') {
+    console.log('[Store] Attaching useStore to window');
     window.useStore = useStore;
 }

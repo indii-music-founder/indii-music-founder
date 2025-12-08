@@ -151,18 +151,18 @@ export default function TestPlaybookPanel() {
             <div className="p-3 border-t border-gray-800 bg-red-900/20">
                 <button
                     onClick={async () => {
-                        // if (confirm('NUCLEAR RESET...')) {
-                        try {
-                            const { signOut } = await import('firebase/auth');
-                            const { auth } = await import('@/services/firebase');
-                            await signOut(auth);
-                        } catch (e) {
-                            console.warn("Firebase signout failed (might be offline):", e);
+                        if (confirm('NUCLEAR RESET: This will clear all local storage, session storage, and sign out of Firebase. Continue?')) {
+                            try {
+                                const { signOut } = await import('firebase/auth');
+                                const { auth } = await import('@/services/firebase');
+                                await signOut(auth);
+                            } catch (e) {
+                                console.warn("Firebase signout failed (might be offline):", e);
+                            }
+                            localStorage.clear();
+                            sessionStorage.clear();
+                            window.location.reload();
                         }
-                        localStorage.clear();
-                        sessionStorage.clear();
-                        window.location.reload();
-                        // }
                     }}
                     className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-900/20"
                 >
@@ -175,6 +175,6 @@ export default function TestPlaybookPanel() {
             <div className="p-2 bg-gray-900 border-t border-gray-800 text-[10px] text-gray-500 text-center font-mono">
                 Only visible in development
             </div>
-        </div>
+        </div >
     );
 }

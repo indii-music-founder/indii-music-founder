@@ -123,14 +123,14 @@ export default function CommandBar() {
                                 initial={{ opacity: 0, scale: 0.98 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.98 }}
-                                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md border-2 border-dashed border-blue-500/50 rounded-xl m-1"
+                                className="absolute inset-0 z-50 flex items-center justify-center bg-blue-900/40 backdrop-blur-md border-2 border-dashed border-blue-400 rounded-xl m-1 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
                             >
-                                <div className="text-center animate-pulse">
-                                    <div className="bg-blue-500/20 p-4 rounded-full mx-auto mb-2 w-16 h-16 flex items-center justify-center">
-                                        <Paperclip size={32} className="text-blue-400" />
+                                <div className="text-center animate-bounce">
+                                    <div className="bg-blue-500/20 p-5 rounded-full mx-auto mb-3 w-20 h-20 flex items-center justify-center border border-blue-400/30">
+                                        <Paperclip size={40} className="text-blue-300" />
                                     </div>
-                                    <p className="text-blue-200 font-bold text-lg">Drop files to attach</p>
-                                    <p className="text-blue-400/60 text-sm">Images, Documents, Audio</p>
+                                    <p className="text-white font-bold text-xl tracking-wide drop-shadow-md">DROP FILES HERE</p>
+                                    <p className="text-blue-200 text-sm mt-1">Images, Documents, Audio</p>
                                 </div>
                             </motion.div>
                         )}
@@ -189,7 +189,7 @@ export default function CommandBar() {
                                 <button
                                     type="button"
                                     onClick={() => cameraInputRef.current?.click()}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 transition-all shadow-sm"
                                     title="Take a picture"
                                 >
                                     <Camera size={14} />

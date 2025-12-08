@@ -15,7 +15,6 @@ This document confirms that the RAG pipeline is operational and can ingest, inde
 `;
 
 const FILE_NAME = `librarian-manifesto-${TEST_TIMESTAMP}.txt`;
-// Use process.cwd() for ESM compatibility or fix path resolution
 const FILE_PATH = path.join(process.cwd(), 'e2e', 'temp_artifacts', FILE_NAME);
 
 test.describe('The Librarian: RAG Pipeline Verification', () => {
@@ -38,7 +37,7 @@ test.describe('The Librarian: RAG Pipeline Verification', () => {
     });
 
     test('Ingest, Index, and Retrieve Real Data', async ({ page }) => {
-        // 0. Mock Electron API
+        // 0. Mock Electron API to prevent crashes and simulation
         await page.addInitScript(() => {
             window.electronAPI = {
                 getPlatform: async () => 'darwin',
@@ -51,66 +50,63 @@ test.describe('The Librarian: RAG Pipeline Verification', () => {
                         return () => { };
                     }
                 },
-                audio: { analyze: async () => ({}), getMetadata: async () => ({}) }
+                audio: { analyze: async () => ({}), getMetadata: async () => ({}) },
+                openExternal: async () => { }
             };
         });
 
-        // 1. Login / Land on Dashboard
+        // 1. Load App
         console.log(`[Librarian] Target Secret: ${SECRET_CODE}`);
         await page.goto(BASE_URL);
-
         await page.waitForLoadState('domcontentloaded');
 
-        // Bypass Auth
+        // 2. Bypass Auth via Store Injection
         await page.evaluate(() => {
             // @ts-ignore
-            window.useStore.setState({
-                isAuthenticated: true,
-                isAuthReady: true,
-                currentModule: 'dashboard',
-                organizations: [{ id: 'org-1', name: 'Test Org', members: ['me'] }],
-                currentOrganizationId: 'org-1'
-            });
+            if (window.useStore) {
+                // @ts-ignore
+                window.useStore.setState({
+                    isAuthenticated: true,
+                    isAuthReady: true,
+                    currentModule: 'dashboard',
+                    user: { uid: 'test-user', email: 'test@example.com', displayName: 'Test User' },
+                    userProfile: { bio: 'Verified Tester', role: 'admin' }, // Prevent onboarding redirect
+                    organizations: [{ id: 'org-1', name: 'Test Org', members: ['me'] }],
+                    currentOrganizationId: 'org-1'
+                });
+            }
         });
 
-        // Handle "Get Started" if present (Auth flow) - Should be bypassed now
-        const getStartedBtn = page.getByRole('button', { name: /get started|launch|sign in/i });
-        if (await getStartedBtn.isVisible()) {
-            await getStartedBtn.click();
-        }
+        // Wait for Dashboard to render (look for "Recent Projects" or similar)
+        await expect(page.getByText('Recent Projects')).toBeVisible({ timeout: 10000 });
 
-        // 2. Upload Document to Knowledge Base
-        // Locate the file input in the Knowledge Base section
-        // Based on Dashboard.tsx: "Upload Knowledge Assets"
+        // 3. Upload Document to Knowledge Base
+        // Dashboard.tsx: <input type="file" ... onChange={handleFileUpload} /> in the dashed border area
         const fileInput = page.locator('input[type="file"]').first();
         await expect(fileInput).toBeAttached();
 
         console.log('[Librarian] Uploading Manifesto...');
-        await fileInput.setInputFiles(FILE_PATH);
 
-        // Handle potential alert/toast confirmation
-        // Dashboard.tsx says: alert(`Added ${processed.title} to Knowledge Base!`);
-        // We need to handle the dialog
+        // Setup Dialog Handler for "Added ... to Knowledge Base!" alert
         page.on('dialog', async dialog => {
             console.log(`[Librarian] Alert: ${dialog.message()}`);
             await dialog.accept();
         });
 
-        // Wait a bit for the "Simulated" or "Real" processing to kick off
-        await page.waitForTimeout(5000);
+        await fileInput.setInputFiles(FILE_PATH);
 
-        // 3. Navigate to an Agent (Creative Studio)
-        console.log('[Librarian] Navigating to Creative Agent...');
-        await page.goto(`${BASE_URL}/creative`);
-        await page.waitForLoadState('domcontentloaded');
+        // Wait for processing simulation (Client side logs, toast, etc.)
+        // Ideally we wait for a toast "Added ..."
+        // For now, static wait to allow async processing in React
+        await page.waitForTimeout(8000);
 
         // 4. Interrogation Loop (Polling for Indexing)
-        // RAG indexing is async. It might take 10s or 60s. We will retry.
-        const maxAttempts = 5;
-        let success = false;
-
-        const agentInput = page.getByPlaceholder(/describe your creative task/i);
+        // Use the Global Command Bar
+        const agentInput = page.getByPlaceholder(/Describe your task/i);
         await expect(agentInput).toBeVisible();
+
+        const maxAttempts = 3; // Reduced retry count for cleaner logs
+        let success = false;
 
         for (let i = 0; i < maxAttempts; i++) {
             console.log(`[Librarian] Interrogation Attempt ${i + 1}/${maxAttempts}`);
@@ -118,30 +114,31 @@ test.describe('The Librarian: RAG Pipeline Verification', () => {
             await agentInput.fill(`What is the secret code in the Librarian Protocol manifesto?`);
             await page.keyboard.press('Enter');
 
-            // Wait for response bubble
-            // Logic: Wait for a new message bubble that appears AFTER our question
-            await page.waitForTimeout(5000); // Wait for generation
+            // Wait for Chat Overlay and Response
+            // ChatOverlay should open automatically on submit
+            const chatOverlay = page.getByTestId('agent-message').first();
+            await expect(chatOverlay).toBeVisible({ timeout: 10000 });
 
-            // Check last response
+            // Wait for generation to complete (streaming indicator gone?)
+            // We just wait for the text to appear in last message
+            await page.waitForTimeout(8000);
+
             const lastResponse = page.getByTestId('agent-message').last();
-            await expect(lastResponse).toBeVisible({ timeout: 60000 }); // Wait up to 60s for response
-
-
             const responseText = await lastResponse.innerText();
-
-            console.log(`[Librarian] Agent replied: "${responseText.substring(0, 50)}..."`);
+            console.log(`[Librarian] Agent replied: "${responseText.substring(0, 100)}..."`);
 
             if (responseText.includes(SECRET_CODE)) {
                 console.log('[Librarian] SUCCESS: Secret Code retrieved!');
                 success = true;
                 break;
             } else {
-                console.log('[Librarian] Secret not found yet. waiting...');
-                await page.waitForTimeout(10000); // Wait 10s before retry to let indexing finish
+                console.log('[Librarian] Secret not found yet. Retrying...');
+                // Close/Clean or just ask again? 
+                // Just asking again appends to history.
+                await page.waitForTimeout(5000);
             }
         }
 
-        expect(success, 'Agent failed to retrieve secret code after multiple attempts').toBeTruthy();
+        expect(success, `Agent failed to retrieve secret code: ${SECRET_CODE}`).toBeTruthy();
     });
-
 });

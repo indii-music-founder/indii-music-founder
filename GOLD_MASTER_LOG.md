@@ -74,6 +74,7 @@
   * **Frontend:** Optimized rendering (60fps) and asset loading (<500ms).
   * **Backend:** Verified <1% error rate at 50 concurrent users.
 * **CI/CD:** Automated build and test pipelines via GitHub Actions.
+  * **Governance:** Strict adherence to rules defined in `agent.md` (e.g., Two-Strike Pivot, Service/UI Split).
 
 ---
 

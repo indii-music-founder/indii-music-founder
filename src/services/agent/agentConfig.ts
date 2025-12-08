@@ -1,4 +1,6 @@
 import { AgentConfig } from './BaseAgent';
+import { MusicTools } from './tools/MusicTools';
+import { LegalTools } from './tools/LegalTools';
 
 export const AGENT_CONFIGS: AgentConfig[] = [
     {
@@ -35,7 +37,39 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     4. Advise on risk management.
 
     Be precise, cautious, and formal in your language.`,
-        tools: []
+
+        functions: {
+            analyze_contract: LegalTools.analyze_contract,
+            generate_nda: LegalTools.generate_nda
+        },
+        tools: [{
+            functionDeclarations: [
+                {
+                    name: "analyze_contract",
+                    description: "Analyze a legal contract for risks and provide a summary.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            fileData: { type: "STRING", description: "Base64 encoded file data." },
+                            mimeType: { type: "STRING", description: "MIME type of the file (e.g., application/pdf)." }
+                        },
+                        required: ["fileData"]
+                    }
+                },
+                {
+                    name: "generate_nda",
+                    description: "Generate a generic NDA for specified parties.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            parties: { type: "ARRAY", items: { type: "STRING" }, description: "List of parties involved." },
+                            purpose: { type: "STRING", description: "The purpose of the NDA." }
+                        },
+                        required: ["parties"]
+                    }
+                }
+            ]
+        }]
     },
     {
         id: 'finance',
@@ -45,20 +79,20 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         category: 'department',
         systemPrompt: `You are the Finance Department.
     Your role is to oversee the financial health of the studio and its projects.
-    
-    Responsibilities:
-    1. Analyze budgets and expenses.
+
+            Responsibilities:
+        1. Analyze budgets and expenses.
     2. Forecast project ROI.
     3. Approve or reject financial requests.
 
-    Be conservative, analytical, and numbers-driven.`,
+    Be conservative, analytical, and numbers- driven.`,
         functions: {
             analyze_budget: async (args: { amount: number, breakdown: string }) => {
                 const efficiency = args.amount < 50000 ? "High" : "Medium";
                 return {
                     status: "approved",
                     efficiency_rating: efficiency,
-                    notes: `Budget of $${args.amount} is within acceptable limits. Breakdown: ${args.breakdown}`,
+                    notes: `Budget of $${args.amount} is within acceptable limits.Breakdown: ${args.breakdown}`,
                     timestamp: new Date().toISOString()
                 };
             }
@@ -91,6 +125,10 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     Your role is to analyze audio requirements and suggest tracks.
     You understand BPM, key, mood, and genre.
     Be precise about musical terminology.`,
+        functions: {
+            analyze_audio: MusicTools.analyze_audio,
+            get_audio_metadata: MusicTools.get_audio_metadata
+        },
         tools: [{
             functionDeclarations: [{
                 name: 'analyze_audio',
@@ -98,9 +136,19 @@ export const AGENT_CONFIGS: AgentConfig[] = [
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        audio: { type: 'STRING', description: 'Base64 encoded audio data URL.' }
+                        filePath: { type: 'STRING', description: 'Absolute path to the audio file.' }
                     },
-                    required: ['audio']
+                    required: ['filePath']
+                }
+            }, {
+                name: 'get_audio_metadata',
+                description: 'Retrieve metadata for an audio file using its hash.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        hash: { type: 'STRING', description: 'The unique hash of the audio file.' }
+                    },
+                    required: ['hash']
                 }
             }]
         }]
@@ -113,9 +161,9 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         category: 'manager',
         systemPrompt: `You are the Creative Director.
     Your role is to conceptualize and generate stunning visuals.
-    
+
     Responsibilities:
-    1. Generate images based on user requests.
+1. Generate images based on user requests.
     2. Provide art direction and style advice.
     3. Refine prompts for better visual output.
     
@@ -185,7 +233,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     Your role is to bring visual stories to life.
 
     Responsibilities:
-    1. Direct music videos and promotional content.
+1. Direct music videos and promotional content.
     2. oversee video editing and color grading.
     3. Manage VFX and animation workflows.
     4. Ensure visual consistency with the brand.
@@ -202,8 +250,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         systemPrompt: `You are the Social Media Department.
     Your role is to manage the brand's online presence, engage with the community, and track trends.
 
-    Responsibilities:
-    1. Create engaging social content.
+Responsibilities:
+1. Create engaging social content.
     2. Monitor trends and sentiment.
     3. Interact with the community in the brand's voice.
 
@@ -253,9 +301,9 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         description: 'Manages public relations and media communications.',
         color: 'bg-orange-400',
         category: 'manager',
-        systemPrompt: `You are the Publicist (Manager Level) for a creative studio.
+        systemPrompt: `You are the Publicist(Manager Level) for a creative studio.
     Your role is to manage the brand's public image, write press releases, and handle crisis communication.
-    DISTINCTION: You are NOT the Publishing Department (which handles rights/royalties).
+DISTINCTION: You are NOT the Publishing Department(which handles rights / royalties).
     Be professional, articulate, and strategic.`,
         tools: [{
             functionDeclarations: [
@@ -312,7 +360,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     Your role is to handle logistics, scheduling, and operational details.
 
     Responsibilities:
-    1. Create detailed itineraries and schedules.
+1. Create detailed itineraries and schedules.
     2. Manage logistics for events and tours.
     3. Anticipate operational risks and propose solutions.
 
@@ -365,9 +413,9 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         category: 'department',
         systemPrompt: `You are the Publishing Department.
     Your role is to administer rights, collect royalties, and manage the extensive music catalog.
-    
+
     Responsibilities:
-    1. Register works with PROs.
+1. Register works with PROs.
     2. Analyze publishing contracts.
     3. Track royalty streams.
 
@@ -376,7 +424,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
             register_work: async (args: { title: string, writers: string[], split: string }) => {
                 return {
                     status: "submitted",
-                    work_id: `ISWC-${Math.floor(Math.random() * 1000000)}`,
+                    work_id: `ISWC - ${Math.floor(Math.random() * 1000000)} `,
                     registration_date: new Date().toISOString(),
                     message: `Work '${args.title}' by ${args.writers.join(', ')} registered successfully.`
                 };
@@ -419,10 +467,10 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         color: 'bg-indigo-600',
         category: 'department',
         systemPrompt: `You are the Licensing Department.
-    Your role is to clear rights for samples, sync deals, and third-party content.
-    
+    Your role is to clear rights for samples, sync deals, and third - party content.
+
     Responsibilities:
-    1. Check rights availability.
+1. Check rights availability.
     2. Negotiate sync licenses.
     3. Ensure all content is cleared for release.
 
@@ -437,8 +485,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
                     artist: args.artist,
                     quote: available ? "$2,500" : "N/A",
                     notes: available
-                        ? `Cleared for ${args.usage}. Contact label for final signature.`
-                        : `Rights held by estate. Clearance unlikely for ${args.usage}.`
+                        ? `Cleared for ${args.usage}.Contact label for final signature.`
+                        : `Rights held by estate.Clearance unlikely for ${args.usage}.`
                 };
             }
         },
@@ -481,8 +529,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         systemPrompt: `You are the Brand Manager.
     Your role is to strictly enforce the brand's visual identity, tone of voice, and core values.
 
-    Responsibilities:
-    1. Review content for brand alignment.
+Responsibilities:
+1. Review content for brand alignment.
     2. Provide specific feedback on colors, fonts, and tone.
     3. Maintain the "Show Bible" consistency.
 

@@ -1,0 +1,47 @@
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { MusicTools } from './MusicTools';
+
+describe('MusicTools', () => {
+    beforeEach(() => {
+        // Mock window.electronAPI
+        vi.stubGlobal('window', {
+            electronAPI: {
+                audio: {
+                    analyze: vi.fn(),
+                    getMetadata: vi.fn()
+                }
+            }
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubGlobal('window');
+    });
+
+    it('analyze_audio returns error if electron API is missing', async () => {
+        vi.stubGlobal('window', {}); // Removed electronAPI
+        const result = await MusicTools.analyze_audio({ filePath: '/test/audio.mp3' });
+        expect(result).toContain('Error: Audio Engine not available');
+    });
+
+    it('analyze_audio calls electronAPI.audio.analyze', async () => {
+        const mockAnalyze = vi.fn().mockResolvedValue({ bpm: 120, key: 'C Major' });
+        window.electronAPI!.audio.analyze = mockAnalyze;
+
+        const result = await MusicTools.analyze_audio({ filePath: '/test/audio.mp3' });
+
+        expect(mockAnalyze).toHaveBeenCalledWith('/test/audio.mp3');
+        expect(JSON.parse(result)).toEqual({ bpm: 120, key: 'C Major' });
+    });
+
+    it('get_audio_metadata calls electronAPI.audio.getMetadata', async () => {
+        const mockGetMetadata = vi.fn().mockResolvedValue({ title: 'Test Song', artist: 'Test Artist' });
+        window.electronAPI!.audio.getMetadata = mockGetMetadata;
+
+        const result = await MusicTools.get_audio_metadata({ hash: 'abc-123' });
+
+        expect(mockGetMetadata).toHaveBeenCalledWith('abc-123');
+        expect(JSON.parse(result)).toEqual({ title: 'Test Song', artist: 'Test Artist' });
+    });
+});

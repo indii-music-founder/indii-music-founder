@@ -16,7 +16,7 @@ import { auth, db } from './firebase';
 const googleProvider = new GoogleAuthProvider();
 
 // Studio app URL for redirects after auth
-const STUDIO_URL = process.env.NEXT_PUBLIC_STUDIO_URL || 'https://indiios-studio.web.app';
+const STUDIO_URL = process.env.NEXT_PUBLIC_STUDIO_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'https://indiios-studio.web.app');
 
 /**
  * Sign in with email and password

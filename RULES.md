@@ -34,3 +34,12 @@
 * **Typography:** Variable fonts only (**Inter**, **Geist**).
 * **Aesthetic:** "Liquid Logic." Use glassmorphism, subtle borders (`border-white/5`), and organic 3D shapes.
 * **Linting:** Run `npx eslint . --fix` before every code submission.text.
+
+---
+
+## RULE: THE AGENT CONSTITUTION (Technical Governance)
+
+**Reference:** See `agent.md` for strict technical rules enforced on the AI Agent.
+
+* **Scope:** Testing protocols, architectural constraints (Service/UI separation), Code Hygiene, and Safety Checks.
+* **Enforcement:** The Agent must consult `agent.md` before executing complex tasks.
