@@ -195,7 +195,7 @@ export default function Overlays() {
                         Ready to Build?
                     </h2>
                     <a
-                        href="https://indiios-studio.web.app"
+                        href="/"
                         className="px-10 py-5 bg-white text-black font-bold text-xl hover:bg-neon-blue hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(0,243,255,0.6)] hover:scale-105 transform inline-block"
                     >
                         Launch Studio
