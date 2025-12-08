@@ -38,10 +38,9 @@ export default function LoginForm() {
         if (window.electronAPI) {
             try {
                 // Open the independent bridge page in system browser
-                // In dev, assuming localhost:3000. In prod, this should be the deployed URL.
                 const bridgeUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
                     ? 'http://localhost:3000/login-bridge'
-                    : 'https://architexture-ai-api.web.app/login-bridge';
+                    : 'https://indiios-v-1-1.web.app/login-bridge';
 
                 await window.electronAPI.openExternal(bridgeUrl);
                 setError("Please complete sign in in your browser...");
