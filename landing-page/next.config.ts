@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  // output: 'export',  // Removed to allow App Hosting SSR
+  output: 'export',  // Static export for Firebase Hosting (not App Hosting)
   images: {
     unoptimized: true,
   },
