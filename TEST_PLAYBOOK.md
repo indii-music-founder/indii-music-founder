@@ -218,3 +218,43 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   ```
 
 ---
+
+## 14. The Producer 🎧
+
+**Scope:** Audio Analysis & Music Tools
+**Status:** Ready
+**File:** `src/services/agent/tools/MusicTools.test.ts`
+
+"The Producer" verifies that the AI's music tools correctly interface with the Electron Audio Engine (Tone.js wrapper).
+
+- **Scenarios:**
+  - **The Soundcheck**: Verifies `analyze_audio` calls the correct Electron API.
+  - **The Crate Dig**: Verifies `get_audio_metadata` retrieves correct tags.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/services/agent/tools/MusicTools.test.ts
+  ```
+
+---
+
+## 15. The Judge ⚖️
+
+**Scope:** Legal Contract Analysis
+**Status:** Ready
+**File:** `src/services/agent/tools/LegalTools.test.ts`
+
+"The Judge" ensures that the Legal Department agent can correctly submit documents for analysis and generate standard forms.
+
+- **Scenarios:**
+  - **The Review**: Mock contract submission to Firebase Functions.
+  - **The Draft**: Generation of standard NDA templates.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/services/agent/tools/LegalTools.test.ts
+  ```
+
+---

@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { Building2, Plus, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
-// import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
+import { motion } from 'motion/react';
+import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 export default function SelectOrg() {
+    return (
+        <ErrorBoundary>
+            <SelectOrgContent />
+        </ErrorBoundary>
+    );
+}
+
+function SelectOrgContent() {
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
     const [isCreating, setIsCreating] = useState(false);
@@ -134,7 +142,7 @@ export default function SelectOrg() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-black text-white p-4" style={{ backgroundColor: '#000000' }}>
@@ -167,29 +175,32 @@ export default function SelectOrg() {
                         </div>
                     )}
 
-                    {(organizations || []).map(org => (
-                        <div
-                            key={org.id}
-                            onClick={() => handleSelect(org.id)}
-                            className="bg-[#111] relative group cursor-pointer border-white/[0.2] w-full rounded-xl p-4 border flex items-center justify-between hover:bg-[#1a1a1a] transition-all"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-lg bg-[#222] flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
-                                    <Building2 size={20} />
+                    {(organizations || []).map(org => {
+                        if (!org || !org.id) return null; // Safe guard
+                        return (
+                            <div
+                                key={org.id}
+                                onClick={() => handleSelect(org.id)}
+                                className="bg-[#111] relative group cursor-pointer border-white/[0.2] w-full rounded-xl p-4 border flex items-center justify-between hover:bg-[#1a1a1a] transition-all"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-lg bg-[#222] flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
+                                        <Building2 size={20} />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="font-bold text-white">{org.name}</div>
+                                        <div className="text-xs text-gray-500">{org.members?.length || 0} members</div>
+                                    </div>
                                 </div>
-                                <div className="text-left">
-                                    <div className="font-bold text-white">{org.name}</div>
-                                    <div className="text-xs text-gray-500">{org.members?.length || 0} members</div>
-                                </div>
-                            </div>
 
-                            {currentOrganizationId === org.id && (
-                                <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                                    <Check size={14} />
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                {currentOrganizationId === org.id && (
+                                    <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                                        <Check size={14} />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
 

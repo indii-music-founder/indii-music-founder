@@ -83,19 +83,17 @@ export class AgentService {
                 }
             });
 
-            if (typeof result === 'string') {
-                if (!result.includes("Agent Zero")) {
-                    updateAgentMessage(responseId, { text: result, isStreaming: false });
+            if (result && result.text) {
+                if (!result.text.includes("Agent Zero")) {
+                    updateAgentMessage(responseId, { text: result.text, isStreaming: false });
                 }
-            } else if (result && typeof result === 'object' && 'text' in result) {
-                updateAgentMessage(responseId, { text: result.text, isStreaming: false });
             } else {
                 updateAgentMessage(responseId, { isStreaming: false });
             }
 
         } catch (e: any) {
-            console.error(e);
-            this.addSystemMessage(`Error: ${e.message}`);
+            console.error('[AgentService] Execution Failed:', e);
+            this.addSystemMessage(`❌ **Error:** ${e.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
         }

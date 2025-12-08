@@ -53,3 +53,8 @@
 12. **The "Living Test" Protocol:**
     - **Sync Tests with Tech:** If you advance a technology or system (e.g., adding Vector Search to RAG), you **MUST** update the corresponding test protocol (e.g., "The Librarian") to check this new capability.
     - **No Stale Green Lights:** A test that passes because it checks an obsolete, simple version of the feature is a failure. Tests must cover the *current* level of complexity.
+
+13. **The "Temporal Bridge" Protocol (Live Verification):**
+    - **Cutoff Awareness:** Acknowledge that your training data is static and likely outdated.
+    - **Live Check Mandate:** When using fast-moving libraries (e.g., React, Firebase, AI Models) or debugging obscure errors, you **MUST** use `search_web` or browser tools to verify the *latest* API methods and deprecations.
+    - **Trigger Words:** If you ask yourself "Is this deprecated?" or "Does vX support Y?", you are **required** to verify via the live internet before writing code.

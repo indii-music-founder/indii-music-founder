@@ -166,6 +166,12 @@ class AIService {
                                 }
                             } catch (e) {
                                 console.warn("Failed to parse chunk:", line);
+                                // Optional: if we receive HTML error pages (common with proxies), 
+                                // we should probably abort.
+                                if (line.includes('<!DOCTYPE html>')) {
+                                    controller.error(new Error("Received HTML instead of JSON stream. Proxy or Auth error."));
+                                    return;
+                                }
                             }
                         }
                     }

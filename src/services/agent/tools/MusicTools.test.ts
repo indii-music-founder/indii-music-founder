@@ -3,24 +3,28 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MusicTools } from './MusicTools';
 
 describe('MusicTools', () => {
+    const originalElectronAPI = window.electronAPI;
+
     beforeEach(() => {
-        // Mock window.electronAPI
-        vi.stubGlobal('window', {
-            electronAPI: {
-                audio: {
-                    analyze: vi.fn(),
-                    getMetadata: vi.fn()
-                }
+        // Mock default window.electronAPI
+        // @ts-ignore
+        window.electronAPI = {
+            audio: {
+                analyze: vi.fn(),
+                getMetadata: vi.fn()
             }
-        });
+        };
     });
 
     afterEach(() => {
-        vi.unstubGlobal('window');
+        // Restore
+        // @ts-ignore
+        window.electronAPI = originalElectronAPI;
     });
 
     it('analyze_audio returns error if electron API is missing', async () => {
-        vi.stubGlobal('window', {}); // Removed electronAPI
+        // @ts-ignore
+        window.electronAPI = undefined;
         const result = await MusicTools.analyze_audio({ filePath: '/test/audio.mp3' });
         expect(result).toContain('Error: Audio Engine not available');
     });

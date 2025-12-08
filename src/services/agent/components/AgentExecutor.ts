@@ -37,7 +37,7 @@ export class AgentExecutor {
                 relevantMemories: context.relevantMemories
             }, onProgress);
 
-            return response.text;
+            return response;
         } catch (e: any) {
             console.error(`[AgentExecutor] Agent ${agent.name} failed.`, e);
             throw e;

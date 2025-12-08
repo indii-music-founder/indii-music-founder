@@ -222,10 +222,10 @@ export class GeminiRetrievalService {
         return this.fetch('models/aqa:generateAnswer', {
             method: 'POST',
             body: JSON.stringify({
-                content: { parts: [{ text: userQuery }] },
+                contents: [{ role: 'user', parts: [{ text: userQuery }] }],
                 semanticRetrievalSource: {
                     source: corpusName,
-                    query: { text: userQuery } // Optional: can be different from user query
+                    query: { text: userQuery }
                 }
             })
         });

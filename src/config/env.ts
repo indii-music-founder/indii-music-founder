@@ -26,7 +26,7 @@ const processEnv = {
     useVertex: getEnv('VITE_USE_VERTEX') === 'true',
 
     // Pass through frontend specific
-    VITE_FUNCTIONS_URL: getEnv('VITE_FUNCTIONS_URL'),
+    VITE_FUNCTIONS_URL: getEnv('VITE_FUNCTIONS_URL') || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
     VITE_RAG_PROXY_URL: getEnv('VITE_RAG_PROXY_URL'),
     DEV: getEnv('DEV') || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
 };
