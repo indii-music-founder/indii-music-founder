@@ -23,13 +23,12 @@ jobs:
       - name: Install root dependencies
         run: npm ci --ignore-scripts
 
-      - name: Install landing page dependencies
+      - name: Build landing page
         run: |
           cd landing-page
+          rm -rf out .next
           npm ci
-
-      - name: Build landing page
-        run: npm run build:landing
+          npm run build
         env:
           NODE_ENV: production
 
@@ -46,8 +45,8 @@ jobs:
           echo "=== Landing Page Build ==="
           ls -la landing-page/out || echo "Landing page build not found!"
           echo ""
-          echo "=== Landing Page index.html (first 20 lines) ==="
-          head -20 landing-page/out/index.html || echo "index.html not found!"
+          echo "=== Landing Page Title ==="
+          grep -o '<title>[^<]*</title>' landing-page/out/index.html || echo "No title found!"
           echo ""
           echo "=== Studio Build ==="
           ls -la dist || echo "Studio build not found!"
