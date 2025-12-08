@@ -1,7 +1,8 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut,
   sendPasswordResetEmail,
@@ -48,20 +49,30 @@ export async function signUpWithEmail(email: string, password: string, displayNa
 }
 
 /**
- * Sign in with Google OAuth
+ * Sign in with Google OAuth - uses redirect flow for better compatibility
  */
 export async function signInWithGoogle() {
-  const result = await signInWithPopup(auth, googleProvider);
+  // Use redirect instead of popup - works better across domains
+  await signInWithRedirect(auth, googleProvider);
+}
 
-  // Check if user document exists, create if not
-  const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-  if (!userDoc.exists()) {
-    await createUserDocument(result.user);
-  } else {
-    await updateLastLogin(result.user.uid);
+/**
+ * Handle redirect result after Google sign-in
+ * Call this on page load to complete the sign-in flow
+ */
+export async function handleGoogleRedirect() {
+  const result = await getRedirectResult(auth);
+  if (result) {
+    // Check if user document exists, create if not
+    const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+    if (!userDoc.exists()) {
+      await createUserDocument(result.user);
+    } else {
+      await updateLastLogin(result.user.uid);
+    }
+    return result.user;
   }
-
-  return result.user;
+  return null;
 }
 
 /**

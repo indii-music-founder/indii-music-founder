@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signInWithEmail, signInWithGoogle, getStudioUrl } from '@/app/lib/auth';
+import { signInWithEmail, signInWithGoogle, handleGoogleRedirect, getStudioUrl } from '@/app/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
@@ -12,6 +12,26 @@ export default function LoginForm() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Handle redirect result from Google sign-in
+    useEffect(() => {
+        const checkRedirectResult = async () => {
+            try {
+                setIsLoading(true);
+                const user = await handleGoogleRedirect();
+                if (user) {
+                    // Successfully signed in via redirect
+                    window.location.href = getStudioUrl();
+                }
+            } catch (err: any) {
+                console.error('Redirect result error:', err);
+                setError(err.message || 'Failed to complete Google sign-in');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkRedirectResult();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -73,12 +93,13 @@ export default function LoginForm() {
         }
 
         try {
+            // This will redirect to Google - page will navigate away
             await signInWithGoogle();
-            window.location.href = getStudioUrl();
+            // Note: Code below won't execute as the page redirects
         } catch (err: any) {
             console.error(err);
             setError(err.message || 'Failed to sign in with Google.');
-            setIsLoading(false); // Only stop loading on error, otherwise we redirect
+            setIsLoading(false);
         }
     };
 

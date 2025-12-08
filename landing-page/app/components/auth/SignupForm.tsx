@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signUpWithEmail, signInWithGoogle, getStudioUrl } from '@/app/lib/auth';
+import { signUpWithEmail, signInWithGoogle, handleGoogleRedirect, getStudioUrl } from '@/app/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupForm() {
@@ -13,6 +13,26 @@ export default function SignupForm() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Handle redirect result from Google sign-in
+    useEffect(() => {
+        const checkRedirectResult = async () => {
+            try {
+                setIsLoading(true);
+                const user = await handleGoogleRedirect();
+                if (user) {
+                    // Successfully signed in via redirect
+                    window.location.href = getStudioUrl();
+                }
+            } catch (err: any) {
+                console.error('Redirect result error:', err);
+                setError(err.message || 'Failed to complete Google sign-in');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        checkRedirectResult();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
