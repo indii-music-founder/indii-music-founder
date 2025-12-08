@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { signUpWithEmail, signInWithGoogle, handleGoogleRedirect, getStudioUrl } from '@/app/lib/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/app/lib/firebase';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupForm() {
@@ -32,6 +37,14 @@ export default function SignupForm() {
             }
         };
         checkRedirectResult();
+
+        // Also check if user is ALREADY authenticated (loop protection)
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = getStudioUrl();
+            }
+        });
+        return () => unsubscribe();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
