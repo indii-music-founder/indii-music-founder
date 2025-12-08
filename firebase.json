@@ -3,6 +3,7 @@
         {
             "target": "landing",
             "public": "landing-page/out",
+            "cleanUrls": true,
             "ignore": [
                 "firebase.json",
                 "**/.*",

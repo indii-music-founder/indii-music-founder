@@ -15,7 +15,7 @@ import { useToast } from '@/core/context/ToastContext';
 
 
 export default function Dashboard() {
-    const { setModule, setProject, currentOrganizationId, projects, addProject } = useStore();
+    const { setModule, setProject, currentOrganizationId, projects, addProject, logout } = useStore();
     const toast = useToast();
     console.log("Dashboard Render. Current User:", auth.currentUser?.uid, "Is Anonymous:", auth.currentUser?.isAnonymous);
 
@@ -215,7 +215,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex gap-3 w-full md:w-auto justify-end md:justify-start">
                         <ThreeDButton
-                            onClick={() => auth.signOut()}
+                            onClick={() => logout()}
                             variant="danger"
                             className="rounded-full flex items-center justify-center"
                             title="Sign Out"

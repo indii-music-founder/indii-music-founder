@@ -137,7 +137,17 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                             if (currentId !== 'org-default' && !mappedOrgs.find(o => o.id === currentId)) {
                                 set({ currentOrganizationId: 'org-default' });
                             }
+                        }).catch(err => {
+                            console.error("[AuthSlice] Failed to fetch user organizations:", err);
+                            // Fallback to default org if fetch fails
+                            const defaultOrg = { id: 'org-default', name: 'Personal Workspace', plan: 'free' as const, members: ['me'] };
+                            set({ organizations: [defaultOrg] });
                         });
+                    }).catch(err => {
+                        console.error("[AuthSlice] Failed to load OrganizationService:", err);
+                        // Fallback to default org if service load fails
+                        const defaultOrg = { id: 'org-default', name: 'Personal Workspace', plan: 'free' as const, members: ['me'] };
+                        set({ organizations: [defaultOrg] });
                     });
 
                 } else {

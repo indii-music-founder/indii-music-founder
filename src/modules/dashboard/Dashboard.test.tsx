@@ -1,20 +1,27 @@
 import { auth } from '@/services/firebase';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect } from 'vitest';
 import Dashboard from './Dashboard';
+
+// Hoist mocks to ensure stable references across renders that we can assert on
+const storeMocks = vi.hoisted(() => ({
+    setModule: vi.fn(),
+    setProject: vi.fn(),
+    addProject: vi.fn(),
+    createNewProject: vi.fn(),
+    addKnowledgeDocument: vi.fn(),
+    logout: vi.fn(),
+}));
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
-    useStore: vi.fn(() => ({
-        setModule: vi.fn(),
-        setProject: vi.fn(),
+    useStore: () => ({
+        ...storeMocks,
         currentOrganizationId: 'org-1',
         projects: [
             { id: 'p1', name: 'Test Project', type: 'creative', orgId: 'org-1', date: Date.now() }
         ],
-        addProject: vi.fn(),
-        createNewProject: vi.fn(),
-        addKnowledgeDocument: vi.fn(),
-    })),
+    }),
     AppSlice: {},
 }));
 
@@ -100,11 +107,10 @@ describe('Dashboard', () => {
         expect(screen.getByTestId('onboarding-modal')).toBeInTheDocument();
     });
 
-    it('calls auth.signOut when Sign Out button is clicked', async () => {
-        const { auth } = await import('@/services/firebase');
+    it('calls store.logout when Sign Out button is clicked', async () => {
         render(<Dashboard />);
         const signOutBtn = screen.getByText('Sign Out');
         fireEvent.click(signOutBtn);
-        expect(auth.signOut).toHaveBeenCalled();
+        expect(storeMocks.logout).toHaveBeenCalled();
     });
 });

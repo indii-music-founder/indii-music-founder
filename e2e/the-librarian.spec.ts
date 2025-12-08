@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-const BASE_URL = 'https://architexture-ai-studio.web.app';
+const BASE_URL = 'http://localhost:5173';
 const TEST_TIMESTAMP = Date.now();
 const SECRET_CODE = `OMEGA-${TEST_TIMESTAMP}`;
 const MANIFESTO_CONTENT = `
@@ -38,12 +38,42 @@ test.describe('The Librarian: RAG Pipeline Verification', () => {
     });
 
     test('Ingest, Index, and Retrieve Real Data', async ({ page }) => {
+        // 0. Mock Electron API
+        await page.addInitScript(() => {
+            window.electronAPI = {
+                getPlatform: async () => 'darwin',
+                getAppVersion: async () => '0.0.0',
+                auth: {
+                    login: async () => { },
+                    logout: async () => { },
+                    onUserUpdate: (cb) => {
+                        cb({ idToken: 'mock-token', accessToken: 'mock-access' });
+                        return () => { };
+                    }
+                },
+                audio: { analyze: async () => ({}), getMetadata: async () => ({}) }
+            };
+        });
+
         // 1. Login / Land on Dashboard
         console.log(`[Librarian] Target Secret: ${SECRET_CODE}`);
         await page.goto(BASE_URL);
+
         await page.waitForLoadState('domcontentloaded');
 
-        // Handle "Get Started" if present (Auth flow)
+        // Bypass Auth
+        await page.evaluate(() => {
+            // @ts-ignore
+            window.useStore.setState({
+                isAuthenticated: true,
+                isAuthReady: true,
+                currentModule: 'dashboard',
+                organizations: [{ id: 'org-1', name: 'Test Org', members: ['me'] }],
+                currentOrganizationId: 'org-1'
+            });
+        });
+
+        // Handle "Get Started" if present (Auth flow) - Should be bypassed now
         const getStartedBtn = page.getByRole('button', { name: /get started|launch|sign in/i });
         if (await getStartedBtn.isVisible()) {
             await getStartedBtn.click();

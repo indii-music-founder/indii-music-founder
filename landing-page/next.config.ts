@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: false,
-  output: 'export',  // Static export for Firebase Hosting (not App Hosting)
+  output: 'export',
+  reactStrictMode: true,
   images: {
     unoptimized: true,
   },

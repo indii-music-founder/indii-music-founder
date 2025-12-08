@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { signUpWithEmail, signInWithGoogle, handleGoogleRedirect, getStudioUrl } from '@/app/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/app/lib/firebase';

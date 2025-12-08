@@ -23,7 +23,7 @@ interface Window {
         auth: {
             login: () => Promise<void>;
             logout: () => Promise<void>;
-            onUserUpdate: (callback: (user: any) => void) => void;
+            onUserUpdate: (callback: (user: any) => void) => () => void;
         };
 
         // Audio
