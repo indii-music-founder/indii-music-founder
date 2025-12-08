@@ -72,9 +72,8 @@ export default function App() {
     // Auth Guard - Redirect unauthenticated users to login
     useEffect(() => {
         if (isAuthReady && !isAuthenticated) {
-            // Default to local login bridge if env not set
-            // Default to local login bridge if env not set
-            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'http://localhost:3000/login-bridge';
+            // Use production URL as fallback
+            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login';
 
             if (window.electronAPI?.auth) {
                 window.electronAPI.auth.login();
