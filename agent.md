@@ -48,9 +48,14 @@
 11. **The "Autopoiesis" Rule (Self-Documentation):**
     - **Update Local Charters:** Agents (e.g., Road Manager, Creative Director) MUST update their own specific `AGENTS.md` (e.g., `agents/road-manager/AGENTS.md`) when they learn a new pattern or constraint.
     - **Create if Missing:** If you are working on a module (e.g., `modules/touring`) and no specific Agent Charter exists, **create it**.
+
+12. **Backend Config Verification:**
+    - Before diagnosing a "Service Failure" (e.g., Video Generation failing), **verify the backend keys first**.
+    - Use `firebase functions:config:get` to ensure `INNGEST_EVENT_KEY` and other secrets are present in the target environment.
+    - **Why:** To avoid chasing code bugs when the issue is simply a missing password.
     - **Learn & Log:** If you fix a tricky bug, add a "Lessons Learned" section to that Agent's markdown file so the next agent doesn't repeat the mistake.
 
-12. **The "Living Test" Protocol:**
+13. **The "Living Test" Protocol:**
     - **Sync Tests with Tech:** If you advance a technology or system (e.g., adding Vector Search to RAG), you **MUST** update the corresponding test protocol (e.g., "The Librarian") to check this new capability.
     - **No Stale Green Lights:** A test that passes because it checks an obsolete, simple version of the feature is a failure. Tests must cover the *current* level of complexity.
 
