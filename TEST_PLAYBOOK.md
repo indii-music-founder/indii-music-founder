@@ -258,3 +258,44 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   ```
 
 ---
+---
+
+## 16. The Auditor 📋
+
+**Scope:** Live Infrastructure & Security Configuration  
+**Status:** **ACTIVE**  
+**File:** `scripts/the-auditor.ts`
+
+"The Auditor" is the infrastructure verification protocol. It bypasses frontend mocks and speaks directly to the live Firebase backend to verify configuration, connectivity, and security rules.
+
+- **Scenarios:**
+  1. **Service Auth:** Verifies `automator` service account can login.
+  2. **Storage Connect:** Verifies connection to `gs://indiios-alpha-electron`.
+  3. **Rule Enforcement:** Verifies writes are allowed for owner and denied for others.
+
+- **Command:**
+
+  ```bash
+  npx tsx scripts/the-auditor.ts
+  ```
+
+---
+
+## 17. The Printer 🖨️
+
+**Scope:** `src/modules/design` (Physical Media Designer)
+**Status:** **ACTIVE**
+**File:** `src/modules/design/ThePrinter.test.tsx`
+
+"The Printer" stress tests the Physical Media layout engine to ensure it can handle rapid format switching and rendering without memory leaks or crashes.
+
+- **Scenarios:**
+  1. **The Press Run**: Renders every available template to verify data integrity.
+  2. **The Zoom Lens**: Rapidly updates zoom props (100x) to test re-render performance.
+  3. **The Ink Spill**: Rapidly mounts/unmounts components to catch cleanup failures.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/modules/design/ThePrinter.test.tsx
+  ```

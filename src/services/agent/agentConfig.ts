@@ -231,6 +231,19 @@ export const AGENT_CONFIGS: AgentConfig[] = [
                         },
                         required: ["productType", "scenePrompt"]
                     }
+                },
+                {
+                    name: "generate_high_res_asset",
+                    description: "Generate a 4K/UHD asset for physical media printing using Nano Banana Pro.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            prompt: { type: "STRING", description: "Visual description of the asset." },
+                            templateType: { type: "STRING", description: "The physical format (e.g. 'cd_front', 'vinyl_jacket')." },
+                            style: { type: "STRING", description: "Artistic style." }
+                        },
+                        required: ["prompt", "templateType"]
+                    }
                 }
             ]
         }]

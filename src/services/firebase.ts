@@ -10,7 +10,7 @@ const firebaseConfig = {
     authDomain: `${env.projectId}.firebaseapp.com`,
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: env.projectId,
-    storageBucket: "indiios-v-1-1.firebasestorage.app",
+    storageBucket: env.storageBucket || "gs://indiios-alpha-electron",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:3af738739465ea4095e9bd",
     measurementId: "G-7WW3HEHFTF"

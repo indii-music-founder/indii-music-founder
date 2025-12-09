@@ -21,6 +21,11 @@
         "app": [
           "indiios-studio"
         ]
+      },
+      "storage": {
+        "main": [
+          "indiios-alpha-electron"
+        ]
       }
     }
   },
