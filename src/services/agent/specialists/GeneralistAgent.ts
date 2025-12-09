@@ -76,6 +76,72 @@ export class GeneralistAgent extends BaseAgent {
         this.functions = TOOL_REGISTRY;
     }
 
+
+    // Helper to extract multiple JSON objects from a stream buffer
+    // Handles { ... } { ... } concatenation
+    private extractJsonObjects(buffer: string): { objects: any[], remaining: string } {
+        const objects: any[] = [];
+        let remaining = buffer;
+
+        while (true) {
+            const start = remaining.indexOf('{');
+            if (start === -1) break;
+
+            let balance = 0;
+            let end = -1;
+            let inString = false;
+            let escape = false;
+
+            for (let i = start; i < remaining.length; i++) {
+                const char = remaining[i];
+
+                if (escape) {
+                    escape = false;
+                    continue;
+                }
+
+                if (char === '\\') {
+                    escape = true;
+                    continue;
+                }
+
+                if (char === '"') {
+                    inString = !inString;
+                    continue;
+                }
+
+                if (!inString) {
+                    if (char === '{') balance++;
+                    if (char === '}') {
+                        balance--;
+                        if (balance === 0) {
+                            end = i;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (end !== -1) {
+                const jsonStr = remaining.substring(start, end + 1);
+                try {
+                    const obj = JSON.parse(jsonStr);
+                    objects.push(obj);
+                    remaining = remaining.substring(end + 1);
+                } catch (e) {
+                    // Invalid JSON in this chunk (maybe falsely identified braces?), skip past this opening brace
+                    console.warn(`[GeneralistAgent] Failed to parse chunk: ${jsonStr.substring(0, 20)}...`);
+                    remaining = remaining.substring(start + 1);
+                }
+            } else {
+                // Incomplete object, wait for more data
+                break;
+            }
+        }
+
+        return { objects, remaining };
+    }
+
     async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<{ text: string; data?: any }> {
         console.log(`[${this.name}] Received task: ${task}`);
 
@@ -119,32 +185,22 @@ export class GeneralistAgent extends BaseAgent {
         while (iterations < 8) { // Limit iterations for safety
             const parts: any[] = [];
 
-            // Build Context from History (Simplified for now, similar to AgentZero)
+            // Build Context from History
             history.forEach(msg => {
-                if (msg.id && msg.role !== 'system') { // Skip internal system messages to avoid noise
+                if (msg.id && msg.role !== 'system') {
                     if (msg.role === 'user' && msg.attachments) {
                         msg.attachments.forEach(att => parts.push({ inlineData: { mimeType: att.mimeType, data: att.base64.split(',')[1] } }));
                     }
-                    parts.push({ text: `${msg.role.toUpperCase()}: ${msg.text}` });
+                    if (msg.text) {
+                        parts.push({ text: `${msg.role.toUpperCase()}: ${msg.text}` });
+                    }
                 }
             });
+
+            // Add current context
             parts.push({ text: `${fullSystemPrompt}\n\nLast Input: ${currentInput}\nNext Step (JSON):` });
 
-            // Create placeholder for internal streaming response (visible to user via store)
-            const responseId = uuidv4();
-            // We don't want to spam the store with every intermediate thought as a separate "model" message 
-            // but AgentZero did. Let's keep the pattern for now or better, use the onProgress callback.
-            // Actually, AgentZero directly manipulated the store. 
-            // To be a good citizen of the unified architecture, we should rely on the `AgentService` to handle message construction
-            // BUT, `AgentExecutor` expects the `execute` method to return the FINAL text.
-            // Intermediate thoughts should be sent via `onProgress`.
-
             try {
-                // Determine if we should stream? 
-                // The BaseAgent uses `AI.generateContent` which isn't streaming in the `check` implementation but `AgentZero` used streaming.
-                // For this refactor, we will stick to unary calls to ensure stability first, then upgrade to streaming later (Task 2).
-
-                // STREAMING IMPLEMENTATION
                 const stream = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{ role: 'user', parts }],
@@ -154,54 +210,76 @@ export class GeneralistAgent extends BaseAgent {
                     }
                 });
 
-
-                let fullText = "";
+                let buffer = "";
                 const reader = stream.getReader();
+
+                // Track execution state within this generation
+                let stepActionTaken = false;
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
 
-                    const chunk = value.text();
-                    fullText += chunk;
-                    // Emit token for real-time UI typing effect
-                    onProgress?.({ type: 'token', content: chunk });
-                }
+                    if (value) {
+                        const chunk = value.text();
+                        buffer += chunk;
 
-                // Parse the accumulated full text
-                const result = AI.parseJSON(fullText);
+                        // Emit token for UI typing effect
+                        onProgress?.({ type: 'token', content: chunk });
 
-                if (result.thought) {
-                    onProgress?.({ type: 'thought', content: result.thought });
-                }
+                        // Attempt to parse objects from the growing buffer
+                        const { objects, remaining } = this.extractJsonObjects(buffer);
+                        buffer = remaining;
 
-                if (result.final_response) {
-                    finalResponseText = result.final_response;
-                    break;
-                }
+                        for (const result of objects) {
+                            if (result.thought) {
+                                onProgress?.({ type: 'thought', content: result.thought });
+                            }
 
-                if (result.tool) {
-                    // Report tool usage
-                    onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
+                            if (result.final_response) {
+                                finalResponseText = result.final_response;
+                                stepActionTaken = true;
+                                // We can break inner loop if we have final response
+                            }
 
-                    const toolFunc = TOOL_REGISTRY[result.tool];
-                    let output = "Unknown tool";
-                    if (toolFunc) {
-                        try {
-                            output = await toolFunc(result.args);
-                        } catch (err: any) {
-                            output = `Error: ${err.message}`;
+                            if (result.tool) {
+                                stepActionTaken = true;
+                                // Report tool usage
+                                onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
+
+                                const toolFunc = TOOL_REGISTRY[result.tool];
+                                let output = "Unknown tool";
+                                if (toolFunc) {
+                                    try {
+                                        output = await toolFunc(result.args);
+                                    } catch (err: any) {
+                                        output = `Error: ${err.message}`;
+                                    }
+                                }
+
+                                onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
+
+                                if (output.toLowerCase().includes('successfully')) {
+                                    currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
+                                } else {
+                                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                                }
+                            }
                         }
                     }
 
-                    onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
+                    if (done) break;
+                    if (stepActionTaken && finalResponseText) break; // Optimization: Stop stream if done
+                }
 
-                    if (output.toLowerCase().includes('successfully')) {
-                        currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
-                    } else {
-                        currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                if (finalResponseText) break; // Break outer loop
+                if (!stepActionTaken) {
+                    // If we finished stream but didn't act, maybe verify validity or just loop?
+                    // If buffer still has data, it might be malformed JSON.
+                    if (buffer.trim().length > 0) {
+                        console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
                     }
                 }
+
             } catch (err: any) {
                 console.error("Generalist Loop Error:", err);
                 onProgress?.({ type: 'thought', content: `Error: ${err.message}` });

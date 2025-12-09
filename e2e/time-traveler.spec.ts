@@ -7,6 +7,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
     test('Scenario 1: Project Persistence', async ({ page }) => {
         // 1. Mock Electron API to prevent redirect
         await page.addInitScript(() => {
+            // @ts-ignore
             window.electronAPI = {
                 getPlatform: async () => 'darwin',
                 getAppVersion: async () => '0.0.0',
@@ -25,7 +26,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
         });
 
         // 2. Mock AI Network Responses
-        await page.route('**/*generateContentStream*', async route => {
+        await page.route('**/*generateContentStream*', async (route: any) => {
             const mockResponseChunks = [
                 JSON.stringify({ text: `{ "final_response": "I created the project ` }),
                 JSON.stringify({ text: `TimeTraveler." }` })
@@ -42,7 +43,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
             window.useStore.setState({
                 isAuthenticated: true,
                 isAuthReady: true,
-                currentModule: 'dashboard',
+                currentModule: 'creative', // Force Creative Module (which has ChatOverlay)
                 organizations: [{ id: 'org-1', name: 'Test Org', members: ['me'] }],
                 currentOrganizationId: 'org-1',
                 // Ensure chat overlay is open for persistence check if needed, though dashboard listing is main check

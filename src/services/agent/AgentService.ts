@@ -98,6 +98,18 @@ export class AgentService {
             this.isProcessing = false;
         }
     }
+    async runAgent(agentId: string, task: string, parentContext?: any): Promise<any> {
+        // Build a pipeline context from the parent context or fresh
+        const context = parentContext || await this.contextPipeline.buildContext();
+
+        // Ensure minimal context exists
+        if (!context.chatHistory) context.chatHistory = [];
+
+        console.log(`[AgentService] Delegating task to ${agentId}: "${task}"`);
+
+        return await this.executor.execute(agentId, task, context);
+    }
+
     private addSystemMessage(text: string) {
         useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
     }

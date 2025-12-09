@@ -136,7 +136,7 @@ async function expandQuery(originalQuery: string): Promise<string[]> {
             }
         });
 
-        const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = response.text();
         const variations = JSON.parse(text || "[]");
         return [originalQuery, ...variations];
     } catch (e) {
@@ -250,7 +250,7 @@ export async function localQueryStore(
             }
         });
 
-        const answer = response.candidates?.[0]?.content?.parts?.[0]?.text || "No answer generated.";
+        const answer = response.text() || "No answer generated.";
 
         // 5. Construct Asset
         const sources = rankedDocs.map(r => ({

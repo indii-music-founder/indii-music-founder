@@ -29,6 +29,7 @@ export default function Sidebar() {
     const toolItems = [
         { id: 'music', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
+        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
     ];
 
     const NavItem = ({ item, isActive }: { item: any, isActive: boolean }) => {

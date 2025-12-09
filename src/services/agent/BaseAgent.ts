@@ -1,20 +1,12 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback } from './registry';
-// import { AI } from '@/services/ai/AIService'; // Avoid circular dependency if possible, or import lazily
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { TOOL_REGISTRY } from './tools';
+import { AgentConfig, ToolDefinition, FunctionDeclaration } from './types';
 
-export interface AgentConfig {
-    id: string;
-    name: string;
-    description: string;
-    color: string;
-    category: 'manager' | 'department' | 'specialist';
-    systemPrompt: string;
-    tools?: any[]; // Tool definitions (JSON schema)
-    functions?: Record<string, (args: any) => Promise<any>>; // Implementations
-}
+// Export types for use in definitions
+export type { AgentConfig };
 
-const SUPERPOWER_TOOLS = [
+const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
     {
         name: 'save_memory',
         description: 'Save a fact, rule, or preference to long-term memory.',
@@ -22,7 +14,7 @@ const SUPERPOWER_TOOLS = [
             type: 'object',
             properties: {
                 content: { type: 'string', description: 'The content to remember.' },
-                type: { type: 'string', enum: ['fact', 'summary', 'rule'], description: 'Type of memory.' }
+                type: { type: 'string', description: 'Type of memory.', enum: ['fact', 'summary', 'rule'] }
             },
             required: ['content']
         }
@@ -72,6 +64,29 @@ const SUPERPOWER_TOOLS = [
             },
             required: ['projectId']
         }
+    },
+    {
+        name: 'search_knowledge',
+        description: 'Search the internal knowledge base for answers, guidelines, or policies.',
+        parameters: {
+            type: 'object',
+            properties: {
+                query: { type: 'string', description: 'The search query.' }
+            },
+            required: ['query']
+        }
+    },
+    {
+        name: 'delegate_task',
+        description: 'Delegate a sub-task to another specialized agent.',
+        parameters: {
+            type: 'object',
+            properties: {
+                targetAgentId: { type: 'string', description: 'The ID of the agent to delegate to (e.g., "video", "legal").' },
+                task: { type: 'string', description: 'The specific task for the agent to perform.' }
+            },
+            required: ['targetAgentId', 'task']
+        }
     }
 ];
 
@@ -82,8 +97,8 @@ export class BaseAgent implements SpecializedAgent {
     public color: string;
     public category: 'manager' | 'department' | 'specialist';
     public systemPrompt: string;
-    public tools: any[];
-    protected functions: Record<string, (args: any) => Promise<any>>;
+    public tools: ToolDefinition[];
+    protected functions: Record<string, (args: any, context?: any) => Promise<any>>;
 
     constructor(config: AgentConfig) {
         this.id = config.id;
@@ -101,7 +116,11 @@ export class BaseAgent implements SpecializedAgent {
                 if (!project) return { error: 'Project not found' };
                 return project;
             },
-            ...config.functions
+            delegate_task: async ({ targetAgentId, task }, context) => {
+                const { agentService } = await import('./AgentService');
+                return await agentService.runAgent(targetAgentId, task, context);
+            },
+            ...(config.functions || {})
         };
     }
 
@@ -152,7 +171,7 @@ ${task}
 `;
 
         // Merge specialist tools with superpowers
-        const allTools = [
+        const allTools: ToolDefinition[] = [
             ...(this.tools || []),
             { functionDeclarations: SUPERPOWER_TOOLS }
         ];
@@ -179,7 +198,7 @@ ${task}
 
                 // Check local functions first (specialist specific)
                 if (this.functions[name]) {
-                    const result = await this.functions[name](args);
+                    const result = await this.functions[name](args, enrichedContext);
                     onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
                     return {
                         text: `[Tool: ${name}] Output: ${JSON.stringify(result)}`,
@@ -213,3 +232,4 @@ ${task}
         }
     }
 }
+

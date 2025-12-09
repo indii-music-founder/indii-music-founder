@@ -104,7 +104,7 @@ export default function App() {
             const state = useStore.getState();
             // Simple check: if bio is missing, assume onboarding is needed
             // Ideally we check a specific flag, but this works for the "nuclear" reset flow
-            if (!state.userProfile?.bio && currentModule !== 'onboarding' && currentModule !== 'select-org') {
+            if (!state.userProfile?.bio && currentModule !== 'onboarding' && currentModule !== 'select-org' && !(window as any).__TEST_MODE__) {
                 console.log("[App] New user detected, redirecting to onboarding");
                 useStore.setState({ currentModule: 'onboarding' });
             }
@@ -120,7 +120,11 @@ export default function App() {
             if (window.electronAPI?.auth) {
                 window.electronAPI.auth.login();
             } else {
-                console.warn("[App] Electron API not found! Local Web Mode active.");
+                if (import.meta.env.DEV) {
+                    console.info("[App] Electron API not found. This is expected if running in web mode (npm run dev).");
+                } else {
+                    console.error("[App] Electron API not found in production! deeply suspicious.");
+                }
                 // We do NOT redirect to landingPageUrl anymore to avoid the loop.
                 // We stay here and let AuthLoading show the "Sign In" button.
             }

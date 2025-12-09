@@ -25,7 +25,22 @@ export interface GenerateVideoRequest {
     config?: Record<string, unknown>;
 }
 
+
 export interface GenerateVideoResponse {
     predictions?: any[];
+    [key: string]: any;
+}
+
+export interface GenerateImageRequest {
+    model: string;
+    prompt: string;
+    config?: Record<string, unknown>;
+}
+
+export interface GenerateImageResponse {
+    images: {
+        bytesBase64Encoded: string;
+        mimeType: string;
+    }[];
     [key: string]: any;
 }

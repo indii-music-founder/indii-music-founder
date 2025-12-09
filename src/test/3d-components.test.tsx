@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import { describe, it } from 'vitest';
 import { ThreeDCard, ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '../components/ui/ThreeDCard';
 import { ThreeDButton } from '../components/ui/ThreeDButton';
 

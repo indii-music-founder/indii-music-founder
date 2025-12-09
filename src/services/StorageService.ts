@@ -1,7 +1,7 @@
 
 import { db, storage } from './firebase';
 import { collection, query, orderBy, limit, Timestamp, where, getDocs } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
 import { HistoryItem } from '../core/store';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
@@ -9,6 +9,33 @@ import { FirestoreService } from './FirestoreService';
 class StorageServiceImpl extends FirestoreService<HistoryItem> {
     constructor() {
         super('history');
+    }
+
+    /**
+     * Uploads a file (Blob or File) directly to Firebase Storage.
+     * @param file The file to upload.
+     * @param path The storage path (e.g., 'users/uid/ref_images/id').
+     * @returns The download URL.
+     */
+    async uploadFile(file: Blob | File, path: string): Promise<string> {
+        try {
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+        } catch (error) {
+            console.error("Error uploading file to storage:", error);
+            throw error;
+        }
+    }
+
+    async deleteFile(path: string): Promise<void> {
+        try {
+            const storageRef = ref(storage, path);
+            await deleteObject(storageRef);
+        } catch (error) {
+            console.warn("Error deleting file from storage:", error);
+            // Don't throw, just warn, as the record might be missing
+        }
     }
 
     async saveItem(item: HistoryItem) {
@@ -35,7 +62,7 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                 url: imageUrl,
                 timestamp: Timestamp.fromMillis(item.timestamp),
                 orgId: orgId || 'personal', // Default to 'personal' if no org selected
-                userId: auth.currentUser?.uid // Explicitly save userId
+                userId: auth.currentUser?.uid || null // Explicitly save userId, default to null to avoid Firestore undefined error
             };
 
             // Casting as specific data to satisfy TS, assuming FirestoreService handles ID generation

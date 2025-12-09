@@ -103,7 +103,7 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
         }
     });
 
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = response.response.candidates?.[0]?.content?.parts?.[0]?.text;
     const generated = JSON.parse(text || "{}");
 
     // Post-processing to ensure internal consistency (status, etc)
@@ -123,6 +123,8 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
         name: generated.name || 'Generated Workflow',
         description: generated.description || userPrompt,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 1 },
         nodes,
         edges
     };

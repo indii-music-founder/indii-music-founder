@@ -36,7 +36,7 @@ export default function WorkflowNodeInspector() {
                 model: 'gemini-1.5-flash',
                 contents: [{ role: 'user', parts: [{ text: `Refine this prompt based on the instruction: "${aiInstruction}". \n\nCurrent Prompt: "${prompt}"\n\nReturn ONLY the refined prompt text.` }] }]
             });
-            const newPrompt = response.candidates?.[0]?.content?.parts?.[0]?.text || prompt;
+            const newPrompt = response.response.candidates?.[0]?.content?.parts?.[0]?.text || prompt;
             setPrompt(newPrompt);
             setAiInstruction('');
         } catch (e) {

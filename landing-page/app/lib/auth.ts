@@ -117,5 +117,8 @@ async function updateLastLogin(uid: string) {
  * Get redirect URL for studio app
  */
 export function getStudioUrl() {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:5173';
+  }
   return STUDIO_URL;
 }

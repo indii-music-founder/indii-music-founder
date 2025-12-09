@@ -1,4 +1,4 @@
-import { AIService } from '../ai/AIService';
+import { AI } from '../ai/AIService';
 
 // Types
 export interface ShowroomState {
@@ -37,13 +37,14 @@ export class ShowroomService {
         // Note: In a real implementation, we'd pass the image as a 'part'.
         // For now, we simulate the call structure used by AIService.image
 
-        // This is a simplified wrapper. The actual call would go through the Agent/AIService 
-        // which handles the specific model protocol.
-
-        // TODO: Replace with actual AIService.generateImage call when available in unified API
-        // For now, we assume standard generation.
-
-        return "mock_generated_image_base64_placeholder";
+        return await AI.generateImage({
+            model: 'imagen-3.0-generate-001', // Or 'imagen-3.0-fast-generate-001'
+            prompt: prompt,
+            config: {
+                aspectRatio: '1:1',
+                sampleCount: 1,
+            }
+        });
     }
 
     static async generateVideo(

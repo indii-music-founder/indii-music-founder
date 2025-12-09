@@ -164,7 +164,7 @@ class FileSystemService {
       dir: FileSystemDirectoryHandle,
       path = ''
     ): AsyncGenerator<{ path: string; handle: FileSystemFileHandle }> {
-      for await (const entry of dir.values()) {
+      for await (const entry of (dir as any).values()) {
         const entryPath = path ? `${path}/${entry.name}` : entry.name;
 
         if (entry.kind === 'file') {
@@ -234,7 +234,7 @@ class FileSystemService {
         const handle = data.handle as FileSystemDirectoryHandle;
 
         // Check if we still have permission
-        const permission = await handle.queryPermission({ mode: 'read' });
+        const permission = await (handle as any).queryPermission({ mode: 'read' });
         if (permission === 'granted') {
           resolve(handle);
           return;
@@ -242,7 +242,7 @@ class FileSystemService {
 
         // Request permission (requires user gesture)
         try {
-          const newPermission = await handle.requestPermission({ mode: 'read' });
+          const newPermission = await (handle as any).requestPermission({ mode: 'read' });
           if (newPermission === 'granted') {
             resolve(handle);
           } else {
@@ -301,7 +301,7 @@ class FileSystemService {
   async saveFile(
     suggestedName: string,
     content: Blob | string,
-    types?: FilePickerAcceptType[]
+    types?: any[]
   ): Promise<FileSystemFileHandle | null> {
     if (!this.isSupported()) {
       // Fallback to traditional download

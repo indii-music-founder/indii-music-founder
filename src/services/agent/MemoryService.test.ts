@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { memoryService } from './MemoryService';
-import { firestoreService } from '../FirestoreService';
-
 // Mock FirestoreService Class using vi.hoisted to avoid reference errors
 const { mockAdd, mockList, mockDelete, mockUpdate } = vi.hoisted(() => ({
     mockAdd: vi.fn(),
@@ -18,9 +16,7 @@ vi.mock('../FirestoreService', () => ({
             delete: mockDelete,
             update: mockUpdate
         };
-    }),
-    // KEEPING this for backward compatibility if other tests rely on it, but checking usage
-    firestoreService: {}
+    })
 }));
 
 // Mock AIService - embedContent returns empty to use keyword fallback in tests

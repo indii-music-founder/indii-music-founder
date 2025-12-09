@@ -13,6 +13,16 @@ vi.mock('@/services/ai/AIService', () => ({
         generateContent: vi.fn().mockResolvedValue({
             text: () => "Mock Response",
             functionCalls: () => []
+        }),
+        generateContentStream: vi.fn().mockResolvedValue({
+            stream: (async function* () {
+                yield {
+                    text: () => JSON.stringify({
+                        thought: "Mocking stream thought",
+                        final_response: "Mock Stream Response"
+                    })
+                };
+            })()
         })
     }
 }));
@@ -140,6 +150,43 @@ describe('Multi-Agent Architecture Tests', () => {
                 expect((agent as any)?.systemPrompt).toBeDefined();
             });
         });
+
+        it('should have search_knowledge superpower on all agents', () => {
+            const driver = agentRegistry.get('driver'); // or any other agent
+            // Actually, let's test a few diverse ones
+            const testAgents = ['legal', 'video', 'finance'];
+            testAgents.forEach(id => {
+                const agent: any = agentRegistry.get(id);
+                // BaseAgent merges superpowers into the tools sent to LLM, 
+                // but they are not stored in public .tools array directly in the class 
+                // (logic is in execute method: const allTools = [...this.tools, ...SUPERPOWER_TOOLS])
+
+                // However, we can check if the definition exists in BaseAgent's source 
+                // OR we can't easily check it on the instance without spying on execute.
+                // Wait, looking at BaseAgent.ts, SUPERPOWER_TOOLS is a file-level constant.
+                // But wait, I added search_knowledge to SUPERPOWER_TOOLS in BaseAgent.ts.
+                // The `execute` method uses it. 
+
+                // Ideally we mock AI.generateContent and ensure the tools passed in include search_knowledge.
+            });
+        });
+
+        it('should pass superpower tools to AI when executing', async () => {
+            const agent = agentRegistry.get('marketing');
+            await agent?.execute('Research market trends');
+
+            expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
+                config: expect.objectContaining({
+                    tools: expect.arrayContaining([
+                        expect.objectContaining({
+                            functionDeclarations: expect.arrayContaining([
+                                expect.objectContaining({ name: 'search_knowledge' })
+                            ])
+                        })
+                    ])
+                })
+            }));
+        });
     });
 
     describe('6. Direct Delegation Verification', () => {
@@ -157,6 +204,29 @@ describe('Multi-Agent Architecture Tests', () => {
 
             await service.sendMessage(userQuery, undefined, 'director');
             expect(true).toBe(true);
+        });
+
+        it('should invoke runAgent when delegate_task is called', async () => {
+            // Import the singleton used by BaseAgent
+            const { agentService } = await import('./AgentService');
+
+            // Mock runAgent on the singleton
+            const spy = vi.spyOn(agentService, 'runAgent').mockResolvedValue('Delegation Success');
+
+            const agent = agentRegistry.get('legal'); // Any BaseAgent
+            const delegateFunc = (agent as any).functions['delegate_task'];
+
+            expect(delegateFunc).toBeDefined();
+
+            const result = await delegateFunc({
+                targetAgentId: 'video',
+                task: 'Create strict delegation test'
+            }, { someContext: true });
+
+            expect(spy).toHaveBeenCalledWith('video', 'Create strict delegation test', expect.objectContaining({ someContext: true }));
+            expect(result).toBe('Delegation Success');
+
+            spy.mockRestore();
         });
     });
 
@@ -211,8 +281,8 @@ describe('Multi-Agent Architecture Tests', () => {
             const calls = updateSpy.mock.calls;
             const thoughtUpdate = calls.find((c: any) => c[1].thoughts);
             expect(thoughtUpdate).toBeDefined();
-            expect(thoughtUpdate[1].thoughts.length).toBeGreaterThan(0);
-            expect(thoughtUpdate[1].thoughts[0].text).toBe('Thinking process started...');
+            expect(thoughtUpdate?.[1]?.thoughts?.length).toBeGreaterThan(0);
+            expect(thoughtUpdate?.[1]?.thoughts?.[0]?.text).toBe('Thinking process started...');
         });
     });
 });

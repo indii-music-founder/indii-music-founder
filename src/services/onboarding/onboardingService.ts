@@ -271,9 +271,8 @@ export async function runOnboardingConversation(
             },
         });
 
-        const candidate = response.candidates?.[0];
-        const text = candidate?.content?.parts?.find(p => p.text)?.text || "";
-        const functionCalls = candidate?.content?.parts?.filter(p => p.functionCall).map(p => p.functionCall);
+        const text = response.text() || "";
+        const functionCalls = response.functionCalls();
 
         return {
             text,
@@ -399,5 +398,5 @@ export async function generateSection(section: 'bio' | 'brand_description' | 'pr
             ...AI_CONFIG.THINKING.HIGH,
         },
     });
-    return response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    return response.text().trim() || "";
 }

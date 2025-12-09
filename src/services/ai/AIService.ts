@@ -34,7 +34,7 @@ import { env } from '@/config/env';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { endpointService } from '@/core/config/EndpointService';
-import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest, GenerateVideoResponse } from '@/shared/types/ai.dto';
+import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest, GenerateVideoResponse, GenerateImageRequest, GenerateImageResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode } from '@/shared/types/errors';
 
 export class AIService {
@@ -209,6 +209,32 @@ export class AIService {
         } catch (e) {
             console.error("Video Gen Error", e);
             throw e;
+        }
+    }
+
+    async generateImage(options: {
+        model: string;
+        prompt: string;
+        config?: Record<string, unknown>;
+    }): Promise<string> {
+        try {
+            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(functions, 'generateImage');
+            const response = await this.withRetry(() => generateImageFn({
+                model: options.model,
+                prompt: options.prompt,
+                config: options.config
+            }));
+
+            const images = response.data.images;
+            if (!images || images.length === 0) {
+                throw new Error("No images returned from backend");
+            }
+
+            // Return the first image as base64 string
+            return images[0].bytesBase64Encoded;
+        } catch (e: any) {
+            console.error("Image Gen Error", e);
+            throw new Error(`Generate Image Failed: ${e.message}`);
         }
     }
 

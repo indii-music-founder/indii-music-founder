@@ -99,4 +99,4 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
 
 // Deprecated: Legacy singleton export to maintain backward compatibility during migration
 // TODO: Remove after full migration
-export const firestoreService = new FirestoreService<any>('legacy_fallback');
+// export const firestoreService = new FirestoreService<any>('legacy_fallback');

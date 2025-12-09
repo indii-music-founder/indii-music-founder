@@ -61,7 +61,15 @@ describe('onboardingService', () => {
                 socials: {},
                 brandAssets: [],
                 referenceImages: [],
-                releaseDetails: {}
+                releaseDetails: {
+                    title: '',
+                    type: '',
+                    artists: '',
+                    genre: '',
+                    mood: '',
+                    themes: '',
+                    lyrics: ''
+                }
             },
             analyzedTrackIds: [],
             knowledgeBase: [],
@@ -147,14 +155,8 @@ describe('onboardingService', () => {
 
         it('should call AI service and return text and tools', async () => {
             const mockResponse = {
-                candidates: [{
-                    content: {
-                        parts: [
-                            { text: 'Hello' },
-                            { functionCall: { name: 'updateProfile', args: { bio: 'Hi' } } }
-                        ]
-                    }
-                }]
+                text: () => 'Hello',
+                functionCalls: () => [{ name: 'updateProfile', args: { bio: 'Hi' } }]
             };
             (AI.generateContent as any).mockResolvedValue(mockResponse);
 

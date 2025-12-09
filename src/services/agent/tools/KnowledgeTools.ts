@@ -21,13 +21,16 @@ export const KnowledgeTools = {
                 () => { } // Update Doc Status dummy
             );
 
-            // Format the output for the LLM
-            const sourceList = asset.sources.map(s => `- ${s.name}`).join('\n');
-
-            return `Answer based on Knowledge Base:\n${asset.content}\n\nSources:\n${sourceList}`;
+            // Return structured data for the agent to consume
+            return JSON.stringify({
+                answer: asset.content,
+                sources: asset.sources.map(s => ({
+                    title: s.name
+                }))
+            });
         } catch (e: any) {
             console.error("Knowledge Tool Error:", e);
-            return `Failed to search knowledge base: ${e.message}`;
+            return JSON.stringify({ error: `Failed to search knowledge base: ${e.message}` });
         }
     }
 };

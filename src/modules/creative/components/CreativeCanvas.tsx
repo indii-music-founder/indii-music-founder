@@ -8,13 +8,18 @@ import { httpsCallable } from 'firebase/functions';
 import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';
 import { EndFrameSelector } from './EndFrameSelector';
+import AnnotationPalette from './AnnotationPalette';
+import EditDefinitionsPanel from './EditDefinitionsPanel';
+import { NANA_COLORS, NanaColor } from '../constants';
+import { Editing } from '@/services/image/EditingService';
 
 interface CreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
+    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
 }
 
-export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
+export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: CreativeCanvasProps) {
     const { updateHistoryItem, setActiveReferenceImage, uploadedImages, addUploadedImage, currentProjectId, generatedHistory } = useStore();
     const toast = useToast();
     const [isEditing, setIsEditing] = useState(false);
@@ -24,6 +29,12 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
+
+    // Nana Banana Pro State
+    const [activeColor, setActiveColor] = useState<NanaColor>(NANA_COLORS[0]);
+    const [editDefinitions, setEditDefinitions] = useState<Record<string, string>>({});
+    const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
+    const [generatedCandidates, setGeneratedCandidates] = useState<{ id: string; url: string; prompt: string }[]>([]);
 
     useEffect(() => {
         if (item) {
@@ -144,128 +155,154 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
         if (!fabricCanvas.current) return;
         setIsMagicFillMode(!isMagicFillMode);
 
+        // Clear candidates when toggling mode
+        if (isMagicFillMode) {
+            setGeneratedCandidates([]);
+        }
+
         if (!isMagicFillMode) {
             // Enable drawing mode for mask
             fabricCanvas.current.isDrawingMode = true;
             fabricCanvas.current.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas.current);
             fabricCanvas.current.freeDrawingBrush.width = 30;
-            fabricCanvas.current.freeDrawingBrush.color = 'rgba(255, 0, 255, 0.5)'; // Visible mask color
-            toast.info("Draw over the area you want to replace");
+            // Set brush color to active Nana color
+            // Use hex directly but with some transparency for visibility
+            // Convert hex to rgba manually or use fabric util if available. 
+            // Simple string concat for now assuming full hex.
+            const hex = activeColor.hex;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            fabricCanvas.current.freeDrawingBrush.color = `rgba(${r}, ${g}, ${b}, 0.5)`;
+
+            toast.info(`Annotating with ${activeColor.name}. Define edit in settings.`);
         } else {
             fabricCanvas.current.isDrawingMode = false;
         }
     };
 
-    const handleMagicFill = async () => {
+    // Update brush color when active color changes
+    useEffect(() => {
+        if (fabricCanvas.current && fabricCanvas.current.isDrawingMode && fabricCanvas.current.freeDrawingBrush) {
+            const hex = activeColor.hex;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            fabricCanvas.current.freeDrawingBrush.color = `rgba(${r}, ${g}, ${b}, 0.5)`;
+        }
+    }, [activeColor]);
+
+    const handleMultiEdit = async () => {
         if (!fabricCanvas.current || !item) return;
-        if (!magicFillPrompt) {
-            toast.error("Please enter a prompt for Magic Fill");
+
+        // Verify we have definitions
+        const activeDefinitions = Object.entries(editDefinitions).filter(([_, val]) => val.trim().length > 0);
+        if (activeDefinitions.length === 0) {
+            toast.error("Please define at least one edit prompt in the settings panel.");
+            setIsDefinitionsOpen(true);
             return;
         }
 
         setIsProcessing(true);
-        toast.info("Applying Magic Fill...");
+        toast.info("Processing Nana Banana Pro Edits...");
 
         try {
-            // 1. Get the original image (base64) - assuming item.url is data URI or we can fetch it
-            // For simplicity, if it's a remote URL, we might need to proxy or fetch it. 
-            // If it's data URI, we're good.
-            let imageBase64 = item.url;
-            if (!imageBase64.startsWith('data:')) {
-                // Fetch and convert if needed, or just use canvas export if it's the base
-                // Let's use the canvas background or the image object
-                // Simpler: Export the current canvas state WITHOUT the mask as the input image
-                // But we need the mask separate.
-
-                // Strategy: 
-                // 1. Hide the mask layer (drawing paths)
-                // 2. Export canvas as 'image'
-                // 3. Show ONLY mask layer
-                // 4. Export canvas as 'mask'
-
-                // Actually, simpler: The user draws on top. 
-                // We can export the whole canvas as the "image" (with mask hidden? No, we need the original)
-                // Let's assume the user wants to edit what they see *under* the mask.
-
-                // Hacky but effective way for v1:
-                // 1. Export the current canvas (with drawings) as the mask? No, that includes the image.
-
-                // Better:
-                // Iterate objects. If it's a Path (drawing), it's the mask.
-                // Hide Paths -> Export -> Image
-                // Hide Images/Shapes -> Show Paths (white) on Black bg -> Export -> Mask
-            }
-
-            // Quick implementation:
-            // We need to separate the drawing (mask) from the background image.
             const canvas = fabricCanvas.current;
             const originalObjects = canvas.getObjects();
-
-            // Filter mask objects (paths created in drawing mode)
             const maskObjects = originalObjects.filter(obj => obj.type === 'path');
             const contentObjects = originalObjects.filter(obj => obj.type !== 'path');
 
-            // 1. Generate Image (Content only)
+            // 1. Generate Base Image (Content only)
+            // Hide all masks
             maskObjects.forEach(obj => obj.visible = false);
-            canvas.backgroundColor = '#000000'; // Ensure black bg for export
-            const image = canvas.toDataURL({ format: 'png', multiplier: 1 });
-
-            // 2. Generate Mask (Paths only, white on black)
-            maskObjects.forEach(obj => {
-                obj.visible = true;
-                obj.set({ stroke: '#ffffff', fill: '#ffffff' }); // Make mask white
-            });
-            contentObjects.forEach(obj => obj.visible = false);
             canvas.backgroundColor = '#000000';
-            const mask = canvas.toDataURL({ format: 'png', multiplier: 1 });
+            const baseImage = canvas.toDataURL({ format: 'png', multiplier: 1 });
+            const baseImageObj = { mimeType: 'image/png', data: baseImage.split(',')[1] };
 
-            // Restore state
-            maskObjects.forEach(obj => {
-                obj.set({ stroke: 'rgba(255, 0, 255, 0.5)', fill: '' }); // Restore visual look
-                obj.visible = true;
-            });
-            contentObjects.forEach(obj => obj.visible = true);
+            // 2. Generate Masks for each color
+            const masksToProcess = [];
+
+            for (const [colorId, prompt] of activeDefinitions) {
+                const colorDef = NANA_COLORS.find(c => c.id === colorId);
+                if (!colorDef) continue;
+
+                // Find paths matching this color
+                // Fabric path stroke might be rgba string. 
+                // We need to match somewhat loosely or store metadata.
+                // Simple approach: Check stroke color string.
+                const hex = colorDef.hex;
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                const targetRgbaStart = `rgba(${r}, ${g}, ${b}`; // Partial match
+
+                const colorPaths = maskObjects.filter(obj => {
+                    return obj.stroke && obj.stroke.toString().startsWith(targetRgbaStart);
+                });
+
+                if (colorPaths.length > 0) {
+                    // Hide all objects
+                    originalObjects.forEach(obj => obj.visible = false);
+
+                    // Show only specific color paths as WHITE
+                    colorPaths.forEach(obj => {
+                        obj.visible = true;
+                        obj.set({ stroke: '#ffffff', fill: '' }); // Paths are usually strokes
+                        // obj.set({ fill: '#ffffff' }); // If it was a fill shape
+                    });
+
+                    canvas.backgroundColor = '#000000';
+                    const maskDataUrl = canvas.toDataURL({ format: 'png', multiplier: 1 });
+
+                    masksToProcess.push({
+                        mimeType: 'image/png',
+                        data: maskDataUrl.split(',')[1],
+                        prompt: prompt,
+                        colorId: colorId
+                    });
+
+                    // Restore visual state for these paths
+                    colorPaths.forEach(obj => {
+                        const colorRgba = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                        obj.set({ stroke: colorRgba });
+                    });
+                }
+            }
+
+            // Restore all visibility
+            originalObjects.forEach(obj => obj.visible = true);
             canvas.backgroundColor = '#1a1a1a';
             canvas.renderAll();
 
-            // 3. Call API
-            const editImage = httpsCallable(functions, 'editImage');
-            const response = await editImage({
-                image,
-                mask,
-                prompt: magicFillPrompt
+            if (masksToProcess.length === 0) {
+                toast.error("No drawn areas match your definitions.");
+                setIsProcessing(false);
+                return;
+            }
+
+            // 3. Call Service
+            const results = await Editing.multiMaskEdit({
+                image: baseImageObj,
+                masks: masksToProcess
             });
 
-            const data = response.data as any;
-
-            // 4. Update Canvas
-            if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
-                const newImageBase64 = `data:${data.candidates[0].content.parts[0].inlineData.mimeType};base64,${data.candidates[0].content.parts[0].inlineData.data}`;
-
-                // Clear mask
-                canvas.remove(...maskObjects);
-
-                // Add new image on top? Or replace background?
-                // Let's add it on top for now
-                fabric.Image.fromURL(newImageBase64).then(img => {
-                    img.scaleToWidth(canvas.width!);
-                    img.set({ left: canvas.width! / 2, top: canvas.height! / 2, originX: 'center', originY: 'center' });
-                    canvas.add(img);
-                    canvas.renderAll();
-                });
-
-                toast.success("Magic Fill applied!");
-                setIsMagicFillMode(false);
-                canvas.isDrawingMode = false;
+            if (results && results.length > 0) {
+                setGeneratedCandidates(results);
+                toast.success(`Generated ${results.length} variations!`);
+                // Auto-show candidates UI (implemented below)
+            } else {
+                toast.error("Generation failed to produce candidates.");
             }
 
         } catch (error) {
-            console.error("Magic Fill Error:", error);
-            toast.error("Failed to apply Magic Fill");
+            console.error("Multi Edit Error:", error);
+            toast.error("Failed to process edits");
         } finally {
             setIsProcessing(false);
         }
     };
+
+
 
     const handleAnimate = async () => {
         if (!item) return;
@@ -312,15 +349,32 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                     className="relative max-w-6xl w-full h-[90vh] bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden flex flex-col shadow-2xl"
                     onClick={e => e.stopPropagation()}
                 >
-                    {/* Header */}
+                    {/* Header                        <CanvasHeader
+                            isEditing={isEditing}
+                            setIsEditing={setIsEditing}
+                            isMagicFillMode={isMagicFillMode}
+                            magicFillPrompt={magicFillPrompt}
+                            setMagicFillPrompt={setMagicFillPrompt}
+                            handleMagicFill={handleMultiEdit}
+                            isProcessing={isProcessing}
+                            // Change 'Generate' button text based on mode
+                            saveCanvas={saveCanvas}
+                            item={item}
+                            endFrameItem={endFrameItem}
+                            setEndFrameItem={setEndFrameItem}
+                            setIsSelectingEndFrame={setIsSelectingEndFrame}
+                            handleAnimate={handleAnimate}
+                            onClose={onClose}
+                        /> */}
                     <CanvasHeader
                         isEditing={isEditing}
                         setIsEditing={setIsEditing}
                         isMagicFillMode={isMagicFillMode}
                         magicFillPrompt={magicFillPrompt}
                         setMagicFillPrompt={setMagicFillPrompt}
-                        handleMagicFill={handleMagicFill}
+                        handleMagicFill={handleMultiEdit}
                         isProcessing={isProcessing}
+                        // Change 'Generate' button text based on mode
                         saveCanvas={saveCanvas}
                         item={item}
                         endFrameItem={endFrameItem}
@@ -328,31 +382,90 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                         setIsSelectingEndFrame={setIsSelectingEndFrame}
                         handleAnimate={handleAnimate}
                         onClose={onClose}
+                        onSendToWorkflow={onSendToWorkflow}
                     />
 
                     {/* Content */}
                     <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">
                         {isEditing ? (
-                            <div className="flex h-full w-full">
-                                {/* Toolbar */}
-                                <CanvasToolbar
-                                    addRectangle={addRectangle}
-                                    addCircle={addCircle}
-                                    addText={addText}
-                                    toggleMagicFill={toggleMagicFill}
-                                    isMagicFillMode={isMagicFillMode}
-                                />
-                                {/* Canvas Area */}
-                                <div className="flex-1 flex items-center justify-center bg-gray-900 overflow-auto p-8">
-                                    <canvas ref={canvasEl} />
+                            <>
+                                <div className="flex h-full w-full">
+                                    {/* Toolbar */}
+                                    <AnnotationPalette
+                                        activeColor={activeColor}
+                                        onColorSelect={setActiveColor}
+                                        colorDefinitions={editDefinitions}
+                                        onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+                                    />
+                                    <CanvasToolbar
+                                        addRectangle={addRectangle}
+                                        addCircle={addCircle}
+                                        addText={addText}
+                                        toggleMagicFill={toggleMagicFill}
+                                        isMagicFillMode={isMagicFillMode}
+                                    />
+                                    {/* Canvas Area */}
+                                    <div className="flex-1 flex items-center justify-center bg-gray-900 overflow-auto p-8">
+                                        <canvas ref={canvasEl} />
+                                    </div>
                                 </div>
-                            </div>
+
+                                <EditDefinitionsPanel
+                                    isOpen={isDefinitionsOpen}
+                                    onClose={() => setIsDefinitionsOpen(false)}
+                                    definitions={editDefinitions}
+                                    onUpdateDefinition={(id, val) => setEditDefinitions(prev => ({ ...prev, [id]: val }))}
+                                />
+
+                                {generatedCandidates.length > 0 && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-gray-700 p-4 rounded-xl shadow-2xl z-50 flex gap-4 max-w-[90%] overflow-x-auto">
+                                        {generatedCandidates.map((cand, idx) => (
+                                            <div key={cand.id} className="relative group min-w-[150px] w-[150px]">
+                                                <img src={cand.url} className="w-full h-auto rounded border border-gray-800" />
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-[10px] text-center truncate text-white">
+                                                    {cand.prompt}
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        // Apply this candidate
+                                                        if (fabricCanvas.current) {
+                                                            const canvas = fabricCanvas.current;
+                                                            fabric.Image.fromURL(cand.url).then(img => {
+                                                                img.scaleToWidth(canvas.width!);
+                                                                img.set({ left: canvas.width! / 2, top: canvas.height! / 2, originX: 'center', originY: 'center' });
+                                                                // Clear old masks
+                                                                const objs = canvas.getObjects();
+                                                                const masks = objs.filter(o => o.type === 'path');
+                                                                canvas.remove(...masks);
+
+                                                                canvas.add(img);
+                                                                canvas.renderAll();
+                                                            });
+                                                            setGeneratedCandidates([]); // Close selection
+                                                            toast.success(`Applied Option ${idx + 1}`);
+                                                        }
+                                                    }}
+                                                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                                >
+                                                    <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">Select</span>
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button
+                                            onClick={() => setGeneratedCandidates([])}
+                                            className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center"
+                                        >
+                                            <span className="text-xl">×</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             (item.type === 'video' && !item.url.startsWith('data:image')) ? (
                                 <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl" />
                             ) : (
                                 <div className="relative max-w-full max-h-full">
-                                    <img src={item.url} alt={item.prompt} className="max-w-full max-h-full object-contain shadow-2xl" />
+                                    <img src={item.url} alt={item.prompt || "Content"} className="max-w-full max-h-full object-contain shadow-2xl" />
                                     {item.type === 'video' && item.url.startsWith('data:image') && (
                                         <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20">
                                             STORYBOARD PREVIEW
@@ -376,6 +489,6 @@ export default function CreativeCanvas({ item, onClose }: CreativeCanvasProps) {
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence >
     );
 }

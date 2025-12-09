@@ -132,7 +132,7 @@ export class WorkflowEngine {
                 model: 'gemini-1.5-flash',
                 contents: [{ role: 'user', parts: [{ text: `Write marketing copy for: ${prompt}` }] }]
             });
-            return response.candidates?.[0]?.content?.parts?.[0]?.text;
+            return response.text();
         } else if (data.departmentName === 'Knowledge Base') {
             // RAG / Knowledge Base
             const { runAgenticWorkflow } = await import('@/services/rag/ragService');

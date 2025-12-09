@@ -93,7 +93,19 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
             {/* Global Overlay */}
             {selectedItem && (
-                <CreativeCanvas item={selectedItem} onClose={() => setSelectedItem(null)} />
+                <CreativeCanvas
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    onSendToWorkflow={(type, item) => {
+                        // type is 'firstFrame' | 'lastFrame'
+                        const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
+                        setVideoInput(type, item);
+                        setGenerationMode('video');
+                        setViewMode('video_production');
+                        setSelectedItem(null);
+                        toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
+                    }}
+                />
             )}
         </div>
     );

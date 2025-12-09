@@ -79,7 +79,7 @@ export class ImageGenerationService {
                 config: AI_CONFIG.IMAGE.DEFAULT
             });
 
-            const part = response.candidates?.[0]?.content?.parts?.[0];
+            const part = response.response.candidates?.[0]?.content?.parts?.[0];
             if (part && part.inlineData) {
                 return { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` };
             }
@@ -137,7 +137,7 @@ export class ImageGenerationService {
                     config: AI_CONFIG.IMAGE.DEFAULT
                 });
 
-                const part = response.candidates?.[0]?.content?.parts?.[0];
+                const part = response.response.candidates?.[0]?.content?.parts?.[0];
                 if (part && part.inlineData) {
                     const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                     results.push({

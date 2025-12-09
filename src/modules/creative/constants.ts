@@ -10,6 +10,33 @@ export const EVOLUTION_STAGES = [
     { pct: 100, icon: '🧍' }
 ];
 
+// Image Aspect Ratios
+export const ASPECT_RATIOS = [
+    { label: '1:1', value: '1:1', icon: 'Square' },
+    { label: '16:9', value: '16:9', icon: 'RectangleHorizontal' },
+    { label: '9:16', value: '9:16', icon: 'RectangleVertical' },
+    { label: '4:3', value: '4:3', icon: 'Monitor' },
+    { label: '3:4', value: '3:4', icon: 'Tablet' },
+    { label: '21:9', value: '21:9', icon: 'Wide' }, // Panoramic
+];
+
+export interface NanaColor {
+    id: string;
+    name: string;
+    hex: string;
+}
+
+export const NANA_COLORS: NanaColor[] = [
+    { id: 'purple', name: 'Purple', hex: '#A855F7' },
+    { id: 'red', name: 'Red', hex: '#EF4444' },
+    { id: 'yellow', name: 'Yellow', hex: '#EAB308' },
+    { id: 'blue', name: 'Blue', hex: '#3B82F6' },
+    { id: 'green', name: 'Green', hex: '#22C55E' },
+    { id: 'orange', name: 'Orange', hex: '#F97316' },
+    { id: 'cyan', name: 'Cyan', hex: '#06B6D4' },
+    { id: 'magenta', name: 'Magenta', hex: '#D946EF' },
+];
+
 export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = {
     "Camera": {
         "Digital Cinema": ["Arri Alexa LF", "Red V-Raptor XL", "Sony Venice 2", "Blackmagic Ursa 12K", "Canon C500 Mark II"],

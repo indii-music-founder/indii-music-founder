@@ -122,6 +122,7 @@ export interface ReleaseDetails {
 }
 
 export interface BrandAsset {
+    id?: string;
     url: string;
     description: string;
 }
@@ -138,6 +139,7 @@ export interface BrandKit {
 }
 
 export interface UserProfile {
+    id?: string; // Added for reference image path construction
     bio: string;
     preferences: string;
     careerStage?: string;

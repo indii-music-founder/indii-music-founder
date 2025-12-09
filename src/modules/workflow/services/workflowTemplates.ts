@@ -7,6 +7,8 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
         name: 'Simple Concept Art',
         description: 'Generate a concept art image from a text prompt.',
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
             {
                 id: 'start',
@@ -49,6 +51,8 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
         name: 'Video Teaser Campaign',
         description: 'Create concept art, animate it, and write a tweet.',
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
             {
                 id: 'start',
@@ -115,6 +119,8 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
         name: 'Music Release Package',
         description: 'Generate album art and marketing copy for a new track.',
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 1 },
         nodes: [
             {
                 id: 'start',

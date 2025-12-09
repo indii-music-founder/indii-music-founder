@@ -1,5 +1,5 @@
-import React from 'react';
-import { Brush, Wand2, Save, Image as ImageIcon, Play, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Brush, Wand2, Save, Image as ImageIcon, Play, X, Film, Clapperboard, ChevronDown } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 
 interface CanvasHeaderProps {
@@ -17,6 +17,7 @@ interface CanvasHeaderProps {
     setIsSelectingEndFrame: (isSelecting: boolean) => void;
     handleAnimate: () => void;
     onClose: () => void;
+    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -33,7 +34,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     setEndFrameItem,
     setIsSelectingEndFrame,
     handleAnimate,
-    onClose
+    onClose,
+    onSendToWorkflow
 }) => {
     return (
         <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1a1a1a]">
@@ -71,12 +73,48 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                 </button>
                             </div>
                         )}
-                        <button
-                            onClick={saveCanvas}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                        >
-                            <Save size={14} /> Save / Export
-                        </button>
+                        <div className="relative group">
+                            <button
+                                onClick={saveCanvas}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-l-lg transition-colors flex items-center gap-2"
+                            >
+                                <Save size={14} /> Save
+                            </button>
+                            <div className="absolute top-full left-0 mt-1 w-48 bg-[#1f1f1f] border border-gray-700 rounded-lg shadow-xl overflow-hidden hidden group-hover:block z-50">
+                                {onSendToWorkflow && (
+                                    <>
+                                        <button
+                                            onClick={() => onSendToWorkflow('firstFrame', item)}
+                                            className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
+                                        >
+                                            <Film size={14} className="text-blue-400" /> Use as Start Frame
+                                        </button>
+                                        <button
+                                            onClick={() => onSendToWorkflow('lastFrame', item)}
+                                            className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
+                                        >
+                                            <Clapperboard size={14} className="text-green-400" /> Use as End Frame
+                                        </button>
+                                        <div className="border-t border-gray-700 my-1"></div>
+                                    </>
+                                )}
+                                <button
+                                    onClick={saveCanvas}
+                                    className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
+                                >
+                                    <Save size={14} /> Save to Gallery
+                                </button>
+                            </div>
+                        </div>
+                        {onSendToWorkflow && (
+                            <button
+                                onClick={() => onSendToWorkflow('firstFrame', item)}
+                                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                                title="Send to Video Workflow"
+                            >
+                                <Film size={14} /> To Video
+                            </button>
+                        )}
                     </>
                 )}
                 {!isEditing && item.type === 'image' && (

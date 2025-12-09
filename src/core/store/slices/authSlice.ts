@@ -110,6 +110,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     import('@/modules/auth/UserService').then(({ UserService }) => {
                         UserService.syncUserProfile(user).then((fullProfile) => {
                             const appProfile: UserProfile = {
+                                id: user.uid, // Populate ID from auth user
                                 bio: fullProfile.bio || '',
                                 preferences: typeof fullProfile.preferences === 'string' ? fullProfile.preferences : JSON.stringify(fullProfile.preferences || {}),
                                 brandKit: fullProfile.brandKit || {
@@ -162,6 +163,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     set({ user: null, isAuthenticated: false, isAuthReady: true });
                 }
             });
+        }).catch(error => {
+            console.error("[AuthSlice] Failed to initialize Firebase Auth listener:", error);
+            // Ensure we don't hang in "Loading..." state forever
+            set({ isAuthReady: true, isAuthenticated: false });
         });
     },
     logout: async () => {

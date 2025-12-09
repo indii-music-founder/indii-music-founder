@@ -7,13 +7,15 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
     test('Scenario 1: Vision Analysis to Image Generation', async ({ page }) => {
         // 0. Mock Electron API
         await page.addInitScript(() => {
+            // @ts-ignore
             window.electronAPI = {
                 getPlatform: async () => 'darwin',
                 getAppVersion: async () => '0.0.0',
+                // @ts-ignore
                 auth: {
                     login: async () => { },
                     logout: async () => { },
-                    onUserUpdate: (cb) => {
+                    onUserUpdate: (cb: any) => {
                         // Do NOT trigger callback to avoid App.tsx trying real Firebase Auth with mock tokens
                         // cb({ idToken: 'mock-token', accessToken: 'mock-access' });
                         return () => { };
@@ -31,7 +33,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         page.on('pageerror', err => console.log(`[Page Error] ${err}`));
 
         // 1. Mock AI Network Responses (Generalist Agent LLM)
-        const mockStreamHandler = async (route) => {
+        const mockStreamHandler = async (route: any) => {
             console.log('[Mock] Intercepted AI Stream Request');
             const requestBody = JSON.parse(route.request().postData() || '{}');
             const contents = requestBody.contents || [];
@@ -39,7 +41,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
 
             // Check if deeper parts have text or functionResponse
             // GeneralistAgent sends: { role: 'function', parts: [{ functionResponse: ... }] }
-            const isFunctionResponse = lastContent?.role === 'function' || lastContent?.parts?.some(p => p.functionResponse);
+            const isFunctionResponse = lastContent?.role === 'function' || lastContent?.parts?.some((p: any) => p.functionResponse);
 
             let mockResponseChunks = '';
 
@@ -84,11 +86,30 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         });
 
         // 3. Mock Image Generation Backend (Firebase Function)
-        await page.route('**/generateImage**', async route => {
-            // ... existing mock ...
-            // (omitted for brevity in replacement chunk)
-            // Actually I need to include the surrounding code to match.
-            // But wait, allow multiple replacement chunks? No, strict replacement.
+        await page.route('**/generateImage**', async (route: any) => {
+            console.log('[Mock] Intercepted generateImage');
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    data: {
+                        candidates: [
+                            {
+                                content: {
+                                    parts: [
+                                        {
+                                            inlineData: {
+                                                mimeType: 'image/png',
+                                                data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                })
+            });
         });
 
         // 4. Mock Firebase Storage Upload (for generated image)

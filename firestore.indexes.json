@@ -15,6 +15,24 @@
             ]
         },
         {
+            "collectionGroup": "history",
+            "queryScope": "COLLECTION_GROUP",
+            "fields": [
+                {
+                    "fieldPath": "orgId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "userId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "timestamp",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
             "collectionGroup": "projects",
             "queryScope": "COLLECTION",
             "fields": [

@@ -258,4 +258,17 @@ export class VideoGenerationService {
     }
 }
 
+export interface VideoGenerationOptions {
+    prompt: string;
+    aspectRatio?: string;
+    resolution?: string;
+    seed?: number;
+    negativePrompt?: string;
+    model?: string;
+    firstFrame?: string;
+    lastFrame?: string;
+    timeOffset?: number;
+    ingredients?: string[];
+}
+
 export const VideoGeneration = new VideoGenerationService();

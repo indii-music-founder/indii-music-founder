@@ -5,7 +5,22 @@ import { Editing } from '@/services/image/EditingService';
 export const ImageTools = {
     generate_image: async (args: any) => {
         try {
-            const { studioControls, addToHistory, currentProjectId } = useStore.getState();
+            const { studioControls, addToHistory, currentProjectId, userProfile } = useStore.getState();
+
+            let sourceImages: { mimeType: string; data: string }[] | undefined;
+
+            // Handle Reference Images
+            if (args.referenceImageIndex !== undefined) {
+                const refImages = userProfile.brandKit?.referenceImages || [];
+                const refImg = refImages[args.referenceImageIndex];
+                if (refImg) {
+                    const match = refImg.url.match(/^data:(.+);base64,(.+)$/);
+                    if (match) {
+                        sourceImages = [{ mimeType: match[1], data: match[2] }];
+                        console.log(`[ImageTools] Using reference image: ${refImg.description || 'Untitled'}`);
+                    }
+                }
+            }
 
             const results = await ImageGeneration.generateImages({
                 prompt: args.prompt || "A creative scene",
@@ -13,7 +28,8 @@ export const ImageTools = {
                 resolution: args.resolution || studioControls.resolution,
                 aspectRatio: args.aspectRatio || studioControls.aspectRatio,
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
-                seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined)
+                seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
+                sourceImages: sourceImages
             });
 
             if (results.length > 0) {

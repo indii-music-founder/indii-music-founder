@@ -76,7 +76,7 @@ export async function processForKnowledgeBase(reportContent: string, contextSour
             config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
         });
 
-        const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = response.text();
         if (text) {
             metadata = JSON.parse(text);
         }

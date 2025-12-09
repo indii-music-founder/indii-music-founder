@@ -3,6 +3,7 @@ import ProjectHub from './components/ProjectHub';
 import DataStorageManager from './components/DataStorageManager';
 import AnalyticsView from './components/AnalyticsView';
 import GlobalSettings from './components/GlobalSettings';
+import ReferenceImageManager from './components/ReferenceImageManager';
 
 export default function Dashboard() {
     return (
@@ -21,6 +22,7 @@ export default function Dashboard() {
                 {/* Sidebar: Utilities (4 cols) */}
                 <div className="lg:col-span-4 space-y-6">
                     <DataStorageManager />
+                    <ReferenceImageManager />
                     <AnalyticsView />
                     <GlobalSettings />
                 </div>

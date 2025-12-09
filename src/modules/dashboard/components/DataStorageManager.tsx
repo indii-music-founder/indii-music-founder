@@ -1,3 +1,4 @@
+import { useStore } from '../../../core/store';
 import React, { useEffect, useState } from 'react';
 import { DashboardService, StorageStats } from '../../../services/dashboard/DashboardService';
 import { HardDrive, Download, Trash2 } from 'lucide-react';
@@ -53,7 +54,15 @@ export default function DataStorageManager() {
                     <Trash2 size={16} />
                     <span>Clear Unused Cache</span>
                 </button>
+                <button
+                    onClick={() => useStore.getState().setModule('knowledge')}
+                    className="w-full flex items-center justify-center gap-2 p-3 bg-[#0d1117] border border-blue-900/30 hover:border-blue-500/50 rounded-lg text-blue-400 transition-all"
+                >
+                    <HardDrive size={16} />
+                    <span>Manage Knowledge Base</span>
+                </button>
             </div>
         </div>
     );
 }
+

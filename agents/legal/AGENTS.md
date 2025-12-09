@@ -9,6 +9,7 @@ To protect the studio and its artists by managing contracts, compliance, and int
 * **Contract Analysis:** Uses `analyze_contract` to scan PDF/Text documents for risks and summarize key terms.
 * **Document Generation:** Uses `generate_nda` to create standard Non-Disclosure Agreements.
 * **Advisory:** Provides precise, cautious legal advice on industry regulations.
+* **Knowledge Access:** Uses `search_knowledge` to check company policies and legal guidelines.
 
 ## Tools
 

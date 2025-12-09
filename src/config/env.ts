@@ -35,16 +35,29 @@ const parsed = FrontendEnvSchema.safeParse(processEnv);
 
 if (!parsed.success) {
     console.error("Invalid environment configuration:", parsed.error.format());
+
+    // Explicitly log missing keys for easier debugging
+    const missingKeys: string[] = [];
+    if (!processEnv.apiKey) missingKeys.push('VITE_API_KEY');
+    if (!processEnv.projectId) missingKeys.push('VITE_VERTEX_PROJECT_ID');
+
+    if (missingKeys.length > 0) {
+        console.error("CRITICAL: The following environment variables are missing:", missingKeys.join(', '));
+        console.error("Please check your .env file.");
+    }
+
     // In production, we might want to throw, but for now let's warn and allow partial failure if possible,
     // or throw if critical keys are missing.
     if (!processEnv.apiKey || !processEnv.projectId) {
         console.error("Critical environment variables missing.", processEnv);
         // throw new Error("Critical environment variables missing. Check console for details.");
     }
+
+    // We are proceeding despite validation errors
+    console.warn("Environment validation failed, but critical keys might be present. Proceeding with caution.");
 } else {
-    // If validation fails, we might still want to return the partial processEnv to allow the app to boot
-    // and fail gracefully later (e.g. when making API calls).
-    console.warn("Using partial/invalid config due to validation errors.");
+    // Validation successful
+    // console.log("Environment configuration valid.");
 }
 
 // Export a combined object that has both the common properties (apiKey, etc) AND the original VITE_ keys

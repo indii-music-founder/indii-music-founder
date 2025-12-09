@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Book, Upload, FileText, Search, Filter, MoreVertical, File, Clock } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -6,6 +6,7 @@ export default function KnowledgeBase() {
     const toast = useToast();
     const [isDragging, setIsDragging] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -26,7 +27,14 @@ export default function KnowledgeBase() {
     };
 
     const handleUploadClick = () => {
-        toast.info("Open file dialog (Mock)");
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            toast.info(`Uploading ${files.length} files... (Mock)`);
+        }
     };
 
     // Mock Documents
@@ -58,6 +66,13 @@ export default function KnowledgeBase() {
                 >
                     <Upload size={20} /> Upload Document
                 </button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    multiple
+                />
             </div>
 
             {/* Search and Filter */}
@@ -104,8 +119,8 @@ export default function KnowledgeBase() {
                         <div key={doc.id} className="grid grid-cols-12 gap-4 p-4 hover:bg-gray-800/50 transition-colors items-center group cursor-pointer">
                             <div className="col-span-6 flex items-center gap-3">
                                 <div className={`p-2 rounded-lg ${doc.type === 'PDF' ? 'bg-red-500/10 text-red-400' :
-                                        doc.type === 'DOCX' ? 'bg-blue-500/10 text-blue-400' :
-                                            'bg-gray-700/50 text-gray-400'
+                                    doc.type === 'DOCX' ? 'bg-blue-500/10 text-blue-400' :
+                                        'bg-gray-700/50 text-gray-400'
                                     }`}>
                                     <FileText size={18} />
                                 </div>
