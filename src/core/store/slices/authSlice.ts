@@ -91,6 +91,14 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         // Listen for Auth Changes
         import('@/services/firebase').then(async ({ auth }) => {
             const { onAuthStateChanged } = await import('firebase/auth');
+
+            // Bypass for E2E Tests
+            // @ts-ignore
+            if (window.__TEST_MODE__) {
+                console.log("[AuthSlice] Test Mode detected - skipping Firebase Auth listener");
+                return;
+            }
+
             onAuthStateChanged(auth, async (user: User | null) => {
                 if (user) {
                     // Only consider non-anonymous users as fully authenticated for the Dashboard

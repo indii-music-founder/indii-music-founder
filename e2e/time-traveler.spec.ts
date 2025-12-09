@@ -20,6 +20,8 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
                 },
                 audio: { analyze: async () => ({}), getMetadata: async () => ({}) }
             };
+            // @ts-ignore
+            window.__TEST_MODE__ = true;
         });
 
         // 2. Mock AI Network Responses

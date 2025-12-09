@@ -22,6 +22,8 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
                 audio: { analyze: async () => ({}), getMetadata: async () => ({}) },
                 openExternal: async () => { }
             };
+            // @ts-ignore
+            window.__TEST_MODE__ = true;
         });
 
         // Debug: Log ALL requests to see if generateContentStream is even called

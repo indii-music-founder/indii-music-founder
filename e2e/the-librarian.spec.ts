@@ -53,6 +53,8 @@ test.describe('The Librarian: RAG Pipeline Verification', () => {
                 audio: { analyze: async () => ({}), getMetadata: async () => ({}) },
                 openExternal: async () => { }
             };
+            // @ts-ignore
+            window.__TEST_MODE__ = true;
         });
 
         // 1. Load App
