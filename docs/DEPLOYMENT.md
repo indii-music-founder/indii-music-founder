@@ -5,18 +5,19 @@
 This project has **two separate deployments**:
 
 1. **Landing Page** - Next.js static site with WebGL effects
-   - URL: https://indiios-v-1-1.web.app
+   - URL: <https://indiios-v-1-1.web.app>
    - Source: `landing-page/`
    - Build output: `landing-page/out/`
 
 2. **Studio App** - React + Vite main application
-   - URL: https://indiios-studio.web.app
+   - URL: <https://indiios-studio.web.app>
    - Source: `src/`
    - Build output: `dist/`
 
 ## Local Development
 
 ### Landing Page
+
 ```bash
 cd landing-page
 npm install
@@ -24,6 +25,7 @@ npm run dev
 ```
 
 ### Studio App
+
 ```bash
 npm install
 npm run dev
@@ -32,16 +34,19 @@ npm run dev
 ## Building for Production
 
 ### Build Both Sites
+
 ```bash
 npm run build:all
 ```
 
 ### Build Landing Page Only
+
 ```bash
 npm run build:landing
 ```
 
 ### Build Studio App Only
+
 ```bash
 npm run build:studio
 ```
@@ -49,11 +54,13 @@ npm run build:studio
 ## Manual Deployment to Firebase
 
 ### Prerequisites
+
 1. Install Firebase CLI: `npm install -g firebase-tools`
 2. Login: `firebase login`
-3. Select project: `firebase use architexture-ai-api`
+3. Select project: `firebase use indiios-v-1-1`
 
 ### Deploy Both Sites
+
 ```bash
 # Build both sites
 npm run build:all
@@ -73,11 +80,13 @@ firebase deploy --only hosting
 The project uses GitHub Actions for automated deployments on merge to `main`.
 
 ### Workflow: `.github/workflows/deploy.yml`
+
 - Triggers on push to `main` or manual workflow dispatch
 - Builds both landing page and studio app
 - Deploys to Firebase Hosting using service account
 
 ### Required GitHub Secrets
+
 - `FIREBASE_SERVICE_ACCOUNT` - Service account JSON for Firebase deployment
 - `VITE_API_KEY` - API key for the studio app (optional)
 - `VITE_VERTEX_PROJECT_ID` - GCP project ID (optional)
@@ -86,13 +95,17 @@ The project uses GitHub Actions for automated deployments on merge to `main`.
 ## Troubleshooting
 
 ### Landing page and studio showing the same content
+
 This happens when `landing-page/out` doesn't exist. Build the landing page first:
+
 ```bash
 npm run build:landing
 ```
 
 ### Build fails
+
 1. Clear node_modules and reinstall:
+
    ```bash
    rm -rf node_modules landing-page/node_modules
    npm install
@@ -100,17 +113,21 @@ npm run build:landing
    ```
 
 2. Check Node.js version (requires 20.x):
+
    ```bash
    node --version
    ```
 
 ### Deployment fails
+
 1. Verify Firebase targets are configured:
+
    ```bash
    firebase target:list
    ```
 
 2. Set targets if missing:
+
    ```bash
    firebase target:apply hosting landing indiios-v-1-1
    firebase target:apply hosting app indiios-studio
@@ -133,6 +150,7 @@ Rndr-AI-v1/
 ## Firebase Hosting Configuration
 
 ### `.firebaserc`
+
 ```json
 {
   "targets": {
@@ -147,6 +165,7 @@ Rndr-AI-v1/
 ```
 
 ### `firebase.json`
+
 ```json
 {
   "hosting": [
@@ -166,10 +185,10 @@ Rndr-AI-v1/
 
 After deployment, verify both sites are working:
 
-1. **Landing Page**: https://indiios-v-1-1.web.app
+1. **Landing Page**: <https://indiios-v-1-1.web.app>
    - Should show WebGL effects and animation
    - Should have "Enter Studio" or similar CTA
 
-2. **Studio App**: https://indiios-studio.web.app
+2. **Studio App**: <https://indiios-studio.web.app>
    - Should show the main indiiOS studio interface
    - Should load authentication and workspace features
