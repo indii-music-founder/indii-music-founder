@@ -17,11 +17,10 @@ export default function LoginBridge() {
                 // Determine if we are just landing here or if we just finished a popup flow
                 // Check if this window was opened by window.open (popup)
                 if (window.opener) {
-                    // We are likely inside the popup itself? No, firebase handles popup closure.
-                    // Wait, signInWithPopup opens its OWN window. We are the MAIN window.
                     setStatus('Session active. Click button to re-sync if needed.');
                 } else {
-                    setStatus('Ready to sign in.');
+                    // Only reset status if we are NOT already authenticated/redirecting
+                    setStatus(prev => (typeof prev !== 'string' || prev.startsWith('Authenticated')) ? prev : 'Ready to sign in.');
                 }
             } else {
                 setStatus('Ready to sign in.');
@@ -114,7 +113,7 @@ export default function LoginBridge() {
                 ) : (
                     <div className="py-8">
                         <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-neutral-400">{status}</p>
+                        <div className="text-neutral-400">{status}</div>
                     </div>
                 )}
 

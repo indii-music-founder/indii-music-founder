@@ -125,7 +125,10 @@
       "dist/**/*",
       "dist-electron/**/*",
       "package.json",
-      "!node_modules/@rollup/rollup-linux-x64-gnu"
+      "!node_modules/@rollup/rollup-linux-x64-gnu",
+      "!**/@esbuild/aix-ppc64",
+      "!**/@esbuild/android-arm",
+      "!**/@esbuild/linux-loong64"
     ],
     "publish": [
       {
