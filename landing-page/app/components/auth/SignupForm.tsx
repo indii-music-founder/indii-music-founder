@@ -194,7 +194,7 @@ export default function SignupForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="group relative flex w-full justify-center rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="group relative flex w-full justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                         {isLoading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />

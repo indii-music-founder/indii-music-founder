@@ -219,6 +219,18 @@ export const AGENT_CONFIGS: AgentConfig[] = [
                         },
                         required: ["prompt"]
                     }
+                },
+                {
+                    name: "run_showroom_mockup",
+                    description: "Generate a product mockup in the Showroom.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            productType: { type: "STRING", enum: ['T-Shirt', 'Hoodie', 'Mug', 'Bottle', 'Poster', 'Phone Screen'] },
+                            scenePrompt: { type: "STRING", description: "Visual description of the scene." }
+                        },
+                        required: ["productType", "scenePrompt"]
+                    }
                 }
             ]
         }]

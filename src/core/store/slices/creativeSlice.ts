@@ -134,8 +134,12 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                             unsubscribe();
                             resolve();
                         }
-                    } catch (e) {
-                        console.error("Anonymous sign-in failed:", e);
+                    } catch (e: any) {
+                        if (e.code === 'auth/admin-restricted-operation') {
+                            console.debug("Anonymous authentication disabled. Proceeding as Guest.");
+                        } else {
+                            console.error("Anonymous sign-in failed:", e);
+                        }
                         unsubscribe();
                         resolve();
                     }

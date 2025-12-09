@@ -37,7 +37,7 @@ import { endpointService } from '@/core/config/EndpointService';
 import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest, GenerateVideoResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode } from '@/shared/types/errors';
 
-class AIService {
+export class AIService {
     private apiKey: string;
     private projectId?: string;
     private location?: string;

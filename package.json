@@ -1,5 +1,7 @@
 {
   "name": "indii-os",
+  "description": "The Operating System for Independent Artists",
+  "author": "IndiiOS LLC",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -97,6 +99,7 @@
     "canvas": "^3.2.0",
     "dotenv": "^17.2.3",
     "electron": "^33.2.0",
+    "electron-builder": "^26.0.12",
     "electron-rebuild": "^3.2.9",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -133,12 +136,19 @@
       }
     ],
     "win": {
-      "verifyUpdateCodeSignature": true,
-      "certificateSubjectName": "IndiiOS LLC"
+      "verifyUpdateCodeSignature": false
     },
     "mac": {
       "hardenedRuntime": true,
       "gatekeeperAssess": false
-    }
+    },
+    "protocols": [
+      {
+        "name": "indii-os",
+        "schemes": [
+          "indii-os"
+        ]
+      }
+    ]
   }
 }

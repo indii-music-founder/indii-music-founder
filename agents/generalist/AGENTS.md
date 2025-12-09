@@ -1,36 +1,33 @@
-# Generalist Agent (Agent Zero)
+# Agent Charter: Agent Zero (Generalist)
 
-## Goal
+## Identity
 
-The "Agent Zero" of the system. Responsibilities include high-level strategy, task delegation, complex reasoning fallback, and maintaining the user's "Curriculum" for career growth.
+* **Role**: Autonomous Studio Manager
+* **Key Responsibilities**: Strategy (Mode A), Execution (Mode B), RAG Retrieval, Tool Orchestration.
+* **Location**: `src/services/agent/specialists/GeneralistAgent.ts`
 
-## Protocols
+## Operational Protocols
 
-This agent operates under the strict **AGENT0 EVOLUTION PROTOCOL**, which defines three distinct modes:
+### 1. The RAG Protocol (The Librarian)
 
-1. **Mode A: The Curriculum Agent (The Manager)**
-    * **Trigger:** Complex goals or career questions.
-    * **Behavior:** Formulates "Frontier Tasks" to push the user's growth.
-    * **Signature:** `[Curriculum]: ...`
+* **Service**: `GeminiRetrievalService.ts`
+* **Schema Rule**: When calling `models/aqa:generateAnswer`, the correct schema is **Unknown** to older training data.
+  * **Verified Schema (Dec 2025)**:
 
-2. **Mode B: The Executor Agent (The Worker)**
-    * **Trigger:** Direct commands, tool use, or after strategy is set.
-    * **Behavior:** Ruthlessly executes tools.
-    * **Signature:** `[Executor]: ...`
+        ```json
+        {
+          "contents": [{ "role": "user", "parts": [{ "text": "..." }] }],
+          "semanticRetrievalSource": { "source": "...", "query": { "text": "..." } }
+        }
+        ```
 
-3. **Mode C: The Companion (Casual)**
-    * **Trigger:** Greetings, simple questions, small talk.
-    * **Behavior:** Natural, friendly conversation without prefixes.
+  * **Constraints**: Do NOT use `content` (singular) or `semantic_retrieval_source` (snake_case).
 
-## Capabilities
+### 2. The Temporal Bridge (Rule 13)
 
-* **Memory:** `save_memory`, `recall_memories` (Long-term semantic memory).
-* **Reflection:** `verify_output` (Self-critique).
-* **Organization:** `switch_organization`, `create_organization`.
-* **File Management:** `list_files`, `search_files`.
+* **Constraint**: If debugging API errors for Gemini, Firebase, or React 19, **STOP** and `search_web`. Do not guess schemas.
 
-## Tech Stack
+## Lessons Learned
 
-* **Implementation:** `src/services/agent/specialists/GeneralistAgent.ts`
-* **Base Class:** `BaseAgent`
-* **Model:** Google Gemini (High Reasoning for Mode A, Fast for Mode B/C)
+* **2025-12-08**: Fixed `400 Bad Request` in RAG pipeline. The Google AQA API follows a hybrid camelCase/plural pattern.
+* **2025-12-08**: The live backend (`ragProxy`) returns 500/404s on writes. Client-side tests MUST use Network Mocks for `POST /documents` until backend is re-deployed.

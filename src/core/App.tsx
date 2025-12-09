@@ -30,26 +30,46 @@ const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingD
 const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
 const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDashboard'));
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
+const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 
 // Auth Loading Component
-const AuthLoading = () => (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white space-y-6">
-        <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-            <h2 className="text-xl font-semibold">Waiting for Login...</h2>
-            <p className="text-gray-400 mt-2 text-center max-w-xs">
-                Please complete the sign-in process in your browser window.
-            </p>
-        </div>
+const AuthLoading = () => {
+    const handleLogin = async () => {
+        if (window.electronAPI?.auth) {
+            window.electronAPI.auth.login();
+        } else {
+            // Web fallback
+            try {
+                const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+                const { auth } = await import('@/services/firebase');
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Web Login failed:", error);
+                alert("Login failed. Check console.");
+            }
+        }
+    };
 
-        <button
-            onClick={() => window.electronAPI?.auth?.login()}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-medium transition-colors flex items-center gap-2"
-        >
-            <span>Open Login Page</span>
-        </button>
-    </div>
-);
+    return (
+        <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white space-y-6">
+            <div className="flex flex-col items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                <h2 className="text-xl font-semibold">Waiting for Login...</h2>
+                <p className="text-gray-400 mt-2 text-center max-w-xs">
+                    Please sign in to continue.
+                </p>
+            </div>
+
+            <button
+                onClick={handleLogin}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-medium transition-colors flex items-center gap-2"
+            >
+                <span>{window.electronAPI?.auth ? 'Open Login Page' : 'Sign In with Google'}</span>
+            </button>
+        </div>
+    );
+};
 
 
 export default function App() {
@@ -95,14 +115,14 @@ export default function App() {
     useEffect(() => {
         if (isAuthReady && !isAuthenticated) {
             // Use production URL as fallback
-            // Use production URL as fallback, or localhost in DEV if env var is missing
             const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://indiios-v-1-1.web.app/login');
 
             if (window.electronAPI?.auth) {
                 window.electronAPI.auth.login();
             } else {
-                console.warn("[App] Electron API not found! Falling back to standard redirect:", landingPageUrl);
-                window.location.href = landingPageUrl;
+                console.warn("[App] Electron API not found! Local Web Mode active.");
+                // We do NOT redirect to landingPageUrl anymore to avoid the loop.
+                // We stay here and let AuthLoading show the "Sign In" button.
             }
         }
     }, [isAuthReady, isAuthenticated]);
@@ -163,7 +183,7 @@ export default function App() {
             <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
                 <ApiKeyErrorModal />
                 {/* Left Sidebar */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && (
+                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
                     <div className="hidden md:block h-full">
                         <Sidebar />
                     </div>
@@ -197,6 +217,7 @@ export default function App() {
                                         {currentModule === 'finance' && <FinanceDashboard />}
                                         {currentModule === 'licensing' && <LicensingDashboard />}
                                         {currentModule === 'onboarding' && <OnboardingPage />}
+                                        {currentModule === 'showroom' && <Showroom />}
                                     </>
                                 )}
                             </Suspense>
@@ -204,7 +225,7 @@ export default function App() {
                     </div>
 
                     {/* Command Bar at Bottom */}
-                    {currentModule !== 'select-org' && currentModule !== 'onboarding' && (
+                    {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
                         <div className="flex-shrink-0 z-10 relative">
                             <ErrorBoundary>
                                 <ChatOverlay />
@@ -215,12 +236,12 @@ export default function App() {
                 </main>
 
                 {/* Right Panel */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && (
+                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
                     <RightPanel />
                 )}
 
                 {/* Mobile Navigation */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && <MobileNav />}
+                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && <MobileNav />}
 
                 {/* DevTools HUD - Only in Development */}
                 {import.meta.env.DEV && (

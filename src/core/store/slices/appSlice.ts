@@ -9,7 +9,7 @@ export interface Project {
 }
 
 export interface AppSlice {
-    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding';
+    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom';
     currentProjectId: string;
     projects: Project[];
     setModule: (module: AppSlice['currentModule']) => void;

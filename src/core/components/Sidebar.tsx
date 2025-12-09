@@ -23,6 +23,7 @@ export default function Sidebar() {
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
+        { id: 'showroom', icon: Layout, label: 'Product Showroom' },
     ];
 
     const toolItems = [
@@ -55,9 +56,12 @@ export default function Sidebar() {
                 {isSidebarOpen && (
                     <div className="overflow-hidden">
                         <h2 className="text-sm font-semibold text-gray-200 whitespace-nowrap">Studio Resources</h2>
-                        <p className="text-xs text-gray-500 mt-1 leading-relaxed truncate">
-                            Select an analyzed track...
-                        </p>
+                        <button
+                            onClick={() => setModule('dashboard')}
+                            className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
+                        >
+                            <Layout size={12} /> Return to HQ
+                        </button>
                     </div>
                 )}
                 <button

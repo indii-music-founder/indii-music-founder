@@ -9,6 +9,7 @@ Creative Director agent responsible for managing image and video generation task
 - Generate images using Gemini 3.0 Pro Image.
 - Generate video treatments and render videos.
 - Manage brand consistency.
+- **[NEW] Product Showroom:** Generate photorealistic product mockups via `run_showroom_mockup`.
 
 ## Tech Stack
 

@@ -1,0 +1,60 @@
+import { AIService } from '../ai/AIService';
+
+// Types
+export interface ShowroomState {
+    productAsset: string | null; // Base64 or URL
+    productType: 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
+    scenePrompt: string;
+    motionPrompt: string;
+    generatedMockup: string | null; // Base64
+    generatedVideo: string | null; // URL
+    isGenerating: boolean;
+}
+
+export class ShowroomService {
+
+    static async generateMockup(
+        productAsset: string,
+        productType: string,
+        scenePrompt: string
+    ): Promise<string> {
+        console.log('[ShowroomService] Generating mockup...', { productType, scenePrompt });
+
+        // Construct the Texture Mapping Prompt
+        const prompt = `
+        You are a product visualizer. Use the provided graphic design asset (the first image).
+        
+        TASK:
+        Generate a photorealistic image of a ${productType} in this scene: "${scenePrompt}".
+        
+        CRITICAL INSTRUCTION:
+        You MUST apply the provided graphic design onto the ${productType}.
+        The graphic must conform to the geometry, fabric folds, lighting, and texture of the object.
+        Do not change the graphic's colors or content. Just map it onto the 3D surface.
+        `;
+
+        // Call Gemini 3 Pro Image (via AIService/Agent)
+        // Note: In a real implementation, we'd pass the image as a 'part'.
+        // For now, we simulate the call structure used by AIService.image
+
+        // This is a simplified wrapper. The actual call would go through the Agent/AIService 
+        // which handles the specific model protocol.
+
+        // TODO: Replace with actual AIService.generateImage call when available in unified API
+        // For now, we assume standard generation.
+
+        return "mock_generated_image_base64_placeholder";
+    }
+
+    static async generateVideo(
+        mockupImage: string,
+        motionPrompt: string
+    ): Promise<string> {
+        console.log('[ShowroomService] Animate scene...', { motionPrompt });
+
+        // Call Veo 3.1
+        // Input: Image (Mockup) + Text (Motion)
+
+        return "mock_generated_video_url_placeholder";
+    }
+}

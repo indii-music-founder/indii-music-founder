@@ -54,8 +54,31 @@ export default function LoginBridge() {
                     params.set('accessToken', googleAccessToken);
                 }
                 window.location.href = `indii-os://auth/callback?${params.toString()}`;
-                setStatus('Sign in complete. You can close this tab.');
-                setTimeout(() => window.close(), 2000);
+
+                // UX Fix: Provide manual launch option for resilience
+                const deepLink = `indii-os://auth/callback?${params.toString()}`;
+                const ManualLaunch = () => (
+                    <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 animate-fade-in-up">
+                        <p className="text-sm text-gray-400 mb-3">Browser didn't open the app?</p>
+                        <a
+                            href={deepLink}
+                            className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-medium transition-colors"
+                        >
+                            Launch App Manually
+                        </a>
+                    </div>
+                );
+
+                setStatus(
+                    <div className="flex flex-col items-center">
+                        <p className="text-lg font-medium text-green-400 mb-2">Authenticated!</p>
+                        <p className="text-gray-400">Redirecting to Indii OS...</p>
+                        <ManualLaunch />
+                    </div> as any
+                );
+
+                // Allow user to see the manual button, don't auto-close immediately if they need it
+                // setTimeout(() => window.close(), 5000); 
             } else {
                 setError('Failed to get Google credential');
             }
