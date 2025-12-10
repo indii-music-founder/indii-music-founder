@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signInWithEmail, signInWithGoogle, handleGoogleRedirect, getStudioUrl } from '@/app/lib/auth';
+import { signInWithEmail, getStudioUrl } from '@/app/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
@@ -13,25 +13,7 @@ export default function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Handle redirect result from Google sign-in
-    useEffect(() => {
-        const checkRedirectResult = async () => {
-            try {
-                setIsLoading(true);
-                const user = await handleGoogleRedirect();
-                if (user) {
-                    // Successfully signed in via redirect
-                    window.location.href = getStudioUrl();
-                }
-            } catch (err: any) {
-                console.error('Redirect result error:', err);
-                setError(err.message || 'Failed to complete Google sign-in');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        checkRedirectResult();
-    }, []);
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,58 +32,7 @@ export default function LoginForm() {
         }
     };
 
-    const handleGoogleSignIn = async () => {
-        setIsLoading(true);
-        setError(null);
 
-        // Electron Bridge: Use System Browser + Deep Link
-        if (window.electronAPI) {
-            try {
-                // Open the independent bridge page in system browser
-                const bridgeUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-                    ? 'http://localhost:3000/login-bridge'
-                    : 'https://indiios-v-1-1.web.app/login-bridge';
-
-                await window.electronAPI.openExternal(bridgeUrl);
-                setError("Please complete sign in in your browser...");
-
-                // Wait for token from Main Process
-                window.electronAPI.onAuthToken(async (tokenData) => {
-                    try {
-                        const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                        const firebaseModule = await import('@/app/lib/firebase');
-                        const auth = getAuth(firebaseModule.default);
-                        // Create credential from Google OAuth tokens (not Firebase ID token)
-                        const credential = GoogleAuthProvider.credential(
-                            tokenData.idToken,
-                            tokenData.accessToken || null
-                        );
-                        await signInWithCredential(auth, credential);
-                        window.location.href = getStudioUrl();
-                    } catch (e: any) {
-                        console.error("Bridge auth failed:", e);
-                        setError(e.message);
-                        setIsLoading(false);
-                    }
-                });
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message || 'Failed to open details.');
-                setIsLoading(false);
-            }
-            return;
-        }
-
-        try {
-            // This will redirect to Google - page will navigate away
-            await signInWithGoogle();
-            // Note: Code below won't execute as the page redirects
-        } catch (err: any) {
-            console.error(err);
-            setError(err.message || 'Failed to sign in with Google.');
-            setIsLoading(false);
-        }
-    };
 
     return (
         <div className="w-full max-w-md space-y-8 bg-black/50 p-8 rounded-2xl border border-white/10 backdrop-blur-xl">
@@ -185,29 +116,7 @@ export default function LoginForm() {
                         )}
                     </button>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-white/10" />
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="bg-[#0a0a0a] px-2 text-gray-500">Or continue with</span>
-                        </div>
-                    </div>
 
-                    <button
-                        type="button"
-                        onClick={handleGoogleSignIn}
-                        disabled={isLoading}
-                        className="flex w-full justify-center items-center gap-3 rounded-lg bg-white/5 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 border border-white/10 transition-all"
-                    >
-                        <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
-                            <path
-                                d="M12.0003 20.45c4.65 0 8.05-3.15 8.05-8.05 0-.75-.05-1.45-.2-2.1h-7.85v3.95h4.5c-.2 1.15-1.25 3.35-4.5 3.35-2.7 0-4.95-2.2-4.95-4.95s2.25-4.95 4.95-4.95c1.25 0 2.35.45 3.2 1.25l3.1-3.1c-2-1.85-4.6-2.95-7.3-2.95-6.05 0-11 4.95-11 11s4.95 11 11 11z"
-                                fill="currentColor"
-                            />
-                        </svg>
-                        Sign in with Google
-                    </button>
                 </div>
 
                 <div className="text-center text-sm">

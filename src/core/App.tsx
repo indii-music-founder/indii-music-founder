@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -32,41 +32,87 @@ const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDash
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
 const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 
-// Auth Loading Component
-const AuthLoading = () => {
-    const handleLogin = async () => {
-        if (window.electronAPI?.auth) {
-            window.electronAPI.auth.login();
-        } else {
-            // Web fallback
-            try {
-                const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
-                const { auth } = await import('@/services/firebase');
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Web Login failed:", error);
-                alert("Login failed. Check console.");
-            }
+// Auth Login Component
+const AuthLogin = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            const { signInWithEmailAndPassword } = await import('firebase/auth');
+            const { auth } = await import('@/services/firebase');
+            await signInWithEmailAndPassword(auth, email, password);
+            // Auth listener in App will handle the rest
+        } catch (err: any) {
+            console.error("Login failed:", err);
+            setError(err.message || "Failed to sign in");
+            setLoading(false);
         }
     };
 
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white space-y-6">
-            <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-                <h2 className="text-xl font-semibold">Waiting for Login...</h2>
-                <p className="text-gray-400 mt-2 text-center max-w-xs">
-                    Please sign in to continue.
-                </p>
-            </div>
+        <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white p-4">
+            <div className="w-full max-w-md bg-[#161b22] p-8 rounded-xl border border-[#30363d] shadow-xl">
+                <div className="text-center mb-8">
+                    <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
+                    <p className="text-gray-400">Sign in to Indii OS Studio</p>
+                </div>
 
-            <button
-                onClick={handleLogin}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-medium transition-colors flex items-center gap-2"
-            >
-                <span>{window.electronAPI?.auth ? 'Open Login Page' : 'Sign In with Google'}</span>
-            </button>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    {error && (
+                        <div className="p-3 bg-red-900/30 border border-red-800 text-red-200 rounded text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                        <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-white transition-all"
+                            placeholder="name@example.com"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                        <input
+                            type="password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-white transition-all"
+                            placeholder="••••••••"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={`w-full py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-white transition-all transform active:scale-95 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                        {loading ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Signing in...
+                            </span>
+                        ) : 'Sign In'}
+                    </button>
+                </form>
+
+                <div className="mt-6 text-center text-sm text-gray-500">
+                    <p>Don't have an account? Please contact your administrator.</p>
+                </div>
+            </div>
         </div>
     );
 };
@@ -111,72 +157,13 @@ export default function App() {
         }
     }, [isAuthenticated, isAuthReady, currentModule]);
 
-    // Auth Guard - Redirect unauthenticated users to login
+    // Auth Guard - No auto-redirect loop. Just show login form if needed.
     useEffect(() => {
         if (isAuthReady && !isAuthenticated) {
-            // Use production URL as fallback
-            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://indiios-v-1-1.web.app/login');
-
-            if (window.electronAPI?.auth) {
-                window.electronAPI.auth.login();
-            } else {
-                if (import.meta.env.DEV) {
-                    console.info("[App] Electron API not found. This is expected if running in web mode (npm run dev).");
-                } else {
-                    console.error("[App] Electron API not found in production! deeply suspicious.");
-                }
-                // We do NOT redirect to landingPageUrl anymore to avoid the loop.
-                // We stay here and let AuthLoading show the "Sign In" button.
-            }
+            console.log("[App] Not authenticated. Showing login form.");
         }
     }, [isAuthReady, isAuthenticated]);
 
-    // Electron Deep Link Auth Listener
-    useEffect(() => {
-        if (!window.electronAPI?.auth) {
-            return;
-        }
-
-        const unsubscribe = window.electronAPI.auth.onUserUpdate(async (tokens) => {
-            console.log("[App] Received tokens from Electron:", tokens ? "tokens present" : "null");
-
-            // Handle logout signal
-            if (!tokens) {
-                console.log("[App] Received logout signal from Electron");
-                return;
-            }
-
-            if (tokens.idToken) {
-                try {
-                    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                    const { auth } = await import('@/services/firebase');
-                    const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
-                    await signInWithCredential(auth, credential);
-                    console.log("[App] Successfully signed in with deep link tokens");
-                } catch (error) {
-                    console.error("[App] Failed to sign in with deep link tokens:", error);
-                    // Retry once after a short delay (handles race conditions)
-                    setTimeout(async () => {
-                        try {
-                            const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                            const { auth } = await import('@/services/firebase');
-                            const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
-                            await signInWithCredential(auth, credential);
-                            console.log("[App] Retry successful - signed in with deep link tokens");
-                        } catch (retryError) {
-                            console.error("[App] Retry also failed:", retryError);
-                        }
-                    }, 1000);
-                }
-            }
-        });
-
-        // Cleanup listener on unmount
-        return () => {
-            console.log("[App] Cleaning up Electron auth listener");
-            unsubscribe();
-        };
-    }, []);
 
     useEffect(() => {
         console.log(`[App] Current Module Changed: ${currentModule}`);
@@ -200,7 +187,7 @@ export default function App() {
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
                                 {/* Auth Gate */}
                                 {(!isAuthReady || !isAuthenticated) ? (
-                                    <AuthLoading />
+                                    <AuthLogin />
                                 ) : (
                                     <>
                                         {currentModule === 'select-org' && <SelectOrg />}

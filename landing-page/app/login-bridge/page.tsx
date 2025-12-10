@@ -6,129 +6,19 @@ import app from '../lib/firebase';
 import { useRouter } from 'next/navigation';
 
 export default function LoginBridge() {
-    const [status, setStatus] = useState('Initializing...');
-    const [error, setError] = useState('');
-    const router = useRouter();
-    const auth = getAuth(app);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Determine if we are just landing here or if we just finished a popup flow
-                // Check if this window was opened by window.open (popup)
-                if (window.opener) {
-                    setStatus('Session active. Click button to re-sync if needed.');
-                } else {
-                    // Only reset status if we are NOT already authenticated/redirecting
-                    setStatus(prev => (typeof prev !== 'string' || prev.startsWith('Authenticated')) ? prev : 'Ready to sign in.');
-                }
-            } else {
-                setStatus('Ready to sign in.');
-            }
-        });
-
-        return () => unsubscribe();
-    }, []);
-
-    const startSignIn = async () => {
-        try {
-            setStatus('Signing in with Google...');
-            const provider = new GoogleAuthProvider();
-            // Force account selection to ensure fresh token if needed
-            provider.setCustomParameters({ prompt: 'select_account' });
-            const result = await signInWithPopup(auth, provider);
-
-            // Get the GOOGLE OAuth credential (not Firebase ID token)
-            // This is required for Electron bridge - GoogleAuthProvider.credential() expects Google OAuth tokens
-            const credential = GoogleAuthProvider.credentialFromResult(result);
-            const googleIdToken = credential?.idToken;
-            const googleAccessToken = credential?.accessToken;
-
-            if (googleIdToken) {
-                setStatus('Authenticated. Redirecting to Indii OS...');
-                // Pass Google OAuth tokens (not Firebase ID token)
-                const params = new URLSearchParams();
-                params.set('idToken', googleIdToken);
-                if (googleAccessToken) {
-                    params.set('accessToken', googleAccessToken);
-                }
-                window.location.href = `indii-os://auth/callback?${params.toString()}`;
-
-                // UX Fix: Provide manual launch option for resilience
-                const deepLink = `indii-os://auth/callback?${params.toString()}`;
-                const ManualLaunch = () => (
-                    <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10 animate-fade-in-up">
-                        <p className="text-sm text-gray-400 mb-3">Browser didn't open the app?</p>
-                        <a
-                            href={deepLink}
-                            className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-medium transition-colors"
-                        >
-                            Launch App Manually
-                        </a>
-                    </div>
-                );
-
-                setStatus(
-                    <div className="flex flex-col items-center">
-                        <p className="text-lg font-medium text-green-400 mb-2">Authenticated!</p>
-                        <p className="text-gray-400">Redirecting to Indii OS...</p>
-                        <ManualLaunch />
-                    </div> as any
-                );
-
-                // Allow user to see the manual button, don't auto-close immediately if they need it
-                // setTimeout(() => window.close(), 5000); 
-            } else {
-                setError('Failed to get Google credential');
-            }
-        } catch (e: any) {
-            console.error(e);
-            setError(e.message || 'Unknown error');
-            setStatus('Sign In Failed');
-        }
-    };
-
-    const handleUser = async (_user: User) => {
-        // User is already authenticated - trigger fresh sign-in to get OAuth credentials
-        // (onAuthStateChanged fires for cached sessions, but we need fresh Google OAuth tokens)
-        setStatus('Session found. Re-authenticating...');
-        startSignIn();
-    };
-
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-sans">
             <div className="p-8 border border-neutral-800 rounded-xl bg-neutral-900/50 text-center max-w-md w-full">
-                <h1 className="text-2xl font-bold mb-4">Indii OS Login</h1>
-
-                {error ? (
-                    <div className="text-red-500 mb-4 p-4 bg-red-900/20 rounded-lg">
-                        {error}
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="mt-4 block w-full py-2 bg-red-600 rounded hover:bg-red-500"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                ) : (
-                    <div className="py-8">
-                        <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <div className="text-neutral-400">{status}</div>
-                    </div>
-                )}
-
-                <div className="mt-8">
-                    <button
-                        onClick={startSignIn}
-                        className="px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 mx-auto"
-                    >
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
-                        Sign in with Google
-                    </button>
-                    <p className="mt-4 text-xs text-neutral-500 max-w-xs mx-auto">
-                        This will open a browser window to authenticate securely with Google.
-                    </p>
-                </div>
+                <h1 className="text-2xl font-bold mb-4">Login Bridge</h1>
+                <p className="text-neutral-400 mb-6">
+                    Google Sign-In is currently disabled. Please use Email/Password login in the main application.
+                </p>
+                <a
+                    href="/login"
+                    className="inline-block px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                    Go to Login
+                </a>
             </div>
         </div>
     );
