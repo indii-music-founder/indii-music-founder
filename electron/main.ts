@@ -431,7 +431,7 @@ const createWindow = () => {
                         `style-src ${styleSrc}`,
                         "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:5173",
                         "font-src 'self' https://fonts.gstatic.com http://localhost:5173",
-                        "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com http://localhost:5173 ws://localhost:5173",
+                        "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://us-central1-indiios-v-1-1.cloudfunctions.net http://localhost:5173 ws://localhost:5173",
                         "worker-src 'self' blob:"
                     ].join('; ')
                 ],
