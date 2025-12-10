@@ -114,10 +114,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
             }
 
-        } catch (error) {
-            console.error("Onboarding error:", error);
+        } catch (error: any) {
+            console.error("Full Onboarding Error:", error);
             // toast.error("Connection glitch. Please try again."); // Assuming toast is available or add it
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: "Sorry, I ran into a glitch. Can you say that again?" }] }]);
+            const errorMessage = error.message || JSON.stringify(error);
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: `Sorry, I ran into a glitch: ${errorMessage}. Can you say that again?` }] }]);
         } finally {
             setIsProcessing(false);
         }

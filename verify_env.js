@@ -10,10 +10,14 @@ function checkEnv(filePath, name) {
     if (fs.existsSync(filePath)) {
         const config = dotenv.parse(fs.readFileSync(filePath));
         console.log(`[${name}] VITE_VERTEX_PROJECT_ID:`, config.VITE_VERTEX_PROJECT_ID);
+        console.log(`[${name}] VITE_API_KEY present:`, !!config.VITE_API_KEY);
         if (config.VITE_VERTEX_PROJECT_ID !== 'indiios-v-1-1') {
             console.error(`[FAIL] ${name} incorrect project ID.`);
         } else {
-            console.log(`[PASS] ${name} correct.`);
+            console.log(`[PASS] ${name} project ID correct.`);
+        }
+        if (!config.VITE_API_KEY) {
+            console.error(`[FAIL] ${name} VITE_API_KEY missing.`);
         }
     } else {
         console.warn(`[WARN] ${name} file not found.`);
