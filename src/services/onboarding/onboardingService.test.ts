@@ -113,6 +113,25 @@ describe('onboardingService', () => {
             expect(updates).toContain('Release Details');
         });
 
+        it('should update extended brand kit fields (socials and pro)', () => {
+            const calls = [{
+                name: OnboardingTools.UpdateProfile,
+                args: {
+                    social_spotify: 'https://spotify.com/artist/12345',
+                    social_soundcloud: 'https://soundcloud.com/artist',
+                    pro_affiliation: 'ASCAP',
+                    distributor: 'DistroKid'
+                }
+            }];
+
+            const { updatedProfile, updates } = processFunctionCalls(calls, baseProfile, []);
+            expect(updatedProfile.brandKit.socials.spotify).toBe('https://spotify.com/artist/12345');
+            expect(updatedProfile.brandKit.socials.soundcloud).toBe('https://soundcloud.com/artist');
+            expect(updatedProfile.brandKit.socials.pro).toBe('ASCAP');
+            expect(updatedProfile.brandKit.socials.distributor).toBe('DistroKid');
+            expect(updates).toContain('Socials & Pro Details');
+        });
+
         it('should add image assets', () => {
             const files: ConversationFile[] = [{
                 id: '1',
