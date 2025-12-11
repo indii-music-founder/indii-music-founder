@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 export default function OnboardingPage() {
     const { userProfile, setUserProfile, setModule } = useStore();
     const [input, setInput] = useState('');
-    const [history, setHistory] = useState<{ role: string; parts: { text: string }[] }[]>([]);
+    const [history, setHistory] = useState<{ role: string; parts: { text: string }[]; toolCall?: any }[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [files, setFiles] = useState<ConversationFile[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -71,10 +71,11 @@ export default function OnboardingPage() {
         setFiles(prev => prev.filter(f => f.id !== id));
     };
 
-    const handleSend = async () => {
-        if (!input.trim() && files.length === 0) return;
+    const handleSend = async (arg?: string | React.MouseEvent) => {
+        const textToSend = typeof arg === 'string' ? arg : input;
+        if (!textToSend.trim() && files.length === 0) return;
 
-        const userMsg = { role: 'user', parts: [{ text: input }] };
+        const userMsg = { role: 'user', parts: [{ text: textToSend }] };
         const newHistory = [...history, userMsg];
         setHistory(newHistory);
         setInput('');
@@ -85,25 +86,33 @@ export default function OnboardingPage() {
         try {
             const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, 'onboarding', currentFiles);
 
+            let nextHistory = [...newHistory];
+            let uiToolCall = null;
+
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
                 setUserProfile(updatedProfile);
 
                 if (isFinished) {
-                    // Handle completion - perhaps offer to go to dashboard
+                    // Handle completion
                 }
+
+                // Check for UI Tools
+                uiToolCall = functionCalls.find(fc => fc.name === 'askMultipleChoice');
 
                 if (!text && updates.length > 0) {
                     const fallbackText = `I've updated your ${updates.join(', ')}. What else can I help you with?`;
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: fallbackText }] }]);
+                    nextHistory.push({ role: 'model', parts: [{ text: fallbackText }], toolCall: uiToolCall });
                 } else if (text) {
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+                    nextHistory.push({ role: 'model', parts: [{ text }], toolCall: uiToolCall });
                 } else {
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: "I processed that, but I'm not sure what to say. Is there anything else?" }] }]);
+                    nextHistory.push({ role: 'model', parts: [{ text: "I processed that. Ready for the next step?" }], toolCall: uiToolCall });
                 }
             } else {
-                setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+                nextHistory.push({ role: 'model', parts: [{ text }] });
             }
+
+            setHistory(nextHistory);
 
         } catch (error: any) {
             console.error("Full Onboarding Error:", error);
@@ -160,6 +169,24 @@ export default function OnboardingPage() {
                                 : 'bg-[#1a1f2e] text-gray-200 rounded-tl-sm border border-gray-800'
                                 }`}>
                                 <div className="text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
+
+                                {/* Generative UI Renderer */}
+                                {msg.toolCall && msg.toolCall.name === 'askMultipleChoice' && (
+                                    <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        {msg.toolCall.args.options.map((option: string) => (
+                                            <button
+                                                key={option}
+                                                onClick={() => {
+                                                    setInput(option);
+                                                    handleSend(option); // Pass option directly to avoid stale state
+                                                }}
+                                                className="bg-black/20 hover:bg-white hover:text-black border border-white/10 px-4 py-2 rounded-lg text-sm transition-all transform hover:scale-105"
+                                            >
+                                                {option}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     ))}

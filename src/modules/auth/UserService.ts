@@ -8,7 +8,7 @@ export interface FirestoreUserProfile {
     uid: string;
     email: string;
     displayName: string;
-    photoURL?: string;
+    photoURL?: string | null;
     createdAt: Timestamp;
     lastLoginAt: Timestamp;
     tier: 'free' | 'pro' | 'enterprise';
@@ -46,7 +46,7 @@ export const UserService = {
                 uid: user.uid,
                 email: user.email || '',
                 displayName: user.displayName || 'Anonymous',
-                photoURL: user.photoURL || undefined,
+                photoURL: user.photoURL || null,
                 createdAt: Timestamp.now(),
                 lastLoginAt: Timestamp.now(),
                 tier: 'free',

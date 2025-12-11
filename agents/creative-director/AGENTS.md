@@ -10,6 +10,8 @@ Creative Director agent responsible for managing image and video generation task
 - Generate video treatments and render videos.
 - Manage brand consistency.
 - **[NEW] Product Showroom:** Generate photorealistic product mockups via `run_showroom_mockup`.
+- **[NEW] Client-Side Generative UI:** Can render interactive widgets (buttons, forms) directly in the chat stream using the `askMultipleChoice` tool.
+  - This bypasses the need for the user to type answers for structured data (Genre, Career Stage).
 
 - **[NEW] Physical Media Design:** Manage layout and asset generation for CD, Vinyl, Cassette, and Posters at 300 DPI.
   - Leverages **Nano Banana Pro** for 4K asset generation.

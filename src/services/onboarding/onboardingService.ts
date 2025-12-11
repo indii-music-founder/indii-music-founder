@@ -1,7 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '../../modules/workflow/types';
-import { FunctionDeclaration } from '@google/genai';
+import { FunctionDeclaration, SchemaType } from '@google/generative-ai';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Types & Enums ---
@@ -12,6 +12,7 @@ export enum OnboardingTools {
     AddTextAssetToKnowledgeBase = 'addTextAssetToKnowledgeBase',
     GenerateProfileSection = 'generateProfileSection',
     FinishOnboarding = 'finishOnboarding',
+    AskMultipleChoice = 'askMultipleChoice',
 }
 
 export interface UpdateProfileArgs {
@@ -53,25 +54,25 @@ const updateProfileFunction: FunctionDeclaration = {
     name: OnboardingTools.UpdateProfile,
     description: 'Updates fields in the user profile. Distinguishes between PERMANENT Artist Identity and TRANSIENT Release Details.',
     parameters: {
-        type: 'OBJECT' as any,
+        type: SchemaType.OBJECT,
         description: 'The profile fields to update.',
         properties: {
             // Identity Fields
-            bio: { type: 'STRING' as any, description: 'The artist\'s biography (Permanent).' },
-            preferences: { type: 'STRING' as any, description: 'The artist\'s creative preferences (Permanent).' },
-            brand_description: { type: 'STRING' as any, description: 'Visual brand description (Permanent).' },
-            colors: { type: 'ARRAY' as any, items: { type: 'STRING' as any }, description: 'Brand color palette.' },
-            fonts: { type: 'STRING' as any, description: 'Brand fonts.' },
-            social_twitter: { type: 'STRING' as any, description: 'Twitter handle.' },
-            social_instagram: { type: 'STRING' as any, description: 'Instagram handle.' },
-            career_stage: { type: 'STRING' as any, description: 'The artist\'s career stage (e.g., Emerging, Professional, Legend).' },
-            goals: { type: 'ARRAY' as any, items: { type: 'STRING' as any }, description: 'Specific career goals (e.g., Tour, Sync, Fanbase).' },
+            bio: { type: SchemaType.STRING, description: 'The artist\'s biography (Permanent).' },
+            preferences: { type: SchemaType.STRING, description: 'The artist\'s creative preferences (Permanent).' },
+            brand_description: { type: SchemaType.STRING, description: 'Visual brand description (Permanent).' },
+            colors: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'Brand color palette.' },
+            fonts: { type: SchemaType.STRING, description: 'Brand fonts.' },
+            social_twitter: { type: SchemaType.STRING, description: 'Twitter handle.' },
+            social_instagram: { type: SchemaType.STRING, description: 'Instagram handle.' },
+            career_stage: { type: SchemaType.STRING, description: 'The artist\'s career stage (e.g., Emerging, Professional, Legend).' },
+            goals: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'Specific career goals (e.g., Tour, Sync, Fanbase).' },
 
             // Release Fields (Transient)
-            release_title: { type: 'STRING' as any, description: 'Title of the current Single, EP, or Album.' },
-            release_type: { type: 'STRING' as any, description: 'Type of release (Single, EP, Album).' },
-            release_mood: { type: 'STRING' as any, description: 'The specific mood of this release.' },
-            release_themes: { type: 'STRING' as any, description: 'Themes or concepts specific to this release.' },
+            release_title: { type: SchemaType.STRING, description: 'Title of the current Single, EP, or Album.' },
+            release_type: { type: SchemaType.STRING, description: 'Type of release (Single, EP, Album).' },
+            release_mood: { type: SchemaType.STRING, description: 'The specific mood of this release.' },
+            release_themes: { type: SchemaType.STRING, description: 'Themes or concepts specific to this release.' },
         },
     },
 };
@@ -80,12 +81,12 @@ const addImageAssetFunction: FunctionDeclaration = {
     name: OnboardingTools.AddImageAsset,
     description: 'Adds an uploaded image to the user\'s brand assets or reference images.',
     parameters: {
-        type: 'OBJECT' as any,
+        type: SchemaType.OBJECT,
         description: 'Details of the image asset to add.',
         properties: {
-            file_name: { type: 'STRING' as any, description: 'The name of the file that was uploaded.' },
-            asset_type: { type: 'STRING' as any, enum: ['brand_asset', 'reference_image'], description: 'The type of asset to add.' },
-            description: { type: 'STRING' as any, description: 'A description for the image asset.' },
+            file_name: { type: SchemaType.STRING, description: 'The name of the file that was uploaded.' },
+            asset_type: { type: SchemaType.STRING, format: "enum", enum: ['brand_asset', 'reference_image'], description: 'The type of asset to add.' },
+            description: { type: SchemaType.STRING, description: 'A description for the image asset.' },
         },
         required: ['file_name', 'asset_type', 'description'],
     },
@@ -95,11 +96,11 @@ const addTextAssetToKnowledgeBaseFunction: FunctionDeclaration = {
     name: OnboardingTools.AddTextAssetToKnowledgeBase,
     description: 'Adds the content of an uploaded text document to the user\'s knowledge base.',
     parameters: {
-        type: 'OBJECT' as any,
+        type: SchemaType.OBJECT,
         description: 'Details of the text document to add to the knowledge base.',
         properties: {
-            file_name: { type: 'STRING' as any, description: 'The name of the file that was uploaded.' },
-            title: { type: 'STRING' as any, description: 'A descriptive title for this knowledge document.' },
+            file_name: { type: SchemaType.STRING, description: 'The name of the file that was uploaded.' },
+            title: { type: SchemaType.STRING, description: 'A descriptive title for this knowledge document.' },
         },
         required: ['file_name', 'title'],
     },
@@ -109,11 +110,11 @@ const generateProfileSectionFunction: FunctionDeclaration = {
     name: OnboardingTools.GenerateProfileSection,
     description: 'Generates content for a specific section of the user\'s profile based on the conversation.',
     parameters: {
-        type: 'OBJECT' as any,
+        type: SchemaType.OBJECT,
         description: 'Details for the content generation request.',
         properties: {
-            section_to_generate: { type: 'STRING' as any, enum: ['bio', 'brand_description', 'preferences'], description: 'The profile section to generate content for.' },
-            user_input: { type: 'STRING' as any, description: 'A summary of the user\'s request and context to use for generation.' },
+            section_to_generate: { type: SchemaType.STRING, format: "enum", enum: ['bio', 'brand_description', 'preferences'], description: 'The profile section to generate content for.' },
+            user_input: { type: SchemaType.STRING, description: 'A summary of the user\'s request and context to use for generation.' },
         },
         required: ['section_to_generate', 'user_input'],
     },
@@ -123,12 +124,27 @@ const finishOnboardingFunction: FunctionDeclaration = {
     name: OnboardingTools.FinishOnboarding,
     description: 'Call this function ONLY when BOTH Artist Identity and Current Release details are sufficient.',
     parameters: {
-        type: 'OBJECT' as any,
+        type: SchemaType.OBJECT,
         description: 'The final confirmation message.',
         properties: {
-            confirmation_message: { type: 'STRING' as any, description: 'A final, friendly message to send to the user.' },
+            confirmation_message: { type: SchemaType.STRING, description: 'A final, friendly message to send to the user.' },
         },
         required: ['confirmation_message'],
+    },
+};
+
+const askMultipleChoiceFunction: FunctionDeclaration = {
+    name: OnboardingTools.AskMultipleChoice,
+    description: 'Presents a list of options to the user for them to select one or more. Use this for Genres, Career Stages, or quick preferences.',
+    parameters: {
+        type: SchemaType.OBJECT,
+        description: 'Configuration for the multiple choice UI.',
+        properties: {
+            question: { type: SchemaType.STRING, description: 'The question to ask the user (e.g., "What is your main genre?").' },
+            options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'The list of options to display.' },
+            allow_multiple: { type: SchemaType.BOOLEAN, description: 'Whether the user can select multiple options.' },
+        },
+        required: ['question', 'options'],
     },
 };
 
@@ -200,9 +216,13 @@ export async function runOnboardingConversation(
     1. **Prioritize Identity**: If Artist Identity is < 100%, focus there first.
     2. **Pivot to Release**: Once Identity is solid, say: "Got it. Now, let's talk about your current project. Is it a single or an album?"
     3. **The "Song"**: If they want to "brag about a song", that goes into **Release Details** (Mood, Themes, Title).
-    4. **Update Often**: Call \`updateProfile\` immediately after every useful answer.
-    5. **Tone**: You are an industry pro. Cool, efficient, strategic.
-    6. **Files**: If the user uploads a file, acknowledge it. If it's an image, use \`addImageAsset\`. If it's a text doc, use \`addTextAssetToKnowledgeBase\`.
+    4. **Silent Updates**: Call \`updateProfile\` immediately when you get new data, but **DO NOT** say "I have updated your profile" or "I've added that to your bio". This breaks the flow.
+    5. **Stay in Character**: Instead of confirming the data entry, acknowledge the *content* (e.g., "Techno is a powerful choice." or "Just starting out? That's the most exciting time.").
+    6. **Always Follow Up**: After processing their answer, immediately ask the next relevant question to fill the **Missing** fields. Never leave a dead end.
+    7. **Tone**: You are "indii," a visionary Creative Director. You are encouraging, sharp, and curious. Treat the user like a star.
+    8. **Files**: If the user uploads a file, acknowledge it clearly. Use \`addImageAsset\` or \`addTextAssetToKnowledgeBase\` as needed.
+    9. **Interactive UI**: If you need to ask about **Genre**, **Career Stage**, or **Styles**, DO NOT just ask text. Use \`askMultipleChoice\` to show buttons. It's faster for the user.
+       - Example: \`askMultipleChoice("What's your primary genre?", ["House", "Techno", "Hip Hop", "Indie Rock"])\`
 
     Only call \`finishOnboarding\` when BOTH layers are robust.`;
 
@@ -256,18 +276,19 @@ export async function runOnboardingConversation(
         const response = await AI.generateContent({
             model: AI_MODELS.TEXT.AGENT,
             contents: contents,
+            systemInstruction,
+            tools: [{
+                functionDeclarations: [
+                    updateProfileFunction,
+                    addImageAssetFunction,
+                    addTextAssetToKnowledgeBaseFunction,
+                    generateProfileSectionFunction,
+                    finishOnboardingFunction,
+                    askMultipleChoiceFunction,
+                ]
+            }],
             config: {
-                systemInstruction,
                 ...AI_CONFIG.THINKING.HIGH,
-                tools: [{
-                    functionDeclarations: [
-                        updateProfileFunction,
-                        addImageAssetFunction,
-                        addTextAssetToKnowledgeBaseFunction,
-                        generateProfileSectionFunction,
-                        finishOnboardingFunction,
-                    ]
-                }],
             },
         });
 
@@ -393,8 +414,8 @@ export async function generateSection(section: 'bio' | 'brand_description' | 'pr
     const response = await AI.generateContent({
         model: AI_MODELS.TEXT.AGENT,
         contents: { role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] },
+        systemInstruction: systemPrompt,
         config: {
-            systemInstruction: systemPrompt,
             ...AI_CONFIG.THINKING.HIGH,
         },
     });

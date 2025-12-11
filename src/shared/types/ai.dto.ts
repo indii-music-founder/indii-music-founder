@@ -2,6 +2,9 @@ export interface GenerateContentRequest {
     model: string;
     contents: { role: string; parts: any[] } | { role: string; parts: any[] }[];
     config?: Record<string, unknown>;
+    systemInstruction?: string;
+    tools?: any[];
+    apiKey?: string;
 }
 
 // Just wrapping 'any' for now since the Gemini SDK response is deep and complex.

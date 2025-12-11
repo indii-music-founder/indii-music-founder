@@ -59,39 +59,45 @@ export class AIService {
         model: string;
         contents: { role: string; parts: any[] } | { role: string; parts: any[] }[];
         config?: Record<string, unknown>;
+        systemInstruction?: string;
+        tools?: any[];
     }) {
         return this.withRetry(async () => {
             try {
-                const generateContentFn = httpsCallable<GenerateContentRequest, GenerateContentResponse>(functions, 'generateContent');
-                const response = await generateContentFn({
+                // EMERGENCY PIVOT: Backend is broken/missing. Using Client SDK directly.
+                const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                const genAI = new GoogleGenerativeAI(this.apiKey);
+
+                const model = genAI.getGenerativeModel({
                     model: options.model,
-                    contents: options.contents,
-                    config: options.config
+                    systemInstruction: options.systemInstruction,
+                    tools: options.tools,
+                    ...options.config // formatting safety 
                 });
-                return wrapResponse(response.data);
+
+                // The SDK expects contents in a specific format.
+                // Our internal format is compatible, but let's ensure type safety if needed.
+                // Wrap contents in a request object to match the GenerateContentRequest interface
+                // required by the Google Generative AI SDK for multi-turn history.
+                const generateRequest = {
+                    contents: Array.isArray(options.contents) ? options.contents : [options.contents]
+                };
+
+                const result = await model.generateContent(generateRequest as any);
+                const response = await result.response;
+
+                // The SDK returns a helper object, but our wrapResponse expects the raw data structure.
+                // We can extract the raw candidates from the response object.
+                // response.candidates is accessible.
+
+                return wrapResponse({
+                    candidates: response.candidates,
+                    promptFeedback: response.promptFeedback
+                });
+
             } catch (error: any) {
-                console.error("Generate Content Failed:", error);
-
-                // Extract the actual error message from Firebase HttpsError
-                // Firebase HttpsError structure: { code, message, details }
-                // The message is often more descriptive than just the code
-                const errorCode = error.code || error.details?.code || 'UNKNOWN';
-                const errorMessage = error.details?.originalMessage
-                    || error.details?.message
-                    || (error.message && error.message !== error.code ? error.message : null)
-                    || 'Unknown error';
-
-                console.error("Extracted error details:", { errorCode, errorMessage, fullError: error });
-
-                if (error.details?.code) {
-                    // Forward the standardized error code if available
-                    const newError = new Error(`[${error.details.code}] ${errorMessage}`);
-                    (newError as any).code = error.details.code;
-                    throw newError;
-                }
-
-                // Ensure we have a meaningful message, not just the error code
-                throw new Error(`Generate Content Failed: ${errorMessage}`);
+                console.error("Generate Content (Client SDK) Failed:", error);
+                throw new Error(`Generate Content Failed: ${error.message}`);
             }
         });
     }

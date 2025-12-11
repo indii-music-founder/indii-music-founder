@@ -100,10 +100,12 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             }
 
             onAuthStateChanged(auth, async (user: User | null) => {
+                console.log("[AuthSlice] Auth State Changed:", user ? `User ${user.uid} (Anon: ${user.isAnonymous})` : 'Logged Out');
                 if (user) {
-                    // Only consider non-anonymous users as fully authenticated for the Dashboard
-                    // Anonymous users (if any) need to upgrade/sign-in to access protected data
-                    const isAuthenticated = !user.isAnonymous;
+                    // ALLOW ANONYMOUS ACCESS
+                    // We treat anonymous users as authenticated for the purpose of app access
+                    // Specific modules can check user.isAnonymous if they need to restrict features
+                    const isAuthenticated = !!user;
                     set({ user, isAuthenticated, isAuthReady: true });
 
                     // Sync User Profile from Firestore

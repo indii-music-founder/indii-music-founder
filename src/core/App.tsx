@@ -72,8 +72,9 @@ const AuthLogin = () => {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                         <input
+                            id="email"
                             type="email"
                             required
                             value={email}
@@ -84,8 +85,9 @@ const AuthLogin = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Password</label>
                         <input
+                            id="password"
                             type="password"
                             required
                             value={password}
@@ -110,7 +112,25 @@ const AuthLogin = () => {
                 </form>
 
                 <div className="mt-6 text-center text-sm text-gray-500">
-                    <p>Don't have an account? Please contact your administrator.</p>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            setLoading(true);
+                            try {
+                                const { signInAnonymously } = await import('firebase/auth');
+                                const { auth } = await import('@/services/firebase');
+                                await signInAnonymously(auth);
+                            } catch (err: any) {
+                                console.error("[AuthLogin] Guest Login Error:", err);
+                                setError(err.message);
+                                setLoading(false);
+                            }
+                        }}
+                        className="text-indigo-600 hover:text-indigo-500 font-semibold"
+                    >
+                        Guest Mode (Anonymous)
+                    </button>
+                    <p className="mt-2">Don't have an account? Please contact your administrator.</p>
                 </div>
             </div>
         </div>

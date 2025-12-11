@@ -6,11 +6,11 @@ import { getAuth } from 'firebase/auth';
 import { env } from '../config/env';
 
 const firebaseConfig = {
-    apiKey: env.apiKey,
-    authDomain: `${env.projectId}.firebaseapp.com`,
+    apiKey: env.apiKey || "AIzaSyD7bmREk0yo8-WtJIngr7ek9U1-BC7BTC0",
+    authDomain: "indiios-v-1-1.firebaseapp.com",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-    projectId: env.projectId,
-    storageBucket: env.storageBucket || "gs://indiios-alpha-electron",
+    projectId: "indiios-v-1-1",
+    storageBucket: "indiios-v-1-1.firebasestorage.app",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:3af738739465ea4095e9bd",
     measurementId: "G-7WW3HEHFTF"
