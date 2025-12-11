@@ -10,6 +10,9 @@ export interface HistoryItem {
     orgId?: string;
     meta?: string;
     mask?: string;
+    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
+    tags?: string[];
+    subject?: string;
 }
 
 export interface CanvasImage {
@@ -49,6 +52,7 @@ export interface CreativeSlice {
     // Uploads
     uploadedImages: HistoryItem[];
     addUploadedImage: (img: HistoryItem) => void;
+    updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
     // Studio Controls
@@ -163,6 +167,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
 
     uploadedImages: [],
     addUploadedImage: (img) => set((state) => ({ uploadedImages: [img, ...state.uploadedImages] })),
+    updateUploadedImage: (id, updates) => set((state) => ({
+        uploadedImages: state.uploadedImages.map(img => img.id === id ? { ...img, ...updates } : img)
+    })),
     removeUploadedImage: (id) => set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) })),
 
     studioControls: {

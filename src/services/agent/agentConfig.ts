@@ -3,7 +3,7 @@ import { MarketingAgent } from './definitions/MarketingAgent';
 import { LegalAgent } from './definitions/LegalAgent';
 import { FinanceAgent } from './definitions/FinanceAgent';
 import { MusicAgent } from './definitions/MusicAgent';
-import { DirectorAgent } from './definitions/DirectorAgent';
+import { DirectorAgent } from '@/agents/director/config';
 import { VideoAgent } from './definitions/VideoAgent';
 import { SocialAgent } from './definitions/SocialAgent';
 import { PublicistAgent } from './definitions/PublicistAgent';
@@ -11,8 +11,10 @@ import { RoadAgent } from './definitions/RoadAgent';
 import { PublishingAgent } from './definitions/PublishingAgent';
 import { LicensingAgent } from './definitions/LicensingAgent';
 import { BrandAgent } from './definitions/BrandAgent';
+import { DevOpsAgent } from './definitions/DevOpsAgent';
+import { SecurityAgent } from './definitions/SecurityAgent';
 
-export const AGENT_CONFIGS: AgentConfig[] = [
+export const AGENT_REGISTRY: AgentConfig[] = [
     MarketingAgent,
     LegalAgent,
     FinanceAgent,
@@ -24,5 +26,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     RoadAgent,
     PublishingAgent,
     LicensingAgent,
-    BrandAgent
+    BrandAgent,
+    BrandAgent,
+    // DevOpsAgent, // Internal / Testing only
+    // SecurityAgent // Internal / Testing only
 ];

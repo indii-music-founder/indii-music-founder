@@ -63,8 +63,22 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => {
-        // localStorage.setItem('userProfile', JSON.stringify(profile)); // Deprecate local storage sync? Or keep as cache?
         set({ userProfile: profile });
+
+        // Sync to Firestore if logged in
+        const user = get().user;
+        if (user) {
+            import('@/modules/auth/UserService').then(({ UserService }) => {
+                UserService.updateProfile(user.uid, {
+                    bio: profile.bio,
+                    preferences: profile.preferences,
+                    brandKit: profile.brandKit,
+                    knowledgeBase: profile.knowledgeBase,
+                    careerStage: profile.careerStage,
+                    goals: profile.goals
+                } as any);
+            });
+        }
     },
     updateBrandKit: (updates) => set((state) => {
         const newProfile = {

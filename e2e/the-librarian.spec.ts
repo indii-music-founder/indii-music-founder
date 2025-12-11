@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-const BASE_URL = 'http://localhost:5173';
+const STUDIO_URL = 'http://localhost:4242';
 const TEST_TIMESTAMP = Date.now();
 const SECRET_CODE = `OMEGA-${TEST_TIMESTAMP}`;
 const MANIFESTO_CONTENT = `

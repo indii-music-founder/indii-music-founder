@@ -202,7 +202,8 @@ export class AIService {
                 prompt: options.prompt,
                 model: options.model,
                 image: options.image,
-                config: options.config
+                config: options.config,
+                apiKey: this.apiKey
             }));
 
             const data = response.data as any;
@@ -228,7 +229,8 @@ export class AIService {
             const response = await this.withRetry(() => generateImageFn({
                 model: options.model,
                 prompt: options.prompt,
-                config: options.config
+                config: options.config,
+                apiKey: this.apiKey
             }));
 
             const images = response.data.images;
@@ -252,7 +254,8 @@ export class AIService {
             const embedContentFn = httpsCallable(functions, 'embedContent');
             const response = await this.withRetry(() => embedContentFn({
                 model: options.model,
-                content: options.content
+                content: options.content,
+                apiKey: this.apiKey
             }));
             return response.data;
         } catch (error: any) {

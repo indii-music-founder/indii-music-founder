@@ -59,7 +59,14 @@
     - **Sync Tests with Tech:** If you advance a technology or system (e.g., adding Vector Search to RAG), you **MUST** update the corresponding test protocol (e.g., "The Librarian") to check this new capability.
     - **No Stale Green Lights:** A test that passes because it checks an obsolete, simple version of the feature is a failure. Tests must cover the *current* level of complexity.
 
-13. **The "Temporal Bridge" Protocol (Live Verification):**
+14. **The "Temporal Bridge" Protocol (Live Verification):**
     - **Cutoff Awareness:** Acknowledge that your training data is static and likely outdated.
     - **Live Check Mandate:** When using fast-moving libraries (e.g., React, Firebase, AI Models) or debugging obscure errors, you **MUST** use `search_web` or browser tools to verify the *latest* API methods and deprecations.
     - **Trigger Words:** If you ask yourself "Is this deprecated?" or "Does vX support Y?", you are **required** to verify via the live internet before writing code.
+
+15. **Port Awareness & Architecture Split:**
+    - **CRITICAL:** The project contains TWO distinct applications:
+      1. **Electron Studio App (Vite):** Runs on **Port 4242** (or 5173). This is the main application (`src/core/App.tsx`).
+      2. **Landing Page (Next.js):** Runs on **Port 3000**. This is the marketing/auth bridge (`landing-page/app`).
+    - **Rule:** When debugging "White Pages" or routing errors (e.g., `/select-org`), check the PORT first. Accessing app routes on Port 3000 will result in a 404/White Page.
+    - **Verify:** Always check `npm run dev` arguments (e.g., `--port 4242`) to confirm the active port.

@@ -125,6 +125,9 @@ export interface BrandAsset {
     id?: string;
     url: string;
     description: string;
+    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
+    tags?: string[];
+    subject?: string; // e.g. "Dave", "The Band"
 }
 
 export interface BrandKit {

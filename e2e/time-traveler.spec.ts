@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const STUDIO_URL = 'http://localhost:5173';
+const STUDIO_URL = 'http://localhost:4242';
 
 test.describe('The Time Traveler: Data Persistence Verification', () => {
 

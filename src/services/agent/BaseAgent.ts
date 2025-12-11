@@ -133,40 +133,44 @@ export class BaseAgent implements SpecializedAgent {
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
-        // Dynamically import store to avoid circular deps
-        const { useStore } = await import('@/core/store');
-        const { currentOrganizationId, currentProjectId } = useStore.getState();
-
         const enrichedContext = {
             ...context,
-            orgId: currentOrganizationId,
-            projectId: currentProjectId
+            orgId: context?.currentOrganizationId,
+            projectId: context?.currentProjectId
         };
 
         const SUPERPOWER_PROMPT = `
-        **SUPERPOWERS (Agent Zero Protocol):**
-        - **Memory:** Use 'save_memory' to remember important details. Use 'recall_memories' to check for past context.
-        - **Reflection:** Use 'verify_output' to double-check your work before finalizing.
-        - **Approval:** Use 'request_approval' before taking any public or irreversible action.
+        ## CAPABILITIES & PROTOCOLS
+        You have access to the following advanced capabilities ("Superpowers"):
+        - **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.
+        - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
+        - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
+
+        ## TONE & STYLE
+        - Be direct and concise. Avoid "As an AI..." boilerplate.
+        - Act with the authority of your role (${this.name}).
+        - If the user asks for an action, DO IT. Don't just say you can.
         `;
 
         // Build memory section if memories were retrieved
         const memorySection = context?.memoryContext
-            ? `\nRELEVANT MEMORIES (from past conversations):\n${context.memoryContext}\n`
+            ? `\n## RELEVANT MEMORIES\n${context.memoryContext}\n`
             : '';
 
         const fullPrompt = `
+# MISSION
 ${this.systemPrompt}
+
+# CONTEXT
+${JSON.stringify(enrichedContext, null, 2)}
+
+# HISTORY
+${context?.chatHistoryString || ''}
+${memorySection}
 
 ${SUPERPOWER_PROMPT}
 
-CONTEXT:
-${JSON.stringify(enrichedContext, null, 2)}
-
-HISTORY:
-${context?.chatHistoryString || ''}
-${memorySection}
-TASK:
+# CURRENT OBJECTIVE
 ${task}
 `;
 

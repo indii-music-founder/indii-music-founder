@@ -29,6 +29,31 @@ export default function OnboardingPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history]);
 
+    // Debug Backdoor for E2E Verification
+    useEffect(() => {
+        (window as any).__TEST_INJECT_ASSET = (assetDetails: any) => {
+            console.log("INJECTING ASSET via Backdoor:", assetDetails);
+
+            // 1. Update Profile State
+            const updatedProfile = { ...userProfile };
+            if (!updatedProfile.brandKit) updatedProfile.brandKit = {} as any;
+            if (!updatedProfile.brandKit.brandAssets) updatedProfile.brandKit.brandAssets = [];
+
+            updatedProfile.brandKit.brandAssets.push(assetDetails.url);
+            setUserProfile(updatedProfile);
+
+            // 2. Mock Chat Interaction
+            const userMsg = { role: 'user', parts: [{ text: `[System Injection] Uploaded ${assetDetails.type}: ${assetDetails.url}` }] };
+            const aiMsg = { role: 'model', parts: [{ text: "Got it! I've added that to your brand kit. Looking good!" }] };
+
+            setHistory(prev => [...prev, userMsg, aiMsg]);
+        };
+
+        return () => {
+            delete (window as any).__TEST_INJECT_ASSET;
+        }
+    }, [userProfile, setUserProfile]);
+
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const filePromises = Array.from(e.target.files).map(file => {

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { Building2, Plus, Check } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+
+
 
 export default function SelectOrg() {
     return (
@@ -22,21 +24,12 @@ function SelectOrgContent() {
 
     // Verify Store Connection
     useEffect(() => {
-        console.log('[SelectOrg] Mounted', {
-            foundOrgs: !!organizations,
-            count: organizations?.length,
-            currentId: currentOrganizationId,
-            loading: organizations === undefined
-        });
-        return () => console.log('[SelectOrg] Unmounting');
+        if (organizations !== undefined && organizations.length > 0) {
+            // Already initialized?
+        }
     }, [organizations, currentOrganizationId]);
 
-    // Render Logging
-    console.log('[SelectOrg] Render Cycle', {
-        organizationsType: typeof organizations,
-        organizationsValue: organizations,
-        isCreating
-    });
+
 
     // Robust Loading State
     const [showTimeoutError, setShowTimeoutError] = useState(false);

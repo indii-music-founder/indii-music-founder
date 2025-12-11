@@ -7,7 +7,7 @@ export const AI_MODELS = {
     },
     IMAGE: {
         // Main image generation model
-        GENERATION: 'gemini-3-pro-image-preview',
+        GENERATION: 'imagen-3.0-generate-001',
     },
     VIDEO: {
         // Video generation model

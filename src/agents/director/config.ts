@@ -1,5 +1,5 @@
-import { AgentConfig } from "../types";
-import systemPrompt from '@agents/director/prompt.md?raw';
+import { AgentConfig } from "@/services/agent/types";
+import systemPrompt from './prompt.md?raw';
 
 export const DirectorAgent: AgentConfig = {
     id: 'director',

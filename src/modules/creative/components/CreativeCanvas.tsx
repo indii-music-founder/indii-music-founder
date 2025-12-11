@@ -33,6 +33,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
     // Nana Banana Pro State
     const [activeColor, setActiveColor] = useState<NanaColor>(NANA_COLORS[0]);
     const [editDefinitions, setEditDefinitions] = useState<Record<string, string>>({});
+    const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string, data: string } | null>>({});
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
     const [generatedCandidates, setGeneratedCandidates] = useState<{ id: string; url: string; prompt: string }[]>([]);
 
@@ -258,7 +259,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                         mimeType: 'image/png',
                         data: maskDataUrl.split(',')[1],
                         prompt: prompt,
-                        colorId: colorId
+                        colorId: colorId,
+                        referenceImage: referenceImages[colorId] || undefined // Pass reference image if exists
                     });
 
                     // Restore visual state for these paths
@@ -415,6 +417,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                                     onClose={() => setIsDefinitionsOpen(false)}
                                     definitions={editDefinitions}
                                     onUpdateDefinition={(id, val) => setEditDefinitions(prev => ({ ...prev, [id]: val }))}
+                                    referenceImages={referenceImages}
+                                    onUpdateReferenceImage={(id, val) => setReferenceImages(prev => ({ ...prev, [id]: val }))}
                                 />
 
                                 {generatedCandidates.length > 0 && (
@@ -427,22 +431,37 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                                                 </div>
                                                 <button
                                                     onClick={() => {
-                                                        // Apply this candidate
+                                                        // Apply this candidate in Daisy Chain (Clear masks, new base)
                                                         if (fabricCanvas.current) {
                                                             const canvas = fabricCanvas.current;
                                                             fabric.Image.fromURL(cand.url).then(img => {
                                                                 img.scaleToWidth(canvas.width!);
                                                                 img.set({ left: canvas.width! / 2, top: canvas.height! / 2, originX: 'center', originY: 'center' });
-                                                                // Clear old masks
-                                                                const objs = canvas.getObjects();
-                                                                const masks = objs.filter(o => o.type === 'path');
-                                                                canvas.remove(...masks);
 
-                                                                canvas.add(img);
+                                                                // Clear old masks AND old images
+                                                                canvas.clear();
+                                                                canvas.backgroundColor = '#1a1a1a';
+                                                                canvas.add(img); // Add new base
+
+                                                                // Re-initialize free drawing brush (lost on clear)
+                                                                if (isMagicFillMode) {
+                                                                    canvas.isDrawingMode = true;
+                                                                    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                                                                    canvas.freeDrawingBrush.width = 30;
+                                                                    // Set color again
+                                                                    const hex = activeColor.hex;
+                                                                    const r = parseInt(hex.slice(1, 3), 16);
+                                                                    const g = parseInt(hex.slice(3, 5), 16);
+                                                                    const b = parseInt(hex.slice(5, 7), 16);
+                                                                    canvas.freeDrawingBrush.color = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                                                                } else {
+                                                                    canvas.isDrawingMode = false;
+                                                                }
+
                                                                 canvas.renderAll();
                                                             });
                                                             setGeneratedCandidates([]); // Close selection
-                                                            toast.success(`Applied Option ${idx + 1}`);
+                                                            toast.success(`Daisy Chain Linked: Applied Option ${idx + 1}`);
                                                         }
                                                     }}
                                                     className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"

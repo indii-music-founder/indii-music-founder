@@ -2,6 +2,7 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { env } from '@/config/env';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -35,7 +36,8 @@ export class ImageGenerationService {
                 prompt: fullPrompt,
                 aspectRatio: options.aspectRatio,
                 count: count,
-                images: options.sourceImages
+                images: options.sourceImages,
+                apiKey: env.apiKey
             });
 
             const data = result.data as any;

@@ -13,6 +13,8 @@ import AudioStressTest from '../dev/AudioStressTest';
 
 // Lazy load modules
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
+
+
 const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
@@ -138,6 +140,8 @@ const AuthLogin = () => {
 };
 
 
+import { env } from '@/config/env';
+
 export default function App() {
     const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
 
@@ -168,6 +172,29 @@ export default function App() {
     useEffect(() => {
         if (isAuthenticated && isAuthReady) {
             const state = useStore.getState();
+
+            // Check for DevEx skip flag
+            if (env.skipOnboarding && !state.userProfile?.bio) {
+                console.log("[App] DevEx: Skipping onboarding via env flag");
+                // Mock a profile to satisfy the check
+                useStore.setState({
+                    userProfile: {
+                        ...state.userProfile,
+                        id: state.user?.uid || 'dev-user',
+                        bio: 'Dev Mode Auto-Generated Bio',
+                        preferences: '{}',
+                        // Minimal required fields
+                        brandKit: state.userProfile?.brandKit || {
+                            colors: [], fonts: '', brandDescription: '', negativePrompt: '', socials: {}, brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: 'Single', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
+                        },
+                        analyzedTrackIds: [],
+                        knowledgeBase: [],
+                        savedWorkflows: []
+                    }
+                });
+                return; // Skip the redirect below
+            }
+
             // Simple check: if bio is missing, assume onboarding is needed
             // Ideally we check a specific flag, but this works for the "nuclear" reset flow
             if (!state.userProfile?.bio && currentModule !== 'onboarding' && currentModule !== 'select-org' && !(window as any).__TEST_MODE__) {
@@ -229,6 +256,8 @@ export default function App() {
                                         {currentModule === 'licensing' && <LicensingDashboard />}
                                         {currentModule === 'onboarding' && <OnboardingPage />}
                                         {currentModule === 'showroom' && <Showroom />}
+
+                                        {/* Fallback for unknown modules */}
                                     </>
                                 )}
                             </Suspense>

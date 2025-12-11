@@ -63,16 +63,18 @@ describe('ImageGenerationService', () => {
     describe('remixImage', () => {
         it('should remix image successfully', async () => {
             const mockResponse = {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'image/png',
-                                data: 'remixedData'
-                            }
-                        }]
-                    }
-                }]
+                response: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: 'remixedData'
+                                }
+                            }]
+                        }
+                    }]
+                }
             };
             (AI.generateContent as any).mockResolvedValue(mockResponse);
 
@@ -87,7 +89,7 @@ describe('ImageGenerationService', () => {
         });
 
         it('should return null if no image generated', async () => {
-            (AI.generateContent as any).mockResolvedValue({ candidates: [] });
+            (AI.generateContent as any).mockResolvedValue({ response: { candidates: [] } });
 
             const result = await ImageGeneration.remixImage({
                 contentImage: { mimeType: 'image/png', data: 'data1' },
@@ -105,7 +107,10 @@ describe('ImageGenerationService', () => {
                 style_context: 'A style',
                 negative_prompt: 'Avoid this'
             };
-            (AI.generateContent as any).mockResolvedValue({ text: () => JSON.stringify(mockJSON) });
+            // Mock generateContent to return an object with a text() method
+            (AI.generateContent as any).mockResolvedValue({
+                text: () => JSON.stringify(mockJSON)
+            });
             (AI.parseJSON as any).mockReturnValue(mockJSON);
 
             const result = await ImageGeneration.extractStyle({ mimeType: 'image/png', data: 'data' });

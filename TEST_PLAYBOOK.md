@@ -93,7 +93,7 @@ This document defines the named stress test protocols used to validate Rndr AI. 
 ## 6. The Paparazzi 📸
 
 **Scope:** Media, Storage, & Generation  
-**Status:** Planned  
+**Status:** **ACTIVE**  
 **File:** `e2e/the-paparazzi.spec.ts`
 
 "The Paparazzi" tests the heavy media pipelines.
@@ -101,7 +101,14 @@ This document defines the named stress test protocols used to validate Rndr AI. 
 1. **Shoot**: Uploads a real image file to Storage.
 2. **Process**: Triggers the AI Vision analysis.
 3. **Print**: Requests an image generation based on the analysis.
-4. **Gallery**: Verifies the generated image URL is valid and publicly accessible.
+4. **Daisychain**: Validates the sequential multi-mask editing and reference image passing.
+5. **Gallery**: Verifies the generated image URL is valid and publicly accessible.
+
+**Command:**
+
+```bash
+npx playwright test e2e/the-paparazzi.spec.ts
+```
 
 ---
 
@@ -258,7 +265,6 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   ```
 
 ---
----
 
 ## 16. The Auditor 📋
 
@@ -299,3 +305,67 @@ This document defines the named stress test protocols used to validate Rndr AI. 
   ```bash
   npx vitest run src/modules/design/ThePrinter.test.tsx
   ```
+
+---
+
+## 18. The Cinematographer 🎥
+
+**Scope:** Video Tools & Chain Generation
+**Status:** **ACTIVE**
+**File:** `src/services/agent/tools/VideoTools.test.ts`
+
+"The Cinematographer" verifies the AI Video Tools, specifically the iterative generation capabilities ("video chaining").
+
+- **Scenarios:**
+  - **The Long Take**: Verifies `generate_video_chain` correctly loops, extracting the last frame and recycling it as the start frame for the next segment.
+  - **The Director's Cut**: Verifies keyframe update logic.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/services/agent/tools/VideoTools.test.ts
+  ```
+
+---
+
+## 19. The Editor 🎨
+
+**Scope:** Image Editing Service
+**Status:** **ACTIVE**
+**File:** `src/services/image/__tests__/EditingService.test.ts`
+
+"The Editor" validates the Image Editing pipeline, including complex multi-mask composition and reference image handling.
+
+- **Scenarios:**
+  - **The Magic Kill**: Verifies `multiMaskEdit` processes masks sequentially.
+  - **The Reference**: Confirms `referenceImage` data is correctly passed to the backend.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/services/image/__tests__/EditingService.test.ts
+  ```
+
+---
+
+## 20. Agent Tool Integration (Specialist Agents)
+
+**Goal**: Verify that the new specialist agents and their tools (Maps, Finance) are functioning correctly.
+
+#### Automated Unit Tests
+
+Run the following command to verify the tool logic and mocks (including internal DevOps/Security tools):
+
+```bash
+npx vitest src/services/agent/tools/MapsTools.test.ts src/services/agent/tools/BigQueryTools.test.ts src/services/agent/tools/DevOpsTools.test.ts src/services/agent/tools/SecurityTools.test.ts
+```
+
+#### Verification Scenarios
+
+1. **Road Manager Agent (Maps)**
+   - **Prompt**: "Find me a hotel in Paris."
+   - **Expected**: A list of hotels in Paris with ratings and addresses (from Google Maps API).
+
+2. **Finance Agent (BigQuery)**
+   - **Prompt**: "What was the revenue for Q1 2025?"
+   - **Expected**: A mocked financial report or data table.

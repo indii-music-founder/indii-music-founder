@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // Configuration for "The Gauntlet"
-const BASE_URL = 'http://localhost:5173';
+const BASE_URL = 'http://localhost:4242';
 const TEST_USER_ID = `gauntlet_user_${Date.now()}`;
 
 test.describe('The Gauntlet: Live Production Stress Test', () => {

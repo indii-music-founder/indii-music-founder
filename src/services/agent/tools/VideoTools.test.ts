@@ -23,6 +23,7 @@ vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
             addToHistory: mockAddToHistory,
+            addAgentMessage: vi.fn(), // Added missing mock
             currentProjectId: 'test-project-id'
         })
     }
@@ -122,4 +123,45 @@ describe('VideoTools', () => {
             expect(result).toBe('Clip with ID non-existent not found.');
         });
     });
+
+    describe('generate_video_chain', () => {
+        it('should chain overlapping video generation steps', async () => {
+            // Mock sequence:
+            // 1. Generate segment 1 (8s)
+            mockGenerateVideo.mockResolvedValueOnce([{ url: 'http://segment1.mp4' }]);
+            mockExtractVideoFrame.mockResolvedValueOnce('data:image/png;base64,frame1');
+
+            // 2. Generate segment 2 (8s) using frame1
+            mockGenerateVideo.mockResolvedValueOnce([{ url: 'http://segment2.mp4' }]);
+            mockExtractVideoFrame.mockResolvedValueOnce('data:image/png;base64,frame2');
+
+            // We request 16s total.
+            // Loop 1: duration < 16. Current time 0. Gen 8s. New time 8.
+            // Loop 2: duration < 16. Current time 8. Gen 8s. New time 16.
+            // Stop.
+
+            const result = await VideoTools.generate_video_chain({
+                startImage: 'data:image/png;base64,start',
+                totalDuration: 9, // < 10 (2 * 5s)
+                prompt: 'chain video'
+            });
+
+            expect(mockGenerateVideo).toHaveBeenCalledTimes(2);
+
+            // First call uses start image
+            expect(mockGenerateVideo).toHaveBeenNthCalledWith(1, {
+                firstFrame: 'data:image/png;base64,start',
+                prompt: 'chain video'
+            });
+
+            // Second call uses extracted frame from segment 1
+            expect(mockGenerateVideo).toHaveBeenNthCalledWith(2, {
+                firstFrame: 'data:image/png;base64,frame1',
+                prompt: 'chain video (Part 2, continuation)'
+            });
+
+            expect(result).toContain('Geneated 2 video segments');
+        });
+    });
 });
+

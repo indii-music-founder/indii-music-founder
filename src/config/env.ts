@@ -5,7 +5,9 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     // Frontend specific
     VITE_FUNCTIONS_URL: z.string().url().optional(),
     VITE_RAG_PROXY_URL: z.string().url().optional(),
+    VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
     DEV: z.boolean().default(false),
+    skipOnboarding: z.boolean().default(false),
 });
 
 const processEnv = {
@@ -13,10 +15,12 @@ const processEnv = {
     projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_PROJECT_ID : undefined),
     location: import.meta.env.VITE_VERTEX_LOCATION || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_LOCATION : undefined),
     useVertex: (import.meta.env.VITE_USE_VERTEX || (typeof process !== 'undefined' ? process.env.VITE_USE_VERTEX : undefined)) === 'true',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
 
     // Pass through frontend specific
     VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL || (typeof process !== 'undefined' ? process.env.VITE_FUNCTIONS_URL : undefined) || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
     VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL || (typeof process !== 'undefined' ? process.env.VITE_RAG_PROXY_URL : undefined),
+    VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
     DEV: import.meta.env.DEV || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
 };
 

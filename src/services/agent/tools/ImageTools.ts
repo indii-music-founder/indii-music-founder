@@ -20,6 +20,28 @@ export const ImageTools = {
                         console.log(`[ImageTools] Using reference image: ${refImg.description || 'Untitled'}`);
                     }
                 }
+            } else if (args.referenceAssetIndex !== undefined) {
+                // Handle Brand Assets (e.g. Logos)
+                const brandAssets = userProfile.brandKit?.brandAssets || [];
+                const asset = brandAssets[args.referenceAssetIndex];
+                if (asset) {
+                    const match = asset.url.match(/^data:(.+);base64,(.+)$/);
+                    if (match) {
+                        sourceImages = [{ mimeType: match[1], data: match[2] }];
+                        console.log(`[ImageTools] Using brand asset: ${asset.description || 'Untitled'}`);
+                    }
+                }
+            } else if (args.uploadedImageIndex !== undefined) {
+                // Handle Recent Uploads
+                const { uploadedImages } = useStore.getState();
+                const upload = uploadedImages[args.uploadedImageIndex];
+                if (upload) {
+                    const match = upload.url.match(/^data:(.+);base64,(.+)$/);
+                    if (match) {
+                        sourceImages = [{ mimeType: match[1], data: match[2] }];
+                        console.log(`[ImageTools] Using upload: ${upload.prompt || 'Untitled'}`);
+                    }
+                }
             }
 
             const results = await ImageGeneration.generateImages({

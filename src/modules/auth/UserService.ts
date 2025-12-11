@@ -18,6 +18,8 @@ export interface FirestoreUserProfile {
     analyzedTrackIds?: string[];
     knowledgeBase?: any[];
     savedWorkflows?: any[];
+    careerStage?: string;
+    goals?: string[];
 }
 
 export const UserService = {

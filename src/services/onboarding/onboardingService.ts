@@ -36,6 +36,9 @@ export interface AddImageAssetArgs {
     file_name: string;
     asset_type: 'brand_asset' | 'reference_image';
     description: string;
+    category: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
+    tags?: string[];
+    subject?: string;
 }
 
 export interface AddTextAssetArgs {
@@ -85,10 +88,18 @@ const addImageAssetFunction: FunctionDeclaration = {
         description: 'Details of the image asset to add.',
         properties: {
             file_name: { type: SchemaType.STRING, description: 'The name of the file that was uploaded.' },
-            asset_type: { type: SchemaType.STRING, format: "enum", enum: ['brand_asset', 'reference_image'], description: 'The type of asset to add.' },
-            description: { type: SchemaType.STRING, description: 'A description for the image asset.' },
+            asset_type: { type: SchemaType.STRING, format: "enum", enum: ['brand_asset', 'reference_image'], description: 'The high-level storage type.' },
+            category: {
+                type: SchemaType.STRING,
+                format: "enum",
+                enum: ['headshot', 'bodyshot', 'clothing', 'environment', 'logo', 'other'],
+                description: 'The semantic category of the content.'
+            },
+            tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'Keywords describing the asset (e.g. "red jacket", "tour 2024").' },
+            subject: { type: SchemaType.STRING, description: 'Name of the person/subject in the image, if applicable.' },
+            description: { type: SchemaType.STRING, description: 'A visual description for the image asset.' },
         },
-        required: ['file_name', 'asset_type', 'description'],
+        required: ['file_name', 'asset_type', 'description', 'category'],
     },
 };
 
@@ -221,6 +232,8 @@ export async function runOnboardingConversation(
     6. **Always Follow Up**: After processing their answer, immediately ask the next relevant question to fill the **Missing** fields. Never leave a dead end.
     7. **Tone**: You are "indii," a visionary Creative Director. You are encouraging, sharp, and curious. Treat the user like a star.
     8. **Files**: If the user uploads a file, acknowledge it clearly. Use \`addImageAsset\` or \`addTextAssetToKnowledgeBase\` as needed.
+       - **CRITICAL**: When adding images, categorize them correctly (Headshot, Body Shot, Clothing, Logo). Ask who is in the photo or what the clothing item is if not clear.
+       - Example: "Is this a photo of you, or the whole band?" -> Tag with Subject.
     9. **Interactive UI**: If you need to ask about **Genre**, **Career Stage**, or **Styles**, DO NOT just ask text. Use \`askMultipleChoice\` to show buttons. It's faster for the user.
        - Example: \`askMultipleChoice("What's your primary genre?", ["House", "Techno", "Hip Hop", "Indie Rock"])\`
 
@@ -368,7 +381,13 @@ export function processFunctionCalls(
                 const args = call.args as AddImageAssetArgs;
                 const file = files.find(f => f.file.name === args.file_name);
                 if (file && file.base64) {
-                    const newAsset: BrandAsset = { url: `data:image/png;base64,${file.base64}`, description: args.description };
+                    const newAsset: BrandAsset = {
+                        url: `data:image/png;base64,${file.base64}`,
+                        description: args.description,
+                        category: args.category,
+                        tags: args.tags,
+                        subject: args.subject
+                    };
                     const newBrandKit = { ...updatedProfile.brandKit };
 
                     if (args.asset_type === 'brand_asset') {
