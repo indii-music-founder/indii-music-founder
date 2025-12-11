@@ -1,6 +1,6 @@
-import { AgentConfig } from "../types";
-import systemPrompt from "@agents/legal/prompt.md?raw";
-import { LegalTools } from "../tools/LegalTools";
+import { AgentConfig } from "@/services/agent/types";
+import systemPrompt from './prompt.md?raw';
+import { LegalTools } from "@/services/agent/tools/LegalTools";
 
 export const LegalAgent: AgentConfig = {
     id: "legal",
@@ -9,10 +9,6 @@ export const LegalAgent: AgentConfig = {
     color: "bg-red-700",
     category: "department",
     systemPrompt,
-    functions: {
-        analyze_contract: LegalTools.analyze_contract,
-        generate_nda: LegalTools.generate_nda
-    },
     tools: [{
         functionDeclarations: [
             {
@@ -28,17 +24,35 @@ export const LegalAgent: AgentConfig = {
                 }
             },
             {
-                name: "generate_nda",
-                description: "Generate a generic NDA for specified parties.",
+                name: "draft_contract",
+                description: "Draft a new legal contract or agreement.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
+                        type: { type: "STRING", description: "Type of contract (e.g. NDA, Deal Memo)." },
                         parties: { type: "ARRAY", items: { type: "STRING" }, description: "List of parties involved." },
-                        purpose: { type: "STRING", description: "The purpose of the NDA." }
+                        terms: { type: "STRING", description: "Key terms and conditions." }
+                    },
+                    required: ["type", "parties", "terms"]
+                }
+            },
+            {
+                name: "generate_nda",
+                description: "Rapidly generate a standard NDA.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        parties: { type: "ARRAY", items: { type: "STRING" }, description: "List of parties." },
+                        purpose: { type: "STRING", description: "Purpose of disclosure." }
                     },
                     required: ["parties"]
                 }
             }
         ]
-    }]
+    }],
+    functions: {
+        analyze_contract: LegalTools.analyze_contract,
+        draft_contract: LegalTools.draft_contract,
+        generate_nda: LegalTools.generate_nda
+    }
 };

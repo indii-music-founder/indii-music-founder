@@ -1,18 +1,20 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus } from '@/services/onboarding/onboardingService';
-import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
+
+type HistoryItem = { role: string; parts: { text: string }[]; toolCall?: any };
 
 export default function OnboardingPage() {
     const { userProfile, setUserProfile, setModule } = useStore();
     const [input, setInput] = useState('');
-    const [history, setHistory] = useState<{ role: string; parts: { text: string }[]; toolCall?: any }[]>([]);
+    const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [files, setFiles] = useState<ConversationFile[]>([]);
+    const [showMobileStatus, setShowMobileStatus] = useState(false); // Mobile Drawer State
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -22,7 +24,7 @@ export default function OnboardingPage() {
             const greeting = "Hi, I'm indii, your Chief Creative Officer. Let's get your profile set up so I can help you better. First, tell me a bit about yourself as an artist. What's your vibe?";
             setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
         }
-    }, []);
+    }, [history.length]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -100,7 +102,7 @@ export default function OnboardingPage() {
         const textToSend = typeof arg === 'string' ? arg : input;
         if (!textToSend.trim() && files.length === 0) return;
 
-        const userMsg = { role: 'user', parts: [{ text: textToSend }] };
+        const userMsg: HistoryItem = { role: 'user', parts: [{ text: textToSend }] };
         const newHistory = [...history, userMsg];
         setHistory(newHistory);
         setInput('');
@@ -125,8 +127,20 @@ export default function OnboardingPage() {
                 // Check for UI Tools
                 uiToolCall = functionCalls.find(fc => fc.name === 'askMultipleChoice');
 
+                // --- SMART LOOP FIX ---
+                // If the AI didn't return text (silent update) OR returned a generic "next step"
+                // We calculate exactly what is missing and prompt the user.
                 if (!text && updates.length > 0) {
-                    const fallbackText = `I've updated your ${updates.join(', ')}. What else can I help you with?`;
+                    const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
+                    let nextTopic = "anything else";
+
+                    if (coreMissing.length > 0) {
+                        nextTopic = coreMissing[0].replace(/([A-Z])/g, ' $1').toLowerCase(); // e.g. "career stage"
+                    } else if (releaseMissing.length > 0) {
+                        nextTopic = "your current release (" + releaseMissing[0].replace(/([A-Z])/g, ' $1').toLowerCase() + ")";
+                    }
+
+                    const fallbackText = `I've updated your ${updates.join(', ')}. Next, tell me about ${nextTopic}.`;
                     nextHistory.push({ role: 'model', parts: [{ text: fallbackText }], toolCall: uiToolCall });
                 } else if (text) {
                     nextHistory.push({ role: 'model', parts: [{ text }], toolCall: uiToolCall });
@@ -155,29 +169,94 @@ export default function OnboardingPage() {
     const { coreProgress, releaseProgress, coreMissing, releaseMissing } = calculateProfileStatus(userProfile);
     const isReadyForDashboard = coreProgress > 50; // Threshold for allowing skip/complete
 
+    // --- SHARED PROGRESS COMPONENT ---
+    const ProfileProgress = () => (
+        <div>
+            {/* Identity Progress */}
+            <div className="mb-8">
+                <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-300 font-medium">Core Identity</span>
+                    <span className="text-white font-bold">{coreProgress}%</span>
+                </div>
+                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-white transition-all duration-500"
+                        style={{ width: `${coreProgress}%` }}
+                    />
+                </div>
+                <div className="mt-4 space-y-3">
+                    {['bio', 'brandDescription', 'socials', 'visuals'].map(key => {
+                        const isMissing = coreMissing.includes(key);
+                        return (
+                            <div key={key} className="flex items-center gap-3 text-sm">
+                                {isMissing ? (
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center">
+                                        <div className="w-full h-full rounded-full bg-transparent" />
+                                    </div>
+                                ) : (
+                                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-black">
+                                        <CheckCircle size={12} fill="currentColor" className="text-black" />
+                                    </div>
+                                )}
+                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            {isReadyForDashboard && (
+                <div className="mt-8 pt-6 border-t border-gray-800">
+                    <button
+                        onClick={handleComplete}
+                        className="w-full bg-white text-black px-6 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2 group"
+                    >
+                        Go to Studio <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <p className="text-center text-xs text-gray-500 mt-3">You can continue editing your profile later.</p>
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <div className="flex h-screen w-full bg-[#0d1117] overflow-hidden">
             {/* Left Panel: Chat */}
             <div className="flex-1 flex flex-col relative">
                 {/* Header */}
-                <div className="absolute top-0 left-0 right-0 p-6 z-10 flex justify-between items-center bg-gradient-to-b from-[#0d1117] to-transparent">
+                <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-10 flex justify-between items-center bg-gradient-to-b from-[#0d1117] via-[#0d1117]/90 to-transparent">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
                             <Sparkles className="text-white" size={20} />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-white">Setup Your Artist Profile</h1>
-                            <p className="text-sm text-gray-400">Chat with indii to build your brand kit</p>
+                            <h1 className="text-lg md:text-xl font-bold text-white">Setup Your Profile</h1>
+                            <p className="text-xs md:text-sm text-gray-400">Chat with indii to build your brand</p>
                         </div>
                     </div>
-                    {isReadyForDashboard && (
+
+                    {/* Desktop Action */}
+                    <div className="hidden lg:block">
+                        {isReadyForDashboard && (
+                            <button
+                                onClick={handleComplete}
+                                className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-gray-200 transition-colors text-sm"
+                            >
+                                Enter Studio <ArrowRight size={16} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Mobile Action: View Progress */}
+                    <div className="flex items-center gap-2 lg:hidden">
                         <button
-                            onClick={handleComplete}
-                            className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors"
+                            onClick={() => setShowMobileStatus(true)}
+                            className="flex items-center gap-2 bg-[#1a1f2e] border border-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                         >
-                            Go to Studio <ArrowRight size={18} />
+                            {coreProgress}% <ChevronRight size={14} className="text-gray-400" />
                         </button>
-                    )}
+                    </div>
                 </div>
 
                 {/* Chat Area */}
@@ -189,11 +268,11 @@ export default function OnboardingPage() {
                             key={idx}
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user'
+                            <div className={`max-w-[85%] md:max-w-[80%] p-4 rounded-2xl ${msg.role === 'user'
                                 ? 'bg-white text-black rounded-tr-sm'
-                                : 'bg-[#1a1f2e] text-gray-200 rounded-tl-sm border border-gray-800'
+                                : 'bg-[#161b22] text-gray-200 rounded-tl-sm border border-gray-800' // Darker bubble
                                 }`}>
-                                <div className="text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
+                                <div className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
 
                                 {/* Generative UI Renderer */}
                                 {msg.toolCall && msg.toolCall.name === 'askMultipleChoice' && (
@@ -217,8 +296,9 @@ export default function OnboardingPage() {
                     ))}
                     {isProcessing && (
                         <div className="flex justify-start">
-                            <div className="bg-[#1a1f2e] text-gray-400 p-4 rounded-2xl rounded-tl-sm border border-gray-800 flex items-center gap-2">
-                                <Sparkles size={16} className="animate-spin" /> indii is thinking...
+                            <div className="bg-[#161b22] text-gray-400 p-4 rounded-2xl rounded-tl-sm border border-gray-800 flex items-center gap-2">
+                                <Sparkles size={16} className="animate-spin" />
+                                <span className="text-sm">indii is thinking...</span>
                             </div>
                         </div>
                     )}
@@ -227,7 +307,7 @@ export default function OnboardingPage() {
 
                 {/* File Previews */}
                 {files.length > 0 && (
-                    <div className="px-4 py-2 bg-[#0d1117]/80 backdrop-blur border-t border-gray-800 flex gap-2 overflow-x-auto max-w-3xl mx-auto w-full">
+                    <div className="px-4 py-2 bg-[#0d1117]/95 backdrop-blur border-t border-gray-800 flex gap-2 overflow-x-auto max-w-3xl mx-auto w-full z-20">
                         {files.map(file => (
                             <div key={file.id} className="relative group flex-shrink-0 w-16 h-16 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                                 {file.type === 'image' ? (
@@ -249,8 +329,8 @@ export default function OnboardingPage() {
                 )}
 
                 {/* Input Area */}
-                <div className="p-6 bg-[#0d1117] border-t border-gray-800">
-                    <div className="max-w-3xl mx-auto flex gap-3">
+                <div className="p-4 md:p-6 bg-[#0d1117] border-t border-gray-800 z-20 pb-safe">
+                    <div className="max-w-3xl mx-auto flex gap-2 md:gap-3">
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -261,69 +341,35 @@ export default function OnboardingPage() {
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="p-4 text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] rounded-xl border border-gray-800 transition-colors"
+                            className="p-3 md:p-4 text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] rounded-xl border border-gray-800 transition-colors"
                         >
-                            <Paperclip size={24} />
+                            <Paperclip size={20} className="md:w-6 md:h-6" />
                         </button>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Tell me about your music, style, or upload a bio..."
-                            className="flex-1 bg-[#1a1f2e] border border-gray-800 rounded-xl px-6 py-4 text-white focus:border-white/20 focus:outline-none text-lg placeholder:text-gray-600"
+                            placeholder="Type here..."
+                            className="flex-1 bg-[#1a1f2e] border border-gray-800 rounded-xl px-4 md:px-6 py-3 md:py-4 text-white focus:border-white/20 focus:outline-none text-base md:text-lg placeholder:text-gray-600"
                             autoFocus
                         />
                         <button
                             onClick={handleSend}
                             disabled={isProcessing || (!input.trim() && files.length === 0)}
-                            className="bg-white hover:bg-gray-200 text-black p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="bg-white hover:bg-gray-200 text-black p-3 md:p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <Send size={24} />
+                            <Send size={20} className="md:w-6 md:h-6" />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Right Panel: Live Status */}
+            {/* Right Panel: Live Status (Desktop) */}
             <div className="hidden lg:block w-96 bg-[#010409] border-l border-gray-800 p-8 overflow-y-auto">
                 <div className="mb-8">
                     <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-6">Profile Completion</h3>
-
-                    {/* Identity Progress */}
-                    <div className="mb-8">
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-300 font-medium">Core Identity</span>
-                            <span className="text-white font-bold">{coreProgress}%</span>
-                        </div>
-                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-white transition-all duration-500"
-                                style={{ width: `${coreProgress}%` }}
-                            />
-                        </div>
-                        <div className="mt-4 space-y-3">
-                            {['bio', 'brandDescription', 'socials', 'visuals'].map(key => {
-                                const isMissing = coreMissing.includes(key);
-                                return (
-                                    <div key={key} className="flex items-center gap-3 text-sm">
-                                        {isMissing ? (
-                                            <div className="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center">
-                                                <div className="w-full h-full rounded-full bg-transparent" />
-                                            </div>
-                                        ) : (
-                                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-black">
-                                                <CheckCircle size={12} fill="currentColor" className="text-black" />
-                                            </div>
-                                        )}
-                                        <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
-                                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <ProfileProgress />
                 </div>
 
                 <div className="pt-8 border-t border-gray-800">
@@ -357,6 +403,42 @@ export default function OnboardingPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Status Drawer */}
+            <AnimatePresence>
+                {showMobileStatus && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowMobileStatus(false)}
+                            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-[#0d1117] border-l border-gray-800 p-6 z-50 lg:hidden shadow-2xl flex flex-col"
+                        >
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-white font-bold text-lg">Your Progress</h3>
+                                <button
+                                    onClick={() => setShowMobileStatus(false)}
+                                    className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto">
+                                <ProfileProgress />
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

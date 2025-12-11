@@ -1,6 +1,6 @@
 import { AgentConfig } from './BaseAgent';
 import { MarketingAgent } from './definitions/MarketingAgent';
-import { LegalAgent } from './definitions/LegalAgent';
+import { LegalAgent } from '@/agents/legal/config';
 import { FinanceAgent } from './definitions/FinanceAgent';
 import { MusicAgent } from './definitions/MusicAgent';
 import { DirectorAgent } from '@/agents/director/config';
@@ -13,20 +13,23 @@ import { LicensingAgent } from './definitions/LicensingAgent';
 import { BrandAgent } from './definitions/BrandAgent';
 import { DevOpsAgent } from './definitions/DevOpsAgent';
 import { SecurityAgent } from './definitions/SecurityAgent';
+import { ScreenwriterAgent } from '@/agents/screenwriter/config';
+import { ProducerAgent } from '@/agents/producer/config';
 
-export const AGENT_REGISTRY: AgentConfig[] = [
+export const AGENT_CONFIGS: AgentConfig[] = [
     MarketingAgent,
     LegalAgent,
     FinanceAgent,
+    ProducerAgent,
     MusicAgent,
     DirectorAgent,
+    ScreenwriterAgent,
     VideoAgent,
     SocialAgent,
     PublicistAgent,
     RoadAgent,
     PublishingAgent,
     LicensingAgent,
-    BrandAgent,
     BrandAgent,
     // DevOpsAgent, // Internal / Testing only
     // SecurityAgent // Internal / Testing only

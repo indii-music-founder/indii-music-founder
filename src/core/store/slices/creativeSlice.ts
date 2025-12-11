@@ -80,6 +80,10 @@ export interface CreativeSlice {
     };
     setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
 
+    // Entity Anchor (Character Consistency)
+    entityAnchor: HistoryItem | null;
+    setEntityAnchor: (img: HistoryItem | null) => void;
+
     viewMode: 'gallery' | 'canvas' | 'showroom' | 'video_production';
     setViewMode: (mode: 'gallery' | 'canvas' | 'showroom' | 'video_production') => void;
 
@@ -196,6 +200,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     setVideoInput: (key, value) => set(state => ({
         videoInputs: { ...state.videoInputs, [key]: value }
     })),
+
+    entityAnchor: null,
+    setEntityAnchor: (img) => set({ entityAnchor: img }),
 
     viewMode: 'gallery',
     setViewMode: (mode) => set({ viewMode: mode }),

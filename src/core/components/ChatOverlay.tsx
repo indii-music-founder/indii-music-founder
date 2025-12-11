@@ -4,6 +4,7 @@ import { AgentThought } from '@/core/store/slices/agentSlice';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
+import VisualScriptRenderer from './VisualScriptRenderer';
 
 const ThoughtChain = ({ thoughts }: { thoughts: AgentThought[] }) => {
     const [isOpen, setIsOpen] = useState(true);
@@ -112,7 +113,35 @@ export default function ChatOverlay() {
 
                                 {msg.role !== 'system' && (
                                     <div className="prose prose-invert prose-sm max-w-none break-words leading-relaxed">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                code({ node, inline, className, children, ...props }: any) {
+                                                    const match = /language-(\w+)/.exec(className || '')
+                                                    const isJson = match && match[1] === 'json';
+                                                    if (!inline && isJson) {
+                                                        try {
+                                                            const jsonContent = String(children).replace(/\n$/, '');
+                                                            // Simple heuristic to check if it's a visual script
+                                                            if (jsonContent.includes('"beats"') && jsonContent.includes('"camera"')) {
+                                                                return <VisualScriptRenderer data={jsonContent} />;
+                                                            }
+                                                        } catch (e) {
+                                                            // Not valid JSON or not a script, fall back to normal code block
+                                                        }
+                                                    }
+                                                    return !inline && match ? (
+                                                        <code className={className} {...props}>
+                                                            {children}
+                                                        </code>
+                                                    ) : (
+                                                        <code className={className} {...props}>
+                                                            {children}
+                                                        </code>
+                                                    )
+                                                }
+                                            }}
+                                        >
                                             {msg.text}
                                         </ReactMarkdown>
                                     </div>

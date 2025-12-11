@@ -142,6 +142,20 @@ const AuthLogin = () => {
 
 import { env } from '@/config/env';
 
+// Dev Tool: Port Warning Badge
+const PortWarning = () => {
+    const port = window.location.port;
+    if (!import.meta.env.DEV) return null; // Only show in Dev
+    if (port === '4242') return null; // Correct port, show nothing (or show a small green dot if preferred, but user asked for "wrong port" warning)
+
+    return (
+        <div className="fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
+            ⚠️ WRONG PORT: {port} <br />
+            <span className="font-normal opacity-80">Use :4242 for Studio</span>
+        </div>
+    );
+};
+
 export default function App() {
     const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
 

@@ -28,6 +28,13 @@ export interface UpdateProfileArgs {
     release_themes?: string;
     social_twitter?: string;
     social_instagram?: string;
+    social_spotify?: string;
+    social_soundcloud?: string;
+    social_bandcamp?: string;
+    social_beatport?: string;
+    social_website?: string;
+    pro_affiliation?: string; // Performing Rights Org
+    distributor?: string;
     career_stage?: string;
     goals?: string[];
 }
@@ -68,6 +75,13 @@ const updateProfileFunction: FunctionDeclaration = {
             fonts: { type: SchemaType.STRING, description: 'Brand fonts.' },
             social_twitter: { type: SchemaType.STRING, description: 'Twitter handle.' },
             social_instagram: { type: SchemaType.STRING, description: 'Instagram handle.' },
+            social_spotify: { type: SchemaType.STRING, description: 'Spotify artist profile URL.' },
+            social_soundcloud: { type: SchemaType.STRING, description: 'SoundCloud profile URL.' },
+            social_bandcamp: { type: SchemaType.STRING, description: 'Bandcamp profile URL.' },
+            social_beatport: { type: SchemaType.STRING, description: 'Beatport artist profile URL.' },
+            social_website: { type: SchemaType.STRING, description: 'Official website URL.' },
+            pro_affiliation: { type: SchemaType.STRING, description: 'Performing Rights Organization (e.g. ASCAP, BMI).' },
+            distributor: { type: SchemaType.STRING, description: 'Music Distributor (e.g. DistroKid, Tunecore).' },
             career_stage: { type: SchemaType.STRING, description: 'The artist\'s career stage (e.g., Emerging, Professional, Legend).' },
             goals: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'Specific career goals (e.g., Tour, Sync, Fanbase).' },
 
@@ -236,6 +250,11 @@ export async function runOnboardingConversation(
        - Example: "Is this a photo of you, or the whole band?" -> Tag with Subject.
     9. **Interactive UI**: If you need to ask about **Genre**, **Career Stage**, or **Styles**, DO NOT just ask text. Use \`askMultipleChoice\` to show buttons. It's faster for the user.
        - Example: \`askMultipleChoice("What's your primary genre?", ["House", "Techno", "Hip Hop", "Indie Rock"])\`
+    10. **Help the User**: If the user says "I don't know" or seems stuck, **OFFER SUGGESTIONS**. Do not just wait.
+        - Example: "If you're unsure about your bio, tell me a few artists you like, and I'll draft one for you."
+    11. **Allow Skips**: If the user wants to skip a question (e.g., "I don't have a release yet" or "Skip this"), **ACCEPT IT IMMEDIATELY**.
+        - Say: "No problem, we can come back to that later."
+        - Then move to the next topic. DO NOT annoy them by asking again.
 
     Only call \`finishOnboarding\` when BOTH layers are robust.`;
 
@@ -340,7 +359,7 @@ export function processFunctionCalls(
                 if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
                 // Handle BrandKit (Identity + Release)
-                const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram;
+                const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor;
                 const hasReleaseUpdates = args.release_title || args.release_type || args.release_mood || args.release_themes;
 
                 if (hasBrandUpdates || hasReleaseUpdates) {
@@ -352,13 +371,20 @@ export function processFunctionCalls(
                     if (args.fonts) newBrandKit.fonts = args.fonts;
                     if (args.negative_prompt) newBrandKit.negativePrompt = args.negative_prompt;
 
-                    if (args.social_twitter || args.social_instagram) {
+                    if (args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor) {
                         newBrandKit.socials = {
                             ...newBrandKit.socials,
                             ...(args.social_twitter && { twitter: args.social_twitter }),
                             ...(args.social_instagram && { instagram: args.social_instagram }),
+                            ...(args.social_spotify && { spotify: args.social_spotify }),
+                            ...(args.social_soundcloud && { soundcloud: args.social_soundcloud }),
+                            ...(args.social_bandcamp && { bandcamp: args.social_bandcamp }),
+                            ...(args.social_beatport && { beatport: args.social_beatport }),
+                            ...(args.social_website && { website: args.social_website }),
+                            ...(args.pro_affiliation && { pro: args.pro_affiliation }),
+                            ...(args.distributor && { distributor: args.distributor }),
                         };
-                        updates.push('Socials');
+                        updates.push('Socials & Pro Details');
                     }
 
                     // Release Updates

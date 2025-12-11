@@ -11,6 +11,17 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Custom Startup Log for Developer Clarity
+    {
+      name: 'startup-log',
+      configureServer(server) {
+        server.httpServer?.on('listening', () => {
+          console.log('\n\x1b[36m%s\x1b[0m', '  🚀 INDII OS - STUDIO (ELECTRON)');
+          console.log('\x1b[36m%s\x1b[0m', '  Running at http://localhost:4242');
+          console.log('\x1b[90m%s\x1b[0m', '  (Landing Page runs on :3000)\n');
+        });
+      }
+    },
     // Source Code Obfuscation (HEY Audit Appendix D)
     // process.env.NODE_ENV === 'production' && WebpackObfuscator({
     //   rotateStringArray: true,
@@ -68,7 +79,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 4242,
     watch: {
       ignored: ['**/temp_comparison_repo_backup/**']
     },

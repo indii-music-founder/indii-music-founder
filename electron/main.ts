@@ -90,7 +90,7 @@ const createWindow = () => {
         }
     });
 
-    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
     const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
 
     if (isDev) {

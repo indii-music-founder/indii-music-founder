@@ -84,6 +84,64 @@ export const DirectorAgent: AgentConfig = {
                     },
                     required: ["prompt", "templateType"]
                 }
+            },
+            {
+                name: "set_entity_anchor",
+                description: "Set a global reference image for character consistency (Entity Anchor).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        image: { type: "STRING", description: "Base64 encoded image." }
+                    },
+                    required: ["image"]
+                }
+            },
+            {
+                name: "generate_visual_script",
+                description: "Generate a structured 9-beat visual script from a synopsis.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        synopsis: { type: "STRING", description: "Story synopsis or lyrics." }
+                    },
+                    required: ["synopsis"]
+                }
+            },
+            {
+                name: "render_cinematic_grid",
+                description: "Render a cinematic grid of shots (Wide, Close-up, etc.) using the Entity Anchor.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        prompt: { type: "STRING", description: "Scene description." }
+                    },
+                    required: ["prompt"]
+                }
+            },
+            {
+                name: "extract_grid_frame",
+                description: "Extract a specific frame from a generated cinematic grid.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        imageId: { type: "STRING", description: "ID of the grid image." },
+                        gridIndex: { type: "NUMBER", description: "Index of the panel to extract." }
+                    },
+                    required: ["gridIndex"]
+                }
+            },
+            {
+                name: "interpolate_sequence",
+                description: "Generate a seamless video transition between two frames.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        firstFrame: { type: "STRING", description: "Starting frame (base64)." },
+                        lastFrame: { type: "STRING", description: "Ending frame (base64)." },
+                        prompt: { type: "STRING", description: "Optional description of transition." }
+                    },
+                    required: ["firstFrame", "lastFrame"]
+                }
             }
         ]
     }]

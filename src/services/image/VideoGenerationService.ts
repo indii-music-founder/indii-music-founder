@@ -269,6 +269,8 @@ export interface VideoGenerationOptions {
     lastFrame?: string;
     timeOffset?: number;
     ingredients?: string[];
+    duration?: number;
+    fps?: number;
 }
 
 export const VideoGeneration = new VideoGenerationService();

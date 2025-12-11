@@ -306,5 +306,38 @@ export const VideoTools = {
             }
             return `Video chain generation failed: An unknown error occurred.`;
         }
+    },
+    interpolate_sequence: async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
+        try {
+            // "Interpolate_Sequence(Frame_A, Frame_B)"
+            // "Google V3.1 generates the transition pixels between these locked states."
+
+            // We use VideoGeneration service but pass both firstFrame and lastFrame.
+            // (Assuming the underlying service supports this, which many video models do).
+
+            const results = await VideoGeneration.generateVideo({
+                prompt: args.prompt || "Smooth transition between frames",
+                firstFrame: args.firstFrame,
+                lastFrame: args.lastFrame
+            });
+
+            if (results.length > 0) {
+                const uri = results[0].url;
+                const { addToHistory, currentProjectId } = useStore.getState();
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: uri,
+                    prompt: args.prompt || "Frame Interpolation",
+                    type: 'video',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+                return `Sequence interpolated successfully: ${uri}`;
+            }
+            return "Interpolation failed (no URI returned).";
+
+        } catch (e: any) {
+            return `Interpolation failed: ${e.message}`;
+        }
     }
 };

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine } from 'lucide-react';
+import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -12,7 +12,7 @@ interface CreativeGalleryProps {
 }
 
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
-    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem } = useStore();
+    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore();
     // const [selectedItem, setSelectedItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video'; mask?: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -123,6 +123,13 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                 </button>
                             </>
                         )}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setEntityAnchor(item); toast.success("Entity Anchor Set"); }}
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors"
+                            title="Set as Entity Anchor (Character Lock)"
+                        >
+                            <Anchor size={14} />
+                        </button>
                         <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 transition-colors">
                             <Maximize2 size={14} />
                         </button>

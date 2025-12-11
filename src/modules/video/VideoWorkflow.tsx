@@ -114,7 +114,8 @@ export default function VideoWorkflow() {
     const handleGenerate = async () => {
         setStep('generating');
         setJobStatus('queued');
-        toast.info('Queuing scene generation...');
+        const isInterpolation = videoInputs.firstFrame && videoInputs.lastFrame;
+        toast.info(isInterpolation ? 'Queuing interpolation sequence...' : 'Queuing scene generation...');
 
         try {
             const { VideoGeneration } = await import('@/services/image/VideoGenerationService');
@@ -123,15 +124,14 @@ export default function VideoWorkflow() {
                 prompt: localPrompt,
                 resolution: studioControls.resolution,
                 aspectRatio: studioControls.aspectRatio,
-                // negativePrompt: studioControls.negativePrompt, // Not supported in trigger yet, need to update backend if needed
+                // negativePrompt: studioControls.negativePrompt, // Backend support pending
                 // seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                // firstFrame: videoInputs.firstFrame?.url, // Not supported in trigger yet
-                // lastFrame: videoInputs.lastFrame?.url, // Not supported in trigger yet
-                // timeOffset: videoInputs.timeOffset, // Not supported in trigger yet
-                // ingredients: videoInputs.ingredients?.map(i => i.url) // Not supported in trigger yet
+                firstFrame: videoInputs.firstFrame?.url,
+                lastFrame: videoInputs.lastFrame?.url,
+                timeOffset: videoInputs.timeOffset,
+                ingredients: videoInputs.ingredients?.map(i => i.url),
                 duration: 5, // Default for now
                 fps: 30, // Default for now
-                userId: 'user-id-placeholder', // Should get from auth
                 orgId: currentOrganizationId
             });
 

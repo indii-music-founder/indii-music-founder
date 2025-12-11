@@ -174,6 +174,17 @@ export class GeneralistAgent extends BaseAgent {
         - Mood: ${brandKit.releaseDetails?.mood || 'N/A'}
         - Themes: ${brandKit.releaseDetails?.themes || 'N/A'}
         
+        SOCIALS & BUSINESS:
+        - Twitter: ${brandKit.socials?.twitter || 'N/A'}
+        - Instagram: ${brandKit.socials?.instagram || 'N/A'}
+        - Spotify: ${brandKit.socials?.spotify || 'N/A'}
+        - SoundCloud: ${brandKit.socials?.soundcloud || 'N/A'}
+        - Bandcamp: ${brandKit.socials?.bandcamp || 'N/A'}
+        - Beatport: ${brandKit.socials?.beatport || 'N/A'}
+        - Website: ${brandKit.socials?.website || 'N/A'}
+        - PRO: ${brandKit.socials?.pro || 'N/A'}
+        - Distributor: ${brandKit.socials?.distributor || 'N/A'}
+        
         AVAILABLE ASSETS (Reference by Index):
         Brand Assets:
         ${brandKit.brandAssets?.map((a: any, i: number) => `  [${i}] ${a.subject ? a.subject + ' - ' : ''}${a.category ? a.category.toUpperCase() + ': ' : ''}${a.description || 'Asset'} ${a.tags ? '(' + a.tags.join(', ') + ')' : ''}`).join('\n') || 'None'}

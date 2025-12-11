@@ -44,6 +44,11 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
         "Analog Film": ["Panavision Millennium XL2", "Arriflex 435", "Leica M6", "Hasselblad 500C/M", "Mamiya RZ67", "Polaroid SX-70"],
         "Specialty": ["GoPro Hero 12", "DJI Mavic 3 Cine (Drone)", "Phantom Flex4K (High Speed)", "Thermal Camera", "CCTV Security", "Electron Microscope"]
     },
+    "Layout": {
+        "Cinematic": ["Cinematic Grid (Wide/Med/Close/Low)", "Film Strip", "Split Screen", "Montage"],
+        "Storyboard": ["Storyboard 2x2", "Storyboard 3x3", "Comic Book Layout", "Character Sheet"],
+        "Social": ["YouTube Thumbnail", "Instagram Grid", "Vertical Split"]
+    },
     "Lens": {
         "Prime Lenses": ["14mm Ultra Wide", "24mm Wide", "35mm Classic", "50mm Standard", "85mm Portrait", "135mm Telephoto"],
         "Zoom Lenses": ["16-35mm Wide Zoom", "24-70mm Standard Zoom", "70-200mm Telephoto Zoom", "200-600mm Super Telephoto"],
