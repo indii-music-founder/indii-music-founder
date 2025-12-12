@@ -5,6 +5,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import VisualScriptRenderer from './VisualScriptRenderer';
+import ScreenplayRenderer from './ScreenplayRenderer';
+import CallSheetRenderer from './CallSheetRenderer';
+import ContractRenderer from './ContractRenderer';
+import { voiceService } from '@/services/ai/VoiceService';
+import { Volume2, VolumeX } from 'lucide-react';
 
 const ThoughtChain = ({ thoughts }: { thoughts: AgentThought[] }) => {
     const [isOpen, setIsOpen] = useState(true);
@@ -39,9 +44,6 @@ const ThoughtChain = ({ thoughts }: { thoughts: AgentThought[] }) => {
         </div>
     );
 };
-
-import { voiceService } from '@/services/ai/VoiceService';
-import { Volume2, VolumeX } from 'lucide-react';
 
 export default function ChatOverlay() {
     const store = useStore();
@@ -119,15 +121,31 @@ export default function ChatOverlay() {
                                                 code({ node, inline, className, children, ...props }: any) {
                                                     const match = /language-(\w+)/.exec(className || '')
                                                     const isJson = match && match[1] === 'json';
+
+                                                    // Contract Detection (Markdown content check)
+                                                    const childrenStr = String(children);
+                                                    if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) {
+                                                        return <ContractRenderer markdown={childrenStr} />;
+                                                    }
+
                                                     if (!inline && isJson) {
                                                         try {
-                                                            const jsonContent = String(children).replace(/\n$/, '');
-                                                            // Simple heuristic to check if it's a visual script
-                                                            if (jsonContent.includes('"beats"') && jsonContent.includes('"camera"')) {
-                                                                return <VisualScriptRenderer data={jsonContent} />;
+                                                            const content = childrenStr.replace(/\n$/, '');
+                                                            const data = JSON.parse(content);
+
+                                                            // Heuristic Detection
+                                                            if (data.beats && (data.title || data.synopsis)) {
+                                                                return <VisualScriptRenderer data={data} />;
                                                             }
+                                                            if (data.elements && data.elements[0]?.type === 'slugline') {
+                                                                return <ScreenplayRenderer data={data} />;
+                                                            }
+                                                            if (data.callTime && data.nearestHospital) {
+                                                                return <CallSheetRenderer data={data} />;
+                                                            }
+
                                                         } catch (e) {
-                                                            // Not valid JSON or not a script, fall back to normal code block
+                                                            // Not valid JSON or unknown type
                                                         }
                                                     }
                                                     return !inline && match ? (

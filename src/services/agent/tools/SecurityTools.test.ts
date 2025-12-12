@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { check_api_status, scan_content, rotate_credentials } from './SecurityTools';
+import {
+    check_api_status,
+    scan_content,
+    rotate_credentials,
+    verify_zero_touch_prod,
+    check_core_dump_policy,
+    audit_workload_isolation
+} from './SecurityTools';
 
 describe('SecurityTools (Mocked)', () => {
     describe('check_api_status', () => {
@@ -53,6 +60,65 @@ describe('SecurityTools (Mocked)', () => {
             expect(parsed.status).toBe('SUCCESS');
             expect(parsed.new_key_id).toBeDefined();
             expect(parsed.timestamp).toBeDefined();
+        });
+    });
+
+    describe('verify_zero_touch_prod', () => {
+        it('should return compliant for prod- prefixed services', async () => {
+            const result = await verify_zero_touch_prod({ service_name: 'prod-payment-service' });
+            const parsed = JSON.parse(result);
+            expect(parsed.compliant).toBe(true);
+            expect(parsed.automation_level).toBe('FULL_NOPE');
+        });
+
+        it('should return non-compliant for dev services', async () => {
+            const result = await verify_zero_touch_prod({ service_name: 'dev-sandbox' });
+            const parsed = JSON.parse(result);
+            expect(parsed.compliant).toBe(false);
+            expect(parsed.automation_level).toBe('PARTIAL');
+        });
+    });
+
+    describe('check_core_dump_policy', () => {
+        it('should confirm core dumps disabled for foundational auth service', async () => {
+            const result = await check_core_dump_policy({ service_name: 'foundational-auth' });
+            const parsed = JSON.parse(result);
+            expect(parsed.compliant).toBe(true);
+            expect(parsed.setting).toBe('DISABLED');
+            expect(parsed.risk_level).toBe('LOW');
+        });
+
+        it('should show enabled (and medium risk) for non-critical service', async () => {
+            const result = await check_core_dump_policy({ service_name: 'generic-app' });
+            const parsed = JSON.parse(result);
+            // In our mock logic, non-auth/non-key services are assumed to NOT have it explicitly disabled (mock logic inversion)
+            // Wait, looking at logic: const isFoundational = service_name.includes('auth') || service_name.includes('key');
+            // const coreDumpsDisabled = isFoundational;
+            // So if not foundational, it is ENABLED.
+            expect(parsed.setting).toBe('ENABLED');
+            expect(parsed.risk_level).toBe('MEDIUM');
+        });
+    });
+
+    describe('audit_workload_isolation', () => {
+        it('should assign RING_0 to FOUNDATIONAL workloads and verify no neighbors', async () => {
+            const result = await audit_workload_isolation({
+                service_name: 'identity-provider',
+                workload_type: 'FOUNDATIONAL'
+            });
+            const parsed = JSON.parse(result);
+            expect(parsed.assigned_ring).toBe('RING_0_CORE');
+            expect(parsed.neighbors).toHaveLength(0);
+        });
+
+        it('should assign RING_2 to LOWER_PRIORITY workloads', async () => {
+            const result = await audit_workload_isolation({
+                service_name: 'daily-report-job',
+                workload_type: 'LOWER_PRIORITY'
+            });
+            const parsed = JSON.parse(result);
+            expect(parsed.assigned_ring).toBe('RING_2_BATCH');
+            expect(parsed.neighbors).not.toHaveLength(0);
         });
     });
 });

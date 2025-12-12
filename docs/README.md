@@ -13,6 +13,12 @@ This directory contains detailed architectural and technical documentation for i
   - Documents the migration of heavy AI tasks (Image/Video generation) to Firebase Functions and Vertex AI.
   - Lists available backend services and their triggers.
 
+## AI Models & Capabilities
+
+- [Audio Generation & TTS](./AUDIO_GENERATION.md)
+  - Documentation for Gemini 2.5 Flash and Pro TTS models.
+  - Covers expressivity, pacing, and multi-speaker capabilities.
+
 ## UI & Design
 
 - [UI State & Branding](./UI_STATE.md)

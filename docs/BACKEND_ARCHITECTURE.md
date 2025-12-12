@@ -49,6 +49,7 @@ When scaling from 1 user to 1,000 or 1,000,000 users, client-side generation fai
 | Service | Function Name | Trigger | Model | Scaling Strategy |
 | :--- | :--- | :--- | :--- | :--- |
 | **Video** | `generateVideo` | HTTPS | `veo-3.1-generate-preview` | Async Queue (Long running) |
+| **Audio** | `generateSpeech` | Callable | `gemini-2.5-pro-tts-preview` | Stateless |
 | **Image** | `generateImage` | Callable | `gemini-3-pro-image-preview` | Stateless / Auto-scaling |
 | **Director** | `creativeDirectorAgent` | HTTPS | `gemini-3-pro-preview` | Stateless |
 | **Brand** | `analyzeBrand`, `generateBrandAsset` | Callable | `gemini-3-pro-preview` | Stateless |

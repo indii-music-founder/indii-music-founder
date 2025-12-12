@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import PulseButton from './components/ui/PulseButton';
 import BreathingText from './components/ui/BreathingText';
+import AudioManager from './components/AudioManager';
+import DigitalBillboard from './components/ui/DigitalBillboard';
 import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
 
@@ -21,91 +23,60 @@ export default function Home() {
     <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-center selection:bg-resonance-blue selection:text-white">
 
       {/* 1. The Subliminal Background */}
+      <AudioManager />
       <SoundscapeCanvas />
 
       {/* 2. Content Overlay */}
-      <div className="relative z-10 max-w-5xl px-6 mx-auto space-y-12">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto">
 
-        {/* Animated Badge */}
+        {/* Glass Hero Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <span className="inline-block px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] rounded-full bg-white/5 border border-white/10 text-white/70 animate-throb-light backdrop-blur-md">
-            The Operating System for Independent Artists
-          </span>
-        </motion.div>
-
-        {/* Hero Headline */}
-        <motion.h1
-          className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/40"
-          initial={{ opacity: 0, scale: 0.95 }}
+          className="relative w-full max-w-5xl min-h-[600px] flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-[30px] backdrop-saturate-150 border-t border-l border-white/20 border-b border-r border-black/20 rounded-[3rem] p-12 md:p-16 lg:p-24 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
         >
-          Feel the <br />
-          <BreathingText className="text-glow-blue inline-block">Music</BreathingText>
-        </motion.h1>
+          {/* Internal Reflective Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20 pointer-events-none" />
 
-        {/* Subheadline interacting with the "Pulse" concept */}
-        <motion.p
-          className="max-w-2xl mx-auto text-lg md:text-xl text-white/60 font-light leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.8 }}
-        >
-          Experience the subliminal resonance of your creativity. <br />
-          Tools that vibrate at the frequency of your imagination.
-        </motion.p>
+          {/* Subtle Noise Texture for realism (Optional, simulates frosted glass grain) */}
+          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
 
-        {/* Action Buttons */}
-        <motion.div
-          className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-        >
-          {loading ? (
-            /* Loading State */
-            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-          ) : user ? (
-            /* Logged In State */
-            <Link href={getStudioUrl()}>
-              <PulseButton className="text-lg px-12">
-                Launch Studio
-              </PulseButton>
-            </Link>
-          ) : (
-            /* Guest State */
-            <>
-              <Link href="/auth/signup">
-                <PulseButton className="text-lg">
-                  Start Creating
-                </PulseButton>
+          <div className="relative z-20 space-y-10 text-center w-full">
+            {/* Animated Badge / Logo */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <span className="text-4xl md:text-5xl font-bold tracking-tight text-white/90 animate-pulse-slow">
+                indiiOS
+              </span>
+            </motion.div>
+
+            <DigitalBillboard />
+
+            {/* Login Link below as a secondary action for all slides */}
+            <div className="mt-8">
+              <Link href="/login" className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
+                Already have an account? Sign In
               </Link>
-
-              <Link href="/auth/login">
-                <PulseButton variant="secondary" className="text-lg">
-                  Sign In
-                </PulseButton>
-              </Link>
-            </>
-          )}
+            </div>
+          </div>
         </motion.div>
-
       </div>
 
       {/* Footer / Anchors */}
-      <motion.div
+      < motion.div
         className="absolute bottom-8 left-0 right-0 text-center text-white/20 text-sm tracking-widest uppercase"
-        initial={{ opacity: 0 }}
+        initial={{ opacity: 0 }
+        }
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 2 }}
       >
         <p>Scroll to Resonate</p>
-      </motion.div>
+      </motion.div >
 
-    </main>
+    </main >
   );
 }

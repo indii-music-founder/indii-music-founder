@@ -92,8 +92,7 @@ module.exports = {
       config: {},
     },
     // Electron Fuses (Binary Locking for HEY Audit)
-    // Electron Fuses (Binary Locking for HEY Audit) - DISABLED FOR DEBUGGING
-    /*
+    // Electron Fuses (Binary Locking for HEY Audit)
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,            // HEY Finding #15: Disables NODE_RUN (prevents starting as Node process)
@@ -103,6 +102,5 @@ module.exports = {
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true, // Enforces ASAR Integrity (Tamper Resistance)
       [FuseV1Options.OnlyLoadAppFromAsar]: true,                   // Forces app to run from signed bundle
     }),
-    */
   ],
 };

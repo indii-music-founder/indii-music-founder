@@ -14,12 +14,10 @@ export default function SoundscapeCanvas() {
             >
                 <Suspense fallback={null}>
                     <WaveMesh />
-                    <fog attach="fog" args={['#030303', 5, 20]} />
+                    <fog attach="fog" args={['#080808', 8, 30]} />
                     <ambientLight intensity={0.5} />
                 </Suspense>
             </Canvas>
-            {/* Vignette Overlay for depth */}
-            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(3,3,3,0.8)_100%)]" />
         </div>
     );
 }

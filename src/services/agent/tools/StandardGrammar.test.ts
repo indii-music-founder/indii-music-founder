@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScreenwriterTools } from './ScreenwriterTools';
 import { ProducerTools } from './ProducerTools';
@@ -18,45 +17,56 @@ describe('Standard Grammar Tools', () => {
     });
 
     describe('Screenwriter Agent', () => {
-        it('format_screenplay sends correct prompt', async () => {
-            const mockResponse = { text: () => 'INT. OFFICE - DAY\n\nJOHN sits at his desk.' };
+        it('format_screenplay requests JSON and parses it', async () => {
+            const mockJson = JSON.stringify({
+                title: "Test Scene",
+                elements: [{ type: "slugline", text: "INT. TEST - DAY" }]
+            });
+            const mockResponse = { text: () => mockJson };
             (AI.generateContent as any).mockResolvedValue(mockResponse);
 
-            const result = await ScreenwriterTools.format_screenplay({ text: 'John is at his desk in an office.' });
+            const result = await ScreenwriterTools.format_screenplay({ text: 'John is at his desk.' });
 
             expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
                 contents: expect.objectContaining({
-                    role: 'user',
-                    parts: expect.arrayContaining([{ text: expect.stringContaining('Convert this text to screenplay format') }])
+                    parts: expect.arrayContaining([{ text: expect.stringContaining('Convert this text to screenplay JSON') }])
                 })
             }));
-            expect(result).toContain('INT. OFFICE');
+            const parsed = JSON.parse(result);
+            expect(parsed.title).toBe("Test Scene");
         });
     });
 
     describe('Producer Agent', () => {
-        it('create_call_sheet sends correct prompt', async () => {
-            const mockResponse = { text: () => '# DAILY CALL SHEET\n\n**Date:** 2025-10-27' };
+        it('create_call_sheet requests JSON and parses it', async () => {
+            const mockJson = JSON.stringify({
+                production: "Test Production",
+                callTime: "08:00 AM",
+                cast: []
+            });
+            const mockResponse = { text: () => mockJson };
             (AI.generateContent as any).mockResolvedValue(mockResponse);
 
             const result = await ProducerTools.create_call_sheet({
                 date: '2025-10-27',
                 location: 'Studio A',
-                cast: ['Actor 1', 'Actor 2']
+                cast: ['Actor 1']
             });
 
             expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
                 contents: expect.objectContaining({
-                    parts: expect.arrayContaining([{ text: expect.stringContaining('Create a call sheet for') }])
+                    parts: expect.arrayContaining([{ text: expect.stringContaining('Create a call sheet JSON') }])
                 })
             }));
-            expect(result).toContain('DAILY CALL SHEET');
+
+            const parsed = JSON.parse(result);
+            expect(parsed.production).toBe("Test Production");
         });
     });
 
     describe('Legal Agent', () => {
-        it('draft_contract sends correct prompt', async () => {
-            const mockResponse = { text: () => '# NON-DISCLOSURE AGREEMENT\n\nThis agreement...' };
+        it('draft_contract includes mandatory header', async () => {
+            const mockResponse = { text: () => '# LEGAL AGREEMENT\n\nThis agreement...' };
             (AI.generateContent as any).mockResolvedValue(mockResponse);
 
             const result = await LegalTools.draft_contract({
@@ -70,7 +80,7 @@ describe('Standard Grammar Tools', () => {
                     parts: expect.arrayContaining([{ text: expect.stringContaining('Draft a NDA between Alice and Bob') }])
                 })
             }));
-            expect(result).toContain('NON-DISCLOSURE AGREEMENT');
+            expect(result).toContain('# LEGAL AGREEMENT');
         });
     });
 });

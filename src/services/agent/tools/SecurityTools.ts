@@ -64,3 +64,51 @@ export const rotate_credentials = async (args: { service_name: string }): Promis
         timestamp: new Date().toISOString()
     });
 };
+
+export const verify_zero_touch_prod = async (args: { service_name: string }): Promise<string> => {
+    const { service_name } = args;
+    // Mock logic: Assume services starting with 'prod-' have ZTP enabled
+    const isCompliant = service_name.toLowerCase().startsWith('prod-') || service_name === 'foundational-auth';
+
+    return JSON.stringify({
+        service: service_name,
+        check: 'zero_touch_prod',
+        compliant: isCompliant,
+        automation_level: isCompliant ? 'FULL_NOPE' : 'PARTIAL', // NoPe = No Persons
+        last_audit: new Date().toISOString()
+    });
+};
+
+export const check_core_dump_policy = async (args: { service_name: string }): Promise<string> => {
+    const { service_name } = args;
+    // Mock logic: Foundational services MUST have core dumps disabled
+    const isFoundational = service_name.includes('auth') || service_name.includes('key');
+    const coreDumpsDisabled = isFoundational; // In this mock, we assume we are compliant if it's foundational
+
+    return JSON.stringify({
+        service: service_name,
+        check: 'core_dump_policy',
+        compliant: coreDumpsDisabled,
+        setting: coreDumpsDisabled ? 'DISABLED' : 'ENABLED',
+        risk_level: coreDumpsDisabled ? 'LOW' : isFoundational ? 'CRITICAL' : 'MEDIUM'
+    });
+};
+
+export const audit_workload_isolation = async (args: { service_name: string, workload_type: 'FOUNDATIONAL' | 'SENSITIVE' | 'LOWER_PRIORITY' }): Promise<string> => {
+    const { service_name, workload_type } = args;
+
+    // Mock logic for security rings
+    let ring = 'GENERAL';
+    if (workload_type === 'FOUNDATIONAL') ring = 'RING_0_CORE';
+    if (workload_type === 'SENSITIVE') ring = 'RING_1_SENSITIVE';
+    if (workload_type === 'LOWER_PRIORITY') ring = 'RING_2_BATCH';
+
+    return JSON.stringify({
+        service: service_name,
+        check: 'workload_isolation',
+        workload_type: workload_type,
+        assigned_ring: ring,
+        isolation_status: 'ENFORCED',
+        neighbors: workload_type === 'FOUNDATIONAL' ? [] : ['other-batch-jobs'] // Foundational should have no neighbors
+    });
+};

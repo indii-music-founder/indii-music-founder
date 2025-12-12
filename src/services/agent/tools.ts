@@ -14,7 +14,7 @@ import { NavigationTools } from './tools/NavigationTools';
 import { MapsTools } from './tools/MapsTools';
 import { execute_bigquery_query, get_table_schema } from './tools/BigQueryTools';
 import { list_clusters, get_cluster_status, scale_deployment, list_instances, restart_service } from './tools/DevOpsTools';
-import { check_api_status, scan_content, rotate_credentials } from './tools/SecurityTools';
+import { check_api_status, scan_content, rotate_credentials, verify_zero_touch_prod, check_core_dump_policy, audit_workload_isolation } from './tools/SecurityTools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -39,6 +39,9 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     check_api_status,
     scan_content,
     rotate_credentials,
+    verify_zero_touch_prod,
+    check_core_dump_policy,
+    audit_workload_isolation,
     ...PUBLICIST_TOOLS
 };
 
@@ -56,7 +59,7 @@ AVAILABLE TOOLS:
 10. search_knowledge(query: string) - Search the knowledge base.
 11. open_project(projectId: string) - Open a specific project.
 12. delegate_task(agent_id: string, task: string, context?: any) - Delegate to specialized agent.
-13. generate_video(prompt: string, image?: string, duration?: number) - Generate a video.
+13. generate_video(prompt: string, image?: string, duration?: number) - Generate video.
 14. generate_motion_brush(image: string, mask: string, prompt?: string) - Motion brush animation.
 15. analyze_audio(audio: string) - Analyze audio file.
 16. analyze_contract(file_data: string, mime_type: string) - Analyze contract.
@@ -88,4 +91,7 @@ AVAILABLE TOOLS:
 42. check_api_status(api_name: string) - Check Apigee API status.
 43. scan_content(text: string) - Scan content for PII/safety (Model Armor).
 44. rotate_credentials(service_name: string) - Rotate service credentials.
+45. verify_zero_touch_prod(service_name: string) - Verify ZTP automation (NoPe).
+46. check_core_dump_policy(service_name: string) - Check if core dumps are disabled.
+47. audit_workload_isolation(service_name: string, workload_type: string) - Check workload isolation ring.
 `;

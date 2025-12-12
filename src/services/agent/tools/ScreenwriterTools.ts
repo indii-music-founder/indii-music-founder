@@ -6,12 +6,23 @@ export const ScreenwriterTools = {
         try {
             const systemPrompt = `
 You are a professional screenwriter formatting expert.
-Your task is to convert raw text into standard screenplay format (Sluglines, Action, Character, Dialogue).
-You should attempt to infer scene headers (INT./EXT.) if not explicit.
-Return the result as a markdown string that mimics screenplay formatting (e.g. capitalized names centered, sluglines bolded).
-Strictly adhere to standard industry conventions.
+Your task is to convert raw text into a structured JSON screenplay format.
+Return ONLY valid JSON with the following structure:
+{
+  "title": "Scene Title",
+  "author": "IndiiOS AI",
+  "elements": [
+    { "type": "slugline", "text": "INT. OFFICE - DAY" },
+    { "type": "action", "text": "A busy newsroom..." },
+    { "type": "character", "text": "JANE" },
+    { "type": "dialogue", "text": "Did you see the news?" },
+    { "type": "parenthetical", "text": "whispering" },
+    { "type": "transition", "text": "CUT TO:" }
+  ]
+}
+Attempt to infer scene headers if not explicit.
 `;
-            const prompt = `Convert this text to screenplay format:\n\n${args.text}`;
+            const prompt = `Convert this text to screenplay JSON:\n\n${args.text}`;
 
             const response = await AI.generateContent({
                 model: 'gemini-1.5-pro-preview-0409',
@@ -19,7 +30,9 @@ Strictly adhere to standard industry conventions.
                 systemInstruction: systemPrompt
             });
 
-            return response.text();
+            const textResponse = response.text();
+            const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+            return jsonMatch ? jsonMatch[0] : textResponse;
         } catch (e: any) {
             return `Failed to format screenplay: ${e.message}`;
         }

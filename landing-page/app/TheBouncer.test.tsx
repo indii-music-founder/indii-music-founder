@@ -75,9 +75,12 @@ describe('The Bouncer 🦍', () => {
         render(<LandingPage />);
 
         // Check for Visual Elements
-        expect(screen.getByText('Feel the')).toBeInTheDocument();
-        expect(screen.getByTestId('breathing-text')).toHaveTextContent('Music');
-        expect(screen.getByTestId('soundscape-canvas')).toBeInTheDocument();
+        // Both parts are now BreathingText components
+        const breathingTexts = screen.getAllByTestId('breathing-text');
+        expect(breathingTexts[0]).toHaveTextContent('Your Music.');
+        expect(breathingTexts[1]).toHaveTextContent('Your Rules.');
+
+        expect(screen.getByText('indiiOS')).toBeInTheDocument();
 
         // Check for Buttons
         expect(screen.getAllByText('Start Creating').length).toBeGreaterThan(0);

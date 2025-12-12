@@ -368,4 +368,31 @@ npx vitest src/services/agent/tools/MapsTools.test.ts src/services/agent/tools/B
 
 2. **Finance Agent (BigQuery)**
    - **Prompt**: "What was the revenue for Q1 2025?"
-   - **Expected**: A mocked financial report or data table.
+
+---
+
+## 21. The Vault 🏦
+
+**Scope:** Production Security & Access Control
+**Framework:** Zero Touch Prod (ZTP) & Security Rings
+**Status:** **ACTIVE**
+**File:** `src/services/agent/tools/SecurityTools.test.ts`
+**Documentation:** `docs/PRODUCTION_SECURITY_PROTOCOL.md`
+
+"The Vault" verifies compliance with production security protocols:
+
+1. **Zero Touch Prod (ZTP)**: Ensures services are managed via automation (NoPe).
+2. **Crown Jewels**: Verifies Core Dumps are disabled for foundational services.
+3. **Isolation**: Checks Workload Security Rings placement.
+
+**Scenarios:**
+
+1. **The Airlock**: Verifies "prod-" services are flagged for Full Automation.
+2. **The Containment**: Checks that critical auth services have debugging/core dumps disabled.
+3. **The Quarantine**: Ensures foundational workloads have 0 neighbors (dedicated hardware/vm logic).
+
+**Command:**
+
+```bash
+npx vitest run src/services/agent/tools/SecurityTools.test.ts
+```

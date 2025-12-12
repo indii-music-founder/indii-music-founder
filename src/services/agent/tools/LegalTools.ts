@@ -22,6 +22,7 @@ export const LegalTools = {
             const systemPrompt = `
 You are a senior entertainment lawyer.
 Draft a legally binding contract in Markdown format.
+Start the document with a level 1 header "# LEGAL AGREEMENT".
 Use standard legal language but keep it readable.
 Ensure all parties and terms are clearly defined.
 Common types: NDA, Model Release, Location Agreement, Sync License.
