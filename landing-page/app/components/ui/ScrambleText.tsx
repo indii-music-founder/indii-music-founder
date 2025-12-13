@@ -74,7 +74,6 @@ export default function ScrambleText({
 
         return () => {
             isCancelled = true;
-            clearTimeout(timeout);
         };
     }, [text, delay, scrambleSpeed, revealSpeed]);
 
