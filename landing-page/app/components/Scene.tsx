@@ -160,9 +160,10 @@ export default function Scene() {
             <AudioManager />
             <Canvas camera={{ position: [0, 0, 5], fov: 75 }} dpr={[1, 2]}>
                 <Suspense fallback={null}>
+                    {/* <ThreeDOrbs /> */}
+                    {/* <AudioRing /> */}
+                    {/* <OrigamiParticles /> */}
                     <ThreeDOrbs />
-                    <AudioRing />
-                    <OrigamiParticles />
                     <ScrollControls pages={11} damping={0.2}>
                         <CameraRig />
 
@@ -179,7 +180,7 @@ export default function Scene() {
                             <TheRemix />
 
                             {/* Global Atmosphere */}
-                            <NeuralAether />
+                            {/* <NeuralAether /> */}
                         </Scroll>
 
                         {/* HTML Overlay Layer (Text) */}
@@ -191,6 +192,6 @@ export default function Scene() {
                     <Effects />
                 </Suspense>
             </Canvas>
-        </div>
+        </div >
     );
 }
