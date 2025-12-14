@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus } from '@/services/onboarding/onboardingService';
+import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '@/services/onboarding/onboardingService';
 import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign } from 'lucide-react';
 import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -139,25 +139,26 @@ export default function OnboardingPage() {
                 const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
-                // --- SMART LOOP FIX ---
-                // If the AI didn't return text (silent update) OR returned a generic "next step"
-                // We calculate exactly what is missing and prompt the user.
+                // --- NATURAL FALLBACK RESPONSES ---
+                // If the AI didn't return text (silent update), generate a human-sounding response
                 if (!text && updates.length > 0) {
                     const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
-                    let nextTopic = "anything else";
 
-                    if (coreMissing.length > 0) {
-                        nextTopic = coreMissing[0].replace(/([A-Z])/g, ' $1').toLowerCase(); // e.g. "career stage"
-                    } else if (releaseMissing.length > 0) {
-                        nextTopic = "your current release (" + releaseMissing[0].replace(/([A-Z])/g, ' $1').toLowerCase() + ")";
-                    }
+                    // Determine the next topic to ask about (prioritize core identity, then release)
+                    const nextMissing = coreMissing.length > 0
+                        ? coreMissing[0] as any
+                        : releaseMissing.length > 0
+                            ? releaseMissing[0] as any
+                            : null;
 
-                    const fallbackText = `I've updated your ${updates.join(', ')}. Next, tell me about ${nextTopic}.`;
+                    const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
+                    const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);
                     nextHistory.push({ role: 'model', parts: [{ text: fallbackText }], toolCall: uiToolCall });
                 } else if (text) {
                     nextHistory.push({ role: 'model', parts: [{ text }], toolCall: uiToolCall });
                 } else {
-                    nextHistory.push({ role: 'model', parts: [{ text: "I processed that. Ready for the next step?" }], toolCall: uiToolCall });
+                    // Edge case: AI returned nothing at all
+                    nextHistory.push({ role: 'model', parts: [{ text: generateEmptyResponseFallback() }], toolCall: uiToolCall });
                 }
             } else {
                 nextHistory.push({ role: 'model', parts: [{ text }] });

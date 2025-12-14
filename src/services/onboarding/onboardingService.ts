@@ -563,6 +563,183 @@ export function processFunctionCalls(
     return { updatedProfile, isFinished, updates };
 }
 
+// --- Natural Fallback Response Generator ---
+// These replace robotic "I processed that" messages with human, contextual responses
+
+type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes';
+
+// Educational context for each topic - helps users understand WHY we need this info
+const topicContext: Record<TopicKey, { name: string; why: string; examples: string[] }> = {
+    bio: {
+        name: 'your story',
+        why: "Your bio is the foundation of your press kit — journalists, playlist curators, and booking agents read this first",
+        examples: ["Where you started", "What drives your sound", "Your musical journey so far"]
+    },
+    brandDescription: {
+        name: 'your visual identity',
+        why: "Consistent visuals are how fans recognize you across platforms — it's your visual signature",
+        examples: ["Color palette vibes", "Photography style", "The aesthetic that matches your sound"]
+    },
+    socials: {
+        name: 'your social presence',
+        why: "This helps me connect your releases across platforms and track your growth",
+        examples: ["Instagram", "Spotify", "Your main hangout online"]
+    },
+    visuals: {
+        name: 'visual assets',
+        why: "Photos and logos let me generate on-brand content without guessing",
+        examples: ["A headshot or press photo", "Your logo if you have one", "Reference images you vibe with"]
+    },
+    careerStage: {
+        name: 'where you are in your journey',
+        why: "This shapes everything from release strategy to marketing spend — a debut single needs different rollout than a third album",
+        examples: ["Just starting out", "Building momentum", "Already established"]
+    },
+    goals: {
+        name: 'what you\'re aiming for',
+        why: "Clear goals mean I can prioritize what actually moves the needle for YOU, not generic advice",
+        examples: ["Touring more", "Getting playlisted", "Building a fanbase", "Sync licensing"]
+    },
+    title: {
+        name: 'your release title',
+        why: "The title drives SEO, hashtags, and all the copy I'll write for you",
+        examples: ["Single name", "EP title", "Album name"]
+    },
+    type: {
+        name: 'the release format',
+        why: "A single rollout is totally different from an album campaign — I need to plan accordingly",
+        examples: ["Single", "EP", "Album", "Remix"]
+    },
+    genre: {
+        name: 'the genre',
+        why: "Genre determines playlist targets, press outlets, and even posting times — each scene has its own rhythm",
+        examples: ["Primary genre", "Subgenre if you're specific", "Or genre-fluid if you blend"]
+    },
+    mood: {
+        name: 'the vibe',
+        why: "Mood shapes everything from cover art direction to caption tone — euphoric needs different energy than melancholic",
+        examples: ["Dark and moody", "Euphoric and uplifting", "Introspective", "High-energy"]
+    },
+    themes: {
+        name: 'what the music is about',
+        why: "Themes give me hooks for storytelling — 'heartbreak anthem' writes different copy than 'summer freedom'",
+        examples: ["The concept", "What inspired it", "What you want listeners to feel"]
+    }
+};
+
+// Varied acknowledgment phrases (replaces "I processed that")
+const acknowledgments = {
+    general: [
+        "Got it.",
+        "Nice.",
+        "Cool.",
+        "Okay, that helps.",
+        "Noted.",
+        "Makes sense.",
+        "I'm with you.",
+        "That works.",
+        "Alright.",
+    ],
+    excited: [
+        "Hell yes.",
+        "Now we're talking.",
+        "That's what I like to hear.",
+        "This is good stuff.",
+        "I can work with that.",
+        "Damn, okay.",
+        "Love it.",
+    ],
+    thoughtful: [
+        "Interesting.",
+        "I see where you're going.",
+        "That gives me something to work with.",
+        "Okay, I'm picking up what you're putting down.",
+        "That paints a picture.",
+    ]
+};
+
+// Transition phrases to the next topic
+const transitions = {
+    natural: [
+        "Now,",
+        "So,",
+        "Next up:",
+        "Let's talk about",
+        "What about",
+        "Moving on —",
+        "Quick one:",
+    ],
+    curious: [
+        "I'm curious about",
+        "Tell me about",
+        "What's the deal with",
+        "Talk to me about",
+    ]
+};
+
+function randomPick<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export function generateNaturalFallback(
+    updates: string[],
+    nextMissing: TopicKey | null,
+    isReleaseContext: boolean = false
+): string {
+    // If we have updates, acknowledge them naturally (without listing them robotically)
+    const ack = updates.length > 0
+        ? randomPick([...acknowledgments.general, ...acknowledgments.thoughtful])
+        : '';
+
+    // If nothing left to ask, we're good
+    if (!nextMissing) {
+        return ack ? `${ack} Looking solid so far.` : "We're in good shape. Anything else you want to add?";
+    }
+
+    const topic = topicContext[nextMissing];
+    if (!topic) {
+        // Fallback for unknown topics
+        return ack
+            ? `${ack} What else should I know?`
+            : "What else can you tell me?";
+    }
+
+    // Build a natural, educational prompt
+    const transition = randomPick([...transitions.natural, ...transitions.curious]);
+
+    // ~30% chance to include the "why" explanation (educational)
+    const includeWhy = Math.random() < 0.3;
+
+    // ~20% chance to include examples
+    const includeExamples = Math.random() < 0.2 && !includeWhy;
+
+    let response = ack ? `${ack} ` : '';
+
+    if (includeWhy) {
+        response += `${transition} ${topic.name}. ${topic.why}. What's yours?`;
+    } else if (includeExamples) {
+        response += `${transition} ${topic.name} — ${topic.examples.slice(0, 2).join(', ')}, that kind of thing.`;
+    } else {
+        response += `${transition} ${topic.name}?`;
+    }
+
+    return response;
+}
+
+// Generates a fallback when the AI returns nothing (edge case)
+export function generateEmptyResponseFallback(): string {
+    const responses = [
+        "Hmm, I'm not sure I followed that. Can you say more?",
+        "I want to make sure I got that right — can you elaborate?",
+        "Tell me more about that.",
+        "Can you expand on that a bit?",
+        "I'm listening — keep going.",
+        "Interesting. What else?",
+        "Walk me through that a bit more.",
+    ];
+    return randomPick(responses);
+}
+
 export async function generateSection(section: 'bio' | 'brand_description' | 'preferences', userInput: string): Promise<string> {
     const systemPrompt = `You are a professional copywriter specializing in the music industry. Write a compelling, concise, and professional piece of content for the specified section. The tone should be authentic and engaging. Do not add any extra conversational text, just return the content.`;
 

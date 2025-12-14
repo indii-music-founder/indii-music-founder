@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus } from '../../services/onboarding/onboardingService';
+import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '../../services/onboarding/onboardingService';
 import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '../../modules/workflow/types';
@@ -16,12 +16,22 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Dynamic opening greetings - more natural and varied
+    const OPENING_GREETINGS = [
+        "Hey — let's update your profile. What's changed since we last talked? New release brewing, or just tweaking the brand?",
+        "Back for round two. What are we working on — new music, new direction, or just tidying things up?",
+        "Good to see you again. What needs an update — the artist identity stuff or the current release details?",
+        "Alright, let's do this. What's on the agenda — adding new info, changing direction, or prepping for something new?",
+        "Quick check-in time. What's new in your world? I'll help you get it captured.",
+    ];
+
     // Initial greeting
     useEffect(() => {
         if (isOpen && history.length === 0) {
-            const greeting = "Hi, I'm indii, your Chief Creative Officer. Let's get your profile set up so I can help you better. First, tell me a bit about yourself as an artist. What's your vibe?";
+            const greeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
             setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     // Auto-scroll to bottom
@@ -101,14 +111,21 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     // Handle completion
                 }
 
-                // Fallback: If model did work but didn't speak, speak for it.
+                // Natural fallback: If model did work but didn't speak, generate human-sounding response
                 if (!text && updates.length > 0) {
-                    const fallbackText = `I've updated your ${updates.join(', ')}. What else can I help you with?`;
+                    const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
+                    const nextMissing = coreMissing.length > 0
+                        ? coreMissing[0] as any
+                        : releaseMissing.length > 0
+                            ? releaseMissing[0] as any
+                            : null;
+                    const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
+                    const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text: fallbackText }] }]);
                 } else if (text) {
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
                 } else {
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: "I processed that, but I'm not sure what to say. Is there anything else?" }] }]);
+                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: generateEmptyResponseFallback() }] }]);
                 }
             } else {
                 setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
