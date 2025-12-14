@@ -54,14 +54,25 @@ export default function Home() {
               </span>
             </motion.div>
 
-            <DigitalBillboard />
+            {loading ? (
+              <div className="h-[400px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            ) : (
+              <DigitalBillboard
+                user={user}
+                authenticatedCta={{ label: "Launch Studio", href: getStudioUrl() }}
+              />
+            )}
 
             {/* Login Link below as a secondary action for all slides */}
-            <div className="mt-8">
-              <Link href="/login" className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
-                Already have an account? Sign In
-              </Link>
-            </div>
+            {!user && !loading && (
+              <div className="mt-8">
+                <Link href="/login" className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
+                  Already have an account? Sign In
+                </Link>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

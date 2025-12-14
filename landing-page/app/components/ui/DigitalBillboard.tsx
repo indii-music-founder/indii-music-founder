@@ -18,7 +18,15 @@ interface SlideData {
 
 import { BILLBOARD_SLIDES } from '../../lib/billboardContent';
 
-export default function DigitalBillboard() {
+interface DigitalBillboardProps {
+    user?: any;
+    authenticatedCta?: {
+        label: string;
+        href: string;
+    };
+}
+
+export default function DigitalBillboard({ user, authenticatedCta }: DigitalBillboardProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const slides = BILLBOARD_SLIDES;
 
@@ -32,6 +40,7 @@ export default function DigitalBillboard() {
     }, []);
 
     const currentSlide = slides[currentIndex];
+    const effectiveCta = (user && authenticatedCta) ? authenticatedCta : currentSlide.cta;
 
     return (
         <div className="relative h-[400px] flex flex-col items-center justify-center">
@@ -57,9 +66,9 @@ export default function DigitalBillboard() {
                     </PulseText>
 
                     {/* CTA Button */}
-                    <Link href={currentSlide.cta.href}>
+                    <Link href={effectiveCta.href}>
                         <PulseButton className="px-8 py-4 text-lg bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105">
-                            {currentSlide.cta.label}
+                            {effectiveCta.label}
                         </PulseButton>
                     </Link>
                 </motion.div>

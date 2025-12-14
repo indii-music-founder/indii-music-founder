@@ -22,10 +22,10 @@ export default function OnboardingPage() {
     // Dynamic opening greetings - feels more like meeting someone at a showcase
     const OPENING_GREETINGS = [
         "Hey — I'm indii. Think of me as your creative director, campaign strategist, and hype person rolled into one. I've worked with everyone from bedroom producers to platinum artists, and I'm here to make sure the world sees what you've got. So tell me — who are you and what's your sound?",
-        "Welcome to indii. I've spent 15 years helping artists cut through the noise — from underground scenes to main stages. Before we build anything, I need to understand YOU. Not just the music, but the vision. What's your story?",
+
         "Alright, let's do this. I'm indii — part creative director, part campaign architect, full-time believer in independent artists. I've seen bedroom demos become Billboard hits and TikTok moments become careers. What I need to know first: what makes YOUR sound different?",
         "Hey there. I'm indii, and my job is to turn your music into a movement. But first, I need to get inside your head a bit. Forget the typical 'describe your genre' questions — tell me what you're really trying to say with your music.",
-        "What's up — I'm indii. I've been in this industry long enough to know that the best campaigns come from knowing the artist, not just the music. So before we talk releases and rollouts, let's talk about you. What's the indii pitch? Who are you?",
+        "What's up — I'm indii. I've been trained by industry professionals to know that the best campaigns come from knowing the artist, not just the music. So before we talk releases and rollouts, let's talk about you. What's the indii pitch? Who are you?",
     ];
 
     // Initial greeting
@@ -34,7 +34,7 @@ export default function OnboardingPage() {
             const randomGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
             setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Auto-scroll to bottom

@@ -35,10 +35,13 @@ vi.mock('framer-motion', () => ({
         div: ({ children, className }: any) => <div className={className} data-testid="motion-div">{children}</div>,
         h1: ({ children, className }: any) => <h1 className={className}>{children}</h1>,
         p: ({ children, className }: any) => <p className={className}>{children}</p>,
+        span: ({ children, className }: any) => <span className={className}>{children}</span>,
         button: ({ children, className }: any) => <button className={className}>{children}</button>,
     },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
     useScroll: () => ({ scrollYProgress: { get: () => 0 } }),
-    useTransform: () => 0
+    useTransform: () => 0,
+    useAnimation: () => ({ start: vi.fn(), stop: vi.fn(), set: vi.fn() })
 }));
 
 // Mock lib/auth for getStudioUrl
@@ -64,6 +67,14 @@ vi.mock('./components/ui/BreathingText', () => ({
     default: ({ children }: any) => <span data-testid="breathing-text">{children}</span>
 }));
 
+vi.mock('./components/ui/ScrambleText', () => ({
+    default: ({ text, className }: any) => <span className={className}>{text}</span>
+}));
+
+vi.mock('./components/ui/PulseText', () => ({
+    default: ({ children, className }: any) => <span className={className} data-testid="pulse-text">{children}</span>
+}));
+
 
 describe('The Bouncer 🦍', () => {
     it('shows "Start Creating" and "Sign In" when user is Guest', () => {
@@ -76,15 +87,15 @@ describe('The Bouncer 🦍', () => {
 
         // Check for Visual Elements
         // Both parts are now BreathingText components
-        const breathingTexts = screen.getAllByTestId('breathing-text');
-        expect(breathingTexts[0]).toHaveTextContent('Your Music.');
-        expect(breathingTexts[1]).toHaveTextContent('Your Rules.');
+        // Check for Visual Elements
+        expect(screen.getByText('Your Music.')).toBeInTheDocument();
+        expect(screen.getByText('Your Rules.')).toBeInTheDocument();
 
         expect(screen.getByText('indiiOS')).toBeInTheDocument();
 
         // Check for Buttons
         expect(screen.getAllByText('Start Creating').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Sign In').length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Sign In/).length).toBeGreaterThan(0);
 
         // Should NOT see Launch Studio
         expect(screen.queryByText('Launch Studio')).not.toBeInTheDocument();
