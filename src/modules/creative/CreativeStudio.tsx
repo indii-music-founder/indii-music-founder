@@ -10,7 +10,7 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
-    const { viewMode, setViewMode, selectedItem, setSelectedItem, generationMode, setGenerationMode, pendingPrompt, setPendingPrompt, setPrompt, studioControls, addToHistory, currentProjectId } = useStore();
+    const { viewMode, setViewMode, selectedItem, setSelectedItem, generationMode, setGenerationMode, pendingPrompt, setPendingPrompt, setPrompt, studioControls, addToHistory, currentProjectId, userProfile } = useStore();
     // const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
     const toast = useToast();
 
@@ -39,16 +39,20 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
             // Trigger Image Generation
             const generateImage = async () => {
-                toast.info("Generating image...");
+                const isCoverArt = studioControls.isCoverArtMode;
+                toast.info(isCoverArt ? "Generating cover art..." : "Generating image...");
                 try {
                     const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
                     const results = await ImageGeneration.generateImages({
                         prompt: pendingPrompt,
                         count: 1,
                         resolution: studioControls.resolution,
-                        aspectRatio: studioControls.aspectRatio,
+                        aspectRatio: isCoverArt ? '1:1' : studioControls.aspectRatio,
                         negativePrompt: studioControls.negativePrompt,
-                        seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
+                        seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                        // Pass distributor context for cover art mode
+                        userProfile: isCoverArt ? userProfile : undefined,
+                        isCoverArt
                     });
 
                     if (results.length > 0) {

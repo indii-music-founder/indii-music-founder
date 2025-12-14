@@ -61,8 +61,11 @@ export interface CreativeSlice {
         resolution: string;
         negativePrompt: string;
         seed: string;
+        isCoverArtMode: boolean; // When true, enforces distributor cover art specs
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
+    enableCoverArtMode: () => void; // Sets 1:1 aspect for cover art
+    disableCoverArtMode: () => void; // Reverts to previous aspect ratio
 
     // Mode & Inputs
     generationMode: 'image' | 'video';
@@ -180,9 +183,24 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         aspectRatio: '16:9',
         resolution: '4K',
         negativePrompt: '',
-        seed: ''
+        seed: '',
+        isCoverArtMode: false
     },
     setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
+    enableCoverArtMode: () => set((state) => ({
+        studioControls: {
+            ...state.studioControls,
+            aspectRatio: '1:1', // Cover art is always square
+            isCoverArtMode: true
+        }
+    })),
+    disableCoverArtMode: () => set((state) => ({
+        studioControls: {
+            ...state.studioControls,
+            aspectRatio: '16:9', // Revert to default
+            isCoverArtMode: false
+        }
+    })),
 
     generationMode: 'image',
     setGenerationMode: (mode) => set({ generationMode: mode }),

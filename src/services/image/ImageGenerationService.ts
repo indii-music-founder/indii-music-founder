@@ -4,6 +4,8 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
 import { isInlineDataPart } from '@/shared/types/ai.dto';
+import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
+import type { UserProfile } from '@/modules/workflow/types';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -14,6 +16,9 @@ export interface ImageGenerationOptions {
     negativePrompt?: string;
     sourceImages?: { mimeType: string; data: string }[]; // For edit/reference modes
     projectContext?: string;
+    // Distributor-aware options
+    userProfile?: UserProfile;
+    isCoverArt?: boolean; // If true, enforces distributor cover art specs
 }
 
 export interface RemixOptions {
@@ -24,6 +29,48 @@ export interface RemixOptions {
 
 export class ImageGenerationService {
 
+    /**
+     * Get distributor-aware image constraints
+     * Returns the image specs required by the user's distributor
+     */
+    getDistributorConstraints(profile: UserProfile): ImageConstraints {
+        return getImageConstraints(profile);
+    }
+
+    /**
+     * Build a distributor-aware prompt that includes sizing requirements
+     */
+    private buildDistributorAwarePrompt(options: ImageGenerationOptions): string {
+        let prompt = options.prompt;
+
+        // If cover art mode and profile is provided, inject distributor context
+        if (options.isCoverArt && options.userProfile) {
+            const constraints = getImageConstraints(options.userProfile);
+            const distributorContext = getDistributorPromptContext(options.userProfile);
+
+            // Prepend distributor requirements to ensure proper sizing
+            prompt = `[COVER ART REQUIREMENTS: Generate a ${constraints.width}x${constraints.height}px square image. ${constraints.colorMode} color mode only.]\n\n${prompt}`;
+
+            // Add project context if not already provided
+            if (!options.projectContext) {
+                options.projectContext = `\n\n${distributorContext}`;
+            }
+        }
+
+        return prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '');
+    }
+
+    /**
+     * Get the appropriate aspect ratio for the request
+     */
+    private getAspectRatio(options: ImageGenerationOptions): string {
+        // If cover art mode, always use 1:1 square
+        if (options.isCoverArt) {
+            return '1:1';
+        }
+        return options.aspectRatio || '1:1';
+    }
+
     async generateImages(options: ImageGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
         const results: { id: string, url: string, prompt: string }[] = [];
         const count = options.count || 1;
@@ -31,11 +78,12 @@ export class ImageGenerationService {
         try {
             const generateImage = httpsCallable(functions, 'generateImage');
 
-            const fullPrompt = options.prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '');
+            const fullPrompt = this.buildDistributorAwarePrompt(options);
+            const aspectRatio = this.getAspectRatio(options);
 
             const result = await generateImage({
                 prompt: fullPrompt,
-                aspectRatio: options.aspectRatio,
+                aspectRatio: aspectRatio,
                 count: count,
                 images: options.sourceImages,
                 apiKey: env.apiKey
@@ -65,6 +113,29 @@ export class ImageGenerationService {
             throw err;
         }
         return results;
+    }
+
+    /**
+     * Generate cover art with automatic distributor compliance
+     * This is the recommended method for generating release artwork
+     */
+    async generateCoverArt(
+        prompt: string,
+        profile: UserProfile,
+        options?: Partial<ImageGenerationOptions>
+    ): Promise<{ id: string, url: string, prompt: string, constraints: ImageConstraints }[]> {
+        const constraints = getImageConstraints(profile);
+
+        const results = await this.generateImages({
+            ...options,
+            prompt,
+            userProfile: profile,
+            isCoverArt: true,
+            aspectRatio: '1:1', // Cover art is always square
+        });
+
+        // Attach constraints to results for UI display
+        return results.map(r => ({ ...r, constraints }));
     }
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {

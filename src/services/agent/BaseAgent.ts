@@ -157,6 +157,11 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## RELEVANT MEMORIES\n${context.memoryContext}\n`
             : '';
 
+        // Build distributor section - this informs all AI operations about requirements
+        const distributorSection = context?.distributor?.isConfigured
+            ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
+            : '';
+
         const fullPrompt = `
 # MISSION
 ${this.systemPrompt}
@@ -167,6 +172,7 @@ ${JSON.stringify(enrichedContext, null, 2)}
 # HISTORY
 ${context?.chatHistoryString || ''}
 ${memorySection}
+${distributorSection}
 
 ${SUPERPOWER_PROMPT}
 

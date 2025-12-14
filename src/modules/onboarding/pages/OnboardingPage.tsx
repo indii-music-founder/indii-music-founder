@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus } from '@/services/onboarding/onboardingService';
-import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap } from 'lucide-react';
+import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign } from 'lucide-react';
+import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -134,8 +135,8 @@ export default function OnboardingPage() {
                     // Handle completion
                 }
 
-                // Check for UI Tools (multiple choice, insights, creative direction)
-                const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection'];
+                // Check for UI Tools (multiple choice, insights, creative direction, distributor info)
+                const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
                 // --- SMART LOOP FIX ---
@@ -381,6 +382,102 @@ export default function OnboardingPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Distributor Requirements Card */}
+                                {msg.toolCall && msg.toolCall.name === 'shareDistributorInfo' && (() => {
+                                    const distro = getDistributorRequirements(msg.toolCall.args.distributor_name);
+                                    if (!distro) return null;
+                                    return (
+                                        <div className="mt-4 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border border-cyan-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            <div className="flex items-start gap-3 mb-4">
+                                                <div className="p-2 bg-cyan-500/20 rounded-lg">
+                                                    <BookOpen size={18} className="text-cyan-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-1">{distro.name} Requirements</p>
+                                                    <p className="text-xs text-gray-400">Here's what you need to know for your release</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                                {/* Cover Art */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Image size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Cover Art</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">
+                                                        {distro.coverArt.minSize} - {distro.coverArt.maxSize}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">{distro.coverArt.format} • {distro.coverArt.colorMode}</p>
+                                                </div>
+
+                                                {/* Audio */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Music size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Audio</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">{distro.audio.format}</p>
+                                                    <p className="text-xs text-gray-500">{distro.audio.sampleRate} / {distro.audio.bitDepth}</p>
+                                                </div>
+
+                                                {/* Timeline */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Clock size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Timeline</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">{distro.timeline.minLeadTime} lead time</p>
+                                                    <p className="text-xs text-gray-500">{distro.timeline.reviewTime} review</p>
+                                                </div>
+
+                                                {/* Pricing */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <DollarSign size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Payout</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">{distro.pricing.artistPayout}</p>
+                                                    <p className="text-xs text-gray-500">{distro.pricing.model}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Metadata */}
+                                            <div className="bg-black/20 rounded-lg p-3 mb-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <FileCheck size={14} className="text-cyan-400" />
+                                                    <span className="text-xs font-semibold text-gray-300">Required Metadata</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {distro.metadata.requiredFields.slice(0, 8).map((field, idx) => (
+                                                        <span key={idx} className="text-xs bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded">
+                                                            {field}
+                                                        </span>
+                                                    ))}
+                                                    {distro.metadata.requiredFields.length > 8 && (
+                                                        <span className="text-xs text-gray-500">+{distro.metadata.requiredFields.length - 8} more</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Pro Tips */}
+                                            {distro.proTips.length > 0 && (
+                                                <div className="border-t border-cyan-500/20 pt-3">
+                                                    <p className="text-xs text-cyan-400 font-semibold mb-2">💡 Pro Tips</p>
+                                                    <ul className="space-y-1">
+                                                        {distro.proTips.slice(0, 3).map((tip, idx) => (
+                                                            <li key={idx} className="text-xs text-gray-400 flex items-start gap-2">
+                                                                <span className="text-cyan-500 mt-0.5">→</span>
+                                                                {tip}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </motion.div>
                     ))}

@@ -335,6 +335,7 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 - If they're stuck, don't just wait — offer creative starters: "Tell me 3 artists you'd want to open for, and I'll help draft your bio"
 - Accept skips gracefully: "Totally fine, we'll circle back" — then MOVE ON
 - Keep responses punchy. You're not writing essays. 2-4 sentences max unless diving deep.
+- **DISTRIBUTOR INTEL**: When an artist mentions their distributor (DistroKid, TuneCore, CD Baby, AWAL, Ditto, UnitedMasters, Amuse), IMMEDIATELY use \`shareDistributorInfo\` to show them the requirements and pro tips. This is valuable intel — cover art specs, audio formats, metadata requirements, timeline recommendations. Artists NEED this. Save their distributor to the profile too.
 
 **NEVER DO:**
 - Sound like a form or a chatbot
@@ -422,6 +423,7 @@ ALWAYS preserve what they're NOT changing.`;
                     askMultipleChoiceFunction,
                     shareInsightFunction,
                     suggestCreativeDirectionFunction,
+                    shareDistributorInfoFunction,
                 ]
             }],
             config: {
