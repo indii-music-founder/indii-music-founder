@@ -37,6 +37,8 @@ if (!gotTheLock) {
 }
 
 const createWindow = () => {
+    const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
+
     const mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
@@ -48,7 +50,7 @@ const createWindow = () => {
             sandbox: true,
             safeDialogs: true,
             safeDialogsMessage: 'Stop seeing alerts from this page',
-            webSecurity: true,
+            webSecurity: !isDev, // Disable webSecurity in Dev
             webviewTag: false,
         },
     });
@@ -91,7 +93,7 @@ const createWindow = () => {
     });
 
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
-    const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
+    // const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL; // Already defined above
 
     if (isDev) {
         console.log('[DEBUG] Attempting to load Dev Server URL:', devServerUrl);

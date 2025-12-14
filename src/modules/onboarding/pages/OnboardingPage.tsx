@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus } from '@/services/onboarding/onboardingService';
-import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight } from 'lucide-react';
+import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,13 +18,23 @@ export default function OnboardingPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Dynamic opening greetings - feels more like meeting someone at a showcase
+    const OPENING_GREETINGS = [
+        "Hey — I'm indii. Think of me as your creative director, campaign strategist, and hype person rolled into one. I've worked with everyone from bedroom producers to platinum artists, and I'm here to make sure the world sees what you've got. So tell me — who are you and what's your sound?",
+        "Welcome to indii. I've spent 15 years helping artists cut through the noise — from underground scenes to main stages. Before we build anything, I need to understand YOU. Not just the music, but the vision. What's your story?",
+        "Alright, let's do this. I'm indii — part creative director, part campaign architect, full-time believer in independent artists. I've seen bedroom demos become Billboard hits and TikTok moments become careers. What I need to know first: what makes YOUR sound different?",
+        "Hey there. I'm indii, and my job is to turn your music into a movement. But first, I need to get inside your head a bit. Forget the typical 'describe your genre' questions — tell me what you're really trying to say with your music.",
+        "What's up — I'm indii. I've been in this industry long enough to know that the best campaigns come from knowing the artist, not just the music. So before we talk releases and rollouts, let's talk about you. What's the indii pitch? Who are you?",
+    ];
+
     // Initial greeting
     useEffect(() => {
         if (history.length === 0) {
-            const greeting = "Hi, I'm indii, your Chief Creative Officer. Let's get your profile set up so I can help you better. First, tell me a bit about yourself as an artist. What's your vibe?";
-            setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
+            const randomGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
+            setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
         }
-    }, [history.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -124,8 +134,9 @@ export default function OnboardingPage() {
                     // Handle completion
                 }
 
-                // Check for UI Tools
-                uiToolCall = functionCalls.find(fc => fc.name === 'askMultipleChoice');
+                // Check for UI Tools (multiple choice, insights, creative direction)
+                const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection'];
+                uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
                 // --- SMART LOOP FIX ---
                 // If the AI didn't return text (silent update) OR returned a generic "next step"
@@ -185,7 +196,7 @@ export default function OnboardingPage() {
                     />
                 </div>
                 <div className="mt-4 space-y-3">
-                    {['bio', 'brandDescription', 'socials', 'visuals'].map(key => {
+                    {['bio', 'brandDescription', 'socials', 'visuals', 'careerStage', 'goals'].map(key => {
                         const isMissing = coreMissing.includes(key);
                         return (
                             <div key={key} className="flex items-center gap-3 text-sm">
@@ -206,8 +217,44 @@ export default function OnboardingPage() {
                     })}
                 </div>
             </div>
+
+            {/* Release Progress */}
+            <div className="mb-8">
+                <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-300 font-medium">Current Release</span>
+                    <span className="text-white font-bold">{releaseProgress}%</span>
+                </div>
+                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-purple-500 transition-all duration-500"
+                        style={{ width: `${releaseProgress}%` }}
+                    />
+                </div>
+                <div className="mt-4 space-y-3">
+                    {['title', 'type', 'genre', 'mood', 'themes'].map(key => {
+                        const isMissing = releaseMissing.includes(key);
+                        return (
+                            <div key={key} className="flex items-center gap-3 text-sm">
+                                {isMissing ? (
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center">
+                                        <div className="w-full h-full rounded-full bg-transparent" />
+                                    </div>
+                                ) : (
+                                    <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                                        <CheckCircle size={12} fill="currentColor" className="text-white" />
+                                    </div>
+                                )}
+                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
+                                    {key === 'title' ? 'Release Title' : key.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             {isReadyForDashboard && (
-                <div className="mt-8 pt-6 border-t border-gray-800">
+                <div className="pt-6 border-t border-gray-800">
                     <button
                         onClick={handleComplete}
                         className="w-full bg-white text-black px-6 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2 group"
@@ -274,7 +321,7 @@ export default function OnboardingPage() {
                                 }`}>
                                 <div className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
 
-                                {/* Generative UI Renderer */}
+                                {/* Generative UI Renderer - Multiple Choice */}
                                 {msg.toolCall && msg.toolCall.name === 'askMultipleChoice' && (
                                     <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         {msg.toolCall.args.options.map((option: string) => (
@@ -291,6 +338,49 @@ export default function OnboardingPage() {
                                         ))}
                                     </div>
                                 )}
+
+                                {/* Industry Insight Card */}
+                                {msg.toolCall && msg.toolCall.name === 'shareInsight' && (
+                                    <div className="mt-4 bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2 bg-amber-500/20 rounded-lg">
+                                                <Lightbulb size={18} className="text-amber-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider mb-1">Industry Insight</p>
+                                                <p className="text-sm text-gray-200 leading-relaxed">{msg.toolCall.args.insight}</p>
+                                                {msg.toolCall.args.action_suggestion && (
+                                                    <p className="text-xs text-amber-300/80 mt-2 italic">→ {msg.toolCall.args.action_suggestion}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Creative Direction Card */}
+                                {msg.toolCall && msg.toolCall.name === 'suggestCreativeDirection' && (
+                                    <div className="mt-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2 bg-purple-500/20 rounded-lg">
+                                                <Zap size={18} className="text-purple-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-1">Creative Direction</p>
+                                                <p className="text-sm text-gray-200 leading-relaxed">{msg.toolCall.args.suggestion}</p>
+                                                <p className="text-xs text-gray-400 mt-2">{msg.toolCall.args.rationale}</p>
+                                                {msg.toolCall.args.examples && msg.toolCall.args.examples.length > 0 && (
+                                                    <div className="flex gap-2 mt-3 flex-wrap">
+                                                        {msg.toolCall.args.examples.map((ex: string, idx: number) => (
+                                                            <span key={idx} className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">
+                                                                {ex}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     ))}
@@ -298,7 +388,9 @@ export default function OnboardingPage() {
                         <div className="flex justify-start">
                             <div className="bg-[#161b22] text-gray-400 p-4 rounded-2xl rounded-tl-sm border border-gray-800 flex items-center gap-2">
                                 <Sparkles size={16} className="animate-spin" />
-                                <span className="text-sm">indii is thinking...</span>
+                                <span className="text-sm animate-pulse">
+                                    {['indii is thinking...', 'Processing that...', 'Let me think about this...', 'Interesting...'][Math.floor(Math.random() * 4)]}
+                                </span>
                             </div>
                         </div>
                     )}
@@ -328,6 +420,32 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
+                {/* Quick Suggestions */}
+                {history.length > 0 && history.length < 6 && !input && !isProcessing && (
+                    <div className="px-4 pb-2 bg-[#0d1117]">
+                        <div className="max-w-3xl mx-auto">
+                            <p className="text-xs text-gray-600 mb-2">Not sure what to say? Try:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    "I'm an electronic producer from...",
+                                    "I'm working on my debut single",
+                                    "I've been making music for 5 years",
+                                    "My sound is influenced by...",
+                                    "I want to tour more this year"
+                                ].slice(0, 3).map((suggestion) => (
+                                    <button
+                                        key={suggestion}
+                                        onClick={() => setInput(suggestion)}
+                                        className="text-xs text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] border border-gray-800 px-3 py-1.5 rounded-full transition-colors"
+                                    >
+                                        {suggestion}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Input Area */}
                 <div className="p-4 md:p-6 bg-[#0d1117] border-t border-gray-800 z-20 pb-safe">
                     <div className="max-w-3xl mx-auto flex gap-2 md:gap-3">
@@ -350,7 +468,7 @@ export default function OnboardingPage() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Type here..."
+                            placeholder="Tell me about your music..."
                             className="flex-1 bg-[#1a1f2e] border border-gray-800 rounded-xl px-4 md:px-6 py-3 md:py-4 text-white focus:border-white/20 focus:outline-none text-base md:text-lg placeholder:text-gray-600"
                             autoFocus
                         />

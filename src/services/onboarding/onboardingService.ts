@@ -3,6 +3,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '../../modules/workflow/types';
 import type { FunctionDeclaration } from '@/shared/types/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { getDistributorRequirements, getDistributorSummaryForAI, getSupportedDistributors } from './distributorRequirements';
 
 // --- Types & Enums ---
 
@@ -13,6 +14,9 @@ export enum OnboardingTools {
     GenerateProfileSection = 'generateProfileSection',
     FinishOnboarding = 'finishOnboarding',
     AskMultipleChoice = 'askMultipleChoice',
+    ShareInsight = 'shareInsight',
+    SuggestCreativeDirection = 'suggestCreativeDirection',
+    ShareDistributorInfo = 'shareDistributorInfo',
 }
 
 export interface UpdateProfileArgs {
@@ -22,10 +26,15 @@ export interface UpdateProfileArgs {
     colors?: string[];
     fonts?: string;
     negative_prompt?: string;
+    // Release fields
     release_title?: string;
     release_type?: string;
+    release_artists?: string; // Collaborators, features
+    release_genre?: string;
     release_mood?: string;
     release_themes?: string;
+    release_lyrics?: string;
+    // Social fields
     social_twitter?: string;
     social_instagram?: string;
     social_spotify?: string;
@@ -67,29 +76,35 @@ const updateProfileFunction: FunctionDeclaration = {
         type: 'OBJECT',
         description: 'The profile fields to update.',
         properties: {
-            // Identity Fields
-            bio: { type: 'STRING', description: 'The artist\'s biography (Permanent).' },
-            preferences: { type: 'STRING', description: 'The artist\'s creative preferences (Permanent).' },
-            brand_description: { type: 'STRING', description: 'Visual brand description (Permanent).' },
-            colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette.' },
-            fonts: { type: 'STRING', description: 'Brand fonts.' },
-            social_twitter: { type: 'STRING', description: 'Twitter handle.' },
-            social_instagram: { type: 'STRING', description: 'Instagram handle.' },
+            // Identity Fields (Permanent)
+            bio: { type: 'STRING', description: 'The artist\'s biography — their story, background, what makes them unique (Permanent).' },
+            preferences: { type: 'STRING', description: 'The artist\'s creative preferences and style notes (Permanent).' },
+            brand_description: { type: 'STRING', description: 'Visual brand description — aesthetic, vibe, colors, mood (Permanent).' },
+            colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette as hex codes or color names.' },
+            fonts: { type: 'STRING', description: 'Brand fonts or typography preferences.' },
+            negative_prompt: { type: 'STRING', description: 'Things to AVOID in AI-generated content (e.g., "no neon colors, no cartoons").' },
+            career_stage: { type: 'STRING', description: 'Career stage: Emerging (just starting), Rising (building momentum), Professional (established), Legend (industry veteran).' },
+            goals: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Career goals: Touring, Sync Licensing, Grow Fanbase, Label Deal, Brand Partnerships, etc.' },
+
+            // Social & Business (Permanent)
+            social_twitter: { type: 'STRING', description: 'Twitter/X handle (e.g., @artistname).' },
+            social_instagram: { type: 'STRING', description: 'Instagram handle (e.g., @artistname).' },
             social_spotify: { type: 'STRING', description: 'Spotify artist profile URL.' },
             social_soundcloud: { type: 'STRING', description: 'SoundCloud profile URL.' },
             social_bandcamp: { type: 'STRING', description: 'Bandcamp profile URL.' },
             social_beatport: { type: 'STRING', description: 'Beatport artist profile URL.' },
             social_website: { type: 'STRING', description: 'Official website URL.' },
-            pro_affiliation: { type: 'STRING', description: 'Performing Rights Organization (e.g. ASCAP, BMI).' },
-            distributor: { type: 'STRING', description: 'Music Distributor (e.g. DistroKid, Tunecore).' },
-            career_stage: { type: 'STRING', description: 'The artist\'s career stage (e.g., Emerging, Professional, Legend).' },
-            goals: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Specific career goals (e.g., Tour, Sync, Fanbase).' },
+            pro_affiliation: { type: 'STRING', description: 'Performing Rights Organization (ASCAP, BMI, SESAC, PRS, etc.).' },
+            distributor: { type: 'STRING', description: 'Music Distributor (DistroKid, TuneCore, CD Baby, AWAL, etc.).' },
 
-            // Release Fields (Transient)
+            // Release Fields (Transient - changes per release)
             release_title: { type: 'STRING', description: 'Title of the current Single, EP, or Album.' },
-            release_type: { type: 'STRING', description: 'Type of release (Single, EP, Album).' },
-            release_mood: { type: 'STRING', description: 'The specific mood of this release.' },
-            release_themes: { type: 'STRING', description: 'Themes or concepts specific to this release.' },
+            release_type: { type: 'STRING', description: 'Type of release: Single, EP, Album, Remix, Mixtape.' },
+            release_artists: { type: 'STRING', description: 'Artists on this release — solo name, or "Artist feat. Guest" for features/collabs.' },
+            release_genre: { type: 'STRING', description: 'Primary genre of this release (e.g., House, Techno, Hip-Hop, Indie Rock, R&B, Pop).' },
+            release_mood: { type: 'STRING', description: 'The emotional vibe of this release (e.g., Dark, Euphoric, Melancholic, Energetic, Introspective).' },
+            release_themes: { type: 'STRING', description: 'Themes or concepts — what is the song/album ABOUT? (e.g., "late-night heartbreak", "summer freedom").' },
+            release_lyrics: { type: 'STRING', description: 'Key lyrics or the full lyrics of the song (useful for marketing copy and visuals).' },
         },
     },
 };
@@ -172,6 +187,50 @@ const askMultipleChoiceFunction: FunctionDeclaration = {
     },
 };
 
+const shareInsightFunction: FunctionDeclaration = {
+    name: OnboardingTools.ShareInsight,
+    description: 'Share a relevant music industry insight, tip, or observation based on what the artist has shared. Use this to add value and show expertise. Examples: "Spotify playlisting is great, but TikTok is driving 80% of discovery now" or "The sync licensing market is booming for indie artists."',
+    parameters: {
+        type: 'OBJECT',
+        description: 'The insight to share with context.',
+        properties: {
+            insight: { type: 'STRING', description: 'The industry insight or tip to share.' },
+            context: { type: 'STRING', description: 'Why this insight is relevant to this artist (e.g., "Since you mentioned you\'re focused on touring...").' },
+            action_suggestion: { type: 'STRING', description: 'Optional: A specific action the artist could take based on this insight.' },
+        },
+        required: ['insight', 'context'],
+    },
+};
+
+const suggestCreativeDirectionFunction: FunctionDeclaration = {
+    name: OnboardingTools.SuggestCreativeDirection,
+    description: 'Offer a creative direction or campaign idea based on what you\'ve learned about the artist. This shows you\'re actively thinking about their strategy, not just collecting data.',
+    parameters: {
+        type: 'OBJECT',
+        description: 'A creative suggestion for the artist.',
+        properties: {
+            suggestion: { type: 'STRING', description: 'The creative direction or idea (e.g., "Given your dark electronic sound and visual aesthetic, a limited-edition visualizer drop before the single could build serious hype").' },
+            rationale: { type: 'STRING', description: 'Why you think this would work for them specifically.' },
+            examples: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Optional: Reference artists or campaigns that did something similar successfully.' },
+        },
+        required: ['suggestion', 'rationale'],
+    },
+};
+
+const shareDistributorInfoFunction: FunctionDeclaration = {
+    name: OnboardingTools.ShareDistributorInfo,
+    description: `When an artist mentions their distributor, use this tool to show them the specific requirements and pro tips for that distributor. This includes cover art specs, audio format requirements, metadata fields, timeline recommendations, and insider tips. Supported distributors: ${getSupportedDistributors().join(', ')}.`,
+    parameters: {
+        type: 'OBJECT',
+        description: 'The distributor to show requirements for.',
+        properties: {
+            distributor_name: { type: 'STRING', description: 'The name of the distributor (e.g., "DistroKid", "TuneCore", "CD Baby", "AWAL").' },
+            highlight_section: { type: 'STRING', description: 'Optional: Which section to emphasize (cover_art, audio, metadata, timeline, pricing, tips). If not specified, shows a summary.' },
+        },
+        required: ['distributor_name'],
+    },
+};
+
 // --- Helpers ---
 
 export function calculateProfileStatus(profile: UserProfile) {
@@ -197,6 +256,7 @@ export function calculateProfileStatus(profile: UserProfile) {
     const releaseChecks = {
         title: !!releaseDetails.title,
         type: !!releaseDetails.type,
+        genre: !!releaseDetails.genre,
         mood: !!releaseDetails.mood,
         themes: !!releaseDetails.themes,
     };
@@ -221,62 +281,99 @@ export async function runOnboardingConversation(
 
     const { coreMissing, releaseMissing, coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
 
-    const baseInstruction = `You are "indii," the Chief Creative Officer and Intake Manager. 
-    Your goal is to build a layered profile for the artist.
-    
-    **LAYER 1: ARTIST IDENTITY** (Progress: ${coreProgress}%)
-    Missing: [${coreMissing.join(', ').toUpperCase()}]
-    - Who are they? What is their core brand? This rarely changes.
-    - **Career Stage**: Where are they in their journey?
-    - **Goals**: What are they trying to achieve?
+    const baseInstruction = `You are "indii" — a seasoned music industry creative director with 15+ years working with artists from underground scenes to platinum acts. You've seen it all: the bedroom producers who became headliners, the viral moments that changed careers, the artists who burned out and the ones who built empires.
 
-    
-    **LAYER 2: CURRENT RELEASE** (Progress: ${releaseProgress}%)
-    Missing: [${releaseMissing.join(', ').toUpperCase()}]
-    - What are they working on RIGHT NOW? (Single, Album, EP).
-    - This is "The Hook". We need to know about *this specific song/project* to market it.
-    
-    **PROTOCOL:**
-    1. **Prioritize Identity**: If Artist Identity is < 100%, focus there first.
-    2. **Pivot to Release**: Once Identity is solid, say: "Got it. Now, let's talk about your current project. Is it a single or an album?"
-    3. **The "Song"**: If they want to "brag about a song", that goes into **Release Details** (Mood, Themes, Title).
-    4. **Silent Updates**: Call \`updateProfile\` immediately when you get new data, but **DO NOT** say "I have updated your profile" or "I've added that to your bio". This breaks the flow.
-    5. **Stay in Character**: Instead of confirming the data entry, acknowledge the *content* (e.g., "Techno is a powerful choice." or "Just starting out? That's the most exciting time.").
-    6. **Be the Driver**: You know EXACTLY what information is missing (see "MISSING" list). Do not wait for the user to lead.
-       - **Bad**: "Is there anything else you want to tell me?" (Too passive, causes loops).
-       - **Good**: "That covers your style. Now, I need to know about your **Career Stage**. Are you just starting out, or established?"
-       - **Good**: "Great bio. Now, do you have a **Release Title** for your upcoming project?"
-       - **Probing is OK**: It is fine to ask "Tell me more about that" *if* digging into a specific topic (like themes), but afterwards, immediately switch back to the Missing Checklist.
-    7. **Tone**: You are "indii," a visionary Creative Director. You are encouraging, sharp, and curious. Treat the user like a star.
-    8. **Files**: If the user uploads a file, acknowledge it clearly. Use \`addImageAsset\` or \`addTextAssetToKnowledgeBase\` as needed.
-       - **CRITICAL**: When adding images, categorize them correctly (Headshot, Body Shot, Clothing, Logo). Ask who is in the photo or what the clothing item is if not clear.
-       - Example: "Is this a photo of you, or the whole band?" -> Tag with Subject.
-    9. **Interactive UI**: If you need to ask about **Genre**, **Career Stage**, or **Styles**, DO NOT just ask text. Use \`askMultipleChoice\` to show buttons. It's faster for the user.
-       - Example: \`askMultipleChoice("What's your primary genre?", ["House", "Techno", "Hip Hop", "Indie Rock"])\`
-    10. **Help the User**: If the user says "I don't know" or seems stuck, **OFFER SUGGESTIONS**. Do not just wait.
-        - Example: "If you're unsure about your bio, tell me a few artists you like, and I'll draft one for you."
-    11. **Allow Skips**: If the user wants to skip a question (e.g., "I don't have a release yet" or "Skip this"), **ACCEPT IT IMMEDIATELY**.
-        - Say: "No problem, we can come back to that later."
-        - Then move to the next topic. DO NOT annoy them by asking again.
+**YOUR PERSONALITY:**
+- You speak like someone who's been backstage, in the studio, and in the boardroom
+- Sharp, witty, occasionally irreverent — but never condescending
+- You get genuinely excited about good ideas and aren't afraid to show it
+- You ask the questions a great A&R or manager would ask
+- You reference real industry dynamics, not generic advice
+- You have opinions (tastefully expressed) and aren't just a yes-bot
+- You curse occasionally when excited (tastefully: "damn," "hell yes")
+- You use music industry vernacular naturally: "drop," "rollout," "sync," "DSPs," "EPK," "press kit"
 
-    Only call \`finishOnboarding\` when BOTH layers are robust.`;
+**YOUR INTERVIEW STYLE:**
+- **Open with energy**: Not clinical questions. More like meeting an artist at a label showcase.
+- **Callback technique**: Reference what they've already told you. "You mentioned techno earlier — is this release staying in that lane or are you experimenting?"
+- **Probe the interesting bits**: If they say something compelling, dig in before moving on. "Wait, you opened for Disclosure? How'd that shape your sound?"
+- **Industry context**: Explain WHY you're asking. "I'm asking about your visual brand because Spotify Canvas and TikTok are visual-first now."
+- **React authentically**:
+  - To techno/house: "Berlin vibes. I respect that."
+  - To indie/folk: "There's always room for authenticity in a world of autotune."
+  - To hip-hop: "The culture is everything. Who are your influences?"
+  - To emerging artists: "This is the best time to be starting. The gatekeepers are gone."
+  - To established artists: "Let's make sure the world sees what you've built."
+- **Push gently**: If answers are vague, ask for specifics. "When you say 'chill vibes,' do you mean downtempo electronic or more acoustic lo-fi?"
+
+**CONVERSATION FLOW:**
+- You're building TWO layers of understanding:
+
+**LAYER 1: ARTIST IDENTITY** (${coreProgress}% complete)
+${coreMissing.length > 0 ? `Still need: ${coreMissing.map(m => m.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}` : '✓ Identity locked in'}
+- The permanent DNA: Who they ARE, not just what they're releasing
+- Career stage, goals, visual brand, social presence, the origin story
+
+**LAYER 2: CURRENT RELEASE** (${releaseProgress}% complete)
+${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}` : '✓ Release details captured'}
+- The project they're promoting NOW — this drives the campaign
+- Title, type (single/EP/album), mood, themes, the story of THIS release
+
+**INTERVIEW TECHNIQUES:**
+1. **Don't interrogate — converse**: Each question should flow from the last answer
+2. **Share micro-insights**: "Genre blending is smart — algorithms actually reward that now"
+3. **Use callbacks**: "Earlier you said you're focused on touring — does this release have that live energy?"
+4. **Validate artistic choices**: "Going independent instead of signing? That takes guts. It's also the smart move if you've got the hustle."
+5. **Read between the lines**: If someone's vague about their career stage, they might be embarrassed — make it comfortable
+6. **Name-drop context**: "Billie Eilish started in a bedroom. Where do you create?"
+
+**RULES:**
+- Call \`updateProfile\` SILENTLY when you get info — never say "I've updated your profile"
+- React to the CONTENT, not the data entry: "Damn, that's a strong hook" not "I've saved your release title"
+- Use \`askMultipleChoice\` for genre, career stage, goals — it's faster and feels more interactive
+- If they upload an image, actually REACT to it: "This shot has main character energy" or "The lighting here is moody — is that the vibe for this release?"
+- If they're stuck, don't just wait — offer creative starters: "Tell me 3 artists you'd want to open for, and I'll help draft your bio"
+- Accept skips gracefully: "Totally fine, we'll circle back" — then MOVE ON
+- Keep responses punchy. You're not writing essays. 2-4 sentences max unless diving deep.
+
+**NEVER DO:**
+- Sound like a form or a chatbot
+- Say "Great!" or "Awesome!" at the start of every response
+- Ask multiple questions at once
+- Repeat questions they've already answered
+- Be generic — reference THEIR specific answers
+
+Only call \`finishOnboarding\` when both layers feel solid.`;
 
     // Safety check for update context strings
-    const safeBio = userProfile.bio ? userProfile.bio.substring(0, 30) : "";
-    const safeTitle = userProfile.brandKit?.releaseDetails?.title || "Untitled";
+    const safeBio = userProfile.bio ? userProfile.bio.substring(0, 50) : "";
+    const safeTitle = userProfile.brandKit?.releaseDetails?.title || "";
+    const safeCareerStage = userProfile.careerStage || "unknown";
 
-    const updateInstruction = `You are "indii," helping the user update their profile.
-    
-    CURRENT CONTEXT:
-    Identity: "${safeBio}..."
-    Active Release: "${safeTitle}"
-    
-    **USER INTENT:**
-    - If they say "I have a new song/album", treat this as a **Release Context Switch**. Update \`release_title\`, \`release_type\`, etc.
-    - If they say "I'm rebranding", update \`bio\`, \`brand_description\`, etc.
-    
-    ALWAYS preserve the layer they aren't changing.
-    `;
+    const updateInstruction = `You are "indii" — the same seasoned creative director, checking back in with an artist you already know.
+
+**CURRENT CONTEXT:**
+- Their bio starts: "${safeBio}..."
+- Career stage: ${safeCareerStage}
+- ${safeTitle ? `Active release: "${safeTitle}"` : "No active release on file"}
+
+**YOUR APPROACH:**
+You're not starting from scratch — you know this artist. Act like a manager catching up with a client:
+- "Back already? What's new — new music or new direction?"
+- "Last time we talked you were working on [X]. How'd that turn out?"
+
+**DETECT INTENT:**
+- **"New release"** → They're switching release context. Get title, type, mood, themes for the NEW project.
+- **"Rebranding"** or **"new direction"** → Identity layer is changing. Update bio, brand description, visuals.
+- **"Just updating socials"** → Quick update. Get it done, don't over-complicate.
+
+**RULES:**
+- Don't repeat questions about data you already have
+- Reference their existing profile naturally
+- Keep the same personality — sharp, music-savvy, not robotic
+- Silent updates, authentic reactions
+
+ALWAYS preserve what they're NOT changing.`;
 
     const systemInstruction = mode === 'onboarding' ? baseInstruction : updateInstruction;
 
@@ -323,6 +420,8 @@ export async function runOnboardingConversation(
                     generateProfileSectionFunction,
                     finishOnboardingFunction,
                     askMultipleChoiceFunction,
+                    shareInsightFunction,
+                    suggestCreativeDirectionFunction,
                 ]
             }],
             config: {
@@ -366,16 +465,16 @@ export function processFunctionCalls(
 
                 // Handle BrandKit (Identity + Release)
                 const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor;
-                const hasReleaseUpdates = args.release_title || args.release_type || args.release_mood || args.release_themes;
+                const hasReleaseUpdates = args.release_title || args.release_type || args.release_artists || args.release_genre || args.release_mood || args.release_themes || args.release_lyrics;
 
                 if (hasBrandUpdates || hasReleaseUpdates) {
                     const newBrandKit = { ...updatedProfile.brandKit };
 
                     // Identity Updates
-                    if (args.brand_description) newBrandKit.brandDescription = args.brand_description;
-                    if (args.colors) newBrandKit.colors = args.colors;
-                    if (args.fonts) newBrandKit.fonts = args.fonts;
-                    if (args.negative_prompt) newBrandKit.negativePrompt = args.negative_prompt;
+                    if (args.brand_description) { newBrandKit.brandDescription = args.brand_description; updates.push('Brand Description'); }
+                    if (args.colors) { newBrandKit.colors = args.colors; updates.push('Colors'); }
+                    if (args.fonts) { newBrandKit.fonts = args.fonts; updates.push('Fonts'); }
+                    if (args.negative_prompt) { newBrandKit.negativePrompt = args.negative_prompt; updates.push('Negative Prompt'); }
 
                     if (args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor) {
                         newBrandKit.socials = {
@@ -390,7 +489,7 @@ export function processFunctionCalls(
                             ...(args.pro_affiliation && { pro: args.pro_affiliation }),
                             ...(args.distributor && { distributor: args.distributor }),
                         };
-                        updates.push('Socials & Pro Details');
+                        updates.push('Socials');
                     }
 
                     // Release Updates
@@ -399,8 +498,11 @@ export function processFunctionCalls(
                             ...newBrandKit.releaseDetails,
                             ...(args.release_title && { title: args.release_title }),
                             ...(args.release_type && { type: args.release_type }),
+                            ...(args.release_artists && { artists: args.release_artists }),
+                            ...(args.release_genre && { genre: args.release_genre }),
                             ...(args.release_mood && { mood: args.release_mood }),
                             ...(args.release_themes && { themes: args.release_themes }),
+                            ...(args.release_lyrics && { lyrics: args.release_lyrics }),
                         };
                         updates.push('Release Details');
                     }

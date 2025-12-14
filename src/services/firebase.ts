@@ -6,7 +6,7 @@ import { getAuth } from 'firebase/auth';
 import { env } from '../config/env';
 
 const firebaseConfig = {
-    apiKey: env.apiKey || "AIzaSyD7bmREk0yo8-WtJIngr7ek9U1-BC7BTC0",
+    apiKey: env.apiKey || "AQ.Ab8RN6IufHeAJIV_X8b-5-uGlIZgIMxZmNy4Je2rg-scTsIPfA",
     authDomain: "indiios-v-1-1.firebaseapp.com",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",

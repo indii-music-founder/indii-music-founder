@@ -6,12 +6,12 @@ export function configureSecurity(session: Session) {
         const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
 
         const scriptSrc = isDev
-            ? "'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com http://localhost:5173"
+            ? "* 'unsafe-inline' 'unsafe-eval'"
             : "'self' https://apis.google.com https://*.firebaseapp.com";
 
-        const defaultSrc = isDev ? "'self'" : "'none'";
+        const defaultSrc = isDev ? "*" : "'none'";
         const styleSrc = isDev
-            ? "'self' 'unsafe-inline' https://fonts.googleapis.com http://localhost:5173"
+            ? "* 'unsafe-inline'"
             : "'self' 'unsafe-inline' https://fonts.googleapis.com";
 
         callback({
@@ -22,14 +22,14 @@ export function configureSecurity(session: Session) {
                         `default-src ${defaultSrc}`,
                         `script-src ${scriptSrc}`,
                         `style-src ${styleSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:5173",
-                        "font-src 'self' https://fonts.gstatic.com http://localhost:5173",
-                        "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://us-central1-indiios-v-1-1.cloudfunctions.net http://localhost:5173 ws://localhost:5173",
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242",
+                        "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
+                        "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://us-central1-indiios-v-1-1.cloudfunctions.net http://localhost:4242 ws://localhost:4242",
                         "worker-src 'self' blob:"
                     ].join('; ')
                 ],
                 'Cross-Origin-Opener-Policy': ['same-origin-allow-popups'],
-                'Cross-Origin-Embedder-Policy': ['require-corp']
+                'Cross-Origin-Embedder-Policy': ['unsafe-none']
             }
         });
     });
