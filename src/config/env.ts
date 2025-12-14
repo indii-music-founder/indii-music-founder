@@ -11,7 +11,8 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
 });
 
 const processEnv = {
-    apiKey: import.meta.env.VITE_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_API_KEY : undefined),
+    apiKey: "AIzaSyDQyNRsArXlKshdVSSz8xOH3Ar0ntvbS3U", // Force update
+    // apiKey: import.meta.env.VITE_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_API_KEY : undefined),
     projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_PROJECT_ID : undefined),
     location: import.meta.env.VITE_VERTEX_LOCATION || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_LOCATION : undefined),
     useVertex: (import.meta.env.VITE_USE_VERTEX || (typeof process !== 'undefined' ? process.env.VITE_USE_VERTEX : undefined)) === 'true',
