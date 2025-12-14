@@ -72,6 +72,7 @@ export default function OnboardingPage() {
             const filePromises = Array.from(e.target.files).map(file => {
                 return new Promise<ConversationFile>((resolve) => {
                     const isImage = file.type.startsWith('image/');
+                    const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a'].some(ext => file.name.toLowerCase().endsWith(ext));
                     const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
 
                     if (isImage) {
@@ -86,6 +87,15 @@ export default function OnboardingPage() {
                             });
                         };
                         reader.readAsDataURL(file);
+                    } else if (isAudio) {
+                        // Audio files - we only extract metadata, never store the actual audio
+                        resolve({
+                            id: uuidv4(),
+                            file,
+                            preview: '',
+                            type: 'audio',
+                            content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
+                        });
                     } else if (isText) {
                         file.text().then(text => {
                             resolve({
@@ -169,7 +179,13 @@ export default function OnboardingPage() {
         } catch (error: any) {
             console.error("Full Onboarding Error:", error);
             const errorMessage = error.message || JSON.stringify(error);
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: `Sorry, I ran into a glitch: ${errorMessage}. Can you say that again?` }] }]);
+            const errorResponses = [
+                `Hmm, something went sideways on my end. Mind trying that again?`,
+                `Tech hiccup — my bad. Hit me with that one more time?`,
+                `Lost the thread there for a second. What were you saying?`,
+                `Connection blip. Run that by me again?`,
+            ];
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] }] }]);
         } finally {
             setIsProcessing(false);
         }
@@ -487,7 +503,7 @@ export default function OnboardingPage() {
                             <div className="bg-[#161b22] text-gray-400 p-4 rounded-2xl rounded-tl-sm border border-gray-800 flex items-center gap-2">
                                 <Sparkles size={16} className="animate-spin" />
                                 <span className="text-sm animate-pulse">
-                                    {['indii is thinking...', 'Processing that...', 'Let me think about this...', 'Interesting...'][Math.floor(Math.random() * 4)]}
+                                    {['Hang on...', 'Let me think...', 'One sec...', 'Mmm...', 'Okay...'][Math.floor(Math.random() * 5)]}
                                 </span>
                             </div>
                         </div>
@@ -502,6 +518,10 @@ export default function OnboardingPage() {
                             <div key={file.id} className="relative group flex-shrink-0 w-16 h-16 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                                 {file.type === 'image' ? (
                                     <img src={file.preview} alt="preview" className="w-full h-full object-cover" />
+                                ) : file.type === 'audio' ? (
+                                    <div className="w-full h-full flex items-center justify-center text-purple-400 bg-purple-500/10">
+                                        <Music size={24} />
+                                    </div>
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                                         <FileText size={24} />
@@ -527,9 +547,9 @@ export default function OnboardingPage() {
                                 {[
                                     "I'm an electronic producer from...",
                                     "I'm working on my debut single",
-                                    "I've been making music for 5 years",
+                                    "Let me upload a track so you can hear it",
                                     "My sound is influenced by...",
-                                    "I want to tour more this year"
+                                    "I've got some press photos to share"
                                 ].slice(0, 3).map((suggestion) => (
                                     <button
                                         key={suggestion}
@@ -553,7 +573,7 @@ export default function OnboardingPage() {
                             onChange={handleFileSelect}
                             className="hidden"
                             multiple
-                            accept="image/*,.txt,.md,.json"
+                            accept="image/*,.txt,.md,.json,audio/*,.mp3,.wav,.flac,.aiff,.m4a"
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../core/store';
 import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '../../services/onboarding/onboardingService';
-import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '../../modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,6 +44,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             const filePromises = Array.from(e.target.files).map(file => {
                 return new Promise<ConversationFile>((resolve) => {
                     const isImage = file.type.startsWith('image/');
+                    const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a'].some(ext => file.name.toLowerCase().endsWith(ext));
                     const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
 
                     if (isImage) {
@@ -58,6 +59,15 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             });
                         };
                         reader.readAsDataURL(file);
+                    } else if (isAudio) {
+                        // Audio files - we only extract metadata, never store the actual audio
+                        resolve({
+                            id: uuidv4(),
+                            file,
+                            preview: '',
+                            type: 'audio',
+                            content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
+                        });
                     } else if (isText) {
                         file.text().then(text => {
                             resolve({
@@ -134,8 +144,13 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
         } catch (error: any) {
             console.error("Full Onboarding Error:", error);
             // toast.error("Connection glitch. Please try again."); // Assuming toast is available or add it
-            const errorMessage = error.message || JSON.stringify(error);
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: `Sorry, I ran into a glitch: ${errorMessage}. Can you say that again?` }] }]);
+            const errorResponses = [
+                `Hmm, something went sideways on my end. Mind trying that again?`,
+                `Tech hiccup — my bad. Hit me with that one more time?`,
+                `Lost the thread there for a second. What were you saying?`,
+                `Connection blip. Run that by me again?`,
+            ];
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] }] }]);
         } finally {
             setIsProcessing(false);
         }
@@ -179,7 +194,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                         {isProcessing && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-800 text-gray-400 p-3 rounded-xl rounded-tl-none animate-pulse">
-                                    indii is thinking...
+                                    {['Hang on...', 'Let me think...', 'One sec...', 'Mmm...', 'Okay...'][Math.floor(Math.random() * 5)]}
                                 </div>
                             </div>
                         )}
@@ -193,6 +208,10 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 <div key={file.id} className="relative group flex-shrink-0 w-16 h-16 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                                     {file.type === 'image' ? (
                                         <img src={file.preview} alt="preview" className="w-full h-full object-cover" />
+                                    ) : file.type === 'audio' ? (
+                                        <div className="w-full h-full flex items-center justify-center text-purple-400 bg-purple-500/10">
+                                            <Music size={24} />
+                                        </div>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-gray-400">
                                             <FileText size={24} />
@@ -217,7 +236,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onChange={handleFileSelect}
                                 className="hidden"
                                 multiple
-                                accept="image/*,.txt,.md,.json"
+                                accept="image/*,.txt,.md,.json,audio/*,.mp3,.wav,.flac,.aiff,.m4a"
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}

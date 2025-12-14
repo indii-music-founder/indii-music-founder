@@ -79,7 +79,7 @@ const updateProfileFunction: FunctionDeclaration = {
             // Identity Fields (Permanent)
             bio: { type: 'STRING', description: 'The artist\'s biography — their story, background, what makes them unique (Permanent).' },
             preferences: { type: 'STRING', description: 'The artist\'s creative preferences and style notes (Permanent).' },
-            brand_description: { type: 'STRING', description: 'Visual brand description — aesthetic, vibe, colors, mood (Permanent).' },
+            brand_description: { type: 'STRING', description: 'Visual brand description — aesthetic, style, colors, mood (Permanent).' },
             colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette as hex codes or color names.' },
             fonts: { type: 'STRING', description: 'Brand fonts or typography preferences.' },
             negative_prompt: { type: 'STRING', description: 'Things to AVOID in AI-generated content (e.g., "no neon colors, no cartoons").' },
@@ -102,7 +102,7 @@ const updateProfileFunction: FunctionDeclaration = {
             release_type: { type: 'STRING', description: 'Type of release: Single, EP, Album, Remix, Mixtape.' },
             release_artists: { type: 'STRING', description: 'Artists on this release — solo name, or "Artist feat. Guest" for features/collabs.' },
             release_genre: { type: 'STRING', description: 'Primary genre of this release (e.g., House, Techno, Hip-Hop, Indie Rock, R&B, Pop).' },
-            release_mood: { type: 'STRING', description: 'The emotional vibe of this release (e.g., Dark, Euphoric, Melancholic, Energetic, Introspective).' },
+            release_mood: { type: 'STRING', description: 'The emotional energy of this release (e.g., Dark, Euphoric, Melancholic, Energetic, Introspective).' },
             release_themes: { type: 'STRING', description: 'Themes or concepts — what is the song/album ABOUT? (e.g., "late-night heartbreak", "summer freedom").' },
             release_lyrics: { type: 'STRING', description: 'Key lyrics or the full lyrics of the song (useful for marketing copy and visuals).' },
         },
@@ -299,12 +299,12 @@ export async function runOnboardingConversation(
 - **Probe the interesting bits**: If they say something compelling, dig in before moving on. "Wait, you opened for Disclosure? How'd that shape your sound?"
 - **Industry context**: Explain WHY you're asking. "I'm asking about your visual brand because Spotify Canvas and TikTok are visual-first now."
 - **React authentically**:
-  - To techno/house: "Berlin vibes. I respect that."
+  - To techno/house: "Berlin energy. I respect that."
   - To indie/folk: "There's always room for authenticity in a world of autotune."
   - To hip-hop: "The culture is everything. Who are your influences?"
   - To emerging artists: "This is the best time to be starting. The gatekeepers are gone."
   - To established artists: "Let's make sure the world sees what you've built."
-- **Push gently**: If answers are vague, ask for specifics. "When you say 'chill vibes,' do you mean downtempo electronic or more acoustic lo-fi?"
+- **Push gently**: If answers are vague, ask for specifics. "When you say 'chill,' do you mean downtempo electronic or more acoustic lo-fi?"
 
 **CONVERSATION FLOW:**
 - You're building TWO layers of understanding:
@@ -331,11 +331,12 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 - Call \`updateProfile\` SILENTLY when you get info — never say "I've updated your profile"
 - React to the CONTENT, not the data entry: "Damn, that's a strong hook" not "I've saved your release title"
 - Use \`askMultipleChoice\` for genre, career stage, goals — it's faster and feels more interactive
-- If they upload an image, actually REACT to it: "This shot has main character energy" or "The lighting here is moody — is that the vibe for this release?"
+- If they upload an image, actually REACT to it: "This shot has main character energy" or "The lighting here is moody — is that the direction for this release?"
 - If they're stuck, don't just wait — offer creative starters: "Tell me 3 artists you'd want to open for, and I'll help draft your bio"
 - Accept skips gracefully: "Totally fine, we'll circle back" — then MOVE ON
 - Keep responses punchy. You're not writing essays. 2-4 sentences max unless diving deep.
 - **DISTRIBUTOR INTEL**: When an artist mentions their distributor (DistroKid, TuneCore, CD Baby, AWAL, Ditto, UnitedMasters, Amuse), IMMEDIATELY use \`shareDistributorInfo\` to show them the requirements and pro tips. This is valuable intel — cover art specs, audio formats, metadata requirements, timeline recommendations. Artists NEED this. Save their distributor to the profile too.
+- **FILE UPLOADS**: Naturally invite uploads when relevant. They can attach images (press photos, logos, reference art), documents (bio, press kit, lyrics), and audio files. If they upload music, acknowledge it and let them know: "I'll pull some metadata from this to understand the track better — I don't store your audio anywhere, it stays on your device." React to audio uploads with genuine interest: "Nice, let me take a look at what you're working with."
 
 **NEVER DO:**
 - Sound like a form or a chatbot
@@ -578,7 +579,7 @@ const topicContext: Record<TopicKey, { name: string; why: string; examples: stri
     brandDescription: {
         name: 'your visual identity',
         why: "Consistent visuals are how fans recognize you across platforms — it's your visual signature",
-        examples: ["Color palette vibes", "Photography style", "The aesthetic that matches your sound"]
+        examples: ["Color palette", "Photography style", "The aesthetic that matches your sound"]
     },
     socials: {
         name: 'your social presence',
@@ -588,7 +589,7 @@ const topicContext: Record<TopicKey, { name: string; why: string; examples: stri
     visuals: {
         name: 'visual assets',
         why: "Photos and logos let me generate on-brand content without guessing",
-        examples: ["A headshot or press photo", "Your logo if you have one", "Reference images you vibe with"]
+        examples: ["A headshot or press photo", "Your logo if you have one", "Reference images that inspire you"]
     },
     careerStage: {
         name: 'where you are in your journey',
@@ -616,8 +617,8 @@ const topicContext: Record<TopicKey, { name: string; why: string; examples: stri
         examples: ["Primary genre", "Subgenre if you're specific", "Or genre-fluid if you blend"]
     },
     mood: {
-        name: 'the vibe',
-        why: "Mood shapes everything from cover art direction to caption tone — euphoric needs different energy than melancholic",
+        name: 'the energy',
+        why: "The mood shapes everything from cover art direction to caption tone — high-energy needs different treatment than something introspective",
         examples: ["Dark and moody", "Euphoric and uplifting", "Introspective", "High-energy"]
     },
     themes: {
@@ -727,15 +728,16 @@ export function generateNaturalFallback(
 }
 
 // Generates a fallback when the AI returns nothing (edge case)
+// These pivot to a question-answer format to get the conversation moving
 export function generateEmptyResponseFallback(): string {
     const responses = [
-        "Hmm, I'm not sure I followed that. Can you say more?",
-        "I want to make sure I got that right — can you elaborate?",
-        "Tell me more about that.",
-        "Can you expand on that a bit?",
-        "I'm listening — keep going.",
-        "Interesting. What else?",
-        "Walk me through that a bit more.",
+        "Okay let me ask you this — what's the ONE thing you want people to feel when they hear your music?",
+        "Alright, different angle — if someone asked your biggest fan to describe your sound, what would they say?",
+        "Let me put it another way — are you more the high-energy, get-people-moving type or more introspective and chill?",
+        "Here's what would help me — tell me about the last song you released. What was it called, what was the mood?",
+        "Let me try this differently — if you had to pick three artists that influenced your sound, who would they be?",
+        "Let me come at this from another direction — what's the project you're working on right now?",
+        "Okay, let me ask something simpler — are you working on a single, an EP, or a full album?",
     ];
     return randomPick(responses);
 }
