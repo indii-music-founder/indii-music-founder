@@ -40,7 +40,7 @@ class MemoryService {
         try {
             const result = await AI.embedContent({
                 model: this.embeddingModel,
-                content: { parts: [{ text }] }
+                content: { role: 'user', parts: [{ text }] }
             });
             // Extract embedding from response
             const embedding = (result as any)?.embedding?.values;

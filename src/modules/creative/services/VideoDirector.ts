@@ -1,5 +1,7 @@
 import { AI } from '@/services/ai/AIService';
-import { useStore } from '@/core/store';
+import { useStore, HistoryItem } from '@/core/store';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -39,10 +41,10 @@ export class VideoDirector {
                     config: { responseMimeType: 'application/json' }
                 });
 
-                const feedback = AI.parseJSON(critique.text());
+                const feedback = AI.parseJSON(critique.text()) as { score?: number; refined_prompt?: string };
                 console.log("🎬 Director Feedback:", feedback);
 
-                if (feedback.score < 8) {
+                if (typeof feedback.score === 'number' && feedback.score < 8) {
                     console.log("🎬 Director Rejected. Reshooting...");
                     // 4. Reshoot
                     // Note: We need to call the generation service again. 
@@ -99,5 +101,18 @@ export class VideoDirector {
             };
             video.onerror = () => resolve(null);
         });
+    }
+
+    /**
+     * Trigger video generation from an image using Veo
+     */
+    static async triggerAnimation(item: HistoryItem): Promise<{ success: boolean; error?: string }> {
+        const triggerVideoGeneration = httpsCallable(functions, 'triggerVideoGeneration');
+        const response = await triggerVideoGeneration({
+            image: item.url,
+            prompt: item.prompt || 'Animate this scene',
+            model: 'veo-3.1-generate-preview'
+        });
+        return response.data as { success: boolean; error?: string };
     }
 }

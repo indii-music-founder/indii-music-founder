@@ -160,7 +160,7 @@ describe('VideoTools', () => {
                 prompt: 'chain video (Part 2, continuation)'
             });
 
-            expect(result).toContain('Geneated 2 video segments');
+            expect(result).toContain('Generated 2 segments');
         });
     });
 });

@@ -1,28 +1,77 @@
-// Helper to clean JSON (remove markdown blocks)
+import { env } from '@/config/env';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { endpointService } from '@/core/config/EndpointService';
+import {
+    Content,
+    ContentPart,
+    TextPart,
+    FunctionCallPart,
+    GenerateContentResponse,
+    GenerateVideoRequest,
+    GenerateVideoResponse,
+    GenerateImageRequest,
+    GenerateImageResponse,
+    GenerationConfig,
+    ToolConfig,
+    WrappedResponse,
+    Candidate,
+    PromptFeedback
+} from '@/shared/types/ai.dto';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Removes markdown code block wrappers from JSON strings
+ */
 function cleanJSON(text: string): string {
     return text.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
 }
 
-// Helper to wrap raw JSON response to match GoogleGenerativeAI SDK response format
-function wrapResponse(rawResponse: any) {
+/**
+ * Type guard to check if a content part is a TextPart
+ */
+function isTextPart(part: ContentPart): part is TextPart {
+    return 'text' in part;
+}
+
+/**
+ * Type guard to check if a content part is a FunctionCallPart
+ */
+function isFunctionCallPart(part: ContentPart): part is FunctionCallPart {
+    return 'functionCall' in part;
+}
+
+/**
+ * Wraps raw API response to provide consistent accessor methods
+ */
+function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
     return {
         response: rawResponse,
-        text: () => {
-            if (rawResponse.candidates && rawResponse.candidates.length > 0) {
-                const candidate = rawResponse.candidates[0];
-                if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-                    return candidate.content.parts[0].text;
+        text: (): string => {
+            const candidates = rawResponse.candidates;
+            if (candidates && candidates.length > 0) {
+                const candidate = candidates[0];
+                if (candidate.content?.parts?.length > 0) {
+                    const firstPart = candidate.content.parts[0];
+                    if (isTextPart(firstPart)) {
+                        return firstPart.text;
+                    }
                 }
             }
-            return "";
+            return '';
         },
-        functionCalls: () => {
-            if (rawResponse.candidates && rawResponse.candidates.length > 0) {
-                const candidate = rawResponse.candidates[0];
-                if (candidate.content && candidate.content.parts) {
+        functionCalls: (): FunctionCallPart['functionCall'][] => {
+            const candidates = rawResponse.candidates;
+            if (candidates && candidates.length > 0) {
+                const candidate = candidates[0];
+                if (candidate.content?.parts) {
                     return candidate.content.parts
-                        .filter((p: any) => p.functionCall)
-                        .map((p: any) => p.functionCall);
+                        .filter(isFunctionCallPart)
+                        .map((p) => p.functionCall);
                 }
             }
             return [];
@@ -30,19 +79,66 @@ function wrapResponse(rawResponse: any) {
     };
 }
 
-import { env } from '@/config/env';
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
-import { endpointService } from '@/core/config/EndpointService';
-import { GenerateContentRequest, GenerateContentResponse, GenerateVideoRequest, GenerateVideoResponse, GenerateImageRequest, GenerateImageResponse } from '@/shared/types/ai.dto';
-import { AppErrorCode } from '@/shared/types/errors';
+// ============================================================================
+// Types for AIService
+// ============================================================================
+
+interface GenerateContentOptions {
+    model: string;
+    contents: Content | Content[];
+    config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: ToolConfig[];
+}
+
+interface GenerateStreamOptions {
+    model: string;
+    contents: Content[];
+    config?: GenerationConfig;
+}
+
+interface GenerateVideoOptions {
+    model: string;
+    prompt: string;
+    image?: { imageBytes: string; mimeType: string };
+    config?: GenerationConfig & {
+        aspectRatio?: string;
+        durationSeconds?: number;
+    };
+}
+
+interface GenerateImageOptions {
+    model: string;
+    prompt: string;
+    config?: GenerationConfig & {
+        numberOfImages?: number;
+        aspectRatio?: string;
+        negativePrompt?: string;
+    };
+}
+
+interface EmbedContentOptions {
+    model: string;
+    content: Content;
+}
+
+interface StreamChunk {
+    text: () => string;
+}
+
+interface RetryableError extends Error {
+    code?: string;
+}
+
+// ============================================================================
+// AIService Class
+// ============================================================================
 
 export class AIService {
-    private apiKey: string;
-    private projectId?: string;
-    private location?: string;
-    private useVertex: boolean;
-
+    private readonly apiKey: string;
+    private readonly projectId?: string;
+    private readonly location?: string;
+    private readonly useVertex: boolean;
 
     constructor() {
         this.apiKey = env.apiKey;
@@ -51,83 +147,114 @@ export class AIService {
         this.useVertex = env.useVertex;
 
         if (!this.apiKey && !this.projectId) {
-            console.warn("Missing VITE_API_KEY or VITE_VERTEX_PROJECT_ID");
+            console.warn('[AIService] Missing VITE_API_KEY or VITE_VERTEX_PROJECT_ID');
         }
     }
 
-    async generateContent(options: {
-        model: string;
-        contents: { role: string; parts: any[] } | { role: string; parts: any[] }[];
-        config?: Record<string, unknown>;
-        systemInstruction?: string;
-        tools?: any[];
-    }) {
+    /**
+     * Generate content using Google Generative AI SDK
+     */
+    async generateContent(options: GenerateContentOptions): Promise<WrappedResponse> {
         return this.withRetry(async () => {
             try {
-                // EMERGENCY PIVOT: Backend is broken/missing. Using Client SDK directly.
-                const { GoogleGenerativeAI } = await import("@google/generative-ai");
+                const { GoogleGenerativeAI } = await import('@google/generative-ai');
                 const genAI = new GoogleGenerativeAI(this.apiKey);
 
                 const model = genAI.getGenerativeModel({
                     model: options.model,
                     systemInstruction: options.systemInstruction,
-                    tools: options.tools,
-                    ...options.config // formatting safety 
+                    tools: options.tools as any,
+                    ...options.config
                 });
 
-                // The SDK expects contents in a specific format.
-                // Our internal format is compatible, but let's ensure type safety if needed.
-                // Wrap contents in a request object to match the GenerateContentRequest interface
-                // required by the Google Generative AI SDK for multi-turn history.
-                const generateRequest = {
-                    contents: Array.isArray(options.contents) ? options.contents : [options.contents]
+                const contents = Array.isArray(options.contents)
+                    ? options.contents
+                    : [options.contents];
+
+                const result = await model.generateContent({ contents });
+                const response = result.response;
+
+                // Map SDK response to our typed structure
+                const mappedResponse: GenerateContentResponse = {
+                    candidates: response.candidates?.map((c): Candidate => ({
+                        content: {
+                            role: c.content?.role ?? 'model',
+                            parts: (c.content?.parts ?? []).map((p): ContentPart => {
+                                if ('text' in p && p.text) {
+                                    return { text: p.text };
+                                }
+                                if ('functionCall' in p && p.functionCall) {
+                                    return {
+                                        functionCall: {
+                                            name: p.functionCall.name,
+                                            args: p.functionCall.args as Record<string, unknown>
+                                        }
+                                    };
+                                }
+                                return { text: '' };
+                            })
+                        },
+                        finishReason: c.finishReason as Candidate['finishReason'],
+                        safetyRatings: c.safetyRatings?.map(r => ({
+                            category: r.category,
+                            probability: r.probability,
+                            blocked: false
+                        })),
+                        index: c.index
+                    })),
+                    promptFeedback: response.promptFeedback ? {
+                        blockReason: response.promptFeedback.blockReason,
+                        safetyRatings: response.promptFeedback.safetyRatings?.map(r => ({
+                            category: r.category,
+                            probability: r.probability
+                        }))
+                    } : undefined
                 };
 
-                const result = await model.generateContent(generateRequest as any);
-                const response = await result.response;
+                return wrapResponse(mappedResponse);
 
-                // The SDK returns a helper object, but our wrapResponse expects the raw data structure.
-                // We can extract the raw candidates from the response object.
-                // response.candidates is accessible.
-
-                return wrapResponse({
-                    candidates: response.candidates,
-                    promptFeedback: response.promptFeedback
-                });
-
-            } catch (error: any) {
-                console.error("Generate Content (Client SDK) Failed:", error);
-                throw new Error(`Generate Content Failed: ${error.message}`);
+            } catch (error) {
+                const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+                console.error('[AIService] Generate Content Failed:', err.message);
+                throw err;
             }
         });
     }
 
-    private async withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+    /**
+     * Retry logic with exponential backoff for transient errors
+     */
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        retries = 3,
+        delay = 1000
+    ): Promise<T> {
         try {
             return await operation();
-        } catch (error: any) {
-            // Check for retryable errors: 429 (Resource Exhausted), 503 (Unavailable), or specific app codes
+        } catch (error) {
+            const err = error as RetryableError;
+            const errorMessage = err.message ?? '';
+
             const isRetryable =
-                error.code === 'resource-exhausted' ||
-                error.code === 'unavailable' ||
-                error.message.includes('QUOTA_EXCEEDED') ||
-                error.message.includes('503') ||
-                error.message.includes('429');
+                err.code === 'resource-exhausted' ||
+                err.code === 'unavailable' ||
+                errorMessage.includes('QUOTA_EXCEEDED') ||
+                errorMessage.includes('503') ||
+                errorMessage.includes('429');
 
             if (retries > 0 && isRetryable) {
                 console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
                 await new Promise(resolve => setTimeout(resolve, delay));
-                return this.withRetry(operation, retries - 1, delay * 2); // Exponential backoff
+                return this.withRetry(operation, retries - 1, delay * 2);
             }
             throw error;
         }
     }
 
-    async generateContentStream(options: {
-        model: string;
-        contents: { role: string; parts: { text: string }[] }[];
-        config?: Record<string, unknown>;
-    }) {
+    /**
+     * Generate content with streaming response
+     */
+    async generateContentStream(options: GenerateStreamOptions): Promise<ReadableStream<StreamChunk>> {
         const functionUrl = endpointService.getFunctionUrl('generateContentStream');
 
         const response = await this.withRetry(() => fetch(functionUrl, {
@@ -141,15 +268,21 @@ export class AIService {
         }));
 
         if (!response.ok) {
-            throw new Error(`Generate Content Stream Failed: ${await response.text()}`);
+            const errorText = await response.text();
+            throw new AppException(
+                AppErrorCode.NETWORK_ERROR,
+                `Generate Content Stream Failed: ${errorText}`
+            );
         }
 
-        if (!response.body) throw new Error("No response body");
+        if (!response.body) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'No response body');
+        }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
-        return new ReadableStream({
+        return new ReadableStream<StreamChunk>({
             async start(controller) {
                 try {
                     let buffer = '';
@@ -160,28 +293,28 @@ export class AIService {
                         const chunk = decoder.decode(value, { stream: true });
                         buffer += chunk;
                         const lines = buffer.split('\n');
-                        // Keep the last part in the buffer (it might be incomplete)
-                        buffer = lines.pop() || '';
+                        buffer = lines.pop() ?? '';
 
                         for (const line of lines) {
                             if (line.trim() === '') continue;
                             try {
-                                const parsed = JSON.parse(line);
+                                const parsed = JSON.parse(line) as { text?: string };
                                 if (parsed.text) {
-                                    controller.enqueue({ text: () => parsed.text });
+                                    const text = parsed.text;
+                                    controller.enqueue({ text: () => text });
                                 }
-                            } catch (e) {
-                                console.warn("Failed to parse chunk:", line);
-                                // Optional: if we receive HTML error pages (common with proxies), 
-                                // we should probably abort.
+                            } catch {
+                                console.warn('[AIService] Failed to parse stream chunk:', line);
                                 if (line.includes('<!DOCTYPE html>')) {
-                                    controller.error(new Error("Received HTML instead of JSON stream. Proxy or Auth error."));
+                                    controller.error(new AppException(
+                                        AppErrorCode.NETWORK_ERROR,
+                                        'Received HTML instead of JSON stream. Proxy or Auth error.'
+                                    ));
                                     return;
                                 }
                             }
                         }
                     }
-
                     controller.close();
                 } catch (err) {
                     controller.error(err);
@@ -190,14 +323,16 @@ export class AIService {
         });
     }
 
-    async generateVideo(options: {
-        model: string;
-        prompt: string;
-        image?: { imageBytes: string; mimeType: string };
-        config?: Record<string, unknown>;
-    }) {
+    /**
+     * Generate video using Vertex AI backend
+     */
+    async generateVideo(options: GenerateVideoOptions): Promise<string> {
         try {
-            const generateVideoFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'generateVideo');
+            const generateVideoFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(
+                functions,
+                'generateVideo'
+            );
+
             const response = await this.withRetry(() => generateVideoFn({
                 prompt: options.prompt,
                 model: options.model,
@@ -206,26 +341,34 @@ export class AIService {
                 apiKey: this.apiKey
             }));
 
-            const data = response.data as any;
-            const prediction = data.predictions?.[0];
+            const prediction = response.data.predictions?.[0];
 
-            if (!prediction) throw new Error("No prediction returned from backend");
+            if (!prediction) {
+                throw new AppException(
+                    AppErrorCode.INTERNAL_ERROR,
+                    'No prediction returned from video generation backend'
+                );
+            }
 
             return JSON.stringify(prediction);
 
-        } catch (e) {
-            console.error("Video Gen Error", e);
-            throw e;
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+            console.error('[AIService] Video Gen Error:', err.message);
+            throw err;
         }
     }
 
-    async generateImage(options: {
-        model: string;
-        prompt: string;
-        config?: Record<string, unknown>;
-    }): Promise<string> {
+    /**
+     * Generate image using backend function
+     */
+    async generateImage(options: GenerateImageOptions): Promise<string> {
         try {
-            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(functions, 'generateImage');
+            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(
+                functions,
+                'generateImage'
+            );
+
             const response = await this.withRetry(() => generateImageFn({
                 model: options.model,
                 prompt: options.prompt,
@@ -235,40 +378,57 @@ export class AIService {
 
             const images = response.data.images;
             if (!images || images.length === 0) {
-                throw new Error("No images returned from backend");
+                throw new AppException(
+                    AppErrorCode.INTERNAL_ERROR,
+                    'No images returned from backend'
+                );
             }
 
-            // Return the first image as base64 string
             return images[0].bytesBase64Encoded;
-        } catch (e: any) {
-            console.error("Image Gen Error", e);
-            throw new Error(`Generate Image Failed: ${e.message}`);
+
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+            console.error('[AIService] Image Gen Error:', err.message);
+            throw err;
         }
     }
 
-    async embedContent(options: {
-        model: string;
-        content: { role?: string; parts: { text: string }[] };
-    }) {
+    /**
+     * Generate embeddings for content
+     */
+    async embedContent(options: EmbedContentOptions): Promise<{ values: number[] }> {
         try {
-            const embedContentFn = httpsCallable(functions, 'embedContent');
+            const embedContentFn = httpsCallable<
+                { model: string; content: Content; apiKey: string },
+                { embedding: { values: number[] } }
+            >(functions, 'embedContent');
+
             const response = await this.withRetry(() => embedContentFn({
                 model: options.model,
                 content: options.content,
                 apiKey: this.apiKey
             }));
-            return response.data;
-        } catch (error: any) {
-            throw new Error(`Embed Content Failed: ${error.message}`);
+
+            return response.data.embedding;
+
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                `Embed Content Failed: ${err.message}`
+            );
         }
     }
 
-    parseJSON(text: string | undefined) {
+    /**
+     * Parse JSON from AI response, handling markdown code blocks
+     */
+    parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
         if (!text) return {};
         try {
-            return JSON.parse(cleanJSON(text));
+            return JSON.parse(cleanJSON(text)) as T;
         } catch {
-            console.error("Failed to parse JSON:", text);
+            console.error('[AIService] Failed to parse JSON:', text);
             return {};
         }
     }

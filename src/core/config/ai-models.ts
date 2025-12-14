@@ -7,12 +7,12 @@ export const AI_MODELS = {
     },
     IMAGE: {
         // Main image generation model
-        GENERATION: 'imagen-3.0-generate-001',
+        GENERATION: 'gemini-3-pro-image-preview',
     },
     VIDEO: {
         // Video generation model
         GENERATION: 'veo-3.1-generate-preview',
-        EDIT: 'veo-2.0-generate-001'
+        EDIT: 'veo-3.1-generate-preview'
     }
 } as const;
 

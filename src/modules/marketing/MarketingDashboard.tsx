@@ -6,11 +6,13 @@ import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 
 import BrandManager from './components/BrandManager';
 
+import PostGenerator from './components/PostGenerator';
+
 export default function MarketingDashboard() {
     const toast = useToast();
     const { currentModule } = useStore();
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'brand'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'generator' | 'brand'>('overview');
 
     const handleCreateCampaign = () => {
         toast.info("Create Campaign modal would open here.");
@@ -83,6 +85,7 @@ export default function MarketingDashboard() {
             actions={DashboardActions}
             tabs={[
                 { label: 'Overview', value: 'overview' },
+                { label: 'Post Generator', value: 'generator' },
                 { label: 'Brand Manager', value: 'brand' }
             ]}
             activeTab={activeTab}
@@ -164,8 +167,10 @@ export default function MarketingDashboard() {
                         </div>
                     </div>
                 </>
-            ) : (
+            ) : activeTab === 'brand' ? (
                 <BrandManager />
+            ) : (
+                <PostGenerator />
             )}
         </ModuleDashboard>
     );

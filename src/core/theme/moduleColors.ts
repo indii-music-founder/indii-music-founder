@@ -152,6 +152,22 @@ export const moduleColors: Record<AppSlice['currentModule'], ModuleColor> = {
         ring: 'focus-within:ring-blue-400/50',
         hoverText: 'hover:text-blue-200',
         hoverBg: 'hover:bg-blue-400/5',
+    },
+    onboarding: {
+        text: 'text-purple-400',
+        bg: 'bg-purple-400/10',
+        border: 'border-purple-400',
+        ring: 'focus-within:ring-purple-400/50',
+        hoverText: 'hover:text-purple-200',
+        hoverBg: 'hover:bg-purple-400/5',
+    },
+    showroom: {
+        text: 'text-indigo-400',
+        bg: 'bg-indigo-400/10',
+        border: 'border-indigo-400',
+        ring: 'focus-within:ring-indigo-400/50',
+        hoverText: 'hover:text-indigo-200',
+        hoverBg: 'hover:bg-indigo-400/5',
     }
 };
 

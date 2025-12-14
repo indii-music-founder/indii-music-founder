@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { PlayerRef } from '@remotion/player';
 import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Volume2, VolumeX, Eye, EyeOff, Settings, Layers, Image as ImageIcon } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
@@ -11,6 +11,7 @@ import { VideoPreview } from './components/VideoPreview';
 import { VideoPropertiesPanel } from './components/VideoPropertiesPanel';
 import { VideoTimeline } from './components/VideoTimeline';
 import { StudioToolbar } from '@/components/studio/StudioToolbar';
+import { throttle } from '../../../lib/throttle';
 
 const PIXELS_PER_FRAME = 2;
 
@@ -56,7 +57,18 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         originalDuration: number;
     } | null>(null);
 
-    const selectedClip = project.clips.find(c => c.id === selectedClipIdState);
+    // 1. Use useRef for drag state to avoid effect recreation
+    const dragStateRef = useRef(dragState);
+    useEffect(() => { dragStateRef.current = dragState; }, [dragState]);
+
+    const updateClipRef = useRef(updateClip);
+    useEffect(() => { updateClipRef.current = updateClip; }, [updateClip]);
+
+    // 5. Memoize selected clip lookup
+    const selectedClip = useMemo(() =>
+        project.clips.find(c => c.id === selectedClipIdState),
+        [project.clips, selectedClipIdState]
+    );
 
     // Initialize with passed video if available
     useEffect(() => {
@@ -88,27 +100,28 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         }
     }, [isPlaying]);
 
-    const handlePlayPause = () => {
+    const handlePlayPause = useCallback(() => {
         setIsPlaying(!isPlaying);
-    };
+    }, [isPlaying, setIsPlaying]);
 
-    const handleSeek = (frame: number) => {
+    const handleSeek = useCallback((frame: number) => {
         if (playerRef.current) {
             playerRef.current.seekTo(frame);
             setCurrentTime(frame);
         }
-    };
+    }, [setCurrentTime]);
 
-    const formatTime = (frame: number) => {
-        const seconds = Math.floor(frame / project.fps);
+    const formatTime = useCallback((frame: number) => {
+        const fps = project.fps || 30;
+        const seconds = Math.floor(frame / fps);
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = seconds % 60;
-        const remainingFrames = frame % project.fps;
+        const remainingFrames = frame % fps;
         return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}:${remainingFrames.toString().padStart(2, '0')}`;
-    };
+    }, [project.fps]);
 
     // Drag & Drop Handlers
-    const handleDragStart = (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => {
+    const handleDragStart = useCallback((e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => {
         e.stopPropagation();
         setDragState({
             type,
@@ -118,44 +131,44 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             originalDuration: clip.durationInFrames
         });
         setSelectedClipId(clip.id);
-    };
+    }, [setSelectedClipId]);
 
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!dragState) return;
+        const handleMouseMove = throttle((e: MouseEvent) => {
+            if (!dragStateRef.current) return;
 
-            const deltaPixels = e.clientX - dragState.startX;
+            const currentDragState = dragStateRef.current;
+            const deltaPixels = e.clientX - currentDragState.startX;
             const deltaFrames = Math.round(deltaPixels / PIXELS_PER_FRAME);
 
-            if (dragState.type === 'move') {
-                const newStartFrame = Math.max(0, dragState.originalStartFrame + deltaFrames);
-                updateClip(dragState.clipId, { startFrame: newStartFrame });
-            } else if (dragState.type === 'resize') {
-                const newDuration = Math.max(1, dragState.originalDuration + deltaFrames);
-                updateClip(dragState.clipId, { durationInFrames: newDuration });
+            if (currentDragState.type === 'move') {
+                const newStartFrame = Math.max(0, currentDragState.originalStartFrame + deltaFrames);
+                updateClipRef.current(currentDragState.clipId, { startFrame: newStartFrame });
+            } else if (currentDragState.type === 'resize') {
+                const newDuration = Math.max(1, currentDragState.originalDuration + deltaFrames);
+                updateClipRef.current(currentDragState.clipId, { durationInFrames: newDuration });
             }
-        };
+        }, 16);
 
         const handleMouseUp = () => {
             setDragState(null);
         };
 
-        if (dragState) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        }
+        // Add event listeners once with cleanup (using Refs for state access)
+        window.addEventListener('mousemove', handleMouseMove, { passive: true });
+        window.addEventListener('mouseup', handleMouseUp);
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [dragState, updateClip]);
+    }, []); // Empty deps - handlers use refs
 
-    const handleAddTrack = () => {
+    const handleAddTrack = useCallback(() => {
         addTrack('video');
-    };
+    }, [addTrack]);
 
-    const handleAddSampleClip = (trackId: string, type: 'text' | 'video' | 'image' | 'audio' = 'text') => {
+    const handleAddSampleClip = useCallback((trackId: string, type: 'text' | 'video' | 'image' | 'audio' = 'text') => {
         const clipData: any = {
             type,
             startFrame: 0,
@@ -176,7 +189,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         }
 
         addClip(clipData);
-    };
+    }, [addClip]);
 
     const handleExport = async () => {
         setIsExporting(true);

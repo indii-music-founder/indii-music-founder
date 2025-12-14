@@ -1,8 +1,37 @@
-
 import { AI } from '@/services/ai/AIService';
+import type { ToolFunctionArgs } from '../types';
+
+// ============================================================================
+// Types for ProducerTools
+// ============================================================================
+
+interface CreateCallSheetArgs extends ToolFunctionArgs {
+    date: string;
+    location: string;
+    cast: string[];
+}
+
+interface BreakdownScriptArgs extends ToolFunctionArgs {
+    script: string;
+}
+
+// ============================================================================
+// Helper to extract error message
+// ============================================================================
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An unknown error occurred';
+}
+
+// ============================================================================
+// ProducerTools Implementation
+// ============================================================================
 
 export const ProducerTools = {
-    create_call_sheet: async (args: { date: string; location: string; cast: string[] }) => {
+    create_call_sheet: async (args: CreateCallSheetArgs): Promise<string> => {
         try {
             const systemPrompt = `
 You are a Unit Production Manager.
@@ -31,7 +60,7 @@ Cast: ${args.cast.join(', ')}
 `;
 
             const response = await AI.generateContent({
-                model: 'gemini-1.5-pro-preview-0409',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
@@ -39,12 +68,12 @@ Cast: ${args.cast.join(', ')}
             const textResponse = response.text();
             const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
             return jsonMatch ? jsonMatch[0] : textResponse;
-        } catch (e: any) {
-            return `Failed to create call sheet: ${e.message}`;
+        } catch (e: unknown) {
+            return `Failed to create call sheet: ${getErrorMessage(e)}`;
         }
     },
 
-    breakdown_script: async (args: { script: string }) => {
+    breakdown_script: async (args: BreakdownScriptArgs): Promise<string> => {
         try {
             const systemPrompt = `
 You are a Line Producer.
@@ -60,18 +89,17 @@ Output a JSON list of:
             const prompt = `Breakdown this script:\n\n${args.script}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-1.5-pro-preview-0409',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
 
             const textResponse = response.text();
-            // Basic cleanup to try to get just JSON if the model talks
             const jsonMatch = textResponse.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
             return jsonMatch ? jsonMatch[0] : textResponse;
 
-        } catch (e: any) {
-            return `Failed to breakdown script: ${e.message}`;
+        } catch (e: unknown) {
+            return `Failed to breakdown script: ${getErrorMessage(e)}`;
         }
     }
 };

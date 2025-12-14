@@ -24,7 +24,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         useStore.setState({ isAgentOpen: false });
         if (generationMode === 'video') {
             setViewMode('video_production');
-        } else if (viewMode === 'video_production' && generationMode !== 'video') {
+        } else if (viewMode === 'video_production') {
             // If we switched OUT of video mode, go back to gallery (or canvas/showroom)
             // But if we just mounted with initialMode='image', generationMode might be 'image' already.
             setViewMode('gallery');

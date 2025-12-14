@@ -2,6 +2,7 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { isInlineDataPart, isTextPart, type ContentPart } from '@/shared/types/ai.dto';
 
 export class EditingService {
 
@@ -161,7 +162,7 @@ export class EditingService {
             });
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && part.inlineData) {
+            if (part && isInlineDataPart(part)) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
                     id: crypto.randomUUID(),
@@ -170,7 +171,7 @@ export class EditingService {
                 };
             }
 
-            if (part && part.text && part.text.startsWith('http')) {
+            if (part && isTextPart(part) && part.text.startsWith('http')) {
                 return {
                     id: crypto.randomUUID(),
                     url: part.text,
@@ -236,7 +237,7 @@ export class EditingService {
             });
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && part.inlineData) {
+            if (part && isInlineDataPart(part)) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
                     id: crypto.randomUUID(),
@@ -272,7 +273,7 @@ export class EditingService {
                     ...AI_CONFIG.THINKING.HIGH
                 }
             });
-            const plan = AI.parseJSON(planRes.text());
+            const plan = AI.parseJSON<{ scenes: string[] }>(planRes.text());
             const scenes = plan.scenes || [];
             while (scenes.length < options.count) scenes.push(`${options.prompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -315,7 +316,7 @@ export class EditingService {
                 });
 
                 const part = response.response.candidates?.[0]?.content?.parts?.[0];
-                if (part && part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
+                if (part && isInlineDataPart(part) && part.inlineData.mimeType && part.inlineData.data) {
                     const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                     previousImage = { mimeType: part.inlineData.mimeType, data: part.inlineData.data };
                     results.push({

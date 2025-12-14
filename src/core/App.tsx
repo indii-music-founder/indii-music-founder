@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -8,13 +8,15 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import ChatOverlay from './components/ChatOverlay';
-import TestPlaybookPanel from './dev/TestPlaybookPanel';
-import AudioStressTest from '../dev/AudioStressTest';
+import { AuthLogin } from './components/AuthLogin';
+import { STANDALONE_MODULES, type ModuleId } from './constants';
+import { env } from '@/config/env';
 
-// Lazy load modules
+// ============================================================================
+// Lazy-loaded Module Components
+// ============================================================================
+
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
-
-
 const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
@@ -34,131 +36,71 @@ const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDash
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
 const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 
-// Auth Login Component
-const AuthLogin = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+// Dev-only components
+const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
+const AudioStressTest = lazy(() => import('../dev/AudioStressTest'));
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+// ============================================================================
+// Module Router - Maps module IDs to components
+// ============================================================================
 
-        try {
-            const { signInWithEmailAndPassword } = await import('firebase/auth');
-            const { auth } = await import('@/services/firebase');
-            await signInWithEmailAndPassword(auth, email, password);
-            // Auth listener in App will handle the rest
-        } catch (err: any) {
-            console.error("Login failed:", err);
-            setError(err.message || "Failed to sign in");
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white p-4">
-            <div className="w-full max-w-md bg-[#161b22] p-8 rounded-xl border border-[#30363d] shadow-xl">
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
-                    <p className="text-gray-400">Sign in to Indii OS Studio</p>
-                </div>
-
-                <form onSubmit={handleLogin} className="space-y-4">
-                    {error && (
-                        <div className="p-3 bg-red-900/30 border border-red-800 text-red-200 rounded text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                        <input
-                            id="email"
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-white transition-all"
-                            placeholder="name@example.com"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-white transition-all"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium text-white transition-all transform active:scale-95 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {loading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Signing in...
-                            </span>
-                        ) : 'Sign In'}
-                    </button>
-                </form>
-
-                <div className="mt-6 text-center text-sm text-gray-500">
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            setLoading(true);
-                            try {
-                                const { signInAnonymously } = await import('firebase/auth');
-                                const { auth } = await import('@/services/firebase');
-                                await signInAnonymously(auth);
-                            } catch (err: any) {
-                                console.error("[AuthLogin] Guest Login Error:", err);
-                                setError(err.message);
-                                setLoading(false);
-                            }
-                        }}
-                        className="text-indigo-600 hover:text-indigo-500 font-semibold"
-                    >
-                        Guest Mode (Anonymous)
-                    </button>
-                    <p className="mt-2">Don't have an account? Please contact your administrator.</p>
-                </div>
-            </div>
-        </div>
-    );
+// Use flexible type to accommodate different component prop signatures
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
+    'dashboard': Dashboard,
+    'creative': CreativeStudio,
+    'video': VideoStudio,
+    'music': MusicStudio,
+    'legal': LegalDashboard,
+    'marketing': MarketingDashboard,
+    'workflow': WorkflowLab,
+    'knowledge': KnowledgeBase,
+    'road': RoadManager,
+    'social': SocialDashboard,
+    'brand': BrandManager,
+    'campaign': CampaignDashboard,
+    'publicist': PublicistDashboard,
+    'publishing': PublishingDashboard,
+    'finance': FinanceDashboard,
+    'licensing': LicensingDashboard,
+    'showroom': Showroom,
+    'onboarding': OnboardingPage,
+    'select-org': SelectOrg,
 };
 
+// ============================================================================
+// Helper Components
+// ============================================================================
 
-import { env } from '@/config/env';
+function LoadingFallback() {
+    return (
+        <div className="flex items-center justify-center h-full text-gray-500">
+            Loading Module...
+        </div>
+    );
+}
 
-// Dev Tool: Port Warning Badge
-const PortWarning = () => {
+function DevPortWarning() {
     const port = window.location.port;
-    if (!import.meta.env.DEV) return null; // Only show in Dev
-    if (port === '4242') return null; // Correct port, show nothing (or show a small green dot if preferred, but user asked for "wrong port" warning)
+    if (!import.meta.env.DEV || port === '4242') return null;
 
     return (
         <div className="fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
-            ⚠️ WRONG PORT: {port} <br />
+            Wrong Port: {port}
+            <br />
             <span className="font-normal opacity-80">Use :4242 for Studio</span>
         </div>
     );
-};
+}
 
-export default function App() {
-    const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
+// ============================================================================
+// Custom Hooks
+// ============================================================================
 
+function useAppInitialization() {
+    const { initializeAuth, initializeHistory, loadProjects, isAuthReady, isAuthenticated } = useStore();
+
+    // Initialize auth on mount
     useEffect(() => {
         initializeAuth();
 
@@ -166,120 +108,150 @@ export default function App() {
         if (window.location.pathname === '/select-org') {
             useStore.setState({ currentModule: 'select-org' });
         }
+
+        // Reset agent open state on mount
+        useStore.setState({ isAgentOpen: false });
     }, [initializeAuth]);
 
-    // Data Load Effect - Only load when authenticated
+    // Load data when authenticated
     useEffect(() => {
         if (isAuthenticated && isAuthReady) {
-            console.log("[App] User authenticated, loading data...", { isAuthenticated, isAuthReady });
+            console.log('[App] User authenticated, loading data...');
             initializeHistory();
             loadProjects();
         }
     }, [isAuthenticated, isAuthReady, initializeHistory, loadProjects]);
+}
 
-    // Reset agent open state on mount
+function useOnboardingRedirect() {
+    const { isAuthReady, isAuthenticated, currentModule } = useStore();
+
     useEffect(() => {
-        useStore.setState({ isAgentOpen: false });
-    }, []);
+        if (!isAuthenticated || !isAuthReady) return;
 
-    // New User Onboarding Redirect
-    useEffect(() => {
-        if (isAuthenticated && isAuthReady) {
-            const state = useStore.getState();
+        const state = useStore.getState();
+        const isTestMode = typeof window !== 'undefined' && '__TEST_MODE__' in window;
 
-            // Check for DevEx skip flag
-            if (env.skipOnboarding && !state.userProfile?.bio) {
-                console.log("[App] DevEx: Skipping onboarding via env flag");
-                // Mock a profile to satisfy the check
-                useStore.setState({
-                    userProfile: {
-                        ...state.userProfile,
-                        id: state.user?.uid || 'dev-user',
-                        bio: 'Dev Mode Auto-Generated Bio',
-                        preferences: '{}',
-                        // Minimal required fields
-                        brandKit: state.userProfile?.brandKit || {
-                            colors: [], fonts: '', brandDescription: '', negativePrompt: '', socials: {}, brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: 'Single', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
-                        },
-                        analyzedTrackIds: [],
-                        knowledgeBase: [],
-                        savedWorkflows: []
-                    }
-                });
-                return; // Skip the redirect below
-            }
+        // Skip onboarding in dev mode if flag is set
+        if (env.skipOnboarding && !state.userProfile?.bio) {
+            console.log('[App] DevEx: Skipping onboarding via env flag');
+            useStore.setState({
+                userProfile: {
+                    ...state.userProfile,
+                    id: state.user?.uid || 'dev-user',
+                    bio: 'Dev Mode Auto-Generated Bio',
+                    preferences: '{}',
+                    brandKit: state.userProfile?.brandKit || {
+                        colors: [],
+                        fonts: '',
+                        brandDescription: '',
+                        negativePrompt: '',
+                        socials: {},
+                        brandAssets: [],
+                        referenceImages: [],
+                        releaseDetails: {
+                            title: '', type: 'Single', artists: '', genre: '',
+                            mood: '', themes: '', lyrics: ''
+                        }
+                    },
+                    analyzedTrackIds: [],
+                    knowledgeBase: [],
+                    savedWorkflows: []
+                }
+            });
+            return;
+        }
 
-            // Simple check: if bio is missing, assume onboarding is needed
-            // Ideally we check a specific flag, but this works for the "nuclear" reset flow
-            if (!state.userProfile?.bio && currentModule !== 'onboarding' && currentModule !== 'select-org' && !(window as any).__TEST_MODE__) {
-                console.log("[App] New user detected, redirecting to onboarding");
-                useStore.setState({ currentModule: 'onboarding' });
-            }
+        // Redirect to onboarding if profile is incomplete
+        const shouldRedirectToOnboarding =
+            !state.userProfile?.bio &&
+            currentModule !== 'onboarding' &&
+            currentModule !== 'select-org' &&
+            !isTestMode;
+
+        if (shouldRedirectToOnboarding) {
+            console.log('[App] New user detected, redirecting to onboarding');
+            useStore.setState({ currentModule: 'onboarding' });
         }
     }, [isAuthenticated, isAuthReady, currentModule]);
+}
 
-    // Auth Guard - No auto-redirect loop. Just show login form if needed.
+// ============================================================================
+// Module Renderer Component
+// ============================================================================
+
+interface ModuleRendererProps {
+    moduleId: ModuleId;
+}
+
+function ModuleRenderer({ moduleId }: ModuleRendererProps) {
+    const ModuleComponent = MODULE_COMPONENTS[moduleId];
+
+    if (!ModuleComponent) {
+        return <div className="flex items-center justify-center h-full text-gray-500">Unknown module</div>;
+    }
+
+    // Special case for creative studio which needs initialMode prop
+    if (moduleId === 'creative') {
+        return <ModuleComponent initialMode="image" />;
+    }
+
+    return <ModuleComponent />;
+}
+
+// ============================================================================
+// Main App Component
+// ============================================================================
+
+export default function App() {
+    const { currentModule, isAuthReady, isAuthenticated } = useStore();
+
+    // Initialize app and handle onboarding
+    useAppInitialization();
+    useOnboardingRedirect();
+
+    // Log module changes in dev
     useEffect(() => {
-        if (isAuthReady && !isAuthenticated) {
-            console.log("[App] Not authenticated. Showing login form.");
+        if (import.meta.env.DEV) {
+            console.log(`[App] Current Module: ${currentModule}`);
         }
-    }, [isAuthReady, isAuthenticated]);
-
-
-    useEffect(() => {
-        console.log(`[App] Current Module Changed: ${currentModule}`);
     }, [currentModule]);
+
+    // Determine if current module should show chrome (sidebar, command bar, etc.)
+    const showChrome = useMemo(
+        () => !STANDALONE_MODULES.includes(currentModule as ModuleId),
+        [currentModule]
+    );
 
     return (
         <ToastProvider>
-            <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
+            <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans">
                 <ApiKeyErrorModal />
-                {/* Left Sidebar */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
+
+                {/* Left Sidebar - Hidden for standalone modules */}
+                {showChrome && (
                     <div className="hidden md:block h-full">
                         <Sidebar />
                     </div>
                 )}
 
                 {/* Main Content Area */}
-                <main className="flex-1 flex flex-col min-w-0 bg-[#0d1117] relative">
+                <main className="flex-1 flex flex-col min-w-0 bg-background relative">
                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                         <ErrorBoundary>
-                            <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
+                            <Suspense fallback={<LoadingFallback />}>
                                 {/* Auth Gate */}
-                                {(!isAuthReady || !isAuthenticated) ? (
+                                {!isAuthReady || !isAuthenticated ? (
                                     <AuthLogin />
                                 ) : (
-                                    <>
-                                        {currentModule === 'select-org' && <SelectOrg />}
-                                        {currentModule === 'dashboard' && <Dashboard />}
-                                        {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
-                                        {currentModule === 'legal' && <LegalDashboard />}
-                                        {currentModule === 'music' && <MusicStudio />}
-                                        {currentModule === 'marketing' && <MarketingDashboard />}
-                                        {currentModule === 'video' && <VideoStudio />}
-                                        {currentModule === 'workflow' && <WorkflowLab />}
-                                        {currentModule === 'knowledge' && <KnowledgeBase />}
-                                        {currentModule === 'road' && <RoadManager />}
-                                        {currentModule === 'social' && <SocialDashboard />}
-                                        {currentModule === 'brand' && <BrandManager />}
-                                        {currentModule === 'campaign' && <CampaignDashboard />}
-                                        {currentModule === 'publicist' && <PublicistDashboard />}
-                                        {currentModule === 'publishing' && <PublishingDashboard />}
-                                        {currentModule === 'finance' && <FinanceDashboard />}
-                                        {currentModule === 'licensing' && <LicensingDashboard />}
-                                        {currentModule === 'onboarding' && <OnboardingPage />}
-                                        {currentModule === 'showroom' && <Showroom />}
-
-                                        {/* Fallback for unknown modules */}
-                                    </>
+                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
                                 )}
                             </Suspense>
                         </ErrorBoundary>
                     </div>
 
-                    {/* Command Bar at Bottom */}
-                    {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
+                    {/* Command Bar - Hidden for standalone modules */}
+                    {showChrome && (
                         <div className="flex-shrink-0 z-10 relative">
                             <ErrorBoundary>
                                 <ChatOverlay />
@@ -289,22 +261,21 @@ export default function App() {
                     )}
                 </main>
 
-                {/* Right Panel */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
-                    <RightPanel />
-                )}
+                {/* Right Panel - Hidden for standalone modules */}
+                {showChrome && <RightPanel />}
 
-                {/* Mobile Navigation */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && <MobileNav />}
+                {/* Mobile Navigation - Hidden for standalone modules */}
+                {showChrome && <MobileNav />}
 
                 {/* DevTools HUD - Only in Development */}
                 {import.meta.env.DEV && (
-                    <>
+                    <Suspense fallback={null}>
                         <TestPlaybookPanel />
                         <div className="fixed bottom-4 left-4 z-50">
                             <AudioStressTest />
                         </div>
-                    </>
+                        <DevPortWarning />
+                    </Suspense>
                 )}
             </div>
         </ToastProvider>

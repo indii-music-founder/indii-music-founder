@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 
 interface StudioToolbarProps {
-    children: ReactNode;
+    children?: ReactNode;
     className?: string;
     left?: ReactNode;
     right?: ReactNode;

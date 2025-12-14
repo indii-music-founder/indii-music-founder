@@ -11,10 +11,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'save_memory',
         description: 'Save a fact, rule, or preference to long-term memory.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                content: { type: 'string', description: 'The content to remember.' },
-                type: { type: 'string', description: 'Type of memory.', enum: ['fact', 'summary', 'rule'] }
+                content: { type: 'STRING', description: 'The content to remember.' },
+                type: { type: 'STRING', description: 'Type of memory.', enum: ['fact', 'summary', 'rule'] }
             },
             required: ['content']
         }
@@ -23,9 +23,9 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'recall_memories',
         description: 'Search long-term memory for relevant information.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                query: { type: 'string', description: 'Search query.' }
+                query: { type: 'STRING', description: 'Search query.' }
             },
             required: ['query']
         }
@@ -34,10 +34,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'verify_output',
         description: 'Critique and verify generated content against a goal.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                goal: { type: 'string', description: 'The original goal.' },
-                content: { type: 'string', description: 'The content to verify.' }
+                goal: { type: 'STRING', description: 'The original goal.' },
+                content: { type: 'STRING', description: 'The content to verify.' }
             },
             required: ['goal', 'content']
         }
@@ -46,10 +46,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'request_approval',
         description: 'Request user approval for high-stakes actions.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                content: { type: 'string', description: 'Content or action requiring approval.' },
-                type: { type: 'string', description: 'Type of action (e.g., "post", "email").' }
+                content: { type: 'STRING', description: 'Content or action requiring approval.' },
+                type: { type: 'STRING', description: 'Type of action (e.g., "post", "email").' }
             },
             required: ['content']
         }
@@ -58,9 +58,9 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'get_project_details',
         description: 'Fetch full details of a project by ID.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                projectId: { type: 'string', description: 'The ID of the project to fetch.' }
+                projectId: { type: 'STRING', description: 'The ID of the project to fetch.' }
             },
             required: ['projectId']
         }
@@ -69,9 +69,9 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'search_knowledge',
         description: 'Search the internal knowledge base for answers, guidelines, or policies.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                query: { type: 'string', description: 'The search query.' }
+                query: { type: 'STRING', description: 'The search query.' }
             },
             required: ['query']
         }
@@ -80,10 +80,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'delegate_task',
         description: 'Delegate a sub-task to another specialized agent.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                targetAgentId: { type: 'string', description: 'The ID of the agent to delegate to (e.g., "video", "legal").' },
-                task: { type: 'string', description: 'The specific task for the agent to perform.' }
+                targetAgentId: { type: 'STRING', description: 'The ID of the agent to delegate to (e.g., "video", "legal").' },
+                task: { type: 'STRING', description: 'The specific task for the agent to perform.' }
             },
             required: ['targetAgentId', 'task']
         }
@@ -187,9 +187,9 @@ ${task}
                 model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
                 config: {
-                    ...AI_CONFIG.THINKING.LOW,
-                    tools: allTools
-                }
+                    ...AI_CONFIG.THINKING.LOW
+                },
+                tools: allTools as any
             });
 
             const functionCall = response.functionCalls()?.[0];

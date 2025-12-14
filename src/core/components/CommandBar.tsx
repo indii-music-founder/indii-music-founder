@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback, memo } from 'react';
 import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image, ChevronUp, X } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
@@ -9,7 +9,98 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { voiceService } from '@/services/ai/VoiceService';
 
-export default function CommandBar() {
+interface DelegateMenuProps {
+    isOpen: boolean;
+    currentModule: string;
+    managerAgents: any[];
+    departmentAgents: any[];
+    onSelect: (id: string) => void;
+    onClose: () => void;
+}
+
+const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgents, departmentAgents, onSelect, onClose }: DelegateMenuProps) => {
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={onClose}
+                    />
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[300px]"
+                    >
+                        <div className="overflow-y-auto custom-scrollbar">
+                            <div className="p-1">
+                                <button
+                                    onClick={() => onSelect('dashboard')}
+                                    className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-gray-500" />
+                                    Indii (Chief of Staff)
+                                </button>
+                            </div>
+
+                            <div className="border-t border-gray-800 my-1" />
+
+                            <div className="p-2">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase px-2 mb-1">Manager's Office</p>
+                                {managerAgents.map(agent => (
+                                    <button
+                                        key={agent.id}
+                                        onClick={() => onSelect(agent.id)}
+                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${agent.color}`} />
+                                        {agent.name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="border-t border-gray-800 my-1" />
+
+                            <div className="p-2">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase px-2 mb-1">Departments</p>
+                                {departmentAgents.map(dept => (
+                                    <button
+                                        key={dept.id}
+                                        onClick={() => onSelect(dept.id)}
+                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${dept.color}`} />
+                                        {dept.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+});
+
+const AttachmentList = memo(({ attachments, onRemove }: { attachments: File[], onRemove: (index: number) => void }) => {
+    if (attachments.length === 0) return null;
+    return (
+        <div className="px-4 pb-2 flex gap-2 flex-wrap">
+            {attachments.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
+                    {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
+                    <span className="max-w-[150px] truncate">{file.name}</span>
+                    <button type="button" onClick={() => onRemove(index)} className="hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors">
+                        <X size={12} />
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
+});
+
+function CommandBar() {
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [openDelegate, setOpenDelegate] = useState(false);
@@ -24,77 +115,98 @@ export default function CommandBar() {
 
     const toast = useToast();
 
-    const handleDelegate = (moduleId: string) => {
+    // Memoize agent lists to avoid re-calling registry on every render
+    const allAgents = useMemo(() => agentRegistry.getAll(), []);
+    const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);
+    const departmentAgents = useMemo(() => allAgents.filter(a => a.category === 'department'), [allAgents]);
+    const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
+
+    const handleCloseDelegate = useCallback(() => setOpenDelegate(false), []);
+
+    const handleMicClick = useCallback(() => {
+        if (isListening) {
+            voiceService.stopListening();
+            setIsListening(false);
+        } else {
+            if (voiceService.isSupported()) {
+                setIsListening(true);
+                voiceService.startListening((text) => {
+                    setInput(prev => prev + (prev ? ' ' : '') + text);
+                    setIsListening(false);
+                }, () => setIsListening(false));
+            } else {
+                toast.error("Voice input not supported in this browser.");
+            }
+        }
+    }, [isListening, toast]);
+
+    const handleDelegate = useCallback((moduleId: string) => {
         if (moduleId !== 'dashboard') {
             setModule(moduleId as any);
         }
-
         if (!isAgentOpen) {
             toggleAgentWindow();
         }
         setOpenDelegate(false);
-    };
+    }, [isAgentOpen, setModule, toggleAgentWindow]);
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
         }
-    };
+    }, []);
 
-    const removeAttachment = (index: number) => {
+    const removeAttachment = useCallback((index: number) => {
         setAttachments(prev => prev.filter((_, i) => i !== index));
-    };
+    }, []);
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(true);
-    };
+    }, []);
 
-    const handleDragLeave = (e: React.DragEvent) => {
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-    };
+    }, []);
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
         if (e.dataTransfer.files) {
             setAttachments(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
         }
-    };
+    }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // Memoize file processing to avoid recreating Promise.all handler
+    const processAttachments = useCallback(async (files: File[]) => {
+        return Promise.all(files.map(file =>
+            new Promise<{ mimeType: string; base64: string }>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({
+                    mimeType: file.type,
+                    base64: (reader.result as string).split(',')[1]
+                });
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            })
+        ));
+    }, []);
+
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() && attachments.length === 0) return;
 
         setIsProcessing(true);
-        // Ensure agent window (chat overlay) is open when sending a message
         if (!isAgentOpen) {
             toggleAgentWindow();
         }
 
         try {
-            // Check if current module is a known agent
-            const knownAgents = agentRegistry.getAll().map(a => a.id);
-            const targetAgent = knownAgents.includes(currentModule) ? currentModule : undefined;
+            const targetAgent = knownAgentIds.includes(currentModule) ? currentModule : undefined;
+            const processedAttachments = attachments.length > 0 ? await processAttachments(attachments) : undefined;
 
-            // Process attachments
-            const processedAttachments = await Promise.all(attachments.map(async (file) => {
-                return new Promise<{ mimeType: string; base64: string }>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const base64 = (reader.result as string).split(',')[1];
-                        resolve({
-                            mimeType: file.type,
-                            base64
-                        });
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-            }));
-
-            await agentService.sendMessage(input, processedAttachments.length > 0 ? processedAttachments : undefined, targetAgent);
+            await agentService.sendMessage(input, processedAttachments, targetAgent);
 
             setInput('');
             setAttachments([]);
@@ -104,7 +216,7 @@ export default function CommandBar() {
             toast.error("Failed to send message.");
             setIsProcessing(false);
         }
-    };
+    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast]);
 
     return (
         <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
@@ -146,19 +258,7 @@ export default function CommandBar() {
                         />
 
                         {/* Attachments Preview */}
-                        {attachments.length > 0 && (
-                            <div className="px-4 pb-2 flex gap-2 flex-wrap">
-                                {attachments.map((file, index) => (
-                                    <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
-                                        {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
-                                        <span className="max-w-[150px] truncate">{file.name}</span>
-                                        <button type="button" onClick={() => removeAttachment(index)} className="hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors">
-                                            <X size={12} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <AttachmentList attachments={attachments} onRemove={removeAttachment} />
 
                         {/* Toolbar */}
                         <div className="flex items-center justify-between px-2 pb-2">
@@ -206,92 +306,21 @@ export default function CommandBar() {
                                         <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    <AnimatePresence>
-                                        {openDelegate && (
-                                            <>
-                                                <div
-                                                    className="fixed inset-0 z-40"
-                                                    onClick={() => setOpenDelegate(false)}
-                                                />
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: 10 }}
-                                                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[300px]"
-                                                >
-                                                    <div className="overflow-y-auto custom-scrollbar">
-                                                        <div className="p-1">
-                                                            <button
-                                                                onClick={() => handleDelegate('dashboard')}
-                                                                className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
-                                                            >
-                                                                <div className="w-2 h-2 rounded-full bg-gray-500" />
-                                                                Indii (Chief of Staff)
-                                                            </button>
-                                                        </div>
-
-                                                        <div className="border-t border-gray-800 my-1" />
-
-                                                        <div className="p-2">
-                                                            <p className="text-[10px] font-bold text-gray-500 uppercase px-2 mb-1">Manager's Office</p>
-                                                            {agentRegistry.getAll()
-                                                                .filter(agent => agent.category === 'manager' || agent.category === 'specialist')
-                                                                .map(agent => (
-                                                                    <button
-                                                                        key={agent.id}
-                                                                        onClick={() => handleDelegate(agent.id)}
-                                                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
-                                                                    >
-                                                                        <div className={`w-1.5 h-1.5 rounded-full ${agent.color}`} />
-                                                                        {agent.name}
-                                                                    </button>
-                                                                ))}
-                                                        </div>
-
-                                                        <div className="border-t border-gray-800 my-1" />
-
-                                                        <div className="p-2">
-                                                            <p className="text-[10px] font-bold text-gray-500 uppercase px-2 mb-1">Departments</p>
-                                                            {agentRegistry.getAll()
-                                                                .filter(agent => agent.category === 'department')
-                                                                .map(dept => (
-                                                                    <button
-                                                                        key={dept.id}
-                                                                        onClick={() => handleDelegate(dept.id)}
-                                                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
-                                                                    >
-                                                                        <div className={`w-1.5 h-1.5 rounded-full ${dept.color}`} />
-                                                                        {dept.name}
-                                                                    </button>
-                                                                ))}
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            </>
-                                        )}
-                                    </AnimatePresence>
+                                    <DelegateMenu
+                                        isOpen={openDelegate}
+                                        currentModule={currentModule}
+                                        managerAgents={managerAgents}
+                                        departmentAgents={departmentAgents}
+                                        onSelect={handleDelegate}
+                                        onClose={handleCloseDelegate}
+                                    />
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        if (isListening) {
-                                            voiceService.stopListening();
-                                            setIsListening(false);
-                                        } else {
-                                            if (voiceService.isSupported()) {
-                                                setIsListening(true);
-                                                voiceService.startListening((text) => {
-                                                    setInput(prev => prev + (prev ? ' ' : '') + text);
-                                                    setIsListening(false);
-                                                }, () => setIsListening(false));
-                                            } else {
-                                                toast.error("Voice input not supported in this browser.");
-                                            }
-                                        }
-                                    }}
+                                    onClick={handleMicClick}
                                     className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
                                 >
                                     <Mic size={14} />
@@ -324,3 +353,5 @@ export default function CommandBar() {
         </div>
     );
 }
+
+export default memo(CommandBar);

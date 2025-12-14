@@ -3,6 +3,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
+import { isInlineDataPart } from '@/shared/types/ai.dto';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -82,7 +83,7 @@ export class ImageGenerationService {
             });
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && part.inlineData) {
+            if (part && isInlineDataPart(part)) {
                 return { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` };
             }
             return null;
@@ -140,7 +141,7 @@ export class ImageGenerationService {
                 });
 
                 const part = response.response.candidates?.[0]?.content?.parts?.[0];
-                if (part && part.inlineData) {
+                if (part && isInlineDataPart(part)) {
                     const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                     results.push({
                         id: crypto.randomUUID(),

@@ -1,12 +1,146 @@
-import React, { useState, useRef } from 'react';
-import { Book, Upload, FileText, Search, Filter, MoreVertical, File, Clock } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Book, Upload, FileText, Search, Filter, MoreVertical, File, Clock, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
+import { processForKnowledgeBase } from '@/services/rag/ragService';
+
+interface KnowledgeDoc {
+    id: string;
+    title: string;
+    type: string;
+    size: string;
+    date: string;
+    tag: string;
+    rawName: string; // resource name for deletion
+}
 
 export default function KnowledgeBase() {
     const toast = useToast();
     const [isDragging, setIsDragging] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const loadDocuments = async () => {
+        try {
+            setIsLoading(true);
+            const corpusName = await GeminiRetrieval.initCorpus();
+            const result = await GeminiRetrieval.listDocuments(corpusName);
+
+            const docs: KnowledgeDoc[] = (result.documents || []).map((d: any) => ({
+                id: d.name.split('/').pop() || 'unknown',
+                rawName: d.name,
+                title: d.displayName,
+                type: d.customMetadata?.find((m: any) => m.key === 'mimeType')?.stringValue || 'TXT',
+                size: d.customMetadata?.find((m: any) => m.key === 'fileSize')?.stringValue || 'Unknown',
+                date: new Date(d.customMetadata?.find((m: any) => m.key === 'uploadDate')?.stringValue || Date.now()).toLocaleDateString(),
+                tag: 'General' // Default tag as Gemini doesn't tag automatically yet
+            }));
+
+            // Sort by newest
+            setDocuments(docs.reverse());
+        } catch (error) {
+            console.error("Failed to load documents:", error);
+            // Don't show toast on init failure, just log it. 
+            // Often fails if corpus is empty/new.
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadDocuments();
+    }, []);
+
+    const handleFileUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        toast.info(`Processing ${files.length} file(s)...`);
+
+        let successCount = 0;
+        const uploadPromises: Promise<void>[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            if (file.type === 'application/pdf') {
+                uploadPromises.push((async () => {
+                    try {
+                        const { PDFService } = await import('@/services/utils/PDFService');
+                        const text = await PDFService.extractText(file);
+
+                        await processForKnowledgeBase(text, file.name, {
+                            size: `${(file.size / 1024).toFixed(1)} KB`,
+                            type: file.type,
+                            originalDate: new Date(file.lastModified).toISOString()
+                        });
+
+                        toast.success(`Indexed PDF: ${file.name}`);
+                        successCount++;
+                    } catch (err) {
+                        console.error("PDF Fail:", err);
+                        toast.error(`Failed to read PDF: ${file.name}`);
+                    }
+                })());
+            } else if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.json') || file.name.endsWith('.ts') || file.name.endsWith('.tsx') || file.name.endsWith('.csv')) {
+                uploadPromises.push(new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const text = e.target?.result as string;
+                        if (!text) {
+                            toast.error(`Failed to read text from ${file.name}`);
+                            return resolve();
+                        }
+
+                        try {
+                            await processForKnowledgeBase(text, file.name, {
+                                size: `${(file.size / 1024).toFixed(1)} KB`,
+                                type: file.type || 'text/plain',
+                                originalDate: new Date(file.lastModified).toISOString()
+                            });
+                            toast.success(`Indexed: ${file.name}`);
+                            successCount++;
+                        } catch (err) {
+                            console.error(`Failed to upload ${file.name}`, err);
+                            toast.error(`Failed to upload ${file.name}`);
+                        }
+                        resolve();
+                    };
+                    reader.onerror = () => {
+                        toast.error(`Error reading file: ${file.name}`);
+                        resolve();
+                    };
+                    reader.readAsText(file);
+                }));
+            } else {
+                toast.error(`Unsupported file type: ${file.name}`);
+            }
+        }
+
+        await Promise.all(uploadPromises);
+
+        if (successCount > 0) {
+            toast.success(`Successfully added ${successCount} document(s) to Knowledge Base.`);
+            await loadDocuments();
+        }
+        setIsUploading(false);
+    };
+
+    const handleDelete = async (doc: KnowledgeDoc) => {
+        if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return;
+
+        try {
+            await GeminiRetrieval.deleteDocument(doc.rawName);
+            toast.success("Document deleted.");
+            await loadDocuments();
+        } catch (err) {
+            console.error("Delete failed:", err);
+            toast.error("Failed to delete document.");
+        }
+    };
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -20,31 +154,8 @@ export default function KnowledgeBase() {
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            toast.info(`Uploading ${files.length} files... (Mock)`);
-        }
+        handleFileUpload(e.dataTransfer.files);
     };
-
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            toast.info(`Uploading ${files.length} files... (Mock)`);
-        }
-    };
-
-    // Mock Documents
-    const documents = [
-        { id: 1, title: "Brand Guidelines 2024", type: "PDF", size: "2.4 MB", date: "2 days ago", tag: "Design" },
-        { id: 2, title: "Q4 Marketing Strategy", type: "DOCX", size: "1.1 MB", date: "1 week ago", tag: "Marketing" },
-        { id: 3, title: "Artist Contract Template", type: "PDF", size: "540 KB", date: "2 weeks ago", tag: "Legal" },
-        { id: 4, title: "Project Alpha Notes", type: "TXT", size: "12 KB", date: "3 weeks ago", tag: "General" },
-        { id: 5, title: "Competitor Analysis", type: "PDF", size: "3.8 MB", date: "1 month ago", tag: "Strategy" },
-    ];
 
     const filteredDocs = documents.filter(doc =>
         doc.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -58,19 +169,22 @@ export default function KnowledgeBase() {
                         <Book className="text-emerald-500" />
                         Knowledge Base
                     </h1>
-                    <p className="text-gray-400">Central repository for your project assets and documents.</p>
+                    <p className="text-gray-400">Central repository. AI agents can access these documents.</p>
                 </div>
                 <button
-                    onClick={handleUploadClick}
-                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors flex items-center gap-2"
                 >
-                    <Upload size={20} /> Upload Document
+                    {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+                    {isUploading ? 'Uploading...' : 'Upload Document'}
                 </button>
                 <input
                     type="file"
                     ref={fileInputRef}
                     className="hidden"
-                    onChange={handleFileSelect}
+                    onChange={(e) => handleFileUpload(e.target.files)}
+                    accept=".txt,.md,.json,.csv,.js,.ts,.tsx,.pdf" // Added .pdf
                     multiple
                 />
             </div>
@@ -99,55 +213,64 @@ export default function KnowledgeBase() {
                 onDrop={handleDrop}
                 className={`mb-8 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer ${isDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-800 hover:border-gray-700 hover:bg-gray-800/30'
                     }`}
+                onClick={() => fileInputRef.current?.click()}
             >
                 <Upload size={32} className={`mb-3 ${isDragging ? 'text-emerald-500' : 'text-gray-500'}`} />
                 <p className="text-gray-400 font-medium">Drag and drop files here to upload</p>
-                <p className="text-xs text-gray-600 mt-1">Supported formats: PDF, DOCX, TXT, MD</p>
+                <p className="text-xs text-gray-600 mt-1">Supported formats: TXT, MD, JSON, CSV, Code</p>
             </div>
 
             {/* Document List */}
-            <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden min-h-[200px]">
                 <div className="grid grid-cols-12 gap-4 p-4 border-b border-gray-800 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     <div className="col-span-6">Name</div>
                     <div className="col-span-2">Type</div>
                     <div className="col-span-2">Size</div>
-                    <div className="col-span-2 text-right">Modified</div>
+                    <div className="col-span-2 text-right">Actions</div>
                 </div>
 
                 <div className="divide-y divide-gray-800">
-                    {filteredDocs.map(doc => (
-                        <div key={doc.id} className="grid grid-cols-12 gap-4 p-4 hover:bg-gray-800/50 transition-colors items-center group cursor-pointer">
+                    {isLoading ? (
+                        <div className="p-8 flex items-center justify-center text-gray-500 gap-2">
+                            <Loader2 className="animate-spin" size={16} /> Loading documents...
+                        </div>
+                    ) : filteredDocs.map(doc => (
+                        <div key={doc.id} className="grid grid-cols-12 gap-4 p-4 hover:bg-gray-800/50 transition-colors items-center group">
                             <div className="col-span-6 flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${doc.type === 'PDF' ? 'bg-red-500/10 text-red-400' :
-                                    doc.type === 'DOCX' ? 'bg-blue-500/10 text-blue-400' :
-                                        'bg-gray-700/50 text-gray-400'
+                                <div className={`p-2 rounded-lg ${['PDF', 'DOCX'].includes(doc.type) ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
                                     }`}>
                                     <FileText size={18} />
                                 </div>
                                 <div>
                                     <div className="font-medium text-gray-200 group-hover:text-white transition-colors">{doc.title}</div>
                                     <div className="text-xs text-gray-500 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-gray-600"></span>
-                                        {doc.tag}
+                                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                                        Indexed
                                     </div>
                                 </div>
                             </div>
                             <div className="col-span-2 text-sm text-gray-400 font-mono">{doc.type}</div>
                             <div className="col-span-2 text-sm text-gray-400 font-mono">{doc.size}</div>
                             <div className="col-span-2 text-right text-sm text-gray-400 flex items-center justify-end gap-2">
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1 mr-2 text-xs opacity-50">
                                     <Clock size={12} /> {doc.date}
                                 </span>
-                                <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 transition-opacity">
-                                    <MoreVertical size={16} />
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(doc); }}
+                                    className="p-1 hover:bg-red-900/50 rounded text-gray-400 hover:text-red-400 transition-colors"
+                                    title="Delete Document"
+                                >
+                                    <Trash2 size={16} />
                                 </button>
                             </div>
                         </div>
                     ))}
 
-                    {filteredDocs.length === 0 && (
+                    {!isLoading && filteredDocs.length === 0 && (
                         <div className="p-8 text-center text-gray-500">
-                            No documents found matching "{searchQuery}"
+                            {documents.length === 0
+                                ? "Knowledge Base is empty. Upload your first document!"
+                                : `No documents found matching "${searchQuery}"`}
                         </div>
                     )}
                 </div>

@@ -1,11 +1,34 @@
-
 import { AI } from '@/services/ai/AIService';
+import type { ToolFunctionArgs } from '../types';
+
+// ============================================================================
+// Types for NarrativeTools
+// ============================================================================
+
+interface GenerateVisualScriptArgs extends ToolFunctionArgs {
+    synopsis: string;
+}
+
+// ============================================================================
+// Helper to extract error message
+// ============================================================================
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An unknown error occurred';
+}
+
+// ============================================================================
+// NarrativeTools Implementation
+// ============================================================================
 
 export const NarrativeTools = {
-    generate_visual_script: async (args: { synopsis: string }) => {
+    generate_visual_script: async (args: GenerateVisualScriptArgs): Promise<string> => {
         try {
             const systemPrompt = `
-You are a master filmmaker and narrative structuralist. 
+You are a master filmmaker and narrative structuralist.
 Your task is to convert a raw synopsis into a structured 9-beat visual script.
 Focus on visual storytelling, camera angles, and emotional beats.
 
@@ -28,7 +51,7 @@ Return ONLY a valid JSON object with the following structure:
             const prompt = `Synopsis: ${args.synopsis}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-1.5-pro-preview-0409',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
@@ -43,8 +66,8 @@ Return ONLY a valid JSON object with the following structure:
 
             return textResponse;
 
-        } catch (e: any) {
-            return `Failed to generate script: ${e.message}`;
+        } catch (e: unknown) {
+            return `Failed to generate script: ${getErrorMessage(e)}`;
         }
     }
 };

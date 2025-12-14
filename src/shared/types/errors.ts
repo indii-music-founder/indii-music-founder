@@ -2,11 +2,56 @@ export enum AppErrorCode {
     QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
     SAFETY_VIOLATION = 'SAFETY_VIOLATION',
     INTERNAL_ERROR = 'INTERNAL_ERROR',
-    INVALID_ARGUMENT = 'INVALID_ARGUMENT'
+    INVALID_ARGUMENT = 'INVALID_ARGUMENT',
+    NETWORK_ERROR = 'NETWORK_ERROR',
+    AUTH_ERROR = 'AUTH_ERROR',
+    NOT_FOUND = 'NOT_FOUND',
+    RATE_LIMITED = 'RATE_LIMITED'
+}
+
+export interface ErrorDetails {
+    field?: string;
+    reason?: string;
+    retryable?: boolean;
+    retryAfterMs?: number;
+    originalError?: Error | string;
+    context?: Record<string, unknown>;
 }
 
 export interface AppError {
     code: AppErrorCode;
     message: string;
-    details?: any;
+    details?: ErrorDetails;
+}
+
+export class AppException extends Error {
+    code: AppErrorCode;
+    details?: ErrorDetails;
+
+    constructor(code: AppErrorCode, message: string, details?: ErrorDetails) {
+        super(message);
+        this.name = 'AppException';
+        this.code = code;
+        this.details = details;
+    }
+
+    toAppError(): AppError {
+        return {
+            code: this.code,
+            message: this.message,
+            details: this.details
+        };
+    }
+
+    static fromError(error: unknown, defaultCode: AppErrorCode = AppErrorCode.INTERNAL_ERROR): AppException {
+        if (error instanceof AppException) {
+            return error;
+        }
+        if (error instanceof Error) {
+            return new AppException(defaultCode, error.message, {
+                originalError: error.message
+            });
+        }
+        return new AppException(defaultCode, String(error));
+    }
 }

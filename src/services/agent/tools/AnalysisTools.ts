@@ -1,7 +1,51 @@
 import { useStore } from '@/core/store';
+import type { ToolFunctionArgs } from '../types';
+
+// ============================================================================
+// Types for AnalysisTools
+// ============================================================================
+
+interface AnalyzeAudioArgs extends ToolFunctionArgs {
+    audio: string;
+}
+
+interface AnalyzeContractArgs extends ToolFunctionArgs {
+    file_data: string;
+    mime_type: string;
+}
+
+interface SearchKnowledgeArgs extends ToolFunctionArgs {
+    query: string;
+}
+
+interface VerifyOutputArgs extends ToolFunctionArgs {
+    goal: string;
+    content: string;
+}
+
+interface ContractAnalysisResult {
+    score?: number;
+    summary?: string;
+    risks?: string[];
+}
+
+// ============================================================================
+// Helper to extract error message
+// ============================================================================
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An unknown error occurred';
+}
+
+// ============================================================================
+// AnalysisTools Implementation
+// ============================================================================
 
 export const AnalysisTools = {
-    analyze_audio: async (args: { audio: string }) => {
+    analyze_audio: async (args: AnalyzeAudioArgs): Promise<string> => {
         try {
             const { AudioAnalysisEngine } = await import('@/modules/music/services/AudioAnalysisEngine');
             const engine = new AudioAnalysisEngine();
@@ -23,25 +67,30 @@ export const AnalysisTools = {
             const analysis = await engine.analyze(arrayBuffer);
             return `Audio Analysis Result: ${JSON.stringify(analysis, null, 2)}`;
         } catch (e: unknown) {
-            if (e instanceof Error) {
-                return `Audio analysis failed: ${e.message}`;
-            }
-            return `Audio analysis failed: An unknown error occurred.`;
+            return `Audio analysis failed: ${getErrorMessage(e)}`;
         }
     },
-    analyze_contract: async (args: { file_data: string, mime_type: string }) => {
+
+    analyze_contract: async (args: AnalyzeContractArgs): Promise<string> => {
         try {
             const { functions } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
-            const analyzeContract = httpsCallable(functions, 'analyzeContract');
+            const analyzeContract = httpsCallable<
+                { fileData: string; mimeType: string },
+                ContractAnalysisResult
+            >(functions, 'analyzeContract');
+
             const result = await analyzeContract({ fileData: args.file_data, mimeType: args.mime_type });
-            const data = result.data as any;
-            return `Contract Analysis:\nScore: ${data.score}\nSummary: ${data.summary}\nRisks: ${data.risks.join('\n- ')}`;
-        } catch (e: any) {
-            return `Contract analysis failed: ${e.message}`;
+            const data = result.data;
+
+            const risks = data.risks ?? [];
+            return `Contract Analysis:\nScore: ${data.score ?? 'N/A'}\nSummary: ${data.summary ?? 'N/A'}\nRisks: ${risks.join('\n- ')}`;
+        } catch (e: unknown) {
+            return `Contract analysis failed: ${getErrorMessage(e)}`;
         }
     },
-    search_knowledge: async (args: { query: string }) => {
+
+    search_knowledge: async (args: SearchKnowledgeArgs): Promise<string> => {
         try {
             const { runAgenticWorkflow } = await import('@/services/rag/ragService');
             const { useStore } = await import('@/core/store');
@@ -53,28 +102,26 @@ export const AnalysisTools = {
             const result = await runAgenticWorkflow(args.query, userProfile, null, onUpdate, onDocStatus);
             return `RAG Search Result: ${result.asset.content}`;
         } catch (e: unknown) {
-            if (e instanceof Error) {
-                return `Knowledge search failed: ${e.message}`;
-            }
-            return `Knowledge search failed: An unknown error occurred.`;
+            return `Knowledge search failed: ${getErrorMessage(e)}`;
         }
     },
-    verify_output: async (args: { goal: string, content: string }) => {
+
+    verify_output: async (args: VerifyOutputArgs): Promise<string> => {
         try {
             const { AI } = await import('@/services/ai/AIService');
             const prompt = `CRITIQUE REQUEST:
             GOAL: ${args.goal}
             CONTENT: ${args.content}
-            
+
             Evaluate if the content meets the goal. Provide a score (1-10) and specific feedback.`;
 
             const res = await AI.generateContent({
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             return res.text();
-        } catch (e: any) {
-            return `Verification failed: ${e.message}`;
+        } catch (e: unknown) {
+            return `Verification failed: ${getErrorMessage(e)}`;
         }
     }
 };

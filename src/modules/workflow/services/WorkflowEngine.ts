@@ -129,7 +129,7 @@ export class WorkflowEngine {
         } else if (data.departmentName === 'Marketing Department') {
             // Generate Text
             const response = await AI.generateContent({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-3-pro-preview',
                 contents: [{ role: 'user', parts: [{ text: `Write marketing copy for: ${prompt}` }] }]
             });
             return response.text();

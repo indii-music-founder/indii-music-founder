@@ -1,23 +1,69 @@
-
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { AI } from '@/services/ai/AIService';
+import type { ToolFunctionArgs } from '../types';
+
+// ============================================================================
+// Types for LegalTools
+// ============================================================================
+
+interface AnalyzeContractArgs extends ToolFunctionArgs {
+    fileData: string;
+    mimeType: string;
+}
+
+interface DraftContractArgs extends ToolFunctionArgs {
+    type: string;
+    parties: string[];
+    terms: string;
+}
+
+interface GenerateNdaArgs extends ToolFunctionArgs {
+    parties: string[];
+    purpose: string;
+}
+
+interface ContractAnalysisResult {
+    summary?: string;
+    clauses?: string[];
+    risks?: string[];
+    [key: string]: unknown;
+}
+
+// ============================================================================
+// Helper to extract error message
+// ============================================================================
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An unknown error occurred';
+}
+
+// ============================================================================
+// LegalTools Implementation
+// ============================================================================
 
 export const LegalTools = {
-    analyze_contract: async (args: { fileData: string, mimeType: string }) => {
+    analyze_contract: async (args: AnalyzeContractArgs): Promise<string> => {
         try {
-            const analyzeContract = httpsCallable(functions, 'analyzeContract');
+            const analyzeContract = httpsCallable<
+                { fileData: string; mimeType: string },
+                ContractAnalysisResult
+            >(functions, 'analyzeContract');
+
             const result = await analyzeContract({
                 fileData: args.fileData,
                 mimeType: args.mimeType || 'application/pdf'
             });
             return JSON.stringify(result.data, null, 2);
-        } catch (e: any) {
-            return `Contract analysis failed: ${e.message}`;
+        } catch (e: unknown) {
+            return `Contract analysis failed: ${getErrorMessage(e)}`;
         }
     },
 
-    draft_contract: async (args: { type: string; parties: string[]; terms: string }) => {
+    draft_contract: async (args: DraftContractArgs): Promise<string> => {
         try {
             const systemPrompt = `
 You are a senior entertainment lawyer.
@@ -32,19 +78,18 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
 Key Terms: ${args.terms}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-1.5-pro-preview-0409',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
 
             return response.text();
-        } catch (e: any) {
-            return `Failed to draft contract: ${e.message}`;
+        } catch (e: unknown) {
+            return `Failed to draft contract: ${getErrorMessage(e)}`;
         }
     },
 
-    // Improved generation tool that wraps the AI drafter
-    generate_nda: async (args: { parties: string[], purpose: string }) => {
+    generate_nda: async (args: GenerateNdaArgs): Promise<string> => {
         return LegalTools.draft_contract({
             type: 'Non-Disclosure Agreement',
             parties: args.parties,

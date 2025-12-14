@@ -2,14 +2,12 @@
 import { cn } from '@/lib/utils';
 import {
   AnimatePresence,
-  motion
-} from 'motion/react';
-import type {
-  TargetAndTransition,
-  Transition,
-  Variant,
-  Variants,
-} from 'motion/react'
+  motion,
+  type TargetAndTransition,
+  type Transition,
+  type Variant,
+  type Variants,
+} from 'framer-motion';
 import React from 'react';
 
 export type PresetType = 'blur' | 'fade-in-blur' | 'scale' | 'fade' | 'slide';

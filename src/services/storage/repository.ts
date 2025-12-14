@@ -1,11 +1,75 @@
-import { openDB } from 'idb';
-import { db, storage, auth } from '../firebase'; // Ensure firebase.ts exports these
+import { openDB, IDBPDatabase } from 'idb';
+import { db, storage, auth } from '../firebase';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
-import { doc, setDoc, getDoc, collection, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
 const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
 const WORKFLOWS_STORE = 'workflows';
+const SYNC_QUEUE_STORE = 'syncQueue';
+
+// ============================================================================
+// Sync Queue for offline-first asset uploads
+// ============================================================================
+
+interface SyncQueueItem {
+    id: string;
+    type: 'asset';
+    data: Blob;
+    timestamp: number;
+    retryCount: number;
+}
+
+const syncQueue: Map<string, SyncQueueItem> = new Map();
+
+function queueAssetForSync(id: string, blob: Blob): void {
+    syncQueue.set(id, {
+        id,
+        type: 'asset',
+        data: blob,
+        timestamp: Date.now(),
+        retryCount: 0
+    });
+    console.log(`[Repository] Asset ${id} queued for sync (${syncQueue.size} items in queue)`);
+}
+
+/**
+ * Process the sync queue - call this when online connectivity is restored
+ */
+export async function processSyncQueue(): Promise<void> {
+    const user = auth.currentUser;
+    if (!user || syncQueue.size === 0) return;
+
+    console.log(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
+
+    const itemsToRemove: string[] = [];
+
+    for (const [id, item] of syncQueue) {
+        try {
+            const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
+            await uploadBytes(storageRef, item.data);
+            itemsToRemove.push(id);
+            console.log(`[Repository] Successfully synced queued asset ${id}`);
+        } catch (error) {
+            console.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
+            item.retryCount++;
+
+            // Remove from queue after 3 failed attempts
+            if (item.retryCount >= 3) {
+                console.error(`[Repository] Asset ${id} removed from queue after 3 failed attempts`);
+                itemsToRemove.push(id);
+            }
+        }
+    }
+
+    // Clean up processed items
+    itemsToRemove.forEach(id => syncQueue.delete(id));
+    console.log(`[Repository] Sync queue processed. ${syncQueue.size} items remaining.`);
+}
+
+// ============================================================================
+// Database Initialization
+// ============================================================================
 
 export async function initDB() {
     return openDB(DB_NAME, 2, {
@@ -34,13 +98,11 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
     if (user) {
         try {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
-            // Fire and forget upload to not block UI? 
-            // Better to await to ensure data safety, or return early. 
-            // For this implementation, we'll await but catch errors so app doesn't crash if offline.
             await uploadBytes(storageRef, blob);
         } catch (error) {
-            console.warn(`Failed to sync asset ${id} to cloud:`, error);
-            // TODO: Queue for sync later
+            console.warn(`[Repository] Failed to sync asset ${id} to cloud:`, error);
+            // Queue for retry on next sync
+            queueAssetForSync(id, blob);
         }
     }
 

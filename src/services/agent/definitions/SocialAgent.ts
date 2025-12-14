@@ -11,10 +11,13 @@ export const SocialAgent: AgentConfig = {
     functions: {
         analyze_trends: async (args: { topic: string }) => {
             return {
-                trend_score: 85,
-                sentiment: "positive",
-                keywords: ["viral", "trending", "hot"],
-                summary: `The topic '${args.topic}' is currently trending with positive sentiment.`
+                success: true,
+                data: {
+                    trend_score: 85,
+                    sentiment: "positive",
+                    keywords: ["viral", "trending", "hot"],
+                    summary: `The topic '${args.topic}' is currently trending with positive sentiment.`
+                }
             };
         }
     },

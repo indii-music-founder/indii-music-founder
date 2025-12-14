@@ -1,8 +1,35 @@
-
 import { AI } from '@/services/ai/AIService';
+import type { ToolFunctionArgs } from '../types';
+
+// ============================================================================
+// Types for ScreenwriterTools
+// ============================================================================
+
+interface FormatScreenplayArgs extends ToolFunctionArgs {
+    text: string;
+}
+
+interface AnalyzeScriptStructureArgs extends ToolFunctionArgs {
+    script: string;
+}
+
+// ============================================================================
+// Helper to extract error message
+// ============================================================================
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An unknown error occurred';
+}
+
+// ============================================================================
+// ScreenwriterTools Implementation
+// ============================================================================
 
 export const ScreenwriterTools = {
-    format_screenplay: async (args: { text: string }) => {
+    format_screenplay: async (args: FormatScreenplayArgs): Promise<string> => {
         try {
             const systemPrompt = `
 You are a professional screenwriter formatting expert.
@@ -25,7 +52,7 @@ Attempt to infer scene headers if not explicit.
             const prompt = `Convert this text to screenplay JSON:\n\n${args.text}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-1.5-pro-preview-0409',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
@@ -33,12 +60,12 @@ Attempt to infer scene headers if not explicit.
             const textResponse = response.text();
             const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
             return jsonMatch ? jsonMatch[0] : textResponse;
-        } catch (e: any) {
-            return `Failed to format screenplay: ${e.message}`;
+        } catch (e: unknown) {
+            return `Failed to format screenplay: ${getErrorMessage(e)}`;
         }
     },
 
-    analyze_script_structure: async (args: { script: string }) => {
+    analyze_script_structure: async (args: AnalyzeScriptStructureArgs): Promise<string> => {
         try {
             const systemPrompt = `
 You are a script doctor and narrative analyst.
@@ -64,7 +91,7 @@ Return ONLY valid JSON with this structure:
             const prompt = `Analyze this script:\n\n${args.script}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-1.5-pro-preview-0409',
+                model: 'gemini-3-pro-preview',
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
@@ -72,8 +99,8 @@ Return ONLY valid JSON with this structure:
             const textResponse = response.text();
             const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
             return jsonMatch ? jsonMatch[0] : textResponse;
-        } catch (e: any) {
-            return `Failed to analyze script: ${e.message}`;
+        } catch (e: unknown) {
+            return `Failed to analyze script: ${getErrorMessage(e)}`;
         }
     }
 };

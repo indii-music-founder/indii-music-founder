@@ -68,7 +68,9 @@ describe('CreativeCanvas', () => {
         id: '1',
         url: 'http://test.com/image.png',
         prompt: 'test prompt',
-        type: 'image' as const
+        type: 'image' as const,
+        timestamp: Date.now(),
+        projectId: 'test-project'
     };
 
     const mockOnClose = vi.fn();

@@ -12,10 +12,13 @@ export const FinanceAgent: AgentConfig = {
         analyze_budget: async (args: { amount: number; breakdown: string }) => {
             const efficiency = args.amount < 50000 ? "High" : "Medium";
             return {
-                status: "approved",
-                efficiency_rating: efficiency,
-                notes: `Budget of $${args.amount} is within acceptable limits. Breakdown: ${args.breakdown}`,
-                timestamp: new Date().toISOString()
+                success: true,
+                data: {
+                    status: "approved",
+                    efficiency_rating: efficiency,
+                    notes: `Budget of $${args.amount} is within acceptable limits. Breakdown: ${args.breakdown}`,
+                    timestamp: new Date().toISOString()
+                }
             };
         }
     },

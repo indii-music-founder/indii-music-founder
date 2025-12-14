@@ -27,11 +27,9 @@ describe('UniversalNode', () => {
     const mockData = {
         departmentName: 'Creative',
         selectedJobId: 'job1',
-        nodeType: 'department',
+        nodeType: 'department' as const,
         status: Status.PENDING,
-        label: 'Test Node',
-        prompt: 'Test Prompt',
-        result: null,
+        result: undefined,
     };
 
     const mockProps = {

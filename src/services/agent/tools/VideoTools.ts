@@ -1,6 +1,64 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import type { ToolFunctionArgs, AgentContext } from '../types';
+
+// ============================================================================
+// Types for VideoTools
+// ============================================================================
+
+interface GenerateVideoArgs extends ToolFunctionArgs {
+    prompt: string;
+    image?: string;
+    duration?: number;
+}
+
+interface GenerateMotionBrushArgs extends ToolFunctionArgs {
+    image: string;
+    mask: string;
+    prompt?: string;
+}
+
+interface BatchEditVideosArgs extends ToolFunctionArgs {
+    prompt: string;
+    videoIndices?: number[];
+}
+
+interface ExtendVideoArgs extends ToolFunctionArgs {
+    videoUrl: string;
+    prompt: string;
+    direction: 'start' | 'end';
+}
+
+interface UpdateKeyframeArgs extends ToolFunctionArgs {
+    clipId: string;
+    property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation';
+    frame: number;
+    value: number;
+    easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+}
+
+interface GenerateVideoChainArgs extends ToolFunctionArgs {
+    prompt: string;
+    startImage: string;
+    totalDuration: number;
+}
+
+interface InterpolateSequenceArgs extends ToolFunctionArgs {
+    firstFrame: string;
+    lastFrame: string;
+    prompt?: string;
+}
+
+interface VideoGenerationOptions {
+    prompt: string;
+    firstFrame?: string;
+    lastFrame?: string;
+}
+
+// ============================================================================
+// VideoTools Implementation
+// ============================================================================
 
 export const VideoTools = {
     generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
@@ -149,7 +207,7 @@ export const VideoTools = {
                 return "Failed to extract frame from the provided video URL.";
             }
 
-            const options: any = {
+            const options: VideoGenerationOptions = {
                 prompt: args.prompt,
             };
 
@@ -336,8 +394,11 @@ export const VideoTools = {
             }
             return "Interpolation failed (no URI returned).";
 
-        } catch (e: any) {
-            return `Interpolation failed: ${e.message}`;
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Interpolation failed: ${e.message}`;
+            }
+            return `Interpolation failed: An unknown error occurred.`;
         }
     }
 };

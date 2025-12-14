@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../../../core/store';
 import { X, Save, Sparkles, Loader2 } from 'lucide-react';
 import { AI } from '../../../services/ai/AIService';
+import { isTextPart } from '@/shared/types/ai.dto';
 
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore();
@@ -33,10 +34,11 @@ export default function WorkflowNodeInspector() {
         setIsGenerating(true);
         try {
             const response = await AI.generateContent({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-3-pro-preview',
                 contents: [{ role: 'user', parts: [{ text: `Refine this prompt based on the instruction: "${aiInstruction}". \n\nCurrent Prompt: "${prompt}"\n\nReturn ONLY the refined prompt text.` }] }]
             });
-            const newPrompt = response.response.candidates?.[0]?.content?.parts?.[0]?.text || prompt;
+            const part = response.response.candidates?.[0]?.content?.parts?.[0];
+            const newPrompt = (part && isTextPart(part)) ? part.text : prompt;
             setPrompt(newPrompt);
             setAiInstruction('');
         } catch (e) {

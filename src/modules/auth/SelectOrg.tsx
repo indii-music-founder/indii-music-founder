@@ -47,7 +47,7 @@ function SelectOrgContent() {
     if (organizations === undefined) {
         if (showTimeoutError) {
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4" style={{ backgroundColor: '#000000' }}>
+                <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4" style={{ backgroundColor: '#000000', color: 'white', position: 'fixed', inset: 0, zIndex: 9999 }}>
                     <div className="text-center max-w-md">
                         <h2 className="text-xl font-bold text-red-500 mb-2">Connection Timeout</h2>
                         <p className="text-gray-400 mb-6">We couldn't load your organizations. Please check your connection.</p>
@@ -64,10 +64,10 @@ function SelectOrgContent() {
 
         console.warn("SelectOrg: Store 'organizations' is undefined. Waiting for hydration...");
         return (
-            <div className="flex items-center justify-center min-h-screen bg-black text-white" style={{ backgroundColor: '#000000' }}>
+            <div className="flex items-center justify-center min-h-screen bg-black text-white" style={{ backgroundColor: '#000000', color: 'white', position: 'fixed', inset: 0, zIndex: 9999 }}>
                 <div className="text-center">
                     <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-500">Loading your workspace...</p>
+                    <p style={{ color: '#888' }}>Loading your workspace...</p>
                 </div>
             </div>
         );
@@ -138,7 +138,7 @@ function SelectOrgContent() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-black text-white p-4" style={{ backgroundColor: '#000000' }}>
+        <div className="flex items-center justify-center min-h-screen bg-black text-white p-4" style={{ backgroundColor: '#000000', color: 'white', position: 'absolute', inset: 0, zIndex: 9999, overflowY: 'auto' }}>
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center">
