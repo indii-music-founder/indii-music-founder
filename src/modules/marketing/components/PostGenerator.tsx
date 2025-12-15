@@ -81,7 +81,7 @@ export default function PostGenerator() {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-1.5-flash', // Fast model for text
+                model: AI_MODELS.TEXT.FAST, // Fast model for text
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
 

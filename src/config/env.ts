@@ -23,6 +23,7 @@ const processEnv = {
     VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL || (typeof process !== 'undefined' ? process.env.VITE_RAG_PROXY_URL : undefined),
     VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
     DEV: import.meta.env.DEV || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
+    skipOnboarding: true,
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);

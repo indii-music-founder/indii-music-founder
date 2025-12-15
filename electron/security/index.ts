@@ -22,9 +22,10 @@ export function configureSecurity(session: Session) {
                         `default-src ${defaultSrc}`,
                         `script-src ${scriptSrc}`,
                         `style-src ${styleSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242",
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indiios-studio.web.app",
                         "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
                         "connect-src 'self' ws: http: https: https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://us-central1-indiios-v-1-1.cloudfunctions.net http://localhost:4242 ws://localhost:4242",
+                        "manifest-src 'self' https://indiios-studio.web.app",
                         "worker-src 'self' blob:"
                     ].join('; ')
                 ],

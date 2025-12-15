@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 
 export default function SelectOrg() {
+    console.log("Rendering SelectOrg module (Electron)");
     return (
         <ErrorBoundary>
             <SelectOrgContent />
