@@ -187,18 +187,18 @@ export function buildDistributorContext(profile: UserProfile): DistributorContex
         minHeight: minSize.height,
         maxWidth: maxSize.width,
         maxHeight: maxSize.height,
-        format: distro.coverArt.format.split('/').map(f => f.trim().toUpperCase()),
+        format: distro.coverArt.format.map(f => f.trim().toUpperCase()),
         colorMode: distro.coverArt.colorMode,
         aspectRatio: '1:1',
-        notes: distro.coverArt.notes ? [distro.coverArt.notes] : []
+        notes: distro.coverArt.notes || []
     };
 
     const audioConstraints: AudioConstraints = {
-        format: distro.audio.format.split('/').map(f => f.trim().toUpperCase()),
+        format: distro.audio.format.map(f => f.trim().toUpperCase()),
         sampleRate: parseSampleRate(distro.audio.sampleRate),
         bitDepth: parseBitDepth(distro.audio.bitDepth),
         channels: 'stereo',
-        notes: distro.audio.notes ? [distro.audio.notes] : []
+        notes: distro.audio.notes || []
     };
 
     const metadataConstraints: MetadataConstraints = {
@@ -206,14 +206,14 @@ export function buildDistributorContext(profile: UserProfile): DistributorContex
         optionalFields: [],
         isrcRequired: distro.metadata.isrcRequired,
         upcRequired: distro.metadata.upcRequired,
-        notes: distro.metadata.notes ? [distro.metadata.notes] : []
+        notes: distro.metadata.notes || []
     };
 
     const timelineConstraints: TimelineConstraints = {
         minLeadTimeDays: parseLeadTime(distro.timeline.minLeadTime),
         reviewTimeDays: parseLeadTime(distro.timeline.reviewTime),
         recommendedLeadTimeDays: parseLeadTime(distro.timeline.minLeadTime) + 7,
-        notes: distro.timeline.notes ? [distro.timeline.notes] : []
+        notes: distro.timeline.notes || []
     };
 
     return {

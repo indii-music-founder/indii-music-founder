@@ -73,7 +73,7 @@ describe('AudioAnalysisEngine', () => {
 
     it('should handle File input', async () => {
         const file = new File([""], "test.mp3");
-        // @ts-ignore
+        // @ts-expect-error File polyfill lacks arrayBuffer typing in jsdom
         file.arrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(8));
 
         await engine.analyze(file);

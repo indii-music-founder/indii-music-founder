@@ -107,7 +107,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             const { onAuthStateChanged } = await import('firebase/auth');
 
             // Bypass for E2E Tests
-            // @ts-ignore
+            // @ts-expect-error test mode flag is injected in playwright environment
             if (window.__TEST_MODE__) {
                 console.log("[AuthSlice] Test Mode detected - skipping Firebase Auth listener");
                 return;
