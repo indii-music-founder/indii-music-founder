@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Megaphone, Copy, Image as ImageIcon, Loader2, Wand2, Upload } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { AI_MODELS } from '@/core/config/ai-models';
 import { AI } from '@/services/ai/AIService';
 
 interface PostContent {

@@ -162,7 +162,7 @@ export interface ConversationFile {
     id: string;
     file: File;
     preview: string; // data URL for images
-    type: 'image' | 'document';
+    type: 'image' | 'document' | 'audio';
     base64?: string; // base64 string for images
     content?: string; // text content for documents
 }
