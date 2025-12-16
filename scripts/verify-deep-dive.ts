@@ -5,9 +5,9 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { env } from '../src/config/env';
 
 // Mock Browser Environment for Firebase
-// @ts-ignore
+// @ts-expect-error Firebase scripts assume DOM window exists
 global.window = {};
-// @ts-ignore
+// @ts-expect-error align global self reference for Firebase SDK in Node
 global.self = global;
 
 // Hardcoded Token from Step 249 (This is the one-time proof)

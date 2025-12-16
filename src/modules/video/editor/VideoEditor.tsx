@@ -41,7 +41,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const [activeTab, setActiveTab] = useState<'project' | 'tracks' | 'assets'>('project');
     const [selectedClipIdState, setSelectedClipIdState] = useState<string | null>(null); // Local state for UI selection if needed, or sync with store
     const [isExporting, setIsExporting] = useState(false);
-    const [renderMode, setRenderMode] = useState<'local' | 'cloud'>('local');
 
     // Sync local selection with store
     useEffect(() => {
@@ -193,43 +192,20 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     const handleExport = async () => {
         setIsExporting(true);
-        toast.info(`Starting ${renderMode} export... This may take a while.`);
+        toast.info('Starting cloud export... This may take a while.');
 
         try {
-            let data: any;
+            const render = httpsCallable(functions, 'renderVideo');
+            const result = await render({
+                compositionId: project.id, // Dynamic Composition ID
+                inputProps: { project }
+            });
+            const data = result.data as { renderId?: string; success?: boolean; url?: string; error?: string };
 
-            if (renderMode === 'cloud') {
-                const render = httpsCallable(functions, 'renderVideo');
-                const result = await render({
-                    compositionId: project.id, // Dynamic Composition ID
-                    inputProps: { project }
-                });
-                data = result.data;
-            } else {
-                const endpoint = '/api/video/render';
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ project }),
-                });
-                data = await response.json();
-            }
-
-            if (data.success || data.renderId) { // generic check
-                if (renderMode === 'cloud') {
-                    toast.success('Cloud render started! (Check console for ID)');
+            if (data.renderId || data.success) {
+                toast.success('Cloud render started! (Check console for ID)');
+                if (data.renderId) {
                     console.log('Render ID:', data.renderId);
-                } else {
-                    toast.success('Export complete!');
-                    // Trigger download
-                    const link = document.createElement('a');
-                    link.href = data.url;
-                    link.download = `project-${project.name}.mp4`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
                 }
             } else {
                 throw new Error(data.error || 'Export failed');

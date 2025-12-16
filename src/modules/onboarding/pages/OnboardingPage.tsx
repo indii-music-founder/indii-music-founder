@@ -134,7 +134,7 @@ export default function OnboardingPage() {
         try {
             const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, 'onboarding', currentFiles);
 
-            let nextHistory = [...newHistory];
+            const nextHistory = [...newHistory];
             let uiToolCall = null;
 
             if (functionCalls && functionCalls.length > 0) {
