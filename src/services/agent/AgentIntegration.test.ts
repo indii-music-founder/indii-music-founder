@@ -5,10 +5,57 @@ import { agentRegistry } from './registry';
 import { useStore } from '@/core/store';
 import { AI } from '@/services/ai/AIService';
 
+// Provide safe environment defaults to avoid failing validation during tests
+vi.mock('@/config/env', () => ({
+    env: {
+        apiKey: 'test-api-key',
+        projectId: 'test-project',
+        location: 'test-location',
+        useVertex: false,
+        googleMapsApiKey: 'maps-key',
+        VITE_FUNCTIONS_URL: 'https://example.com/functions',
+        VITE_RAG_PROXY_URL: 'https://example.com/rag',
+        VITE_GOOGLE_MAPS_API_KEY: 'maps-key',
+        DEV: true,
+        skipOnboarding: true
+    }
+}));
+
+// Mock Gemini Retrieval to suppress API key warnings and network calls
+vi.mock('@/services/rag/GeminiRetrievalService', () => ({
+    GeminiRetrieval: {
+        initCorpus: vi.fn().mockResolvedValue('test-corpus'),
+        listDocuments: vi.fn().mockResolvedValue([]),
+        query: vi.fn().mockResolvedValue([]),
+        ingestText: vi.fn().mockResolvedValue(undefined),
+        createDocument: vi.fn().mockResolvedValue({ name: 'doc' })
+    }
+}));
+
+// Mock Firebase to avoid environment-dependent initialization during unit tests
+vi.mock('@/services/firebase', () => ({
+    db: {},
+    storage: {},
+    auth: {},
+    functions: {}
+}));
+
+// Mock MemoryService to bypass Firestore and embedding calls
+vi.mock('./MemoryService', () => ({
+    memoryService: {
+        retrieveRelevantMemories: vi.fn().mockResolvedValue([]),
+        saveMemory: vi.fn()
+    }
+}));
+
 // Mock AI Service to control responses and simulate tool usage
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
-        generateContent: vi.fn(),
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => '',
+            functionCalls: () => []
+        }),
+        generateContentStream: vi.fn()
     }
 }));
 
@@ -40,6 +87,18 @@ describe('Agent Architecture Integration (Hardened)', () => {
             })
         };
         (useStore.getState as any).mockReturnValue(mockStoreState);
+
+        // Provide a default streaming response for the Generalist agent
+        (AI.generateContentStream as any).mockImplementation(() => {
+            const stream = new ReadableStream({
+                start(controller) {
+                    controller.enqueue({ text: () => '{"final_response":"Generalist fallback response"}' });
+                    controller.close();
+                }
+            });
+
+            return Promise.resolve(stream);
+        });
 
         service = new AgentService();
     });
@@ -130,7 +189,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
             addAgentMessage({ id: '2', role: 'model', text: 'Prev Model', timestamp: 200 });
 
             (AI.generateContent as any).mockResolvedValueOnce({ text: () => 'marketing' }); // Router
-            (AI.generateContent as any).mockResolvedValueOnce({ text: () => 'Response' }); // Agent
+            (AI.generateContent as any).mockResolvedValueOnce({ text: () => 'Response', functionCalls: () => [] }); // Agent
 
             await service.sendMessage('New Message');
 
