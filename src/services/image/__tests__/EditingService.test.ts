@@ -90,23 +90,27 @@ describe('EditingService', () => {
                 .mockResolvedValueOnce({ text: () => JSON.stringify({ scenes: ['Scene 1', 'Scene 2'] }) }) // Planner
                 .mockResolvedValueOnce({ text: () => 'Visual Context' }) // Context Analysis
                 .mockResolvedValueOnce({ // Frame 1
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: { mimeType: 'image/png', data: 'frame1' }
-                            }]
-                        }
-                    }]
+                    response: {
+                        candidates: [{
+                            content: {
+                                parts: [{
+                                    inlineData: { mimeType: 'image/png', data: 'frame1' }
+                                }]
+                            }
+                        }]
+                    }
                 })
                 .mockResolvedValueOnce({ text: () => 'Visual Context 2' }) // Context Analysis 2
                 .mockResolvedValueOnce({ // Frame 2
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: { mimeType: 'image/png', data: 'frame2' }
-                            }]
-                        }
-                    }]
+                    response: {
+                        candidates: [{
+                            content: {
+                                parts: [{
+                                    inlineData: { mimeType: 'image/png', data: 'frame2' }
+                                }]
+                            }
+                        }]
+                    }
                 });
 
             (AI.parseJSON as any).mockReturnValue({ scenes: ['Scene 1', 'Scene 2'] });
@@ -123,4 +127,45 @@ describe('EditingService', () => {
             expect(result[1].url).toBe('data:image/png;base64,frame2');
         });
     });
+
+    describe('multiMaskEdit', () => {
+        it('should process masks sequentially and return variations', async () => {
+            // Mock backend responses for sequential edits
+            // We expect 4 variations, and each variation has 2 masks (steps).
+            // Total backend calls = variationCount (4) * masks.length (2) = 8 calls.
+
+            const mockResponse = {
+                data: {
+                    candidates: [{
+                        content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'edited-step' } }] }
+                    }]
+                }
+            };
+            mockHttpsCallable.mockResolvedValue(mockResponse);
+
+            const result = await Editing.multiMaskEdit({
+                image: { mimeType: 'image/png', data: 'base' },
+                masks: [
+                    { mimeType: 'image/png', data: 'mask1', prompt: 'edit1', colorId: 'red', referenceImage: { mimeType: 'image/jpeg', data: 'ref1' } },
+                    { mimeType: 'image/png', data: 'mask2', prompt: 'edit2', colorId: 'blue' }
+                ],
+                variationCount: 2 // Reduced for test
+            });
+
+            expect(result).toHaveLength(2);
+            expect(mockHttpsCallable).toHaveBeenCalledTimes(4); // 2 variations * 2 steps
+
+            // Check if reference image was passed in the first call
+            const firstCallArgs = mockHttpsCallable.mock.calls[0][0];
+            expect(firstCallArgs.referenceImage).toBeDefined();
+            expect(firstCallArgs.referenceImage).toBe('ref1');
+            expect(firstCallArgs.prompt).toBe('edit1');
+
+            // Check second step (uses result of first as input)
+            const secondCallArgs = mockHttpsCallable.mock.calls[1][0];
+            expect(secondCallArgs.image).toBe('edited-step'); // Input is output of join
+            expect(secondCallArgs.prompt).toBe('edit2');
+        });
+    });
 });
+

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -8,10 +8,14 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import ChatOverlay from './components/ChatOverlay';
-import TestPlaybookPanel from './dev/TestPlaybookPanel';
-import AudioStressTest from '../dev/AudioStressTest';
+import { AuthLogin } from './components/AuthLogin';
+import { STANDALONE_MODULES, type ModuleId } from './constants';
+import { env } from '@/config/env';
 
-// Lazy load modules
+// ============================================================================
+// Lazy-loaded Module Components
+// ============================================================================
+
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
 const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
@@ -32,49 +36,71 @@ const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDash
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
 const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 
-// Auth Loading Component
-const AuthLoading = () => {
-    const handleLogin = async () => {
-        if (window.electronAPI?.auth) {
-            window.electronAPI.auth.login();
-        } else {
-            // Web fallback
-            try {
-                const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
-                const { auth } = await import('@/services/firebase');
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Web Login failed:", error);
-                alert("Login failed. Check console.");
-            }
-        }
-    };
+// Dev-only components
+const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
+const AudioStressTest = lazy(() => import('../dev/AudioStressTest'));
 
-    return (
-        <div className="flex flex-col items-center justify-center h-screen bg-[#0d1117] text-white space-y-6">
-            <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-                <h2 className="text-xl font-semibold">Waiting for Login...</h2>
-                <p className="text-gray-400 mt-2 text-center max-w-xs">
-                    Please sign in to continue.
-                </p>
-            </div>
+// ============================================================================
+// Module Router - Maps module IDs to components
+// ============================================================================
 
-            <button
-                onClick={handleLogin}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full font-medium transition-colors flex items-center gap-2"
-            >
-                <span>{window.electronAPI?.auth ? 'Open Login Page' : 'Sign In with Google'}</span>
-            </button>
-        </div>
-    );
+// Use flexible type to accommodate different component prop signatures
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
+    'dashboard': Dashboard,
+    'creative': CreativeStudio,
+    'video': VideoStudio,
+    'music': MusicStudio,
+    'legal': LegalDashboard,
+    'marketing': MarketingDashboard,
+    'workflow': WorkflowLab,
+    'knowledge': KnowledgeBase,
+    'road': RoadManager,
+    'social': SocialDashboard,
+    'brand': BrandManager,
+    'campaign': CampaignDashboard,
+    'publicist': PublicistDashboard,
+    'publishing': PublishingDashboard,
+    'finance': FinanceDashboard,
+    'licensing': LicensingDashboard,
+    'showroom': Showroom,
+    'onboarding': OnboardingPage,
+    'select-org': SelectOrg,
 };
 
+// ============================================================================
+// Helper Components
+// ============================================================================
 
-export default function App() {
-    const { currentModule, initializeHistory, initializeAuth, loadProjects, isAuthReady, isAuthenticated } = useStore();
+function LoadingFallback() {
+    return (
+        <div className="flex items-center justify-center h-full text-gray-500">
+            Loading Module...
+        </div>
+    );
+}
 
+function DevPortWarning() {
+    const port = window.location.port;
+    if (!import.meta.env.DEV || port === '4242') return null;
+
+    return (
+        <div className="fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">
+            Wrong Port: {port}
+            <br />
+            <span className="font-normal opacity-80">Use :4242 for Studio</span>
+        </div>
+    );
+}
+
+// ============================================================================
+// Custom Hooks
+// ============================================================================
+
+function useAppInitialization() {
+    const { initializeAuth, initializeHistory, loadProjects, isAuthReady, isAuthenticated } = useStore();
+
+    // Initialize auth on mount
     useEffect(() => {
         initializeAuth();
 
@@ -82,154 +108,150 @@ export default function App() {
         if (window.location.pathname === '/select-org') {
             useStore.setState({ currentModule: 'select-org' });
         }
+
+        // Reset agent open state on mount
+        useStore.setState({ isAgentOpen: false });
     }, [initializeAuth]);
 
-    // Data Load Effect - Only load when authenticated
+    // Load data when authenticated
     useEffect(() => {
         if (isAuthenticated && isAuthReady) {
-            console.log("[App] User authenticated, loading data...", { isAuthenticated, isAuthReady });
+            console.log('[App] User authenticated, loading data...');
             initializeHistory();
             loadProjects();
         }
     }, [isAuthenticated, isAuthReady, initializeHistory, loadProjects]);
+}
 
-    // Reset agent open state on mount
+function useOnboardingRedirect() {
+    const { isAuthReady, isAuthenticated, currentModule } = useStore();
+
     useEffect(() => {
-        useStore.setState({ isAgentOpen: false });
-    }, []);
+        if (!isAuthenticated || !isAuthReady) return;
 
-    // New User Onboarding Redirect
-    useEffect(() => {
-        if (isAuthenticated && isAuthReady) {
-            const state = useStore.getState();
-            // Simple check: if bio is missing, assume onboarding is needed
-            // Ideally we check a specific flag, but this works for the "nuclear" reset flow
-            if (!state.userProfile?.bio && currentModule !== 'onboarding' && currentModule !== 'select-org' && !(window as any).__TEST_MODE__) {
-                console.log("[App] New user detected, redirecting to onboarding");
-                useStore.setState({ currentModule: 'onboarding' });
-            }
-        }
-    }, [isAuthenticated, isAuthReady, currentModule]);
+        const state = useStore.getState();
+        const isTestMode = typeof window !== 'undefined' && '__TEST_MODE__' in window;
 
-    // Auth Guard - Redirect unauthenticated users to login
-    useEffect(() => {
-        if (isAuthReady && !isAuthenticated) {
-            // Use production URL as fallback
-            const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://indiios-v-1-1.web.app/login');
-
-            if (window.electronAPI?.auth) {
-                window.electronAPI.auth.login();
-            } else {
-                if (import.meta.env.DEV) {
-                    console.info("[App] Electron API not found. This is expected if running in web mode (npm run dev).");
-                } else {
-                    console.error("[App] Electron API not found in production! deeply suspicious.");
+        // Skip onboarding in dev mode if flag is set
+        if (env.skipOnboarding && !state.userProfile?.bio) {
+            console.log('[App] DevEx: Skipping onboarding via env flag');
+            useStore.setState({
+                userProfile: {
+                    ...state.userProfile,
+                    id: state.user?.uid || 'dev-user',
+                    bio: 'Dev Mode Auto-Generated Bio',
+                    preferences: '{}',
+                    brandKit: state.userProfile?.brandKit || {
+                        colors: [],
+                        fonts: '',
+                        brandDescription: '',
+                        negativePrompt: '',
+                        socials: {},
+                        brandAssets: [],
+                        referenceImages: [],
+                        releaseDetails: {
+                            title: '', type: 'Single', artists: '', genre: '',
+                            mood: '', themes: '', lyrics: ''
+                        }
+                    },
+                    analyzedTrackIds: [],
+                    knowledgeBase: [],
+                    savedWorkflows: []
                 }
-                // We do NOT redirect to landingPageUrl anymore to avoid the loop.
-                // We stay here and let AuthLoading show the "Sign In" button.
-            }
-        }
-    }, [isAuthReady, isAuthenticated]);
-
-    // Electron Deep Link Auth Listener
-    useEffect(() => {
-        if (!window.electronAPI?.auth) {
+            });
             return;
         }
 
-        const unsubscribe = window.electronAPI.auth.onUserUpdate(async (tokens) => {
-            console.log("[App] Received tokens from Electron:", tokens ? "tokens present" : "null");
+        // Redirect to onboarding if profile is incomplete
+        const shouldRedirectToOnboarding =
+            !state.userProfile?.bio &&
+            currentModule !== 'onboarding' &&
+            currentModule !== 'select-org' &&
+            !isTestMode;
 
-            // Handle logout signal
-            if (!tokens) {
-                console.log("[App] Received logout signal from Electron");
-                return;
-            }
+        if (shouldRedirectToOnboarding) {
+            console.log('[App] New user detected, redirecting to onboarding');
+            useStore.setState({ currentModule: 'onboarding' });
+        }
+    }, [isAuthenticated, isAuthReady, currentModule]);
+}
 
-            if (tokens.idToken) {
-                try {
-                    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                    const { auth } = await import('@/services/firebase');
-                    const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
-                    await signInWithCredential(auth, credential);
-                    console.log("[App] Successfully signed in with deep link tokens");
-                } catch (error) {
-                    console.error("[App] Failed to sign in with deep link tokens:", error);
-                    // Retry once after a short delay (handles race conditions)
-                    setTimeout(async () => {
-                        try {
-                            const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                            const { auth } = await import('@/services/firebase');
-                            const credential = GoogleAuthProvider.credential(tokens.idToken, tokens.accessToken);
-                            await signInWithCredential(auth, credential);
-                            console.log("[App] Retry successful - signed in with deep link tokens");
-                        } catch (retryError) {
-                            console.error("[App] Retry also failed:", retryError);
-                        }
-                    }, 1000);
-                }
-            }
-        });
+// ============================================================================
+// Module Renderer Component
+// ============================================================================
 
-        // Cleanup listener on unmount
-        return () => {
-            console.log("[App] Cleaning up Electron auth listener");
-            unsubscribe();
-        };
-    }, []);
+interface ModuleRendererProps {
+    moduleId: ModuleId;
+}
 
+function ModuleRenderer({ moduleId }: ModuleRendererProps) {
+    const ModuleComponent = MODULE_COMPONENTS[moduleId];
+
+    if (!ModuleComponent) {
+        return <div className="flex items-center justify-center h-full text-gray-500">Unknown module</div>;
+    }
+
+    // Special case for creative studio which needs initialMode prop
+    if (moduleId === 'creative') {
+        return <ModuleComponent initialMode="image" />;
+    }
+
+    return <ModuleComponent />;
+}
+
+// ============================================================================
+// Main App Component
+// ============================================================================
+
+export default function App() {
+    const { currentModule, isAuthReady, isAuthenticated } = useStore();
+
+    // Initialize app and handle onboarding
+    useAppInitialization();
+    useOnboardingRedirect();
+
+    // Log module changes in dev
     useEffect(() => {
-        console.log(`[App] Current Module Changed: ${currentModule}`);
+        if (import.meta.env.DEV) {
+            console.log(`[App] Current Module: ${currentModule}`);
+        }
     }, [currentModule]);
+
+    // Determine if current module should show chrome (sidebar, command bar, etc.)
+    const showChrome = useMemo(
+        () => !STANDALONE_MODULES.includes(currentModule as ModuleId),
+        [currentModule]
+    );
 
     return (
         <ToastProvider>
-            <div className="flex h-screen w-screen bg-[#0d1117] text-white overflow-hidden font-sans">
+            <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans">
                 <ApiKeyErrorModal />
-                {/* Left Sidebar */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
+
+                {/* Left Sidebar - Hidden for standalone modules */}
+                {showChrome && (
                     <div className="hidden md:block h-full">
                         <Sidebar />
                     </div>
                 )}
 
                 {/* Main Content Area */}
-                <main className="flex-1 flex flex-col min-w-0 bg-[#0d1117] relative">
+                <main className="flex-1 flex flex-col min-w-0 bg-background relative">
                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                         <ErrorBoundary>
-                            <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading Module...</div>}>
+                            <Suspense fallback={<LoadingFallback />}>
                                 {/* Auth Gate */}
-                                {(!isAuthReady || !isAuthenticated) ? (
-                                    <AuthLoading />
+                                {!isAuthReady || !isAuthenticated ? (
+                                    <AuthLogin />
                                 ) : (
-                                    <>
-                                        {currentModule === 'select-org' && <SelectOrg />}
-                                        {currentModule === 'dashboard' && <Dashboard />}
-                                        {currentModule === 'creative' && <CreativeStudio initialMode="image" />}
-                                        {currentModule === 'legal' && <LegalDashboard />}
-                                        {currentModule === 'music' && <MusicStudio />}
-                                        {currentModule === 'marketing' && <MarketingDashboard />}
-                                        {currentModule === 'video' && <VideoStudio />}
-                                        {currentModule === 'workflow' && <WorkflowLab />}
-                                        {currentModule === 'knowledge' && <KnowledgeBase />}
-                                        {currentModule === 'road' && <RoadManager />}
-                                        {currentModule === 'social' && <SocialDashboard />}
-                                        {currentModule === 'brand' && <BrandManager />}
-                                        {currentModule === 'campaign' && <CampaignDashboard />}
-                                        {currentModule === 'publicist' && <PublicistDashboard />}
-                                        {currentModule === 'publishing' && <PublishingDashboard />}
-                                        {currentModule === 'finance' && <FinanceDashboard />}
-                                        {currentModule === 'licensing' && <LicensingDashboard />}
-                                        {currentModule === 'onboarding' && <OnboardingPage />}
-                                        {currentModule === 'showroom' && <Showroom />}
-                                    </>
+                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
                                 )}
                             </Suspense>
                         </ErrorBoundary>
                     </div>
 
-                    {/* Command Bar at Bottom */}
-                    {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
+                    {/* Command Bar - Hidden for standalone modules */}
+                    {showChrome && (
                         <div className="flex-shrink-0 z-10 relative">
                             <ErrorBoundary>
                                 <ChatOverlay />
@@ -239,22 +261,21 @@ export default function App() {
                     )}
                 </main>
 
-                {/* Right Panel */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && (
-                    <RightPanel />
-                )}
+                {/* Right Panel - Hidden for standalone modules */}
+                {showChrome && <RightPanel />}
 
-                {/* Mobile Navigation */}
-                {currentModule !== 'select-org' && currentModule !== 'onboarding' && currentModule !== 'dashboard' && <MobileNav />}
+                {/* Mobile Navigation - Hidden for standalone modules */}
+                {showChrome && <MobileNav />}
 
                 {/* DevTools HUD - Only in Development */}
                 {import.meta.env.DEV && (
-                    <>
+                    <Suspense fallback={null}>
                         <TestPlaybookPanel />
                         <div className="fixed bottom-4 left-4 z-50">
                             <AudioStressTest />
                         </div>
-                    </>
+                        <DevPortWarning />
+                    </Suspense>
                 )}
             </div>
         </ToastProvider>

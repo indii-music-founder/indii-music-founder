@@ -10,6 +10,9 @@ export interface HistoryItem {
     orgId?: string;
     meta?: string;
     mask?: string;
+    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
+    tags?: string[];
+    subject?: string;
 }
 
 export interface CanvasImage {
@@ -49,6 +52,7 @@ export interface CreativeSlice {
     // Uploads
     uploadedImages: HistoryItem[];
     addUploadedImage: (img: HistoryItem) => void;
+    updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
     // Studio Controls
@@ -57,8 +61,11 @@ export interface CreativeSlice {
         resolution: string;
         negativePrompt: string;
         seed: string;
+        isCoverArtMode: boolean; // When true, enforces distributor cover art specs
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
+    enableCoverArtMode: () => void; // Sets 1:1 aspect for cover art
+    disableCoverArtMode: () => void; // Reverts to previous aspect ratio
 
     // Mode & Inputs
     generationMode: 'image' | 'video';
@@ -75,6 +82,10 @@ export interface CreativeSlice {
         ingredients: HistoryItem[];
     };
     setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
+
+    // Entity Anchor (Character Consistency)
+    entityAnchor: HistoryItem | null;
+    setEntityAnchor: (img: HistoryItem | null) => void;
 
     viewMode: 'gallery' | 'canvas' | 'showroom' | 'video_production';
     setViewMode: (mode: 'gallery' | 'canvas' | 'showroom' | 'video_production') => void;
@@ -163,15 +174,33 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
 
     uploadedImages: [],
     addUploadedImage: (img) => set((state) => ({ uploadedImages: [img, ...state.uploadedImages] })),
+    updateUploadedImage: (id, updates) => set((state) => ({
+        uploadedImages: state.uploadedImages.map(img => img.id === id ? { ...img, ...updates } : img)
+    })),
     removeUploadedImage: (id) => set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) })),
 
     studioControls: {
         aspectRatio: '16:9',
         resolution: '4K',
         negativePrompt: '',
-        seed: ''
+        seed: '',
+        isCoverArtMode: false
     },
     setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
+    enableCoverArtMode: () => set((state) => ({
+        studioControls: {
+            ...state.studioControls,
+            aspectRatio: '1:1', // Cover art is always square
+            isCoverArtMode: true
+        }
+    })),
+    disableCoverArtMode: () => set((state) => ({
+        studioControls: {
+            ...state.studioControls,
+            aspectRatio: '16:9', // Revert to default
+            isCoverArtMode: false
+        }
+    })),
 
     generationMode: 'image',
     setGenerationMode: (mode) => set({ generationMode: mode }),
@@ -189,6 +218,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     setVideoInput: (key, value) => set(state => ({
         videoInputs: { ...state.videoInputs, [key]: value }
     })),
+
+    entityAnchor: null,
+    setEntityAnchor: (img) => set({ entityAnchor: img }),
 
     viewMode: 'gallery',
     setViewMode: (mode) => set({ viewMode: mode }),

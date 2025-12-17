@@ -13,13 +13,16 @@ export const LicensingAgent: AgentConfig = {
             // Determine random availability
             const available = Math.random() > 0.3;
             return {
-                status: available ? "available" : "restricted",
-                title: args.title,
-                artist: args.artist,
-                quote: available ? "$2,500" : "N/A",
-                notes: available
-                    ? `Cleared for ${args.usage}.Contact label for final signature.`
-                    : `Rights held by estate.Clearance unlikely for ${args.usage}.`
+                success: true,
+                data: {
+                    status: available ? "available" : "restricted",
+                    title: args.title,
+                    artist: args.artist,
+                    quote: available ? "$2,500" : "N/A",
+                    notes: available
+                        ? `Cleared for ${args.usage}.Contact label for final signature.`
+                        : `Rights held by estate.Clearance unlikely for ${args.usage}.`
+                }
             };
         }
     },

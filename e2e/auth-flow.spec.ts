@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // Configuration for "The Gatekeeper"
 const LANDING_PAGE_URL = 'http://localhost:3000';
-const STUDIO_URL = 'http://localhost:5173';
+const STUDIO_URL = 'http://localhost:4242';
 
 test.describe('The Gatekeeper: Auth System Verification', () => {
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, Upload } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioStore } from '../store/audioStore';
 
 export default function AudioManager() {
@@ -22,20 +23,30 @@ export default function AudioManager() {
         const audio = new Audio('/audio/tech-house-loop.mp3');
         audio.loop = true;
         audio.volume = 0.7;
-        audio.crossOrigin = "anonymous"; // Important for analyzing external audio if needed
+        audio.preload = "auto";
+        audio.crossOrigin = "anonymous";
         audioRef.current = audio;
 
         // Event listeners
-        audio.addEventListener('canplaythrough', () => {
+        const handleCanPlay = () => {
+            console.log("Audio Ready");
             setIsReady(true);
-        });
+        };
 
-        audio.addEventListener('error', (e) => {
+        const handleError = (e: Event | string) => {
             console.error("Audio error:", e);
-        });
+        };
+
+        audio.addEventListener('canplaythrough', handleCanPlay);
+        audio.addEventListener('error', handleError);
+
+        // Force load
+        audio.load();
 
         return () => {
             audio.pause();
+            audio.removeEventListener('canplaythrough', handleCanPlay);
+            audio.removeEventListener('error', handleError);
             audioRef.current = null;
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             if (audioContextRef.current) audioContextRef.current.close();
@@ -51,9 +62,12 @@ export default function AudioManager() {
             audioContextRef.current = ctx;
 
             const analyser = ctx.createAnalyser();
-            analyser.fftSize = 2048; // Higher resolution for 31 bands
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.85;
             analyserRef.current = analyser;
 
+            // Connect only if not already connected (though we check context above)
+            // Need to handle CORS issues with generic error catch
             const source = ctx.createMediaElementSource(audioRef.current);
             sourceRef.current = source;
             source.connect(analyser);
@@ -68,90 +82,59 @@ export default function AudioManager() {
     const analyzeLoop = () => {
         if (!analyserRef.current) return;
 
-        const bufferLength = analyserRef.current.frequencyBinCount; // 1024
+        const bufferLength = analyserRef.current.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
         analyserRef.current.getByteFrequencyData(dataArray);
 
-        // Calculate 31 Bands (Logarithmic-ish approximation)
-        // 1024 bins spread across 0-22kHz.
-        // We want 31 bands.
         const bands: number[] = [];
         const bandCount = 31;
-
-        // Simple linear-to-log mapping
-        // We can use a multiplier to widen the bin range for higher frequencies
         let currentBin = 0;
 
         for (let i = 0; i < bandCount; i++) {
-            // Determine start and end bin for this band
-            // Using a power function to distribute bins: bin = floor(base ^ i)
-            // Or simpler: just hardcode ranges or use a geometric progression.
-
-            // Geometric progression:
-            // start = 0
-            // next = start * factor
-            // factor = (1024)^(1/31) ~= 1.25
-
-            // Let's use a simpler approach for visualizer:
-            // Low bands need fewer bins, high bands need more.
-
-            // Total bins = 1024.
-            // Let's try to grab chunks.
-
-            const startBin = Math.floor(Math.pow(i / bandCount, 2) * (bufferLength * 0.8)); // Use mostly lower/mid range, ignore very top
+            const startBin = Math.floor(Math.pow(i / bandCount, 2) * (bufferLength * 0.8));
             const endBin = Math.floor(Math.pow((i + 1) / bandCount, 2) * (bufferLength * 0.8));
-
-            let sum = 0;
-            let count = 0;
-
-            // Ensure at least one bin
             const actualStart = Math.max(startBin, currentBin);
             const actualEnd = Math.max(endBin, actualStart + 1);
+            let sum = 0;
+            let count = 0;
 
             for (let j = actualStart; j < actualEnd && j < bufferLength; j++) {
                 sum += dataArray[j];
                 count++;
             }
-
             currentBin = actualEnd;
-
-            const avg = count > 0 ? sum / count : 0;
-            bands.push(avg / 255);
+            bands.push(count > 0 ? (sum / count) / 255 : 0);
         }
 
-        // Legacy 3-band calculation (kept for compatibility)
-        // Bass: 0-3 (~0-500Hz) -> rough mapping to new bins
-        // We can re-calculate from dataArray for accuracy
-        let bass = 0;
-        for (let i = 0; i < 10; i++) bass += dataArray[i]; // First ~200Hz
-        bass /= 10;
+        // Legacy 3-band approx
+        let bass = 0; for (let i = 0; i < 10; i++) bass += dataArray[i];
+        let mid = 0; for (let i = 10; i < 100; i++) mid += dataArray[i];
+        let high = 0; for (let i = 100; i < 500; i++) high += dataArray[i];
 
-        let mid = 0;
-        for (let i = 10; i < 100; i++) mid += dataArray[i]; // ~200Hz - 2kHz
-        mid /= 90;
-
-        let high = 0;
-        for (let i = 100; i < 500; i++) high += dataArray[i]; // ~2kHz - 10kHz
-        high /= 400;
-
-        // Normalize 0-1
         setFrequencyData({
-            bass: bass / 255,
-            mid: mid / 255,
-            high: high / 255,
+            bass: (bass / 10) / 255,
+            mid: (mid / 90) / 255,
+            high: (high / 400) / 255,
             bands: bands
         });
 
         rafRef.current = requestAnimationFrame(analyzeLoop);
     };
 
+    const [showGlitch, setShowGlitch] = useState(false);
+
+    const triggerGlitch = () => {
+        setShowGlitch(true);
+        setTimeout(() => setShowGlitch(false), 2000);
+    };
+
     const togglePlay = async () => {
         if (!audioRef.current) return;
 
+        // On iOS, we must create/resume context inside the click handler
         if (!audioContextRef.current) {
             setupAudioAnalysis();
         }
-
         if (audioContextRef.current?.state === 'suspended') {
             await audioContextRef.current.resume();
         }
@@ -159,9 +142,10 @@ export default function AudioManager() {
         if (isPlaying) {
             audioRef.current.pause();
         } else {
-            const playPromise = audioRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(e => console.error("Audio play failed on click:", e));
+            try {
+                await audioRef.current.play();
+            } catch (e) {
+                console.error("Audio Play failed:", e);
             }
         }
         setIsPlaying(!isPlaying);
@@ -177,64 +161,94 @@ export default function AudioManager() {
         audioRef.current.load();
         setFileName(file.name);
         setIsReady(true);
-
         if (isPlaying) {
-            audioRef.current.play();
+            const playPromise = audioRef.current.play();
+            if (playPromise) playPromise.catch(e => console.error("Play error after upload:", e));
         }
     };
 
     return (
-        <div className="fixed bottom-8 left-8 z-50 flex items-center gap-4">
-            <button
+        <div className="fixed bottom-8 left-8 z-50 flex flex-col gap-4 items-start md:flex-row md:items-center">
+            {/* Play/Pause Control */}
+            <motion.button
+                whileTap={{ scale: 0.9 }}
                 onClick={togglePlay}
                 disabled={!isReady}
-                className={`p-3 rounded-full backdrop-blur-md border transition-all group ${isPlaying
-                    ? 'bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_15px_rgba(0,243,255,0.3)]'
-                    : 'bg-black/50 border-white/10 text-white hover:bg-white/10'
-                    } ${!isReady ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-14 h-14 md:w-16 md:h-16 rounded-full backdrop-blur-md border transition-all flex items-center justify-center shadow-2xl group ${isPlaying
+                    ? 'bg-neon-blue/20 border-neon-blue text-neon-blue shadow-[0_0_20px_rgba(0,243,255,0.4)]'
+                    : 'bg-black/60 border-white/20 text-white hover:bg-white/10 hover:border-white/40'
+                    } ${!isReady ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}`}
             >
                 {isPlaying ? (
-                    <Volume2 className="w-6 h-6" />
+                    <Volume2 className="w-6 h-6 md:w-8 md:h-8" />
                 ) : (
-                    <VolumeX className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
+                    <VolumeX className="w-6 h-6 md:w-8 md:h-8 text-white/50 group-hover:text-white transition-colors" />
                 )}
-            </button>
+            </motion.button>
 
-            {/* Upload Button */}
-            <div className="relative group">
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-3 rounded-full bg-black/50 border border-white/10 text-white hover:bg-white/10 backdrop-blur-md transition-all"
-                    title="Upload your own track"
+            {/* Controls Container */}
+            <div className="flex gap-2">
+                {/* Upload Button */}
+                <div className="relative group">
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-5 py-3 md:px-6 md:py-3 rounded-full bg-black/60 border border-white/10 text-white hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all flex items-center gap-2 md:gap-3 font-medium tracking-wide shadow-lg"
+                        title="Upload your own track"
+                    >
+                        <Upload className="w-5 h-5" />
+                        <span className="inline">Upload</span>
+                    </motion.button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept="audio/*"
+                        className="hidden"
+                    />
+                </div>
+
+                {/* Mobile Camera/Action Button (Requested) */}
+                <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    className="md:hidden px-4 py-3 rounded-full bg-black/60 border border-white/10 text-white hover:bg-white/10 backdrop-blur-md transition-all flex items-center justify-center shadow-lg"
+                    onClick={triggerGlitch}
+                    title="Use Camera"
                 >
-                    <Upload className="w-5 h-5" />
-                </button>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept="audio/*"
-                    className="hidden"
-                />
+                    <span className="text-xl">📷</span>
+                </motion.button>
             </div>
 
-            {/* Status / CTA */}
+            {/* Hint */}
             {!hasInteracted && !isPlaying && isReady && (
-                <div className="bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full animate-pulse cursor-pointer" onClick={togglePlay}>
-                    <span className="text-xs text-white font-bold uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-2 h-2 bg-neon-blue rounded-full animate-ping"></span>
-                        Click for Sound
-                    </span>
+                <div
+                    className="absolute -top-12 left-0 bg-neon-blue/90 text-black px-4 py-2 rounded-lg pointer-events-none animate-bounce shadow-[0_0_20px_rgba(46,46,254,0.5)] z-50 w-max"
+                >
+                    <div className="text-xs font-bold uppercase tracking-widest whitespace-nowrap">Tap to Initialize</div>
                 </div>
             )}
 
             {fileName && (
-                <div className="bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full max-w-[200px]">
-                    <span className="text-xs text-white/80 font-mono truncate block">
-                        {fileName}
+                <div className="bg-black/80 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full max-w-[200px] shadow-lg">
+                    <span className="text-xs text-white/90 font-mono truncate block animate-pulse">
+                        Playing: {fileName}
                     </span>
                 </div>
             )}
+
+            {/* Glitch Overlay Toast */}
+            <AnimatePresence>
+                {showGlitch && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.5, x: "-50%" }}
+                        animate={{ opacity: 1, scale: 1, x: "-50%" }}
+                        exit={{ opacity: 0, scale: 1.5, filter: "blur(10px)", x: "-50%" }}
+                        className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[100] bg-red-600 text-white px-6 py-3 font-mono text-sm font-bold tracking-widest uppercase shadow-[0_0_30px_rgba(255,0,0,0.6)] border border-red-400 rotate-2"
+                    >
+                        SYSTEM_LOCK // CAMERA_OFFLINE
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

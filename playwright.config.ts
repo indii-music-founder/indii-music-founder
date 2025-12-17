@@ -10,8 +10,8 @@ export default defineConfig({
     },
     webServer: [
         {
-            command: 'npm run dev',
-            port: 5173,
+            command: 'npm run dev -- --port 4242',
+            port: 4242,
             reuseExistingServer: !process.env.CI,
         },
         {
@@ -28,7 +28,7 @@ export default defineConfig({
         {
             name: 'web',
             use: {
-                baseURL: 'http://localhost:5173',
+                baseURL: 'http://localhost:4242',
                 browserName: 'chromium',
             },
             testIgnore: /.*electron.spec.ts/,

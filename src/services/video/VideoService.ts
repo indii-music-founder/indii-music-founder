@@ -32,11 +32,12 @@ export class VideoService {
             const plan = AI.parseJSON(analysisRes.text());
 
             // Step 2: Generate Video
+            const videoPrompt = typeof plan.video_prompt === 'string' ? plan.video_prompt : "Animate";
             const uri = await AI.generateVideo({
                 model: AI_MODELS.VIDEO.GENERATION,
-                prompt: plan.video_prompt || "Animate",
+                prompt: videoPrompt,
                 image: { imageBytes: image.data, mimeType: image.mimeType },
-                config: { numberOfVideos: 1, resolution: '720p', aspectRatio: '16:9' }
+                config: { aspectRatio: '16:9', durationSeconds: 5 }
             });
 
             return uri || null;
@@ -88,10 +89,9 @@ export class VideoService {
                 prompt: prompt || "Transition",
                 image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
                 config: {
-                    numberOfVideos: 1,
-                    resolution: '720p',
                     aspectRatio: '16:9',
-                    lastFrame: { imageBytes: endImage.data, mimeType: endImage.mimeType }
+                    durationSeconds: 5,
+                    lastFrame: `data:${endImage.mimeType};base64,${endImage.data}`
                 }
             });
             return uri || null;

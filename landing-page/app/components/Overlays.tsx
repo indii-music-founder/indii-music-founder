@@ -23,7 +23,6 @@ const GlitchText = ({ text, delay = 0 }: { text: string, delay?: number }) => {
                 if (index < iteration) {
                     return text[index];
                 }
-                // Random characters for glitch effect
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
                 return chars[Math.floor(Math.random() * chars.length)];
             }).join(''));
@@ -32,194 +31,176 @@ const GlitchText = ({ text, delay = 0 }: { text: string, delay?: number }) => {
                 clearInterval(interval);
             }
 
-            iteration += 1 / 2; // Speed of decoding
+            iteration += 1 / 2;
         }, 30);
 
         return () => clearInterval(interval);
     }, [text, started]);
 
-    return <span className="font-mono">{display}</span>;
+    return <span className="font-mono tracking-wider">{display}</span>;
 }
 
 export default function Overlays() {
     return (
-        <>
+        <div className="text-white selection:bg-neon-blue selection:text-black">
             {/* Hero Section (Page 0) */}
-            <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
-                <div className="text-center z-10 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-                    <h1 className="text-7xl md:text-9xl font-bold tracking-tighter mb-6 text-white">
+            <section className="h-screen w-full flex flex-col items-center justify-center pointer-events-none">
+                <div className="text-center z-10 px-4">
+                    <h1 className="text-8xl md:text-[10rem] font-bold tracking-tighter leading-none mb-8 opacity-90 mix-blend-difference">
                         indiiOS
                     </h1>
-                    <div className="flex flex-col gap-2">
-                        <p className="text-2xl md:text-3xl text-white font-medium tracking-wide">
+                    <div className="flex flex-col gap-4 text-center">
+                        <p className="text-2xl md:text-3xl font-light tracking-[0.2em] uppercase text-white/80">
                             Your Music. Your Rules.
-                        </p>
-                        <p className="text-xl md:text-2xl text-white/70 font-light tracking-wide">
-                            The Operating System for your Independence.
                         </p>
                     </div>
                 </div>
             </section>
 
             {/* Deep Listening (Page 1) */}
-            <section className="h-[100vh] w-full flex items-center justify-center pointer-events-none">
-                <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
-                        Smart Audio Analysis
-                    </h2>
-                    <p className="text-xl md:text-2xl text-white/90 font-light mb-8 drop-shadow-lg">
-                        Informative. Helpful. Creative.
-                    </p>
-                    <div className="text-neon-blue text-lg tracking-widest uppercase font-bold drop-shadow-md">
-                        Turning your music into actionable data.
+            <section className="h-screen w-full flex items-center justify-center pointer-events-none">
+                <div className="glass-panel max-w-2xl p-12 rounded-[2rem] bg-black/20 backdrop-blur-xl border border-white/5 shadow-2xl">
+                    <div className="mb-4 text-neon-blue font-mono text-sm tracking-widest uppercase">
+                        <GlitchText text="Creative Engine" />
                     </div>
+                    <h2 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+                        Sonic Vision
+                    </h2>
+                    <p className="text-xl text-white/60 font-light leading-relaxed">
+                        Generate album art, animated covers, and social assets that pulse to the beat of your track.
+                        Your sound, visualized instantly.
+                    </p>
                 </div>
             </section>
 
             {/* Agent Zero (Page 2) */}
-            <section className="h-[100vh] w-full flex items-center justify-center px-8 md:px-20 pointer-events-none">
-                <div className="max-w-4xl text-center p-8 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-6xl md:text-8xl font-bold mb-6 text-white">
+            <section className="h-screen w-full flex items-center justify-end px-8 md:px-20 pointer-events-none">
+                <div className="glass-panel max-w-xl p-12 rounded-[2rem] bg-black/20 backdrop-blur-xl border border-white/5 text-right">
+                    <div className="mb-4 text-neon-purple font-mono text-sm tracking-widest uppercase">
+                        <GlitchText text="Autonomous Workflow" delay={200} />
+                    </div>
+                    <h2 className="text-6xl md:text-8xl font-bold mb-6 tracking-tighter">
                         indii
                     </h2>
-                    <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
-                        Your helpful AI assistant. It handles the business tasks humans used to do.
+                    <p className="text-2xl text-white/80 font-light mb-8 leading-tight">
+                        Your AI production manager.
                     </p>
 
-                    <div className="flex flex-col gap-4 items-center">
+                    <div className="flex flex-col items-end gap-6 text-white/50">
                         <div className="flex items-center gap-4">
-                            <span className="text-neon-purple font-bold">THE ARCHITECT</span>
-                            <div className="w-12 h-0.5 bg-neon-purple/50"></div>
+                            <span className="text-sm uppercase tracking-widest">Generates Assets</span>
+                            <div className="w-8 h-[1px] bg-white/20"></div>
                         </div>
-                        <p className="text-sm text-white/80 max-w-xs">
-                            Plans your career strategy.
-                        </p>
-
-                        <div className="flex items-center gap-4 mt-4">
-                            <span className="text-neon-blue font-bold">THE BUILDER</span>
-                            <div className="w-12 h-0.5 bg-neon-blue/50"></div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm uppercase tracking-widest">Manages Campaigns</span>
+                            <div className="w-16 h-[1px] bg-white/20"></div>
                         </div>
-                        <p className="text-sm text-white/80 max-w-xs">
-                            Executes the work.
-                        </p>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm uppercase tracking-widest">Executes Strategy</span>
+                            <div className="w-24 h-[1px] bg-white/20"></div>
+                        </div>
                     </div>
                 </div>
-            </section >
+            </section>
 
             {/* Neural Forge (Page 3) */}
-            < section className="h-[100vh] w-full flex items-center justify-center pointer-events-none" >
-                <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-                        Career Strategy
+            <section className="h-screen w-full flex items-center justify-start px-8 md:px-32 pointer-events-none">
+                <div className="max-w-3xl">
+                    <h2 className="text-7xl md:text-9xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-neon-pink to-white opacity-80">
+                        Create
                     </h2>
-                    <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
-                        Useful insights to grow your fanbase and income. <span className="text-neon-pink font-bold">Profitable growth.</span>
+                    <h2 className="text-7xl md:text-9xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-white to-neon-pink opacity-80 pl-20">
+                        Reality
+                    </h2>
+                    <p className="text-2xl md:text-3xl text-white/70 font-light tracking-wide max-w-xl border-l-2 border-neon-pink pl-6">
+                        From text to video. From audio to imagery. <br />
+                        <span className="text-white font-medium">A complete studio in your browser.</span>
                     </p>
                 </div>
-            </section >
+            </section>
 
             {/* The Firewall (Page 4) */}
-            < section className="h-[100vh] w-full flex items-center justify-center pointer-events-none" >
-                <div className="text-center max-w-4xl px-8 py-12 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white">
-                        Rights Protection
+            <section className="h-screen w-full flex items-center justify-center pointer-events-none">
+                <div className="text-center">
+                    <div className="inline-block px-4 py-1 rounded-full border border-neon-green/30 bg-neon-green/10 text-neon-green font-mono text-xs tracking-widest mb-6">
+                        SYSTEM_INTEGRITY_PROTECTED
+                    </div>
+                    <h2 className="text-6xl md:text-8xl font-bold mb-8 tracking-tighter">
+                        The Vault
                     </h2>
-                    <p className="text-xl md:text-2xl text-white/90 font-light mb-8">
-                        Secure your IP. <span className="text-neon-green font-bold">Get paid for your work.</span>
+                    <p className="text-xl md:text-2xl text-white/60 font-light max-w-2xl mx-auto">
+                        Your intellectual property, secured on-chain.
+                        <br />Smart contracts for simpler splits.
                     </p>
                 </div>
-            </section >
+            </section>
 
             {/* Business (Page 5) */}
-            < section className="h-[120vh] w-full flex flex-col items-center justify-center pointer-events-none" >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-6xl px-6 mb-20">
-                    {/* Marketing Card */}
-                    <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md">
-                        <h3 className="text-3xl font-bold text-white mb-2">Command Center</h3>
-                        <p className="text-signal-green text-sm uppercase tracking-wider mb-6">Marketing & Reach</p>
-                        <p className="text-white/80">
-                            Real-time global stream tracking. Visualize your audience as living data points on a holographic interface.
+            <section className="h-[120vh] w-full flex flex-col items-center justify-center pointer-events-none px-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl mb-24">
+                    <div className="p-10 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors backdrop-blur-md group">
+                        <h3 className="text-3xl font-bold mb-2 group-hover:text-neon-blue transition-colors">Launch</h3>
+                        <p className="text-white/40 text-sm leading-relaxed">
+                            Deploy multi-channel marketing campaigns with a single click.
                         </p>
                     </div>
-
-                    {/* Legal Card */}
-                    <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-black/50 backdrop-blur-md">
-                        <h3 className="text-3xl font-bold text-white mb-2">The Shield</h3>
-                        <p className="text-neon-purple text-sm uppercase tracking-wider mb-6">Legal & Rights</p>
-                        <p className="text-white/80">
-                            Reach real fans. Instantly turns red flags (bad terms) into green lights (negotiated rights).
+                    <div className="p-10 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors backdrop-blur-md group">
+                        <h3 className="text-3xl font-bold mb-2 group-hover:text-neon-purple transition-colors">Manage</h3>
+                        <p className="text-white/40 text-sm leading-relaxed">
+                            Organize your team, your files, and your finances in one command center.
                         </p>
                     </div>
                 </div>
+            </section>
 
-                <div className="text-center p-6 rounded-2xl bg-black/30 backdrop-blur-sm">
-                    <h2 className="text-4xl md:text-5xl font-bold text-white">
-                        Scale Your Career.
+            {/* Commerce (Page 6) */}
+            <section className="h-screen w-full flex items-center justify-center pointer-events-none">
+                <h2 className="text-[15vw] font-bold opacity-10 tracking-tighter select-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-sm">
+                    EMPIRE
+                </h2>
+                <div className="text-center z-10 glass-panel p-16 rounded-full aspect-square flex flex-col items-center justify-center bg-black/30 backdrop-blur-md border border-white/10">
+                    <h2 className="text-5xl md:text-7xl font-bold mb-4">
+                        Build
                     </h2>
-                </div>
-            </section >
-
-            {/* Commerce (Page 5) */}
-            < section className="h-[100vh] w-full flex items-center justify-center pointer-events-none" >
-                <div className="text-center p-10 rounded-3xl bg-black/40 backdrop-blur-md border border-white/10">
-                    <h2 className="text-6xl md:text-8xl font-bold text-white mb-4 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-                        Direct to Fan.
-                    </h2>
-                    <p className="text-xl text-white/90 max-w-xl mx-auto">
-                        Sell merch, tickets, and vinyl directly to your audience. No middlemen.
+                    <p className="text-lg text-white/50 font-mono tracking-widest uppercase">
+                        Your Legacy
                     </p>
                 </div>
-            </section >
-            {/* The Titan (Spacer for 3D) */}
-            < section className="h-[100vh] w-full pointer-events-none" ></section >
+            </section>
 
-            {/* Outro & Launch */}
-            <section className="h-auto w-full flex flex-col items-center justify-center pointer-events-auto py-32">
-                <div className="text-center z-10 mb-12 pointer-events-none">
-                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-                        Your Music.
-                    </h2>
-                    <h2 className="text-4xl md:text-6xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-                        Your Rules.
-                    </h2>
-                    <h2 className="text-6xl md:text-8xl font-bold text-white mt-8 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+            {/* Spacer */}
+            <section className="h-screen w-full pointer-events-none"></section>
+
+            {/* Outro */}
+            <section className="min-h-screen w-full flex flex-col items-center justify-center pointer-events-auto py-32">
+                <div className="text-center mb-20 pointer-events-none">
+                    <p className="text-sm font-mono text-white/30 tracking-[0.5em] uppercase mb-8">
+                        System Ready
+                    </p>
+                    <h2 className="text-6xl md:text-9xl font-bold tracking-tighter mb-4">
                         indiiOS
                     </h2>
-                    <p className="text-xl md:text-2xl text-white/60 font-light mt-4 tracking-widest uppercase">
-                        The Operating System for your Independence
-                    </p>
                 </div>
 
-                <div className="text-center z-10 bg-black/60 backdrop-blur-xl p-12 rounded-3xl border border-white/10 shadow-2xl mb-20">
-                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-8">
-                        Ready to Build?
-                    </h2>
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-neon-blue to-neon-purple rounded-xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
                     <a
                         href="/login"
-                        className="px-10 py-5 bg-white text-black font-bold text-xl hover:bg-neon-blue hover:text-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(0,243,255,0.6)] hover:scale-105 transform inline-block"
+                        className="relative px-12 py-6 bg-black rounded-xl leading-none flex items-center divide-x divide-gray-600"
                     >
-                        Launch Studio
+                        <span className="flex items-center space-x-5">
+                            <span className="pr-6 text-gray-100 text-xl font-bold tracking-wider">ENTER STUDIO</span>
+                        </span>
+                        <span className="pl-6 text-neon-blue group-hover:text-white transition duration-200">
+                            &rarr;
+                        </span>
                     </a>
-                    <p className="text-white/40 mt-6 text-sm">
-                        v1.0.0 (Alpha)
-                    </p>
                 </div>
 
-                {/* Footer */}
-                <footer className="text-center z-10 text-white/30 text-sm">
-                    <a href="/" className="text-white/50 hover:text-white transition-colors mb-4 inline-block">
-                        &larr; Back to Home
-                    </a>
-                    <p className="mb-2">&copy; 2025 indiiOS. All rights reserved.</p>
-                    <div className="flex gap-4 justify-center">
-                        <span className="hover:text-white cursor-pointer transition-colors">Privacy Policy</span>
-                        <span>|</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">Terms of Service</span>
-                        <span>|</span>
-                        <span className="hover:text-white cursor-pointer transition-colors">Contact</span>
-                    </div>
+                <footer className="mt-40 text-center text-white/20 text-xs font-mono">
+                    <p>&copy; 2025 THE WALKING AGENCY. ALL RIGHTS RESERVED.</p>
                 </footer>
             </section>
-        </>
+        </div>
     );
 }

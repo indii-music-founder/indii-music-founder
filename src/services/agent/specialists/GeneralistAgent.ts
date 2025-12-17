@@ -165,6 +165,35 @@ export class GeneralistAgent extends BaseAgent {
         - Identity: ${context.userProfile?.bio || 'N/A'}
         - Visual Style: ${brandKit.brandDescription || 'N/A'}
         - Colors: ${brandKit.colors?.join(', ') || 'N/A'}
+        - Fonts: ${brandKit.fonts || 'N/A'}
+        - Negative Prompt: ${brandKit.negativePrompt || 'N/A'}
+        
+        CURRENT RELEASE:
+        - Title: ${brandKit.releaseDetails?.title || 'Untitled'}
+        - Type: ${brandKit.releaseDetails?.type || 'N/A'}
+        - Mood: ${brandKit.releaseDetails?.mood || 'N/A'}
+        - Themes: ${brandKit.releaseDetails?.themes || 'N/A'}
+        
+        SOCIALS & BUSINESS:
+        - Twitter: ${brandKit.socials?.twitter || 'N/A'}
+        - Instagram: ${brandKit.socials?.instagram || 'N/A'}
+        - Spotify: ${brandKit.socials?.spotify || 'N/A'}
+        - SoundCloud: ${brandKit.socials?.soundcloud || 'N/A'}
+        - Bandcamp: ${brandKit.socials?.bandcamp || 'N/A'}
+        - Beatport: ${brandKit.socials?.beatport || 'N/A'}
+        - Website: ${brandKit.socials?.website || 'N/A'}
+        - PRO: ${brandKit.socials?.pro || 'N/A'}
+        - Distributor: ${brandKit.socials?.distributor || 'N/A'}
+        
+        AVAILABLE ASSETS (Reference by Index):
+        Brand Assets:
+        ${brandKit.brandAssets?.map((a: any, i: number) => `  [${i}] ${a.subject ? a.subject + ' - ' : ''}${a.category ? a.category.toUpperCase() + ': ' : ''}${a.description || 'Asset'} ${a.tags ? '(' + a.tags.join(', ') + ')' : ''}`).join('\n') || 'None'}
+        
+        Reference Images:
+        ${brandKit.referenceImages?.map((a: any, i: number) => `  [${i}] ${a.subject ? a.subject + ' - ' : ''}${a.category ? a.category.toUpperCase() + ': ' : ''}${a.description || 'Image'} ${a.tags ? '(' + a.tags.join(', ') + ')' : ''}`).join('\n') || 'None'}
+
+        RECENT UPLOADS (Reference by Index):
+        ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${img.subject ? img.subject + ' - ' : ''}${img.category ? img.category.toUpperCase() + ': ' : ''}${img.prompt || 'Uploaded Image'} (${img.type}) ${img.tags ? '(' + img.tags.join(', ') + ')' : ''}`).slice(0, 10).join('\n') || 'None'}
         ` : '';
 
         const fullSystemPrompt = `${this.systemPrompt}

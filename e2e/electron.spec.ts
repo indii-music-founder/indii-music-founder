@@ -44,15 +44,15 @@ test.describe('Electron IPC', () => {
             // We execute this in the context of the browser window
             const { platform, version } = await window.evaluate(async () => {
                 // Debug: check if electronAPI is available
-                // @ts-ignore
+                // @ts-expect-error
                 if (!window.electronAPI) {
                     console.error('Window context: window.electronAPI is UNDEFINED');
                     throw new Error('window.electronAPI is UNDEFINED');
                 }
                 return {
-                    // @ts-ignore
+                    // @ts-expect-error
                     platform: await window.electronAPI.getPlatform(),
-                    // @ts-ignore
+                    // @ts-expect-error
                     version: await window.electronAPI.getAppVersion()
                 };
             });

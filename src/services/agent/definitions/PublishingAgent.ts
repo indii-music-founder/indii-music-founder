@@ -11,10 +11,13 @@ export const PublishingAgent: AgentConfig = {
     functions: {
         register_work: async (args: { title: string, writers: string[], split: string }) => {
             return {
-                status: "submitted",
-                work_id: `ISWC - ${Math.floor(Math.random() * 1000000)} `,
-                registration_date: new Date().toISOString(),
-                message: `Work '${args.title}' by ${args.writers.join(', ')} registered successfully.`
+                success: true,
+                data: {
+                    status: "submitted",
+                    work_id: `ISWC - ${Math.floor(Math.random() * 1000000)} `,
+                    registration_date: new Date().toISOString(),
+                    message: `Work '${args.title}' by ${args.writers.join(', ')} registered successfully.`
+                }
             };
         }
     },

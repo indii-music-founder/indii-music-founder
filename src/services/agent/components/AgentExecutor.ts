@@ -34,7 +34,9 @@ export class AgentExecutor {
                 chatHistoryString: context.chatHistoryString,
                 // Inject semantic memory context
                 memoryContext: context.memoryContext,
-                relevantMemories: context.relevantMemories
+                relevantMemories: context.relevantMemories,
+                // Inject distributor requirements context
+                distributor: context.distributor
             }, onProgress);
 
             return response;

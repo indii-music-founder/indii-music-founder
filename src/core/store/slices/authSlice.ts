@@ -63,8 +63,22 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => {
-        // localStorage.setItem('userProfile', JSON.stringify(profile)); // Deprecate local storage sync? Or keep as cache?
         set({ userProfile: profile });
+
+        // Sync to Firestore if logged in
+        const user = get().user;
+        if (user) {
+            import('@/modules/auth/UserService').then(({ UserService }) => {
+                UserService.updateProfile(user.uid, {
+                    bio: profile.bio,
+                    preferences: profile.preferences,
+                    brandKit: profile.brandKit,
+                    knowledgeBase: profile.knowledgeBase,
+                    careerStage: profile.careerStage,
+                    goals: profile.goals
+                } as any);
+            });
+        }
     },
     updateBrandKit: (updates) => set((state) => {
         const newProfile = {
@@ -93,17 +107,19 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             const { onAuthStateChanged } = await import('firebase/auth');
 
             // Bypass for E2E Tests
-            // @ts-ignore
+            // @ts-expect-error test mode flag is injected in playwright environment
             if (window.__TEST_MODE__) {
                 console.log("[AuthSlice] Test Mode detected - skipping Firebase Auth listener");
                 return;
             }
 
             onAuthStateChanged(auth, async (user: User | null) => {
+                console.log("[AuthSlice] Auth State Changed:", user ? `User ${user.uid} (Anon: ${user.isAnonymous})` : 'Logged Out');
                 if (user) {
-                    // Only consider non-anonymous users as fully authenticated for the Dashboard
-                    // Anonymous users (if any) need to upgrade/sign-in to access protected data
-                    const isAuthenticated = !user.isAnonymous;
+                    // ALLOW ANONYMOUS ACCESS
+                    // We treat anonymous users as authenticated for the purpose of app access
+                    // Specific modules can check user.isAnonymous if they need to restrict features
+                    const isAuthenticated = !!user;
                     set({ user, isAuthenticated, isAuthReady: true });
 
                     // Sync User Profile from Firestore

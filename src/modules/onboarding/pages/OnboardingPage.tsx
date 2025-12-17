@@ -1,27 +1,40 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus } from '@/services/onboarding/onboardingService';
-import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '@/services/onboarding/onboardingService';
+import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign } from 'lucide-react';
+import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
+
+type HistoryItem = { role: string; parts: { text: string }[]; toolCall?: any };
 
 export default function OnboardingPage() {
     const { userProfile, setUserProfile, setModule } = useStore();
     const [input, setInput] = useState('');
-    const [history, setHistory] = useState<{ role: string; parts: { text: string }[] }[]>([]);
+    const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [files, setFiles] = useState<ConversationFile[]>([]);
+    const [showMobileStatus, setShowMobileStatus] = useState(false); // Mobile Drawer State
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Dynamic opening greetings - feels more like meeting someone at a showcase
+    const OPENING_GREETINGS = [
+        "Hey — I'm indii. Think of me as your creative director, campaign strategist, and hype person rolled into one. Whether you are a bedroom producer or a platinum artist, I'm here to make sure the world sees what you've got. So tell me — who are you and what's your sound?",
+
+        "Alright, let's do this. I'm indii — part creative director, part campaign architect, full-time believer in independent artists. Your bedroom demo could become a Billboard hit, and TikTok moments can become careers with the right system. What I need to know first: what makes YOUR sound different?",
+        "Hey there. I'm indii, and my job is to help turn your music into a movement. But first, I need to get inside your head a bit. Forget the typical 'describe your genre' questions — tell me what you're really trying to say with your music.",
+        "What's up — I'm indii. I've been trained by industry professionals to know that the best campaigns come from knowing the artist, not just the music. So before we talk releases and rollouts, let's talk about you. What's the indii pitch? Who are you?",
+    ];
 
     // Initial greeting
     useEffect(() => {
         if (history.length === 0) {
-            const greeting = "Hi, I'm indii, your Chief Creative Officer. Let's get your profile set up so I can help you better. First, tell me a bit about yourself as an artist. What's your vibe?";
-            setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
+            const randomGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
+            setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Auto-scroll to bottom
@@ -29,11 +42,37 @@ export default function OnboardingPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history]);
 
+    // Debug Backdoor for E2E Verification
+    useEffect(() => {
+        (window as any).__TEST_INJECT_ASSET = (assetDetails: any) => {
+            console.log("INJECTING ASSET via Backdoor:", assetDetails);
+
+            // 1. Update Profile State
+            const updatedProfile = { ...userProfile };
+            if (!updatedProfile.brandKit) updatedProfile.brandKit = {} as any;
+            if (!updatedProfile.brandKit.brandAssets) updatedProfile.brandKit.brandAssets = [];
+
+            updatedProfile.brandKit.brandAssets.push(assetDetails.url);
+            setUserProfile(updatedProfile);
+
+            // 2. Mock Chat Interaction
+            const userMsg = { role: 'user', parts: [{ text: `[System Injection] Uploaded ${assetDetails.type}: ${assetDetails.url}` }] };
+            const aiMsg = { role: 'model', parts: [{ text: "Got it! I've added that to your brand kit. Looking good!" }] };
+
+            setHistory(prev => [...prev, userMsg, aiMsg]);
+        };
+
+        return () => {
+            delete (window as any).__TEST_INJECT_ASSET;
+        }
+    }, [userProfile, setUserProfile]);
+
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const filePromises = Array.from(e.target.files).map(file => {
                 return new Promise<ConversationFile>((resolve) => {
                     const isImage = file.type.startsWith('image/');
+                    const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a'].some(ext => file.name.toLowerCase().endsWith(ext));
                     const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
 
                     if (isImage) {
@@ -48,6 +87,15 @@ export default function OnboardingPage() {
                             });
                         };
                         reader.readAsDataURL(file);
+                    } else if (isAudio) {
+                        // Audio files - we only extract metadata, never store the actual audio
+                        resolve({
+                            id: uuidv4(),
+                            file,
+                            preview: '',
+                            type: 'audio',
+                            content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
+                        });
                     } else if (isText) {
                         file.text().then(text => {
                             resolve({
@@ -71,10 +119,11 @@ export default function OnboardingPage() {
         setFiles(prev => prev.filter(f => f.id !== id));
     };
 
-    const handleSend = async () => {
-        if (!input.trim() && files.length === 0) return;
+    const handleSend = async (arg?: string | React.MouseEvent) => {
+        const textToSend = typeof arg === 'string' ? arg : input;
+        if (!textToSend.trim() && files.length === 0) return;
 
-        const userMsg = { role: 'user', parts: [{ text: input }] };
+        const userMsg: HistoryItem = { role: 'user', parts: [{ text: textToSend }] };
         const newHistory = [...history, userMsg];
         setHistory(newHistory);
         setInput('');
@@ -85,29 +134,58 @@ export default function OnboardingPage() {
         try {
             const { text, functionCalls } = await runOnboardingConversation(newHistory, userProfile, 'onboarding', currentFiles);
 
+            const nextHistory = [...newHistory];
+            let uiToolCall = null;
+
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
                 setUserProfile(updatedProfile);
 
                 if (isFinished) {
-                    // Handle completion - perhaps offer to go to dashboard
+                    // Handle completion
                 }
 
+                // Check for UI Tools (multiple choice, insights, creative direction, distributor info)
+                const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];
+                uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
+
+                // --- NATURAL FALLBACK RESPONSES ---
+                // If the AI didn't return text (silent update), generate a human-sounding response
                 if (!text && updates.length > 0) {
-                    const fallbackText = `I've updated your ${updates.join(', ')}. What else can I help you with?`;
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: fallbackText }] }]);
+                    const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
+
+                    // Determine the next topic to ask about (prioritize core identity, then release)
+                    const nextMissing = coreMissing.length > 0
+                        ? coreMissing[0] as any
+                        : releaseMissing.length > 0
+                            ? releaseMissing[0] as any
+                            : null;
+
+                    const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
+                    const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);
+                    nextHistory.push({ role: 'model', parts: [{ text: fallbackText }], toolCall: uiToolCall });
                 } else if (text) {
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+                    nextHistory.push({ role: 'model', parts: [{ text }], toolCall: uiToolCall });
                 } else {
-                    setHistory(prev => [...prev, { role: 'model', parts: [{ text: "I processed that, but I'm not sure what to say. Is there anything else?" }] }]);
+                    // Edge case: AI returned nothing at all
+                    nextHistory.push({ role: 'model', parts: [{ text: generateEmptyResponseFallback() }], toolCall: uiToolCall });
                 }
             } else {
-                setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
+                nextHistory.push({ role: 'model', parts: [{ text }] });
             }
 
-        } catch (error) {
-            console.error("Onboarding error:", error);
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: "Sorry, I ran into a glitch. Can you say that again?" }] }]);
+            setHistory(nextHistory);
+
+        } catch (error: any) {
+            console.error("Full Onboarding Error:", error);
+            const errorMessage = error.message || JSON.stringify(error);
+            const errorResponses = [
+                `Hmm, something went sideways on my end. Mind trying that again?`,
+                `Tech hiccup — my bad. Hit me with that one more time?`,
+                `Lost the thread there for a second. What were you saying?`,
+                `Connection blip. Run that by me again?`,
+            ];
+            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorResponses[Math.floor(Math.random() * errorResponses.length)] }] }]);
         } finally {
             setIsProcessing(false);
         }
@@ -120,29 +198,130 @@ export default function OnboardingPage() {
     const { coreProgress, releaseProgress, coreMissing, releaseMissing } = calculateProfileStatus(userProfile);
     const isReadyForDashboard = coreProgress > 50; // Threshold for allowing skip/complete
 
+    // --- SHARED PROGRESS COMPONENT ---
+    const ProfileProgress = () => (
+        <div>
+            {/* Identity Progress */}
+            <div className="mb-8">
+                <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-300 font-medium">Core Identity</span>
+                    <span className="text-white font-bold">{coreProgress}%</span>
+                </div>
+                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-white transition-all duration-500"
+                        style={{ width: `${coreProgress}%` }}
+                    />
+                </div>
+                <div className="mt-4 space-y-3">
+                    {['bio', 'brandDescription', 'socials', 'visuals', 'careerStage', 'goals'].map(key => {
+                        const isMissing = coreMissing.includes(key);
+                        return (
+                            <div key={key} className="flex items-center gap-3 text-sm">
+                                {isMissing ? (
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center">
+                                        <div className="w-full h-full rounded-full bg-transparent" />
+                                    </div>
+                                ) : (
+                                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-black">
+                                        <CheckCircle size={12} fill="currentColor" className="text-black" />
+                                    </div>
+                                )}
+                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Release Progress */}
+            <div className="mb-8">
+                <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-300 font-medium">Current Release</span>
+                    <span className="text-white font-bold">{releaseProgress}%</span>
+                </div>
+                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-purple-500 transition-all duration-500"
+                        style={{ width: `${releaseProgress}%` }}
+                    />
+                </div>
+                <div className="mt-4 space-y-3">
+                    {['title', 'type', 'genre', 'mood', 'themes'].map(key => {
+                        const isMissing = releaseMissing.includes(key);
+                        return (
+                            <div key={key} className="flex items-center gap-3 text-sm">
+                                {isMissing ? (
+                                    <div className="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center">
+                                        <div className="w-full h-full rounded-full bg-transparent" />
+                                    </div>
+                                ) : (
+                                    <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                                        <CheckCircle size={12} fill="currentColor" className="text-white" />
+                                    </div>
+                                )}
+                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
+                                    {key === 'title' ? 'Release Title' : key.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {isReadyForDashboard && (
+                <div className="pt-6 border-t border-gray-800">
+                    <button
+                        onClick={handleComplete}
+                        className="w-full bg-white text-black px-6 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2 group"
+                    >
+                        Go to Studio <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <p className="text-center text-xs text-gray-500 mt-3">You can continue editing your profile later.</p>
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <div className="flex h-screen w-full bg-[#0d1117] overflow-hidden">
             {/* Left Panel: Chat */}
             <div className="flex-1 flex flex-col relative">
                 {/* Header */}
-                <div className="absolute top-0 left-0 right-0 p-6 z-10 flex justify-between items-center bg-gradient-to-b from-[#0d1117] to-transparent">
+                <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-10 flex justify-between items-center bg-gradient-to-b from-[#0d1117] via-[#0d1117]/90 to-transparent">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
                             <Sparkles className="text-white" size={20} />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-white">Setup Your Artist Profile</h1>
-                            <p className="text-sm text-gray-400">Chat with indii to build your brand kit</p>
+                            <h1 className="text-lg md:text-xl font-bold text-white">Setup Your Profile</h1>
+                            <p className="text-xs md:text-sm text-gray-400">Chat with indii to build your brand</p>
                         </div>
                     </div>
-                    {isReadyForDashboard && (
+
+                    {/* Desktop Action */}
+                    <div className="hidden lg:block">
+                        {isReadyForDashboard && (
+                            <button
+                                onClick={handleComplete}
+                                className="flex items-center gap-2 bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-gray-200 transition-colors text-sm"
+                            >
+                                Enter Studio <ArrowRight size={16} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Mobile Action: View Progress */}
+                    <div className="flex items-center gap-2 lg:hidden">
                         <button
-                            onClick={handleComplete}
-                            className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors"
+                            onClick={() => setShowMobileStatus(true)}
+                            className="flex items-center gap-2 bg-[#1a1f2e] border border-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                         >
-                            Go to Studio <ArrowRight size={18} />
+                            {coreProgress}% <ChevronRight size={14} className="text-gray-400" />
                         </button>
-                    )}
+                    </div>
                 </div>
 
                 {/* Chat Area */}
@@ -154,18 +333,178 @@ export default function OnboardingPage() {
                             key={idx}
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user'
+                            <div className={`max-w-[85%] md:max-w-[80%] p-4 rounded-2xl ${msg.role === 'user'
                                 ? 'bg-white text-black rounded-tr-sm'
-                                : 'bg-[#1a1f2e] text-gray-200 rounded-tl-sm border border-gray-800'
+                                : 'bg-[#161b22] text-gray-200 rounded-tl-sm border border-gray-800' // Darker bubble
                                 }`}>
-                                <div className="text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
+                                <div className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
+
+                                {/* Generative UI Renderer - Multiple Choice */}
+                                {msg.toolCall && msg.toolCall.name === 'askMultipleChoice' && (
+                                    <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        {msg.toolCall.args.options.map((option: string) => (
+                                            <button
+                                                key={option}
+                                                onClick={() => {
+                                                    setInput(option);
+                                                    handleSend(option); // Pass option directly to avoid stale state
+                                                }}
+                                                className="bg-black/20 hover:bg-white hover:text-black border border-white/10 px-4 py-2 rounded-lg text-sm transition-all transform hover:scale-105"
+                                            >
+                                                {option}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Industry Insight Card */}
+                                {msg.toolCall && msg.toolCall.name === 'shareInsight' && (
+                                    <div className="mt-4 bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2 bg-amber-500/20 rounded-lg">
+                                                <Lightbulb size={18} className="text-amber-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider mb-1">Industry Insight</p>
+                                                <p className="text-sm text-gray-200 leading-relaxed">{msg.toolCall.args.insight}</p>
+                                                {msg.toolCall.args.action_suggestion && (
+                                                    <p className="text-xs text-amber-300/80 mt-2 italic">→ {msg.toolCall.args.action_suggestion}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Creative Direction Card */}
+                                {msg.toolCall && msg.toolCall.name === 'suggestCreativeDirection' && (
+                                    <div className="mt-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2 bg-purple-500/20 rounded-lg">
+                                                <Zap size={18} className="text-purple-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs text-purple-400 font-semibold uppercase tracking-wider mb-1">Creative Direction</p>
+                                                <p className="text-sm text-gray-200 leading-relaxed">{msg.toolCall.args.suggestion}</p>
+                                                <p className="text-xs text-gray-400 mt-2">{msg.toolCall.args.rationale}</p>
+                                                {msg.toolCall.args.examples && msg.toolCall.args.examples.length > 0 && (
+                                                    <div className="flex gap-2 mt-3 flex-wrap">
+                                                        {msg.toolCall.args.examples.map((ex: string, idx: number) => (
+                                                            <span key={idx} className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">
+                                                                {ex}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Distributor Requirements Card */}
+                                {msg.toolCall && msg.toolCall.name === 'shareDistributorInfo' && (() => {
+                                    const distro = getDistributorRequirements(msg.toolCall.args.distributor_name);
+                                    if (!distro) return null;
+                                    return (
+                                        <div className="mt-4 bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border border-cyan-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            <div className="flex items-start gap-3 mb-4">
+                                                <div className="p-2 bg-cyan-500/20 rounded-lg">
+                                                    <BookOpen size={18} className="text-cyan-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-cyan-400 font-semibold uppercase tracking-wider mb-1">{distro.name} Requirements</p>
+                                                    <p className="text-xs text-gray-400">Here's what you need to know for your release</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                                {/* Cover Art */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Image size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Cover Art</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">
+                                                        {distro.coverArt.minSize} - {distro.coverArt.maxSize}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">{distro.coverArt.format} • {distro.coverArt.colorMode}</p>
+                                                </div>
+
+                                                {/* Audio */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Music size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Audio</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">{distro.audio.format}</p>
+                                                    <p className="text-xs text-gray-500">{distro.audio.sampleRate} / {distro.audio.bitDepth}</p>
+                                                </div>
+
+                                                {/* Timeline */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Clock size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Timeline</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">{distro.timeline.minLeadTime} lead time</p>
+                                                    <p className="text-xs text-gray-500">{distro.timeline.reviewTime} review</p>
+                                                </div>
+
+                                                {/* Pricing */}
+                                                <div className="bg-black/20 rounded-lg p-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <DollarSign size={14} className="text-cyan-400" />
+                                                        <span className="text-xs font-semibold text-gray-300">Payout</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">{distro.pricing.artistPayout}</p>
+                                                    <p className="text-xs text-gray-500">{distro.pricing.model}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Metadata */}
+                                            <div className="bg-black/20 rounded-lg p-3 mb-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <FileCheck size={14} className="text-cyan-400" />
+                                                    <span className="text-xs font-semibold text-gray-300">Required Metadata</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {distro.metadata.requiredFields.slice(0, 8).map((field, idx) => (
+                                                        <span key={idx} className="text-xs bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded">
+                                                            {field}
+                                                        </span>
+                                                    ))}
+                                                    {distro.metadata.requiredFields.length > 8 && (
+                                                        <span className="text-xs text-gray-500">+{distro.metadata.requiredFields.length - 8} more</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Pro Tips */}
+                                            {distro.proTips.length > 0 && (
+                                                <div className="border-t border-cyan-500/20 pt-3">
+                                                    <p className="text-xs text-cyan-400 font-semibold mb-2">💡 Pro Tips</p>
+                                                    <ul className="space-y-1">
+                                                        {distro.proTips.slice(0, 3).map((tip, idx) => (
+                                                            <li key={idx} className="text-xs text-gray-400 flex items-start gap-2">
+                                                                <span className="text-cyan-500 mt-0.5">→</span>
+                                                                {tip}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </motion.div>
                     ))}
                     {isProcessing && (
                         <div className="flex justify-start">
-                            <div className="bg-[#1a1f2e] text-gray-400 p-4 rounded-2xl rounded-tl-sm border border-gray-800 flex items-center gap-2">
-                                <Sparkles size={16} className="animate-spin" /> indii is thinking...
+                            <div className="bg-[#161b22] text-gray-400 p-4 rounded-2xl rounded-tl-sm border border-gray-800 flex items-center gap-2">
+                                <Sparkles size={16} className="animate-spin" />
+                                <span className="text-sm animate-pulse">
+                                    {['Hang on...', 'Let me think...', 'One sec...', 'Mmm...', 'Okay...'][Math.floor(Math.random() * 5)]}
+                                </span>
                             </div>
                         </div>
                     )}
@@ -174,11 +513,15 @@ export default function OnboardingPage() {
 
                 {/* File Previews */}
                 {files.length > 0 && (
-                    <div className="px-4 py-2 bg-[#0d1117]/80 backdrop-blur border-t border-gray-800 flex gap-2 overflow-x-auto max-w-3xl mx-auto w-full">
+                    <div className="px-4 py-2 bg-[#0d1117]/95 backdrop-blur border-t border-gray-800 flex gap-2 overflow-x-auto max-w-3xl mx-auto w-full z-20">
                         {files.map(file => (
                             <div key={file.id} className="relative group flex-shrink-0 w-16 h-16 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                                 {file.type === 'image' ? (
                                     <img src={file.preview} alt="preview" className="w-full h-full object-cover" />
+                                ) : file.type === 'audio' ? (
+                                    <div className="w-full h-full flex items-center justify-center text-purple-400 bg-purple-500/10">
+                                        <Music size={24} />
+                                    </div>
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                                         <FileText size={24} />
@@ -195,82 +538,74 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
+                {/* Quick Suggestions */}
+                {history.length > 0 && history.length < 6 && !input && !isProcessing && (
+                    <div className="px-4 pb-2 bg-[#0d1117]">
+                        <div className="max-w-3xl mx-auto">
+                            <p className="text-xs text-gray-600 mb-2">Not sure what to say? Try:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    "I'm an electronic producer from...",
+                                    "I'm working on my debut single",
+                                    "Let me upload a track so you can hear it",
+                                    "My sound is influenced by...",
+                                    "I've got some press photos to share"
+                                ].slice(0, 3).map((suggestion) => (
+                                    <button
+                                        key={suggestion}
+                                        onClick={() => setInput(suggestion)}
+                                        className="text-xs text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] border border-gray-800 px-3 py-1.5 rounded-full transition-colors"
+                                    >
+                                        {suggestion}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Input Area */}
-                <div className="p-6 bg-[#0d1117] border-t border-gray-800">
-                    <div className="max-w-3xl mx-auto flex gap-3">
+                <div className="p-4 md:p-6 bg-[#0d1117] border-t border-gray-800 z-20 pb-safe">
+                    <div className="max-w-3xl mx-auto flex gap-2 md:gap-3">
                         <input
                             type="file"
                             ref={fileInputRef}
                             onChange={handleFileSelect}
                             className="hidden"
                             multiple
-                            accept="image/*,.txt,.md,.json"
+                            accept="image/*,.txt,.md,.json,audio/*,.mp3,.wav,.flac,.aiff,.m4a"
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="p-4 text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] rounded-xl border border-gray-800 transition-colors"
+                            className="p-3 md:p-4 text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] rounded-xl border border-gray-800 transition-colors"
                         >
-                            <Paperclip size={24} />
+                            <Paperclip size={20} className="md:w-6 md:h-6" />
                         </button>
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Tell me about your music, style, or upload a bio..."
-                            className="flex-1 bg-[#1a1f2e] border border-gray-800 rounded-xl px-6 py-4 text-white focus:border-white/20 focus:outline-none text-lg placeholder:text-gray-600"
+                            placeholder="Tell me about your music..."
+                            className="flex-1 bg-[#1a1f2e] border border-gray-800 rounded-xl px-4 md:px-6 py-3 md:py-4 text-white focus:border-white/20 focus:outline-none text-base md:text-lg placeholder:text-gray-600"
                             autoFocus
                         />
                         <button
                             onClick={handleSend}
                             disabled={isProcessing || (!input.trim() && files.length === 0)}
-                            className="bg-white hover:bg-gray-200 text-black p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="bg-white hover:bg-gray-200 text-black p-3 md:p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <Send size={24} />
+                            <Send size={20} className="md:w-6 md:h-6" />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Right Panel: Live Status */}
+            {/* Right Panel: Live Status (Desktop) */}
             <div className="hidden lg:block w-96 bg-[#010409] border-l border-gray-800 p-8 overflow-y-auto">
                 <div className="mb-8">
                     <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-6">Profile Completion</h3>
-
-                    {/* Identity Progress */}
-                    <div className="mb-8">
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-300 font-medium">Core Identity</span>
-                            <span className="text-white font-bold">{coreProgress}%</span>
-                        </div>
-                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-white transition-all duration-500"
-                                style={{ width: `${coreProgress}%` }}
-                            />
-                        </div>
-                        <div className="mt-4 space-y-3">
-                            {['bio', 'brandDescription', 'socials', 'visuals'].map(key => {
-                                const isMissing = coreMissing.includes(key);
-                                return (
-                                    <div key={key} className="flex items-center gap-3 text-sm">
-                                        {isMissing ? (
-                                            <div className="w-5 h-5 rounded-full border-2 border-gray-700 flex items-center justify-center">
-                                                <div className="w-full h-full rounded-full bg-transparent" />
-                                            </div>
-                                        ) : (
-                                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-black">
-                                                <CheckCircle size={12} fill="currentColor" className="text-black" />
-                                            </div>
-                                        )}
-                                        <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
-                                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <ProfileProgress />
                 </div>
 
                 <div className="pt-8 border-t border-gray-800">
@@ -304,6 +639,42 @@ export default function OnboardingPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Status Drawer */}
+            <AnimatePresence>
+                {showMobileStatus && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowMobileStatus(false)}
+                            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-[#0d1117] border-l border-gray-800 p-6 z-50 lg:hidden shadow-2xl flex flex-col"
+                        >
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-white font-bold text-lg">Your Progress</h3>
+                                <button
+                                    onClick={() => setShowMobileStatus(false)}
+                                    className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto">
+                                <ProfileProgress />
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

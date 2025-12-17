@@ -12,6 +12,16 @@ This directory contains detailed architectural and technical documentation for i
   - Outlines the hybrid client/server architecture.
   - Documents the migration of heavy AI tasks (Image/Video generation) to Firebase Functions and Vertex AI.
   - Lists available backend services and their triggers.
+- [Application & Code Overview](./APP_OVERVIEW.md)
+  - Maps product surfaces (Landing, Studio, Electron) to repository directories.
+  - Summarizes core creative suites, operational modules, and the multi-agent hub/spoke model.
+  - Highlights frontend layering, backend functions, and how to extend the platform safely.
+
+## AI Models & Capabilities
+
+- [Audio Generation & TTS](./AUDIO_GENERATION.md)
+  - Documentation for Gemini 2.5 Flash and Pro TTS models.
+  - Covers expressivity, pacing, and multi-speaker capabilities.
 
 ## UI & Design
 

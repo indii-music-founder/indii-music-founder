@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
-import { X, Upload, Image as ImageIcon, Plus } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 interface BrandAssetsDrawerProps {
@@ -127,7 +127,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     return (
-        <div className="absolute top-full right-0 mt-2 w-80 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-top-2 fade-in duration-200">
+        <div className="absolute top-full right-0 mt-2 w-80 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-drawer overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-top-2 fade-in duration-200">
             {/* Header */}
             <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-[#111]">
                 <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
@@ -160,29 +160,54 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
                 {activeTab === 'upload' ? (
                     /* Upload Area */
-                    <div
-                        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors mb-6 ${isDragging ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500 bg-[#0f0f0f]'}`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                            id="brand-asset-upload"
-                            onChange={handleFileInput}
-                        />
-                        <label htmlFor="brand-asset-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
-                                <Upload size={18} />
-                            </div>
-                            <span className="text-xs text-gray-400 font-medium">
-                                Drag & Drop or <span className="text-white hover:underline">Browse</span>
-                            </span>
-                            <span className="text-[10px] text-gray-600">Logos, textures, style refs</span>
-                        </label>
+                    <div className="space-y-4">
+                        <div
+                            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 mb-6 ${isDragging ? 'border-white bg-white/10 scale-[1.02]' : 'border-gray-700 hover:border-gray-500 hover:bg-[#1a1a1a] bg-[#0f0f0f]'}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                className="hidden"
+                                id="brand-asset-upload"
+                                onChange={handleFileInput}
+                            />
+                            <label htmlFor="brand-asset-upload" className="cursor-pointer flex flex-col items-center gap-3 w-full">
+                                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-white text-black' : 'bg-gray-800 text-gray-400 group-hover:text-white'}`}>
+                                    <Upload size={24} />
+                                </div>
+                                <div className="space-y-1">
+                                    <span className="block text-sm text-white font-medium">
+                                        Click to Upload
+                                    </span>
+                                    <span className="block text-xs text-gray-500">
+                                        or drag and drop images here
+                                    </span>
+                                </div>
+                            </label>
+                        </div>
+
+                        {/* Mobile Camera Option */}
+                        <div className="md:hidden">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                className="hidden"
+                                id="camera-upload"
+                                onChange={handleFileInput}
+                            />
+                            <label
+                                htmlFor="camera-upload"
+                                className="w-full py-3 bg-[#222] border border-gray-700 rounded-xl text-white font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                            >
+                                <Camera size={18} />
+                                Take a Photo
+                            </label>
+                        </div>
                     </div>
                 ) : (
                     /* Generate Area */

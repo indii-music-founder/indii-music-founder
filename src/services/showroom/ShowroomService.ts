@@ -38,7 +38,7 @@ export class ShowroomService {
         // For now, we simulate the call structure used by AIService.image
 
         return await AI.generateImage({
-            model: 'imagen-3.0-generate-001', // Or 'imagen-3.0-fast-generate-001'
+            model: 'gemini-3-pro-image-preview',
             prompt: prompt,
             config: {
                 aspectRatio: '1:1',

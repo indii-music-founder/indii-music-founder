@@ -84,3 +84,30 @@
     1. Beta Release to early adopters.
     2. Expand "Knowledge Base" with RAG integration.
     3. Refine mobile experience for companion app.
+
+---
+
+## 5. Confirmed Baseline (Dec 10, 2025)
+
+**DO NOT REGRESS THE FOLLOWING FEATURES.**
+These features have been verified working in production-like conditions via Live Demo and Testing.
+
+### A. Onboarding & Identity
+
+1. **Full Flow Functionality**: Users can travel from **Landing Page (Login)** -> **Onboarding (Chat)** -> **Dashboard (Studio)** without interruption.
+    * *Verified by*: Live Demo "Kaelen V"
+2. **Client-Side Generative UI**: The Onboarding Agent **MUST** be able to render interactive buttons (Generative UI) for high-friction questions (Genre, Career Stage, Goals).
+    * *Implementation*: `askMultipleChoice` tool in `onboardingService.ts`.
+    * *Renderer*: `OnboardingPage.tsx` handles `msg.toolCall` logic.
+    * *Verified by*: `src/modules/onboarding/pages/OnboardingPage.test.tsx` (Unit) and Live Browser Verification.
+3. **Agent Persona Persistence**: The Agent must maintain a specific creative persona (e.g., "Kaelen V") and not revert to a generic robotic assistant.
+    * *Verified by*: Persistent memory checks in "The Gauntlet".
+
+### B. Core Architecture
+
+1. **Local-First Profile**: User profile data (bio, genre, goals) successfully saves to the local store and persists between sessions.
+2. **Auth State Transitions**: The app correctly handles the state change from `New User` -> `Onboarding` -> `Authenticated User`.
+
+**Evidence:**
+* [Demo Recording](/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/cc7a8891-6e3e-4de3-a1ad-8cdf2036c396/onboarding_kaelen_v_1765428994412.webp)
+* [Unit Test](/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/onboarding/pages/OnboardingPage.test.tsx)

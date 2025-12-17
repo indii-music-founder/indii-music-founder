@@ -3,14 +3,14 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyD7bmREk0yo8-WtJIngr7ek9U1-BC7BTC0",
-  authDomain: "indiios-v-1-1.web.app",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
+  authDomain: "indiios-v-1-1.firebaseapp.com",
   databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
   projectId: "indiios-v-1-1",
   storageBucket: "indiios-v-1-1.firebasestorage.app",
   messagingSenderId: "223837784072",
-  appId: "1:223837784072:web:28eabcf0c5dd985395e9bd",
-  measurementId: "G-KNWPRGE5JK"
+  appId: "1:223837784072:web:3af738739465ea4095e9bd",
+  measurementId: "G-7WW3HEHFTF"
 };
 
 // Initialize Firebase (prevent duplicate initialization in dev)

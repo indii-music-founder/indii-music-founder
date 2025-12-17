@@ -5,7 +5,9 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     // Frontend specific
     VITE_FUNCTIONS_URL: z.string().url().optional(),
     VITE_RAG_PROXY_URL: z.string().url().optional(),
+    VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
     DEV: z.boolean().default(false),
+ investigate-login-system-failure2025-12-1704-01-00
     // Firebase specific overrides (optional)
     firebaseApiKey: z.string().optional(),
     firebaseAuthDomain: z.string().optional(),
@@ -15,24 +17,18 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     firebaseMeasurementId: z.string().optional(),
     firebaseMessagingSenderId: z.string().optional(),
     firebaseDatabaseURL: z.string().url().optional(),
+
+    skipOnboarding: z.boolean().default(false),
+ main
 });
 
-// Helper to safely get env vars in both Vite (browser) and Node (scripts) output
-const getEnv = (key: string) => {
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-        return import.meta.env[key];
-    }
-    if (typeof process !== 'undefined' && process.env) {
-        return process.env[key];
-    }
-    return undefined;
-};
-
 const processEnv = {
-    apiKey: getEnv('VITE_API_KEY'),
-    projectId: getEnv('VITE_VERTEX_PROJECT_ID'),
-    location: getEnv('VITE_VERTEX_LOCATION'),
-    useVertex: getEnv('VITE_USE_VERTEX') === 'true',
+    // Use environment variable - no hardcoded fallback for security
+    apiKey: import.meta.env.VITE_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_API_KEY : undefined),
+    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_PROJECT_ID : undefined),
+    location: import.meta.env.VITE_VERTEX_LOCATION || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_LOCATION : undefined),
+    useVertex: (import.meta.env.VITE_USE_VERTEX || (typeof process !== 'undefined' ? process.env.VITE_USE_VERTEX : undefined)) === 'true',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
 
     // Pass through frontend specific
     VITE_FUNCTIONS_URL: getEnv('VITE_FUNCTIONS_URL') || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
@@ -48,6 +44,11 @@ const processEnv = {
     firebaseMeasurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID'),
     firebaseMessagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
     firebaseDatabaseURL: getEnv('VITE_FIREBASE_DATABASE_URL'),
+    VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL || (typeof process !== 'undefined' ? process.env.VITE_FUNCTIONS_URL : undefined) || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
+    VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL || (typeof process !== 'undefined' ? process.env.VITE_RAG_PROXY_URL : undefined),
+    VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
+    DEV: import.meta.env.DEV || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
+    skipOnboarding: true,
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);

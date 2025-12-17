@@ -8,15 +8,36 @@ interface EditDefinitionsPanelProps {
     onClose: () => void;
     definitions: Record<string, string>;
     onUpdateDefinition: (colorId: string, prompt: string) => void;
+    referenceImages?: Record<string, { mimeType: string, data: string } | null>;
+    onUpdateReferenceImage?: (colorId: string, image: { mimeType: string, data: string } | null) => void;
 }
 
 export default function EditDefinitionsPanel({
     isOpen,
     onClose,
     definitions,
-    onUpdateDefinition
+    onUpdateDefinition,
+    referenceImages = {},
+    onUpdateReferenceImage
 }: EditDefinitionsPanelProps) {
     if (!isOpen) return null;
+
+    const handleFileChange = (colorId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0] && onUpdateReferenceImage) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if (ev.target?.result) {
+                    const result = ev.target.result as string;
+                    const match = result.match(/^data:(.+);base64,(.+)$/);
+                    if (match) {
+                        onUpdateReferenceImage(colorId, { mimeType: match[1], data: match[2] });
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <motion.div
@@ -39,7 +60,7 @@ export default function EditDefinitionsPanel({
                 <div className="bg-blue-900/20 border border-blue-900/50 rounded-lg p-3 flex gap-3 items-start">
                     <AlertCircle className="text-blue-400 shrink-0 mt-0.5" size={16} />
                     <p className="text-xs text-blue-200">
-                        Map each color to a specific edit instruction. Areas marked with the color will be transformed based on your prompt.
+                        Map each color to a specific edit instruction. Optionally attach a reference image (e.g. "Use these shoes") to guide the edit.
                     </p>
                 </div>
 
@@ -52,13 +73,44 @@ export default function EditDefinitionsPanel({
                             />
                             <span className="text-sm font-medium text-gray-300">{color.name}</span>
                         </div>
-                        <div className="p-2">
+                        <div className="p-2 space-y-2">
                             <textarea
                                 value={definitions[color.id] || ''}
                                 onChange={(e) => onUpdateDefinition(color.id, e.target.value)}
                                 placeholder={`e.g. Turn into ${color.name.toLowerCase()} neon lights...`}
                                 className="w-full bg-transparent text-sm text-white placeholder-gray-600 border-none outline-none resize-none h-20 focus:ring-0"
                             />
+
+                            {/* Reference Image Input */}
+                            <div className="flex items-center gap-2">
+                                {referenceImages[color.id] ? (
+                                    <div className="relative w-12 h-12 rounded overflow-hidden border border-gray-700 group/img">
+                                        <img
+                                            src={`data:${referenceImages[color.id]!.mimeType};base64,${referenceImages[color.id]!.data}`}
+                                            className="w-full h-full object-cover"
+                                            alt="Ref"
+                                        />
+                                        <button
+                                            onClick={() => onUpdateReferenceImage && onUpdateReferenceImage(color.id, null)}
+                                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                        >
+                                            <X size={12} className="text-white" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    onUpdateReferenceImage && (
+                                        <label className="flex items-center gap-2 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 rounded cursor-pointer transition-colors text-xs text-gray-400 border border-transparent hover:border-gray-600">
+                                            <span className="text-[10px]">+ Ref Scan</span>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) => handleFileChange(color.id, e)}
+                                            />
+                                        </label>
+                                    )
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}

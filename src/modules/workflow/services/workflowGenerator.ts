@@ -3,7 +3,7 @@ import { AI } from '../../../services/ai/AIService';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
 import type { SavedWorkflow } from '../types';
 import { Status } from '../types';
-// import { SchemaType } from '@google/genai';
+import { isTextPart } from '@/shared/types/ai.dto';
 
 // Helper to flatten registry for the AI context
 const getRegistryContext = () => {
@@ -94,7 +94,7 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
     };
 
     const response = await AI.generateContent({
-        model: 'gemini-2.0-flash-thinking-exp-01-21',
+        model: 'gemini-3-pro-preview',
         contents: { role: 'user', parts: [{ text: `User Request: "${userPrompt}"\n\nGenerate the workflow JSON.` }] },
         config: {
             systemInstruction,
@@ -103,8 +103,9 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
         }
     });
 
-    const text = response.response.candidates?.[0]?.content?.parts?.[0]?.text;
-    const generated = JSON.parse(text || "{}");
+    const part = response.response.candidates?.[0]?.content?.parts?.[0];
+    const text = (part && isTextPart(part)) ? part.text : '{}';
+    const generated = JSON.parse(text);
 
     // Post-processing to ensure internal consistency (status, etc)
     const nodes = (generated.nodes || []).map((n: any) => ({

@@ -58,8 +58,46 @@ export class DashboardService {
         };
     }
 
+    /**
+     * Export all user data as a downloadable JSON backup
+     * IndexedDB data is serialized and offered as a file download
+     */
     static async exportBackup(): Promise<void> {
-        console.log("Generating backup...");
-        // TODO: Implement zip generation of IndexedDB
+        console.log('[DashboardService] Generating backup...');
+
+        try {
+            // Collect data from store
+            const { useStore } = await import('@/core/store');
+            const state = useStore.getState();
+
+            const backupData = {
+                version: '1.0',
+                exportedAt: new Date().toISOString(),
+                projects: state.projects || [],
+                generatedHistory: state.generatedHistory || [],
+                userProfile: state.userProfile || null,
+                // Exclude sensitive data like auth tokens
+            };
+
+            // Create downloadable file
+            const blob = new Blob(
+                [JSON.stringify(backupData, null, 2)],
+                { type: 'application/json' }
+            );
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `indiios-backup-${Date.now()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            console.log('[DashboardService] Backup exported successfully');
+        } catch (error) {
+            console.error('[DashboardService] Export backup failed:', error);
+            throw error;
+        }
     }
 }

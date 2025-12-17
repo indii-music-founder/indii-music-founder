@@ -1,9 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { v4 as uuidv4 } from 'uuid';
-import { env } from '@/config/env';
 import { extractVideoFrame } from '@/utils/video';
-import { ImageGeneration } from './ImageGenerationService';
 
 export class VideoGenerationService {
 
@@ -82,97 +80,28 @@ export class VideoGenerationService {
 
         const finalPrompt = fullPrompt + timeContext + ingredientsContext;
 
-        try {
-            const videoUri = await AI.generateVideo({
-                model,
-                prompt: finalPrompt,
-                image: (options.firstFrame && options.firstFrame.startsWith('data:'))
-                    ? { mimeType: options.firstFrame.split(';')[0].split(':')[1], imageBytes: options.firstFrame.split(',')[1] }
-                    : undefined,
-                config: {
-                    lastFrame: (options.lastFrame && options.lastFrame.startsWith('data:'))
-                        ? { mimeType: options.lastFrame.split(';')[0].split(':')[1], imageBytes: options.lastFrame.split(',')[1] }
-                        : undefined
-                }
-            });
-
-            if (videoUri) {
-                return [{
-                    id: crypto.randomUUID(),
-                    url: videoUri,
-                    prompt: options.prompt
-                }];
+        const videoUri = await AI.generateVideo({
+            model,
+            prompt: finalPrompt,
+            image: (options.firstFrame && options.firstFrame.startsWith('data:'))
+                ? { mimeType: options.firstFrame.split(';')[0].split(':')[1], imageBytes: options.firstFrame.split(',')[1] }
+                : undefined,
+            config: {
+                lastFrame: (options.lastFrame && options.lastFrame.startsWith('data:'))
+                    ? { mimeType: options.lastFrame.split(';')[0].split(':')[1], imageBytes: options.lastFrame.split(',')[1] }
+                    : undefined
             }
+        });
 
-            // Fallback: Generate a Storyboard Preview using Gemini 3 Pro Image
-            console.log("Video API unavailable, generating Storyboard Preview...");
-
-            const storyboardPrompt = `Create a 2x2 storyboard grid showing the sequence of: ${options.prompt}. 
-            ${options.firstFrame ? 'The sequence starts with the provided reference image.' : ''}
-            ${options.lastFrame ? 'The sequence ends with the provided reference image.' : ''}
-            Cinematic lighting, 8k resolution, consistent character and style.`;
-
-            // Reuse generateImages to create the storyboard
-            const storyboardImages = await ImageGeneration.generateImages({
-                prompt: storyboardPrompt,
-                count: 1,
-                resolution: '2K',
-                aspectRatio: '16:9', // Keep 16:9 for the grid itself
-                sourceImages: options.firstFrame ? [{ mimeType: 'image/png', data: options.firstFrame.split(',')[1] }] : undefined
-            });
-
-            if (storyboardImages.length > 0) {
-                return [{
-                    id: crypto.randomUUID(),
-                    url: storyboardImages[0].url,
-                    prompt: `[Storyboard Preview] ${options.prompt}`
-                }];
-            }
-
-            // Ultimate fallback if even image gen fails
-            return [{
-                id: crypto.randomUUID(),
-                url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                prompt: `[SIMULATION] ${options.prompt}`
-            }];
-        } catch (e: unknown) {
-            console.error("Video Generation Error:", e);
-
-            // Attempt Storyboard Fallback
-            try {
-                console.log("Attempting Storyboard Fallback...");
-                const storyboardPrompt = `Create a cinematic storyboard sequence for: ${options.prompt}.
-                ${options.firstFrame ? 'The sequence starts with the provided reference image.' : ''}
-                ${options.lastFrame ? 'The sequence ends with the provided reference image.' : ''}
-                High resolution, consistent style.`;
-
-                const storyboardImages = await ImageGeneration.generateImages({
-                    prompt: storyboardPrompt,
-                    count: 1,
-                    resolution: '2K',
-                    aspectRatio: '16:9',
-                    sourceImages: options.firstFrame ? [{ mimeType: 'image/png', data: options.firstFrame.split(',')[1] }] : undefined
-                });
-
-                if (storyboardImages.length > 0) {
-                    return [{
-                        id: crypto.randomUUID(),
-                        url: storyboardImages[0].url,
-                        prompt: `[Storyboard Fallback] ${options.prompt}`
-                    }];
-                }
-            } catch (fallbackErr: unknown) {
-                console.error("Fallback failed:", fallbackErr);
-            }
-
-            // Ultimate fallback
-            const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-            return [{
-                id: crypto.randomUUID(),
-                url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                prompt: `[ERROR: ${errorMessage}] ${options.prompt}`
-            }];
+        if (!videoUri) {
+            throw new Error('Video generation returned no result');
         }
+
+        return [{
+            id: crypto.randomUUID(),
+            url: videoUri,
+            prompt: options.prompt
+        }];
     }
 
     async generateLongFormVideo(options: {
@@ -212,12 +141,7 @@ export class VideoGenerationService {
                     results.push(video);
 
                     // Extract last frame for next iteration
-                    // We need to wait for the video to be "ready" to extract frame.
-                    // Since generateVideo returns a URL, we can try to extract.
                     try {
-                        // Note: This might fail if the URL is not immediately accessible or CORS issues.
-                        // In a real app, we might need a backend service to do this or wait.
-                        // For simulation, BigBuckBunny works.
                         const lastFrameData = await extractVideoFrame(video.url);
                         currentFirstFrame = lastFrameData;
                     } catch (err: unknown) {
@@ -269,6 +193,8 @@ export interface VideoGenerationOptions {
     lastFrame?: string;
     timeOffset?: number;
     ingredients?: string[];
+    duration?: number;
+    fps?: number;
 }
 
 export const VideoGeneration = new VideoGenerationService();

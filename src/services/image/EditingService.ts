@@ -2,21 +2,28 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { isInlineDataPart, isTextPart, type ContentPart } from '@/shared/types/ai.dto';
 
 export class EditingService {
 
     async editImage(options: {
         image: { mimeType: string; data: string };
         mask?: { mimeType: string; data: string };
+        referenceImage?: { mimeType: string; data: string }; // New support for reference ingredients
         prompt: string;
         negativePrompt?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
             const editImageFn = httpsCallable(functions, 'editImage');
 
+            // Pass reference image to backend function
             const result = await editImageFn({
                 image: options.image.data,
                 mask: options.mask?.data,
+                referenceImage: options.referenceImage?.data,
+                // Only passing data bytes, assuming mimtype is inferred or standard, 
+                // or backend expects just base64. 
+                // Previous code passed `image: options.image.data` (bytes), so we follow that pattern.
                 prompt: options.prompt + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '')
             });
 
@@ -40,56 +47,56 @@ export class EditingService {
 
     async multiMaskEdit(options: {
         image: { mimeType: string; data: string };
-        masks: { mimeType: string; data: string; prompt: string; colorId: string }[];
+        masks: { mimeType: string; data: string; prompt: string; colorId: string; referenceImage?: { mimeType: string; data: string } }[];
         negativePrompt?: string;
+        variationCount?: number; // Default to 4
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         const results: { id: string, url: string, prompt: string }[] = [];
+        const count = options.variationCount || 4;
 
         try {
-            console.log("Starting Multi-Mask Edit with", options.masks.length, "masks");
+            console.log("Starting Multi-Mask Edit with", options.masks.length, "masks. Generating", count, "variations.");
 
-            // Option 1: Process sequentially (Safe fallback)
-            // Ideally backend would take all masks at once.
-            // We'll simulate a "composite" result by applying them one by one for now
-            // or return multiple options if parallel.
+            // We generate 'count' variations. 
+            // For each variation, we strip the 'composite' image through the mask pipeline.
+            // Note: Parallelizing variations is possible but heavy on rate limits. Sequential for safety now.
 
-            // Let's assume we want to return variations (Options 1-4 from flowchart)
-            // Since we can't easily chain them perfectly without a real backend "pipeline",
-            // we will simulate the flow by returning mock variations if real API isn't updated.
+            for (let i = 0; i < count; i++) {
+                let currentImageData = options.image;
+                let compositePromptParts = [];
 
-            // For now, let's try to run the FIRST mask edit using the real API as a proof of life
-            // and then return mock variations for the others to verify UI flow.
-
-            if (options.masks.length > 0) {
-                // Apply first edit
-                const firstMask = options.masks[0];
-                const result = await this.editImage({
-                    image: options.image,
-                    mask: { mimeType: firstMask.mimeType, data: firstMask.data },
-                    prompt: firstMask.prompt,
-                    negativePrompt: options.negativePrompt
-                });
-
-                if (result) {
-                    results.push({ ...result, prompt: `Var 1: ${firstMask.prompt}` });
-
-                    // Add mock variations for the UI to show "Option 1-4"
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url: result.url, // Re-use for now, or use a placeholder filter if possible 
-                        prompt: `Var 2: Alternative style`
+                // Sequential Pipeline: Base -> Mask 1 -> Result 1 -> Mask 2 -> ... -> Final
+                for (const mask of options.masks) {
+                    // Apply edit
+                    const result = await this.editImage({
+                        image: currentImageData,
+                        mask: { mimeType: mask.mimeType, data: mask.data },
+                        referenceImage: mask.referenceImage, // Pass specific reference for this mask
+                        prompt: mask.prompt, // We rely on the model's randomness for different results if called multiple times
+                        negativePrompt: options.negativePrompt
                     });
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url: result.url,
-                        prompt: `Var 3: High contrast`
-                    });
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url: result.url,
-                        prompt: `Var 4: Subtle`
-                    });
+
+                    if (result) {
+                        // Extract data for next step
+                        // result.url is base64 data URI
+                        const match = result.url.match(/^data:(.+);base64,(.+)$/);
+                        if (match) {
+                            currentImageData = { mimeType: match[1], data: match[2] };
+                            compositePromptParts.push(mask.prompt);
+                        } else {
+                            throw new Error("Failed to parse intermediate result data URI");
+                        }
+                    } else {
+                        throw new Error(`Failed to generate step for mask: ${mask.prompt}`);
+                    }
                 }
+
+                // Push the final composite result
+                results.push({
+                    id: crypto.randomUUID(),
+                    url: `data:${currentImageData.mimeType};base64,${currentImageData.data}`,
+                    prompt: `Composite ${i + 1}: ${compositePromptParts.join(', ')}`
+                });
             }
 
             return results;
@@ -155,7 +162,7 @@ export class EditingService {
             });
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && part.inlineData) {
+            if (part && isInlineDataPart(part)) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
                     id: crypto.randomUUID(),
@@ -164,7 +171,7 @@ export class EditingService {
                 };
             }
 
-            if (part && part.text && part.text.startsWith('http')) {
+            if (part && isTextPart(part) && part.text.startsWith('http')) {
                 return {
                     id: crypto.randomUUID(),
                     url: part.text,
@@ -230,7 +237,7 @@ export class EditingService {
             });
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && part.inlineData) {
+            if (part && isInlineDataPart(part)) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
                     id: crypto.randomUUID(),
@@ -266,7 +273,7 @@ export class EditingService {
                     ...AI_CONFIG.THINKING.HIGH
                 }
             });
-            const plan = AI.parseJSON(planRes.text());
+            const plan = AI.parseJSON<{ scenes: string[] }>(planRes.text());
             const scenes = plan.scenes || [];
             while (scenes.length < options.count) scenes.push(`${options.prompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -309,7 +316,7 @@ export class EditingService {
                 });
 
                 const part = response.response.candidates?.[0]?.content?.parts?.[0];
-                if (part && part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
+                if (part && isInlineDataPart(part) && part.inlineData.mimeType && part.inlineData.data) {
                     const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                     previousImage = { mimeType: part.inlineData.mimeType, data: part.inlineData.data };
                     results.push({

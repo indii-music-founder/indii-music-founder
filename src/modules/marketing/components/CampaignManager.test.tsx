@@ -35,14 +35,15 @@ describe('CampaignManager', () => {
         title: 'Test Campaign',
         durationDays: 7,
         startDate: '2023-01-01',
+        assetType: 'campaign' as const,
         posts: [
             {
                 id: 'p1',
                 day: 1,
-                platform: 'Twitter',
+                platform: 'Twitter' as const,
                 copy: 'Test Tweet',
                 status: CampaignStatus.PENDING,
-                imageAsset: { imageUrl: 'test.jpg', title: 'Test Image' }
+                imageAsset: { imageUrl: 'test.jpg', title: 'Test Image', assetType: 'image' as const, caption: 'Test Caption' }
             }
         ]
     };

@@ -15,6 +15,14 @@ vi.mock('@/services/firebase', () => ({
     functions: {}
 }));
 
+// Mock AIService
+const mockGenerateContent = vi.fn();
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: (args: any) => mockGenerateContent(args)
+    }
+}));
+
 describe('LegalTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -45,6 +53,9 @@ describe('LegalTools', () => {
     });
 
     it('generate_nda returns mock data (for now)', async () => {
+        mockGenerateContent.mockResolvedValue({
+            text: () => '[MOCK] Generated NDA for Alice and Bob'
+        });
         const result = await LegalTools.generate_nda({
             parties: ['Alice', 'Bob'],
             purpose: 'Collaboration'

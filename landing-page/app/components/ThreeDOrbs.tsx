@@ -7,11 +7,7 @@ import * as THREE from 'three';
 import { createNoise2D } from 'simplex-noise';
 import { useAudioStore } from '../store/audioStore';
 
-const COUNT = 40;
-const SPEED_FACTOR = 0.5;
-
-// Reusing the logic from LiquidOrbs but adapting for 3D
-// Orbs will float up from the bottom
+const COUNT = 15;
 
 export default function ThreeDOrbs() {
     const { viewport, camera } = useThree();
@@ -53,14 +49,6 @@ export default function ThreeDOrbs() {
     useFrame((state, delta) => {
         const { bass, mid, high } = freqDataRef.current;
         const time = state.clock.elapsedTime;
-
-        // We want the orbs to stay relative to the camera's view, 
-        // effectively acting like a background layer even though the camera moves.
-        // However, if we just parent them to the camera, they will move WITH the camera.
-        // If we want them to float up through the "world", we can let them be world-space.
-        // But since the camera moves down significantly (scroll * 96), we might lose them.
-        // Let's make them follow the camera Y but float up relative to it.
-
         const cameraY = camera.position.y;
 
         particles.forEach((particle, i) => {
@@ -83,7 +71,6 @@ export default function ThreeDOrbs() {
                 particle.position.y = bottomBound;
                 particle.position.x = (Math.random() - 0.5) * viewport.width * 1.5;
             }
-            // Also if it falls too far behind (shouldn't happen with upward movement but good safety)
             if (particle.position.y < bottomBound - 10) {
                 particle.position.y = bottomBound;
             }
@@ -91,7 +78,6 @@ export default function ThreeDOrbs() {
             // 2. Audio Reactivity
             // Scale pulse with bass
             const targetScale = particle.baseScale * (1 + bass * 0.5);
-            // Smooth lerp
             particle.scale = THREE.MathUtils.lerp(particle.scale, targetScale, 0.1);
 
             // 3. Update Matrix
@@ -103,27 +89,14 @@ export default function ThreeDOrbs() {
 
             meshRef.current.setMatrixAt(i, dummy.matrix);
 
-            // 4. Update Color & Emissive
-            // Shift hue with mid, increase brightness with high
-            const hue = (0.6 + mid * 0.2 + Math.sin(time * 0.1 + particle.offset) * 0.1) % 1;
-            const lightness = 0.5 + high * 0.5; // Pulse brightness
-
-            color.setHSL(hue, 0.9, lightness);
-
-            // We can't easily set per-instance emissive on a single material without custom shaders or using the color attribute as emissive tint if configured.
-            // But standard meshPhysicalMaterial uses instanceColor for albedo.
-            // To get a "glow", we rely on the high lightness pushing into Bloom threshold (usually > 1).
-            // Let's boost the color values above 1.0 for the bloom effect.
-
-            if (high > 0.5) {
-                color.multiplyScalar(1 + high * 2); // Super bright for bloom
-            }
-
-            meshRef.current.setColorAt(i, color);
+            // 4. Update Color
+            // We use standard white for glass, but maybe slight emissive tint?
+            // Actually for physically correct glass, we don't want to mess with vertex colors too much 
+            // if we want pure refraction. But let's keep it simple.
+            // meshRef.current.setColorAt(i, color); // disable color updates for pure glass
         });
 
         meshRef.current.instanceMatrix.needsUpdate = true;
-        if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
     });
 
     return (
@@ -132,20 +105,20 @@ export default function ThreeDOrbs() {
             <Instances range={COUNT} ref={meshRef}>
                 <sphereGeometry args={[1, 32, 32]} />
                 <meshPhysicalMaterial
-                    roughness={0.05} // Smoother surface
-                    metalness={0.6} // More metallic
-                    transmission={0.9} // High transmission for glass look
-                    thickness={3.0} // Thicker glass
-                    ior={1.5} // Standard glass IOR
+                    roughness={0.02} // Ultra smooth
+                    metalness={0.1} // Less metallic, more glass-like
+                    transmission={0.98} // Crystal clear
+                    thickness={2.0}
+                    ior={1.45} // Acrylic/Glass
                     clearcoat={1}
-                    clearcoatRoughness={0.05}
-                    attenuationDistance={1.0}
+                    clearcoatRoughness={0.02}
+                    attenuationDistance={2.0}
                     attenuationColor="#ffffff"
                     color="#ffffff"
-                    iridescence={1}
+                    iridescence={0.5} // Subtle iridescence
                     iridescenceIOR={1.3}
-                    iridescenceThicknessRange={[0, 1400]}
-                    dispersion={8} // Higher dispersion for more rainbows
+                    iridescenceThicknessRange={[0, 400]}
+                    dispersion={4} // Subtle dispersion
                 />
                 {particles.map((_, i) => (
                     <Instance key={i} />

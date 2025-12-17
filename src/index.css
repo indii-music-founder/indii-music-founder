@@ -86,6 +86,13 @@
   --color-bg-dark: var(--bg-dark);
   --color-bg-panel: var(--bg-panel);
   --color-text-main: var(--text-main);
+
+  /* Z-Index Registry */
+  --z-index-base: 0;
+  --z-index-sidebar: 40;
+  --z-index-drawer: 50;
+  --z-index-modal: 100;
+  --z-index-toast: 200;
 }
 
 @layer base {

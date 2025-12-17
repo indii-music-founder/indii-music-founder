@@ -11,10 +11,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'save_memory',
         description: 'Save a fact, rule, or preference to long-term memory.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                content: { type: 'string', description: 'The content to remember.' },
-                type: { type: 'string', description: 'Type of memory.', enum: ['fact', 'summary', 'rule'] }
+                content: { type: 'STRING', description: 'The content to remember.' },
+                type: { type: 'STRING', description: 'Type of memory.', enum: ['fact', 'summary', 'rule'] }
             },
             required: ['content']
         }
@@ -23,9 +23,9 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'recall_memories',
         description: 'Search long-term memory for relevant information.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                query: { type: 'string', description: 'Search query.' }
+                query: { type: 'STRING', description: 'Search query.' }
             },
             required: ['query']
         }
@@ -34,10 +34,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'verify_output',
         description: 'Critique and verify generated content against a goal.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                goal: { type: 'string', description: 'The original goal.' },
-                content: { type: 'string', description: 'The content to verify.' }
+                goal: { type: 'STRING', description: 'The original goal.' },
+                content: { type: 'STRING', description: 'The content to verify.' }
             },
             required: ['goal', 'content']
         }
@@ -46,10 +46,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'request_approval',
         description: 'Request user approval for high-stakes actions.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                content: { type: 'string', description: 'Content or action requiring approval.' },
-                type: { type: 'string', description: 'Type of action (e.g., "post", "email").' }
+                content: { type: 'STRING', description: 'Content or action requiring approval.' },
+                type: { type: 'STRING', description: 'Type of action (e.g., "post", "email").' }
             },
             required: ['content']
         }
@@ -58,9 +58,9 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'get_project_details',
         description: 'Fetch full details of a project by ID.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                projectId: { type: 'string', description: 'The ID of the project to fetch.' }
+                projectId: { type: 'STRING', description: 'The ID of the project to fetch.' }
             },
             required: ['projectId']
         }
@@ -69,9 +69,9 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'search_knowledge',
         description: 'Search the internal knowledge base for answers, guidelines, or policies.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                query: { type: 'string', description: 'The search query.' }
+                query: { type: 'STRING', description: 'The search query.' }
             },
             required: ['query']
         }
@@ -80,10 +80,10 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         name: 'delegate_task',
         description: 'Delegate a sub-task to another specialized agent.',
         parameters: {
-            type: 'object',
+            type: 'OBJECT',
             properties: {
-                targetAgentId: { type: 'string', description: 'The ID of the agent to delegate to (e.g., "video", "legal").' },
-                task: { type: 'string', description: 'The specific task for the agent to perform.' }
+                targetAgentId: { type: 'STRING', description: 'The ID of the agent to delegate to (e.g., "video", "legal").' },
+                task: { type: 'STRING', description: 'The specific task for the agent to perform.' }
             },
             required: ['targetAgentId', 'task']
         }
@@ -133,40 +133,50 @@ export class BaseAgent implements SpecializedAgent {
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
-        // Dynamically import store to avoid circular deps
-        const { useStore } = await import('@/core/store');
-        const { currentOrganizationId, currentProjectId } = useStore.getState();
-
         const enrichedContext = {
             ...context,
-            orgId: currentOrganizationId,
-            projectId: currentProjectId
+            orgId: context?.currentOrganizationId,
+            projectId: context?.currentProjectId
         };
 
         const SUPERPOWER_PROMPT = `
-        **SUPERPOWERS (Agent Zero Protocol):**
-        - **Memory:** Use 'save_memory' to remember important details. Use 'recall_memories' to check for past context.
-        - **Reflection:** Use 'verify_output' to double-check your work before finalizing.
-        - **Approval:** Use 'request_approval' before taking any public or irreversible action.
+        ## CAPABILITIES & PROTOCOLS
+        You have access to the following advanced capabilities ("Superpowers"):
+        - **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.
+        - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
+        - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
+
+        ## TONE & STYLE
+        - Be direct and concise. Avoid "As an AI..." boilerplate.
+        - Act with the authority of your role (${this.name}).
+        - If the user asks for an action, DO IT. Don't just say you can.
         `;
 
         // Build memory section if memories were retrieved
         const memorySection = context?.memoryContext
-            ? `\nRELEVANT MEMORIES (from past conversations):\n${context.memoryContext}\n`
+            ? `\n## RELEVANT MEMORIES\n${context.memoryContext}\n`
+            : '';
+
+        // Build distributor section - this informs all AI operations about requirements
+        const distributorSection = context?.distributor?.isConfigured
+            ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
         const fullPrompt = `
+# MISSION
 ${this.systemPrompt}
+
+# CONTEXT
+${JSON.stringify(enrichedContext, null, 2)}
+
+# HISTORY
+${context?.chatHistoryString || ''}
+${memorySection}
+${distributorSection}
 
 ${SUPERPOWER_PROMPT}
 
-CONTEXT:
-${JSON.stringify(enrichedContext, null, 2)}
-
-HISTORY:
-${context?.chatHistoryString || ''}
-${memorySection}
-TASK:
+# CURRENT OBJECTIVE
 ${task}
 `;
 
@@ -183,9 +193,9 @@ ${task}
                 model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
                 config: {
-                    ...AI_CONFIG.THINKING.LOW,
-                    tools: allTools
-                }
+                    ...AI_CONFIG.THINKING.LOW
+                },
+                tools: allTools as any
             });
 
             const functionCall = response.functionCalls()?.[0];

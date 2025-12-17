@@ -8,10 +8,10 @@ interface EditorAssetLibraryProps {
 }
 
 export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragStart }) => {
-    const history = useStore((state) => state.creative.generatedHistory);
+    const history = useStore((state) => state.generatedHistory);
 
     // Filter for supported types
-    const assets = history.filter(item =>
+    const assets = history.filter((item: HistoryItem) =>
         ['image', 'video', 'audio'].includes(item.type)
     );
 
@@ -39,7 +39,7 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                         Generate some content first!
                     </div>
                 ) : (
-                    assets.map((item) => (
+                    assets.map((item: HistoryItem) => (
                         <div
                             key={item.id}
                             draggable

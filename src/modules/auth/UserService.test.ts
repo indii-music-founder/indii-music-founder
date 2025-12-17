@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserService, FirestoreUserProfile } from './UserService';
 import { db } from '../../services/firebase';
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { UserContext } from 'firebase/auth';
+
 
 // Mock Firebase
 vi.mock('../../services/firebase', () => ({

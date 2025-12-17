@@ -1,373 +1,93 @@
 'use client';
 
-import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import {
-  Music,
-  Shield,
-  Zap,
-  Users,
-  TrendingUp,
-  Sparkles,
-  Play,
-  ArrowRight,
-  Menu,
-  X
-} from 'lucide-react';
-
-const features = [
-  {
-    icon: Music,
-    title: 'Smart Audio Analysis',
-    description: 'AI-powered analysis turns your music into actionable insights. Understand your sound like never before.',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-400/10',
-  },
-  {
-    icon: Sparkles,
-    title: 'AI Creative Assistant',
-    description: 'Meet Indii - your AI assistant that handles the business tasks so you can focus on creating.',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-400/10',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Career Strategy',
-    description: 'Data-driven insights to grow your fanbase and income. Make decisions backed by real analytics.',
-    color: 'text-pink-400',
-    bgColor: 'bg-pink-400/10',
-  },
-  {
-    icon: Shield,
-    title: 'Rights Protection',
-    description: 'Secure your IP and get paid for your work. Never miss a royalty payment again.',
-    color: 'text-green-400',
-    bgColor: 'bg-green-400/10',
-  },
-  {
-    icon: Users,
-    title: 'Direct to Fan',
-    description: 'Sell merch, tickets, and vinyl directly to your audience. No middlemen, higher margins.',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-400/10',
-  },
-  {
-    icon: Zap,
-    title: 'Workflow Automation',
-    description: 'Automate repetitive tasks with AI-powered workflows. Scale your operation effortlessly.',
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-400/10',
-  },
-];
-
+import PulseButton from './components/ui/PulseButton';
+import BreathingText from './components/ui/BreathingText';
+import AudioManager from './components/AudioManager';
+import DigitalBillboard from './components/ui/DigitalBillboard';
 import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
 
-export default function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+// Dynamically import 3D canvas to avoid SSR issues
+const SoundscapeCanvas = dynamic(() => import('./components/3d/SoundscapeCanvas'), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 bg-void" />
+});
+
+export default function Home() {
   const { user, loading } = useAuth();
-  const studioUrl = getStudioUrl();
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link href="/" className="text-2xl font-bold tracking-tight">
-              indiiOS
-            </Link>
+    <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-center selection:bg-resonance-blue selection:text-white">
 
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="#features" className="text-sm text-white/60 hover:text-white transition-colors">
-                Features
-              </Link>
-              <Link href="#pricing" className="text-sm text-white/60 hover:text-white transition-colors">
-                Pricing
-              </Link>
-              <Link href="/teaser" className="text-sm text-white/60 hover:text-white transition-colors">
-                Experience
-              </Link>
-            </div>
+      {/* 1. The Subliminal Background */}
+      <AudioManager />
+      <SoundscapeCanvas />
 
-            {/* Auth Buttons */}
-            <div className="hidden md:flex items-center gap-4">
-              {!loading && user ? (
-                <a
-                  href={studioUrl}
-                  className="px-4 py-2 text-sm font-medium text-black bg-white rounded-full hover:bg-white/90 transition-colors"
-                >
-                  Launch Studio
-                </a>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="text-sm text-white/80 hover:text-white transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="px-4 py-2 bg-white text-black text-sm font-medium rounded-full hover:bg-white/90 transition-colors"
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
+      {/* 2. Content Overlay */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto">
 
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden p-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        {/* Glass Hero Card */}
+        <motion.div
+          className="relative w-full max-w-5xl min-h-[600px] flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-[30px] backdrop-saturate-150 border-t border-l border-white/20 border-b border-r border-black/20 rounded-[3rem] p-12 md:p-16 lg:p-24 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* Internal Reflective Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20 pointer-events-none" />
+
+          {/* Subtle Noise Texture for realism (Optional, simulates frosted glass grain) */}
+          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
+
+          <div className="relative z-20 space-y-10 text-center w-full">
+            {/* Animated Badge / Logo */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
+              <span className="text-4xl md:text-5xl font-bold tracking-tight text-white/90 animate-pulse-slow">
+                indiiOS
+              </span>
+            </motion.div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:hidden bg-black/95 border-b border-white/5"
-          >
-            <div className="px-4 py-4 space-y-4">
-              <Link href="#features" className="block text-white/60 hover:text-white">
-                Features
-              </Link>
-              <Link href="#pricing" className="block text-white/60 hover:text-white">
-                Pricing
-              </Link>
-              <Link href="/teaser" className="block text-white/60 hover:text-white">
-                Experience
-              </Link>
-              <div className="pt-4 border-t border-white/10 space-y-3">
-                <Link
-                  href="/login"
-                  className="block text-center py-2 text-white/80"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/signup"
-                  className="block text-center py-2 bg-white text-black font-medium rounded-lg"
-                >
-                  Get Started
+            {loading ? (
+              <div className="h-[400px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            ) : (
+              <DigitalBillboard
+                user={user}
+                authenticatedCta={{ label: "Launch Studio", href: getStudioUrl() }}
+              />
+            )}
+
+            {/* Login Link below as a secondary action for all slides */}
+            {!user && !loading && (
+              <div className="mt-8">
+                <Link href="/login" className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
+                  Already have an account? Sign In
                 </Link>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-black to-black" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-
-        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/60 mb-8">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              Now in Alpha
-            </div>
-
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-              Your Music.
-              <br />
-              <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Your Rules.
-              </span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto mb-12">
-              The AI-native operating system for independent artists.
-              Create, protect, and profit from your music.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              {!loading && user ? (
-                <a
-                  href={studioUrl}
-                  className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all hover:scale-105"
-                >
-                  Launch Studio
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </a>
-              ) : (
-                <Link
-                  href="/signup"
-                  className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-lg hover:bg-white/90 transition-all hover:scale-105"
-                >
-                  Get Started Free
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-              )}
-              <Link
-                href="/teaser"
-                className="group flex items-center gap-2 px-8 py-4 bg-white/5 text-white border border-white/10 rounded-lg hover:bg-white/10 transition-all"
-              >
-                <Play size={20} />
-                Watch Experience
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center p-2">
-            <div className="w-1.5 h-3 bg-white/40 rounded-full" />
+            )}
           </div>
         </motion.div>
-      </section>
+      </div>
 
-      {/* Features Section */}
-      <section id="features" className="py-32 px-4">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Everything You Need
-            </h2>
-            <p className="text-xl text-white/60 max-w-2xl mx-auto">
-              A complete toolkit for modern independent artists.
-              Powered by AI, designed for creators.
-            </p>
-          </motion.div>
+      {/* Footer / Anchors */}
+      < motion.div
+        className="absolute bottom-8 left-0 right-0 text-center text-white/20 text-sm tracking-widest uppercase"
+        initial={{ opacity: 0 }
+        }
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2, duration: 2 }}
+      >
+        <p>Scroll to Resonate</p>
+      </motion.div >
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="group p-8 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all"
-              >
-                <div className={`inline-flex p-3 rounded-xl ${feature.bgColor} mb-6`}>
-                  <feature.icon className={feature.color} size={24} />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-white/60 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-32 px-4">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="relative p-12 md:p-16 rounded-3xl bg-gradient-to-br from-purple-900/40 via-black to-cyan-900/40 border border-white/10 text-center overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent" />
-
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                Ready to Build Your Empire?
-              </h2>
-              <p className="text-xl text-white/60 mb-10 max-w-2xl mx-auto">
-                Join the next generation of independent artists taking control of their careers.
-              </p>
-              {!loading && user ? (
-                <a
-                  href={studioUrl}
-                  className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-lg hover:bg-white/90 transition-all hover:scale-105"
-                >
-                  Launch Studio
-                  <ArrowRight size={24} />
-                </a>
-              ) : (
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-lg hover:bg-white/90 transition-all hover:scale-105"
-                >
-                  Get Started Free
-                  <ArrowRight size={24} />
-                </Link>
-              )}
-              <p className="text-white/40 mt-6 text-sm">
-                No credit card required
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-16 px-4 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4">indiiOS</h3>
-              <p className="text-white/60 max-w-sm mb-6">
-                The operating system for your independence.
-                Built by artists, for artists.
-              </p>
-              <Link
-                href="/teaser"
-                className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white/60 transition-colors"
-              >
-                <Sparkles size={14} />
-                Explore the immersive experience
-              </Link>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-3 text-white/60">
-                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/login" className="hover:text-white transition-colors">Studio</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-3 text-white/60">
-                <li><Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-white/40 text-sm">
-              &copy; 2025 indiiOS. All rights reserved.
-            </p>
-            <p className="text-white/20 text-xs">
-              v1.0.0 (Alpha)
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </main >
   );
 }

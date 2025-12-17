@@ -35,25 +35,24 @@ describe('WorkflowEngine', () => {
                 id: 'start',
                 type: 'inputNode',
                 position: { x: 0, y: 0 },
-                data: { label: 'Start', prompt: 'Test Query', status: Status.PENDING, nodeType: 'input' }
+                data: { prompt: 'Test Query', status: Status.PENDING, nodeType: 'input' as const }
             },
             {
                 id: 'kb-node',
                 type: 'departmentNode',
                 position: { x: 200, y: 0 },
                 data: {
-                    label: 'KB Query',
                     departmentName: 'Knowledge Base',
                     selectedJobId: 'kb-query',
                     status: Status.PENDING,
-                    nodeType: 'department'
+                    nodeType: 'department' as const
                 }
             },
             {
                 id: 'end',
                 type: 'outputNode',
                 position: { x: 400, y: 0 },
-                data: { label: 'End', status: Status.PENDING, nodeType: 'output' }
+                data: { status: Status.PENDING, nodeType: 'output' as const }
             }
         ];
 

@@ -97,6 +97,5 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 }
 
-// Deprecated: Legacy singleton export to maintain backward compatibility during migration
-// TODO: Remove after full migration
-// export const firestoreService = new FirestoreService<any>('legacy_fallback');
+// Note: Each service that needs Firestore should instantiate its own typed FirestoreService
+// Example: const userService = new FirestoreService<User>('users');

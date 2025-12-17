@@ -64,13 +64,13 @@ jobs:
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           echo "Deploying landing page to target: landing"
-          firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive --debug 2>&1 | head -100
-
+          firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive --debug
+      
       - name: Deploy studio app to Firebase Hosting
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           echo "Deploying studio app to target: app"
-          firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive --debug 2>&1 | head -100
+          firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive --debug
 
       - name: Cleanup credentials
         if: always()

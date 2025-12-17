@@ -235,30 +235,29 @@ describe('VideoWorkflow', () => {
         });
     });
 
-    // TODO: This test requires the component to switch to 'result' step when a video is selected.
-    // Currently, it defaults to 'idea' step.
-    // it('displays active video when selected', () => {
-    //     const mockVideo = {
-    //         id: '1',
-    //         type: 'video',
-    //         url: 'https://example.com/test.mp4',
-    //         prompt: 'Test Video'
-    //     };
+    // Skipped: Requires component refactor to support auto-navigation to 'result' step
+    it.skip('displays active video when selected', () => {
+        const mockVideo = {
+            id: '1',
+            type: 'video' as const,
+            url: 'https://example.com/test.mp4',
+            prompt: 'Test Video'
+        };
 
-    //     (useStore as any).mockReturnValue({
-    //         generatedHistory: [mockVideo],
-    //         selectedItem: mockVideo,
-    //         uploadedImages: [],
-    //         pendingPrompt: null,
-    //         setPendingPrompt: mockSetPendingPrompt,
-    //         addToHistory: mockAddToHistory,
-    //         setPrompt: vi.fn(),
-    //         studioControls: { aspectRatio: '16:9' },
-    //         videoInputs: { firstFrame: null, lastFrame: null },
-    //         setVideoInput: vi.fn(),
-    //     });
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            generatedHistory: [mockVideo],
+            selectedItem: mockVideo,
+            uploadedImages: [],
+            pendingPrompt: null,
+            setPendingPrompt: mockSetPendingPrompt,
+            addToHistory: mockAddToHistory,
+            setPrompt: vi.fn(),
+            studioControls: { aspectRatio: '16:9' },
+            videoInputs: { firstFrame: null, lastFrame: null },
+            setVideoInput: vi.fn(),
+        });
 
-    //     render(<VideoWorkflow />);
-    //     expect(screen.getByText('"Test Video"')).toBeInTheDocument();
-    // });
+        render(<VideoWorkflow />);
+        expect(screen.getByText('"Test Video"')).toBeInTheDocument();
+    });
 });

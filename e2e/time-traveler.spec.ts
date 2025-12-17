@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-const STUDIO_URL = 'http://localhost:5173';
+const STUDIO_URL = 'http://localhost:4242';
 
 test.describe('The Time Traveler: Data Persistence Verification', () => {
 
     test('Scenario 1: Project Persistence', async ({ page }) => {
         // 1. Mock Electron API to prevent redirect
         await page.addInitScript(() => {
-            // @ts-ignore
+            // @ts-expect-error
             window.electronAPI = {
                 getPlatform: async () => 'darwin',
                 getAppVersion: async () => '0.0.0',
@@ -21,7 +21,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
                 },
                 audio: { analyze: async () => ({}), getMetadata: async () => ({}) }
             };
-            // @ts-ignore
+            // @ts-expect-error
             window.__TEST_MODE__ = true;
         });
 
@@ -39,7 +39,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
 
         // 4. Bypass Auth
         await page.evaluate(() => {
-            // @ts-ignore
+            // @ts-expect-error
             window.useStore.setState({
                 isAuthenticated: true,
                 isAuthReady: true,
@@ -57,9 +57,9 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
         // Since we can't easily mock the Tool Execution loop purely via network without complex state,
         // we manually inject the project into the store mimicking the tool's effect.
         await page.evaluate((name) => {
-            // @ts-ignore
+            // @ts-expect-error
             const projects = window.useStore.getState().projects || [];
-            // @ts-ignore
+            // @ts-expect-error
             window.useStore.setState({
                 projects: [...projects, { id: 'proj-1', name, description: 'Test', status: 'active', members: ['me'], createdAt: Date.now(), updatedAt: Date.now() }]
             });

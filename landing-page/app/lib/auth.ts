@@ -13,9 +13,7 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
-const googleProvider = new GoogleAuthProvider();
-
-// Studio app URL for redirects after auth
+// Studio app URL for refunds after auth
 const STUDIO_URL = process.env.NEXT_PUBLIC_STUDIO_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'https://indiios-studio.web.app');
 
 /**
@@ -46,33 +44,6 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   await sendEmailVerification(result.user);
 
   return result.user;
-}
-
-/**
- * Sign in with Google OAuth - uses redirect flow for better compatibility
- */
-export async function signInWithGoogle() {
-  // Use redirect instead of popup - works better across domains
-  await signInWithRedirect(auth, googleProvider);
-}
-
-/**
- * Handle redirect result after Google sign-in
- * Call this on page load to complete the sign-in flow
- */
-export async function handleGoogleRedirect() {
-  const result = await getRedirectResult(auth);
-  if (result) {
-    // Check if user document exists, create if not
-    const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-    if (!userDoc.exists()) {
-      await createUserDocument(result.user);
-    } else {
-      await updateLastLogin(result.user.uid);
-    }
-    return result.user;
-  }
-  return null;
 }
 
 /**

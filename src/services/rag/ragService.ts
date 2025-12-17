@@ -64,7 +64,11 @@ export async function runAgenticWorkflow(
 /**
  * Takes raw content and ingests it into the Gemini Corpus.
  */
-export async function processForKnowledgeBase(reportContent: string, contextSource: string): Promise<{ title: string; content: string; entities: string[]; tags: string[]; embeddingId?: string }> {
+export async function processForKnowledgeBase(
+    reportContent: string,
+    contextSource: string,
+    extraMetadata: { size?: string; type?: string; originalDate?: string } = {}
+): Promise<{ title: string; content: string; entities: string[]; tags: string[]; embeddingId?: string }> {
     // 1. Extract Metadata (Title, Summary) using standard Gemini
     // We still do this to get a nice title/summary for the UI
     const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;
@@ -88,7 +92,13 @@ export async function processForKnowledgeBase(reportContent: string, contextSour
     // 2. Ingest into Gemini Corpus
     try {
         const corpusName = await GeminiRetrieval.initCorpus();
-        const doc = await GeminiRetrieval.createDocument(corpusName, metadata.title, { source: contextSource });
+        const doc = await GeminiRetrieval.createDocument(corpusName, metadata.title, {
+            source: contextSource,
+            summary: metadata.summary,
+            fileSize: extraMetadata.size || '0 KB',
+            mimeType: extraMetadata.type || 'text/plain',
+            uploadDate: extraMetadata.originalDate || new Date().toISOString()
+        });
         await GeminiRetrieval.ingestText(doc.name, reportContent);
         console.log("Ingested into Gemini Corpus:", doc.name);
     } catch (e) {

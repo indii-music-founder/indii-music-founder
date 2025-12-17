@@ -129,7 +129,7 @@ export default function CreativeNavbar() {
     };
 
     return (
-        <div className="flex flex-col z-20">
+        <div className="flex flex-col z-20 relative">
             <StudioToolbar
                 className="bg-[#1a1a1a]"
                 left={
@@ -264,6 +264,7 @@ export default function CreativeNavbar() {
                         <div className="flex items-center gap-2 flex-shrink-0">
                             <button
                                 onClick={() => setShowBrandAssets(!showBrandAssets)}
+                                data-testid="brand-assets-toggle"
                                 className={`text-[10px] uppercase font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${showBrandAssets ? 'bg-yellow-900/30 text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 <Sparkles size={10} className={showBrandAssets ? "text-yellow-500" : "text-gray-500"} /> Brand

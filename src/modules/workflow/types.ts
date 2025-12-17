@@ -125,6 +125,9 @@ export interface BrandAsset {
     id?: string;
     url: string;
     description: string;
+    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
+    tags?: string[];
+    subject?: string; // e.g. "Dave", "The Band"
 }
 
 export interface BrandKit {
@@ -159,7 +162,7 @@ export interface ConversationFile {
     id: string;
     file: File;
     preview: string; // data URL for images
-    type: 'image' | 'document';
+    type: 'image' | 'document' | 'audio';
     base64?: string; // base64 string for images
     content?: string; // text content for documents
 }

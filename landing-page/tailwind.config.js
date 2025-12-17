@@ -8,14 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'neon-purple': '#b026ff',
-        'neon-blue': '#00f3ff',
-        'signal-green': '#00ff9d',
-        'obsidian': '#0a0a0a',
+        'void': '#030303',
+        'resonance-blue': '#2E2EFE',
+        'frequency-pink': '#FE2E9A',
+        'signal-white': '#F0F0F0',
       },
       fontFamily: {
         sans: ['var(--font-geist-sans)'],
         mono: ['var(--font-geist-mono)'],
+      },
+      animation: {
+        'pulse-slow': 'pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'throb-light': 'throb-light 4s ease-in-out infinite',
       },
     },
   },

@@ -21,12 +21,12 @@ describe('VideoTimeline', () => {
         width: 1920,
         height: 1080,
         tracks: [
-            { id: 't1', name: 'Track 1', type: 'video' }
+            { id: 't1', name: 'Track 1', type: 'video' as const }
         ],
         clips: [
             {
                 id: 'c1',
-                type: 'video',
+                type: 'video' as const,
                 startFrame: 0,
                 durationInFrames: 100,
                 trackId: 't1',
@@ -102,7 +102,7 @@ describe('VideoTimeline', () => {
             clips: [{
                 ...mockProject.clips[0],
                 keyframes: {
-                    scale: [{ frame: 10, value: 1.5, easing: 'linear' }]
+                    scale: [{ frame: 10, value: 1.5, easing: 'linear' as const }]
                 }
             }]
         };
@@ -126,7 +126,7 @@ describe('VideoTimeline', () => {
             clips: [{
                 ...mockProject.clips[0],
                 keyframes: {
-                    scale: [{ frame: 10, value: 1.5, easing: 'linear' }]
+                    scale: [{ frame: 10, value: 1.5, easing: 'linear' as const }]
                 }
             }]
         };

@@ -17,7 +17,7 @@ import {
     type DragEvent,
     useEffect,
 } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, File as FileIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 

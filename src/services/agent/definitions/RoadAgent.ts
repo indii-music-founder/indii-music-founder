@@ -34,6 +34,41 @@ export const RoadAgent: AgentConfig = {
                 }
             },
             {
+                name: "search_places",
+                description: "Search for real-world places (venues, hotels, stores) using Google Maps.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Search query (e.g., 'Jazz clubs in Chicago')." },
+                        type: { type: "STRING", description: "Optional place type (e.g., 'restaurant')." }
+                    },
+                    required: ["query"]
+                }
+            },
+            {
+                name: "get_place_details",
+                description: "Get details (address, phone, rating) for a specific place by ID.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        place_id: { type: "STRING", description: "Google Place ID." }
+                    },
+                    required: ["place_id"]
+                }
+            },
+            {
+                name: "get_distance_matrix",
+                description: "Calculate driving distance and time between locations.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        origins: { type: "ARRAY", description: "Starting points (addresses or cities).", items: { type: "STRING" } },
+                        destinations: { type: "ARRAY", description: "Destinations (addresses or cities).", items: { type: "STRING" } }
+                    },
+                    required: ["origins", "destinations"]
+                }
+            },
+            {
                 name: "generate_social_post",
                 description: "Generate tour updates for social media.",
                 parameters: {

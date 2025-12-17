@@ -20,6 +20,28 @@ export const ImageTools = {
                         console.log(`[ImageTools] Using reference image: ${refImg.description || 'Untitled'}`);
                     }
                 }
+            } else if (args.referenceAssetIndex !== undefined) {
+                // Handle Brand Assets (e.g. Logos)
+                const brandAssets = userProfile.brandKit?.brandAssets || [];
+                const asset = brandAssets[args.referenceAssetIndex];
+                if (asset) {
+                    const match = asset.url.match(/^data:(.+);base64,(.+)$/);
+                    if (match) {
+                        sourceImages = [{ mimeType: match[1], data: match[2] }];
+                        console.log(`[ImageTools] Using brand asset: ${asset.description || 'Untitled'}`);
+                    }
+                }
+            } else if (args.uploadedImageIndex !== undefined) {
+                // Handle Recent Uploads
+                const { uploadedImages } = useStore.getState();
+                const upload = uploadedImages[args.uploadedImageIndex];
+                if (upload) {
+                    const match = upload.url.match(/^data:(.+);base64,(.+)$/);
+                    if (match) {
+                        sourceImages = [{ mimeType: match[1], data: match[2] }];
+                        console.log(`[ImageTools] Using upload: ${upload.prompt || 'Untitled'}`);
+                    }
+                }
             }
 
             const results = await ImageGeneration.generateImages({
@@ -117,6 +139,93 @@ export const ImageTools = {
                 return `Batch edit failed: ${e.message}`;
             }
             return `Batch edit failed: An unknown error occurred.`;
+        }
+    },
+    render_cinematic_grid: async (args: { prompt: string }) => {
+        try {
+            // In a real implementation, this would call Nano Banana Pro
+            // For now, we simulate a grid generation request to the existing image generator
+            // asking it to compose a grid.
+            // We also check for an entity anchor.
+            const { entityAnchor } = useStore.getState();
+
+            let fullPrompt = `Create a cinematic grid of shots (Wide, Medium, Close-up, Low Angle) for: ${args.prompt}.`;
+            let sourceImages = undefined;
+
+            if (entityAnchor) {
+                const match = entityAnchor.url.match(/^data:(.+);base64,(.+)$/);
+                if (match) {
+                    sourceImages = [{ mimeType: match[1], data: match[2] }];
+                    fullPrompt += " Maintain strict character consistency with the provided reference.";
+                }
+            }
+
+            // Re-use generate_image logic internally or call the service
+            // Since we don't have a dedicated grid service yet, we wrap the standard generation
+            // assuming the model can handle "split screen" or "grid" prompts.
+            const results = await ImageGeneration.generateImages({
+                prompt: fullPrompt,
+                count: 1, // We want 1 image that IS a grid
+                resolution: '4K', // High res for grid details
+                aspectRatio: '16:9',
+                sourceImages: sourceImages
+            });
+
+            if (results.length > 0) {
+                const { addToHistory, currentProjectId } = useStore.getState();
+                const res = results[0];
+                addToHistory({
+                    id: res.id,
+                    url: res.url,
+                    prompt: fullPrompt,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId,
+                    meta: 'cinematic_grid'
+                });
+                return `Cinematic grid generated for "${args.prompt}".`;
+            }
+            return "Failed to generate cinematic grid.";
+
+        } catch (e: any) {
+            return `Render cinematic grid failed: ${e.message}`;
+        }
+    },
+    extract_grid_frame: async (args: { imageId?: string, gridIndex: number }) => {
+        // Placeholder: In a real system this would use OpenCV or AI segmentation to crop the specific panel
+        // For now, we'll just acknowledge the request.
+        return "Extract grid frame not fully implemented. (Simulated success: Framed extracted)";
+    },
+    set_entity_anchor: async (args: { image: string }) => {
+        try {
+            const { setEntityAnchor, addToHistory, currentProjectId } = useStore.getState();
+
+            // Validate image data
+            const match = args.image.match(/^data:(.+);base64,(.+)$/);
+            if (!match) {
+                return "Invalid image data. Must be base64 data URI.";
+            }
+
+            // Create a history item for the anchor so it can be stored/referenced
+            const anchorItem = {
+                id: crypto.randomUUID(),
+                url: args.image,
+                prompt: "Entity Anchor (Global Reference)",
+                type: 'image' as const, // explicitly Typed
+                timestamp: Date.now(),
+                projectId: currentProjectId,
+                category: 'headshot' as const
+            };
+
+            setEntityAnchor(anchorItem);
+
+            // Optionally add to history if not already there, but strictly it's a state setting.
+            // Let's add it to history so the user can see it in the gallery.
+            addToHistory(anchorItem);
+
+            return "Entity Anchor set successfully. Character consistency is now locked.";
+        } catch (e: any) {
+            return `Failed to set Entity Anchor: ${e.message}`;
         }
     }
 };

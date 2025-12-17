@@ -12,10 +12,13 @@ export const FinanceAgent: AgentConfig = {
         analyze_budget: async (args: { amount: number; breakdown: string }) => {
             const efficiency = args.amount < 50000 ? "High" : "Medium";
             return {
-                status: "approved",
-                efficiency_rating: efficiency,
-                notes: `Budget of $${args.amount} is within acceptable limits. Breakdown: ${args.breakdown}`,
-                timestamp: new Date().toISOString()
+                success: true,
+                data: {
+                    status: "approved",
+                    efficiency_rating: efficiency,
+                    notes: `Budget of $${args.amount} is within acceptable limits. Breakdown: ${args.breakdown}`,
+                    timestamp: new Date().toISOString()
+                }
             };
         }
     },
@@ -32,6 +35,28 @@ export const FinanceAgent: AgentConfig = {
                         breakdown: { type: "STRING", description: "Breakdown of costs." }
                     },
                     required: ["amount"]
+                }
+            },
+            {
+                name: "execute_bigquery_query",
+                description: "Execute a SQL query on the company's BigQuery data warehouse to retrieve sales, revenue, or budget data.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Standard SQL query." }
+                    },
+                    required: ["query"]
+                }
+            },
+            {
+                name: "get_table_schema",
+                description: "Get the schema of a specific BigQuery table to understand available fields.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        table_id: { type: "STRING", description: "Table ID (e.g. 'sales_data', 'quarterly_budget')." }
+                    },
+                    required: ["table_id"]
                 }
             }
         ]

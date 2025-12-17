@@ -12,7 +12,7 @@ export const AI_MODELS = {
     VIDEO: {
         // Video generation model
         GENERATION: 'veo-3.1-generate-preview',
-        EDIT: 'veo-2.0-generate-001'
+        EDIT: 'veo-3.1-generate-preview'
     }
 } as const;
 

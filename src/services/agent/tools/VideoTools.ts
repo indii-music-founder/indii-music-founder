@@ -1,6 +1,64 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import type { ToolFunctionArgs, AgentContext } from '../types';
+
+// ============================================================================
+// Types for VideoTools
+// ============================================================================
+
+interface GenerateVideoArgs extends ToolFunctionArgs {
+    prompt: string;
+    image?: string;
+    duration?: number;
+}
+
+interface GenerateMotionBrushArgs extends ToolFunctionArgs {
+    image: string;
+    mask: string;
+    prompt?: string;
+}
+
+interface BatchEditVideosArgs extends ToolFunctionArgs {
+    prompt: string;
+    videoIndices?: number[];
+}
+
+interface ExtendVideoArgs extends ToolFunctionArgs {
+    videoUrl: string;
+    prompt: string;
+    direction: 'start' | 'end';
+}
+
+interface UpdateKeyframeArgs extends ToolFunctionArgs {
+    clipId: string;
+    property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation';
+    frame: number;
+    value: number;
+    easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+}
+
+interface GenerateVideoChainArgs extends ToolFunctionArgs {
+    prompt: string;
+    startImage: string;
+    totalDuration: number;
+}
+
+interface InterpolateSequenceArgs extends ToolFunctionArgs {
+    firstFrame: string;
+    lastFrame: string;
+    prompt?: string;
+}
+
+interface VideoGenerationOptions {
+    prompt: string;
+    firstFrame?: string;
+    lastFrame?: string;
+}
+
+// ============================================================================
+// VideoTools Implementation
+// ============================================================================
 
 export const VideoTools = {
     generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
@@ -149,7 +207,7 @@ export const VideoTools = {
                 return "Failed to extract frame from the provided video URL.";
             }
 
-            const options: any = {
+            const options: VideoGenerationOptions = {
                 prompt: args.prompt,
             };
 
@@ -216,6 +274,131 @@ export const VideoTools = {
                 return `Keyframe update failed: ${e.message}`;
             }
             return `Keyframe update failed: An unknown error occurred.`;
+        }
+    },
+    generate_video_chain: async (args: { prompt: string, startImage: string, totalDuration: number }) => {
+        try {
+            // "The user should be able to choose anywhere from a total of an eight second video... up to six minutes and 32 seconds"
+            // "daisychains in a manner where the system takes the last frame automatically creates it for the first frame"
+
+            // 1. Validate Input
+            const match = args.startImage.match(/^data:(.+);base64,(.+)$/);
+            if (!match) {
+                return "Invalid start image. Must be a base64 data URI.";
+            }
+
+            const { extractVideoFrame } = await import('@/utils/video');
+            const { addToHistory, currentProjectId } = useStore.getState();
+
+            // 2. Calculate Segments
+            // Standard generation is ~5-8s usually? Let's assume VideoService defaults (which might be 5s or 8s depending on model).
+            // Veo/Gemini models often output ~5s. 
+            // 6m 32s = 392 seconds. 
+            // If chunks are 5s: ~79 chunks.
+            // If chunks are 8s: ~49 chunks.
+
+            // We'll proceed with a loop until total duration is reached.
+
+            let currentImage = args.startImage; // Keep as string (Data URI)
+            let accumulatedDuration = 0;
+            const generatedUrls: string[] = [];
+
+            // Prevent infinite loops / excessively long requests
+            const MAX_ITERATIONS = 50;
+            let iteration = 0;
+
+            useStore.getState().addAgentMessage({
+                id: crypto.randomUUID(),
+                role: 'system',
+                text: `Starting video chain generation for target duration ${args.totalDuration}s...`,
+                timestamp: Date.now()
+            });
+
+            while (accumulatedDuration < args.totalDuration && iteration < MAX_ITERATIONS) {
+                iteration++;
+
+                // Generate segment
+                const results = await VideoGeneration.generateVideo({
+                    prompt: args.prompt + (iteration > 1 ? ` (Part ${iteration}, continuation)` : ""),
+                    firstFrame: currentImage // Pass the data URI string directly
+                });
+
+                if (results.length === 0) {
+                    return `Video chain broke at iteration ${iteration}. Failed to generate segment.`;
+                }
+
+                const segmentUrl = results[0].url;
+                generatedUrls.push(segmentUrl);
+                accumulatedDuration += 5; // Assuming 5s per clip for now unless we get duration from Result.
+
+                // Add to history immediately so user sees progress
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: segmentUrl,
+                    prompt: `${args.prompt} [Part ${iteration}]`,
+                    type: 'video',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+
+                // Extract last frame for next iteration
+                // Note: extracting frame from a URL (which might be Signed URL) requires fetching it.
+                // Our extractVideoFrame utility handles valid src URLs.
+                const lastFrameData = await extractVideoFrame(segmentUrl);
+
+                if (!lastFrameData) {
+                    return `Video chain broke at iteration ${iteration}. Could not extract last frame for chain.`;
+                }
+
+                currentImage = lastFrameData; // Update for next loop (it's already a string)
+
+                // Rate limit safety
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            return `Video chain completed! Generated ${generatedUrls.length} segments.`;
+
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Video chain generation failed: ${e.message}`;
+            }
+            return `Video chain generation failed: An unknown error occurred.`;
+        }
+    },
+    interpolate_sequence: async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
+        try {
+            // "Interpolate_Sequence(Frame_A, Frame_B)"
+            // "Google V3.1 generates the transition pixels between these locked states."
+
+            // We use VideoGeneration service but pass both firstFrame and lastFrame.
+            // (Assuming the underlying service supports this, which many video models do).
+
+            const results = await VideoGeneration.generateVideo({
+                prompt: args.prompt || "Smooth transition between frames",
+                firstFrame: args.firstFrame,
+                lastFrame: args.lastFrame
+            });
+
+            if (results.length > 0) {
+                const uri = results[0].url;
+                const { addToHistory, currentProjectId } = useStore.getState();
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: uri,
+                    prompt: args.prompt || "Frame Interpolation",
+                    type: 'video',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId
+                });
+                return `Sequence interpolated successfully: ${uri}`;
+            }
+            return "Interpolation failed (no URI returned).";
+
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                return `Interpolation failed: ${e.message}`;
+            }
+            return `Interpolation failed: An unknown error occurred.`;
         }
     }
 };

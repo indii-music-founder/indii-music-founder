@@ -41,7 +41,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     try {
         const result = await AI.embedContent({
             model: 'text-embedding-004',
-            content: { parts: [{ text }] }
+            content: { role: 'user', parts: [{ text }] }
         });
 
         // Handle both potential response formats (v1 vs v1beta/alpha differences)
