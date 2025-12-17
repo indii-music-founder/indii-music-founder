@@ -31,6 +31,7 @@ temp_comparison_repo
 
 # Secrets
 scripts/configure_secrets.sh
+.env
 
 # Test artifacts
 test_logs*.txt
