@@ -26,6 +26,7 @@
     "postinstall": "electron-rebuild"
   },
   "dependencies": {
+    "@genkit-ai/express": "^1.26.0",
     "@genkit-ai/ai": "^1.25.0",
     "@google/genai": "^1.30.0",
     "@google/generative-ai": "^0.24.1",

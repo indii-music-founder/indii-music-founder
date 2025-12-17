@@ -70,7 +70,7 @@ class GeminiRetrievalService {
 
     async initCorpus() {
         const list = await this.listCorpora();
-        // @ts-ignore
+        // @ts-expect-error retrieval API returns loosely typed corpus objects
         const existing = list.corpora?.find(c => c.displayName === "indiiOS Knowledge Base");
 
         if (existing) {
@@ -78,7 +78,7 @@ class GeminiRetrievalService {
         }
 
         const newCorpus = await this.createCorpus();
-        // @ts-ignore
+        // @ts-expect-error API responses omit name typing in SDK
         return newCorpus.name;
     }
 
@@ -165,15 +165,15 @@ async function runStressTest() {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         console.log("   DEBUG: Listing all corpora to verify existence...");
-        const list = await GeminiRetrieval.listCorpora();
-        // @ts-ignore
-        const found = list.corpora?.find(c => c.name === corpusName);
+    const list = await GeminiRetrieval.listCorpora();
+    // @ts-expect-error response typing for corpora listing is incomplete
+    const found = list.corpora?.find(c => c.name === corpusName);
         console.log("   DEBUG: Found in list?", !!found);
 
         console.log("   DEBUG: Fetching corpus details directly...");
         try {
-            // @ts-ignore
-            const details = await GeminiRetrieval.fetch(corpusName);
+        // @ts-expect-error fetch wrapper returns untyped JSON payload
+        const details = await GeminiRetrieval.fetch(corpusName);
             console.log("   DEBUG: Corpus details:", JSON.stringify(details, null, 2));
         } catch (e) {
             console.error("   DEBUG: Failed to fetch corpus details:", e);
@@ -198,9 +198,9 @@ async function runStressTest() {
             console.time("Stress Test Query");
 
             return Promise.all(docs.map(async (doc, i) => {
-                const result = await GeminiRetrieval.query(corpusName, `What is the secret code for document #${i}?`);
-                // @ts-ignore
-                const answer = result.answer?.content?.parts?.[0]?.text || 'No answer';
+            const result = await GeminiRetrieval.query(corpusName, `What is the secret code for document #${i}?`);
+            // @ts-expect-error generative response schema is dynamic per model
+            const answer = result.answer?.content?.parts?.[0]?.text || 'No answer';
                 return { doc: i, answer, expected: doc.content };
             })).then(async results => {
                 console.timeEnd("Stress Test Query");

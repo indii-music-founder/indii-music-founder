@@ -95,7 +95,7 @@ export default function LiquidOrbs() {
 
             // 3. Apply Filter
             const blurFilter = new KawaseBlurFilter(30, 10, true);
-            // @ts-ignore
+            // @ts-expect-error pixi.js filters typing does not include generic containers
             orbStage.filters = [blurFilter];
 
             // 4. Create Orbs

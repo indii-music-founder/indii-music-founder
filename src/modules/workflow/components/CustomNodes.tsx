@@ -84,7 +84,7 @@ export const OutputNode = memo(({ data, selected }: NodeProps<OutputNodeData>) =
     const resultIsAsset = typeof data.result === 'object' && data.result !== null;
     let displayText = 'Workflow output';
     if (resultIsAsset) {
-        // @ts-ignore
+        // @ts-expect-error workflow result can be an asset object with optional title
         displayText = `Asset: ${data.result.title || data.result.assetType}`;
     } else if (typeof data.result === 'string' && data.result) {
         displayText = `Report generated`;

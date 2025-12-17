@@ -114,7 +114,7 @@ export default function MusicStudio() {
         const result = await fileSystemService.pickAudioFile();
         if (result) {
             const url = URL.createObjectURL(result.file);
-            // @ts-ignore
+            // @ts-expect-error File.path is provided by Electron's file picker
             const path = result.file.path;
 
             const newTrack: LoadedAudio = {

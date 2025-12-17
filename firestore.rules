@@ -1,86 +1,10 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper to check if the user is a member of the target organization
-    function isOrgMember(orgId) {
-      return request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
-    }
-
-    // Users - only owner can read/write
-    match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Organizations
-    match /organizations/{orgId} {
-      // Allow reading if the user is a member
-      allow read: if request.auth != null && (request.auth.uid in resource.data.members);
-      // Allow creating new organizations
-      allow create: if request.auth != null;
-      // Allow updating if user is a member (e.g. adding members)
-      allow update: if request.auth != null && (request.auth.uid in resource.data.members);
-    }
-
-    // Projects
-    match /projects/{projectId} {
-      // Allow access if the project belongs to an org the user is a member of
-      // OR if it is a personal project (orgId == 'org-default' or 'personal')
-      allow read: if request.auth != null && (
-        isOrgMember(resource.data.orgId) || 
-        ((resource.data.orgId == 'org-default' || resource.data.orgId == 'personal') && resource.data.userId == request.auth.uid)
-      );
-      allow create: if request.auth != null && (
-        isOrgMember(request.resource.data.orgId) ||
-        ((request.resource.data.orgId == 'org-default' || request.resource.data.orgId == 'personal') && request.resource.data.userId == request.auth.uid)
-      );
-      allow update, delete: if request.auth != null && (
-        isOrgMember(resource.data.orgId) ||
-        ((resource.data.orgId == 'org-default' || resource.data.orgId == 'personal') && resource.data.userId == request.auth.uid)
-      );
-    }
-
-    // Video Jobs
-    match /videoJobs/{jobId} {
-      // Allow access if the job belongs to an org the user is a member of
-      // OR if it belongs to the user directly (legacy/personal)
-      allow read: if request.auth != null && (
-        (resource.data.orgId != null && isOrgMember(resource.data.orgId)) || 
-        resource.data.userId == request.auth.uid
-      );
-      // Backend creates these usually via Admin SDK, but if client needs to write:
-      allow create: if request.auth != null && (
-        (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)) ||
-        request.resource.data.userId == request.auth.uid
-      );
-      allow update: if request.auth != null && (
-         (resource.data.orgId != null && isOrgMember(resource.data.orgId)) ||
-         resource.data.userId == request.auth.uid
-      );
-    }
-    
-    // History
-    match /history/{itemId} {
-      allow read: if request.auth != null && (
-        (resource.data.orgId != null && isOrgMember(resource.data.orgId)) ||
-        ((resource.data.orgId == 'org-default' || resource.data.orgId == 'personal') && resource.data.userId == request.auth.uid)
-      );
-      allow create: if request.auth != null && (
-        (request.resource.data.orgId != null && isOrgMember(request.resource.data.orgId)) ||
-        ((request.resource.data.orgId == 'org-default' || request.resource.data.orgId == 'personal') && request.resource.data.userId == request.auth.uid)
-      );
-    }
-
-    // Workflows
-    match /workflows/{workflowId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-
-    // Lock down all other collections
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if
+          request.time < timestamp.date(2025, 10, 26);
     }
   }
 }
