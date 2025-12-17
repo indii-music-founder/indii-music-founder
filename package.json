@@ -27,7 +27,11 @@
   },
   "dependencies": {
     "@genkit-ai/express": "^1.26.0",
+ fix-issues-from-codex-review2025-12-1700-32-38
     "@genkit-ai/ai": "^1.26.0",
+
+    "@genkit-ai/ai": "^1.25.0",
+ main
     "@google/genai": "^1.30.0",
     "@google/generative-ai": "^0.24.1",
     "@googlemaps/react-wrapper": "^1.2.0",
