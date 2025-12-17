@@ -63,6 +63,7 @@ scenes.
 - **Tunable trust gates:** Drift alerts should fail closed when required inputs are missing, preventing the system
   from hallucinating continuity based on incomplete or fabricated data.
 
+ add-semantic-visual-memory-core2025-12-1702-24-52
 ## Data Contracts & Operational Hardening
 - **Schema guardrails:** Formalize contracts for Entity Profiles, Scene Graph Snapshots, and Render Directives;
   version them and reject writes that violate required fields (roles, beat references, asset IDs, lighting tags,
@@ -97,6 +98,8 @@ scenes.
 - **Contract drift monitors:** Instrument alerts for unexpected schema fields, missing residency tags, or
   downgraded approvals; open incidents automatically when contract drift exceeds thresholds.
 
+
+ main
 ## Verification & QA
 - **Preflight asset checks:** Rendering requests must validate that referenced Show Bible entries, storyboard panels,
   and exemplar assets exist and are approved before Cortex retrieval begins; otherwise the request is rejected with a
@@ -105,6 +108,7 @@ scenes.
   strings or placeholder IDs) to prove the Cortex reads/writes the same shapes it will receive in production.
 - **Drift regression harness:** Add regression cases where assets are intentionally missing or altered; assert the
   trust gates block generation and surface provenance gaps instead of falling back to mocked continuity.
+ add-semantic-visual-memory-core2025-12-1702-24-52
 - **Budget validation:** Add load tests that assert p95/p99 latency stays within envelopes for hot vs. cold paths and
   that drift-alert precision/recall remains above agreed thresholds during high-concurrency runs.
 - **Residency drills:** Simulate regional outages; confirm fail-closed retrieval, alerting, and that no cross-region
@@ -211,6 +215,8 @@ scenes.
 - **Rollback playbook:** Preserve snapshot IDs for embeddings, scene graphs, and contract versions; define the order
   of toggling kill switches, draining queues, and restoring prior snapshots.
 
+ main
+
 ## Implementation Notes
 - Start with existing RAG/semantic retrieval infrastructure; extend schemas to store multimodal embeddings keyed
   by entity and beat.
@@ -218,6 +224,7 @@ scenes.
   retrieval.
 - Store provenance metadata (asset IDs, storyboard frame references, artist notes) to enable explainability and
   human override when drift checks fire.
+ add-semantic-visual-memory-core2025-12-1702-24-52
 - Add a freshness policy: expire or down-rank embeddings when a character, costume, or prop state changes in the
   Show Bible to avoid reusing stale visual guidance.
 - Keep a compact "beat-local" cache of embeddings and scene graphs for the active sequence to reduce lookup
@@ -248,3 +255,5 @@ scenes.
   pass; require a rollback plan with snapshot IDs for embeddings and scene graphs before enabling new features.
 - **Performance/capacity operations:** Maintain perf dashboards with stage/production comparables, validate
   back-pressure thresholds, and tune autoscaling based on error budget consumption.
+
+ main
