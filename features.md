@@ -52,7 +52,10 @@
 
 ### 1. The Neural Cortex (Advanced Logic)
 
-* **Semantic Visual Memory Core:** A vector-based imagination system for indii. Instead of just referencing pixels, the Agent understands the *narrative intent* and *semantic identity* of characters/locations to eliminate visual drift during long Story Chains.
+* **Semantic Visual Memory Core:** A vector-based imagination system for indii. Instead of just referencing pixels, the Agent
+  understands the *narrative intent* and *semantic identity* of characters/locations to eliminate visual drift during long
+  Story Chains. See the [Neural Cortex spec](docs/NEURAL_CORTEX.md) for the semantic memory architecture, interfaces, and drift
+  detection loop.
 * **Team Collaboration:** Real-time multiplayer editing within a Project.
 
 ### 2. 3D & Spatial
