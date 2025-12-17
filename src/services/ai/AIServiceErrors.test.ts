@@ -15,6 +15,10 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('@/config/env', () => ({
     env: {
+        apiKey: 'test-key',
+        projectId: 'test-project',
+        location: 'test-location',
+        useVertex: false,
         VITE_API_KEY: 'test-key',
         VITE_VERTEX_PROJECT_ID: 'test-project',
         VITE_VERTEX_LOCATION: 'test-location',
