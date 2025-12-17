@@ -1,82 +1,77 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
 # indiiOS: The AI-Native Creative Studio
 
-indiiOS is a comprehensive, multi-tenant creative platform powered by a multi-agent AI system. It unifies image generation, video production, music synthesis, and campaign management into a single, intelligent workspace.
+indiiOS is a multi-tenant creative operating system that blends AI-assisted image generation, video production, music synthesis, and campaign operations into one workspace. The platform is anchored by a hub-and-spoke agent architecture that keeps context (organization, project, brand kit) consistent across every surface.
 
-## 🚀 Live Demo
+## 📦 What's in this repo?
+- **Landing page** (`landing-page/`): marketing site built with React + Framer Motion that routes into live demos.
+- **Web studio** (`src/`, `public/`): the primary React 19 experience containing creative suites, workflow tools, and agent chat.
+- **Electron shell** (`electron/`, `dist-electron/`): desktop wrapper that mirrors the studio with native menus and window controls.
+- **Agent definitions** (`agents/`): hub + specialist agents, tool definitions, and prompts.
+- **Backend services** (`functions/`): Firebase Functions fronting Vertex AI for heavy image/video generation and other workloads.
 
-- **Landing Page:** [https://indiios-v-1-1.web.app](https://indiios-v-1-1.web.app)
-- **Studio App:** [https://indiios-studio.web.app](https://indiios-studio.web.app)
+## ✨ Core experiences
+- **Creative Studio:** infinite canvas for image generation, editing, and product visualization ("Showroom").
+- **Video Studio:** idea-to-brief-to-render pipeline with QA checkpoints ("Director's Cut").
+- **Music Studio:** analysis and composition tools powered by the MusicAgent.
+- **Workflow Lab:** node-based automation editor to chain AI tasks across suites.
+- **Operational suites:** marketing, legal, touring, finance, and social modules that keep campaigns on track.
 
-## 📚 Documentation
+## 🧠 Agent system
+- **Hub (indii):** orchestrates conversations, injects org/project context, and delegates to specialists.
+- **Specialists:** Legal, Marketing, Brand, Road, Music, Video, Creative Director, and more, each with localized tools/prompts under `agents/<name>/`.
+- **Context safety:** Firestore-scoped lookups and prompt guards ensure responses stay within the active workspace.
 
-- [Features](./features.md) - Detailed breakdown of current capabilities.
-- [Roadmap](./ROADMAP.md) - Future plans and technical improvements.
-- [Agent System Architecture](./docs/AGENT_SYSTEM_ARCHITECTURE.md) - Deep dive into the "Hub-and-Spoke" AI model.
-- [Backend Architecture](./docs/BACKEND_ARCHITECTURE.md) - Cloud Functions and Vertex AI integration.
-- [UI State & Branding](./docs/UI_STATE.md) - Design system and branding guidelines.
-
-## ✨ Key Features
-
-### 🏢 Multi-Tenancy & Collaboration
-
-- **Organization Support:** Create and manage multiple organizations (workspaces).
-- **Project Isolation:** Data (Assets, History, Context) is strictly scoped to the active Organization and Project.
-- **Cloud Persistence:** All data is securely stored and synced via Firebase Firestore.
-
-### 🤖 The Multi-Agent System ("Hub-and-Spoke")
-
-- **indii (Agent Zero):** The Generalist Manager that triages requests and orchestrates workflows.
-- **Specialist Agents:**
-  - **LegalAgent:** Contract review, rights management, and compliance.
-  - **MarketingAgent:** Campaign strategy, copywriting, and brand alignment.
-  - **BrandAgent:** Brand consistency analysis and asset generation.
-  - **RoadManager:** Tour logistics, fuel calculations, and itinerary planning.
-  - **MusicAgent:** Audio synthesis theory and composition.
-- **Context Awareness:** Agents are aware of your current Organization, Project, and Brand Kit.
-
-### 🎨 Creative Suites
-
-- **Creative Studio:** Infinite canvas for image generation, editing, and product visualization ("Showroom").
-- **Video Studio:** AI-powered video production workflow (Idea -> Brief -> Review) with "Director's Cut" QA.
-- **Music Studio:** Audio analysis and generation tools.
-- **Workflow Lab:** Node-based automation editor for chaining AI tasks.
-
-## 🛠️ Tech Stack
-
+## 🏗️ Architecture snapshot
 - **Frontend:** React 19, Vite, TailwindCSS, Framer Motion, React Three Fiber, PixiJS v8.
-- **Backend:** Firebase (Hosting, Functions, Firestore, Storage).
-- **AI Core:** Google Gemini 3.0 Pro (High Thinking), Veo 3.1, Imagen 3.
+- **Backend:** Firebase Hosting/Functions/Firestore/Storage with IAM-gated callable/HTTP endpoints.
+- **AI models:** Google Gemini 3.0 Pro (High Thinking), Veo 3.1, Imagen 3 for media generation.
 
-## 💻 Run Locally
+## 🚦 Quick start
+**Prerequisites:** Node.js 20+, Firebase CLI, access to Google Vertex AI.
 
-**Prerequisites:** Node.js 20+, Firebase CLI.
-
-1. **Install dependencies:**
-
+1. Install dependencies
    ```bash
    npm install
    ```
 
-2. **Environment Setup:**
-   Create a `.env.local` file with your keys:
-
+2. Configure environment
+   Create `.env.local` at the repo root:
    ```env
    VITE_GEMINI_API_KEY=your_key_here
    VITE_FIREBASE_CONFIG=your_firebase_config_json
    ```
 
-3. **Run the Development Server:**
-
+3. Run the web studio
    ```bash
    npm run dev
    ```
 
-4. **Deploy:**
+4. Launch Electron shell
+   ```bash
+   npm run electron
+   ```
 
+5. Deploy (hosting + functions)
    ```bash
    firebase deploy
    ```
+
+## 🧪 Testing & verification
+- **Unit/integration:** use the existing test suite and utilities under `src/` (see `package.json` scripts).
+- **E2E:** Playwright specs live in `e2e/`.
+- **Logs & baselines:** previous verification outputs are captured in `verification/` and `test_results*.txt`.
+
+## 📚 Documentation
+- [Features](./features.md) — capabilities overview.
+- [Roadmap](./ROADMAP.md) — upcoming work and technical debt.
+- [Agent System Architecture](./docs/AGENT_SYSTEM_ARCHITECTURE.md) — hub-and-spoke design and tool calling.
+- [Backend Architecture](./docs/BACKEND_ARCHITECTURE.md) — Firebase + Vertex AI service map.
+- [Application & Code Overview](./docs/APP_OVERVIEW.md) — how product surfaces map to the codebase.
+- [UI State & Branding](./docs/UI_STATE.md) — design system and brand guardrails.
+
+## 📬 Feedback
+Issues and improvement ideas are welcome. Please open a GitHub issue or start a thread in the project discussion board.
