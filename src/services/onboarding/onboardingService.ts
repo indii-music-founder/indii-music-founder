@@ -1,6 +1,6 @@
-import { AI } from '../ai/AIService';
+import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '../../modules/workflow/types';
+import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '@/modules/workflow/types';
 import type { FunctionDeclaration } from '@/shared/types/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { getDistributorRequirements, getDistributorSummaryForAI, getSupportedDistributors } from './distributorRequirements';
@@ -492,7 +492,7 @@ export function processFunctionCalls(
                             ...(args.pro_affiliation && { pro: args.pro_affiliation }),
                             ...(args.distributor && { distributor: args.distributor }),
                         };
-                        updates.push('Socials');
+                        updates.push('Socials & Pro Details');
                     }
 
                     // Release Updates
