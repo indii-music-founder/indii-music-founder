@@ -175,16 +175,19 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                                 id="brand-asset-upload"
                                 onChange={handleFileInput}
                             />
-                            <label htmlFor="brand-asset-upload" className="cursor-pointer flex flex-col items-center gap-3 w-full">
+                            <label
+                                htmlFor="brand-asset-upload"
+                                className="cursor-pointer flex flex-col items-center gap-3 w-full"
+                            >
                                 <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-white text-black' : 'bg-gray-800 text-gray-400 group-hover:text-white'}`}>
                                     <Upload size={24} />
                                 </div>
-                                <div className="space-y-1">
+                                <div className="space-y-1 text-center">
                                     <span className="block text-sm text-white font-medium">
-                                        Click to Upload
+                                        Drag &amp; Drop or Browse
                                     </span>
                                     <span className="block text-xs text-gray-500">
-                                        or drag and drop images here
+                                        Upload PNG, JPG, SVG brand assets
                                     </span>
                                 </div>
                             </label>

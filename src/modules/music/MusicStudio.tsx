@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import * as Tone from 'tone';
 import { Play, Pause, Activity, Music, FolderOpen, FileAudio, HardDrive, Trash2, Upload, Volume2, SkipBack, SkipForward, Info, BarChart } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -27,9 +28,11 @@ export default function MusicStudio() {
     const [fsSupported, setFsSupported] = useState(false);
     const [loadedAudio, setLoadedAudio] = useState<LoadedAudio[]>([]);
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
-    const [savedLibraries, setSavedLibraries] = useState<SavedLibrary[]>([]);
+    const [savedLibraries] = useState<SavedLibrary[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [engineState, setEngineState] = useState<'idle' | 'starting' | 'running'>('idle');
+    const [sampleRate, setSampleRate] = useState<number | null>(null);
 
     // Refs
     const waveformRef = useRef<HTMLDivElement>(null);
@@ -39,7 +42,6 @@ export default function MusicStudio() {
     // Init
     useEffect(() => {
         setFsSupported(fileSystemService.isSupported());
-        loadSavedLibraries();
 
         return () => {
             if (wavesurferRef.current) {
@@ -101,12 +103,19 @@ export default function MusicStudio() {
         }
     };
 
-    const loadSavedLibraries = async () => {
+    const handleStartEngine = async () => {
+        if (engineState === 'running') return;
+        setEngineState('starting');
+
         try {
-            const libs = await fileSystemService.listSavedHandles();
-            setSavedLibraries(libs.filter(l => l.kind === 'directory'));
-        } catch (err) {
-            console.error('Failed to load saved libraries:', err);
+            await Tone.start();
+            setSampleRate(Tone.context?.sampleRate ?? null);
+            setEngineState('running');
+            toast.success('Audio engine started');
+        } catch (error) {
+            console.error('Failed to start audio engine', error);
+            setEngineState('idle');
+            toast.error('Failed to start audio engine');
         }
     };
 
@@ -159,6 +168,36 @@ export default function MusicStudio() {
         if (currentTrackId === id) setCurrentTrackId(null);
     };
 
+    const handlePickDirectory = async () => {
+        if (!fsSupported) return;
+
+        const directory = await fileSystemService.pickDirectory();
+        if (!directory) return;
+
+        const files = await fileSystemService.getAudioFilesFromDirectory(directory);
+        if (files.length === 0) {
+            toast.info('No audio files found in the selected folder');
+            return;
+        }
+
+        const tracks: LoadedAudio[] = files.map(({ file, path }) => ({
+            id: crypto.randomUUID(),
+            name: file.name,
+            path,
+            file,
+            url: URL.createObjectURL(file),
+            features: null,
+            isGenerated: false
+        }));
+
+        setLoadedAudio(prev => [...prev, ...tracks]);
+        if (!currentTrackId && tracks[0]) {
+            setCurrentTrackId(tracks[0].id);
+        }
+
+        toast.success(`${tracks.length} file(s) added from folder`);
+    };
+
     const activeTrack = loadedAudio.find(t => t.id === currentTrackId);
 
     return (
@@ -168,66 +207,108 @@ export default function MusicStudio() {
             icon={<Music className="text-purple-500" />}
         >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)]">
+                {/* Local library controls */}
+                <div className="lg:col-span-4 bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                            <HardDrive size={14} /> Local Music Library
+                        </h3>
+                        <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                            <Info size={10} /> Local-only workspace
+                        </span>
+                    </div>
 
-                {/* Left Drawer: Library (3 cols) */}
-                <div className="lg:col-span-3 bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col h-full">
-                    <h3 className="text-sm font-semibold mb-4 text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                        <HardDrive size={14} /> Library
-                    </h3>
-
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex gap-2">
                         <button
                             onClick={handlePickFile}
-                            className="flex-1 px-3 py-2 bg-[#21262d] hover:bg-[#30363d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
+                            disabled={!fsSupported}
+                            className={`flex-1 px-3 py-2 bg-[#21262d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border ${fsSupported ? 'border-gray-700 hover:bg-[#30363d]' : 'border-gray-800 opacity-60 cursor-not-allowed'}`}
                         >
-                            <Upload size={14} /> Open File
+                            <Upload size={14} /> File
+                        </button>
+                        <button
+                            onClick={handlePickDirectory}
+                            disabled={!fsSupported}
+                            className={`flex-1 px-3 py-2 bg-[#21262d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border ${fsSupported ? 'border-gray-700 hover:bg-[#30363d]' : 'border-gray-800 opacity-60 cursor-not-allowed'}`}
+                        >
+                            <FolderOpen size={14} /> Folder
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                        {loadedAudio.length === 0 && (
-                            <div className="text-center py-8 text-gray-500 text-xs italic">
-                                No tracks loaded
+                    {!fsSupported && (
+                        <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/40 rounded-lg p-3">
+                            File System Access API not supported in this browser.
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            Browse files or a folder to keep your stems and mixes local. We never upload the audio; analysis runs entirely in-browser.
+                        </p>
+                        {savedLibraries.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="text-[11px] text-gray-500 uppercase tracking-widest">Saved Folders</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {savedLibraries.map(lib => (
+                                        <span key={lib.id} className="px-2 py-1 bg-[#0d1117] border border-gray-800 rounded text-[11px] text-gray-300">{lib.name}</span>
+                                    ))}
+                                </div>
                             </div>
                         )}
-                        {loadedAudio.map(track => (
-                            <div
-                                key={track.id}
-                                onClick={() => setCurrentTrackId(track.id)}
-                                className={`group p-2 rounded-lg border cursor-pointer transition-all ${currentTrackId === track.id
-                                        ? 'bg-purple-900/30 border-purple-500/50'
-                                        : 'bg-[#0d1117] border-gray-800 hover:border-gray-600'
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileAudio size={12} className="text-blue-400 flex-shrink-0" />
-                                        <span className={`text-xs font-medium truncate ${currentTrackId === track.id ? 'text-purple-200' : 'text-gray-300'}`}>
-                                            {track.name}
-                                        </span>
-                                    </div>
-                                    <button
-                                        onClick={(e) => handleRemoveTrack(e, track.id)}
-                                        className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                </div>
-                                {track.features && (
-                                    <div className="flex gap-2 mt-1 px-1">
-                                        <span className="text-[10px] bg-gray-800/50 px-1 rounded text-gray-400">{track.features.bpm} BPM</span>
-                                        <span className="text-[10px] bg-gray-800/50 px-1 rounded text-gray-400">{track.features.key} {track.features.scale}</span>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
                     </div>
                 </div>
 
-                {/* Center: Visualizer & Analysis (9 cols) */}
-                <div className="lg:col-span-9 flex flex-col gap-6">
-                    {/* Visualizer Area */}
-                    <div className="flex-1 bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center relative overflow-hidden">
+                {/* Loaded tracks and waveform */}
+                <div className="lg:col-span-5 flex flex-col gap-4">
+                    <div className="bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col h-full">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                                <FileAudio size={14} /> Loaded Tracks
+                            </h3>
+                            <span className="text-[11px] text-gray-500">{loadedAudio.length} files</span>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                            {loadedAudio.length === 0 && (
+                                <div className="text-center py-8 text-gray-500 text-xs italic" role="status">
+                                    No audio loaded
+                                </div>
+                            )}
+                            {loadedAudio.map(track => (
+                                <div
+                                    key={track.id}
+                                    onClick={() => setCurrentTrackId(track.id)}
+                                    className={`group p-3 rounded-lg border cursor-pointer transition-all ${currentTrackId === track.id
+                                            ? 'bg-purple-900/30 border-purple-500/50'
+                                            : 'bg-[#0d1117] border-gray-800 hover:border-gray-600'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <FileAudio size={12} className="text-blue-400 flex-shrink-0" />
+                                            <span className={`text-xs font-medium truncate ${currentTrackId === track.id ? 'text-purple-200' : 'text-gray-300'}`}>
+                                                {track.name}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => handleRemoveTrack(e, track.id)}
+                                            className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                    {track.features && (
+                                        <div className="flex gap-2 mt-1 px-1">
+                                            <span className="text-[10px] bg-gray-800/50 px-1 rounded text-gray-400">{track.features.bpm} BPM</span>
+                                            <span className="text-[10px] bg-gray-800/50 px-1 rounded text-gray-400">{track.features.key} {track.features.scale}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center relative overflow-hidden">
                         {!activeTrack ? (
                             <div className="text-center text-gray-600">
                                 <Activity size={48} className="mx-auto mb-4 opacity-20" />
@@ -244,14 +325,13 @@ export default function MusicStudio() {
                                     </div>
                                     {isAnalyzing && (
                                         <div className="flex items-center gap-2 text-xs text-purple-400 animate-pulse">
-                                            Analyizing Structure...
+                                            Analyzing Structure...
                                         </div>
                                     )}
                                 </div>
 
                                 <div id="waveform" ref={waveformRef} className="w-full my-auto" />
 
-                                {/* Deep Metrics Overlay */}
                                 {activeTrack.features && (
                                     <div className="absolute bottom-4 left-6 flex gap-6">
                                         <div className="flex flex-col">
@@ -276,10 +356,9 @@ export default function MusicStudio() {
                         )}
                     </div>
 
-                    {/* Transport Controls */}
                     <div className="h-24 bg-[#0d1117] border border-gray-800 rounded-xl p-4 flex items-center justify-between px-8">
                         <div className="flex items-center gap-4">
-                            <button className="text-gray-500 hover:text-white transition-colors">
+                            <button className="text-gray-500 hover:text-white transition-colors" aria-label="Previous track">
                                 <SkipBack size={20} />
                             </button>
                             <button
@@ -289,10 +368,11 @@ export default function MusicStudio() {
                                         ? 'bg-white text-black hover:scale-105 active:scale-95'
                                         : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
+                                aria-label={isPlaying ? 'Pause' : 'Play'}
                             >
                                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
                             </button>
-                            <button className="text-gray-500 hover:text-white transition-colors">
+                            <button className="text-gray-500 hover:text-white transition-colors" aria-label="Next track">
                                 <SkipForward size={20} />
                             </button>
                         </div>
@@ -306,6 +386,41 @@ export default function MusicStudio() {
                     </div>
                 </div>
 
+                {/* Engine status */}
+                <div className="lg:col-span-3 bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                            <BarChart size={14} /> Audio Engine
+                        </h3>
+                        <span className={`text-[10px] px-2 py-1 rounded-full ${engineState === 'running' ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>
+                            {engineState === 'running' ? 'Live' : 'Idle'}
+                        </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs text-gray-400">
+                        <p>Low-latency engine for playback, metering, and MIDI preview.</p>
+                        <p className="text-[11px] text-gray-500">Files stay on your device — no uploads.</p>
+                    </div>
+
+                    <button
+                        onClick={handleStartEngine}
+                        disabled={engineState === 'starting'}
+                        className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${engineState === 'running'
+                                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                : 'bg-purple-600/80 hover:bg-purple-600 text-white border border-purple-500/60'}`}
+                    >
+                        {engineState === 'running' ? 'Engine Running' : engineState === 'starting' ? 'Starting...' : 'Start Engine'}
+                    </button>
+
+                    <div className="space-y-2 text-sm text-gray-200">
+                        <div className="flex justify-between">
+                            <span className="text-gray-400">State</span>
+                            <span className={engineState === 'running' ? 'text-green-300' : 'text-gray-200'}>{engineState === 'running' ? 'Running' : 'Idle'}</span>
+                        </div>
+                        <div className="flex justify-between"><span className="text-gray-400">Sample Rate</span><span>{sampleRate ? `${sampleRate} Hz` : 'Pending'}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Lookahead</span><span>{Tone.context?.lookAhead ?? 0}s</span></div>
+                    </div>
+                </div>
             </div>
         </ModuleDashboard>
     );
