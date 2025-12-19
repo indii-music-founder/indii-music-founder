@@ -7,7 +7,6 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_RAG_PROXY_URL: z.string().url().optional(),
     VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
     DEV: z.boolean().default(false),
- investigate-login-system-failure2025-12-1704-01-00
     // Firebase specific overrides (optional)
     firebaseApiKey: z.string().optional(),
     firebaseAuthDomain: z.string().optional(),
@@ -19,36 +18,50 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     firebaseDatabaseURL: z.string().url().optional(),
 
     skipOnboarding: z.boolean().default(false),
- main
 });
+
+const readEnv = (key: string): string | boolean | undefined => {
+    if (typeof import.meta !== 'undefined' && import.meta.env && key in import.meta.env) {
+        const value = import.meta.env[key as keyof ImportMetaEnv];
+        if (value !== undefined) return value;
+    }
+
+    if (typeof process !== 'undefined' && process.env?.[key] !== undefined) {
+        return process.env[key];
+    }
+
+    return undefined;
+};
+
+const asBoolean = (value: string | boolean | undefined): boolean => {
+    if (typeof value === 'boolean') return value;
+    return value === 'true';
+};
 
 const processEnv = {
     // Use environment variable - no hardcoded fallback for security
-    apiKey: import.meta.env.VITE_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_API_KEY : undefined),
-    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_PROJECT_ID : undefined),
-    location: import.meta.env.VITE_VERTEX_LOCATION || (typeof process !== 'undefined' ? process.env.VITE_VERTEX_LOCATION : undefined),
-    useVertex: (import.meta.env.VITE_USE_VERTEX || (typeof process !== 'undefined' ? process.env.VITE_USE_VERTEX : undefined)) === 'true',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
+    apiKey: readEnv('VITE_API_KEY'),
+    projectId: readEnv('VITE_VERTEX_PROJECT_ID'),
+    location: readEnv('VITE_VERTEX_LOCATION'),
+    useVertex: asBoolean(readEnv('VITE_USE_VERTEX')),
+    googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
 
     // Pass through frontend specific
-    VITE_FUNCTIONS_URL: getEnv('VITE_FUNCTIONS_URL') || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
-    VITE_RAG_PROXY_URL: getEnv('VITE_RAG_PROXY_URL'),
-    DEV: getEnv('DEV') || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
+    VITE_FUNCTIONS_URL: (readEnv('VITE_FUNCTIONS_URL') as string | undefined) || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
+    VITE_RAG_PROXY_URL: readEnv('VITE_RAG_PROXY_URL') as string | undefined,
+    VITE_GOOGLE_MAPS_API_KEY: readEnv('VITE_GOOGLE_MAPS_API_KEY') as string | undefined,
+    DEV: asBoolean(readEnv('DEV')) || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
 
     // Firebase specific overrides
-    firebaseApiKey: getEnv('VITE_FIREBASE_API_KEY'),
-    firebaseAuthDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
-    firebaseProjectId: getEnv('VITE_FIREBASE_PROJECT_ID'),
-    firebaseStorageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
-    firebaseAppId: getEnv('VITE_FIREBASE_APP_ID'),
-    firebaseMeasurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID'),
-    firebaseMessagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-    firebaseDatabaseURL: getEnv('VITE_FIREBASE_DATABASE_URL'),
-    VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL || (typeof process !== 'undefined' ? process.env.VITE_FUNCTIONS_URL : undefined) || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
-    VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL || (typeof process !== 'undefined' ? process.env.VITE_RAG_PROXY_URL : undefined),
-    VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_MAPS_API_KEY : undefined),
-    DEV: import.meta.env.DEV || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
-    skipOnboarding: true,
+    firebaseApiKey: readEnv('VITE_FIREBASE_API_KEY') as string | undefined,
+    firebaseAuthDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN') as string | undefined,
+    firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID') as string | undefined,
+    firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET') as string | undefined,
+    firebaseAppId: readEnv('VITE_FIREBASE_APP_ID') as string | undefined,
+    firebaseMeasurementId: readEnv('VITE_FIREBASE_MEASUREMENT_ID') as string | undefined,
+    firebaseMessagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID') as string | undefined,
+    firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL') as string | undefined,
+    skipOnboarding: asBoolean(readEnv('VITE_SKIP_ONBOARDING')),
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);
