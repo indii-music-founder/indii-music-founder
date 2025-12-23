@@ -127,10 +127,13 @@ if (!parsed.success) {
         console.error("Please check your .env file.");
     }
 
-    // Fail fast if critical keys are missing
+    // Fail fast if critical keys are missing (only at runtime, not during build)
     if (!processEnv.apiKey || !processEnv.projectId) {
         console.error("Critical environment variables missing.", processEnv);
-        throw new Error("Critical environment variables missing. Check console for details.");
+        // Only throw in browser (runtime) - allow build to complete for CI
+        if (typeof window !== 'undefined') {
+            throw new Error("Critical environment variables missing. Check console for details.");
+        }
     }
 
     // We are proceeding despite validation errors
