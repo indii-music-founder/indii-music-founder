@@ -63,7 +63,7 @@ export class EditingService {
 
             for (let i = 0; i < count; i++) {
                 let currentImageData = options.image;
-                let compositePromptParts = [];
+                const compositePromptParts = [];
 
                 // Sequential Pipeline: Base -> Mask 1 -> Result 1 -> Mask 2 -> ... -> Final
                 for (const mask of options.masks) {
