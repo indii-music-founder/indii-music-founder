@@ -74,7 +74,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
 
 function LoadingFallback() {
     return (
-        <div className="flex items-center justify-center h-full text-gray-500">
+        <div className="flex items-center justify-center h-full text-gray-500" style={{ backgroundColor: '#111', color: '#ccc', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             Loading Module...
         </div>
     );
@@ -226,6 +226,7 @@ export default function App() {
     return (
         <ToastProvider>
             <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans">
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '10px', height: '10px', background: 'lime', zIndex: 9999999 }} title="App Mounted" />
                 <ApiKeyErrorModal />
 
                 {/* Left Sidebar - Hidden for standalone modules */}

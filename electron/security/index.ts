@@ -87,4 +87,13 @@ export function configureSecurity(session: Session) {
 
         return callback(verificationResult === 'net::OK' ? 0 : -2);
     });
+
+    // 5. Inject Referer for Firebase/Google APIs (Fixes "requests from referer empty blocked")
+    session.webRequest.onBeforeSendHeaders(
+        { urls: ['*://*.googleapis.com/*', '*://*.firebaseapp.com/*'] },
+        (details, callback) => {
+            details.requestHeaders['Referer'] = 'http://localhost:4242';
+            callback({ requestHeaders: details.requestHeaders });
+        }
+    );
 }

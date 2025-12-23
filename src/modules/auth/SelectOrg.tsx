@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { Building2, Plus, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 
 
 export default function SelectOrg() {
-    console.log("Rendering SelectOrg module (Electron)");
+    console.log("Rendering SelectOrg module (Electron) - ROOT"); // Debug Log
     return (
         <ErrorBoundary>
             <SelectOrgContent />
@@ -16,6 +15,7 @@ export default function SelectOrg() {
 }
 
 function SelectOrgContent() {
+    console.log("Rendering SelectOrgContent"); // Debug Log
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, initializeHistory } = useStore();
 
     const [isCreating, setIsCreating] = useState(false);
@@ -25,6 +25,7 @@ function SelectOrgContent() {
 
     // Verify Store Connection
     useEffect(() => {
+        console.log("SelectOrg: Organizations update", organizations); // Debug Log
         if (organizations !== undefined && organizations.length > 0) {
             // Already initialized?
         }
@@ -140,8 +141,9 @@ function SelectOrgContent() {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-black text-white p-4" style={{ backgroundColor: '#000000', color: 'white', position: 'absolute', inset: 0, zIndex: 9999, overflowY: 'auto' }}>
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md border-2 border-red-500/20 p-4 rounded-xl"> {/* DEBUG BORDER */}
                 <div className="text-center mb-8">
+                    <p className="text-xs text-green-500 font-mono mb-2">DEBUG: SelectOrg Loaded</p>
                     <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center">
                         <span className="text-3xl font-bold text-black tracking-tighter">ii</span>
                     </div>

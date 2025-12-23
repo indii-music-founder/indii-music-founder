@@ -60,6 +60,24 @@ const createWindow = () => {
     // Configure Security (CSP, Permissions, Headers)
     configureSecurity(mainWindow.webContents.session);
 
+    // Pipe Renderer Logs to Terminal
+    mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+        const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
+        console.log(`[Renderer][${levels[level] || 'INFO'}] ${message}`);
+    });
+
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+        console.error(`[DEBUG] Page failed to load: ${errorCode} - ${errorDescription}`);
+    });
+
+    mainWindow.webContents.on('render-process-gone', (event, details) => {
+        console.error(`[DEBUG] Renderer Process Gone: ${details.reason}`);
+    });
+
+    mainWindow.webContents.on('dom-ready', () => {
+        console.log('[DEBUG] DOM Ready');
+    });
+
     // Secure Navigation
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com') || url.includes('accounts.google.com')) {
