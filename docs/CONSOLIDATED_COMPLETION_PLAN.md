@@ -12,7 +12,6 @@ Phase 2 (Feature Integration) is underway, with Knowledge Base initialized.
 
 ## 1. Documentation Cleanup (Completed)
 
-- **Archive/Delete:** `JULES_TASKS.md` (Deprecated).
 - **Update:** `ROADMAP.md` (Active).
 - **Maintain:** `PERFORMANCE_REFACTORING_PLAN.md` (Reference).
 
