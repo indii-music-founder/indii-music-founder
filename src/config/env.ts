@@ -92,10 +92,9 @@ const processEnv = {
     useVertex: toBoolean(readEnv('VITE_USE_VERTEX')),
     googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
 
-    // Pass through frontend specific
-    VITE_FUNCTIONS_URL: readEnv('VITE_FUNCTIONS_URL') || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
+    // Pass through frontend specific - no hardcoded fallbacks for security
+    VITE_FUNCTIONS_URL: readEnv('VITE_FUNCTIONS_URL'),
     VITE_RAG_PROXY_URL: readEnv('VITE_RAG_PROXY_URL'),
-    VITE_GOOGLE_MAPS_API_KEY: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
     DEV: typeof metaEnv?.DEV === 'boolean'
         ? metaEnv.DEV
         : (nodeEnv === 'development' || toBoolean(readEnv('DEV'))),
@@ -128,11 +127,10 @@ if (!parsed.success) {
         console.error("Please check your .env file.");
     }
 
-    // In production, we might want to throw, but for now let's warn and allow partial failure if possible,
-    // or throw if critical keys are missing.
+    // Fail fast if critical keys are missing
     if (!processEnv.apiKey || !processEnv.projectId) {
         console.error("Critical environment variables missing.", processEnv);
-        // throw new Error("Critical environment variables missing. Check console for details.");
+        throw new Error("Critical environment variables missing. Check console for details.");
     }
 
     // We are proceeding despite validation errors
