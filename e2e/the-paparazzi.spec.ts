@@ -7,11 +7,11 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
     test('Scenario 1: Vision Analysis to Image Generation', async ({ page }) => {
         // 0. Mock Electron API
         await page.addInitScript(() => {
-            // @ts-expect-error
+            // @ts-expect-error - testing utility
             window.electronAPI = {
                 getPlatform: async () => 'darwin',
                 getAppVersion: async () => '0.0.0',
-                // @ts-expect-error
+                // @ts-expect-error - testing utility
                 auth: {
                     login: async () => { },
                     logout: async () => { },
@@ -24,7 +24,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
                 audio: { analyze: async () => ({}), getMetadata: async () => ({}) },
                 openExternal: async () => { }
             };
-            // @ts-expect-error
+            // @ts-expect-error - testing utility
             window.__TEST_MODE__ = true;
         });
 
@@ -136,7 +136,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
 
         // 4. Bypass Auth Loading
         await page.evaluate(() => {
-            // @ts-expect-error
+            // @ts-expect-error - testing utility
             window.useStore.setState({
                 isAuthenticated: true,
                 isAuthReady: true,
@@ -175,7 +175,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         // we check the Store directly to prove the pipeline (Vision -> Gen -> Storage) succeeded.
         await expect.poll(async () => {
             return await page.evaluate(() => {
-                // @ts-expect-error
+                // @ts-expect-error - testing utility
                 const history = window.useStore.getState().generatedHistory;
                 return history.some((h: any) => h.url && h.url.includes('iVBORw0K'));
             });
@@ -217,7 +217,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         // Instead of clicking 50 UI elements, we use the internal API to trigger the service call 
         // essentially validating the "Service Integration" layer.
         await page.evaluate(async () => {
-            // @ts-expect-error
+            // @ts-expect-error - testing utility
             const { Editing } = await import('./src/services/image/EditingService'); // Dynamic import if possible, else we rely on global
             // In a real E2E, we'd drive the UI. Here, to be robust against UI flux, 
             // we can try to call the Service method if exposed, OR drive the UI if we trust the selectors.
@@ -237,9 +237,9 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         // We'll simulate a manual Service call from the browser console to verify the network implementation.
 
         const result = await page.evaluate(async () => {
-            // @ts-expect-error
+            // @ts-expect-error - testing utility
             const { functions } = window.firebase; // Access exposed firebase instance
-            // @ts-expect-error
+            // @ts-expect-error - testing utility
             const { httpsCallable } = window.firebaseFunctions;
 
             // Simulate what CreativeCanvas.tsx does:

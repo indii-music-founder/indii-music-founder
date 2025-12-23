@@ -11,6 +11,7 @@ function LaserGrid() {
     const meshRef = useRef<THREE.InstancedMesh>(null!);
     const count = 40;
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const beams = useMemo(() => {
         return new Array(count).fill(0).map((_, i) => ({
             y: (i - count / 2) * 0.5,
@@ -72,6 +73,7 @@ function HexShields() {
     const meshRef = useRef<THREE.InstancedMesh>(null!);
     const count = 20;
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const hexes = useMemo(() => {
         return new Array(count).fill(0).map(() => ({
             position: [

@@ -12,6 +12,7 @@ export default function OrigamiParticles() {
     const meshRef = useRef<THREE.InstancedMesh>(null!);
 
     // Generate particles
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const particles = useMemo(() => {
         const temp = [];
         for (let i = 0; i < COUNT; i++) {

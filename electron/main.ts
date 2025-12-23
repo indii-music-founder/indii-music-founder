@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import path from 'path';
 import { registerSystemHandlers } from './handlers/system';
 import { registerAuthHandlers, handleDeepLink } from './handlers/auth';
@@ -66,7 +66,7 @@ const createWindow = () => {
             return { action: 'allow' };
         }
         if (url.startsWith('https://')) {
-            require('electron').shell.openExternal(url);
+            shell.openExternal(url);
             return { action: 'deny' };
         }
         return { action: 'deny' };
@@ -87,7 +87,7 @@ const createWindow = () => {
             event.preventDefault();
             console.warn(`[Security] Blocked navigation to: ${navigationUrl}`);
             if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
-                require('electron').shell.openExternal(navigationUrl);
+                shell.openExternal(navigationUrl);
             }
         }
     });

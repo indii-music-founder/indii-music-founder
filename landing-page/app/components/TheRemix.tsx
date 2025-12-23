@@ -150,6 +150,7 @@ function RemixStream() {
     const count = 300;
     const high = useAudioStore((state) => state.frequencyData.high) || 0;
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const particles = useMemo(() => {
         return new Array(count).fill(0).map((_, i) => ({
             strand: i % 2 === 0 ? 1 : -1, // Two strands

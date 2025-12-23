@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 'use client';
 
 import { useFrame, useThree } from '@react-three/fiber';
@@ -170,6 +171,7 @@ function NodeParticles() {
     const mesh = useRef<THREE.InstancedMesh>(null!);
 
     // Generate random positions on a sphere surface
+    // eslint-disable-next-line react-hooks/purity
     const particles = useMemo(() => {
         const temp = [];
         for (let i = 0; i < count; i++) {
@@ -218,6 +220,11 @@ function NodeParticles() {
 }
 
 export default function Hero() {
+    const bgParticles = useMemo(() => {
+        const arr = new Float32Array(900).map(() => (Math.random() - 0.5) * 15);
+        return arr;
+    }, []);
+
     return (
         <group position={[0, 0, 0]}>
             <ambientLight intensity={0.5} />
@@ -230,9 +237,9 @@ export default function Hero() {
                     <bufferAttribute
                         attach="attributes-position"
                         count={300}
-                        array={new Float32Array(900).map(() => (Math.random() - 0.5) * 15)}
+                        array={bgParticles}
                         itemSize={3}
-                        args={[new Float32Array(900).map(() => (Math.random() - 0.5) * 15), 3]}
+                        args={[bgParticles, 3]}
                     />
                 </bufferGeometry>
                 <pointsMaterial size={0.03} color="#ffffff" transparent opacity={0.3} sizeAttenuation={true} />

@@ -48,7 +48,9 @@ async function main() {
             console.log("✅ SUCCESS! Upload worked.");
 
             // Cleanup
-            try { await deleteObject(testRef); } catch (e) { }
+            try { await deleteObject(testRef); } catch (e) {
+                // Ignore cleanup errors
+            }
 
             console.log("Found Valid Bucket Strong:", bucket);
             // We found it, no need to probe others (though we could)

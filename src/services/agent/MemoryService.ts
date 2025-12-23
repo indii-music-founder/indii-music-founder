@@ -42,9 +42,8 @@ class MemoryService {
                 model: this.embeddingModel,
                 content: { role: 'user', parts: [{ text }] }
             });
-            // Extract embedding from response
-            const embedding = (result as any)?.embedding?.values;
-            return embedding || [];
+            // AIService.embedContent returns { values: number[] } directly
+            return result?.values || [];
         } catch (error) {
             console.warn('[MemoryService] Failed to get embedding, falling back to keyword search:', error);
             return [];

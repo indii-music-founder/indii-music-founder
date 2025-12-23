@@ -34,6 +34,7 @@ export default function TheTitan() {
             meshRef.current.rotation.y = t * 0.2;
 
             // Camera Shake
+            // eslint-disable-next-line react-hooks/immutability
             camera.position.x += (Math.random() - 0.5) * 0.05;
             camera.position.y += (Math.random() - 0.5) * 0.05;
 

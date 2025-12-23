@@ -11,6 +11,7 @@ interface ContractRendererProps {
 export default function ContractRenderer({ markdown }: ContractRendererProps) {
     const [signed, setSigned] = React.useState(false);
     const toast = useToast();
+    const [signatureId] = React.useState(() => Math.random().toString(36).substr(2, 9).toUpperCase());
 
     const handleSign = () => {
         setSigned(true);
@@ -39,7 +40,7 @@ export default function ContractRenderer({ markdown }: ContractRendererProps) {
             <div className="bg-[#f0ece4] p-6 border-t border-[#dcd6cc] flex items-center justify-between">
                 <div className="text-xs text-gray-500 font-mono w-1/2">
                     <p>ELECTRONIC SIGNATURE REQUESTED</p>
-                    <p>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+                    <p>ID: {signatureId}</p>
                 </div>
 
                 {signed ? (

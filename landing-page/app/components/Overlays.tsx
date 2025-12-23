@@ -6,6 +6,7 @@ const GlitchText = ({ text, delay = 0 }: { text: string, delay?: number }) => {
 
     // Reset when text changes
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStarted(false);
         setDisplay('');
         const startTimeout = setTimeout(() => {

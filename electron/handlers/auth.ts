@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, shell } from 'electron';
+import { ipcMain, BrowserWindow, shell, session } from 'electron';
 import { authStorage } from '../services/AuthStorage';
 import { generatePKCECodeVerifier, generatePKCECodeChallenge } from '../utils/pkce';
 
@@ -39,9 +39,9 @@ export function registerAuthHandlers() {
         console.log('Logout requested');
         try {
             await authStorage.deleteToken();
-            const session = require('electron').session.defaultSession;
-            await session.clearStorageData({
-                storages: ['appcache', 'cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage']
+            const ses = session.defaultSession;
+            await ses.clearStorageData({
+                storages: ['cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage']
             });
             const wins = BrowserWindow.getAllWindows();
             wins.forEach(w => w.webContents.send('auth:user-update', null));

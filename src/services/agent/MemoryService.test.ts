@@ -19,10 +19,10 @@ vi.mock('../FirestoreService', () => ({
     })
 }));
 
-// Mock AIService - embedContent returns empty to use keyword fallback in tests
+// Mock AIService - embedContent returns { values: [] } to match actual return type
 vi.mock('../ai/AIService', () => ({
     AI: {
-        embedContent: vi.fn().mockResolvedValue({ embedding: { values: [] } })
+        embedContent: vi.fn().mockResolvedValue({ values: [] })
     }
 }));
 

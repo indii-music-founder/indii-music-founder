@@ -1,11 +1,11 @@
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, BrowserWindow } from 'electron';
 
 export function registerSystemHandlers() {
     ipcMain.handle('get-platform', () => process.platform);
     ipcMain.handle('get-app-version', () => app.getVersion());
 
     ipcMain.handle('privacy:toggle-protection', (event, isEnabled) => {
-        const win = (require('electron').BrowserWindow).fromWebContents(event.sender);
+        const win = BrowserWindow.fromWebContents(event.sender);
         if (win) win.setContentProtection(isEnabled);
     });
 }

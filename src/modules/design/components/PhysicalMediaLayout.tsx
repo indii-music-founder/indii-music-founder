@@ -39,6 +39,7 @@ export const PhysicalMediaLayout: React.FC<PhysicalMediaLayoutProps> = ({ templa
 
         // Clear existing overlay objects
         fabricCanvas.clear();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         fabricCanvas.backgroundColor = '#ffffff';
 
         // 1. Draw Bleed Area (Red tint outside trim)
