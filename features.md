@@ -17,7 +17,7 @@
   * **MarketingAgent:** Campaign generation and brand voice alignment.
   * **BrandAgent:** Brand consistency analysis and asset generation.
   * **RoadManager:** Tour logistics, fuel calculations, and itinerary planning.
-  * **MusicAgent:** Audio theory and composition assistance.
+  * **MusicAgent:** Audio analysis (BPM, key, energy extraction) for music business workflows.
 * **Server-Side Agents (Mastra):** "Creative Director" agent running on Cloud Functions for high-fidelity asset generation.
 * **Context Injection:** Agents automatically receive Organization, Project, and Brand Kit context.
 * **Streaming Responses:** Real-time token streaming for immediate feedback.
@@ -54,14 +54,9 @@
 
 * **Semantic Visual Memory Core:** A vector-based imagination system for indii. Instead of just referencing pixels, the Agent
   understands the *narrative intent* and *semantic identity* of characters/locations to eliminate visual drift during long
- add-semantic-visual-memory-core2025-12-1702-24-52
   Story Chains. See the [Neural Cortex spec](docs/NEURAL_CORTEX.md) for the semantic memory architecture, interfaces, drift
   detection loop, expanded runbooks (health/back-pressure/degraded modes), contract exemplars with QA harnesses, telemetry-led
   staging, and Phase 2 operational hardening with performance budgets and staged rollout.
-
-  Story Chains. See the [Neural Cortex spec](docs/NEURAL_CORTEX.md) for the semantic memory architecture, interfaces, and drift
-  detection loop.
- main
 * **Team Collaboration:** Real-time multiplayer editing within a Project.
 
 ### 2. 3D & Spatial

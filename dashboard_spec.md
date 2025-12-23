@@ -1,11 +1,10 @@
-
-# Feature Specification: Rndr-AI Dashboard & Settings Hub
+# Feature Specification: indiiOS Dashboard & Settings Hub
 
 ## 1. Overview
 
-Currently, Rndr-AI operates as a "Studio-First" application. Users are immediately dropped into the workspace. Project management is limited to a small dropdown, and settings are scattered across modals.
+indiiOS operates as a "Studio-First" application with multi-tenant support (Organizations/Projects). The **Dashboard** serves as the **"Home Screen"** or **"Headquarters"** of the application, handling meta-management of data, projects, and global configurations.
 
-The **Dashboard** will serve as the **"Home Screen"** or **"Headquarters"** of the application. It acts as a layer *above* the Studio, handling meta-management of data, projects, and global configurations.
+**Current Architecture:** React 19 + Vite, Zustand state management, Firebase (Firestore + Storage).
 
 ## 2. User Experience (UX)
 
@@ -37,26 +36,26 @@ Replacing the dropdown selector with a visual grid.
 * **Actions:**
   * **Create New:** With dedicated setup wizard (Name, Context, Default Ratio).
   * **Duplicate:** Clone a project (useful for branching creative directions).
-  * **Archive/Delete:** Remove from active view or delete from IndexedDB.
+  * **Archive/Delete:** Remove from active view or delete from Firestore.
   * **Merge:** (Phase 2) Combine assets from two projects.
 
 ### B. Data & Storage Manager
 
-Since Rndr-AI is client-side, storage management is critical.
+Cloud storage management via Firebase Storage.
 
-* **Storage Health Bar:** Visual indicator of IndexedDB usage (e.g., "Using 450MB of Browser Quota").
+* **Storage Health Bar:** Visual indicator of storage usage per organization.
 * **Backup & Restore:**
-  * **Export All:** Download a `.rndr` (JSON + Base64) file containing the entire database.
+  * **Export All:** Download a ZIP file containing assets + metadata JSON (via ExportService).
   * **Import:** Restore a backup file.
-* **Cache Clearing:** Buttons to "Delete All Drafts" or "Clear Unused Uploads" to free up space.
+* **Cache Clearing:** Database vacuum via CleanupService ("Cleanup" button in Dashboard).
 
 ### C. Global Configuration
 
-Settings that persist across all projects.
+Settings that persist across all projects (stored in Firestore user profile).
 
-* **API Management:** Secure input for Google API Key (stored in `localStorage` or `IndexedDB`).
+* **API Management:** Server-side via Firebase Functions (no client-side key exposure).
 * **Model Preferences:**
-  * Force specific model versions (e.g., lock `gemini-3-pro-preview-02-05`).
+  * Force specific model versions (e.g., lock `gemini-3-pro-preview`).
   * Set default "Temperature" / Creativity levels.
 * **Interface Settings:**
   * Toggle Haptic Feedback.
@@ -83,51 +82,44 @@ A fun, gamified view of usage.
 
 ## 4. Technical Architecture
 
-### 4.1 New Files
+### 4.1 Key Components
 
-* `dashboard.ts`: Logic for rendering the dashboard grid and handling project CRUD operations.
-* `router.ts`: Simple state machine to toggle visibility between `#view-dashboard` and `#view-studio`.
+* `src/modules/dashboard/Dashboard.tsx`: Main dashboard component with Bento Grid layout.
+* `src/core/store/slices/appSlice.ts`: Module switching via `activeModule` state.
+* `src/core/store/slices/authSlice.ts`: Organization/Project selection state.
 
-### 4.2 Database Extensions (`db.ts`)
+### 4.2 Data Layer
 
-* Need efficient queries to fetch *meta-data* without loading *blobs*.
-* **New Method:** `getProjectMetadata()` -> Returns name, ID, and *thumbnail* (not full gallery) to keep the dashboard snappy.
+* **Firestore Collections:** `organizations`, `projects`, `history`, `assets`
+* **Efficient Queries:** Fetch project metadata without loading full asset blobs.
+* **Real-time Sync:** Firestore listeners for live updates across devices.
 
-### 4.3 DOM Structure
+### 4.3 Module Structure
 
-The `index.html` will be refactored to wrap the existing UI:
-
-```html
-<body>
-    <!-- View 1: Dashboard (Hidden by default on first load if project exists) -->
-    <div id="view-dashboard" class="hidden">
-        <!-- Dashboard Grid -->
-    </div>
-
-    <!-- View 2: Studio (The current UI) -->
-    <div id="view-studio">
-        <!-- Existing Navbar, Main Content, Sidebar -->
-    </div>
-</body>
+```
+src/modules/dashboard/
+├── Dashboard.tsx          # Main dashboard view
+├── ProjectHub.tsx         # Project grid with cards
+├── DataManager.tsx        # Export/Import/Cleanup controls
+├── GlobalSettings.tsx     # User preferences
+└── Analytics.tsx          # Usage stats and gamification
 ```
 
-## 5. Implementation Roadmap
+## 5. Implementation Status
 
-### Phase 1: The Skeleton
+### Completed
 
-1. Refactor `index.html` to support the View Switching architecture.
-2. Create `dashboard.ts` with a basic Project List.
-3. Wire up the "Home" button to switch views instead of resetting the studio.
+- [x] Dashboard layout with Bento Grid
+- [x] Project selection via SelectOrg component
+- [x] Export functionality (ExportService + ZIP)
+- [x] Database vacuum (CleanupService)
+- [x] Multi-tenant data isolation
 
-### Phase 2: Project Management
+### Pending
 
-1. Implement "Create Project" wizard.
-2. Implement "Delete Project" (cascading delete of all images/history linked to `projectId`).
-
-### Phase 3: Data & Settings
-
-1. Implement "Export Backup" (Zip generation).
-2. Implement "Storage Meter" using `navigator.storage.estimate()`.
+- [ ] Storage health bar visualization
+- [ ] Project duplication feature
+- [ ] Analytics/Stats gamification view
 
 ---
-*This specification represents the "Gold Standard" for user management in a client-side AI application.*
+*This specification defines the UX vision for the indiiOS Dashboard.*
