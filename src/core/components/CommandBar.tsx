@@ -241,8 +241,8 @@ function CommandBar() {
                                     <div className="bg-blue-500/20 p-5 rounded-full mx-auto mb-3 w-20 h-20 flex items-center justify-center border border-blue-400/30">
                                         <Paperclip size={40} className="text-blue-300" />
                                     </div>
-                                    <p className="text-white font-bold text-xl tracking-wide drop-shadow-md">DROP FILES HERE</p>
-                                    <p className="text-blue-200 text-sm mt-1">Images, Documents, Audio</p>
+                                    <p className="text-white font-bold text-xl tracking-wide drop-shadow-md">Drop files to attach</p>
+                                    <p className="text-blue-200 text-sm mt-1">Images, documents, audio</p>
                                 </div>
                             </motion.div>
                         )}
