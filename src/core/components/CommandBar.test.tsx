@@ -145,7 +145,7 @@ describe('CommandBar', () => {
             expect(agentService.sendMessage).toHaveBeenCalledWith('Hello agent', undefined, undefined);
         });
     });
-    it('handles drag and drop events', () => {
+    it('handles drag and drop events', async () => {
         render(<CommandBar />);
         const dropZone = screen.getByPlaceholderText('Describe your task, drop files, or take a picture...').closest('div');
 
@@ -154,14 +154,16 @@ describe('CommandBar', () => {
 
         // Drag over
         fireEvent.dragOver(dropZone!);
-        expect(screen.getByText('Drop files to attach')).toBeInTheDocument();
+        expect(await screen.findByText('Drop files to attach')).toBeInTheDocument();
         expect(dropZone).toHaveClass('ring-4');
 
         // Drag leave
         fireEvent.dragLeave(dropZone!);
         // expect(screen.getByPlaceholderText('Describe your task, drop files, or take a picture...')).toBeInTheDocument();
         // Animation might take time to exit or re-render, but our mock removes it immediately if logic is correct
-        expect(screen.queryByText('Drop files to attach')).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText('Drop files to attach')).not.toBeInTheDocument();
+        });
         expect(dropZone).not.toHaveClass('ring-4');
 
         // Drop

@@ -49,18 +49,24 @@ describe('Sidebar Navigation Integration', () => {
     const mockInitializeAuth = vi.fn();
     const mockInitializeHistory = vi.fn();
     const mockLoadProjects = vi.fn();
+    const mockToggleSidebar = vi.fn();
+
+    const buildStoreState = (overrides: Record<string, unknown> = {}) => ({
+        currentModule: 'dashboard',
+        setModule: mockSetModule,
+        isSidebarOpen: true,
+        toggleSidebar: mockToggleSidebar,
+        initializeAuth: mockInitializeAuth,
+        initializeHistory: mockInitializeHistory,
+        loadProjects: mockLoadProjects,
+        isAuthReady: true,
+        isAuthenticated: true,
+        ...overrides,
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            isSidebarOpen: true,
-            toggleSidebar: vi.fn(),
-            initializeAuth: mockInitializeAuth,
-            initializeHistory: mockInitializeHistory,
-            loadProjects: mockLoadProjects,
-        });
+        (useStore as any).mockReturnValue(buildStoreState());
         // Mock setState on the store object itself for App.tsx direct usage
         (useStore as any).setState = vi.fn();
     });
@@ -95,7 +101,7 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Brand Manager', async () => {
         (useStore as any).mockReturnValue({
-            ...useStore(),
+            ...buildStoreState(),
             currentModule: 'brand',
         });
 
@@ -108,7 +114,7 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Campaign Manager', async () => {
         (useStore as any).mockReturnValue({
-            ...useStore(),
+            ...buildStoreState(),
             currentModule: 'campaign',
         });
 
@@ -121,7 +127,7 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Publicist', async () => {
         (useStore as any).mockReturnValue({
-            ...useStore(),
+            ...buildStoreState(),
             currentModule: 'publicist',
         });
 
@@ -134,7 +140,7 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Publishing', async () => {
         (useStore as any).mockReturnValue({
-            ...useStore(),
+            ...buildStoreState(),
             currentModule: 'publishing',
         });
 
@@ -147,7 +153,7 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Finance', async () => {
         (useStore as any).mockReturnValue({
-            ...useStore(),
+            ...buildStoreState(),
             currentModule: 'finance',
         });
 
@@ -160,7 +166,7 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Licensing', async () => {
         (useStore as any).mockReturnValue({
-            ...useStore(),
+            ...buildStoreState(),
             currentModule: 'licensing',
         });
 
@@ -174,14 +180,12 @@ describe('Sidebar Navigation Integration', () => {
     it('renders user profile and logout button', () => {
         const mockLogout = vi.fn();
         (useStore as any).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            isSidebarOpen: true,
+            ...buildStoreState(),
             user: {
                 displayName: 'Test User',
                 email: 'test@example.com'
             },
-            logout: mockLogout
+            logout: mockLogout,
         });
 
         render(<Sidebar />);
