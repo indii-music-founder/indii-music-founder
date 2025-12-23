@@ -141,7 +141,7 @@ export class AIService {
     private readonly useVertex: boolean;
 
     constructor() {
-        this.apiKey = env.apiKey;
+        this.apiKey = env.apiKey || '';
         this.projectId = env.projectId;
         this.location = env.location;
         this.useVertex = env.useVertex;

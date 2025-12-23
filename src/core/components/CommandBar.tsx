@@ -235,7 +235,7 @@ function CommandBar() {
                                 initial={{ opacity: 0, scale: 0.98 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.98 }}
-                                className="absolute inset-0 z-50 flex items-center justify-center bg-blue-900/40 backdrop-blur-md border-2 border-dashed border-blue-400 rounded-xl m-1 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                className="absolute inset-0 z-50 flex items-center justify-center bg-blue-950/90 backdrop-blur-xl border-4 border-dashed border-blue-500 rounded-xl m-1 shadow-[0_0_50px_rgba(59,130,246,0.6)]"
                             >
                                 <div className="text-center animate-bounce">
                                     <div className="bg-blue-500/20 p-5 rounded-full mx-auto mb-3 w-20 h-20 flex items-center justify-center border border-blue-400/30">
