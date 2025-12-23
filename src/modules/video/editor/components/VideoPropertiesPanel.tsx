@@ -9,6 +9,26 @@ interface VideoPropertiesPanelProps {
     currentTime: number;
 }
 
+const KeyframeButton = ({
+    property,
+    value,
+    onAddKeyframe,
+    active
+}: {
+    property: string,
+    value: number,
+    onAddKeyframe: (property: string, value: number) => void,
+    active: boolean
+}) => (
+    <button
+        onClick={() => onAddKeyframe(property, value)}
+        className={`p-1 rounded hover:bg-gray-700 ${active ? 'text-purple-400' : 'text-gray-500'}`}
+        title="Add/Update Keyframe"
+    >
+        <div className="w-2 h-2 transform rotate-45 border border-current bg-current" />
+    </button>
+);
+
 export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip, currentTime }) => {
 
     const handleAddKeyframe = (property: string, value: number) => {
@@ -39,16 +59,6 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
         const relativeFrame = currentTime - selectedClip.startFrame;
         return selectedClip.keyframes[property].some(k => Math.abs(k.frame - relativeFrame) < 1); // Allow 1 frame tolerance
     };
-
-    const KeyframeButton = ({ property, value }: { property: string, value: number }) => (
-        <button
-            onClick={() => handleAddKeyframe(property, value)}
-            className={`p-1 rounded hover:bg-gray-700 ${hasKeyframeAtCurrentTime(property) ? 'text-purple-400' : 'text-gray-500'}`}
-            title="Add/Update Keyframe"
-        >
-            <div className="w-2 h-2 transform rotate-45 border border-current bg-current" />
-        </button>
-    );
 
     return (
         <PropertiesPanel title="Properties">
@@ -105,7 +115,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                         value={selectedClip.scale ?? 1}
                                         onChange={(e) => updateClip(selectedClip.id, { scale: parseFloat(e.target.value) })}
                                     />
-                                    <KeyframeButton property="scale" value={selectedClip.scale ?? 1} />
+                                    <KeyframeButton
+                                        property="scale"
+                                        value={selectedClip.scale ?? 1}
+                                        onAddKeyframe={handleAddKeyframe}
+                                        active={hasKeyframeAtCurrentTime("scale")}
+                                    />
                                 </div>
                             </PropertyRow>
                             <PropertyRow label="Rotation">
@@ -116,7 +131,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                         value={selectedClip.rotation ?? 0}
                                         onChange={(e) => updateClip(selectedClip.id, { rotation: parseFloat(e.target.value) })}
                                     />
-                                    <KeyframeButton property="rotation" value={selectedClip.rotation ?? 0} />
+                                    <KeyframeButton
+                                        property="rotation"
+                                        value={selectedClip.rotation ?? 0}
+                                        onAddKeyframe={handleAddKeyframe}
+                                        active={hasKeyframeAtCurrentTime("rotation")}
+                                    />
                                 </div>
                             </PropertyRow>
                         </div>
@@ -131,7 +151,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                     value={selectedClip.opacity ?? 1}
                                     onChange={(e) => updateClip(selectedClip.id, { opacity: parseFloat(e.target.value) })}
                                 />
-                                <KeyframeButton property="opacity" value={selectedClip.opacity ?? 1} />
+                                <KeyframeButton
+                                    property="opacity"
+                                    value={selectedClip.opacity ?? 1}
+                                    onAddKeyframe={handleAddKeyframe}
+                                    active={hasKeyframeAtCurrentTime("opacity")}
+                                />
                             </div>
                         </PropertyRow>
                         <div className="grid grid-cols-2 gap-2 mt-2">
@@ -143,7 +168,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                         value={selectedClip.x ?? 0}
                                         onChange={(e) => updateClip(selectedClip.id, { x: parseFloat(e.target.value) })}
                                     />
-                                    <KeyframeButton property="x" value={selectedClip.x ?? 0} />
+                                    <KeyframeButton
+                                        property="x"
+                                        value={selectedClip.x ?? 0}
+                                        onAddKeyframe={handleAddKeyframe}
+                                        active={hasKeyframeAtCurrentTime("x")}
+                                    />
                                 </div>
                             </PropertyRow>
                             <PropertyRow label="Y Position">
@@ -154,7 +184,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                         value={selectedClip.y ?? 0}
                                         onChange={(e) => updateClip(selectedClip.id, { y: parseFloat(e.target.value) })}
                                     />
-                                    <KeyframeButton property="y" value={selectedClip.y ?? 0} />
+                                    <KeyframeButton
+                                        property="y"
+                                        value={selectedClip.y ?? 0}
+                                        onAddKeyframe={handleAddKeyframe}
+                                        active={hasKeyframeAtCurrentTime("y")}
+                                    />
                                 </div>
                             </PropertyRow>
                         </div>

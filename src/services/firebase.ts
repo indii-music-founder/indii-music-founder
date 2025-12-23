@@ -3,7 +3,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 
-import { firebaseConfig } from '@/config/env';
+// import { firebaseConfig } from '@/config/env';
 // Get Firebase API key from environment (Vite injects import.meta.env at build time)
 const getFirebaseApiKey = (): string => {
     // Try Vite environment variables (VITE_FIREBASE_API_KEY or fallback to VITE_API_KEY)

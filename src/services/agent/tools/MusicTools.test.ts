@@ -18,12 +18,12 @@ describe('MusicTools', () => {
 
     afterEach(() => {
         // Restore
-        // @ts-expect-error restore mocked electronAPI fixture
+
         window.electronAPI = originalElectronAPI;
     });
 
     it('analyze_audio returns error if electron API is missing', async () => {
-        // @ts-expect-error validate behavior when electronAPI missing
+
         window.electronAPI = undefined;
         const result = await MusicTools.analyze_audio({ filePath: '/test/audio.mp3' });
         expect(result).toContain('Error: Audio Engine not available');

@@ -18,43 +18,34 @@ export class AgentOrchestrator {
         ];
 
         const prompt = `
-        You are the Orchestrator. Your job is to route the user's request to the best suited agent.
+        You are the Orchestrator for indiiOS, the operating system for independent artists.
+        Your goal is to accurately route user requests to the most appropriate specialist agent.
 
-        AGENTS:
+        AVAILABLE AGENTS:
         ${AGENTS.map(a => `- "${a.id}" (${a.name}): ${a.description}`).join('\n')}
 
-        CONTEXT:
-        Current Module: ${context.currentModule || 'none'}
-        Current Project: ${context.projectHandle?.name || 'none'} (${context.projectHandle?.type || 'none'})
+        CURRENT CONTEXT:
+        - Active Module: ${context.currentModule || 'none'}
+        - Project: ${context.projectHandle?.name || 'none'} (${context.projectHandle?.type || 'none'})
 
         USER REQUEST: "${userQuery}"
 
-        INSTRUCTIONS:
-        - Return ONLY the agent ID (e.g., "legal").
-        - If the request is ambiguous, default to "generalist".
-        - If the request is about the current project's domain, prefer that specialist.
+        ROUTING RULES:
+        1. Return ONLY the agent ID (e.g., "legal", "video"). Do not explain.
+        2. If the request is about the current project's domain, prioritize that specialist.
+        3. If the request requires looking up information, general reasoning, or falls outside specific domains, use "generalist".
+        4. "legal" handles contracts, agreements, and splits.
+        5. "music" handles audio analysis, lyrics, and production.
+        6. "video" handles storyboards, treatments, and video editing.
+        7. "marketing" handles social media, campaigns, and brand strategy.
 
         EXAMPLES:
-        User: "Draft a recording contract for my new artist."
-        Agent: legal
-
-        User: "I need a music video concept for this track."
-        Agent: video
-
-        User: "Create a 30-day rollout plan for Instagram."
-        Agent: marketing
-
-        User: "This mix sounds muddy, can you analyze the EQ?"
-        Agent: music
-
-        User: "How do I create a new project?"
-        Agent: generalist
-
-        User: "Search the docs for venue capacity."
-        Agent: generalist
-
-        User: "What's the weather like?"
-        Agent: generalist
+        "Draft a split sheet" -> legal
+        "Make this bass punchier" -> music
+        "Generate a storyboard for the verse" -> video
+        "Post this to TikTok" -> marketing
+        "How do I use this app?" -> generalist
+        "What is the capital of France?" -> generalist
         `;
 
         try {
