@@ -39,6 +39,48 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     skipOnboarding: z.boolean().default(false),
 });
 
+const readEnv = (key: string): string | boolean | undefined => {
+    if (typeof import.meta !== 'undefined' && import.meta.env && key in import.meta.env) {
+        const value = import.meta.env[key as keyof ImportMetaEnv];
+        if (value !== undefined) return value;
+    }
+
+    if (typeof process !== 'undefined' && process.env?.[key] !== undefined) {
+        return process.env[key];
+    }
+
+    return undefined;
+};
+
+const asBoolean = (value: string | boolean | undefined): boolean => {
+    if (typeof value === 'boolean') return value;
+    return value === 'true';
+};
+
+const processEnv = {
+    // Use environment variable - no hardcoded fallback for security
+    apiKey: readEnv('VITE_API_KEY'),
+    projectId: readEnv('VITE_VERTEX_PROJECT_ID'),
+    location: readEnv('VITE_VERTEX_LOCATION'),
+    useVertex: asBoolean(readEnv('VITE_USE_VERTEX')),
+    googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
+
+    // Pass through frontend specific
+    VITE_FUNCTIONS_URL: (readEnv('VITE_FUNCTIONS_URL') as string | undefined) || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
+    VITE_RAG_PROXY_URL: readEnv('VITE_RAG_PROXY_URL') as string | undefined,
+    VITE_GOOGLE_MAPS_API_KEY: readEnv('VITE_GOOGLE_MAPS_API_KEY') as string | undefined,
+    DEV: asBoolean(readEnv('DEV')) || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development'),
+
+    // Firebase specific overrides
+    firebaseApiKey: readEnv('VITE_FIREBASE_API_KEY') as string | undefined,
+    firebaseAuthDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN') as string | undefined,
+    firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID') as string | undefined,
+    firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET') as string | undefined,
+    firebaseAppId: readEnv('VITE_FIREBASE_APP_ID') as string | undefined,
+    firebaseMeasurementId: readEnv('VITE_FIREBASE_MEASUREMENT_ID') as string | undefined,
+    firebaseMessagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID') as string | undefined,
+    firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL') as string | undefined,
+    skipOnboarding: asBoolean(readEnv('VITE_SKIP_ONBOARDING')),
 const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefined;
 const metaEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
 
