@@ -28,7 +28,7 @@ export class GeminiRetrievalService {
 
 
     constructor(apiKey?: string) {
-        this.apiKey = apiKey || env.apiKey;
+        this.apiKey = apiKey || env.apiKey || '';
         if (!this.apiKey) {
             console.error("GeminiRetrievalService: Missing API Key");
         }

@@ -1,12 +1,31 @@
 import { z } from 'zod';
 import { CommonEnvSchema } from '@/shared/schemas/env.schema';
 
+const readEnv = (key: string): string | undefined => {
+    if (typeof import.meta !== 'undefined' && typeof import.meta.env !== 'undefined' && key in import.meta.env) {
+        return import.meta.env[key] as string | undefined;
+    }
+
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env[key];
+    }
+
+    return undefined;
+};
+
+const toBoolean = (value: string | boolean | undefined): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return false;
+};
+
 const FrontendEnvSchema = CommonEnvSchema.extend({
     // Frontend specific
     VITE_FUNCTIONS_URL: z.string().url().optional(),
     VITE_RAG_PROXY_URL: z.string().url().optional(),
     VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
     DEV: z.boolean().default(false),
+
     // Firebase specific overrides (optional)
     firebaseApiKey: z.string().optional(),
     firebaseAuthDomain: z.string().optional(),
@@ -62,6 +81,36 @@ const processEnv = {
     firebaseMessagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID') as string | undefined,
     firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL') as string | undefined,
     skipOnboarding: asBoolean(readEnv('VITE_SKIP_ONBOARDING')),
+const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefined;
+const metaEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
+
+const processEnv = {
+    // Use environment variables when available - no hardcoded fallback for security
+    apiKey: readEnv('VITE_API_KEY'),
+    projectId: readEnv('VITE_VERTEX_PROJECT_ID'),
+    location: readEnv('VITE_VERTEX_LOCATION'),
+    useVertex: toBoolean(readEnv('VITE_USE_VERTEX')),
+    googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
+
+    // Pass through frontend specific
+    VITE_FUNCTIONS_URL: readEnv('VITE_FUNCTIONS_URL') || 'https://us-central1-indiios-v-1-1.cloudfunctions.net',
+    VITE_RAG_PROXY_URL: readEnv('VITE_RAG_PROXY_URL'),
+    VITE_GOOGLE_MAPS_API_KEY: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
+    DEV: typeof metaEnv?.DEV === 'boolean'
+        ? metaEnv.DEV
+        : (nodeEnv === 'development' || toBoolean(readEnv('DEV'))),
+
+    // Firebase specific overrides
+    firebaseApiKey: readEnv('VITE_FIREBASE_API_KEY'),
+    firebaseAuthDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+    firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
+    firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+    firebaseAppId: readEnv('VITE_FIREBASE_APP_ID'),
+    firebaseMeasurementId: readEnv('VITE_FIREBASE_MEASUREMENT_ID'),
+    firebaseMessagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+    firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL'),
+
+    skipOnboarding: toBoolean(readEnv('VITE_SKIP_ONBOARDING')),
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);
@@ -105,18 +154,6 @@ export const env = {
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
 };
-// Re-export specific VITE keys if needed by existing code, or rely on 'env.apiKey' usage.
-// Note: Codebases usually use `env.VITE_API_KEY`. 
-// To avoid massive refactor of call sites, we can map back or just expose both.
-// For "Consolidated Configuration", let's prefer the new clean keys but keep VITE_ on the object if strictly needed.
-// However, the schema defines `apiKey`.
-// Let's add getters for backward compat or update call sites.
-// Updating call sites is better for "Refactor".
-// I will check AIService.ts usage in a moment. To be safe, I will add backward compat getters.
-// Actually, `AIService` used `env.VITE_API_KEY` in the file view I saw earlier.
-// So I should probably map the new keys back to old names OR update `AIService`.
-// I'll update `AIService` to use clean keys as part of this refactor.
-
 // Firebase defaults for the production project. These keep the web app working when
 // environment overrides are not supplied (e.g., on Firebase Hosting deployments).
 export const firebaseDefaultConfig = {

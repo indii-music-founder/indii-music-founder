@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import { Play, Pause, Activity, Music, FolderOpen, FileAudio, HardDrive, Trash2, Upload, Volume2, SkipBack, SkipForward, Info, BarChart } from 'lucide-react';
-import { useToast } from '@/core/context/ToastContext';
+import * as Tone from 'tone';
+import { Activity, File, FileAudio, Folder, HardDrive, Music, Pause, Play, SkipBack, SkipForward, Trash2, Upload, Volume2 } from 'lucide-react';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
+import { useToast } from '@/core/context/ToastContext';
 import { fileSystemService } from '@/services/FileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
 
@@ -17,35 +18,27 @@ interface LoadedAudio {
     isGenerated?: boolean;
 }
 
-interface SavedLibrary {
-    id: string;
-    name: string;
-}
-
 export default function MusicStudio() {
     // Services & State
-    const [fsSupported, setFsSupported] = useState(false);
+    const [fsSupported] = useState(() => fileSystemService.isSupported());
     const [loadedAudio, setLoadedAudio] = useState<LoadedAudio[]>([]);
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
-    const [savedLibraries, setSavedLibraries] = useState<SavedLibrary[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [engineState, setEngineState] = useState<'stopped' | 'running'>('stopped');
+    const [sampleRate, setSampleRate] = useState<number | null>(null);
+    const [lookAhead, setLookAhead] = useState<number | null>(null);
 
     // Refs
     const waveformRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
     const toast = useToast();
 
-    // Init
-    useEffect(() => {
-        setFsSupported(fileSystemService.isSupported());
-        loadSavedLibraries();
-
-        return () => {
-            if (wavesurferRef.current) {
-                wavesurferRef.current.destroy();
-            }
-        };
+    // Cleanup on unmount
+    useEffect(() => () => {
+        if (wavesurferRef.current) {
+            wavesurferRef.current.destroy();
+        }
     }, []);
 
     // WaveSurfer Setup when track changes
@@ -101,12 +94,15 @@ export default function MusicStudio() {
         }
     };
 
-    const loadSavedLibraries = async () => {
+    const startEngine = async () => {
         try {
-            const libs = await fileSystemService.listSavedHandles();
-            setSavedLibraries(libs.filter(l => l.kind === 'directory'));
-        } catch (err) {
-            console.error('Failed to load saved libraries:', err);
+            await Tone.start();
+            setEngineState('running');
+            setSampleRate(Math.round(Tone.context.sampleRate));
+            setLookAhead((Tone.context.lookAhead ?? null) as number | null);
+        } catch (error) {
+            console.error('Failed to start engine', error);
+            toast.error('Unable to start audio engine');
         }
     };
 
@@ -131,22 +127,45 @@ export default function MusicStudio() {
             setCurrentTrackId(newTrack.id);
             toast.success(`Loaded: ${result.file.name}`);
 
-            // Perform Deep Analysis
             setIsAnalyzing(true);
             try {
-                // We use the file purely client-side here to analyze
                 const features = await audioAnalysisService.analyze(result.file);
                 setLoadedAudio(prev => prev.map(t =>
                     t.id === newTrack.id ? { ...t, features } : t
                 ));
                 toast.success('Analysis Complete');
             } catch (err) {
-                console.error("Analysis failed:", err);
-                toast.error("Deep analysis failed, basic playback only.");
+                console.error('Analysis failed:', err);
+                toast.error('Deep analysis failed, basic playback only.');
             } finally {
                 setIsAnalyzing(false);
             }
         }
+    };
+
+    const handlePickDirectory = async () => {
+        const directoryHandle = await fileSystemService.pickDirectory();
+        if (!directoryHandle) return;
+
+        const files = await fileSystemService.getAudioFilesFromDirectory(directoryHandle);
+        if (files.length === 0) {
+            toast.info('No audio files found in that folder');
+            return;
+        }
+
+        const tracks: LoadedAudio[] = files.map(({ file, path }) => ({
+            id: `${Date.now()}-${path}`,
+            name: file.name,
+            path,
+            file,
+            url: URL.createObjectURL(file),
+            features: null,
+        }));
+
+        setLoadedAudio(prev => [...prev, ...tracks]);
+        setCurrentTrackId(tracks[0].id);
+        await fileSystemService.saveDirectoryHandle('music-library', directoryHandle);
+        toast.success(`Loaded ${tracks.length} track(s) from folder`);
     };
 
     const handleRemoveTrack = (e: React.MouseEvent, id: string) => {
@@ -170,24 +189,49 @@ export default function MusicStudio() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)]">
 
                 {/* Left Drawer: Library (3 cols) */}
-                <div className="lg:col-span-3 bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col h-full">
-                    <h3 className="text-sm font-semibold mb-4 text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                        <HardDrive size={14} /> Library
-                    </h3>
+                <div className="lg:col-span-3 bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col h-full space-y-4">
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <HardDrive size={16} className="text-purple-400" />
+                                <h3 className="text-sm font-semibold text-gray-200">Local Music Library</h3>
+                            </div>
+                            <span className="text-[10px] uppercase text-gray-500">{fsSupported ? 'Online' : 'Unavailable'}</span>
+                        </div>
+                        {fsSupported ? (
+                            <div className="flex gap-2 mb-2">
+                                <button
+                                    onClick={handlePickFile}
+                                    className="flex-1 px-3 py-2 bg-[#21262d] hover:bg-[#30363d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
+                                >
+                                    <File size={14} /> File
+                                </button>
+                                <button
+                                    onClick={handlePickDirectory}
+                                    className="flex-1 px-3 py-2 bg-[#21262d] hover:bg-[#30363d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
+                                >
+                                    <Folder size={14} /> Folder
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/40 rounded-md p-3">
+                                File System Access API not supported
+                            </div>
+                        )}
+                        <p className="text-[11px] text-gray-500">Files stay on your device. We never upload your stems.</p>
+                    </div>
 
-                    <div className="flex gap-2 mb-4">
-                        <button
-                            onClick={handlePickFile}
-                            className="flex-1 px-3 py-2 bg-[#21262d] hover:bg-[#30363d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
-                        >
-                            <Upload size={14} /> Open File
-                        </button>
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                            <Upload size={12} /> Loaded Tracks
+                        </h4>
+                        <span className="text-[11px] text-gray-500">{loadedAudio.length} loaded</span>
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                         {loadedAudio.length === 0 && (
                             <div className="text-center py-8 text-gray-500 text-xs italic">
-                                No tracks loaded
+                                No audio loaded
                             </div>
                         )}
                         {loadedAudio.map(track => (
@@ -226,6 +270,35 @@ export default function MusicStudio() {
 
                 {/* Center: Visualizer & Analysis (9 cols) */}
                 <div className="lg:col-span-9 flex flex-col gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-semibold text-gray-200 flex items-center gap-2"><Music size={14} /> Audio Engine</span>
+                                <span className={`text-[11px] ${engineState === 'running' ? 'text-green-400' : 'text-gray-500'}`}>{engineState === 'running' ? 'Active' : 'Idle'}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-3">Start the embedded Tone.js engine to enable synthesis and playback.</p>
+                            <button
+                                onClick={startEngine}
+                                className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm"
+                            >
+                                {engineState === 'running' ? 'Engine Running' : 'Start Engine'}
+                            </button>
+                            <div className="mt-3 text-xs text-gray-400 space-y-1">
+                                <div className="flex justify-between"><span>State</span><span>{engineState === 'running' ? 'Running' : 'Stopped'}</span></div>
+                                <div className="flex justify-between"><span>Sample Rate</span><span>{sampleRate ? `${sampleRate} Hz` : 'Not started'}</span></div>
+                                <div className="flex justify-between"><span>Look Ahead</span><span>{lookAhead != null ? `${lookAhead}s` : 'Not started'}</span></div>
+                            </div>
+                        </div>
+                        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+                            <span className="text-sm font-semibold text-gray-200 flex items-center gap-2"><Activity size={14} /> Track Insights</span>
+                            <p className="text-xs text-gray-500 mt-2">{loadedAudio.length ? 'Select a track to view metrics.' : 'No audio loaded yet.'}</p>
+                        </div>
+                        <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
+                            <span className="text-sm font-semibold text-gray-200 flex items-center gap-2"><Volume2 size={14} /> Playback</span>
+                            <p className="text-xs text-gray-500 mt-2">Waveform playback uses WaveSurfer for visual monitoring.</p>
+                        </div>
+                    </div>
+
                     {/* Visualizer Area */}
                     <div className="flex-1 bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center relative overflow-hidden">
                         {!activeTrack ? (
@@ -279,7 +352,7 @@ export default function MusicStudio() {
                     {/* Transport Controls */}
                     <div className="h-24 bg-[#0d1117] border border-gray-800 rounded-xl p-4 flex items-center justify-between px-8">
                         <div className="flex items-center gap-4">
-                            <button className="text-gray-500 hover:text-white transition-colors">
+                            <button className="text-gray-500 hover:text-white transition-colors" aria-label="Previous track">
                                 <SkipBack size={20} />
                             </button>
                             <button
@@ -289,10 +362,11 @@ export default function MusicStudio() {
                                         ? 'bg-white text-black hover:scale-105 active:scale-95'
                                         : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
+                                aria-label={isPlaying ? 'Pause' : 'Play'}
                             >
                                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
                             </button>
-                            <button className="text-gray-500 hover:text-white transition-colors">
+                            <button className="text-gray-500 hover:text-white transition-colors" aria-label="Next track">
                                 <SkipForward size={20} />
                             </button>
                         </div>

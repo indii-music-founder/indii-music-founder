@@ -233,7 +233,7 @@ describe('Multi-Agent Architecture Tests', () => {
     describe('7. Glass Box UI Verification', () => {
         it('should update store with thoughts when onProgress is triggered', async () => {
             // Stateful mock for store
-            let mockHistory: any[] = [];
+            const mockHistory: any[] = [];
 
             const updateSpy = vi.fn((id, updates) => {
                 const idx = mockHistory.findIndex(m => m.id === id);

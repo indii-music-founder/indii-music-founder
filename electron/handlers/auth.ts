@@ -3,7 +3,7 @@ import { authStorage } from '../services/AuthStorage';
 import { generatePKCECodeVerifier, generatePKCECodeChallenge } from '../utils/pkce';
 
 // In-memory storage for pending auth flows
-let pendingVerifier: string | null = null;
+const pendingVerifier: string | null = null;
 
 // Notify helper
 function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
