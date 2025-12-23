@@ -182,7 +182,7 @@ export default function MusicStudio() {
 
     return (
         <ModuleDashboard
-            title="Music Studio"
+            title="Music Analysis"
             description="Audio Analysis & Management"
             icon={<Music className="text-purple-500" />}
         >
