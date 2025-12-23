@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 const CHARS = "-_~=\\/[]{}<>;*+!@#%^&";
@@ -21,11 +21,11 @@ export default function ScrambleText({
     delay = 0
 }: ScrambleTextProps) {
     const [displayText, setDisplayText] = useState('');
-    const controls = useAnimation();
+    // const controls = useAnimation(); // Unused
 
     useEffect(() => {
         let isCancelled = false;
-        let timeout: NodeJS.Timeout;
+        // let timeout: NodeJS.Timeout; // Unused
 
         const animate = async () => {
             setDisplayText(''); // Clear initially

@@ -6,7 +6,7 @@ import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { Instance, Instances, useScroll } from '@react-three/drei';
 
-import { Trail, Float } from '@react-three/drei';
+import { Trail } from '@react-three/drei';
 
 function ZappingLaser() {
     const laserRef = useRef<THREE.Mesh>(null!);
@@ -17,7 +17,6 @@ function ZappingLaser() {
     const currentPos = useRef(new THREE.Vector3(0, 0, 0));
 
     useFrame((state, delta) => {
-        const t = state.clock.getElapsedTime();
         const scrollIntensity = Math.min(Math.abs(scroll.delta) * 500, 1);
 
         // "Zip Zap" Logic
@@ -79,11 +78,13 @@ function BackgroundParticles() {
 
     const particles = useMemo(() => {
         return new Array(count).fill(0).map(() => ({
+            // eslint-disable-next-line react-hooks/purity
             position: [
                 (Math.random() - 0.5) * 20,
                 (Math.random() - 0.5) * 20,
                 (Math.random() - 0.5) * 40
             ] as [number, number, number],
+            // eslint-disable-next-line react-hooks/purity
             scale: Math.random() * 0.5 + 0.1
         }));
     }, []);

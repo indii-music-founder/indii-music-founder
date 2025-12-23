@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { signInWithEmail, getStudioUrl } from '@/app/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
-    const router = useRouter();
+    // const router = useRouter(); // Unused
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +23,10 @@ export default function LoginForm() {
             await signInWithEmail(email, password);
             // Redirect to studio app
             window.location.href = getStudioUrl();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || 'Failed to sign in. Please check your credentials.');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials.';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -120,7 +120,7 @@ export default function LoginForm() {
                 </div>
 
                 <div className="text-center text-sm">
-                    <span className="text-gray-500">Don't have an account?</span>{' '}
+                    <span className="text-gray-500">Don&apos;t have an account?</span>{' '}
                     <Link
                         href="/signup"
                         className="font-medium text-purple-400 hover:text-purple-300 transition-colors"

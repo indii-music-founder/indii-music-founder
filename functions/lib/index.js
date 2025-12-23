@@ -44,12 +44,13 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.inngestApi = exports.triggerVideoJob = void 0;
+exports.editImage = exports.generateImage = exports.inngestApi = exports.triggerVideoJob = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const inngest_1 = require("inngest");
 const params_1 = require("firebase-functions/params");
 const express_1 = require("inngest/express");
+const google_auth_library_1 = require("google-auth-library");
 // Initialize Firebase Admin
 admin.initializeApp();
 // Define Secrets
@@ -135,5 +136,127 @@ exports.inngestApi = functions
     });
     // Execute the handler
     return handler(req, res);
+});
+exports.generateImage = functions.https.onCall(async (data, context) => {
+    try {
+        const { prompt, aspectRatio, count, images } = data;
+        const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
+        const location = "us-central1";
+        const modelId = "gemini-1.5-pro-preview-0409"; // Using the stable preview or flash as fallback if 3 is not avail
+        // Note: Using the API Key provided by client? Or using Vertex AI IAM?
+        // Client service passes apiKey, but we are in Cloud Functions effectively as a service account (if we init GoogleAuth).
+        // Let's use Vertex AI IAM as it's more secure for backend.
+        const auth = new google_auth_library_1.GoogleAuth({
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+        });
+        const client = await auth.getClient();
+        const accessToken = await client.getAccessToken();
+        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+        const parts = [{ text: prompt + (aspectRatio ? ` --aspect_ratio ${aspectRatio}` : '') }];
+        if (images) {
+            images.forEach(img => {
+                parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+            });
+        }
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken.token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [{
+                        role: "user",
+                        parts: parts
+                    }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    candidateCount: count || 1
+                }
+            }),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Vertex API Error:", errorText);
+            throw new functions.https.HttpsError('internal', errorText);
+        }
+        const result = await response.json();
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
+});
+exports.editImage = functions.https.onCall(async (data, context) => {
+    try {
+        const { image, mask, prompt, referenceImage } = data;
+        const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
+        const location = "us-central1";
+        const modelId = "gemini-1.5-pro-preview-0409";
+        const auth = new google_auth_library_1.GoogleAuth({
+            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+        });
+        const client = await auth.getClient();
+        const accessToken = await client.getAccessToken();
+        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+        const parts = [
+            {
+                inlineData: {
+                    mimeType: "image/png",
+                    data: image
+                }
+            }
+        ];
+        if (mask) {
+            parts.push({
+                inlineData: {
+                    mimeType: "image/png",
+                    data: mask
+                }
+            });
+            parts.push({ text: "Use the second image as a mask for inpainting." });
+        }
+        if (referenceImage) {
+            parts.push({
+                inlineData: {
+                    mimeType: "image/png",
+                    data: referenceImage
+                }
+            });
+            parts.push({ text: "Use this third image as a reference." });
+        }
+        parts.push({ text: `Edit this image: ${prompt}` });
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken.token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                },
+            }),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Vertex API Error:", errorText);
+            throw new functions.https.HttpsError('internal', errorText);
+        }
+        const result = await response.json();
+        return result;
+    }
+    catch (error) {
+        console.error("Function Error:", error);
+        if (error instanceof Error) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+        throw new functions.https.HttpsError('internal', "An unknown error occurred");
+    }
 });
 //# sourceMappingURL=index.js.map

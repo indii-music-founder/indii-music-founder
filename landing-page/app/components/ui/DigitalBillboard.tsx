@@ -1,24 +1,26 @@
 'use client';
 
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PulseText from './PulseText';
 import PulseButton from './PulseButton';
 import Link from 'next/link';
 
-interface SlideData {
-    id: string;
-    content: React.ReactNode;
-    subheadline: string;
-    cta: {
-        label: string;
-        href: string;
-    };
-}
+// interface SlideData {
+//     id: string;
+//     content: React.ReactNode;
+//     subheadline: string;
+//     cta: {
+//         label: string;
+//         href: string;
+//     };
+// }
 
 import { BILLBOARD_SLIDES } from '../../lib/billboardContent';
 
 interface DigitalBillboardProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user?: any;
     authenticatedCta?: {
         label: string;

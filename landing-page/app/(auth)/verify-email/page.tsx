@@ -27,10 +27,11 @@ function VerifyEmailContent() {
             try {
                 await applyActionCode(auth, oobCode);
                 setStatus('success');
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(err);
                 setStatus('error');
-                setError(err.message || 'Failed to verify email.');
+                const errorMessage = err instanceof Error ? err.message : 'Failed to verify email.';
+                setError(errorMessage);
             }
         }
 
@@ -40,6 +41,7 @@ function VerifyEmailContent() {
             // If landing here without mode/code, maybe just show a "Check your email" message?
             // But for now assume this page is the callback handler.
             if (!mode && !oobCode) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setStatus('error');
                 setError('Missing verification info.');
             }

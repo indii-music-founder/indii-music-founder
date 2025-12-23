@@ -45,10 +45,10 @@ export default function ThreeDOrbs() {
     }, [viewport]);
 
     const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
+    // const color = new THREE.Color();
 
-    useFrame((state, delta) => {
-        const { bass, mid, high } = freqDataRef.current;
+    useFrame((state) => {
+        const { bass, /* mid, */ high } = freqDataRef.current;
         const time = state.clock.elapsedTime;
         const cameraY = camera.position.y;
 

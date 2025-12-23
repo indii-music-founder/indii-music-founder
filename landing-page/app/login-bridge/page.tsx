@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
-import app from '../lib/firebase';
-import { useRouter } from 'next/navigation';
+// import { useEffect, useState } from 'react';
+// import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
+// import app from '../lib/firebase';
+// import { useRouter } from 'next/navigation';
 
 export default function LoginBridge() {
     return (

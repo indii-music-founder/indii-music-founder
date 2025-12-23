@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -62,7 +63,6 @@ function NeuralAether() {
     const scroll = useScroll();
 
     // Generate particles with band assignments
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const particles = useMemo(() => {
         const temp = [];
         for (let i = 0; i < count; i++) {

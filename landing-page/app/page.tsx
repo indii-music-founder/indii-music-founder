@@ -3,8 +3,8 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import PulseButton from './components/ui/PulseButton';
-import BreathingText from './components/ui/BreathingText';
+// import PulseButton from './components/ui/PulseButton';
+// import BreathingText from './components/ui/BreathingText';
 import AudioManager from './components/AudioManager';
 import DigitalBillboard from './components/ui/DigitalBillboard';
 import { useAuth } from './components/auth/AuthProvider';

@@ -19,9 +19,10 @@ export default function PasswordResetForm() {
         try {
             await resetPassword(email);
             setIsSent(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || 'Failed to send reset email.');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email.';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }

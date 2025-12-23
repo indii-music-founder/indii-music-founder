@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signUpWithEmail, getStudioUrl } from '@/app/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -9,7 +9,7 @@ import { auth } from '@/app/lib/firebase';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupForm() {
-    const router = useRouter();
+    // const router = useRouter();
     const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -37,9 +37,10 @@ export default function SignupForm() {
             await signUpWithEmail(email, password, displayName);
             // Redirect to studio app
             window.location.href = getStudioUrl();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || 'Failed to create account.');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to create account.';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }

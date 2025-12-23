@@ -57,6 +57,7 @@ export default function AudioManager() {
         if (!audioRef.current || audioContextRef.current) return;
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
             const ctx = new AudioContext();
             audioContextRef.current = ctx;

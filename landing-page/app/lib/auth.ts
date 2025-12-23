@@ -1,16 +1,16 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider,
+  // signInWithRedirect,
+  // getRedirectResult,
+  // GoogleAuthProvider,
   signOut,
   sendPasswordResetEmail,
   sendEmailVerification,
   updateProfile,
   type User
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 // Studio app URL for refunds after auth

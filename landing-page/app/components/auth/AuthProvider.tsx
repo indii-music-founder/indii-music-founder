@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
     user: User | null;
-    userProfile: any | null; // Replace 'any' with your UserProfile type
+    userProfile: unknown | null; // Replace 'any' with your UserProfile type
     loading: boolean;
 }
 
@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [userProfile, setUserProfile] = useState<any | null>(null);
+    const [userProfile, setUserProfile] = useState<unknown | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
