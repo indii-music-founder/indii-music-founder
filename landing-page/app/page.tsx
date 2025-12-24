@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 // import PulseButton from './components/ui/PulseButton';
 // import BreathingText from './components/ui/BreathingText';
 import AudioManager from './components/AudioManager';
@@ -18,19 +18,29 @@ const SoundscapeCanvas = dynamic(() => import('./components/3d/SoundscapeCanvas'
 
 export default function Home() {
   const { user, loading } = useAuth();
+  // 1. Scrollytelling Hook: Track scroll progress
+  const { scrollYProgress } = useScroll();
+
+  // 2. Parallax Transforms: Map scroll to movement
+  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]); // Background moves slower
 
   return (
     <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-center selection:bg-resonance-blue selection:text-white">
 
       {/* 1. The Subliminal Background */}
       <AudioManager />
-      <SoundscapeCanvas />
+      <motion.div style={{ y: bgY }} className="absolute inset-0 z-0">
+        <SoundscapeCanvas />
+      </motion.div>
 
       {/* 2. Content Overlay */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto">
 
         {/* Glass Hero Card with 2026 "Frosted" & "Human" Aesthetics */}
         <motion.div
+          style={{ scale: heroScale, opacity: heroOpacity }}
           className="relative w-full max-w-6xl min-h-[700px] flex flex-col items-center justify-center glass-panel rounded-[3rem] p-12 md:p-24 overflow-hidden border border-glass-border"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}

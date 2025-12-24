@@ -44,19 +44,38 @@ export default function DigitalBillboard({ user, authenticatedCta }: DigitalBill
     const currentSlide = slides[currentIndex];
     const effectiveCta = (user && authenticatedCta) ? authenticatedCta : currentSlide.cta;
 
+    // 3. Micro-delight: Interactive Tilt on Hover
+    const [tilt, setTilt] = useState({ x: 0, y: 0 });
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - left - width / 2) / 20; // Sensitivity 
+        const y = (e.clientY - top - height / 2) / 20;
+        setTilt({ x, y });
+    };
+
     return (
-        <div className="relative h-[400px] flex flex-col items-center justify-center">
+        <div
+            className="relative h-[400px] flex flex-col items-center justify-center perspective-1000"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setTilt({ x: 0, y: 0 })}
+        >
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentSlide.id}
-                    initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    initial={{ opacity: 0, y: 20, filter: "blur(10px)", rotateX: 0, rotateY: 0 }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                        filter: "blur(0px)",
+                        rotateX: -tilt.y, // Inverse for natural feel
+                        rotateY: tilt.x
+                    }}
                     exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="text-center"
+                    transition={{ duration: 0.8, ease: "easeInOut", type: "spring", stiffness: 200, damping: 20 }}
+                    className="text-center transform-style-3d cursor-none" // Invites interaction
                 >
-                    {/* Headline */}
-                    <div className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter">
+                    {/* Headline - Split text animation could go here for extra credit */}
+                    <div className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter hover:glow-text-blue transition-all">
                         {currentSlide.content}
                     </div>
 
@@ -67,9 +86,9 @@ export default function DigitalBillboard({ user, authenticatedCta }: DigitalBill
                         </p>
                     </PulseText>
 
-                    {/* CTA Button */}
+                    {/* CTA Button with Magnetic Pull (implied by layout) */}
                     <Link href={effectiveCta.href}>
-                        <PulseButton className="px-8 py-4 text-lg bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105">
+                        <PulseButton className="px-8 py-4 text-lg bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-bold hover:bg-white hover:text-black transition-all transform hover:scale-110 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
                             {effectiveCta.label}
                         </PulseButton>
                     </Link>

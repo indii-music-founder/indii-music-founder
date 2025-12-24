@@ -19,7 +19,7 @@ export default function PulseButton({ children, className, variant = 'primary', 
                 "relative px-8 py-3 rounded-full font-medium transition-all duration-300 overflow-hidden group",
                 variant === 'primary'
                     ? "bg-white text-void hover:text-resonance-blue"
-                    : "bg-transparent border border-white/20 text-white hover:bg-white/5",
+                    : "bg-transparent border border-white/20 text-white hover:bg-white/5 backdrop-blur-md",
                 "animate-throb-light", // The subliminal pulse
                 className
             )}

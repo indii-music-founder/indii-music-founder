@@ -60,16 +60,29 @@ body::after {
   transform: rotate(-2deg);
 }
 
-.text-glow {
+.glow-text {
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-.text-glow-blue {
+.glow-text-blue {
   text-shadow: 0 0 15px rgba(46, 46, 254, 0.6);
 }
 
-.text-glow-pink {
+.glow-text-pink {
   text-shadow: 0 0 15px rgba(254, 46, 154, 0.6);
+}
+
+/* 3D Utilities for 2026 Interactions */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
 }
 
 /* Animations */
