@@ -11,7 +11,7 @@ import StudioNavControls from './StudioNavControls';
 import ImageSubMenu from './ImageSubMenu';
 import DaisyChainControls from './DaisyChainControls';
 import { StudioToolbar } from '@/components/studio/StudioToolbar';
-import { agentService } from '@/services/agent/agentService';
+import { agentService } from '@/services/agent/AgentService';
 
 import { useToast } from '@/core/context/ToastContext';
 
