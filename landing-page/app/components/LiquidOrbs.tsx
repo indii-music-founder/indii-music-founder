@@ -8,9 +8,31 @@ import debounce from 'debounce';
 import hsl from 'hsl-to-hex';
 import { useAudioStore } from '../store/audioStore';
 
-// --- Configuration ---
-// We expose these as constants so they can be easily tweaked or mapped to Audio later.
-const MAX_ORB_COUNT = 50; // Max bubbles at bottom
+// --- Performance Detection ---
+function detectPerformanceTier(): 'high' | 'medium' | 'low' {
+    if (typeof window === 'undefined') return 'medium';
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const cores = navigator.hardwareConcurrency || 4;
+    const memory = (navigator as any).deviceMemory || 4; // GB, non-standard but widely supported
+
+    // Low-end: mobile with <4 cores or <4GB RAM
+    if (isMobile && (cores < 4 || memory < 4)) return 'low';
+    // Medium: mobile or desktop with 4-6 cores
+    if (isMobile || cores <= 6) return 'medium';
+    // High: desktop with 6+ cores and good memory
+    return 'high';
+}
+
+// --- Configuration (performance-adaptive) ---
+const PERF_TIER = typeof window !== 'undefined' ? detectPerformanceTier() : 'medium';
+const PERF_CONFIG = {
+    high: { maxOrbs: 50, resolution: 2, blurQuality: 10 },
+    medium: { maxOrbs: 25, resolution: 1.5, blurQuality: 6 },
+    low: { maxOrbs: 12, resolution: 1, blurQuality: 3 },
+};
+const { maxOrbs: MAX_ORB_COUNT, resolution: RESOLUTION, blurQuality: BLUR_QUALITY } = PERF_CONFIG[PERF_TIER];
+
 const BASE_RADIUS = 60; // Base size of orbs
 const COLOR_RANGE = {
     hueMin: 180, // Cyan
@@ -71,9 +93,9 @@ export default function LiquidOrbs() {
             await app.init({
                 resizeTo: window,
                 backgroundAlpha: 0,
-                antialias: true,
+                antialias: PERF_TIER !== 'low', // Disable antialiasing on low-end devices
                 autoDensity: true,
-                resolution: 2,
+                resolution: RESOLUTION,
             });
 
             if (!mounted || !containerRef.current) {
@@ -93,8 +115,8 @@ export default function LiquidOrbs() {
             const orbStage = new PIXI.Container();
             app.stage.addChild(orbStage);
 
-            // 3. Apply Filter
-            const blurFilter = new KawaseBlurFilter(30, 10, true);
+            // 3. Apply Filter (quality adjusted by performance tier)
+            const blurFilter = new KawaseBlurFilter(30, BLUR_QUALITY, true);
             // @ts-expect-error pixi.js filters typing does not include generic containers
             orbStage.filters = [blurFilter];
 

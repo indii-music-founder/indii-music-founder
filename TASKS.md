@@ -29,12 +29,12 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Mobile Improvements
 
-- [ ] Verify OnboardingModal fits mobile viewports
-- [ ] Verify NewProjectModal fits mobile viewports
-- [ ] Ensure input font size >= 16px (prevent iOS zoom)
-- [ ] Verify touch targets >= 44x44px
-- [ ] Monitor Liquid Orbs performance on low-end devices
-- [ ] Implement lazy loading for Gallery images
+- [x] Verify OnboardingModal fits mobile viewports
+- [x] Verify NewProjectModal fits mobile viewports
+- [x] Ensure input font size >= 16px (prevent iOS zoom)
+- [x] Verify touch targets >= 44x44px
+- [x] Monitor Liquid Orbs performance on low-end devices
+- [x] Implement lazy loading for Gallery images
 
 ### Dashboard Enhancements
 

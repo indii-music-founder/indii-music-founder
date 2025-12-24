@@ -36,7 +36,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreate, error }: Ne
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Enter project name..."
-                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-neon-purple outline-none"
+                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-base text-white focus:border-neon-purple outline-none"
                             autoFocus
                         />
                     </div>
@@ -48,10 +48,10 @@ export default function NewProjectModal({ isOpen, onClose, onCreate, error }: Ne
                                 <button
                                     key={t}
                                     onClick={() => setType(t as any)}
-                                    className={`p-3 rounded-lg border text-sm font-medium capitalize transition-all ${type === t
+                                    className={`p-3 min-h-11 rounded-lg border text-sm font-medium capitalize transition-all ${type === t
                                         ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
                                         : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'
-                                        } `}
+                                        }`}
                                 >
                                     {t}
                                 </button>
@@ -62,14 +62,14 @@ export default function NewProjectModal({ isOpen, onClose, onCreate, error }: Ne
                     <div className="flex gap-3 mt-6">
                         <button
                             onClick={onClose}
-                            className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold transition-colors"
+                            className="flex-1 py-3 min-h-11 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={() => onCreate(name, type)}
                             disabled={!name.trim()}
-                            className="flex-1 py-3 bg-white hover:bg-neon-blue hover:text-black text-black rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-3 min-h-11 bg-white hover:bg-neon-blue hover:text-black text-black rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Create Project
                         </button>

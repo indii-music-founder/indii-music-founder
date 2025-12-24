@@ -88,7 +88,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             {item.type === 'video' ? (
                 item.url.startsWith('data:image') ? (
                     <div className="relative w-full h-full">
-                        <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
+                        <img src={item.url} alt={item.prompt} loading="lazy" className="w-full h-full object-contain bg-black" />
                         <div className="absolute top-2 left-2 bg-purple-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
                             STORYBOARD
                         </div>

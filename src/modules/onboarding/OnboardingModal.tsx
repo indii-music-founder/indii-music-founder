@@ -166,7 +166,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-[#1a1a1a] border border-gray-800 rounded-2xl w-full max-w-4xl h-[80vh] flex overflow-hidden shadow-2xl"
+                className="bg-[#1a1a1a] border border-gray-800 rounded-2xl w-full max-w-4xl h-[90vh] max-h-[800px] flex flex-col md:flex-row overflow-hidden shadow-2xl"
             >
                 {/* Left Panel: Chat */}
                 <div className="flex-1 flex flex-col border-r border-gray-800">
@@ -175,7 +175,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <Sparkles className="text-white" size={20} />
                             <h2 className="font-bold text-white">Brand Kit Builder</h2>
                         </div>
-                        <button onClick={onClose} className="text-gray-400 hover:text-white">
+                        <button onClick={onClose} className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -240,7 +240,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                                className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                             >
                                 <Paperclip size={20} />
                             </button>
@@ -250,13 +250,13 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                 placeholder="Type your answer..."
-                                className="flex-1 bg-black border border-[#333] rounded-lg px-4 py-2 text-white focus:border-white outline-none"
+                                className="flex-1 bg-black border border-[#333] rounded-lg px-4 py-2 text-base text-white focus:border-white outline-none"
                                 autoFocus
                             />
                             <button
                                 onClick={handleSend}
                                 disabled={isProcessing || (!input.trim() && files.length === 0)}
-                                className="bg-white hover:bg-gray-200 text-black p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="min-w-11 min-h-11 flex items-center justify-center bg-white hover:bg-gray-200 text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 <Send size={20} />
                             </button>
