@@ -8,7 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import ChatOverlay from './components/ChatOverlay';
-import { AuthLogin } from './components/AuthLogin';
+import { AuthLogin } from '../modules/auth/Login';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 

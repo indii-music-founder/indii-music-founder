@@ -30,15 +30,17 @@
 **indiiOS** is a multi-tenant, AI-native creative platform that unifies image generation, video production, music synthesis, and campaign management into a single intelligent workspace.
 
 ### Core Features
+
 - **Creative Studio:** Infinite canvas for image generation and editing
 - **Video Studio:** AI-powered video production with Director's Cut QA
-- **Music Studio:** Audio analysis and generation
+- **Music Analysis:** Audio analysis (BPM, key, energy extraction)
 - **Workflow Lab:** Node-based automation for chaining AI tasks
 - **Multi-Agent System:** Specialized AI agents (Legal, Marketing, Brand, Road Manager, Music)
 
 ### Live Deployments
-- **Landing Page:** https://indiios-v-1-1.web.app
-- **Studio App:** https://indiios-studio.web.app
+
+- **Landing Page:** <https://indiios-v-1-1.web.app>
+- **Studio App:** <https://indiios-studio.web.app>
 
 ---
 
@@ -58,7 +60,7 @@ Rndr-AI-v1/
 │   │   ├── auth/                # Authentication & org selection
 │   │   ├── creative/            # Creative Studio (image generation)
 │   │   ├── video/               # Video Studio
-│   │   ├── music/               # Music Studio
+│   │   ├── music/               # Music Analysis
 │   │   ├── workflow/            # Workflow Lab (node editor)
 │   │   ├── marketing/           # Marketing & Campaign management
 │   │   ├── legal/               # Legal dashboard
@@ -115,18 +117,21 @@ Rndr-AI-v1/
 ### 3.1 Frontend/Backend Split
 
 **Frontend (Client-Side):**
+
 - React 19 + Vite
 - Text/chat uses `GoogleGenerativeAI` SDK directly for low-latency
 - State managed by Zustand
 - Firebase SDK for auth, Firestore, storage
 
 **Backend (Cloud Functions):**
+
 - Firebase Functions (Node.js 22, Gen 2)
 - Vertex AI for image/video generation
 - Agent execution runs server-side
 - IAM Service Accounts (no exposed keys)
 
 **Rationale for Backend Migration:**
+
 - Rate limiting management ("Thundering Herd" prevention)
 - Cost & quota control per user tier
 - Security (no key exposure)
@@ -154,12 +159,14 @@ Rndr-AI-v1/
 ```
 
 **Components:**
+
 - **Hub (AgentZero):** Triages requests, maintains context, delegates to specialists
 - **Spokes (Specialists):** Domain experts extending `BaseAgent` with specialized tools
 - **Registry:** `AgentRegistry` for capability lookup and delegation
 - **Tools:** JSON schemas for AI function calling
 
 **Key Files:**
+
 - `src/services/agent/AgentZero.ts` - Orchestrator
 - `src/services/agent/specialists/BaseAgent.ts` - Base class for specialists
 - `src/services/agent/registry.ts` - Agent registry
@@ -170,6 +177,7 @@ Rndr-AI-v1/
 ## 4. Tech Stack
 
 ### Frontend
+
 - **Framework:** React 19.2.0
 - **Build:** Vite 6.2.0
 - **Styling:** TailwindCSS v4.1.17 (CSS-first config)
@@ -183,18 +191,21 @@ Rndr-AI-v1/
 - **Markdown:** React Markdown 10.1.0
 
 ### Backend
+
 - **Platform:** Firebase (Hosting, Functions, Firestore, Storage, Analytics)
 - **Runtime:** Node.js 22
 - **AI SDK:** `@genkit-ai/ai` 1.25.0, `@google/genai` 1.30.0
 - **Jobs:** Inngest 3.46.0
 
 ### AI Models (STRICT POLICY - See MODEL_POLICY.md)
-- **Image:** `gemini-3-pro-image-preview` (ONLY)
-- **Text/Reasoning:** `gemini-3-pro-preview` (ONLY)
-- **Video:** `veo-3.1-generate-preview` or `veo-3.1-fast-generate-preview` (drafts)
-- **Forbidden:** Gemini 1.5 Flash, Gemini 2.0, Nano (quality requirements)
+
+- **Image:** `gemini-3-pro-image-preview` (Nano Banana Pro)
+- **Text/Reasoning:** `gemini-3-flash-preview` (Fast), `gemini-3-pro-preview` (Reasoning)
+- **Video:** `veo-3.1-generate-preview` (Standard)
+- **Forbidden:** Gemini 1.5 Pro, Gemini 1.5 Flash (Use Gemini 3 equivalents)
 
 ### Testing
+
 - **Unit:** Vitest 4.0.15 + Testing Library
 - **E2E:** Playwright 1.57.0
 - **Environment:** jsdom, fake-indexeddb
@@ -204,6 +215,7 @@ Rndr-AI-v1/
 ## 5. Development Setup
 
 ### Prerequisites
+
 - Node.js 20+
 - Firebase CLI (`npm install -g firebase-tools`)
 
@@ -263,22 +275,26 @@ firebase emulators:start       # Run local emulators
 **Critical:** This system emulates Agent Zero framework with two internal modes:
 
 **Mode A: Curriculum Agent (The Manager)**
+
 - Strategy, challenge, and planning
 - Generate "Frontier Tasks" that push the user forward
 - Output signature: `[Curriculum]: Based on your current trajectory...`
 
 **Mode B: Executor Agent (The Worker)**
+
 - Tool use, coding, implementation
 - Must verify every step (run code, browse trends)
 - Output signature: `[Executor]: Deploying tools to solve this task...`
 
 **Symbiotic Loop:**
+
 - Explicitly link success to user's data
 - Example: "My previous marketing strategy failed to hit 1k streams. I've updated my curriculum to prioritize TikTok."
 
 ### 6.2 Design Currency (2025 Standards)
 
 **From RULES.md:**
+
 - **Framework:** Tailwind CSS v4 (CSS-first config) exclusively
 - **Typography:** Variable fonts only (Inter, Geist)
 - **Aesthetic:** "Liquid Logic" - glassmorphism, subtle borders (`border-white/5`), organic 3D shapes
@@ -287,17 +303,20 @@ firebase emulators:start       # Run local emulators
 ### 6.3 Code Style
 
 **TypeScript:**
+
 - Strict mode enabled
 - ES2022 target
 - Use `@/` alias for imports (e.g., `import { useStore } from '@/core/store'`)
 - No unused parameters/locals enforcement (disabled in tsconfig)
 
 **React:**
+
 - Functional components only
 - Hooks for state/effects
 - Prop types via TypeScript interfaces
 
 **File Naming:**
+
 - Components: PascalCase (e.g., `CreativeStudio.tsx`)
 - Services: PascalCase (e.g., `AgentService.ts`)
 - Utilities: camelCase (e.g., `validationUtils.ts`)
@@ -305,21 +324,43 @@ firebase emulators:start       # Run local emulators
 
 ### 6.4 Model Usage Policy (CRITICAL)
 
+> **WARNING: Runtime validation is enabled. Using forbidden models will CRASH the app on startup.**
+
 **From MODEL_POLICY.md - STRICTLY ENFORCED:**
 
+#### Approved Models (ONLY THESE ARE ALLOWED)
+
+| Purpose | Constant | Model ID |
+|---------|----------|----------|
+| Complex reasoning | `AI_MODELS.TEXT.AGENT` | `gemini-3-pro-preview` |
+| Fast tasks | `AI_MODELS.TEXT.FAST` | `gemini-3-flash-preview` |
+| Image generation | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
+| Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
+
+#### Forbidden Models (WILL CRASH APP)
+
+- `gemini-1.5-flash`, `gemini-1.5-pro` (ALL 1.5 variants)
+- `gemini-2.0-flash`, `gemini-2.0-pro` (ALL 2.0 variants)
+- `gemini-pro`, `gemini-pro-vision` (legacy)
+
+#### Correct Usage
+
 ```typescript
-// ✅ CORRECT - Use Gemini 3 Pro
-const model = genAI.getGenerativeModel({
-  model: 'gemini-3-pro-preview'
+// ✅ CORRECT - Import from central config
+import { AI_MODELS } from '@/core/config/ai-models';
+
+const response = await AI.generateContent({
+  model: AI_MODELS.TEXT.AGENT,  // gemini-3-pro-preview
+  contents: [...]
 });
 
-// ❌ FORBIDDEN - Never use Flash/Nano
-const model = genAI.getGenerativeModel({
-  model: 'gemini-1.5-flash' // WILL BE REJECTED
+// ❌ FORBIDDEN - Hardcoded legacy models (WILL CRASH APP)
+const response = await AI.generateContent({
+  model: 'gemini-1.5-flash'  // APP WILL NOT START
 });
 ```
 
-**Rationale:** World-class quality requires Pro-tier models for all reasoning, image generation, and analysis tasks.
+**Why:** Gemini 3.x is the current generation. Legacy models are deprecated and incompatible with Gemini 3 API features (thinking levels, thought signatures).
 
 ---
 
@@ -377,6 +418,7 @@ window.useStore.setState({...});   // Update state (use cautiously)
 ### 8.1 Data Isolation Model
 
 **Hierarchy:**
+
 ```
 User
 └── Organizations (workspaces)
@@ -403,6 +445,7 @@ allow read: if isOrgMember(resource.data.orgId);
 ```
 
 **Helper Function:**
+
 ```javascript
 function isOrgMember(orgId) {
   return request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
@@ -412,12 +455,14 @@ function isOrgMember(orgId) {
 ### 8.3 Frontend Context Injection
 
 **AgentService automatically injects:**
+
 - Active organization name
 - Active project name
 - Brand Kit (if present)
 - User profile
 
 **Example:**
+
 ```typescript
 // In AgentZero.ts
 const context = `
@@ -434,6 +479,7 @@ Brand Kit: ${brandKit ? 'Yes' : 'None'}
 ### 9.1 Agent Lifecycle
 
 **1. User sends message → AgentService**
+
 ```typescript
 // src/services/agent/AgentService.ts
 async chat(message: string) {
@@ -444,6 +490,7 @@ async chat(message: string) {
 ```
 
 **2. AgentZero analyzes request**
+
 ```typescript
 // src/services/agent/AgentZero.ts
 async execute(task: string, context: Context) {
@@ -453,6 +500,7 @@ async execute(task: string, context: Context) {
 ```
 
 **3. Delegation (if needed)**
+
 ```typescript
 // AgentZero calls delegate_task
 {
@@ -463,6 +511,7 @@ async execute(task: string, context: Context) {
 ```
 
 **4. Specialist execution**
+
 ```typescript
 // src/services/agent/specialists/LegalAgent.ts
 class LegalAgent extends BaseAgent {
@@ -478,6 +527,7 @@ class LegalAgent extends BaseAgent {
 ### 9.2 Adding a New Specialist Agent
 
 **Step 1:** Create agent file
+
 ```typescript
 // src/services/agent/specialists/MyAgent.ts
 import { BaseAgent } from './BaseAgent';
@@ -514,6 +564,7 @@ export class MyAgent extends BaseAgent {
 ```
 
 **Step 2:** Register in `AgentRegistry`
+
 ```typescript
 // src/services/agent/registry.ts
 import { MyAgent } from './specialists/MyAgent';
@@ -522,6 +573,7 @@ AgentRegistry.register(new MyAgent());
 ```
 
 **Step 3:** Update `delegate_task` tool description
+
 ```typescript
 // List valid agent IDs: 'legal', 'marketing', 'my-agent'
 ```
@@ -542,6 +594,7 @@ const text = response.text; // Property access
 ```
 
 **Tool Implementation Pattern:**
+
 ```typescript
 this.functions = {
   tool_name: async (args) => {
@@ -561,16 +614,19 @@ this.functions = {
 **Purpose:** Image generation, infinite canvas, product showroom
 
 **Key Components:**
+
 - `CreativeStudio.tsx` - Main container
 - `InfiniteCanvas.tsx` - Fabric.js canvas with pan/zoom
 - `PromptBuilder.tsx` - AI-powered prompt construction
 - `Showroom.tsx` - 3D product visualization
 
 **Services:**
+
 - `ImageGenerationService.ts` - Calls backend `generateImage` function
 - `VideoDirector.ts` - Image-to-video director's cut
 
 **State:**
+
 - `creativeSlice.ts` - Images, canvas state, history
 
 **README:** `src/modules/creative/README.md`
@@ -580,27 +636,32 @@ this.functions = {
 **Purpose:** AI video production workflow (Idea → Brief → Review)
 
 **Key Components:**
+
 - `VideoStudio.tsx` - Main container
 - `VideoEditor.tsx` - Timeline editor
 - `VideoPlayer.tsx` - Remotion Player wrapper
 
 **Services:**
+
 - `VideoGenerationService.ts` - Vertex AI Veo integration
 
 **State:**
+
 - `videoEditorStore.ts` - Separate Zustand store for video editing
 
 **README:** `src/modules/video/README.md`
 
-### 10.3 Music Studio (`src/modules/music/`)
+### 10.3 Music Analysis (`src/modules/music/`)
 
-**Purpose:** Audio analysis, synthesis, frequency visualization
+**Purpose:** Audio analysis (BPM, key, energy extraction), frequency visualization
 
 **Key Components:**
+
 - `MusicStudio.tsx` - Main container
 - `AudioAnalyzer.tsx` - Waveform & spectrum display
 
 **Services:**
+
 - `AudioAnalysisEngine.ts` - Essentia.js integration for audio features
 
 **README:** `src/modules/music/README.md`
@@ -610,11 +671,13 @@ this.functions = {
 **Purpose:** Node-based automation for chaining AI tasks
 
 **Key Components:**
+
 - `WorkflowLab.tsx` - React Flow editor
 - `WorkflowEngine.ts` - Execution engine
 - `nodeRegistry.ts` - Available node types
 
 **Services:**
+
 - `workflowPersistence.ts` - Firestore sync
 
 **README:** `src/modules/workflow/README.md`
@@ -624,11 +687,13 @@ this.functions = {
 **Purpose:** Campaign management, brand assets, copywriting
 
 **Key Components:**
+
 - `BrandManager.tsx` - Brand kit editor
 - `CampaignManager.tsx` - Campaign lifecycle
 - `MapsComponent.tsx` - Google Maps for geo-targeting
 
 **Agents:**
+
 - `BrandAgent` - Brand consistency analysis
 - `MarketingAgent` - Campaign strategy
 - `CampaignManager` - Execution orchestration
@@ -640,6 +705,7 @@ this.functions = {
 **Purpose:** Contract review, rights management, compliance
 
 **Agents:**
+
 - `LegalAgent` - Contract analysis, IP clause extraction
 
 **README:** `src/modules/legal/README.md`
@@ -653,11 +719,13 @@ this.functions = {
 **Location:** Co-located with source (`.test.ts` suffix) or `__tests__/` directory
 
 **Setup:** `src/test/setup.ts`
+
 - Mocks `firebase` SDK
 - Provides `fake-indexeddb`
 - Configures Testing Library
 
 **Running:**
+
 ```bash
 npm run test              # All tests
 npm run test -- --ui      # Visual UI
@@ -665,6 +733,7 @@ npm run test -- MyComponent  # Specific file
 ```
 
 **Example:**
+
 ```typescript
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
@@ -682,11 +751,13 @@ describe('MyComponent', () => {
 **Location:** `e2e/` directory
 
 **Key Tests:**
+
 - `user-flow.spec.ts` - Full user journey
 - `agent-flow.spec.ts` - Agent interaction
 - `stress-test.spec.ts` - Performance & load
 
 **Running:**
+
 ```bash
 npm run test:e2e                    # Headless
 npx playwright test --ui            # Interactive
@@ -709,8 +780,8 @@ npx playwright test --debug         # Debug mode
 
 | Target | Site ID | Directory | URL |
 |--------|---------|-----------|-----|
-| Landing | `indiios-v-1-1` | `landing-page/out` | https://indiios-v-1-1.web.app |
-| Studio | `indiios-studio` | `dist` | https://indiios-studio.web.app |
+| Landing | `indiios-v-1-1` | `landing-page/out` | <https://indiios-v-1-1.web.app> |
+| Studio | `indiios-studio` | `dist` | <https://indiios-studio.web.app> |
 
 **Config:** `firebase.json`
 
@@ -719,10 +790,12 @@ npx playwright test --debug         # Debug mode
 **File:** `.github/workflows/deploy.yml`
 
 **Triggers:**
+
 - Push to `main` branch
 - Manual workflow dispatch
 
 **Steps:**
+
 1. Checkout repository
 2. Setup Node.js 20.x
 3. Install dependencies (root + landing-page)
@@ -731,6 +804,7 @@ npx playwright test --debug         # Debug mode
 6. Deploy to Firebase Hosting (both targets)
 
 **Secrets Required:**
+
 - `VITE_API_KEY`
 - `VITE_VERTEX_PROJECT_ID`
 - `VITE_VERTEX_LOCATION`
@@ -755,6 +829,7 @@ firebase deploy --only functions:generateImage
 ### 12.4 Environment Variables
 
 **Required for Build:**
+
 ```bash
 VITE_API_KEY=<gemini-api-key>
 VITE_FIREBASE_CONFIG=<firebase-config-json>
@@ -763,6 +838,7 @@ VITE_VERTEX_LOCATION=<vertex-location>
 ```
 
 **Firebase Functions:**
+
 ```bash
 # functions/.env
 GEMINI_API_KEY=<key>
@@ -812,6 +888,7 @@ const text = response.text();
 **Fix:** Run query in dev, copy index creation link from error, add to `firestore.indexes.json`.
 
 **Example:**
+
 ```json
 {
   "indexes": [
@@ -856,6 +933,7 @@ manualChunks: {
 **Problem:** First request after idle period is slow (5-10s).
 
 **Mitigation:**
+
 - Use Gen 2 functions (faster cold starts)
 - Increase min instances for critical functions (costs more)
 - Implement request queueing with Inngest
@@ -867,12 +945,14 @@ manualChunks: {
 ### 14.1 Add a New Module
 
 **1. Create module directory:**
+
 ```bash
 mkdir -p src/modules/my-module
 touch src/modules/my-module/{MyModule.tsx,README.md}
 ```
 
 **2. Define component:**
+
 ```typescript
 // src/modules/my-module/MyModule.tsx
 export default function MyModule() {
@@ -881,17 +961,20 @@ export default function MyModule() {
 ```
 
 **3. Add route in `App.tsx`:**
+
 ```typescript
 {activeModule === 'my-module' && <MyModule />}
 ```
 
 **4. Add to sidebar navigation:**
+
 ```typescript
 // src/core/components/Sidebar.tsx
 { id: 'my-module', label: 'My Module', icon: <Icon /> }
 ```
 
 **5. Update `appSlice.ts` type:**
+
 ```typescript
 type ModuleId = 'dashboard' | 'creative' | 'my-module' | ...;
 ```
@@ -899,6 +982,7 @@ type ModuleId = 'dashboard' | 'creative' | 'my-module' | ...;
 ### 14.2 Add a Cloud Function
 
 **1. Define function:**
+
 ```typescript
 // functions/src/myFunction.ts
 import { onCall } from 'firebase-functions/v2/https';
@@ -913,11 +997,13 @@ export const myFunction = onCall(async (request) => {
 ```
 
 **2. Export in `functions/src/index.ts`:**
+
 ```typescript
 export { myFunction } from './myFunction';
 ```
 
 **3. Call from frontend:**
+
 ```typescript
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
@@ -929,6 +1015,7 @@ const result = await myFunction({ arg: 'value' });
 ### 14.3 Add a Store Slice
 
 **1. Create slice file:**
+
 ```typescript
 // src/core/store/slices/mySlice.ts
 export interface MySlice {
@@ -943,6 +1030,7 @@ export const createMySlice: StateCreator<MySlice> = (set) => ({
 ```
 
 **2. Combine in `store.ts`:**
+
 ```typescript
 import { createMySlice, MySlice } from './slices/mySlice';
 
@@ -972,6 +1060,7 @@ const model = genAI.getGenerativeModel({
 ### 14.5 Debug Agent Issues
 
 **1. Enable verbose logging:**
+
 ```typescript
 // src/services/agent/AgentZero.ts
 console.log('[AgentZero] Executing:', task);
@@ -980,18 +1069,21 @@ console.log('[AgentZero] Response:', response);
 ```
 
 **2. Check agent registry:**
+
 ```javascript
 // Browser console
 window.useStore.getState().agentMessages;
 ```
 
 **3. Verify tool definitions:**
+
 ```typescript
 // Check tools array has correct JSON schema
 // Verify function implementations exist in constructor
 ```
 
 **4. Test specialist directly:**
+
 ```typescript
 import { LegalAgent } from '@/services/agent/specialists/LegalAgent';
 const agent = new LegalAgent();
@@ -1015,6 +1107,7 @@ console.log(result);
 ## Quick Reference
 
 ### Common Imports
+
 ```typescript
 import { useStore } from '@/core/store';
 import { AgentService } from '@/services/agent/AgentService';
@@ -1023,6 +1116,7 @@ import { ImageGenerationService } from '@/services/image/ImageGenerationService'
 ```
 
 ### Key Constants
+
 ```typescript
 // src/modules/creative/constants.ts
 export const DEFAULT_IMAGE_SIZE = { width: 1024, height: 1024 };
@@ -1034,6 +1128,7 @@ export const IMAGE_MODEL = 'gemini-3-pro-image-preview';
 ```
 
 ### Debugging Commands
+
 ```bash
 # Firestore emulator
 firebase emulators:start --only firestore

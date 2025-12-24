@@ -2,6 +2,7 @@ import { useStore } from '@/core/store';
 import { memoryService } from '@/services/agent/MemoryService';
 import { AI } from '@/services/ai/AIService';
 import type { ToolFunctionArgs } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for MemoryTools
@@ -75,7 +76,7 @@ export const MemoryTools = {
             `;
 
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: prompt }] }],
                 config: { responseMimeType: 'application/json' }
             });

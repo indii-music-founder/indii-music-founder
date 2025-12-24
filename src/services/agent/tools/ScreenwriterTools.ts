@@ -1,5 +1,6 @@
 import { AI } from '@/services/ai/AIService';
 import type { ToolFunctionArgs } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for ScreenwriterTools
@@ -52,7 +53,7 @@ Attempt to infer scene headers if not explicit.
             const prompt = `Convert this text to screenplay JSON:\n\n${args.text}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });
@@ -91,7 +92,7 @@ Return ONLY valid JSON with this structure:
             const prompt = `Analyze this script:\n\n${args.script}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });

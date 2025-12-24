@@ -19,14 +19,17 @@ vi.mock('@/core/store', () => ({
 vi.mock('@/services/onboarding/onboardingService', () => ({
     runOnboardingConversation: vi.fn(),
     processFunctionCalls: vi.fn(() => ({ updatedProfile: {}, isFinished: false, updates: [] })),
-    calculateProfileStatus: () => ({ coreProgress: 0, coreMissing: [] })
+    calculateProfileStatus: () => ({ coreProgress: 0, releaseProgress: 0, coreMissing: [], releaseMissing: [] }),
+    generateNaturalFallback: vi.fn(() => 'Mock fallback response'),
+    generateEmptyResponseFallback: vi.fn(() => 'Mock empty response')
 }));
 
 // Mock Framer Motion to avoid animation delays
 vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className }: any) => <div className={className}>{children}</div>,
-    }
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
 describe('OnboardingPage GenUI Verification', () => {

@@ -8,7 +8,7 @@ export const MobileNav = () => {
     const navItems = [
         { id: 'dashboard', icon: Home, label: 'Home' },
         { id: 'creative', icon: Layout, label: 'Studio' },
-        { id: 'music', icon: Music, label: 'Music' },
+        { id: 'music', icon: Music, label: 'Analysis' },
         { id: 'marketing', icon: MessageSquare, label: 'Market' },
         { id: 'workflow', icon: Workflow, label: 'Flow' },
         { id: 'knowledge', icon: Book, label: 'Brain' },

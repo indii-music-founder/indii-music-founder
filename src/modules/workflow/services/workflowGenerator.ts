@@ -4,6 +4,7 @@ import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
 import type { SavedWorkflow } from '../types';
 import { Status } from '../types';
 import { isTextPart } from '@/shared/types/ai.dto';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // Helper to flatten registry for the AI context
 const getRegistryContext = () => {
@@ -94,7 +95,7 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
     };
 
     const response = await AI.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: AI_MODELS.TEXT.AGENT,
         contents: { role: 'user', parts: [{ text: `User Request: "${userPrompt}"\n\nGenerate the workflow JSON.` }] },
         config: {
             systemInstruction,

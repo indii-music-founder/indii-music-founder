@@ -30,7 +30,7 @@ vi.mock('@/modules/touring/RoadManager', () => ({ default: () => <div data-testi
 vi.mock('@/modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
 vi.mock('@/modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
 vi.mock('@/modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
-vi.mock('@/modules/music/MusicStudio', () => ({ default: () => <div data-testid="music-studio">Music Studio</div> }));
+vi.mock('@/modules/music/MusicStudio', () => ({ default: () => <div data-testid="music-studio">Music Analysis</div> }));
 vi.mock('@/modules/video/VideoStudio', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
@@ -66,9 +66,11 @@ describe('Sidebar Navigation Integration', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue(buildStoreState());
-        // Mock setState on the store object itself for App.tsx direct usage
+        const storeState = buildStoreState();
+        (useStore as any).mockReturnValue(storeState);
+        // Mock setState and getState on the store object itself for App.tsx direct usage
         (useStore as any).setState = vi.fn();
+        (useStore as any).getState = vi.fn().mockReturnValue(storeState);
     });
 
     it('renders all sidebar items', () => {

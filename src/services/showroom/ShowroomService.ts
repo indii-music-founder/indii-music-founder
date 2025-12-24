@@ -1,4 +1,5 @@
 import { AI } from '../ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // Types
 export interface ShowroomState {
@@ -38,7 +39,7 @@ export class ShowroomService {
         // For now, we simulate the call structure used by AIService.image
 
         return await AI.generateImage({
-            model: 'gemini-3-pro-image-preview',
+            model: AI_MODELS.IMAGE.GENERATION,
             prompt: prompt,
             config: {
                 aspectRatio: '1:1',

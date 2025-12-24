@@ -58,7 +58,7 @@ describe('Specialist Agents Connection', () => {
         await brandAgent.execute('Test Task', {});
 
         const callArgs = (AI.generateContent as any).mock.calls[0][0];
-        const tools = callArgs.config.tools;
+        const tools = callArgs.tools;
 
         // Create a flat list of all function declarations from all tool objects
         const allFunctionDeclarations = tools.flatMap((t: any) => t.functionDeclarations || []);

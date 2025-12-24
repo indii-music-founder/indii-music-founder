@@ -1,5 +1,6 @@
 import { useStore } from '@/core/store';
 import type { ToolFunctionArgs } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for SocialTools
@@ -32,7 +33,7 @@ export const SocialTools = {
             const { AI } = await import('@/services/ai/AIService');
             const prompt = `Generate a ${args.tone || 'professional'} social media post for ${args.platform} about ${args.topic}. Include hashtags.`;
             const result = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
             const text = result.text();

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CommonEnvSchema } from '@/shared/schemas/env.schema';
+import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
 
 const readEnv = (key: string): string | undefined => {
     if (typeof import.meta !== 'undefined' && typeof import.meta.env !== 'undefined' && key in import.meta.env) {

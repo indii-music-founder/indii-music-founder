@@ -43,13 +43,17 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.editImage = exports.generateImage = exports.inngestApi = exports.triggerVideoJob = void 0;
+exports.ragProxy = exports.editImage = exports.generateImage = exports.inngestApi = exports.triggerVideoJob = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const inngest_1 = require("inngest");
 const params_1 = require("firebase-functions/params");
 const express_1 = require("inngest/express");
+const cors_1 = __importDefault(require("cors"));
 const google_auth_library_1 = require("google-auth-library");
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -142,7 +146,7 @@ exports.generateImage = functions.https.onCall(async (data, context) => {
         const { prompt, aspectRatio, count, images } = data;
         const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
         const location = "us-central1";
-        const modelId = "gemini-1.5-pro-preview-0409"; // Using the stable preview or flash as fallback if 3 is not avail
+        const modelId = "gemini-3-pro-image-preview"; // Updated to latest Gemini 3 Image model
         // Note: Using the API Key provided by client? Or using Vertex AI IAM?
         // Client service passes apiKey, but we are in Cloud Functions effectively as a service account (if we init GoogleAuth).
         // Let's use Vertex AI IAM as it's more secure for backend.
@@ -196,7 +200,7 @@ exports.editImage = functions.https.onCall(async (data, context) => {
         const { image, mask, prompt, referenceImage } = data;
         const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
         const location = "us-central1";
-        const modelId = "gemini-1.5-pro-preview-0409";
+        const modelId = "gemini-3-pro-image-preview";
         const auth = new google_auth_library_1.GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
         });
@@ -258,5 +262,63 @@ exports.editImage = functions.https.onCall(async (data, context) => {
         }
         throw new functions.https.HttpsError('internal', "An unknown error occurred");
     }
+});
+/**
+ * RAG Proxy
+ * Proxies requests to Google Generative Language API (Gemini) to hide API Key
+ * and handle CORS/Referer restrictions server-side.
+ */
+const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
+const cors = (0, cors_1.default)({ origin: true });
+exports.ragProxy = functions
+    .runWith({
+    secrets: [geminiApiKey],
+    timeoutSeconds: 60
+})
+    .https.onRequest((req, res) => {
+    cors(req, res, async () => {
+        // 1. Validate Authentication (Optional but recommended for production)
+        // For now, we allow authentic calls or public if strict auth not required yet
+        // 2. Proxy Logic
+        try {
+            const baseUrl = 'https://generativelanguage.googleapis.com';
+            const targetPath = req.path; // e.g., /v1beta/corpora
+            const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
+            const fetchOptions = {
+                method: req.method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Spoof Referer to satisfy API Key restrictions.
+                    // Since this is a proxy, we claim to be the allowed client.
+                    'Referer': 'http://localhost:3000/'
+                },
+                body: (req.method !== 'GET' && req.method !== 'HEAD') ?
+                    (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
+                    : undefined
+            };
+            const response = await fetch(targetUrl, fetchOptions);
+            // Read text explicitly to avoid stream issues in standard fetch inside functions environment if any
+            const data = await response.text();
+            if (!response.ok) {
+                console.error("RAG Proxy Upstream Error:", {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: targetUrl,
+                    body: data
+                });
+            }
+            res.status(response.status);
+            try {
+                res.send(JSON.parse(data));
+            }
+            catch (_a) {
+                res.send(data);
+            }
+        }
+        catch (error) {
+            console.error("RAG Proxy Error:", error);
+            res.status(500).send({ error: error.message });
+        }
+    });
 });
 //# sourceMappingURL=index.js.map

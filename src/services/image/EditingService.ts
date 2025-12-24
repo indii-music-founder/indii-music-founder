@@ -144,7 +144,7 @@ export class EditingService {
         negativePrompt?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
-            // Use Veo or Gemini 1.5 Pro for video editing/analysis
+            // Use Veo for video editing/analysis
             const model = AI_MODELS.VIDEO.EDIT;
 
             const response = await AI.generateContent({

@@ -1,14 +1,35 @@
 import { Timestamp } from 'firebase/firestore';
-import { UserProfile as AppUserProfile } from '../modules/workflow/types';
+import { BrandKit, KnowledgeDocument, SavedWorkflow } from '@/modules/workflow/types';
 
-export interface UserContext extends AppUserProfile {
+export interface UserPreferences {
+    theme: 'dark' | 'light';
+    notifications: boolean;
+}
+
+export interface UserMembership {
+    tier: 'free' | 'pro' | 'enterprise';
+    expiresAt: Timestamp | null;
+}
+
+export interface UserProfile {
     uid: string;
-    email: string;
+    email: string | null;
     displayName: string | null;
     photoURL: string | null;
     createdAt: Timestamp;
+    updatedAt: Timestamp;
     lastLoginAt: Timestamp;
-    tier: 'free' | 'pro' | 'enterprise';
-    preferences: any; // Override string type from AppUserProfile if needed, or map it
-}
+    emailVerified: boolean;
+    membership: UserMembership;
+    preferences: UserPreferences;
 
+    // App Specific Fields
+    bio?: string;
+    brandKit?: BrandKit;
+    creativePreferences?: string; // Legacy 'preferences' string for creative direction
+    analyzedTrackIds?: string[];
+    knowledgeBase?: KnowledgeDocument[];
+    savedWorkflows?: SavedWorkflow[];
+    careerStage?: string;
+    goals?: string[];
+}

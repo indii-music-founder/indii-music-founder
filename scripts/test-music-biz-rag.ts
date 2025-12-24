@@ -4,15 +4,15 @@ dotenv.config();
 
 // Mock Proxy URL if missing for test
 if (!process.env.VITE_FUNCTIONS_URL) {
-    process.env.VITE_FUNCTIONS_URL = 'http://localhost:5001/rndr-ai-v1/us-central1';
-    console.log("⚠️ VITE_FUNCTIONS_URL missing, using mock: http://localhost:5001/rndr-ai-v1/us-central1");
+    process.env.VITE_FUNCTIONS_URL = 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
+    console.log("⚠️ VITE_FUNCTIONS_URL missing, using live: https://us-central1-indiios-v-1-1.cloudfunctions.net");
 }
 if (!process.env.VITE_RAG_PROXY_URL) {
     process.env.VITE_RAG_PROXY_URL = 'http://localhost:3000';
 }
 
 // Dynamic import to ensure env vars are loaded
-const { GeminiRetrievalService } = await import('../src/services/rag/GeminiRetrievalService');
+const { GeminiRetrievalService } = await import('../src/services/rag/GeminiRetrievalService.ts');
 
 const MOCK_DOCS = [
     {
@@ -79,8 +79,9 @@ These are paid to the master rights holder (usually the label) and the performin
     }
 ];
 
+
 async function runTest() {
-    console.log("🎵 Starting Music Business RAG Test...");
+    console.log("🎵 Starting Music Business RAG Test (Files API)...");
     const apiKey = process.env.VITE_API_KEY;
     if (!apiKey) {
         console.error("❌ Missing VITE_API_KEY in .env");
@@ -89,64 +90,17 @@ async function runTest() {
     const GeminiRetrieval = new GeminiRetrievalService(apiKey);
 
     try {
-        // 0. Cleanup old test corpora
-        console.log("0. Cleaning up old test corpora...");
-        const list = await GeminiRetrieval.listCorpora();
-        if (list.corpora) {
-            for (const c of list.corpora) {
-                if (c.displayName.startsWith("Music Biz Test")) {
-                    console.log(`   Deleting ${c.displayName} (${c.name})...`);
-                    await GeminiRetrieval.deleteCorpus(c.name);
-                }
-            }
-        }
+        console.log("1. Preparing Knowledge Base...");
+        const combinedContent = MOCK_DOCS.map(d => `--- Document: ${d.name} ---\n${d.content}\n`).join("\n");
+        const kbName = `Music_Biz_KB_${Date.now()}.txt`;
 
-        // 1. Init Corpus
-        const corpusName = await GeminiRetrieval.initCorpus(`Music Biz Test ${Date.now()}`);
-        console.log(`1. Initialized Corpus: ${corpusName}`);
+        console.log("2. Uploading File to Gemini...");
+        const file = await GeminiRetrieval.uploadFile(kbName, combinedContent);
+        console.log(`   ✅ File Uploaded: ${file.name} (URI: ${file.uri})`);
+        console.log(`   State: ${file.state}`);
 
-        // Helper for reliable waiting
-        const waitForPropagation = async (attempt: number) => {
-            console.log(`   Waiting for propagation (Attempt ${attempt})...`);
-            // Exponential backoff: 2s, 4s, 8s...
-            const waitTime = Math.min(2000 * Math.pow(2, attempt), 10000);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-        };
-
-        // 2. Ingest Documents with Retry
-        console.log("2. Ingesting Documents...");
-        for (const doc of MOCK_DOCS) {
-            console.log(`   Processing: ${doc.name}...`);
-            let retries = 0;
-            let success = false;
-
-            while (!success && retries < 5) {
-                try {
-                    const d = await GeminiRetrieval.createDocument(corpusName, doc.name, { source: 'script' });
-                    await GeminiRetrieval.ingestText(d.name, doc.content);
-                    success = true;
-                } catch (e: any) {
-                    if (e.message?.includes('404') || e.message?.includes('429')) {
-                        console.warn(`   ⚠️ Error initializing document (404/429). Retrying...`);
-                        await waitForPropagation(retries);
-                        retries++;
-                    } else {
-                        throw e; // Fatal error
-                    }
-                }
-            }
-            if (!success) {
-                console.error(`   ❌ Failed to ingest ${doc.name} after 5 retries.`);
-            }
-        }
-        console.log("   All documents ingested.");
-
-        // Wait for final index propagation
-        console.log("   Waiting for final index propagation...");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        // 3. Run Queries with Retry
-        console.log("3. Running Queries...");
+        // 3. Run Queries
+        console.log("3. Running Queries (Long Context)...");
 
         const queries = [
             "What is the royalty rate in the recording agreement?",
@@ -156,34 +110,25 @@ async function runTest() {
 
         for (const q of queries) {
             console.log(`\n❓ Q: ${q}`);
-            let queryRetries = 0;
-            let querySuccess = false;
+            try {
+                // const canonicalUri = `https://generativelanguage.googleapis.com/${file.name}`;
+                const result = await GeminiRetrieval.query(file.uri, q);
+                // Result structure: { candidates: [ { content: { parts: [ { text: "..." } ] } } ] }
+                const answer = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-            while (!querySuccess && queryRetries < 3) {
-                try {
-                    const result = await GeminiRetrieval.query(corpusName, q);
-                    const answer = result.answer?.content?.parts?.[0]?.text;
-                    console.log(`💡 A: ${answer}`);
-
-                    if (result.answer?.groundingAttributions?.length) {
-                        console.log("   📚 Sources:");
-                        result.answer.groundingAttributions.forEach((attr: any) => {
-                            console.log(`      - ${attr.sourceId} (Confidence: ${attr.content?.parts?.[0]?.text})`);
-                        });
-                    }
-                    querySuccess = true;
-                } catch (e: any) {
-                    if (e.message?.includes('404') || e.message?.includes('429')) {
-                        console.warn(`   ⚠️ Query failed (404/429). Retrying...`);
-                        await waitForPropagation(queryRetries);
-                        queryRetries++;
-                    } else {
-                        console.error(`   ❌ Query failed fatal: ${e}`);
-                        break;
-                    }
+                if (answer) {
+                    console.log(`💡 A: ${answer.trim()}`);
+                } else {
+                    console.warn("   ⚠️ No answer returned:", JSON.stringify(result));
                 }
+            } catch (e: any) {
+                console.error(`   ❌ Query failed: ${e.message}`);
             }
         }
+
+        console.log("\n4. Cleanup...");
+        await GeminiRetrieval.deleteFile(file.name);
+        console.log("   ✅ File deleted.");
 
     } catch (error) {
         console.error("❌ Test FAILED with error:", error);
@@ -191,3 +136,4 @@ async function runTest() {
 }
 
 runTest();
+

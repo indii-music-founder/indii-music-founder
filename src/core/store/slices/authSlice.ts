@@ -68,15 +68,16 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         // Sync to Firestore if logged in
         const user = get().user;
         if (user) {
-            import('@/modules/auth/UserService').then(({ UserService }) => {
+            import('@/services/UserService').then(({ UserService }) => {
                 UserService.updateProfile(user.uid, {
                     bio: profile.bio,
                     preferences: profile.preferences,
+                    creativePreferences: profile.creativePreferences,
                     brandKit: profile.brandKit,
                     knowledgeBase: profile.knowledgeBase,
                     careerStage: profile.careerStage,
                     goals: profile.goals
-                } as any);
+                });
             });
         }
     },
@@ -88,7 +89,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         // Update Firestore if logged in
         const user = state.user;
         if (user) {
-            import('@/modules/auth/UserService').then(({ UserService }) => {
+            import('@/services/UserService').then(({ UserService }) => {
                 // We need to map AppUserProfile back to what Firestore expects if necessary
                 // For now, assume UserService handles Partial<UserContext> which includes AppUserProfile fields
                 UserService.updateProfile(user.uid, { brandKit: newProfile.brandKit } as any);
@@ -123,12 +124,15 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     set({ user, isAuthenticated, isAuthReady: true });
 
                     // Sync User Profile from Firestore
-                    import('@/modules/auth/UserService').then(({ UserService }) => {
+                    import('@/services/UserService').then(({ UserService }) => {
                         UserService.syncUserProfile(user).then((fullProfile) => {
                             const appProfile: UserProfile = {
+                                ...fullProfile, // Spread common fields
                                 id: user.uid, // Populate ID from auth user
                                 bio: fullProfile.bio || '',
-                                preferences: typeof fullProfile.preferences === 'string' ? fullProfile.preferences : JSON.stringify(fullProfile.preferences || {}),
+                                // Clean up preferences mapping
+                                preferences: fullProfile.preferences || {},
+                                creativePreferences: fullProfile.creativePreferences || '',
                                 brandKit: fullProfile.brandKit || {
                                     colors: [],
                                     fonts: '',
@@ -141,7 +145,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                                 },
                                 analyzedTrackIds: fullProfile.analyzedTrackIds || [],
                                 knowledgeBase: fullProfile.knowledgeBase || [],
-                                savedWorkflows: fullProfile.savedWorkflows || []
+                                savedWorkflows: fullProfile.savedWorkflows || [],
+                                careerStage: fullProfile.careerStage || 'Emerging',
+                                goals: fullProfile.goals || []
                             };
                             set({ userProfile: appProfile });
                         });
@@ -186,9 +192,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         });
     },
     logout: async () => {
-        const { signOut } = await import('firebase/auth');
-        const { auth } = await import('@/services/firebase');
-        await signOut(auth);
+        const { AuthService } = await import('@/services/AuthService');
+        await AuthService.signOut();
         set({
             user: null,
             isAuthenticated: false,

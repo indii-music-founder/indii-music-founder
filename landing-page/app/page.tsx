@@ -68,9 +68,9 @@ export default function Home() {
             {/* Login Link below as a secondary action for all slides */}
             {!user && !loading && (
               <div className="mt-8">
-                <Link href="/login" className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
-                  Already have an account? Sign In
-                </Link>
+                <a href={getStudioUrl()} className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
+                  Already have an account? Launch Studio
+                </a>
               </div>
             )}
           </div>

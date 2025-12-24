@@ -2,6 +2,7 @@ import { AI } from '@/services/ai/AIService';
 import { useStore, HistoryItem } from '@/core/store';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -30,7 +31,7 @@ export class VideoDirector {
 
                 // 3. Critique
                 const critique = await AI.generateContent({
-                    model: 'gemini-3-pro-preview',
+                    model: AI_MODELS.TEXT.AGENT,
                     contents: {
                         role: 'user',
                         parts: [
@@ -111,7 +112,7 @@ export class VideoDirector {
         const response = await triggerVideoGeneration({
             image: item.url,
             prompt: item.prompt || 'Animate this scene',
-            model: 'veo-3.1-generate-preview'
+            model: AI_MODELS.VIDEO.GENERATION
         });
         return response.data as { success: boolean; error?: string };
     }

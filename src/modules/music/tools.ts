@@ -1,4 +1,5 @@
 import { AI } from '../../services/ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 export const MUSIC_TOOLS = {
     analyze_audio_features: async (args: { filename: string, physical_metrics?: any }) => {
@@ -85,7 +86,7 @@ export const MUSIC_TOOLS = {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             return res.text() || "Synesthetic visualization of audio frequencies.";
@@ -130,7 +131,7 @@ export const MUSIC_TOOLS = {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
 

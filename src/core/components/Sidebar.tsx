@@ -106,19 +106,43 @@ export default function Sidebar() {
             </div>
             {/* User Profile Section */}
             <div className="p-4 border-t border-white/5">
+                {user?.isAnonymous && isSidebarOpen && (
+                    <div className="mb-4 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+                        <p className="text-xs text-indigo-300 mb-2">Guest Mode</p>
+                        <button
+                            onClick={async () => {
+                                const email = window.prompt("Enter email to link account:");
+                                if (!email) return;
+                                const password = window.prompt("Enter password (min 6 chars):");
+                                if (!password) return;
+                                try {
+                                    const { AuthService } = await import('../../services/AuthService');
+                                    await AuthService.linkAnonymousAccount(email, password);
+                                    alert("Account successfully upgraded!");
+                                } catch (e: any) {
+                                    alert("Error upgrading account: " + e.message);
+                                }
+                            }}
+                            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded"
+                        >
+                            Sign Up to Save
+                        </button>
+                    </div>
+                )}
+
                 <div className={`flex items-center gap-3 ${!isSidebarOpen ? 'justify-center' : ''}`}>
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-bold text-white">
-                            {user?.email?.[0].toUpperCase() || 'U'}
+                            {user?.email?.[0].toUpperCase() || (user?.isAnonymous ? 'G' : 'U')}
                         </span>
                     </div>
                     {isSidebarOpen && (
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-200 truncate">
-                                {user?.displayName || 'User'}
+                                {user?.displayName || (user?.isAnonymous ? 'Guest User' : 'User')}
                             </p>
                             <p className="text-xs text-gray-500 truncate">
-                                {user?.email}
+                                {user?.email || 'No email linked'}
                             </p>
                         </div>
                     )}

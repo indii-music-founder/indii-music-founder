@@ -2,6 +2,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { AI } from '@/services/ai/AIService';
 import type { ToolFunctionArgs } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for LegalTools
@@ -78,7 +79,7 @@ Structure with standard clauses: Definitions, Obligations, Term, Termination, Go
 Key Terms: ${args.terms}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });

@@ -12,14 +12,14 @@ This is the single source of truth for pending tasks. See referenced docs for de
 
 **Reference:** [PLAN_AUTH_SYSTEM.md](./PLAN_AUTH_SYSTEM.md) (detailed 8-phase spec)
 
-- [ ] Phase 1: User Profile Infrastructure (1-2 hrs)
-- [ ] Phase 2: Auth Components (Login, Signup, ForgotPassword) (2-3 hrs)
-- [ ] Phase 3: Auth Service & State Management (2-3 hrs)
-- [ ] Phase 4: Routing & Protected Routes (1-2 hrs)
-- [ ] Phase 5: Landing Page Integration (30 min)
-- [ ] Phase 6: Anonymous → Authenticated Migration (1 hr)
-- [ ] Phase 7: Logout Flow (1 hr)
-- [ ] Phase 8: Google OAuth (optional, 1-2 hrs)
+- [x] Phase 1: User Profile Infrastructure (Completed)
+- [x] Phase 2: Auth Components (Login, Signup, ForgotPassword) (Completed)
+- [x] Phase 3: Auth Service & State Management (Completed)
+- [x] Phase 4: Routing & Protected Routes (Implemented in App.tsx)
+- [x] Phase 5: Landing Page Integration (Completed)
+- [x] Phase 6: Anonymous → Authenticated Migration (Implemented in Sidebar)
+- [x] Phase 7: Logout Flow (Completed)
+- [x] Phase 8: Google OAuth (Implemented)
 
 ### Electron Auth Testing
 
@@ -31,9 +31,16 @@ This is the single source of truth for pending tasks. See referenced docs for de
 
 ### RAG System Verification
 
-- [ ] Run `npx tsx scripts/test-music-biz-rag.ts`
-- [ ] Verify RAG results (check for 404/429 API errors)
+- [ ] Run `npx ts-node --experimental-specifier-resolution=node scripts/test-music-biz-rag.ts`
+- [ ] Verify RAG results (Resolving 400 Bad Request with `fileData`)
 - [ ] Check corpus quota in Google AI Studio
+
+### Gemini 3.0 Migration (Dec 2025)
+
+- [x] Update `ai-models.ts` to `gemini-3-flash-preview` & `gemini-3-pro-image-preview`
+- [x] Update Cloud Functions to use Gemini 3.0 models
+- [x] Rotate API Key (Fix Leaked Key)
+- [ ] Resolve RAG compatibility with Gemini 3 Flash (`fileData` support)
 
 ---
 
@@ -62,7 +69,7 @@ This is the single source of truth for pending tasks. See referenced docs for de
 
 ### Documentation Updates
 
-- [ ] Rename "Music Studio" → "Music Analysis" in UI components
+- [x] ~~Rename "Music Studio" → "Music Analysis" in UI components~~ (Completed 2025-12-23)
 - [ ] Update any remaining "Rndr-AI" references to "indiiOS"
 
 ---

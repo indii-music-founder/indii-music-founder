@@ -1,4 +1,5 @@
 import { AI } from '../../services/ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 export const PUBLICIST_TOOLS = {
     write_press_release: async (args: { headline: string, company_name: string, key_points: string[], contact_info: string }) => {
@@ -18,7 +19,7 @@ export const PUBLICIST_TOOLS = {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             return res.text() || "Failed to generate press release.";
@@ -41,7 +42,7 @@ export const PUBLICIST_TOOLS = {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             return res.text() || "Failed to generate crisis response.";

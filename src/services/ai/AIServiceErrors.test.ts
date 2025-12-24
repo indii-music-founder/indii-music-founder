@@ -2,11 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AI } from './AIService';
 import { AppErrorCode } from '@/shared/types/errors';
 
-// Mock dependencies
-const mockHttpsCallable = vi.fn();
-vi.mock('firebase/functions', () => ({
-    getFunctions: vi.fn(),
-    httpsCallable: () => mockHttpsCallable
+// Mock the Google Generative AI SDK
+const mockGenerateContent = vi.fn();
+
+class MockGoogleGenerativeAI {
+    constructor(_apiKey: string) {}
+    getGenerativeModel() {
+        return {
+            generateContent: mockGenerateContent
+        };
+    }
+}
+
+vi.mock('@google/generative-ai', () => ({
+    GoogleGenerativeAI: MockGoogleGenerativeAI
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -32,19 +41,19 @@ describe('AIService Error Handling', () => {
     });
 
     it('should forward generic errors', async () => {
-        mockHttpsCallable.mockRejectedValue(new Error('Generic failure'));
+        mockGenerateContent.mockRejectedValue(new Error('Generic failure'));
 
         await expect(AI.generateContent({
             model: 'gemini-pro',
             contents: { role: 'user', parts: [] }
-        })).rejects.toThrow('Generate Content Failed: Generic failure');
+        })).rejects.toThrow('Generic failure');
     });
 
     it('should forward standardized QUOTA_EXCEEDED error', async () => {
         const error: any = new Error('Quota exceeded');
-        error.details = { code: AppErrorCode.QUOTA_EXCEEDED };
+        error.code = 'resource-exhausted';
         // Always reject to exhaust all retries (3 retries with exponential backoff: 1s + 2s + 4s = 7s)
-        mockHttpsCallable.mockRejectedValue(error);
+        mockGenerateContent.mockRejectedValue(error);
 
         await expect(AI.generateContent({
             model: 'gemini-pro',
@@ -55,7 +64,7 @@ describe('AIService Error Handling', () => {
     it('should forward standardized SAFETY_VIOLATION error', async () => {
         const error: any = new Error('Safety violation');
         error.details = { code: AppErrorCode.SAFETY_VIOLATION };
-        mockHttpsCallable.mockRejectedValue(error);
+        mockGenerateContent.mockRejectedValue(error);
 
         await expect(AI.generateContent({
             model: 'gemini-pro',
@@ -64,13 +73,24 @@ describe('AIService Error Handling', () => {
     });
 
     it('should retry on transient QUOTA_EXCEEDED error and succeed', async () => {
-        const error: any = new Error('Quota exceeded');
-        error.details = { code: AppErrorCode.QUOTA_EXCEEDED };
+        // Note: Error message must contain 'QUOTA_EXCEEDED' (exact case) or use specific error codes
+        // that survive the AppException wrapping for retry to work
+        const error: any = new Error('QUOTA_EXCEEDED');
+        error.code = 'resource-exhausted';
 
         // Fail once, then succeed
-        mockHttpsCallable
+        mockGenerateContent
             .mockRejectedValueOnce(error)
-            .mockResolvedValueOnce({ data: { candidates: [{ content: { parts: [{ text: 'Success' }] } }] } });
+            .mockResolvedValueOnce({
+                response: {
+                    candidates: [{
+                        content: {
+                            role: 'model',
+                            parts: [{ text: 'Success' }]
+                        }
+                    }]
+                }
+            });
 
         const result = await AI.generateContent({
             model: 'gemini-pro',
@@ -78,6 +98,6 @@ describe('AIService Error Handling', () => {
         });
 
         expect(result.text()).toBe('Success');
-        expect(mockHttpsCallable).toHaveBeenCalledTimes(2);
-    });
+        expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    }, 10000);
 });

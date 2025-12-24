@@ -1,4 +1,5 @@
 import { AI } from '@/services/ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 export const LEGAL_TOOLS = {
     analyze_contract: async (args: { text: string }) => {
@@ -11,7 +12,7 @@ export const LEGAL_TOOLS = {
         OUTPUT FORMAT: Markdown.
         `;
         const res = await AI.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         return res.text() || "Analysis failed.";
@@ -23,7 +24,7 @@ export const LEGAL_TOOLS = {
         OUTPUT: Brief summary of key regulations.
         `;
         const res = await AI.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         return res.text() || "Compliance check failed.";

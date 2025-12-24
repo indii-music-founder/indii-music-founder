@@ -1,5 +1,6 @@
 import { AI } from '@/services/ai/AIService';
 import type { ToolFunctionArgs } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for NarrativeTools
@@ -51,7 +52,7 @@ Return ONLY a valid JSON object with the following structure:
             const prompt = `Synopsis: ${args.synopsis}`;
 
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 systemInstruction: systemPrompt
             });

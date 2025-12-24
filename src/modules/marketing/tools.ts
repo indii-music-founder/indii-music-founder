@@ -1,4 +1,5 @@
 import { AI } from '../../services/ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 export const MARKETING_TOOLS = {
     generate_campaign_strategy: async (args: { product_name: string, target_audience: string, goal: string }) => {
@@ -21,7 +22,7 @@ export const MARKETING_TOOLS = {
 
         try {
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             return res.text() || "Failed to generate strategy.";

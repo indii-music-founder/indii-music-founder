@@ -1,5 +1,6 @@
 import { useStore } from '@/core/store';
 import type { ToolFunctionArgs } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for AnalysisTools
@@ -116,7 +117,7 @@ export const AnalysisTools = {
             Evaluate if the content meets the goal. Provide a score (1-10) and specific feedback.`;
 
             const res = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             return res.text();

@@ -1,116 +1,41 @@
-import { auth } from '@/services/firebase';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import Dashboard from './Dashboard';
 
-// Hoist mocks to ensure stable references across renders that we can assert on
-const storeMocks = vi.hoisted(() => ({
-    setModule: vi.fn(),
-    setProject: vi.fn(),
-    addProject: vi.fn(),
-    createNewProject: vi.fn(),
-    addKnowledgeDocument: vi.fn(),
-    logout: vi.fn(),
+// Mock child components to isolate Dashboard testing
+vi.mock('./components/ProjectHub', () => ({
+    default: () => <div data-testid="project-hub">Project Hub</div>,
 }));
 
-// Mock dependencies
-vi.mock('@/core/store', () => ({
-    useStore: () => ({
-        ...storeMocks,
-        currentOrganizationId: 'org-1',
-        projects: [
-            { id: 'p1', name: 'Test Project', type: 'creative', orgId: 'org-1', date: Date.now() }
-        ],
-    }),
-    AppSlice: {},
+vi.mock('./components/DataStorageManager', () => ({
+    default: () => <div data-testid="data-storage-manager">Data Storage Manager</div>,
 }));
 
-vi.mock('@/services/firebase', () => ({
-    auth: {
-        currentUser: { uid: 'user-1', isAnonymous: false },
-        signOut: vi.fn(),
-    },
+vi.mock('./components/AnalyticsView', () => ({
+    default: () => <div data-testid="analytics-view">Analytics View</div>,
 }));
 
-// Mock child components
-vi.mock('../onboarding/OnboardingModal', () => ({
-    OnboardingModal: ({ isOpen, onClose }: any) => (
-        isOpen ? <div data-testid="onboarding-modal"><button onClick={onClose}>Close Onboarding</button></div> : null
-    ),
+vi.mock('./components/GlobalSettings', () => ({
+    default: () => <div data-testid="global-settings">Global Settings</div>,
 }));
 
-vi.mock('./components/OrganizationSelector', () => ({
-    OrganizationSelector: () => <div data-testid="org-selector">Organization Selector</div>,
-}));
-
-vi.mock('./components/NewProjectModal', () => ({
-    default: ({ isOpen, onClose, onCreate }: any) => (
-        isOpen ? (
-            <div data-testid="new-project-modal">
-                <button onClick={onClose}>Close Modal</button>
-                <button onClick={() => onCreate('New Project', 'creative')}>Create Project</button>
-            </div>
-        ) : null
-    ),
-}));
-
-// Mock Toast Context
-const mockToast = {
-    info: vi.fn(),
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn()
-};
-
-vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => mockToast,
-    ToastProvider: ({ children }: any) => <div>{children}</div>
+vi.mock('./components/ReferenceImageManager', () => ({
+    default: () => <div data-testid="reference-image-manager">Reference Image Manager</div>,
 }));
 
 describe('Dashboard', () => {
-    it('renders the dashboard header and welcome message', () => {
+    it('renders the dashboard header', () => {
         render(<Dashboard />);
-        expect(screen.getByText(/Welcome back to/i)).toBeInTheDocument();
-        expect(screen.getByText('indiiOS')).toBeInTheDocument();
-        expect(screen.getByTestId('org-selector')).toBeInTheDocument();
+        expect(screen.getByText('Studio Headquarters')).toBeInTheDocument();
+        expect(screen.getByText('Manage your projects, data, and global configuration.')).toBeInTheDocument();
     });
 
-    it('renders the New Project button', () => {
+    it('renders all child components', () => {
         render(<Dashboard />);
-        expect(screen.getByText('New Project')).toBeInTheDocument();
-    });
-
-    it('opens the New Project modal when button is clicked', () => {
-        render(<Dashboard />);
-        const newProjectBtn = screen.getByText('New Project');
-        fireEvent.click(newProjectBtn);
-        expect(screen.getByTestId('new-project-modal')).toBeInTheDocument();
-    });
-
-    it('renders recent projects', () => {
-        render(<Dashboard />);
-        expect(screen.getByText('Recent Projects')).toBeInTheDocument();
-        expect(screen.getByText('Test Project')).toBeInTheDocument();
-    });
-
-    it('renders Knowledge Base upload section', () => {
-        render(<Dashboard />);
-        expect(screen.getByText('Knowledge Base')).toBeInTheDocument();
-        expect(screen.getByText('Upload Knowledge Assets')).toBeInTheDocument();
-        expect(screen.getByText('Scan Document')).toBeInTheDocument();
-    });
-
-    it('opens Brand Kit modal when button is clicked', () => {
-        render(<Dashboard />);
-        const brandKitBtn = screen.getByText('Brand Kit');
-        fireEvent.click(brandKitBtn);
-        expect(screen.getByTestId('onboarding-modal')).toBeInTheDocument();
-    });
-
-    it('calls store.logout when Sign Out button is clicked', async () => {
-        render(<Dashboard />);
-        const signOutBtn = screen.getByText('Sign Out');
-        fireEvent.click(signOutBtn);
-        expect(storeMocks.logout).toHaveBeenCalled();
+        expect(screen.getByTestId('project-hub')).toBeInTheDocument();
+        expect(screen.getByTestId('data-storage-manager')).toBeInTheDocument();
+        expect(screen.getByTestId('analytics-view')).toBeInTheDocument();
+        expect(screen.getByTestId('global-settings')).toBeInTheDocument();
+        expect(screen.getByTestId('reference-image-manager')).toBeInTheDocument();
     });
 });

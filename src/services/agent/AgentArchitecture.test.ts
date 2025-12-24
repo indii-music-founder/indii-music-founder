@@ -176,15 +176,13 @@ describe('Multi-Agent Architecture Tests', () => {
             await agent?.execute('Research market trends');
 
             expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
-                config: expect.objectContaining({
-                    tools: expect.arrayContaining([
-                        expect.objectContaining({
-                            functionDeclarations: expect.arrayContaining([
-                                expect.objectContaining({ name: 'search_knowledge' })
-                            ])
-                        })
-                    ])
-                })
+                tools: expect.arrayContaining([
+                    expect.objectContaining({
+                        functionDeclarations: expect.arrayContaining([
+                            expect.objectContaining({ name: 'search_knowledge' })
+                        ])
+                    })
+                ])
             }));
         });
     });

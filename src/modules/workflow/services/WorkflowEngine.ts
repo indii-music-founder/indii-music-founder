@@ -2,6 +2,7 @@ import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, In
 import { useStore } from '@/core/store';
 import { AI } from '@/services/ai/AIService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // Define the structure of a task in the execution queue
 interface ExecutionTask {
@@ -129,7 +130,7 @@ export class WorkflowEngine {
         } else if (data.departmentName === 'Marketing Department') {
             // Generate Text
             const response = await AI.generateContent({
-                model: 'gemini-3-pro-preview',
+                model: AI_MODELS.TEXT.AGENT,
                 contents: [{ role: 'user', parts: [{ text: `Write marketing copy for: ${prompt}` }] }]
             });
             return response.text();

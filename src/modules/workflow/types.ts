@@ -143,8 +143,15 @@ export interface BrandKit {
 
 export interface UserProfile {
     id?: string; // Added for reference image path construction
+    uid?: string; // Add uid for compatibility
+    email?: string | null;
+    displayName?: string | null;
+    photoURL?: string | null;
+
     bio: string;
-    preferences: string;
+    preferences: any; // Changed from string to any/object to match new User model
+    creativePreferences?: string; // Renamed legacy 'preferences' string
+
     careerStage?: string;
     goals?: string[];
     brandKit: BrandKit;

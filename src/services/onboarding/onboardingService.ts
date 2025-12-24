@@ -21,7 +21,7 @@ export enum OnboardingTools {
 
 export interface UpdateProfileArgs {
     bio?: string;
-    preferences?: string;
+    creative_preferences?: string;
     brand_description?: string;
     colors?: string[];
     fonts?: string;
@@ -63,7 +63,7 @@ export interface AddTextAssetArgs {
 }
 
 export interface GenerateSectionArgs {
-    section_to_generate: 'bio' | 'brand_description' | 'preferences';
+    section_to_generate: 'bio' | 'brand_description' | 'creative_preferences';
     user_input: string;
 }
 
@@ -78,7 +78,7 @@ const updateProfileFunction: FunctionDeclaration = {
         properties: {
             // Identity Fields (Permanent)
             bio: { type: 'STRING', description: 'The artist\'s biography — their story, background, what makes them unique (Permanent).' },
-            preferences: { type: 'STRING', description: 'The artist\'s creative preferences and style notes (Permanent).' },
+            creative_preferences: { type: 'STRING', description: 'The artist\'s creative preferences and style notes (Permanent).' },
             brand_description: { type: 'STRING', description: 'Visual brand description — aesthetic, style, colors, mood (Permanent).' },
             colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette as hex codes or color names.' },
             fonts: { type: 'STRING', description: 'Brand fonts or typography preferences.' },
@@ -152,7 +152,7 @@ const generateProfileSectionFunction: FunctionDeclaration = {
         type: 'OBJECT',
         description: 'Details for the content generation request.',
         properties: {
-            section_to_generate: { type: 'STRING', enum: ['bio', 'brand_description', 'preferences'], description: 'The profile section to generate content for.' },
+            section_to_generate: { type: 'STRING', enum: ['bio', 'brand_description', 'creative_preferences'], description: 'The profile section to generate content for.' },
             user_input: { type: 'STRING', description: 'A summary of the user\'s request and context to use for generation.' },
         },
         required: ['section_to_generate', 'user_input'],
@@ -462,7 +462,7 @@ export function processFunctionCalls(
 
                 // Handle root level (Identity)
                 if (args.bio) { updatedProfile = { ...updatedProfile, bio: args.bio }; updates.push('Bio'); }
-                if (args.preferences) { updatedProfile = { ...updatedProfile, preferences: args.preferences }; updates.push('Preferences'); }
+                if (args.creative_preferences) { updatedProfile = { ...updatedProfile, creativePreferences: args.creative_preferences }; updates.push('Creative Preferences'); }
                 if (args.career_stage) { updatedProfile = { ...updatedProfile, careerStage: args.career_stage }; updates.push('Career Stage'); }
                 if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
@@ -742,7 +742,7 @@ export function generateEmptyResponseFallback(): string {
     return randomPick(responses);
 }
 
-export async function generateSection(section: 'bio' | 'brand_description' | 'preferences', userInput: string): Promise<string> {
+export async function generateSection(section: 'bio' | 'brand_description' | 'creative_preferences', userInput: string): Promise<string> {
     const systemPrompt = `You are a professional copywriter specializing in the music industry. Write a compelling, concise, and professional piece of content for the specified section. The tone should be authentic and engaging. Do not add any extra conversational text, just return the content.`;
 
     const response = await AI.generateContent({

@@ -14,17 +14,44 @@ vi.mock('@/services/ai/VoiceService', () => ({
     }
 }));
 
+// Mock react-virtuoso to render items directly
+vi.mock('react-virtuoso', () => ({
+    Virtuoso: ({ data, itemContent }: any) => (
+        <div data-testid="virtuoso-list">
+            {data?.map((item: any, index: number) => (
+                <div key={item.id || index}>{itemContent(index, item)}</div>
+            ))}
+        </div>
+    ),
+}));
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+    motion: {
+        div: ({ children, className, ...props }: any) => <div className={className}>{children}</div>,
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
 describe('ChatOverlay', () => {
     const mockAgentHistory = [
         { id: '1', role: 'user', text: 'Hello', timestamp: 1 },
         { id: '2', role: 'model', text: 'Hi there', timestamp: 2 }
     ];
 
+    const mockStoreState = {
+        agentHistory: mockAgentHistory,
+        isAgentOpen: true,
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            agentHistory: mockAgentHistory,
-            isAgentOpen: true,
+        // useStore is called with selectors, so we need to call the selector on our mock state
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
+            if (typeof selector === 'function') {
+                return selector(mockStoreState);
+            }
+            return mockStoreState;
         });
     });
 
@@ -57,7 +84,7 @@ describe('ChatOverlay', () => {
 
         // rerender with same history shouldn't trigger (handled by ref check in component, but effect runs on mount if condition met)
         // actually, effect runs on history change.
-        // Let's verify it triggered for the existing last message if we just unmuted? 
+        // Let's verify it triggered for the existing last message if we just unmuted?
         // The effect dependency includes [isMuted]. So yes, it should try to speak the last message.
 
         await waitFor(() => {

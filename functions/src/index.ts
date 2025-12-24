@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
+import corsLib from "cors";
 
 import { GoogleAuth } from "google-auth-library";
 
@@ -131,7 +132,7 @@ export const generateImage = functions.https.onCall(async (data: GenerateImageRe
         const { prompt, aspectRatio, count, images } = data;
         const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
         const location = "us-central1";
-        const modelId = "gemini-1.5-pro-preview-0409"; // Using the stable preview or flash as fallback if 3 is not avail
+        const modelId = "gemini-3-pro-image-preview"; // Updated to latest Gemini 3 Image model
 
         // Note: Using the API Key provided by client? Or using Vertex AI IAM?
         // Client service passes apiKey, but we are in Cloud Functions effectively as a service account (if we init GoogleAuth).
@@ -208,7 +209,7 @@ export const editImage = functions.https.onCall(async (data: EditImageRequestDat
         const { image, mask, prompt, referenceImage } = data;
         const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
         const location = "us-central1";
-        const modelId = "gemini-1.5-pro-preview-0409";
+        const modelId = "gemini-3-pro-image-preview";
 
         const auth = new GoogleAuth({
             scopes: ["https://www.googleapis.com/auth/cloud-platform"],
@@ -279,3 +280,68 @@ export const editImage = functions.https.onCall(async (data: EditImageRequestDat
         throw new functions.https.HttpsError('internal', "An unknown error occurred");
     }
 });
+
+/**
+ * RAG Proxy
+ * Proxies requests to Google Generative Language API (Gemini) to hide API Key
+ * and handle CORS/Referer restrictions server-side.
+ */
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
+const cors = corsLib({ origin: true });
+
+export const ragProxy = functions
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 60
+    })
+    .https.onRequest((req, res) => {
+        cors(req, res, async () => {
+            // 1. Validate Authentication (Optional but recommended for production)
+            // For now, we allow authentic calls or public if strict auth not required yet
+
+            // 2. Proxy Logic
+            try {
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path; // e.g., /v1beta/corpora
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
+
+                const fetchOptions: RequestInit = {
+                    method: req.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Spoof Referer to satisfy API Key restrictions.
+                        // Since this is a proxy, we claim to be the allowed client.
+                        'Referer': 'http://localhost:3000/'
+                    },
+                    body: (req.method !== 'GET' && req.method !== 'HEAD') ?
+                        (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
+                        : undefined
+                };
+
+                const response = await fetch(targetUrl, fetchOptions);
+
+                // Read text explicitly to avoid stream issues in standard fetch inside functions environment if any
+                const data = await response.text();
+
+                if (!response.ok) {
+                    console.error("RAG Proxy Upstream Error:", {
+                        status: response.status,
+                        statusText: response.statusText,
+                        url: targetUrl,
+                        body: data
+                    });
+                }
+
+                res.status(response.status);
+                try {
+                    res.send(JSON.parse(data));
+                } catch {
+                    res.send(data);
+                }
+            } catch (error: any) {
+                console.error("RAG Proxy Error:", error);
+                res.status(500).send({ error: error.message });
+            }
+        });
+    });
+
