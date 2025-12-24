@@ -7,10 +7,18 @@
   --foreground: #F0F0F0;
 
   /* Subliminal Theme Colors */
+  /* Subliminal Theme Colors */
   --void: #030303;
+  --true-black: #000000;
   --resonance-blue: #2E2EFE;
+  --electric-blue: #00F0FF;
   --frequency-pink: #FE2E9A;
+  --dopamine-pink: #FF0099;
   --signal-white: #F0F0F0;
+
+  /* Machine Experience (MX) Gradients */
+  --gradient-tech-bro: linear-gradient(135deg, #2E2EFE 0%, #00F0FF 100%);
+  --gradient-dopamine: linear-gradient(135deg, #FF0099 0%, #FE2E9A 100%);
 }
 
 body {
@@ -37,10 +45,19 @@ body::after {
 
 /* Custom Utilities */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.36),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  /* Inner rim light */
+}
+
+.human-scribble {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+  transform: rotate(-2deg);
 }
 
 .text-glow {

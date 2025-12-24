@@ -29,40 +29,56 @@ export default function Home() {
       {/* 2. Content Overlay */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto">
 
-        {/* Glass Hero Card */}
+        {/* Glass Hero Card with 2026 "Frosted" & "Human" Aesthetics */}
         <motion.div
-          className="relative w-full max-w-5xl min-h-[600px] flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-[30px] backdrop-saturate-150 border-t border-l border-white/20 border-b border-r border-black/20 rounded-[3rem] p-12 md:p-16 lg:p-24 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
-          initial={{ opacity: 0, scale: 0.9 }}
+          className="relative w-full max-w-6xl min-h-[700px] flex flex-col items-center justify-center glass-panel rounded-[3rem] p-12 md:p-24 overflow-hidden border border-glass-border"
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} // smooth "Apple-style" ease
         >
-          {/* Internal Reflective Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20 pointer-events-none" />
+          {/* Internal Reflective Gradient (Subtle Tech Bro shimmer) */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/40 pointer-events-none" />
 
-          {/* Subtle Noise Texture for realism (Optional, simulates frosted glass grain) */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
+          {/* "Human Scribble" Accent (SVG) - 2026 Trend: Anti-AI Imperfection */}
+          <div className="absolute top-10 right-10 w-32 h-32 opacity-80 pointer-events-none mix-blend-overlay human-scribble">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 50 Q 25 25, 50 10 T 90 50 Q 75 75, 50 90 T 10 50" stroke="var(--dopamine-pink)" strokeWidth="2" strokeLinecap="round" />
+              <path d="M20 60 Q 35 35, 60 20 T 80 60" stroke="var(--electric-blue)" strokeWidth="2" strokeLinecap="round" strokeDasharray="5 5" />
+            </svg>
+          </div>
 
-          <div className="relative z-20 space-y-10 text-center w-full">
-            {/* Animated Badge / Logo */}
+          {/* Subtle Noise Texture for realism */}
+          <div className="absolute inset-0 opacity-[0.05] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
+
+          <div className="relative z-20 space-y-12 text-center w-full max-w-4xl mx-auto">
+            {/* Animated Badge / Logo with Kinetic Typography */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="relative"
             >
-              <span className="text-4xl md:text-5xl font-bold tracking-tight text-white/90 animate-pulse-slow">
+              {/* Oversized Headline (Trend: Exaggerated Hierarchy) */}
+              <h1 className="text-7xl md:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-signal-white to-gray-400 animate-throb-light pb-4">
                 indiiOS
-              </span>
+              </h1>
+              <p className="font-hand text-dopamine-pink text-2xl md:text-3xl absolute -right-4 -top-8 rotate-12 glow-text-pink">
+                v2026.1
+              </p>
             </motion.div>
 
             {loading ? (
-              <div className="h-[400px] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              <div className="h-[300px] flex items-center justify-center">
+                {/* Custom encoded SVG spinner or CSS loader would go here */}
+                <div className="w-12 h-12 border-4 border-electric-blue border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              <DigitalBillboard
-                user={user}
-                authenticatedCta={{ label: "Launch Studio", href: getStudioUrl() }}
-              />
+              <div className="transform transition-transform hover:scale-[1.02] duration-500">
+                <DigitalBillboard
+                  user={user}
+                  authenticatedCta={{ label: "Enter Studio", href: getStudioUrl() }}
+                />
+              </div>
             )}
 
             {/* Login Link below as a secondary action for all slides */}

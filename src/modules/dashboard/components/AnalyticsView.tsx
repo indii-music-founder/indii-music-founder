@@ -1,21 +1,44 @@
-import React from 'react';
-import { BarChart, Activity, Zap, MessageSquare } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Activity, Zap, MessageSquare, Film, Flame, TrendingUp } from 'lucide-react';
+import { DashboardService, AnalyticsData } from '../../../services/dashboard/DashboardService';
 
 export default function AnalyticsView() {
+    const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+
+    useEffect(() => {
+        DashboardService.getAnalytics().then(setAnalytics);
+    }, []);
+
+    // Find max for chart scaling
+    const maxActivity = analytics ? Math.max(...analytics.weeklyActivity, 1) : 1;
+
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
     return (
         <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-                <Activity className="text-green-400" size={24} />
-                <h2 className="text-lg font-bold text-white">Studio Stats</h2>
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <Activity className="text-green-400" size={24} />
+                    <h2 className="text-lg font-bold text-white">Studio Stats</h2>
+                </div>
+                {analytics && analytics.streak > 0 && (
+                    <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500/20 to-red-500/20 px-3 py-1.5 rounded-full border border-orange-500/30">
+                        <Flame size={16} className="text-orange-400" />
+                        <span className="text-sm font-bold text-orange-300">{analytics.streak} day streak</span>
+                    </div>
+                )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#0d1117] p-4 rounded-lg border border-gray-800">
                     <div className="flex items-center gap-2 text-gray-500 mb-2">
                         <Zap size={14} />
                         <span className="text-xs uppercase tracking-wider">Generations</span>
                     </div>
-                    <div className="text-2xl font-bold text-white">1,248</div>
+                    <div className="text-2xl font-bold text-white font-mono">
+                        {analytics?.totalGenerations.toLocaleString() ?? '—'}
+                    </div>
                 </div>
 
                 <div className="bg-[#0d1117] p-4 rounded-lg border border-gray-800">
@@ -23,16 +46,79 @@ export default function AnalyticsView() {
                         <MessageSquare size={14} />
                         <span className="text-xs uppercase tracking-wider">Messages</span>
                     </div>
-                    <div className="text-2xl font-bold text-white">8,901</div>
+                    <div className="text-2xl font-bold text-white font-mono">
+                        {analytics?.totalMessages.toLocaleString() ?? '—'}
+                    </div>
+                </div>
+
+                <div className="bg-[#0d1117] p-4 rounded-lg border border-gray-800">
+                    <div className="flex items-center gap-2 text-gray-500 mb-2">
+                        <Film size={14} />
+                        <span className="text-xs uppercase tracking-wider">Video Secs</span>
+                    </div>
+                    <div className="text-2xl font-bold text-white font-mono">
+                        {analytics?.totalVideoSeconds ?? '—'}
+                    </div>
+                </div>
+
+                <div className="bg-[#0d1117] p-4 rounded-lg border border-gray-800">
+                    <div className="flex items-center gap-2 text-gray-500 mb-2">
+                        <TrendingUp size={14} />
+                        <span className="text-xs uppercase tracking-wider">Projects</span>
+                    </div>
+                    <div className="text-2xl font-bold text-white font-mono">
+                        {analytics?.totalProjects ?? '—'}
+                    </div>
                 </div>
             </div>
 
-            {/* Placeholder Chart */}
-            <div className="mt-6 h-32 flex items-end justify-between px-2 gap-1 opacity-50">
-                {[40, 70, 45, 90, 60, 80, 50].map((h, i) => (
-                    <div key={i} className="w-full bg-green-500/20 rounded-t" style={{ height: `${h}%` }}></div>
-                ))}
+            {/* Weekly Activity Chart */}
+            <div className="mb-6">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Weekly Activity</h3>
+                <div className="h-24 flex items-end justify-between gap-2">
+                    {analytics?.weeklyActivity.map((count, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <div
+                                className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t transition-all duration-500"
+                                style={{ height: `${Math.max((count / maxActivity) * 100, 4)}%` }}
+                            />
+                            <span className="text-[10px] text-gray-500">{days[i]}</span>
+                        </div>
+                    )) ?? (
+                        Array(7).fill(0).map((_, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                <div className="w-full bg-gray-800 rounded-t h-2" />
+                                <span className="text-[10px] text-gray-500">{days[i]}</span>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
+
+            {/* Word Cloud / Top Prompts */}
+            {analytics && analytics.topPromptWords.length > 0 && (
+                <div>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Top Prompt Words</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {analytics.topPromptWords.map(({ word, count }, i) => {
+                            // Size based on position (first = largest)
+                            const sizeClass = i === 0 ? 'text-base px-3 py-1.5' : i < 3 ? 'text-sm px-2.5 py-1' : 'text-xs px-2 py-0.5';
+                            const colorClass = i === 0 ? 'bg-purple-500/30 text-purple-300 border-purple-500/40' :
+                                              i < 3 ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
+                                              'bg-gray-800 text-gray-400 border-gray-700';
+                            return (
+                                <span
+                                    key={word}
+                                    className={`${sizeClass} ${colorClass} rounded-full border font-medium`}
+                                    title={`Used ${count} times`}
+                                >
+                                    {word}
+                                </span>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

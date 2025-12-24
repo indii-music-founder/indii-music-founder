@@ -40,9 +40,9 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 **Reference:** [dashboard_spec.md](./dashboard_spec.md)
 
-- [ ] Storage health bar visualization
-- [ ] Project duplication feature
-- [ ] Analytics/Stats gamification view
+- [x] Storage health bar visualization
+- [x] Project duplication feature
+- [x] Analytics/Stats gamification view
 
 ### Test Coverage Expansion
 
