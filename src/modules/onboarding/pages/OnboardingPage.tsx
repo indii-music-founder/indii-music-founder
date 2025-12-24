@@ -139,6 +139,10 @@ export default function OnboardingPage() {
 
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
+
+                console.log('[Onboarding] Function Calls:', functionCalls.map(f => f.name));
+                console.log('[Onboarding] Updates:', updates);
+                console.log('[Onboarding] New Profile State:', updatedProfile);
                 setUserProfile(updatedProfile);
 
                 if (isFinished) {
@@ -196,6 +200,7 @@ export default function OnboardingPage() {
     };
 
     const { coreProgress, releaseProgress, coreMissing, releaseMissing } = calculateProfileStatus(userProfile);
+    console.log('[Onboarding] Progress:', { coreProgress, isReady: coreProgress > 50, missing: coreMissing });
     const isReadyForDashboard = coreProgress > 50; // Threshold for allowing skip/complete
 
     // --- SHARED PROGRESS COMPONENT ---

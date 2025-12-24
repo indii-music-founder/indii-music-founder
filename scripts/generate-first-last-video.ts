@@ -45,10 +45,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const functions = getFunctions(app);
 
-const generateVideoFn = httpsCallable(functions, 'generateVideo');
+const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
 try {
-    const response = await generateVideoFn({
+    const response = await triggerVideoJob({
+        jobId: `first-last-video-${Date.now()}`, // Added jobId
+        orgId: "nana-banana-test", // Added orgId
         prompt: "Smooth cinematic transition between frames, natural fluid motion, professional quality",
         model: "veo-3.1-fast-generate-preview",
         image: {
@@ -57,13 +59,13 @@ try {
         },
         config: {
             lastFrame: {
-                mimeType: 'image/png', 
+                mimeType: 'image/png',
                 imageBytes: lastFrame.split(',')[1]
             }
         },
         apiKey: process.env.VITE_API_KEY || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM"
     });
-    
+
     console.log('✓ Video generation response:', JSON.stringify(response.data, null, 2));
 } catch (error: any) {
     console.error('✗ Error:', error.message || error);

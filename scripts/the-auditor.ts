@@ -6,7 +6,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 // Verifies Live Infrastructure Configuration & Security
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCXQDyy5Bc0-ZNoZwI41Zrx9AqhdxUjvQo",
+    apiKey: "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
     authDomain: "indiios-v-1-1.firebaseapp.com",
     projectId: "indiios-v-1-1",
     storageBucket: "gs://indiios-alpha-electron", // VERIFIED BUCKET

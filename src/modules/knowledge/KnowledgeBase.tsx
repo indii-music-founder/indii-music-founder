@@ -26,25 +26,27 @@ export default function KnowledgeBase() {
     const loadDocuments = async () => {
         try {
             setIsLoading(true);
-            const corpusName = await GeminiRetrieval.initCorpus();
-            const result = await GeminiRetrieval.listDocuments(corpusName);
+            // No initCorpus needed for Files API
+            const result = await GeminiRetrieval.listFiles();
 
-            const docs: KnowledgeDoc[] = (result.documents || []).map((d: any) => ({
-                id: d.name.split('/').pop() || 'unknown',
-                rawName: d.name,
-                title: d.displayName,
-                type: d.customMetadata?.find((m: any) => m.key === 'mimeType')?.stringValue || 'TXT',
-                size: d.customMetadata?.find((m: any) => m.key === 'fileSize')?.stringValue || 'Unknown',
-                date: new Date(d.customMetadata?.find((m: any) => m.key === 'uploadDate')?.stringValue || Date.now()).toLocaleDateString(),
-                tag: 'General' // Default tag as Gemini doesn't tag automatically yet
+            // Map GeminiFile to KnowledgeDoc
+            const docs: KnowledgeDoc[] = (result.files || []).map((f: any) => ({
+                id: f.name.split('/').pop() || 'unknown',
+                rawName: f.name, // e.g. "files/..."
+                title: JSON.parse(f.displayName).displayName || f.displayName, // We stored displayName in metadata json? No, displayName is top level but we encoded it?
+                // Actually in uploadFile we did: 'X-Goog-Upload-Header-Content-Meta-Session-Data': JSON.stringify({ displayName })
+                // The API returns the file object with `displayName` as one of the fields if passing metadata worked. 
+                // Let's assume f.displayName is the correct field.
+                type: f.mimeType || 'TXT',
+                size: f.sizeBytes ? `${(parseInt(f.sizeBytes) / 1024).toFixed(1)} KB` : 'Unknown',
+                date: new Date(f.createTime || Date.now()).toLocaleDateString(),
+                tag: f.state === 'ACTIVE' ? 'Ready' : f.state // Show state
             }));
 
             // Sort by newest
             setDocuments(docs.reverse());
         } catch (error) {
             console.error("Failed to load documents:", error);
-            // Don't show toast on init failure, just log it. 
-            // Often fails if corpus is empty/new.
         } finally {
             setIsLoading(false);
         }
@@ -133,7 +135,7 @@ export default function KnowledgeBase() {
         if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return;
 
         try {
-            await GeminiRetrieval.deleteDocument(doc.rawName);
+            await GeminiRetrieval.deleteFile(doc.rawName);
             toast.success("Document deleted.");
             await loadDocuments();
         } catch (err) {

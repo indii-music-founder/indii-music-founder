@@ -27,8 +27,9 @@ export class GeminiRetrievalService {
         if (!this.apiKey) {
             console.error("GeminiRetrievalService: Missing API Key");
         }
-        // Use proxy always
-        const functionsUrl = env.VITE_FUNCTIONS_URL || 'http://localhost:5001/rndr-ai-v1/us-central1';
+        // Default to production if not set, or update local default to correct project
+        // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
+        const functionsUrl = env.VITE_FUNCTIONS_URL || 'https://us-central1-indiios-v-1-1.cloudfunctions.net';
         this.baseUrl = `${functionsUrl}/ragProxy/v1beta`;
     }
 
@@ -128,14 +129,27 @@ export class GeminiRetrievalService {
      * Query using the file context (Long Context Window).
      * Replaces AQA model usage.
      */
-    async query(fileUri: string, userQuery: string) {
+    async query(fileUri: string, userQuery: string, fileContent?: string) {
+        const parts: any[] = [];
+
+        if (fileContent) {
+            console.log("Using Inline Text Context fallback for Gemini 3 Compatibility");
+            parts.push({ text: `Use the following document as context to answer the user's question:\n\n${fileContent}\n\n` });
+        } else {
+            // Standard: File URI (May 400 on Gemini 3 Flash currently)
+            let canonicalUri = fileUri;
+            if (fileUri.startsWith('files/')) {
+                canonicalUri = `https://generativelanguage.googleapis.com/${fileUri}`;
+            }
+            parts.push({ fileData: { fileUri: canonicalUri, mimeType: 'text/plain' } });
+        }
+
+        parts.push({ text: userQuery });
+
         const body = {
             contents: [{
                 role: 'user',
-                parts: [
-                    { fileData: { fileUri: fileUri, mimeType: 'text/plain' } },
-                    { text: userQuery }
-                ]
+                parts: parts
             }]
         };
         console.log("Query Body:", JSON.stringify(body, null, 2));
@@ -145,6 +159,14 @@ export class GeminiRetrievalService {
             method: 'POST',
             body: JSON.stringify(body)
         });
+    }
+
+    /**
+     * Lists files uploaded to the Gemini Files API.
+     */
+    async listFiles(): Promise<{ files: GeminiFile[] }> {
+        // Pagination is supported but for now we just get the default page
+        return this.fetch('files');
     }
 
     // --- Legacy Corpus Compatibility Methods (To avoid breaking tests/consumers immediately) ---

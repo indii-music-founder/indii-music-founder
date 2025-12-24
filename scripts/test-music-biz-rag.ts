@@ -112,8 +112,12 @@ async function runTest() {
             console.log(`\n❓ Q: ${q}`);
             try {
                 // const canonicalUri = `https://generativelanguage.googleapis.com/${file.name}`;
-                const result = await GeminiRetrieval.query(file.uri, q);
-                // Result structure: { candidates: [ { content: { parts: [ { text: "..." } ] } } ] }
+                // Use the URI directly from the file object
+                const canonicalUri = file.uri;
+                // Verify we have content for inline fallback
+                const fileContent = combinedContent;
+                const result = await GeminiRetrieval.query(canonicalUri, q, fileContent);
+                // Result structure: { candidates: [ { content: { parts: [ { text: "..." } } ] } ] }
                 const answer = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
                 if (answer) {

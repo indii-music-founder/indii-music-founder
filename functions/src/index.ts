@@ -144,7 +144,7 @@ export const generateImage = functions.https.onCall(async (data: GenerateImageRe
         const client = await auth.getClient();
         const accessToken = await client.getAccessToken();
 
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+        const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
         const parts: any[] = [{ text: prompt + (aspectRatio ? ` --aspect_ratio ${aspectRatio}` : '') }];
 
@@ -217,7 +217,7 @@ export const editImage = functions.https.onCall(async (data: EditImageRequestDat
         const client = await auth.getClient();
         const accessToken = await client.getAccessToken();
 
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+        const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
 
         const parts: Part[] = [
             {

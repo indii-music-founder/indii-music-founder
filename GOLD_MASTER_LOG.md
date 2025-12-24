@@ -28,7 +28,7 @@
 * **Styling:** Tailwind CSS v4 (CSS-first configuration)
 * **State Management:** Zustand (with specialized slices)
 * **Local Database:** IndexedDB (`idb`)
-* **Backend/Cloud:** Firebase (Auth, Firestore, Functions), Google Vertex AI (Gemini 1.5 Pro, Veo, Imagen 3)
+* **Backend/Cloud:** Firebase (Auth, Firestore, Functions), Google Vertex AI (Gemini 3 Pro, Veo, Imagen 3)
 * **Event Bus:** Inngest (Durable Workflows)
 * **Creative Tools:** Fabric.js (Image Editor), FFmpeg.wasm (Video Processing), Tone.js (Audio)
 

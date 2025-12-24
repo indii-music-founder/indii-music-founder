@@ -21,44 +21,88 @@ export async function runAgenticWorkflow(
 
     onUpdate("Initializing Gemini Knowledge Base...");
 
-    // 1. Ensure Corpus Exists
-    // In a real app, we'd cache this ID in the user profile or store
-    const corpusName = await GeminiRetrieval.initCorpus();
+    let responseText = "No answer found.";
+    let sources: Attribution[] = [];
+    let reasoning = ["Query started"];
+    let files: any[] = [];
 
-    onUpdate("Querying Semantic Retriever...");
+    // 1. Retrieval Phase (Safe Failover)
+    try {
+        const fileList = await GeminiRetrieval.listFiles();
+        files = fileList.files || [];
+    } catch (err) {
+        console.warn("RAG Retrieval Failed (proceeding with Pure LLM):", err);
+        reasoning.push(`Retrieval Error: ${err}`);
+        // Fallback to empty files list -> triggers Pure LLM
+        files = [];
+    }
 
     try {
-        // 2. Query AQA Model
-        const response = await GeminiRetrieval.query(corpusName, query);
-        const answer = response.answer?.content?.parts?.[0]?.text || "No answer found.";
-        const attributedPassages: Attribution[] = response.answer?.groundingAttributions || [];
+        if (files.length > 0) {
+            onUpdate(`Searching ${files.length} document(s)...`);
+            // Sort by newest first (if createTime is available, otherwise trust API order)
+            // The API usually returns list, let's just pick the first one for now as 'Recent Context'
+            const targetFile = files[0];
+            const fileUri = targetFile.name; // This is the 'files/...' URI
 
-        // 3. Construct Knowledge Asset
-        const asset: KnowledgeAsset = {
-            id: crypto.randomUUID(),
-            assetType: 'knowledge',
-            title: `Answer: ${query}`,
-            content: answer,
-            date: Date.now(),
-            tags: ['gemini-rag', 'aqa'],
-            sources: attributedPassages.map((p) => ({
-                name: p.sourceId?.replace(corpusName + '/documents/', '') || 'Unknown',
-                content: p.content?.parts?.[0]?.text || ''
-            })),
-            retrievalDetails: attributedPassages,
-            reasoningTrace: [
-                `Query: "${query}"`,
-                `Corpus: ${corpusName}`,
-                `Model: models/aqa`
-            ]
-        };
+            reasoning.push(`Context: ${targetFile.displayName} (${fileUri})`);
 
-        return { asset, updatedProfile: null };
+            // 2. Query with File Context
+            const result = await GeminiRetrieval.query(fileUri, query);
+            const data = await result.json();
+
+            // Parse Standard Gemini Response
+            const candidate = data.candidates?.[0];
+            responseText = candidate?.content?.parts?.[0]?.text || "No relevant info found in documents.";
+
+            // Attempt to capture citations/grounding if available
+            // Note: Grounding typically comes in 'groundingAttributions' or 'citationMetadata' depending on the model/feature used.
+            // For standard generateContent with files, it's just the model answering.
+            // We'll treat the file itself as the source.
+            if (responseText) {
+                sources.push({
+                    sourceId: targetFile.displayName,
+                    content: { parts: [{ text: "Context from file" }] }
+                });
+            }
+
+        } else {
+            // 3. Fallback: Pure LLM (No documents or Retrieval Failed)
+            onUpdate("Using general knowledge...");
+            if (sources.length === 0) reasoning.push("No files or Retrieval failed. Fallback to General LLM.");
+
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.FAST,
+                contents: { role: 'user', parts: [{ text: query }] },
+                config: { temperature: 0.7 } // Creative fallback
+            });
+
+            responseText = response.text() || "I couldn't generate a response.";
+        }
 
     } catch (error) {
-        console.error("Gemini RAG Failed:", error);
-        throw error;
+        console.error("Agent Logic Failed:", error);
+        responseText = "I'm having trouble processing that right now.";
+        reasoning.push(`Critical Error: ${error}`);
     }
+
+    // 4. Construct Knowledge Asset
+    const asset: KnowledgeAsset = {
+        id: crypto.randomUUID(),
+        assetType: 'knowledge',
+        title: `Answer: ${query}`,
+        content: responseText,
+        date: Date.now(),
+        tags: ['gemini-response', sources.length > 0 ? 'rag' : 'general-knowledge'],
+        sources: sources.map((s) => ({
+            name: s.sourceId || 'AI',
+            content: s.content?.parts?.[0]?.text || ''
+        })),
+        retrievalDetails: sources,
+        reasoningTrace: reasoning
+    };
+
+    return { asset, updatedProfile: null };
 }
 
 /**
@@ -89,27 +133,29 @@ export async function processForKnowledgeBase(
         // Fallback is already set
     }
 
-    // 2. Ingest into Gemini Corpus
+    // 2. Ingest into Gemini Files
     try {
-        const corpusName = await GeminiRetrieval.initCorpus();
-        const doc = await GeminiRetrieval.createDocument(corpusName, metadata.title, {
-            source: contextSource,
-            summary: metadata.summary,
-            fileSize: extraMetadata.size || '0 KB',
-            mimeType: extraMetadata.type || 'text/plain',
-            uploadDate: extraMetadata.originalDate || new Date().toISOString()
-        });
-        await GeminiRetrieval.ingestText(doc.name, reportContent);
-        console.log("Ingested into Gemini Corpus:", doc.name);
-    } catch (e) {
-        console.error("Failed to ingest into Gemini Corpus:", e);
-    }
+        // Direct upload to Files API
+        const file = await GeminiRetrieval.uploadFile(metadata.title, reportContent);
+        console.log("Uploaded to Gemini Files:", file.name);
 
-    return {
-        title: metadata.title,
-        content: metadata.summary,
-        entities: [],
-        tags: ['gemini-corpus'],
-        embeddingId: 'managed-by-gemini' // Placeholder
-    };
+        // Return mostly compatible structure
+        return {
+            title: metadata.title,
+            content: metadata.summary,
+            entities: [],
+            tags: ['gemini-file'],
+            embeddingId: file.name
+        };
+    } catch (e) {
+        console.error("Failed to upload to Gemini Files:", e);
+        // Throw or return partial?
+        return {
+            title: metadata.title,
+            content: "Failed to process",
+            entities: [],
+            tags: ['error'],
+            embeddingId: ''
+        }
+    }
 }

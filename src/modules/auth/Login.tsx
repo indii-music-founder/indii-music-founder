@@ -80,8 +80,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
                 )}
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Email</label>
+                    <label htmlFor="email" className="text-sm font-medium text-zinc-300">Email</label>
                     <input
+                        id="email"
                         type="email"
                         required
                         className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
@@ -93,7 +94,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
 
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                        <label className="text-sm font-medium text-zinc-300">Password</label>
+                        <label htmlFor="password" className="text-sm font-medium text-zinc-300">Password</label>
                         <button
                             type="button"
                             onClick={() => onNavigate('forgot')}
@@ -103,6 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
                         </button>
                     </div>
                     <input
+                        id="password"
                         type="password"
                         required
                         className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"

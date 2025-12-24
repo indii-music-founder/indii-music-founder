@@ -339,9 +339,10 @@ firebase emulators:start       # Run local emulators
 
 #### Forbidden Models (WILL CRASH APP)
 
-- `gemini-1.5-flash`, `gemini-1.5-pro` (ALL 1.5 variants)
-- `gemini-2.0-flash`, `gemini-2.0-pro` (ALL 2.0 variants)
-- `gemini-pro`, `gemini-pro-vision` (legacy)
+- `gemini-1.5-flash`, `gemini-1.5-pro` (ALL 1.5 variants are BANNED)
+- `gemini-2.0-flash`, `gemini-2.0-pro` (ALL 2.0 variants are BANNED)
+- `gemini-pro`, `gemini-pro-vision` (legacy BANNED)
+- Any model not explicitly listed in `Approved Models` above.
 
 #### Correct Usage
 

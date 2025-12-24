@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { DashboardService, ProjectMetadata } from '../../../services/dashboard/DashboardService';
 import { FolderPlus, Clock, Image, MoreVertical } from 'lucide-react';
 import { useStore } from '@/core/store';
+import NewProjectModal from './NewProjectModal';
 
 export default function ProjectHub() {
     const [projects, setProjects] = useState<ProjectMetadata[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const { setModule } = useStore();
 
     useEffect(() => {
@@ -17,11 +19,27 @@ export default function ProjectHub() {
         setModule('creative'); // Default to creative for now
     };
 
+    const handleCreateProject = async (name: string, type: 'creative' | 'music' | 'marketing' | 'legal') => {
+        try {
+            const newProject = await DashboardService.createProject(name);
+            setProjects(prev => [newProject, ...prev]);
+            setIsModalOpen(false);
+            // Optionally open immediately:
+            handleOpenProject(newProject.id);
+        } catch (error) {
+            console.error("Failed to create project:", error);
+            // In a real app, we'd set an error state to show in the modal
+        }
+    };
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white">Recent Projects</h2>
-                <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                >
                     <FolderPlus size={18} />
                     <span>New Project</span>
                 </button>
@@ -64,6 +82,13 @@ export default function ProjectHub() {
                     </div>
                 ))}
             </div>
+
+            <NewProjectModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onCreate={handleCreateProject}
+                error={null}
+            />
         </div>
     );
 }

@@ -210,6 +210,18 @@ export default function CreativeNavbar() {
                 }
             >
                 <div className="flex-1 w-full flex items-center gap-2 justify-center md:justify-end pr-4">
+                    {/* Prompt Input */}
+                    <div className="flex-1 max-w-2xl mx-4 relative hidden md:block">
+                        <input
+                            type="text"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Describe your creative task..."
+                            className="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-4 py-1.5 text-xs text-gray-200 focus:border-purple-500 outline-none transition-colors"
+                            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                        />
+                    </div>
+
                     {/* Studio Controls (Desktop) */}
                     <div className="hidden md:block">
                         <StudioNavControls />

@@ -100,8 +100,8 @@ function DevPortWarning() {
 function useAppInitialization() {
     const { initializeAuth, initializeHistory, loadProjects, isAuthReady, isAuthenticated } = useStore();
 
-    // Initialize auth on mount
     useEffect(() => {
+        if ((window as any).__TEST_MODE__ || localStorage.getItem('TEST_MODE') === 'true') return;
         initializeAuth();
 
         // Handle direct navigation to /select-org
@@ -241,8 +241,8 @@ export default function App() {
                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                         <ErrorBoundary>
                             <Suspense fallback={<LoadingFallback />}>
-                                {/* Auth Gate */}
-                                {!isAuthReady || !isAuthenticated ? (
+                                {/* Auth Gate (Bypass in Test Mode) */}
+                                {(!isAuthReady || !isAuthenticated) && !((window as any).__TEST_MODE__ || localStorage.getItem('TEST_MODE') === 'true') ? (
                                     <AuthLogin />
                                 ) : (
                                     <ModuleRenderer moduleId={currentModule as ModuleId} />
