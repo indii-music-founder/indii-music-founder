@@ -126,66 +126,156 @@ export class GeminiRetrievalService {
     }
 
     /**
+     * File Search API Helpers
+     */
+
+    // Cache the default store name to avoid repeated lookups/creation
+    private defaultStoreName: string | null = null;
+
+    /**
+     * Finds or creates a default FileSearchStore.
+     */
+    async ensureFileSearchStore(): Promise<string> {
+        if (this.defaultStoreName) return this.defaultStoreName;
+
+        // 1. List existing stores to see if we have one
+        try {
+            const listRes = await this.fetch('fileSearchStores');
+            if (listRes.fileSearchStores && listRes.fileSearchStores.length > 0) {
+                // Use the first one found
+                this.defaultStoreName = listRes.fileSearchStores[0].name;
+                console.log("Using existing FileSearchStore:", this.defaultStoreName);
+                return this.defaultStoreName!;
+            }
+        } catch (e) {
+            console.warn("Failed to list FileSearchStores, trying create...", e);
+        }
+
+        // 2. Create a new store if none found
+        try {
+            const createRes = await this.fetch('fileSearchStores', {
+                method: 'POST',
+                body: JSON.stringify({ displayName: "IndiiOS Default Store" })
+            });
+            this.defaultStoreName = createRes.name;
+            console.log("Created new FileSearchStore:", this.defaultStoreName);
+            return this.defaultStoreName!;
+        } catch (e: any) {
+            console.error("Failed to create FileSearchStore:", e);
+            throw new Error(`FileSearchStore Linkage Failed: ${e.message}`);
+        }
+    }
+
+    /**
+     * Imports an existing file (uploaded via files API) into the File Search Store.
+     * @param fileUri The resource name of the file (e.g. "files/123...")
+     */
+    async importFileToStore(fileUri: string, storeName: string): Promise<void> {
+        // Ensure format is just "files/ID" for import
+        let resourceName = fileUri;
+        if (resourceName.startsWith('https://')) {
+            resourceName = resourceName.split('/v1beta/').pop() || resourceName;
+            resourceName = resourceName.split('/files/').pop() ? `files/${resourceName.split('/files/').pop()}` : resourceName;
+        }
+
+        // Ensure pure resource name
+        if (!resourceName.startsWith('files/')) {
+            // If it's just an ID
+            resourceName = `files/${resourceName}`;
+        }
+
+        console.log(`Importing ${resourceName} into ${storeName}...`);
+
+        try {
+            const url = `${storeName}:importFile`; // e.g. fileSearchStores/123:importFile
+            const res = await this.fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({
+                    fileName: resourceName
+                })
+            });
+            console.log("Import Operation started:", res.name);
+
+            // Wait for operation to complete (simple poll)
+            let op = res;
+            let attempts = 0;
+            while (!op.done && attempts < 10) {
+                await new Promise(r => setTimeout(r, 1000));
+                // Operation name is like "operations/..."
+                op = await this.fetch(op.name);
+                attempts++;
+            }
+
+            if (op.error) {
+                // If error says "already exists", we can ignore. 
+                // But usually it just works or fails.
+                console.warn(`Import finished with potential error (or valid state): ${JSON.stringify(op.error)}`);
+            } else {
+                console.log("File imported successfully.");
+            }
+
+        } catch (e: any) {
+            console.error("Import to store failed:", e);
+            // Verify if it failed because it's already there? 
+            // For now throw to be safe
+            throw e;
+        }
+    }
+
+    /**
      * Query using the file context (Long Context Window).
      * Replaces AQA model usage.
      */
     async query(fileUri: string, userQuery: string, fileContent?: string, model?: string) {
         const parts: any[] = [];
-        let canonicalUri = fileUri;
+        let tools: any[] | undefined;
 
         // Default to model if provided, or fallback to config default (usually FAST/Flash)
-        // But for Native RAG with files, we prefer PRO if not specified to avoid 400s on Flash
         const targetModel = model || AI_MODELS.TEXT.FAST;
 
-        // "Native" path: Use fileData if no explicit content fallback is forced OR if we just want to try it.
-        // However, our previous logic was: if fileContent exists, use it.
-        // New logic: If fileContent is provided, it's a fallback. But we want to prefer fileData if possible.
-        // For now, let's trust the caller. If they pass fileContent, they might want inline.
-        // BUT, if they pass null/undefined, we MUST use fileData.
-
         if (fileContent) {
-            // Only log this if we are actually using the fallback
-            // console.log("Using Inline Text Context fallback");
             parts.push({ text: `Use the following document as context to answer the user's question:\n\n${fileContent}\n\n` });
         } else {
-            // Standard: File URI
+            // NATIVE RAG: Use File Search Tool
+            try {
+                // 1. Ensure we have a store
+                const storeName = await this.ensureFileSearchStore();
 
-            // Normalize: Ensure URI matches: https://generativelanguage.googleapis.com/files/<id>
-            // The API explicitly rejects 'files/<id>' and '.../v1beta/files/<id>'
+                // 2. Import this specific file to the store
+                await this.importFileToStore(fileUri, storeName);
 
-            if (fileUri.startsWith('files/')) {
-                // Case: "files/123" -> "https://generativelanguage.googleapis.com/files/123"
-                canonicalUri = `https://generativelanguage.googleapis.com/${fileUri}`;
-            } else if (fileUri.includes('/v1beta/files/')) {
-                // Case: "https://.../v1beta/files/123" -> "https://.../files/123"
-                canonicalUri = fileUri.replace('/v1beta/files/', '/files/');
-            } else {
-                // Trust other formats (Youtube, etc) or already correct URIs
-                canonicalUri = fileUri;
+                // 3. Construct Tool Payload
+                tools = [{
+                    fileSearch: {
+                        fileSearchStoreNames: [storeName]
+                    }
+                }];
+
+            } catch (e) {
+                console.error("File Search Setup Failed:", e);
+                throw e;
             }
-            // We TRUST the input if it's already a URL (even with v1beta)
-
-            parts.push({
-                file_data: {
-                    file_uri: canonicalUri,
-                    mime_type: 'text/plain'
-                }
-            });
         }
 
         parts.push({ text: userQuery });
 
-        const body = {
+        const body: any = {
             contents: [{
                 role: 'user',
                 parts: parts
-            }]
+            }],
+            generationConfig: {
+                temperature: 0.0
+            }
         };
-        console.log("DEBUG: Query fileUri:", fileUri);
-        console.log("DEBUG: Canonical URI:", canonicalUri);
-        // console.log("DEBUG: Query Body:", JSON.stringify(body, null, 2));
 
-        // Use standard generateContent with fileUri
+        if (tools) {
+            body.tools = tools;
+        }
+
+        console.log("DEBUG: Querying with tools:", JSON.stringify(tools));
+
+        // Use standard generateContent
         return this.fetch(`models/${targetModel}:generateContent`, {
             method: 'POST',
             body: JSON.stringify(body)
@@ -196,16 +286,12 @@ export class GeminiRetrievalService {
      * Lists files uploaded to the Gemini Files API.
      */
     async listFiles(): Promise<{ files: GeminiFile[] }> {
-        // Pagination is supported but for now we just get the default page
         return this.fetch('files');
     }
 
-    // --- Legacy Corpus Compatibility Methods (To avoid breaking tests/consumers immediately) ---
-    // These will now throw or log deprecation, or try to map if possible.
-    // Since the previous implementation 404'd, these are broken anyway.
-
+    // --- Legacy Corpus Compatibility Methods ---
     async initCorpus(displayName: string): Promise<string> {
-        console.warn("Corpus/AQA is deprecated due to API 404s. Please update to `uploadFile`.");
+        console.warn("Corpus/AQA is deprecated. Please update to `uploadFile`.");
         return "deprecated-corpus";
     }
 

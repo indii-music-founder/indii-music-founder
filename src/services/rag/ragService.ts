@@ -58,12 +58,12 @@ export async function runAgenticWorkflow(
 
             // 2. Query with File Context
             // We force native RAG (no inline content) by passing undefined for content fallback
-            // And we explicitly request PRO model to avoid Flash 400s with fileData
+            // Perform query using either native-file path or inline-text fallback
             const result = await GeminiRetrieval.query(
                 fileUri,
                 query,
-                undefined, // Force Native RAG (no inline fallback)
-                AI_MODELS.TEXT.AGENT // Use AGENT (gemini-3-pro-preview) for better reasoning + fileData support
+                fileContent, // RESTORED: Pass content so fallback logic works if fileData fails
+                AI_MODELS.TEXT.AGENT
             );
             const data = result;
 
@@ -90,7 +90,7 @@ export async function runAgenticWorkflow(
             const response = await AI.generateContent({
                 model: AI_MODELS.TEXT.FAST,
                 contents: { role: 'user', parts: [{ text: query }] },
-                config: { temperature: 0.7 } // Creative fallback
+                config: { temperature: 0.0 } // Set to 0.0 as per GEMINI.md for maximum factuality
             });
 
             responseText = response.text() || "I couldn't generate a response.";
