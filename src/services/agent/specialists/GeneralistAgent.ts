@@ -241,7 +241,6 @@ export class GeneralistAgent extends BaseAgent {
                         responseMimeType: 'application/json',
                         ...AI_CONFIG.THINKING.HIGH
                     }
-                }
                 });
 
             let buffer = "";
