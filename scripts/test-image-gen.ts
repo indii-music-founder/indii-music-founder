@@ -27,7 +27,7 @@ if (process.env.VITE_FUNCTIONS_URL) {
 }
 
 // Connect to Cloud Function
-const generateImageFn = httpsCallable(functions, 'generateImage');
+const generateImageFn = httpsCallable(functions, 'generateImageV3');
 
 async function runTest() {
     console.log("🎨 Starting Image Generation Test (Vertex AI / Gemini Image 3)...");

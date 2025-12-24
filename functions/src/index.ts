@@ -5,7 +5,7 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 
-import { GoogleAuth } from "google-auth-library";
+// GoogleAuth removed as we switched to API Key for Gemini 3 Image models
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -13,6 +13,7 @@ admin.initializeApp();
 // Define Secrets
 const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 // Lazy Initialize Inngest Client
 // We use a function factory or lazy initialization inside the handler to ensure secrets are available
@@ -127,67 +128,82 @@ interface GenerateImageRequestData {
     images?: { mimeType: string; data: string }[];
 }
 
-export const generateImage = functions.https.onCall(async (data: GenerateImageRequestData, context) => {
-    try {
-        const { prompt, aspectRatio, count, images } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview"; // Updated to latest Gemini 3 Image model
+export const generateImageV3 = functions
+    .runWith({ secrets: [geminiApiKey] })
+    .https.onCall(async (data: GenerateImageRequestData, context) => { // Updated logic for AI Studio
+        try {
+            const { prompt, aspectRatio, count, images } = data;
+            const modelId = "gemini-3-pro-image-preview";
 
-        // Note: Using the API Key provided by client? Or using Vertex AI IAM?
-        // Client service passes apiKey, but we are in Cloud Functions effectively as a service account (if we init GoogleAuth).
-        // Let's use Vertex AI IAM as it's more secure for backend.
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
-        const auth = new GoogleAuth({
-            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-        });
-        const client = await auth.getClient();
-        const accessToken = await client.getAccessToken();
+            const parts: any[] = [{ text: prompt }];
 
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+            if (images) {
+                images.forEach(img => {
+                    parts.push({
+                        inlineData: {
+                            mimeType: img.mimeType || "image/png",
+                            data: img.data
+                        }
+                    });
+                });
+            }
 
-        const parts: any[] = [{ text: prompt + (aspectRatio ? ` --aspect_ratio ${aspectRatio}` : '') }];
-
-        if (images) {
-            images.forEach(img => {
-                parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        role: "user",
+                        parts: parts
+                    }],
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"],
+                        candidateCount: count || 1,
+                        // For Imagen 3 preview, we use these specialized config fields if present
+                        // aspect_ratio is often handled via prompt suffix or imageConfig
+                        ...(aspectRatio ? {
+                            imageConfig: {
+                                aspectRatio: aspectRatio // The API expects literal string like "16:9"
+                            }
+                        } : {})
+                    }
+                }),
             });
-        }
 
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${accessToken.token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                contents: [{
-                    role: "user",
-                    parts: parts
-                }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    candidateCount: count || 1
-                }
-            }),
-        });
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Gemini API Error:", errorText);
+                throw new functions.https.HttpsError('internal', errorText);
+            }
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Vertex API Error:", errorText);
-            throw new functions.https.HttpsError('internal', errorText);
-        }
+            const result = await response.json();
 
-        const result = await response.json();
-        return result;
-    } catch (error: unknown) {
-        console.error("Function Error:", error);
-        if (error instanceof Error) {
-            throw new functions.https.HttpsError('internal', error.message);
+            // Transform Google AI SDK response to match what the client expects
+            // Client expects { images: [{ bytesBase64Encoded: string }] }
+            const candidates = result.candidates || [];
+            const processedImages = candidates.flatMap((c: any) =>
+                (c.content?.parts || [])
+                    .filter((p: any) => p.inlineData)
+                    .map((p: any) => ({
+                        bytesBase64Encoded: p.inlineData.data,
+                        mimeType: p.inlineData.mimeType
+                    }))
+            );
+
+            return { images: processedImages };
+
+        } catch (error: unknown) {
+            console.error("Function Error:", error);
+            if (error instanceof Error) {
+                throw new functions.https.HttpsError('internal', error.message);
+            }
+            throw new functions.https.HttpsError('internal', "An unknown error occurred");
         }
-        throw new functions.https.HttpsError('internal', "An unknown error occurred");
-    }
-});
+    });
 
 interface EditImageRequestData {
     image: string;
@@ -204,89 +220,170 @@ interface Part {
     text?: string;
 }
 
-export const editImage = functions.https.onCall(async (data: EditImageRequestData, context) => {
-    try {
-        const { image, mask, prompt, referenceImage } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview";
+export const editImage = functions
+    .runWith({ secrets: [geminiApiKey] })
+    .https.onCall(async (data: EditImageRequestData, context) => {
+        try {
+            const { image, mask, prompt, referenceImage } = data;
+            const modelId = "gemini-3-pro-image-preview";
 
-        const auth = new GoogleAuth({
-            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-        });
-        const client = await auth.getClient();
-        const accessToken = await client.getAccessToken();
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+            const parts: Part[] = [
+                {
+                    inlineData: {
+                        mimeType: "image/png",
+                        data: image
+                    }
+                }
+            ];
 
-        const parts: Part[] = [
-            {
-                inlineData: {
-                    mimeType: "image/png",
-                    data: image
+            if (mask) {
+                parts.push({
+                    inlineData: {
+                        mimeType: "image/png",
+                        data: mask
+                    }
+                });
+                parts.push({ text: "Use the second image as a mask for inpainting." });
+            }
+
+            if (referenceImage) {
+                parts.push({
+                    inlineData: {
+                        mimeType: "image/png",
+                        data: referenceImage
+                    }
+                });
+                parts.push({ text: "Use this third image as a reference." });
+            }
+
+            parts.push({ text: prompt });
+
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        role: "user",
+                        parts: parts
+                    }],
+                    generation_config: {
+                        response_modalities: ["IMAGE"],
+                    }
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Gemini API Error:", errorText);
+                throw new functions.https.HttpsError('internal', errorText);
+            }
+
+            const result = await response.json();
+            return result;
+
+        } catch (error: unknown) {
+            console.error("Function Error:", error);
+            if (error instanceof Error) {
+                throw new functions.https.HttpsError('internal', error.message);
+            }
+            throw new functions.https.HttpsError('internal', "An unknown error occurred");
+        }
+    });
+/**
+ * Generate Content Stream Proxy
+ * Proxies streaming requests to Gemini API
+ */
+export const generateContentStream = functions
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 300
+    })
+    .https.onRequest((req, res) => {
+        cors(req, res, async () => {
+            if (req.method !== 'POST') {
+                res.status(405).send('Method Not Allowed');
+                return;
+            }
+
+            try {
+                const { model, contents, config } = req.body;
+                const modelId = model || "gemini-3-pro-preview";
+
+                // Use the streamGenerateContent endpoint with SSE
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents,
+                        generationConfig: config
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    res.status(response.status).send(error);
+                    return;
+                }
+
+                // Proxy the stream
+                res.setHeader('Content-Type', 'text/plain'); // AIService expects text chunks parsed as JSON
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+
+                const reader = response.body?.getReader();
+                if (!reader) {
+                    res.status(500).send('No response body');
+                    return;
+                }
+
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.substring(6));
+                                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (text) {
+                                    // Send as NDJSON line
+                                    res.write(JSON.stringify({ text }) + '\n');
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON
+                            }
+                        }
+                    }
+                }
+                res.end();
+
+            } catch (error: any) {
+                console.error("[generateContentStream] Error:", error);
+                if (!res.headersSent) {
+                    res.status(500).send(error.message);
+                } else {
+                    res.end();
                 }
             }
-        ];
-
-        if (mask) {
-            parts.push({
-                inlineData: {
-                    mimeType: "image/png",
-                    data: mask
-                }
-            });
-            parts.push({ text: "Use the second image as a mask for inpainting." });
-        }
-
-        if (referenceImage) {
-            parts.push({
-                inlineData: {
-                    mimeType: "image/png",
-                    data: referenceImage
-                }
-            });
-            parts.push({ text: "Use this third image as a reference." });
-        }
-
-        parts.push({ text: `Edit this image: ${prompt}` });
-
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${accessToken.token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                },
-            }),
         });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Vertex API Error:", errorText);
-            throw new functions.https.HttpsError('internal', errorText);
-        }
-
-        const result = await response.json();
-        return result;
-    } catch (error: unknown) {
-        console.error("Function Error:", error);
-        if (error instanceof Error) {
-            throw new functions.https.HttpsError('internal', error.message);
-        }
-        throw new functions.https.HttpsError('internal', "An unknown error occurred");
-    }
-});
+    });
 
 /**
  * RAG Proxy
  * Proxies requests to Google Generative Language API (Gemini) to hide API Key
  * and handle CORS/Referer restrictions server-side.
  */
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
+// geminiApiKey is now defined at the top
 const cors = corsLib({ origin: true });
 
 export const ragProxy = functions

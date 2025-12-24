@@ -62,7 +62,7 @@ const MessageItem = memo(({ msg }: { msg: AgentMessage }) => (
                 ? 'bg-blue-600/20 text-blue-100 border border-blue-500/30 rounded-tr-sm'
                 : msg.role === 'system'
                     ? 'bg-transparent text-gray-500 text-sm italic border border-transparent w-full text-center'
-                    : 'bg-[#1a1a1a] text-gray-200 border border-gray-800 rounded-tl-sm shadow-xl'
+                    : 'bg-[#1a1f2e] text-gray-200 border border-gray-800 rounded-tl-sm shadow-xl'
                 }`}>
 
             {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} />}

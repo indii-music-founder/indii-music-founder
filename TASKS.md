@@ -41,6 +41,7 @@ This is the single source of truth for pending tasks. See referenced docs for de
 - [x] Update Cloud Functions to use Gemini 3.0 models
 - [x] Rotate API Key (Fix Leaked Key)
 - [ ] Resolve RAG compatibility with Gemini 3 Flash (`fileData` support)
+- [ ] **FUTURE/ENTERPRISE**: Migrate `generateImageV3` from AI Studio (API Key) to Vertex AI (IAM) once `gemini-3-pro-image-preview` is available on Vertex endpoints.
 
 ---
 

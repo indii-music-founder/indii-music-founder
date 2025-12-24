@@ -37,11 +37,26 @@ jobs:
     - name: Run E2E Tests
       # We need to build the electron app first for E2E tests to run against the built binary if that's how the test is set up.
       # However, our current E2E test runs against the compiled main process in dist-electron.
-      # So we need to compile typescript first.
+      # This step runs all E2E tests EXCEPT the web-based RAG workflow test.
       run: |
         npm run electron:build
         ls -R dist-electron
-        xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" npx playwright test || (cat e2e-error.log && exit 1)
+        xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" npx playwright test --grep-invert "RAG Workflow" || (cat e2e-error.log && exit 1)
+
+    - name: Run Web E2E Test (RAG Workflow)
+      env:
+        # These secrets are required for the application to connect to the live backend for RAG.
+        VITE_FUNCTIONS_URL: ${{ secrets.VITE_FUNCTIONS_URL }}
+        VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+        CI: true
+      run: |
+        echo "Building web app for E2E test..."
+        npm run build
+        echo "Starting preview server on port 4242..."
+        npm run preview -- --port 4242 &
+        npx wait-on http://localhost:4242 -t 60000
+        echo "Server is up. Running RAG E2E test..."
+        xvfb-run --auto-servernum npx playwright test --grep "RAG Workflow"
 
   build:
     needs: test

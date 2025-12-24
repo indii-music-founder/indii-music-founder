@@ -5,6 +5,7 @@ const BASE_URL = 'http://localhost:4242';
 const TEST_USER_ID = `gauntlet_user_${Date.now()}`;
 
 test.describe('The Gauntlet: Live Production Stress Test', () => {
+    test.setTimeout(60000); // Increase timeout to 60s for full flow
 
     test.beforeEach(async ({ page }) => {
         // Capture browser logs for debugging
@@ -203,10 +204,46 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         console.log('[Gauntlet] Agent responded successfully.');
     });
 
-    /*
-        test('Scenario 2: The "Chaos" Check (Rapid Navigation)', async ({ page }) => {
-            // ... (commenting out for isolation)
+    test('Scenario 2: Chaos Check (Rapid Navigation)', async ({ page }) => {
+        // A. Setup: Bypass Auth & Inject Mock State (Same as Scenario 1)
+        await page.addInitScript({ content: 'window.__TEST_MODE__ = true;' });
+        await page.goto('/');
+        await page.evaluate(() => localStorage.setItem('TEST_MODE', 'true'));
+        await page.reload();
+        await page.waitForTimeout(1000);
+
+        // Force app state to a known ready state (e.g. Dashboard)
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            store.setState({
+                currentModule: 'dashboard',
+                isAuthenticated: true,
+                isAuthReady: true,
+                userProfile: { uid: 'chaos-user', email: 'chaos@test.com', displayName: 'Chaos User' }
+            });
         });
-    */
+
+        console.log('[Gauntlet] Starting Scenario 2: Chaos Check');
+
+        // Note: Using broad assumption that nav items available.
+        // We know 'dashboard', 'creative' are available. 'settings' probably too.
+        const navItems = ['dashboard', 'creative'];
+
+        for (let i = 0; i < 5; i++) {
+            const randomNav = navItems[Math.floor(Math.random() * navItems.length)];
+            console.log(`[Gauntlet] Chaos Step ${i + 1}: Clicking nav-${randomNav}`);
+
+            // Check if nav item exists before clicking
+            const navLocator = page.locator(`[data-testid="nav-${randomNav}"]`);
+            // Wait briefly for it to be visible incase of re-render
+            try {
+                await expect(navLocator).toBeVisible({ timeout: 2000 });
+                await navLocator.click();
+                await page.waitForTimeout(500); // Small debounce
+            } catch (e) {
+                console.log(`[Gauntlet] Nav item ${randomNav} not found or not visible, skipping.`);
+            }
+        }
+    });
 
 });

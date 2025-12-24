@@ -47,19 +47,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ragProxy = exports.editImage = exports.generateImage = exports.inngestApi = exports.triggerVideoJob = void 0;
+exports.ragProxy = exports.generateContentStream = exports.editImage = exports.generateImageV3 = exports.inngestApi = exports.triggerVideoJob = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const inngest_1 = require("inngest");
 const params_1 = require("firebase-functions/params");
 const express_1 = require("inngest/express");
 const cors_1 = __importDefault(require("cors"));
-const google_auth_library_1 = require("google-auth-library");
+// GoogleAuth removed as we switched to API Key for Gemini 3 Image models
 // Initialize Firebase Admin
 admin.initializeApp();
 // Define Secrets
 const inngestEventKey = (0, params_1.defineSecret)("INNGEST_EVENT_KEY");
 const inngestSigningKey = (0, params_1.defineSecret)("INNGEST_SIGNING_KEY");
+const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 // Lazy Initialize Inngest Client
 // We use a function factory or lazy initialization inside the handler to ensure secrets are available
 const getInngestClient = () => {
@@ -141,31 +142,27 @@ exports.inngestApi = functions
     // Execute the handler
     return handler(req, res);
 });
-exports.generateImage = functions.https.onCall(async (data, context) => {
+exports.generateImageV3 = functions
+    .runWith({ secrets: [geminiApiKey] })
+    .https.onCall(async (data, context) => {
     try {
         const { prompt, aspectRatio, count, images } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
-        const location = "us-central1";
-        const modelId = "gemini-3-pro-image-preview"; // Updated to latest Gemini 3 Image model
-        // Note: Using the API Key provided by client? Or using Vertex AI IAM?
-        // Client service passes apiKey, but we are in Cloud Functions effectively as a service account (if we init GoogleAuth).
-        // Let's use Vertex AI IAM as it's more secure for backend.
-        const auth = new google_auth_library_1.GoogleAuth({
-            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-        });
-        const client = await auth.getClient();
-        const accessToken = await client.getAccessToken();
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
-        const parts = [{ text: prompt + (aspectRatio ? ` --aspect_ratio ${aspectRatio}` : '') }];
+        const modelId = "gemini-3-pro-image-preview";
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
+        const parts = [{ text: prompt }];
         if (images) {
             images.forEach(img => {
-                parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+                parts.push({
+                    inlineData: {
+                        mimeType: img.mimeType || "image/png",
+                        data: img.data
+                    }
+                });
             });
         }
         const response = await fetch(endpoint, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${accessToken.token}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -173,19 +170,32 @@ exports.generateImage = functions.https.onCall(async (data, context) => {
                         role: "user",
                         parts: parts
                     }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    candidateCount: count || 1
-                }
+                generationConfig: Object.assign({ responseModalities: ["TEXT", "IMAGE"], candidateCount: count || 1 }, (aspectRatio ? {
+                    imageConfig: {
+                        aspectRatio: aspectRatio // The API expects literal string like "16:9"
+                    }
+                } : {}))
             }),
         });
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Vertex API Error:", errorText);
+            console.error("Gemini API Error:", errorText);
             throw new functions.https.HttpsError('internal', errorText);
         }
         const result = await response.json();
-        return result;
+        // Transform Google AI SDK response to match what the client expects
+        // Client expects { images: [{ bytesBase64Encoded: string }] }
+        const candidates = result.candidates || [];
+        const processedImages = candidates.flatMap((c) => {
+            var _a;
+            return (((_a = c.content) === null || _a === void 0 ? void 0 : _a.parts) || [])
+                .filter((p) => p.inlineData)
+                .map((p) => ({
+                bytesBase64Encoded: p.inlineData.data,
+                mimeType: p.inlineData.mimeType
+            }));
+        });
+        return { images: processedImages };
     }
     catch (error) {
         console.error("Function Error:", error);
@@ -195,18 +205,13 @@ exports.generateImage = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', "An unknown error occurred");
     }
 });
-exports.editImage = functions.https.onCall(async (data, context) => {
+exports.editImage = functions
+    .runWith({ secrets: [geminiApiKey] })
+    .https.onCall(async (data, context) => {
     try {
         const { image, mask, prompt, referenceImage } = data;
-        const projectId = process.env.GCLOUD_PROJECT || "indiios-v-1-1";
-        const location = "us-central1";
         const modelId = "gemini-3-pro-image-preview";
-        const auth = new google_auth_library_1.GoogleAuth({
-            scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-        });
-        const client = await auth.getClient();
-        const accessToken = await client.getAccessToken();
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:generateContent`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
         const parts = [
             {
                 inlineData: {
@@ -233,23 +238,25 @@ exports.editImage = functions.https.onCall(async (data, context) => {
             });
             parts.push({ text: "Use this third image as a reference." });
         }
-        parts.push({ text: `Edit this image: ${prompt}` });
+        parts.push({ text: prompt });
         const response = await fetch(endpoint, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${accessToken.token}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                contents: [{ role: "user", parts }],
-                generationConfig: {
-                    responseMimeType: "application/json"
-                },
+                contents: [{
+                        role: "user",
+                        parts: parts
+                    }],
+                generation_config: {
+                    response_modalities: ["IMAGE"],
+                }
             }),
         });
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Vertex API Error:", errorText);
+            console.error("Gemini API Error:", errorText);
             throw new functions.https.HttpsError('internal', errorText);
         }
         const result = await response.json();
@@ -264,11 +271,90 @@ exports.editImage = functions.https.onCall(async (data, context) => {
     }
 });
 /**
+ * Generate Content Stream Proxy
+ * Proxies streaming requests to Gemini API
+ */
+exports.generateContentStream = functions
+    .runWith({
+    secrets: [geminiApiKey],
+    timeoutSeconds: 300
+})
+    .https.onRequest((req, res) => {
+    cors(req, res, async () => {
+        var _a, _b, _c, _d, _e, _f;
+        if (req.method !== 'POST') {
+            res.status(405).send('Method Not Allowed');
+            return;
+        }
+        try {
+            const { model, contents, config } = req.body;
+            const modelId = model || "gemini-3-pro-preview";
+            // Use the streamGenerateContent endpoint with SSE
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents,
+                    generationConfig: config
+                })
+            });
+            if (!response.ok) {
+                const error = await response.text();
+                res.status(response.status).send(error);
+                return;
+            }
+            // Proxy the stream
+            res.setHeader('Content-Type', 'text/plain'); // AIService expects text chunks parsed as JSON
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            const reader = (_a = response.body) === null || _a === void 0 ? void 0 : _a.getReader();
+            if (!reader) {
+                res.status(500).send('No response body');
+                return;
+            }
+            const decoder = new TextDecoder();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done)
+                    break;
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            const text = (_f = (_e = (_d = (_c = (_b = data.candidates) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.content) === null || _d === void 0 ? void 0 : _d.parts) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.text;
+                            if (text) {
+                                // Send as NDJSON line
+                                res.write(JSON.stringify({ text }) + '\n');
+                            }
+                        }
+                        catch (e) {
+                            // Skip invalid JSON
+                        }
+                    }
+                }
+            }
+            res.end();
+        }
+        catch (error) {
+            console.error("[generateContentStream] Error:", error);
+            if (!res.headersSent) {
+                res.status(500).send(error.message);
+            }
+            else {
+                res.end();
+            }
+        }
+    });
+});
+/**
  * RAG Proxy
  * Proxies requests to Google Generative Language API (Gemini) to hide API Key
  * and handle CORS/Referer restrictions server-side.
  */
-const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
+// geminiApiKey is now defined at the top
 const cors = (0, cors_1.default)({ origin: true });
 exports.ragProxy = functions
     .runWith({

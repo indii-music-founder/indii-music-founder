@@ -16,7 +16,8 @@ export async function runAgenticWorkflow(
     userProfile: UserProfile,
     activeTrack: AudioAnalysisJob | null,
     onUpdate: (update: string) => void,
-    _updateDocStatus: (docId: string, status: KnowledgeDocumentIndexingStatus) => void
+    _updateDocStatus: (docId: string, status: KnowledgeDocumentIndexingStatus) => void,
+    fileContent?: string
 ): Promise<{ asset: KnowledgeAsset; updatedProfile: UserProfile | null }> {
 
     onUpdate("Initializing Gemini Knowledge Base...");
@@ -48,7 +49,7 @@ export async function runAgenticWorkflow(
             reasoning.push(`Context: ${targetFile.displayName} (${fileUri})`);
 
             // 2. Query with File Context
-            const result = await GeminiRetrieval.query(fileUri, query);
+            const result = await GeminiRetrieval.query(fileUri, query, fileContent);
             const data = await result.json();
 
             // Parse Standard Gemini Response

@@ -11,6 +11,7 @@ import StudioNavControls from './StudioNavControls';
 import ImageSubMenu from './ImageSubMenu';
 import DaisyChainControls from './DaisyChainControls';
 import { StudioToolbar } from '@/components/studio/StudioToolbar';
+import { agentService } from '@/services/agent/agentService';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -31,6 +32,30 @@ export default function CreativeNavbar() {
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
+
+        // Agent Delegation Heuristic
+        const isChatPrompt = prompt.trim().includes(' ') && (
+            prompt.length > 25 ||
+            /^(I|want|can|how|please|tell|give|show|what|why|help|who|where|when)/i.test(prompt.trim())
+        );
+
+        if (isChatPrompt) {
+            if (!useStore.getState().isAgentOpen) {
+                useStore.getState().toggleAgentWindow();
+            }
+            setIsGenerating(true);
+            try {
+                await agentService.sendMessage(prompt);
+                setPrompt('');
+            } catch (e) {
+                console.error("Agent delegation failed:", e);
+                toast.error("Agent delegation failed.");
+            } finally {
+                setIsGenerating(false);
+            }
+            return;
+        }
+
         setIsGenerating(true);
         try {
             let results;

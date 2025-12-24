@@ -143,13 +143,15 @@ export class GeneralistAgent extends BaseAgent {
     }
 
     async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<{ text: string; data?: any }> {
-        console.log(`[${this.name}] Received task: ${task}`);
+
 
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         const { useStore } = await import('@/core/store');
         const { currentOrganizationId, currentProjectId } = useStore.getState();
+
+
 
 
         const orgContext = `
@@ -212,6 +214,7 @@ export class GeneralistAgent extends BaseAgent {
         let finalResponseText = '';
 
         while (iterations < 8) { // Limit iterations for safety
+
             const parts: any[] = [];
 
             // Build Context from History
@@ -227,7 +230,8 @@ export class GeneralistAgent extends BaseAgent {
             });
 
             // Add current context
-            parts.push({ text: `${fullSystemPrompt}\n\nLast Input: ${currentInput}\nNext Step (JSON):` });
+            const nextStepPrompt = `${fullSystemPrompt}\n\nLast Input: ${currentInput}\nNext Step (JSON):`;
+            parts.push({ text: nextStepPrompt });
 
             try {
                 const stream = await AI.generateContentStream({
@@ -237,86 +241,87 @@ export class GeneralistAgent extends BaseAgent {
                         responseMimeType: 'application/json',
                         ...AI_CONFIG.THINKING.HIGH
                     }
+                }
                 });
 
-                let buffer = "";
-                const reader = stream.getReader();
+            let buffer = "";
+            const reader = stream.getReader();
 
-                // Track execution state within this generation
-                let stepActionTaken = false;
+            // Track execution state within this generation
+            let stepActionTaken = false;
 
-                while (true) {
-                    const { done, value } = await reader.read();
+            while (true) {
+                const { done, value } = await reader.read();
 
-                    if (value) {
-                        const chunk = value.text();
-                        buffer += chunk;
+                if (value) {
+                    const chunk = value.text();
+                    buffer += chunk;
 
-                        // Emit token for UI typing effect
-                        onProgress?.({ type: 'token', content: chunk });
+                    // Emit token for UI typing effect
+                    onProgress?.({ type: 'token', content: chunk });
 
-                        // Attempt to parse objects from the growing buffer
-                        const { objects, remaining } = this.extractJsonObjects(buffer);
-                        buffer = remaining;
+                    // Attempt to parse objects from the growing buffer
+                    const { objects, remaining } = this.extractJsonObjects(buffer);
+                    buffer = remaining;
 
-                        for (const result of objects) {
-                            if (result.thought) {
-                                onProgress?.({ type: 'thought', content: result.thought });
+                    for (const result of objects) {
+                        if (result.thought) {
+                            onProgress?.({ type: 'thought', content: result.thought });
+                        }
+
+                        if (result.final_response) {
+                            finalResponseText = result.final_response;
+                            stepActionTaken = true;
+                            // We can break inner loop if we have final response
+                        }
+
+                        if (result.tool) {
+                            stepActionTaken = true;
+                            // Report tool usage
+                            onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
+
+                            const toolFunc = TOOL_REGISTRY[result.tool];
+                            let output = "Unknown tool";
+                            if (toolFunc) {
+                                try {
+                                    output = await toolFunc(result.args);
+                                } catch (err: any) {
+                                    output = `Error: ${err.message}`;
+                                }
                             }
 
-                            if (result.final_response) {
-                                finalResponseText = result.final_response;
-                                stepActionTaken = true;
-                                // We can break inner loop if we have final response
-                            }
+                            onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
 
-                            if (result.tool) {
-                                stepActionTaken = true;
-                                // Report tool usage
-                                onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
-
-                                const toolFunc = TOOL_REGISTRY[result.tool];
-                                let output = "Unknown tool";
-                                if (toolFunc) {
-                                    try {
-                                        output = await toolFunc(result.args);
-                                    } catch (err: any) {
-                                        output = `Error: ${err.message}`;
-                                    }
-                                }
-
-                                onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
-
-                                if (output.toLowerCase().includes('successfully')) {
-                                    currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
-                                } else {
-                                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
-                                }
+                            if (output.toLowerCase().includes('successfully')) {
+                                currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
+                            } else {
+                                currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
                             }
                         }
                     }
-
-                    if (done) break;
-                    if (stepActionTaken && finalResponseText) break; // Optimization: Stop stream if done
                 }
 
-                if (finalResponseText) break; // Break outer loop
-                if (!stepActionTaken) {
-                    // If we finished stream but didn't act, maybe verify validity or just loop?
-                    // If buffer still has data, it might be malformed JSON.
-                    if (buffer.trim().length > 0) {
-                        console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
-                    }
-                }
-
-            } catch (err: any) {
-                console.error("Generalist Loop Error:", err);
-                onProgress?.({ type: 'thought', content: `Error: ${err.message}` });
-                return { text: `Error: ${err.message}` };
+                if (done) break;
+                if (stepActionTaken && finalResponseText) break; // Optimization: Stop stream if done
             }
 
-            iterations++;
+            if (finalResponseText) break; // Break outer loop
+            if (!stepActionTaken) {
+                // If we finished stream but didn't act, maybe verify validity or just loop?
+                // If buffer still has data, it might be malformed JSON.
+                if (buffer.trim().length > 0) {
+                    console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
+                }
+            }
+
+        } catch (err: any) {
+            console.error("Generalist Loop Error:", err);
+            onProgress?.({ type: 'thought', content: `Error: ${err.message}` });
+            return { text: `Error: ${err.message}` };
         }
+
+        iterations++;
+    }
 
         return { text: finalResponseText || "Task completed (no final text)." };
     }

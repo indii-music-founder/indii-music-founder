@@ -145,7 +145,8 @@ export class WorkflowEngine {
                 userProfile,
                 null,
                 (status) => console.log(`[Research]: ${status}`),
-                (id, status) => console.log(`[Doc ${id}]: ${status}`)
+                (id, status) => console.log(`[Doc ${id}]: ${status}`),
+                undefined // No fileContent currently available in workflow engine
             );
             return result.asset.content;
         } else {

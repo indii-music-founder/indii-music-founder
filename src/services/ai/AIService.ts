@@ -268,6 +268,7 @@ export class AIService {
         }));
 
         if (!response.ok) {
+            console.error(`[AIService] Stream Response Error: ${response.status} ${response.statusText}`);
             const errorText = await response.text();
             throw new AppException(
                 AppErrorCode.NETWORK_ERROR,
@@ -288,7 +289,10 @@ export class AIService {
                     let buffer = '';
                     while (true) {
                         const { done, value } = await reader.read();
-                        if (done) break;
+                        if (done) {
+                            break;
+                        }
+
 
                         const chunk = decoder.decode(value, { stream: true });
                         buffer += chunk;

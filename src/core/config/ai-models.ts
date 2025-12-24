@@ -18,8 +18,7 @@
 
 export const AI_MODELS = {
     TEXT: {
-        // Main agent model with high reasoning capabilities
-        AGENT: 'gemini-3-pro-preview',
+        AGENT: 'gemini-3-pro-preview', // Upgraded for better reasoning
         // Faster model for routing and simple tasks
         FAST: 'gemini-3-flash-preview',
     },
