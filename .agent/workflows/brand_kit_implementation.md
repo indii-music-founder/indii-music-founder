@@ -24,7 +24,7 @@ The Brand Kit system allows artists to define their identity (Bio, Brand Descrip
 
 - **Purpose**: Logic layer for the onboarding conversation.
 - **Key Functions**:
-  - `runOnboardingConversation`: Manages the chat flow with Gemini 2.0 Flash Thinking. Handles file attachments (images as inline data, docs as text).
+  - `runOnboardingConversation`: Manages the chat flow with Gemini 3.0 PRO. Handles file attachments (images as inline data, docs as text).
   - `processFunctionCalls`: Updates the `UserProfile` store based on AI function calls (`updateProfile`, `addImageAsset`, etc.).
   - `calculateProfileStatus`: Computes the completion percentage of the profile.
 
