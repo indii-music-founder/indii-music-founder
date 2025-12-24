@@ -129,26 +129,48 @@ export class GeminiRetrievalService {
      * Query using the file context (Long Context Window).
      * Replaces AQA model usage.
      */
-    async query(fileUri: string, userQuery: string, fileContent?: string, model: string = AI_MODELS.TEXT.FAST) {
+    async query(fileUri: string, userQuery: string, fileContent?: string, model?: string) {
         const parts: any[] = [];
+        let canonicalUri = fileUri;
+
+        // Default to model if provided, or fallback to config default (usually FAST/Flash)
+        // But for Native RAG with files, we prefer PRO if not specified to avoid 400s on Flash
+        const targetModel = model || AI_MODELS.TEXT.FAST;
+
+        // "Native" path: Use fileData if no explicit content fallback is forced OR if we just want to try it.
+        // However, our previous logic was: if fileContent exists, use it.
+        // New logic: If fileContent is provided, it's a fallback. But we want to prefer fileData if possible.
+        // For now, let's trust the caller. If they pass fileContent, they might want inline.
+        // BUT, if they pass null/undefined, we MUST use fileData.
 
         if (fileContent) {
-            console.log("Using Inline Text Context fallback for Gemini 3 Compatibility");
+            // Only log this if we are actually using the fallback
+            // console.log("Using Inline Text Context fallback");
             parts.push({ text: `Use the following document as context to answer the user's question:\n\n${fileContent}\n\n` });
         } else {
-            // Standard: File URI (May 400 on Gemini 3 Flash currently)
-            let canonicalUri = fileUri;
+            // Standard: File URI
 
-            // Normalize: If it's a full URL with v1beta, strip it? 
-            // Actually, the API expects "https://generativelanguage.googleapis.com/files/..." usually.
-            // If input is "files/..." (name), prepend base.
+            // Normalize: Ensure URI matches: https://generativelanguage.googleapis.com/files/<id>
+            // The API explicitly rejects 'files/<id>' and '.../v1beta/files/<id>'
+
             if (fileUri.startsWith('files/')) {
+                // Case: "files/123" -> "https://generativelanguage.googleapis.com/files/123"
                 canonicalUri = `https://generativelanguage.googleapis.com/${fileUri}`;
             } else if (fileUri.includes('/v1beta/files/')) {
-                // Fix "https://generativelanguage.googleapis.com/v1beta/files/..." -> "https://generativelanguage.googleapis.com/files/..."
+                // Case: "https://.../v1beta/files/123" -> "https://.../files/123"
                 canonicalUri = fileUri.replace('/v1beta/files/', '/files/');
+            } else {
+                // Trust other formats (Youtube, etc) or already correct URIs
+                canonicalUri = fileUri;
             }
-            parts.push({ fileData: { fileUri: canonicalUri, mimeType: 'text/plain' } });
+            // We TRUST the input if it's already a URL (even with v1beta)
+
+            parts.push({
+                file_data: {
+                    file_uri: canonicalUri,
+                    mime_type: 'text/plain'
+                }
+            });
         }
 
         parts.push({ text: userQuery });
@@ -159,10 +181,12 @@ export class GeminiRetrievalService {
                 parts: parts
             }]
         };
-        console.log("Query Body:", JSON.stringify(body, null, 2));
+        console.log("DEBUG: Query fileUri:", fileUri);
+        console.log("DEBUG: Canonical URI:", canonicalUri);
+        // console.log("DEBUG: Query Body:", JSON.stringify(body, null, 2));
 
         // Use standard generateContent with fileUri
-        return this.fetch(`models/${model}:generateContent`, {
+        return this.fetch(`models/${targetModel}:generateContent`, {
             method: 'POST',
             body: JSON.stringify(body)
         });

@@ -32,7 +32,8 @@ npx shadcn@latest add "https://prompt-kit.com/c/prompt-input.json"
 * `shadcn/ui` configured (Already present in project)
 * `tailwindcss` (Already present)
 
-### Key Components for Rndr-AI-v1
+### Key Components for indiiOS
+
 
 #### `PromptInput`
 
@@ -74,7 +75,7 @@ npm install motion clsx tailwind-merge lucide-react
 npx motion-primitives@latest add text-effect
 ```
 
-### Key Components for Rndr-AI-v1
+### Key Components for indiiOS
 
 #### `TextEffect`
 

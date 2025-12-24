@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Trash2, Search, Filter, Loader2, Book, Clock } from 'lucide-react';
 import { GeminiRetrievalService } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
-import { toast } from 'sonner';
+import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { KnowledgeDocument } from '@/core/store/slices/authSlice';
 
@@ -18,6 +18,7 @@ interface KnowledgeDoc {
 }
 
 export default function KnowledgeBase() {
+    const toast = useToast();
     const { userProfile, setUserProfile } = useStore();
     const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
     const [isUploading, setIsUploading] = useState(false);

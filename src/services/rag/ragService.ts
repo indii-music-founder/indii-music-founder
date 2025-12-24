@@ -57,7 +57,14 @@ export async function runAgenticWorkflow(
             if (contentToUse) reasoning.push("Using cached content from Knowledge Base");
 
             // 2. Query with File Context
-            const result = await GeminiRetrieval.query(fileUri, query, contentToUse);
+            // We force native RAG (no inline content) by passing undefined for content fallback
+            // And we explicitly request PRO model to avoid Flash 400s with fileData
+            const result = await GeminiRetrieval.query(
+                fileUri,
+                query,
+                undefined, // Force Native RAG (no inline fallback)
+                AI_MODELS.TEXT.AGENT // Use AGENT (gemini-3-pro-preview) for better reasoning + fileData support
+            );
             const data = result;
 
             // Parse Standard Gemini Response
