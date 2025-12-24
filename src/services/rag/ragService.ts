@@ -46,11 +46,19 @@ export async function runAgenticWorkflow(
             const targetFile = files[0];
             const fileUri = targetFile.name; // This is the 'files/...' URI
 
+            // Try to find content in UserProfile KnowledgeBase to enable Inline Fallback
+            const localDoc = userProfile.knowledgeBase?.find(doc =>
+                doc.embeddingId === fileUri || doc.id === fileUri.split('/').pop()
+            );
+
+            const contentToUse = fileContent || localDoc?.content;
+
             reasoning.push(`Context: ${targetFile.displayName} (${fileUri})`);
+            if (contentToUse) reasoning.push("Using cached content from Knowledge Base");
 
             // 2. Query with File Context
-            const result = await GeminiRetrieval.query(fileUri, query, fileContent);
-            const data = await result.json();
+            const result = await GeminiRetrieval.query(fileUri, query, contentToUse);
+            const data = result;
 
             // Parse Standard Gemini Response
             const candidate = data.candidates?.[0];
@@ -143,7 +151,7 @@ export async function processForKnowledgeBase(
         // Return mostly compatible structure
         return {
             title: metadata.title,
-            content: metadata.summary,
+            content: reportContent, // Store full content for retrieval
             entities: [],
             tags: ['gemini-file'],
             embeddingId: file.name

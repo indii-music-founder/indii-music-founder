@@ -129,7 +129,7 @@ export class GeminiRetrievalService {
      * Query using the file context (Long Context Window).
      * Replaces AQA model usage.
      */
-    async query(fileUri: string, userQuery: string, fileContent?: string) {
+    async query(fileUri: string, userQuery: string, fileContent?: string, model: string = AI_MODELS.TEXT.FAST) {
         const parts: any[] = [];
 
         if (fileContent) {
@@ -138,8 +138,15 @@ export class GeminiRetrievalService {
         } else {
             // Standard: File URI (May 400 on Gemini 3 Flash currently)
             let canonicalUri = fileUri;
+
+            // Normalize: If it's a full URL with v1beta, strip it? 
+            // Actually, the API expects "https://generativelanguage.googleapis.com/files/..." usually.
+            // If input is "files/..." (name), prepend base.
             if (fileUri.startsWith('files/')) {
                 canonicalUri = `https://generativelanguage.googleapis.com/${fileUri}`;
+            } else if (fileUri.includes('/v1beta/files/')) {
+                // Fix "https://generativelanguage.googleapis.com/v1beta/files/..." -> "https://generativelanguage.googleapis.com/files/..."
+                canonicalUri = fileUri.replace('/v1beta/files/', '/files/');
             }
             parts.push({ fileData: { fileUri: canonicalUri, mimeType: 'text/plain' } });
         }
@@ -155,7 +162,7 @@ export class GeminiRetrievalService {
         console.log("Query Body:", JSON.stringify(body, null, 2));
 
         // Use standard generateContent with fileUri
-        return this.fetch(`models/${AI_MODELS.TEXT.FAST}:generateContent`, {
+        return this.fetch(`models/${model}:generateContent`, {
             method: 'POST',
             body: JSON.stringify(body)
         });

@@ -1,52 +1,51 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Book, Upload, FileText, Search, Filter, MoreVertical, File, Clock, Trash2, Loader2 } from 'lucide-react';
-import { useToast } from '@/core/context/ToastContext';
-import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
+import { Upload, FileText, Trash2, Search, Filter, Loader2, Book, Clock } from 'lucide-react';
+import { GeminiRetrievalService } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
+import { toast } from 'sonner';
+import { useStore } from '@/core/store';
+import { KnowledgeDocument } from '@/core/store/slices/authSlice';
 
+// Using a slightly more robust type for internal state
 interface KnowledgeDoc {
-    id: string;
+    id: string; // The file URI or embedding ID
     title: string;
     type: string;
     size: string;
     date: string;
-    tag: string;
-    rawName: string; // resource name for deletion
+    status: 'indexed' | 'processing' | 'error';
+    rawName: string; // The full files/URI
 }
 
 export default function KnowledgeBase() {
-    const toast = useToast();
-    const [isDragging, setIsDragging] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { userProfile, setUserProfile } = useStore();
     const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const loadDocuments = async () => {
+        setIsLoading(true);
         try {
-            setIsLoading(true);
-            // No initCorpus needed for Files API
-            const result = await GeminiRetrieval.listFiles();
+            const files = await GeminiRetrievalService.listFiles();
 
-            // Map GeminiFile to KnowledgeDoc
-            const docs: KnowledgeDoc[] = (result.files || []).map((f: any) => ({
-                id: f.name.split('/').pop() || 'unknown',
-                rawName: f.name, // e.g. "files/..."
-                title: JSON.parse(f.displayName).displayName || f.displayName, // We stored displayName in metadata json? No, displayName is top level but we encoded it?
-                // Actually in uploadFile we did: 'X-Goog-Upload-Header-Content-Meta-Session-Data': JSON.stringify({ displayName })
-                // The API returns the file object with `displayName` as one of the fields if passing metadata worked. 
-                // Let's assume f.displayName is the correct field.
-                type: f.mimeType || 'TXT',
+            // Map Gemini files to our UI model
+            const docs: KnowledgeDoc[] = files.map((f: any) => ({
+                id: f.name,
+                title: f.displayName || f.name.split('/').pop(), // Fallback if no specific display name
+                type: f.mimeType.includes('pdf') ? 'PDF' : 'TXT', // Simple mapping
                 size: f.sizeBytes ? `${(parseInt(f.sizeBytes) / 1024).toFixed(1)} KB` : 'Unknown',
-                date: new Date(f.createTime || Date.now()).toLocaleDateString(),
-                tag: f.state === 'ACTIVE' ? 'Ready' : f.state // Show state
+                date: new Date(f.createTime).toLocaleDateString(),
+                status: 'indexed',
+                rawName: f.name
             }));
 
-            // Sort by newest
-            setDocuments(docs.reverse());
+            setDocuments(docs);
         } catch (error) {
-            console.error("Failed to load documents:", error);
+            console.error("Failed to load docs:", error);
+            toast.error("Failed to load Knowledge Base.");
         } finally {
             setIsLoading(false);
         }
@@ -63,6 +62,7 @@ export default function KnowledgeBase() {
         toast.info(`Processing ${files.length} file(s)...`);
 
         let successCount = 0;
+        const newDocs: KnowledgeDocument[] = [];
         const uploadPromises: Promise<void>[] = [];
 
         for (let i = 0; i < files.length; i++) {
@@ -74,12 +74,25 @@ export default function KnowledgeBase() {
                         const { PDFService } = await import('@/services/utils/PDFService');
                         const text = await PDFService.extractText(file);
 
-                        await processForKnowledgeBase(text, file.name, {
+                        const result = await processForKnowledgeBase(text, file.name, {
                             size: `${(file.size / 1024).toFixed(1)} KB`,
                             type: file.type,
                             originalDate: new Date(file.lastModified).toISOString()
                         });
 
+                        const doc: KnowledgeDocument = {
+                            id: result.embeddingId.split('/').pop() || 'unknown',
+                            name: result.title,
+                            content: result.content,
+                            type: 'PDF',
+                            tags: result.tags,
+                            entities: result.entities,
+                            embeddingId: result.embeddingId,
+                            indexingStatus: 'ready',
+                            createdAt: Date.now()
+                        };
+
+                        newDocs.push(doc);
                         toast.success(`Indexed PDF: ${file.name}`);
                         successCount++;
                     } catch (err) {
@@ -98,11 +111,26 @@ export default function KnowledgeBase() {
                         }
 
                         try {
-                            await processForKnowledgeBase(text, file.name, {
+                            const result = await processForKnowledgeBase(text, file.name, {
                                 size: `${(file.size / 1024).toFixed(1)} KB`,
                                 type: file.type || 'text/plain',
                                 originalDate: new Date(file.lastModified).toISOString()
                             });
+
+                            const doc: KnowledgeDocument = {
+                                id: result.embeddingId.split('/').pop() || 'unknown',
+                                name: result.title,
+                                content: result.content,
+                                type: file.type || 'TXT',
+                                tags: result.tags,
+                                entities: result.entities,
+                                embeddingId: result.embeddingId,
+                                indexingStatus: 'ready',
+                                createdAt: Date.now()
+                            };
+
+                            newDocs.push(doc);
+
                             toast.success(`Indexed: ${file.name}`);
                             successCount++;
                         } catch (err) {
@@ -125,6 +153,10 @@ export default function KnowledgeBase() {
         await Promise.all(uploadPromises);
 
         if (successCount > 0) {
+            // Update User Profile with new docs
+            const updatedKB = [...(userProfile.knowledgeBase || []), ...newDocs];
+            setUserProfile({ ...userProfile, knowledgeBase: updatedKB });
+
             toast.success(`Successfully added ${successCount} document(s) to Knowledge Base.`);
             await loadDocuments();
         }
@@ -135,7 +167,7 @@ export default function KnowledgeBase() {
         if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return;
 
         try {
-            await GeminiRetrieval.deleteFile(doc.rawName);
+            await GeminiRetrievalService.deleteFile(doc.rawName);
             toast.success("Document deleted.");
             await loadDocuments();
         } catch (err) {
