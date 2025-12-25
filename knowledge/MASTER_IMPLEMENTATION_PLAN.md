@@ -40,12 +40,12 @@ export interface GoldenMetadata {
 
 ### 1.2 The Implementation Steps
 
-1. [ ] **Create Schema:** Create `src/services/metadata/types.ts`
-2. [ ] **Create UI:** Build `MetadataDrawer.tsx` component in `src/modules/music/components/`
+1. [x] **Create Schema:** Create `src/services/metadata/types.ts`
+2. [x] **Create UI:** Build `MetadataDrawer.tsx` component in `src/modules/music/components/`
     * Form fields for ISRC, Splits (with % validation).
     * "Golden Seal" visual indicator (Green Check = Ready for Release).
-3. [ ] **Integrate:** Add `MetadataDrawer` to `MusicStudio.tsx`.
-4. [ ] **Enforce:** Disable "Export" button until Golden Metadata is complete.
+3. [x] **Integrate:** Add `MetadataDrawer` to `MusicStudio.tsx`.
+4. [x] **Enforce:** Disable "Export" button until Golden Metadata is complete.
 
 ---
 
@@ -60,8 +60,8 @@ The current `FinanceAgent` is passive. It must be **Proactive**.
 
 ### 2.2 The Implementation Steps
 
-1. [ ] **Inject Knowledge:** Give `FinanceAgent` access to `Artist_Economics_Deep_Dive.md` via system prompt override.
-2. [ ] **New Capabilities:**
+1. [x] **Inject Knowledge:** Give `FinanceAgent` access to `Artist_Economics_Deep_Dive.md` via system prompt override.
+2. [x] **New Capabilities:**
     * `audit_metadata()`: Check recent tracks for "Golden File" status.
     * `forecast_revenue()`: Use the "Dividend" model to show saved fees (Gamification).
 3. [ ] **Integration:** Display "Fees Saved: $XXXX" in `FinanceDashboard.tsx`.

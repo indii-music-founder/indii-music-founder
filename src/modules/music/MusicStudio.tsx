@@ -420,8 +420,8 @@ export default function MusicStudio() {
                     <button
                         disabled={!activeTrack || !activeTrack.metadata.isGolden}
                         className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${activeTrack && activeTrack.metadata.isGolden
-                                ? 'bg-white text-black hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
-                                : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                            ? 'bg-white text-black hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
+                            : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
                             }`}
                     >
                         <Download size={18} />
@@ -429,8 +429,6 @@ export default function MusicStudio() {
                     </button>
                 </div>
             </div>
-
-        </div>
-        </ModuleDashboard >
+        </ModuleDashboard>
     );
 }

@@ -59,7 +59,15 @@ Electron App → Login Bridge (browser) → Google OAuth → Deep Link → IPC �
 
 - [x] Test full auth flow end-to-end in packaged build
 - [x] Verify deep link protocol on macOS
+- [x] Verify deep link protocol on macOS
 - [x] Test on production build (ad-hoc signed)
+
+### Artist Economics & Metadata (New)
+
+- [x] **Research**: Ingest History & Economics Deep Dives
+- [x] **Planning**: Create `PRODUCT_ALIGNMENT_REPORT.md` & `MASTER_IMPLEMENTATION_PLAN.md`
+- [x] **Pillar 1 (Metadata)**: Implement `GoldenMetadata` Schema & `MetadataDrawer` in MusicStudio
+- [x] **Pillar 2 (Finance)**: Upgrade `FinanceAgent` to 'Active CFO' mode with Dividend forecasting
 
 ### Gemini 3.0 Migration (Final Steps)
 
