@@ -49,12 +49,20 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
     );
 });
 
-const MessageItem = memo(({ msg }: { msg: AgentMessage }) => (
+const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: string }) => (
     <div className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-4 px-1`}>
         {msg.role === 'model' && (
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-lg shadow-purple-900/20 mt-1">
-                AI
-            </div>
+            avatarUrl ? (
+                <img
+                    src={avatarUrl}
+                    className="w-8 h-8 rounded-full object-cover flex-shrink-0 shadow-lg shadow-purple-900/20 mt-1 border border-purple-500/30"
+                    alt="AI"
+                />
+            ) : (
+                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-lg shadow-purple-900/20 mt-1">
+                    AI
+                </div>
+            )
         )}
 
         <div
@@ -141,10 +149,14 @@ const EMPTY_ARRAY: AgentMessage[] = [];
 export default function ChatOverlay() {
     const agentHistory = useStore(state => state.agentHistory) || EMPTY_ARRAY;
     const isAgentOpen = useStore(state => state.isAgentOpen) || false;
+    const userProfile = useStore(state => state.userProfile);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
 
     const [isMuted, setIsMuted] = useState(true);
     const lastSpokenIdRef = useRef<string | null>(null);
+
+    // Get the first available reference image to use as avatar
+    const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;
 
     // Auto-speak effect
     useEffect(() => {
@@ -186,7 +198,7 @@ export default function ChatOverlay() {
                         ref={virtuosoRef}
                         style={{ height: '100%' }}
                         data={agentHistory}
-                        itemContent={(index, msg) => <MessageItem msg={msg} />}
+                        itemContent={(index, msg) => <MessageItem msg={msg} avatarUrl={avatarUrl} />}
                         followOutput="smooth"
                         initialTopMostItemIndex={agentHistory.length > 0 ? agentHistory.length - 1 : 0}
                         className="custom-scrollbar"

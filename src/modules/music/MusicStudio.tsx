@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import * as Tone from 'tone';
-import { Activity, File, FileAudio, Folder, HardDrive, Music, Pause, Play, SkipBack, SkipForward, Trash2, Upload, Volume2 } from 'lucide-react';
+import { Activity, File, FileAudio, Folder, HardDrive, Music, Pause, Play, SkipBack, SkipForward, Trash2, Upload, Volume2, ShieldCheck, Download } from 'lucide-react';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { useToast } from '@/core/context/ToastContext';
 import { fileSystemService } from '@/services/FileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
+import { MetadataDrawer } from './components/MetadataDrawer';
+import { GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 
 interface LoadedAudio {
     id: string;
@@ -16,6 +18,7 @@ interface LoadedAudio {
     url: string;
     features?: AudioFeatures | null;
     isGenerated?: boolean;
+    metadata: GoldenMetadata;
 }
 
 export default function MusicStudio() {
@@ -28,6 +31,7 @@ export default function MusicStudio() {
     const [engineState, setEngineState] = useState<'stopped' | 'running'>('stopped');
     const [sampleRate, setSampleRate] = useState<number | null>(null);
     const [lookAhead, setLookAhead] = useState<number | null>(null);
+    const [isMetadataDrawerOpen, setIsMetadataDrawerOpen] = useState(false);
 
     // Refs
     const waveformRef = useRef<HTMLDivElement>(null);
@@ -120,7 +124,8 @@ export default function MusicStudio() {
                 path,
                 url,
                 features: null,
-                isGenerated: false
+                isGenerated: false,
+                metadata: { ...INITIAL_METADATA, trackTitle: result.file.name.replace(/\.[^/.]+$/, "") }
             };
 
             setLoadedAudio(prev => [...prev, newTrack]);
@@ -159,7 +164,9 @@ export default function MusicStudio() {
             path,
             file,
             url: URL.createObjectURL(file),
+            url: URL.createObjectURL(file),
             features: null,
+            metadata: { ...INITIAL_METADATA, trackTitle: file.name.replace(/\.[^/.]+$/, "") }
         }));
 
         setLoadedAudio(prev => [...prev, ...tracks]);
@@ -176,6 +183,14 @@ export default function MusicStudio() {
             return prev.filter(t => t.id !== id);
         });
         if (currentTrackId === id) setCurrentTrackId(null);
+    };
+
+    // Metadata Update Handler
+    const handleMetadataUpdate = (newData: GoldenMetadata) => {
+        if (!currentTrackId) return;
+        setLoadedAudio(prev => prev.map(t =>
+            t.id === currentTrackId ? { ...t, metadata: newData } : t
+        ));
     };
 
     const activeTrack = loadedAudio.find(t => t.id === currentTrackId);
@@ -239,8 +254,8 @@ export default function MusicStudio() {
                                 key={track.id}
                                 onClick={() => setCurrentTrackId(track.id)}
                                 className={`group p-2 rounded-lg border cursor-pointer transition-all ${currentTrackId === track.id
-                                        ? 'bg-purple-900/30 border-purple-500/50'
-                                        : 'bg-[#0d1117] border-gray-800 hover:border-gray-600'
+                                    ? 'bg-purple-900/30 border-purple-500/50'
+                                    : 'bg-[#0d1117] border-gray-800 hover:border-gray-600'
                                     }`}
                             >
                                 <div className="flex items-center justify-between mb-1">
@@ -308,9 +323,29 @@ export default function MusicStudio() {
                             </div>
                         ) : (
                             <>
+                                <MetadataDrawer
+                                    isOpen={isMetadataDrawerOpen}
+                                    onClose={() => setIsMetadataDrawerOpen(false)}
+                                    metadata={activeTrack.metadata}
+                                    onUpdate={handleMetadataUpdate}
+                                />
+
+                                {/* Top Bar: Title & Metadata Status */}
                                 <div className="absolute top-4 left-6 right-6 flex justify-between items-center z-10">
                                     <div className="flex flex-col">
-                                        <h2 className="text-lg font-bold text-white truncate max-w-[500px]">{activeTrack.name}</h2>
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-lg font-bold text-white truncate max-w-[500px]">{activeTrack.metadata.trackTitle || activeTrack.name}</h2>
+                                            <button
+                                                onClick={() => setIsMetadataDrawerOpen(true)}
+                                                className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTrack.metadata.isGolden
+                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30'
+                                                    : 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30'
+                                                    }`}
+                                            >
+                                                <ShieldCheck size={12} />
+                                                {activeTrack.metadata.isGolden ? 'Golden Master' : 'Metadata Incomplete'}
+                                            </button>
+                                        </div>
                                         <span className="text-xs text-green-400 flex items-center gap-1 mt-1">
                                             <Activity size={10} /> High-Fidelity Analysis Active
                                         </span>
@@ -359,8 +394,8 @@ export default function MusicStudio() {
                                 onClick={togglePlayPause}
                                 disabled={!activeTrack}
                                 className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${activeTrack
-                                        ? 'bg-white text-black hover:scale-105 active:scale-95'
-                                        : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                                    ? 'bg-white text-black hover:scale-105 active:scale-95'
+                                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
                                 aria-label={isPlaying ? 'Pause' : 'Play'}
                             >
@@ -380,7 +415,22 @@ export default function MusicStudio() {
                     </div>
                 </div>
 
+                {/* Export / Action Bar */}
+                <div className="h-14 flex items-center justify-end gap-4">
+                    <button
+                        disabled={!activeTrack || !activeTrack.metadata.isGolden}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${activeTrack && activeTrack.metadata.isGolden
+                                ? 'bg-white text-black hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
+                                : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
+                            }`}
+                    >
+                        <Download size={18} />
+                        {activeTrack && activeTrack.metadata.isGolden ? 'Export Master' : 'Complete Metadata to Export'}
+                    </button>
+                </div>
             </div>
-        </ModuleDashboard>
+
+        </div>
+        </ModuleDashboard >
     );
 }

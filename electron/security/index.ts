@@ -7,7 +7,7 @@ export function configureSecurity(session: Session) {
 
         const scriptSrc = isDev
             ? "* 'unsafe-inline' 'unsafe-eval'"
-            : "'self' https://apis.google.com https://*.firebaseapp.com";
+            : "'self' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com";
 
         const defaultSrc = isDev ? "*" : "'none'";
         const styleSrc = isDev
