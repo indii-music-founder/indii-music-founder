@@ -38,8 +38,9 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
                 )}
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Name</label>
+                    <label htmlFor="signup-name" className="text-sm font-medium text-zinc-300">Name</label>
                     <input
+                        id="signup-name"
                         type="text"
                         required
                         className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
@@ -50,8 +51,9 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Email</label>
+                    <label htmlFor="signup-email" className="text-sm font-medium text-zinc-300">Email</label>
                     <input
+                        id="signup-email"
                         type="email"
                         required
                         className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
@@ -62,8 +64,9 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Password</label>
+                    <label htmlFor="signup-password" className="text-sm font-medium text-zinc-300">Password</label>
                     <input
+                        id="signup-password"
                         type="password"
                         required
                         className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"

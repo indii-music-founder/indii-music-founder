@@ -111,6 +111,7 @@ We use a **webhook-driven** architecture for subscription management to ensure b
 
 | Feature | Free | Pro | Enterprise |
 | :--- | :--- | :--- | :--- |
-| **Video Generation** | Watermarked, Low Res | 1080p, No Watermark | 4K, Priority Queue |
-| **Image Generation** | 50 / month | Unlimited | Unlimited |
-| **Agents** | Generalist Only | All Agents | Custom Agents |
+| **Video Duration** | 8 mins / 5 per day | 60 mins / 50 per day | 4 hours / 500 per day |
+| **Image Generation** | 50 / day | 500 / day | 5000 / day |
+| **Design Resolution** | 1024px (Low Res) | 4096px (4K) | 8192px (8K) |
+| **Projects** | 3 Projects | 50 Projects | Unlimited |

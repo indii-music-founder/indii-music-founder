@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor } from 'lucide-react';
 
@@ -54,24 +55,28 @@ export default function CreativeGallery({ compact = false, onSelect, className =
 
     if (isEmpty) {
         return (
-            <div className="flex-1 flex items-center justify-center text-gray-500 flex-col gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center">
-                    <ImageIcon size={32} className="opacity-50" />
-                </div>
-                <p>Gallery is empty. Start creating or upload assets!</p>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                    <Upload size={16} /> Upload Assets
-                </button>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={handleFileUpload}
+            <div className="flex-1 flex items-center justify-center p-8">
+                <FileUpload
+                    acceptedFileTypes={['image/*', 'video/*']}
+                    onUploadSuccess={(file) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            if (e.target?.result) {
+                                const isVideo = file.type.startsWith('video/');
+                                addUploadedImage({
+                                    id: crypto.randomUUID(),
+                                    type: isVideo ? 'video' : 'image',
+                                    url: e.target.result as string,
+                                    prompt: file.name,
+                                    timestamp: Date.now(),
+                                    projectId: currentProjectId
+                                });
+                                toast.success("Asset uploaded successfully");
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }}
+                    uploadDelay={1000}
                 />
             </div>
         );

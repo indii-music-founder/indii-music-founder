@@ -4,6 +4,8 @@ import { useStore } from '../../core/store';
 import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '../../services/onboarding/onboardingService';
 import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TextEffect } from '@/components/motion-primitives/text-effect';
+import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import type { ConversationFile } from '../../modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,7 +33,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             const greeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
             setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     // Auto-scroll to bottom
@@ -187,7 +189,13 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     ? 'bg-white text-black rounded-tr-none'
                                     : 'bg-[#222] text-gray-200 rounded-tl-none'
                                     }`}>
-                                    {msg.parts[0].text}
+                                    {msg.role === 'model' ? (
+                                        <TextEffect per='char' preset='fade'>
+                                            {msg.parts[0].text}
+                                        </TextEffect>
+                                    ) : (
+                                        msg.parts[0].text
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -272,7 +280,9 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     <div className="mb-8">
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-gray-400">Artist Identity</span>
-                            <span className="text-white font-bold">{coreProgress}%</span>
+                            <span className="text-white font-bold flex items-center">
+                                <AnimatedNumber value={coreProgress} />%
+                            </span>
                         </div>
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div
@@ -303,7 +313,9 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     <div>
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-gray-400">Current Release</span>
-                            <span className="text-gray-400 font-bold">{releaseProgress}%</span>
+                            <span className="text-gray-400 font-bold flex items-center">
+                                <AnimatedNumber value={releaseProgress} />%
+                            </span>
                         </div>
                         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div

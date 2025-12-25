@@ -4,6 +4,7 @@ import { AgentThought } from '@/core/store/slices/agentSlice';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import VisualScriptRenderer from './VisualScriptRenderer';
 import ScreenplayRenderer from './ScreenplayRenderer';
@@ -23,7 +24,7 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
         <div className="mb-3 border-l-2 border-gray-700 pl-3 ml-1">
             <button onClick={() => setIsOpen(!isOpen)} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-2 mb-2 transition-colors">
                 <span className="text-[10px]">{isOpen ? '▼' : '▶'}</span>
-                Thinking Process <span className="opacity-50">({thoughts.length} steps)</span>
+                <TextEffect per='char' preset='fade'>Thinking Process</TextEffect> <span className="opacity-50">({thoughts.length} steps)</span>
             </button>
             <AnimatePresence>
                 {isOpen && (

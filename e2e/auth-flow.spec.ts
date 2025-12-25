@@ -35,7 +35,7 @@ test.describe('The Gatekeeper: Auth System Verification', () => {
         // We accept either the verify-email page or the studio URL
         // Increase timeout for cold start
         try {
-            await expect(page).toHaveURL(/verify-email|5173/, { timeout: 15000 });
+            await expect(page).toHaveURL(/verify-email|4242/, { timeout: 15000 });
         } catch (e) {
             const errorMsg = page.locator('.text-red-300');
             if (await errorMsg.isVisible()) {
