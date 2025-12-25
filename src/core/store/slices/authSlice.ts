@@ -110,21 +110,35 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             electronAPI.auth.onUserUpdate(async (tokenData: { idToken: string; accessToken?: string | null } | null) => {
                 if (tokenData?.idToken) {
                     console.log('[AuthSlice] Received tokens from Electron deep link');
-                    console.log(`[AuthSlice] Token details - ID Token: ${tokenData.idToken.substring(0, 10)}..., Access Token: ${!!tokenData.accessToken}`);
+                    console.log(`[AuthSlice] Token details - ID Token Length: ${tokenData.idToken.length}, Access Token Length: ${tokenData.accessToken?.length || 0}`);
 
                     try {
                         const { auth } = await import('@/services/firebase');
                         console.log('[AuthSlice] Initializing Google Credential with tokens...');
                         const { signInWithCredential, GoogleAuthProvider } = await import('firebase/auth');
-                        const credential = GoogleAuthProvider.credential(tokenData.idToken, tokenData.accessToken);
 
-                        console.log('[AuthSlice] Signing in with credential...');
-                        const result = await signInWithCredential(auth, credential);
-                        console.log('[AuthSlice] deeply link sign-in success:', result.user.uid);
+                        // First attempt: ID Token + Access Token (if available)
+                        try {
+                            const credential = GoogleAuthProvider.credential(tokenData.idToken, tokenData.accessToken);
+                            console.log('[AuthSlice] Attempting sign-in with ID Token + Access Token...');
+                            const result = await signInWithCredential(auth, credential);
+                            console.log('[AuthSlice] Deep link sign-in success (Method: ID+Access):', result.user.uid);
+                        } catch (primaryError) {
+                            // If we have an access token and failed, try again with JUST the ID token
+                            if (tokenData.accessToken) {
+                                console.warn('[AuthSlice] Sign-in with Access Token failed. Retrying with ID Token only...', primaryError);
+                                const credentialRetry = GoogleAuthProvider.credential(tokenData.idToken);
+                                const resultRetry = await signInWithCredential(auth, credentialRetry);
+                                console.log('[AuthSlice] Deep link sign-in success (Method: ID Only):', resultRetry.user.uid);
+                            } else {
+                                throw primaryError; // Re-throw if no fallback possible
+                            }
+                        }
 
                         // onAuthStateChanged will handle the rest
                     } catch (error) {
-                        console.error('[AuthSlice] Failed to sign in with Electron tokens:', error);
+                        console.error('[AuthSlice] Failed to sign in with Electron tokens (All attempts):', error);
+                        // Optional: Could expose this error to the UI via state if needed
                     }
                 } else if (tokenData === null) {
                     console.log('[AuthSlice] Electron logout received');
