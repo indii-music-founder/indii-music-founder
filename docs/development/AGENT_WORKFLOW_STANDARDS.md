@@ -40,5 +40,37 @@ We automate the transition from prototype to production.
 
 ---
 
+## 6. The "Upgrade" Protocol (Standardization)
+
+We have transitioned to the **Gemini 3** platform and **Native File Search RAG**.
+
+* **Model Policy**: strictly adhere to `src/core/config/ai-models.ts`. Only Gemini 3 preview models are allowed. Usage of legacy models (1.5, 2.0) is a protocol violation.
+* **Native RAG**: For document retrieval, use the **Gemini File Search API** or **Files API** (Long Context) via `GeminiRetrievalService`. Abandon legacy Semantic Retriever (Corpus/AQA) patterns.
+* **Response Handling**: Always use `res.text()` (method) for Google AI SDK responses.
+
+## 7. Standardized Verification (The Gauntlet)
+
+For complex multi-agent or multi-step logic, we use the **"Gauntlet"** protocol.
+
+* **Blueprint First**: Any architectural change or implementation > 5 lines requires a formal `implementation_plan.md` first.
+* **Autonomous E2E**: Leverage the autonomous browser tool to verify UI/UX flows in real-time.
+* **Stress Testing**: Run named stress tests (e.g., File Search Stress Test) for new features.
+
+## 8. Tiered Context Awareness
+
+Agents must respect user membership tiers and quotas.
+
+* **Limit Checks**: Before high-resource operations (Video/Image gen, heavy RAG), query `MembershipService` to ensure current usage is within quota.
+* **Graceful Degradation**: If limits are reached, provide actionable feedback or upgrade paths rather than generic errors.
+
+## 9. Multi-Modal Reasoning Guidelines
+
+Select the appropriate model level based on complexity.
+
+* **High Thinking (Pro)**: Use `gemini-3-pro-preview` for strategy, architectural planning, and complex synthesis.
+* **Fast Execution (Flash)**: Use `gemini-3-flash-preview` for specialized tasks, high-speed code generation, and single-responsibility sub-tasks.
+
+---
+
 **Philosophy:**
 The relationship is analogous to a **General Contractor** (User) hiring a **Specialized Architect** (Antigravity). The User reviews capabilities and sets safety regulations, while the Architect designs and coordinates specialized sub-contractors (MCP Servers) to execute the work.

@@ -60,104 +60,38 @@ export default function KnowledgeBase() {
         if (!files || files.length === 0) return;
 
         setIsUploading(true);
-        toast.info(`Processing ${files.length} file(s)...`);
+        toast.info(`Uploading ${files.length} file(s) to Gemini...`);
 
         let successCount = 0;
-        const newDocs: KnowledgeDocument[] = [];
         const uploadPromises: Promise<void>[] = [];
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
 
-            if (file.type === 'application/pdf') {
-                uploadPromises.push((async () => {
-                    try {
-                        const { PDFService } = await import('@/services/utils/PDFService');
-                        const text = await PDFService.extractText(file);
+            uploadPromises.push((async () => {
+                try {
+                    const result = await processForKnowledgeBase(file, file.name, {
+                        size: `${(file.size / 1024).toFixed(1)} KB`,
+                        type: file.type,
+                        originalDate: new Date(file.lastModified).toISOString()
+                    });
 
-                        const result = await processForKnowledgeBase(text, file.name, {
-                            size: `${(file.size / 1024).toFixed(1)} KB`,
-                            type: file.type,
-                            originalDate: new Date(file.lastModified).toISOString()
-                        });
-
-                        const doc: KnowledgeDocument = {
-                            id: result.embeddingId.split('/').pop() || 'unknown',
-                            name: result.title,
-                            content: result.content,
-                            type: 'PDF',
-                            tags: result.tags,
-                            entities: result.entities,
-                            embeddingId: result.embeddingId,
-                            indexingStatus: 'ready',
-                            createdAt: Date.now()
-                        };
-
-                        newDocs.push(doc);
-                        toast.success(`Indexed PDF: ${file.name}`);
+                    if (result.embeddingId) {
+                        toast.success(`Indexed: ${file.name}`);
                         successCount++;
-                    } catch (err) {
-                        console.error("PDF Fail:", err);
-                        toast.error(`Failed to read PDF: ${file.name}`);
+                    } else {
+                        throw new Error("Ingestion failed");
                     }
-                })());
-            } else if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.json') || file.name.endsWith('.ts') || file.name.endsWith('.tsx') || file.name.endsWith('.csv')) {
-                uploadPromises.push(new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        const text = e.target?.result as string;
-                        if (!text) {
-                            toast.error(`Failed to read text from ${file.name}`);
-                            return resolve();
-                        }
-
-                        try {
-                            const result = await processForKnowledgeBase(text, file.name, {
-                                size: `${(file.size / 1024).toFixed(1)} KB`,
-                                type: file.type || 'text/plain',
-                                originalDate: new Date(file.lastModified).toISOString()
-                            });
-
-                            const doc: KnowledgeDocument = {
-                                id: result.embeddingId.split('/').pop() || 'unknown',
-                                name: result.title,
-                                content: result.content,
-                                type: file.type || 'TXT',
-                                tags: result.tags,
-                                entities: result.entities,
-                                embeddingId: result.embeddingId,
-                                indexingStatus: 'ready',
-                                createdAt: Date.now()
-                            };
-
-                            newDocs.push(doc);
-
-                            toast.success(`Indexed: ${file.name}`);
-                            successCount++;
-                        } catch (err) {
-                            console.error(`Failed to upload ${file.name}`, err);
-                            toast.error(`Failed to upload ${file.name}`);
-                        }
-                        resolve();
-                    };
-                    reader.onerror = () => {
-                        toast.error(`Error reading file: ${file.name}`);
-                        resolve();
-                    };
-                    reader.readAsText(file);
-                }));
-            } else {
-                toast.error(`Unsupported file type: ${file.name}`);
-            }
+                } catch (err) {
+                    console.error(`Upload Fail for ${file.name}:`, err);
+                    toast.error(`Failed to upload ${file.name}`);
+                }
+            })());
         }
 
         await Promise.all(uploadPromises);
 
         if (successCount > 0) {
-            // Update User Profile with new docs
-            const updatedKB = [...(userProfile.knowledgeBase || []), ...newDocs];
-            setUserProfile({ ...userProfile, knowledgeBase: updatedKB });
-
             toast.success(`Successfully added ${successCount} document(s) to Knowledge Base.`);
             await loadDocuments();
         }

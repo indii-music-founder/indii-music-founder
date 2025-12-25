@@ -20,6 +20,7 @@ USE ONLY GEMINI 3.x MODELS. NEVER USE GEMINI 1.5 OR 2.0.
 This application **EXCLUSIVELY** uses the **Gemini 3** series models.
 
 Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including:
+
 - Debugging
 - Testing
 - "Temporary" fixes
@@ -38,6 +39,8 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 | **Text/Reasoning (Complex)** | `gemini-3-pro-preview` | Agents, analysis, complex tasks |
 | **Text/Reasoning (Fast)** | `gemini-3-flash-preview` | Routing, simple tasks, high-throughput |
 | **Image Generation** | `gemini-3-pro-image-preview` | All image synthesis (Nano Banana Pro) |
+| **Audio Generation (TTS)** | `gemini-2.5-pro-tts` | High-quality speech synthesis |
+| **Audio Generation (Fast)** | `gemini-2.5-flash-tts` | Low-latency speech synthesis |
 | **Video Generation** | `veo-3.1-generate-preview` | Standard video generation |
 | **Video Generation (Fast)** | `veo-3.1-fast-generate-preview` | Draft/preview videos only |
 
@@ -79,7 +82,7 @@ The following patterns are **BANNED**. Using them will **BREAK THE APPLICATION**
 
 ## How to Use Models Correctly
 
-### ALWAYS import from the central config:
+### ALWAYS import from the central config
 
 ```typescript
 // CORRECT - Use the central config
@@ -92,7 +95,7 @@ const response = await AI.generateContent({
 });
 ```
 
-### NEVER hardcode model strings:
+### NEVER hardcode model strings
 
 ```typescript
 // WRONG - Hardcoded model strings are FORBIDDEN
@@ -111,6 +114,7 @@ const response = await AI.generateContent({
 | Agent reasoning | `AI_MODELS.TEXT.AGENT` | `gemini-3-pro-preview` |
 | Fast routing/simple tasks | `AI_MODELS.TEXT.FAST` | `gemini-3-flash-preview` |
 | Image generation | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
+| Audio/TTS generation | `AI_MODELS.AUDIO.PRO` | `gemini-2.5-pro-tts` |
 | Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
 
 ---
@@ -118,11 +122,13 @@ const response = await AI.generateContent({
 ## Runtime Validation
 
 The `ai-models.ts` file includes **runtime validation** that will:
+
 1. Check all configured models on application startup
 2. Throw an error if ANY forbidden model is detected
 3. Prevent the application from running with invalid models
 
 This means:
+
 - If you introduce a forbidden model, **the app will crash on startup**
 - This is **intentional** - it's better to fail fast than silently degrade
 
@@ -130,7 +136,7 @@ This means:
 
 ## For AI Coding Agents
 
-### IF YOU ARE AN AI AGENT READING THIS:
+### IF YOU ARE AN AI AGENT READING THIS
 
 1. **DO NOT** suggest using Gemini 1.5 or 2.0 models
 2. **DO NOT** change the `ai-models.ts` config to use legacy models
@@ -139,7 +145,7 @@ This means:
 5. **ALWAYS** use `AI_MODELS.TEXT.AGENT`, `AI_MODELS.TEXT.FAST`, etc.
 6. **ALWAYS** import from `@/core/config/ai-models`
 
-### Common Mistakes to AVOID:
+### Common Mistakes to AVOID
 
 ```typescript
 // MISTAKE 1: "I'll just use 1.5 Flash because it's faster"

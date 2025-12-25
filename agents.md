@@ -16,6 +16,7 @@
   - `gemini-3-pro-preview` (complex reasoning)
   - `gemini-3-flash-preview` (fast tasks)
   - `gemini-3-pro-image-preview` (images)
+  - `gemini-2.5-pro-tts` / `gemini-2.5-flash-tts` (audio)
   - `veo-3.1-generate-preview` (video)
 
 - **NEVER USE** these models (app will crash):
@@ -24,6 +25,7 @@
   - `gemini-pro` / `gemini-pro-vision` (BANNED)
 
 - **ALWAYS import from** `@/core/config/ai-models`:
+
   ```typescript
   import { AI_MODELS } from '@/core/config/ai-models';
   model: AI_MODELS.TEXT.FAST  // Correct
@@ -116,11 +118,13 @@
 **Root Cause:** AI agent's training data was outdated and suggested using legacy Gemini 1.5 models.
 
 **Resolution:**
+
 1. Reverted to `gemini-3-flash-preview`
 2. Added runtime validation to `ai-models.ts` that crashes app on forbidden models
 3. Strengthened documentation in `MODEL_POLICY.md` and `agents.md`
 
 **Lesson:**
+
 - **Model Policy is Absolute:** Never, under any circumstances (including debugging), use a forbidden model (e.g., `gemini-1.5-flash`) if the policy strictly mandates `gemini-3`.
 - Runtime validation now enforces this - forbidden models will crash the application on startup.
 - If you're tempted to use an older model, **STOP** and re-read `MODEL_POLICY.md`.

@@ -13,6 +13,11 @@ export interface TierLimits {
     maxImagesPerDay: number;
     maxBatchSize: number;
 
+    // Physical Design limits
+    maxDesignResolution: number;     // max width/height in px
+    maxExportDPI: number;
+    hasCMYKSupport: boolean;
+
     // Storage limits (in MB)
     maxStorageMB: number;
 
@@ -32,6 +37,9 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         maxVideoGenerationsPerDay: 5,
         maxImagesPerDay: 50,
         maxBatchSize: 4,
+        maxDesignResolution: 1024,
+        maxExportDPI: 150,
+        hasCMYKSupport: false,
         maxStorageMB: 500,                  // 500 MB
         maxProjects: 3,
         hasAdvancedEditing: false,
@@ -44,6 +52,9 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         maxVideoGenerationsPerDay: 50,
         maxImagesPerDay: 500,
         maxBatchSize: 16,
+        maxDesignResolution: 4096,          // 4K
+        maxExportDPI: 300,
+        hasCMYKSupport: true,
         maxStorageMB: 10 * 1024,           // 10 GB
         maxProjects: 50,
         hasAdvancedEditing: true,
@@ -56,6 +67,9 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         maxVideoGenerationsPerDay: 500,
         maxImagesPerDay: 5000,
         maxBatchSize: 64,
+        maxDesignResolution: 8192,          // 8K
+        maxExportDPI: 600,
+        hasCMYKSupport: true,
         maxStorageMB: 100 * 1024,          // 100 GB
         maxProjects: -1,                    // Unlimited
         hasAdvancedEditing: true,
@@ -129,14 +143,16 @@ class MembershipServiceImpl {
     /**
      * Get upgrade message for a limit
      */
-    getUpgradeMessage(currentTier: MembershipTier, limitType: 'video' | 'images' | 'storage' | 'projects'): string {
+    getUpgradeMessage(currentTier: MembershipTier, limitType: 'video' | 'images' | 'storage' | 'projects' | 'resolution' | 'export'): string {
         const nextTier = currentTier === 'free' ? 'Pro' : 'Enterprise';
 
         const messages = {
             video: `Upgrade to ${nextTier} for longer video durations`,
             images: `Upgrade to ${nextTier} for more image generations`,
             storage: `Upgrade to ${nextTier} for more storage space`,
-            projects: `Upgrade to ${nextTier} for more projects`
+            projects: `Upgrade to ${nextTier} for more projects`,
+            resolution: `Upgrade to ${nextTier} for high-resolution 4K generation`,
+            export: `Upgrade to ${nextTier} for professional CMYK/300DPI exports`
         };
 
         return messages[limitType];

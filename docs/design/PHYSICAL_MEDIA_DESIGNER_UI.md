@@ -11,13 +11,14 @@ The **Physical Media Designer** is a specialized workspace within IndiiOS for cr
 - **Layout**: Three-column layout (similar to modern design tools like Figma/Canva but simplified).
   - **Left Sidebar (Assets & Templates)**: 250px wide.
   - **Center Stage (Canvas)**: Flexible width. Focus area.
-  - **Right Sidebar (AI Creative Director)**: 300px wide. Chat & Properties.
+  - **Right Sidebar (AI Creative Director)**: 300px wide. Chat & Properties. Includes **Tier Status** badge (Free/Pro/Enterprise).
 
 ### 2. Left Sidebar: "The Crate"
 
 - **Tabs**:
   - **Templates**: Grid view of available formats (CD Front, Vinyl Jacket, etc.).
     - *Interaction*: Clicking a template loads it onto the canvas.
+    - *Premium Content*: Pro/Enterprise templates are marked with a "Sovereign" gold badge.
   - **Assets**: User's uploaded images, logos, and generated assets.
   - **Layers**: Simple list of regions (e.g., "Front Cover", "Spine").
 
@@ -39,10 +40,26 @@ The **Physical Media Designer** is a specialized workspace within IndiiOS for cr
 - **Context Awareness**: Indii knows which template and which region is selected.
 - **Chat Interface**:
   - User: "Generate a Retrowave style background for the cover."
-  - Indii: Uses `Nano Banana Pro` to generate a 4K image and places it in the selected region.
+  - Indii: Uses **Nano Banana Pro** (AI_MODELS.IMAGE.GENERATION) to generate 2K/4K images and places them in the selected region.
 - **Properties Panel (Contextual)**:
   - If a Text element is selected: Font, Size, Color, Spacing, Rotation (crucial for spines).
   - If an Image is selected: Filter, Scale, Crop.
+
+## Upgrade & Tier Integrity
+
+### 1. "The Bouncer" (Quota Enforcement)
+
+When a user on a restricted tier attempts a Pro-only action or hits a daily quota limit, **The Bouncer** interstitial appears:
+
+- **Daily Limits**: Free users are limited to 50 images and 5 video generations per day (via `MembershipService`).
+- **Resolution Caps**: Free tier is limited to 1024px; Pro unlocks 4K.
+- **Visual**: A sleek, dark-glass overlay with a vibrant "Upgrade to Indii Pro" call-to-action (CTA).
+
+### 2. Pro/Enterprise Exclusives
+
+- **CMYK Mode**: Professional print-ready color space (Pro only).
+- **High-DPI Export**: 300DPI+ exports for physical manufacturing.
+- **Unlimited Workspace**: Enterprise tier removes all project and storage caps.
 
 ## Interaction Flow
 
@@ -57,7 +74,10 @@ The **Physical Media Designer** is a specialized workspace within IndiiOS for cr
     - System places text, rotates it 90/270 degrees automatically based on the template spec.
 5. **Export**:
     - User clicks "Export Print Ready".
-    - System generates a high-res PDF or PNG (300DPI) with bleeds included, ready for the print shop.
+    - System checks tier limits:
+        - **Free**: 150DPI PNG/RGB.
+        - **Pro+**: 300DPI PDF/CMYK with bleed & trim marks.
+    - System generates the high-res file, ready for the print shop.
 
 ## Visual Style
 

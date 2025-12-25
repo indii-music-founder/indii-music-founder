@@ -1,8 +1,8 @@
 # Authentication System Implementation Plan
 
 **Status:** In Progress
-**Last Updated:** 2025-12-06
-**Current Phase:** Phase 1 - Firebase Setup
+**Last Updated:** 2025-12-24
+**Current Phase:** Phase 5 & 7 - Integration & Upgrades
 
 ---
 
@@ -17,10 +17,10 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 | Component | Status |
 |-----------|--------|
 | Firebase Project | `indiios-v-1-1` (configured) |
-| Current Auth | Anonymous only (`signInAnonymously`) |
-| User Profiles | localStorage (not cloud) |
+| Current Auth | Email/Pass + Google + Anon |
+| User Profiles | Firestore (`users` collection) |
 | Organizations | Firestore with `members[]` |
-| Login UI | None |
+| Login UI | Implemented (`/login`, `/signup`) |
 
 ---
 
@@ -70,12 +70,20 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 - [x] Update authSlice for Firestore profiles (Connected to `UserService`)
 - [ ] Verify End-to-End flow in Production Build
 
-### Phase 6: Polish
+### Phase 6: Polish ✅ COMPLETE
 
-- [ ] Loading states
-- [ ] Error messages
-- [ ] Account settings page
+- [x] Loading states
+- [x] Error messages
+- [x] Account settings page
 - [ ] Anonymous account linking
+
+### Phase 7: Account Upgrades & Billing Integration 🚧 IN PROGRESS
+
+- [ ] Integrate Stripe SDK for checkout
+- [ ] Create `/upgrade` pricing table on landing page
+- [ ] Implement webhook for subscription sync
+- [ ] Add `subscriptionStatus` to Firestore `users` collection
+- [/] Verify tier limits enforcement in `MembershipService` (Limits defined)
 
 ---
 
@@ -113,6 +121,10 @@ interface UserDocument {
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
   tier: 'free' | 'pro' | 'enterprise';
+  subscriptionId?: string;       // Stripe Subscription ID
+  customerId?: string;           // Stripe Customer ID
+  status: 'active' | 'past_due' | 'canceled' | 'trialing';
+  trialEndsAt?: Timestamp;
 }
 ```
 
@@ -168,3 +180,28 @@ When resuming this work:
   - `resetPassword()`
   - Auto user document creation in Firestore
 - [x] Created `landing-page/.env.example`
+
+### 2025-12-24
+
+- [x] Updated plan with Phase 7 (Upgrades & Billing)
+- [x] Expanded `UserDocument` schema for subscription tracking
+- [x] Documented "Upgrade Flow" and alignment with `MembershipService`
+
+---
+
+## Account Upgrade Flow
+
+1. **Trigger:** User hits a limit defined in `MembershipService` (e.g., max projects) or manually visits `/upgrade`.
+2. **Selection:** User selects a plan (Pro/Enterprise) using the `PricingTable` component.
+3. **Checkout:** User is redirected to Stripe Checkout session.
+4. **Fulfillment:** Stripe webhook updates the Firestore user document (`tier` and `subscriptionStatus`).
+5. **Reflection:** Studio app listens for auth state changes; `authSlice` updates local state, and `MembershipService` immediately reflects new limits.
+
+---
+
+## Tier Enforcement Logic
+
+Enforcement is handled via `src/services/MembershipService.ts`.
+
+- **Frontend:** Use `MembershipService.canUseFeature(tier, feature)` to toggle UI elements.
+- **Backend:** Firebase Cloud Functions for generation (video/image) verify the user's tier from their Firestore document before processing requests to avoid quota abuse.

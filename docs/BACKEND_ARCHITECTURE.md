@@ -1,7 +1,7 @@
 # Backend Architecture & Vertex AI Strategy
 
-**Last Updated:** 2025-12-03
-**Status:** Production Ready
+**Last Updated:** 2025-12-24
+**Status:** Hybrid (Production / Active Development)
 
 ## 1. Current Architecture
 
@@ -61,3 +61,56 @@ When scaling from 1 user to 1,000 or 1,000,000 users, client-side generation fai
 * **Runtime**: Node.js 22
 * **Framework**: Firebase Functions (Gen 2 preferred for concurrency).
 * **Auth**: `google-auth-library` for backend-to-backend; Firebase Auth for client-to-backend.
+
+## 5. Data Models
+
+### User (Firestore: `users/{uid}`)
+
+The source of truth for user profile, membership status, and capabilities.
+
+```typescript
+interface UserDocument {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  createdAt: Timestamp;
+  lastLoginAt: Timestamp;
+  
+  // Membership & Billing
+  tier: 'free' | 'pro' | 'enterprise';
+  subscriptionId?: string;       // Stripe Subscription ID
+  customerId?: string;           // Stripe Customer ID
+  status: 'active' | 'past_due' | 'canceled' | 'trialing';
+  trialEndsAt?: Timestamp;
+
+  // App Specific
+  bio?: string;
+  brandKit?: BrandKit;
+  // ... other app fields
+}
+```
+
+## 6. Subscription & Billing Architecture
+
+**Status:** Phase 7 (In Progress)
+
+We use a **webhook-driven** architecture for subscription management to ensure backend security and consistency.
+
+1. **Trigger:** User selects a plan in the frontend (Landing Page or Studio default verified route).
+2. **Checkout:** Redirects to Stripe Checkout (Client-side init via Stripe SDK).
+3. **Fulfillment (Async):**
+    * Stripe calls our `handleStripeWebhook` Cloud Function.
+    * Function verifies signature.
+    * Updates Firestore `users/{uid}` with `tier`, `subscriptionId`, `status`.
+4. **Enforcement:**
+    * **Frontend:** `MembershipService` listens to Firestore changes and unlocks features in real-time.
+    * **Backend:** Gated Cloud Functions (e.g., `generateVideo`) read the `tier` from Firestore before execution.
+
+### Tier Enforcement Matrix
+
+| Feature | Free | Pro | Enterprise |
+| :--- | :--- | :--- | :--- |
+| **Video Generation** | Watermarked, Low Res | 1080p, No Watermark | 4K, Priority Queue |
+| **Image Generation** | 50 / month | Unlimited | Unlimited |
+| **Agents** | Generalist Only | All Agents | Custom Agents |

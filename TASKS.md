@@ -10,8 +10,8 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### RAG System Compatibility
 
-- [ ] Resolve `fileData` support with Gemini 3 Flash (currently using inline text fallback)
-- [ ] Verify RAG results end-to-end: `npx tsx scripts/test-music-biz-rag.ts`
+- [x] Resolve `fileData` support (Upgraded to Managed File Search System)
+- [x] Verify RAG results end-to-end: `npx tsx scripts/verify-rag-filesearch.ts`
 
 ### Electron Desktop App
 

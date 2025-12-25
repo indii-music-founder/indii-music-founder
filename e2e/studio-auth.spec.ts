@@ -9,7 +9,7 @@ test.describe('Studio App Auth Flow', () => {
         await page.goto(STUDIO_URL);
 
         // 2. Expect Login Screen
-        await expect(page.getByText('Sign in to your account')).toBeVisible();
+        await expect(page.getByText('Sign in to your workspace')).toBeVisible();
 
         // 3. Click "Continue as Guest"
         await page.getByRole('button', { name: /continue as guest/i }).click();
@@ -17,7 +17,7 @@ test.describe('Studio App Auth Flow', () => {
         // 4. Expect Dashboard or Select Org
         // Depending on flow, guest might go straight to dashboard or onboarding
         // For now, check that we are NOT on login screen
-        await expect(page.getByText('Sign in to your account')).not.toBeVisible();
+        await expect(page.getByText('Sign in to your workspace')).not.toBeVisible();
         await expect(page.locator('.sidebar')).toBeVisible();
     });
 
@@ -48,7 +48,7 @@ test.describe('Studio App Auth Flow', () => {
 
     test('Google Sign In Button Presence', async ({ page }) => {
         await page.goto(STUDIO_URL);
-        await expect(page.getByText('Sign in with Google')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Google' })).toBeVisible();
     });
 
 });

@@ -40,48 +40,27 @@ export async function runAgenticWorkflow(
 
     try {
         if (files.length > 0) {
-            onUpdate(`Searching ${files.length} document(s)...`);
-            // Sort by newest first (if createTime is available, otherwise trust API order)
-            // The API usually returns list, let's just pick the first one for now as 'Recent Context'
-            const targetFile = files[0];
-            const fileUri = targetFile.name; // This is the 'files/...' URI
+            onUpdate(`Searching across ${files.length} document(s)...`);
 
-            // Try to find content in UserProfile KnowledgeBase to enable Inline Fallback
-            const localDoc = userProfile.knowledgeBase?.find(doc =>
-                doc.embeddingId === fileUri || doc.id === fileUri.split('/').pop()
-            );
-
-            const contentToUse = fileContent || localDoc?.content;
-
-            reasoning.push(`Context: ${targetFile.displayName} (${fileUri})`);
-            if (contentToUse) reasoning.push("Using cached content from Knowledge Base");
-
-            // 2. Query with File Context
-            // We force native RAG (no inline content) by passing undefined for content fallback
-            // Perform query using either native-file path or inline-text fallback
+            // Pass null for fileUri to trigger Store-wide search across all indexed files
             const result = await GeminiRetrieval.query(
-                fileUri,
+                null,
                 query,
-                fileContent, // RESTORED: Pass content so fallback logic works if fileData fails
+                fileContent,
                 AI_MODELS.TEXT.AGENT
             );
             const data = result;
 
-            // Parse Standard Gemini Response
             const candidate = data.candidates?.[0];
             responseText = candidate?.content?.parts?.[0]?.text || "No relevant info found in documents.";
 
-            // Attempt to capture citations/grounding if available
-            // Note: Grounding typically comes in 'groundingAttributions' or 'citationMetadata' depending on the model/feature used.
-            // For standard generateContent with files, it's just the model answering.
-            // We'll treat the file itself as the source.
             if (responseText) {
+                reasoning.push(`Multi-file search performed across ${files.length} documents.`);
                 sources.push({
-                    sourceId: targetFile.displayName,
-                    content: { parts: [{ text: "Context from file" }] }
+                    sourceId: "Knowledge Base",
+                    content: { parts: [{ text: "Consolidated knowledge from multiple sources" }] }
                 });
             }
-
         } else {
             // 3. Fallback: Pure LLM (No documents or Retrieval Failed)
             onUpdate("Using general knowledge...");
@@ -122,56 +101,58 @@ export async function runAgenticWorkflow(
 }
 
 /**
- * Takes raw content and ingests it into the Gemini Corpus.
+ * Takes raw content (string, File, or Blob) and ingests it into the Gemini File Search system.
  */
 export async function processForKnowledgeBase(
-    reportContent: string,
-    contextSource: string,
+    content: string | File | Blob,
+    fileName: string,
     extraMetadata: { size?: string; type?: string; originalDate?: string } = {}
 ): Promise<{ title: string; content: string; entities: string[]; tags: string[]; embeddingId?: string }> {
     // 1. Extract Metadata (Title, Summary) using standard Gemini
-    // We still do this to get a nice title/summary for the UI
-    const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;
-    let metadata = { title: contextSource, summary: '' };
-    try {
-        const response = await AI.generateContent({
-            model: AI_MODELS.TEXT.FAST,
-            contents: { role: 'user', parts: [{ text: reportContent }] },
-            config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
-        });
+    // We only do this if content is a string or we can read it easily for metadata extraction
+    let displayTitle = fileName;
+    let reportContent = typeof content === 'string' ? content : "Binary Content (PDF/Other)";
 
-        const text = response.text();
-        if (text) {
-            metadata = JSON.parse(text);
+    if (typeof content === 'string') {
+        const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;
+        try {
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.FAST,
+                contents: { role: 'user', parts: [{ text: content }] },
+                config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
+            });
+
+            const text = response.text();
+            if (text) {
+                const metadata = JSON.parse(text);
+                displayTitle = metadata.title || fileName;
+            }
+        } catch (error) {
+            console.warn("Metadata extraction failed, using defaults:", error);
         }
-    } catch (error) {
-        console.warn("Metadata extraction failed, using defaults:", error);
-        // Fallback is already set
     }
 
-    // 2. Ingest into Gemini Files
+    // 2. Ingest into Gemini Files (Native Support)
     try {
-        // Direct upload to Files API
-        const file = await GeminiRetrieval.uploadFile(metadata.title, reportContent);
-        console.log("Uploaded to Gemini Files:", file.name);
+        // Direct upload to Files API - handles PDF/MD/TXT natively now
+        const file = await GeminiRetrieval.uploadFile(displayTitle, content);
+        console.log(`[RAG] Ingested native file: ${file.name} (${file.mimeType})`);
 
-        // Return mostly compatible structure
         return {
-            title: metadata.title,
-            content: reportContent, // Store full content for retrieval
+            title: displayTitle,
+            content: typeof content === 'string' ? content : `Native ${file.mimeType} file stored in Gemini.`,
             entities: [],
-            tags: ['gemini-file'],
+            tags: ['gemini-file', file.mimeType.split('/').pop() || 'raw'],
             embeddingId: file.name
         };
     } catch (e) {
-        console.error("Failed to upload to Gemini Files:", e);
-        // Throw or return partial?
+        console.error("[RAG] Ingestion failed:", e);
         return {
-            title: metadata.title,
+            title: displayTitle,
             content: "Failed to process",
             entities: [],
             tags: ['error'],
             embeddingId: ''
-        }
+        };
     }
 }

@@ -48,9 +48,9 @@ async function runVerification() {
 
         // Step 3: Synthesis Query
         const query = "Who is the lead technician for reactor maintenance, and what is the emergency contact phone number for the security head?";
-        console.log(`3. Querying with synthesis: "${query}"`);
+        console.log(`3. Querying with synthesis (Store-wide): "${query}"`);
 
-        const result = await service.query(fileA.name, query, undefined, 'gemini-3-pro-preview');
+        const result = await service.query(null, query, undefined, 'gemini-3-pro-preview');
         console.log("   ✅ Query successful.");
 
         const answer = result.candidates?.[0]?.content?.parts?.[0]?.text;

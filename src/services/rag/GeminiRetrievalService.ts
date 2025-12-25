@@ -87,18 +87,32 @@ export class GeminiRetrievalService {
     // --- Files API Implementation (Replaces Corpus/Document) ---
 
     /**
-     * Uploads a text file to Gemini Files API.
-     * Returns the File object including URI.
+     * Uploads a file to Gemini Files API.
+     * Supports text, PDF, and other compatible formats.
      */
-    async uploadFile(displayName: string, textContent: string): Promise<GeminiFile> {
+    async uploadFile(displayName: string, content: string | Blob | Uint8Array, mimeType?: string): Promise<GeminiFile> {
+        // Determine MIME type
+        let targetMime = mimeType;
+        if (!targetMime) {
+            if (typeof content === 'string') {
+                targetMime = 'text/plain';
+            } else if (displayName.toLowerCase().endsWith('.pdf')) {
+                targetMime = 'application/pdf';
+            } else if (displayName.toLowerCase().endsWith('.md')) {
+                targetMime = 'text/markdown';
+            } else {
+                targetMime = 'application/octet-stream';
+            }
+        }
+
         const response = await this.fetch('../upload/v1beta/files?uploadType=media', {
             method: 'POST',
             headers: {
                 'X-Goog-Upload-Protocol': 'raw',
-                'Content-Type': 'text/plain',
+                'Content-Type': targetMime,
                 'X-Goog-Upload-Header-Content-Meta-Session-Data': JSON.stringify({ displayName })
             },
-            body: textContent
+            body: content
         });
 
         const file = response.file as GeminiFile;
@@ -226,56 +240,49 @@ export class GeminiRetrievalService {
      * Query using the file context (Long Context Window).
      * Replaces AQA model usage.
      */
-    async query(fileUri: string, userQuery: string, fileContent?: string, model?: string) {
-        const parts: any[] = [];
+    /**
+     * Query using the managed File Search system.
+     * If fileUri is provided, it ensures that file is present in the store.
+     * If fileUri is null/empty, it searches the entire store.
+     */
+    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string) {
         let tools: any[] | undefined;
+        const targetModel = model || AI_MODELS.TEXT.AGENT;
 
-        // Default to model if provided, or fallback to config default (usually FAST/Flash)
-        const targetModel = model || AI_MODELS.TEXT.FAST;
-
-        if (fileContent) {
-            parts.push({ text: `Use the following document as context to answer the user's question:\n\n${fileContent}\n\n` });
-        } else {
-            // NATIVE RAG: Use File Search Tool
+        if (!fileContent) {
             try {
-                // 1. Ensure we have a store
                 const storeName = await this.ensureFileSearchStore();
 
-                // 2. Import this specific file to the store
-                await this.importFileToStore(fileUri, storeName);
+                if (fileUri) {
+                    await this.importFileToStore(fileUri, storeName);
+                }
 
-                // 3. Construct Tool Payload
                 tools = [{
                     fileSearch: {
                         fileSearchStoreNames: [storeName]
                     }
                 }];
-
+                console.log(`[RAG] Querying Store: ${storeName} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
             } catch (e) {
-                console.error("File Search Setup Failed:", e);
-                throw e;
+                console.error("[RAG] File Search Setup Failed:", e);
             }
         }
-
-        parts.push({ text: userQuery });
 
         const body: any = {
             contents: [{
                 role: 'user',
-                parts: parts
+                parts: [
+                    ...(fileContent ? [{ text: `CONTEXT:\n${fileContent}\n\n` }] : []),
+                    { text: userQuery }
+                ]
             }],
             generationConfig: {
                 temperature: 0.0
             }
         };
 
-        if (tools) {
-            body.tools = tools;
-        }
+        if (tools) body.tools = tools;
 
-        console.log("DEBUG: Querying with tools:", JSON.stringify(tools));
-
-        // Use standard generateContent
         return this.fetch(`models/${targetModel}:generateContent`, {
             method: 'POST',
             body: JSON.stringify(body)

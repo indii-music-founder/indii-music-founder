@@ -26,6 +26,11 @@ export const AI_MODELS = {
         // Main image generation model (Nano Banana Pro)
         GENERATION: 'gemini-3-pro-image-preview',
     },
+    AUDIO: {
+        // Upgraded TTS models (Stable)
+        PRO: 'gemini-2.5-pro-tts',
+        FLASH: 'gemini-2.5-flash-tts',
+    },
     VIDEO: {
         // Video generation model
         GENERATION: 'veo-3.1-generate-preview',
@@ -90,6 +95,8 @@ function validateModels(): void {
 ║    - gemini-3-pro-preview (complex reasoning)                                ║
 ║    - gemini-3-flash-preview (fast tasks)                                     ║
 ║    - gemini-3-pro-image-preview (image generation)                           ║
+║    - gemini-2.5-pro-tts (advanced audio)                                     ║
+║    - gemini-2.5-flash-tts (fast audio)                                       ║
 ║    - veo-3.1-generate-preview (video generation)                             ║
 ║                                                                              ║
 ║  DO NOT use gemini-1.5-*, gemini-2.0-*, or legacy gemini-pro models.         ║
