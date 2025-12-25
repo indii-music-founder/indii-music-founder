@@ -3,6 +3,7 @@ import path from 'path';
 import { registerSystemHandlers } from './handlers/system';
 import { registerAuthHandlers, handleDeepLink } from './handlers/auth';
 import { registerAudioHandlers } from './handlers/audio';
+import { registerNetworkHandlers } from './handlers/network';
 import { configureSecurity } from './security';
 
 // Protocol Registration
@@ -128,6 +129,7 @@ app.on('ready', () => {
     registerSystemHandlers();
     registerAuthHandlers();
     registerAudioHandlers();
+    registerNetworkHandlers();
     createWindow();
 });
 

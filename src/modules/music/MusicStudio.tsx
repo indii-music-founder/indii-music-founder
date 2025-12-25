@@ -6,6 +6,7 @@ import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { useToast } from '@/core/context/ToastContext';
 import { fileSystemService } from '@/services/FileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
+import { fingerprintService } from '@/services/audio/FingerprintService';
 import { MetadataDrawer } from './components/MetadataDrawer';
 import { GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 
@@ -134,11 +135,20 @@ export default function MusicStudio() {
 
             setIsAnalyzing(true);
             try {
+                // 1. Analyze Features
                 const features = await audioAnalysisService.analyze(result.file);
+
+                // 2. Generate Fingerprint (using features)
+                const fingerprint = await fingerprintService.generateFingerprint(result.file, features);
+
                 setLoadedAudio(prev => prev.map(t =>
-                    t.id === newTrack.id ? { ...t, features } : t
+                    t.id === newTrack.id ? {
+                        ...t,
+                        features,
+                        metadata: { ...t.metadata, masterFingerprint: fingerprint }
+                    } : t
                 ));
-                toast.success('Analysis Complete');
+                toast.success('Sonic Analysis Complete');
             } catch (err) {
                 console.error('Analysis failed:', err);
                 toast.error('Deep analysis failed, basic playback only.');
@@ -158,12 +168,12 @@ export default function MusicStudio() {
             return;
         }
 
+        // Create tracks initially
         const tracks: LoadedAudio[] = files.map(({ file, path }) => ({
             id: `${Date.now()}-${path}`,
             name: file.name,
             path,
             file,
-            url: URL.createObjectURL(file),
             url: URL.createObjectURL(file),
             features: null,
             metadata: { ...INITIAL_METADATA, trackTitle: file.name.replace(/\.[^/.]+$/, "") }
@@ -171,8 +181,35 @@ export default function MusicStudio() {
 
         setLoadedAudio(prev => [...prev, ...tracks]);
         setCurrentTrackId(tracks[0].id);
+
+        // Asynchronously fingerprint/analyze all loaded tracks
+        // We do this one by one to avoid UI freeze, or parallel if worker supported.
+        // For prototype, let's do simple loop with promises but don't block UI
+        toast.loading(`Analyzing ${tracks.length} tracks...`);
+
+        (async () => {
+            for (const track of tracks) {
+                if (!track.file) continue;
+                try {
+                    const features = await audioAnalysisService.analyze(track.file);
+                    const fingerprint = await fingerprintService.generateFingerprint(track.file, features);
+
+                    setLoadedAudio(prev => prev.map(t =>
+                        t.id === track.id ? {
+                            ...t,
+                            features,
+                            metadata: { ...t.metadata, masterFingerprint: fingerprint }
+                        } : t
+                    ));
+                } catch (e) {
+                    console.error('Batch analysis failed for', track.name);
+                }
+            }
+            toast.dismiss();
+            toast.success("Batch Analysis Complete");
+        })();
+
         await fileSystemService.saveDirectoryHandle('music-library', directoryHandle);
-        toast.success(`Loaded ${tracks.length} track(s) from folder`);
     };
 
     const handleRemoveTrack = (e: React.MouseEvent, id: string) => {

@@ -31,5 +31,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     audio: {
         analyze: (filePath: string) => ipcRenderer.invoke('audio:analyze', filePath),
         getMetadata: (hash: string) => ipcRenderer.invoke('audio:lookup-metadata', hash)
+    },
+
+    // Network (Main Process Fetching)
+    network: {
+        fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url)
     }
 });

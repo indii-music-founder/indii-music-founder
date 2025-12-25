@@ -4,6 +4,7 @@ import { ImageTools } from './tools/ImageTools';
 import { VideoTools } from './tools/VideoTools';
 import { MemoryTools } from './tools/MemoryTools';
 import { AnalysisTools } from './tools/AnalysisTools';
+import { FinanceTools } from './tools/FinanceTools';
 import { SocialTools } from './tools/SocialTools';
 import { CoreTools } from './tools/CoreTools';
 import { OrganizationTools } from './tools/OrganizationTools';

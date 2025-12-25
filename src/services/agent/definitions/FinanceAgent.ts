@@ -84,6 +84,18 @@ Example: "By handling this metadata yourself, you just saved $45 in admin fees a
                     },
                     required: ["query"]
                 }
+            },
+            {
+                name: "analyze_receipt",
+                description: "Extract data (vendor, date, amount, category) from a receipt image.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        image_data: { type: "STRING", description: "Base64 string of the receipt image." },
+                        mime_type: { type: "STRING", description: "MIME type (e.g. image/jpeg)." }
+                    },
+                    required: ["image_data", "mime_type"]
+                }
             }
         ]
     }]

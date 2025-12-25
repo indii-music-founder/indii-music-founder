@@ -7,6 +7,51 @@ import { getDistributorRequirements, getDistributorSummaryForAI, getSupportedDis
 
 // --- Types & Enums ---
 
+// Conversation Phase State Machine
+// Ensures structured flow and prevents topic jumping
+export type OnboardingPhase =
+    | 'identity_intro'      // Initial greeting, artist name
+    | 'identity_core'       // Genre, career stage, goals
+    | 'identity_branding'   // Colors, fonts, aesthetics
+    | 'identity_visuals'    // Press photos, logo, assets
+    | 'release_intro'       // Transition to release focus
+    | 'release_details'     // Title, type, mood
+    | 'release_assets'      // Cover art, tracklist
+    | 'complete';           // All done
+
+export interface ConversationState {
+    phase: OnboardingPhase;
+    completedTopics: string[];
+    pendingTopics: string[];
+}
+
+// Determine current phase based on profile status
+export function determinePhase(profile: UserProfile): OnboardingPhase {
+    const { coreMissing, releaseMissing, coreProgress, releaseProgress } = calculateProfileStatus(profile);
+
+    // No bio = just starting
+    if (!profile.bio || profile.bio.length < 10) return 'identity_intro';
+
+    // Core identity incomplete
+    if (coreMissing.includes('careerStage') || coreMissing.includes('goals')) return 'identity_core';
+
+    // Branding incomplete (colors, fonts, aesthetic)
+    const brandKit = profile.brandKit || {};
+    if (!brandKit.colors?.length && !brandKit.fonts && !brandKit.brandDescription) return 'identity_branding';
+
+    // Visuals incomplete
+    if (coreMissing.includes('visuals')) return 'identity_visuals';
+
+    // All identity done, check release
+    if (coreProgress >= 100 && releaseProgress === 0) return 'release_intro';
+
+    // Release in progress
+    if (releaseMissing.length > 0) return 'release_details';
+
+    // Everything complete
+    return 'complete';
+}
+
 // Option whitelists to ensure AI uses correct options per question type
 export const OPTION_WHITELISTS: Record<string, string[]> = {
     release_type: ['Single', 'EP (3-6 tracks)', 'Album (7+ tracks)', 'Remix', 'DJ Mix', 'Mixtape'],
@@ -16,6 +61,10 @@ export const OPTION_WHITELISTS: Record<string, string[]> = {
     genre: ['House', 'Techno', 'Hip-Hop', 'R&B', 'Pop', 'Indie', 'Electronic', 'Rock', 'Other'],
     goals: ['Grow fanbase', 'Get playlisted', 'Touring', 'Sync licensing', 'Label deal', 'Brand partnerships'],
     mood: ['Dark & moody', 'Euphoric', 'Introspective', 'High-energy', 'Chill', 'Melancholic'],
+    // Visual branding categories
+    aesthetic_style: ['Retro 80s', 'Synthwave', 'Cyberpunk', 'Minimalist', 'Maximalist', 'Vintage', 'Futuristic', 'Organic/Natural', 'Abstract', 'Cinematic'],
+    color_vibe: ['Vibrant & Neon', 'Muted & Earthy', 'Black & White', 'Pastels', 'High Contrast', 'Monochrome', 'Warm tones', 'Cool tones'],
+    font_style: ['Bold & Geometric', 'Elegant Serif', 'Clean Sans-Serif', 'Vintage/Retro', 'Handwritten', 'Tech/Mono', 'Display/Decorative'],
 };
 
 export enum OnboardingTools {
@@ -36,6 +85,7 @@ export interface UpdateProfileArgs {
     brand_description?: string;
     colors?: string[];
     fonts?: string;
+    aesthetic_style?: string; // Visual aesthetic (e.g., "Cyberpunk", "Minimalist")
     negative_prompt?: string;
     visuals_acknowledged?: boolean; // True when user confirms they have no visual assets yet
     // Release fields
@@ -94,6 +144,7 @@ const updateProfileFunction: FunctionDeclaration = {
             brand_description: { type: 'STRING', description: 'Visual brand description — aesthetic, style, colors, mood (Permanent).' },
             colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette as hex codes or color names.' },
             fonts: { type: 'STRING', description: 'Brand fonts or typography preferences.' },
+            aesthetic_style: { type: 'STRING', description: 'Visual aesthetic style (e.g., "Cyberpunk", "Minimalist", "Retro 80s", "Synthwave").' },
             negative_prompt: { type: 'STRING', description: 'Things to AVOID in AI-generated content (e.g., "no neon colors, no cartoons").' },
             visuals_acknowledged: { type: 'BOOLEAN', description: 'Set to true when user confirms they have no visual assets yet (e.g., "None yet - starting fresh"). This marks visuals as complete so we stop asking.' },
             career_stage: { type: 'STRING', description: 'Career stage: Emerging (just starting), Rising (building momentum), Professional (established), Legend (industry veteran).' },
@@ -194,7 +245,7 @@ const askMultipleChoiceFunction: FunctionDeclaration = {
         properties: {
             question_type: {
                 type: 'STRING',
-                enum: ['release_type', 'career_stage', 'visuals', 'socials', 'genre', 'goals', 'mood'],
+                enum: ['release_type', 'career_stage', 'visuals', 'socials', 'genre', 'goals', 'mood', 'aesthetic_style', 'color_vibe', 'font_style'],
                 description: 'The category of question. Options MUST match this category exactly.'
             },
             question: { type: 'STRING', description: 'The question to ask the user (e.g., "What is your main genre?").' },
@@ -269,6 +320,10 @@ export function calculateProfileStatus(profile: UserProfile) {
         visuals: (brandAssets.length > 0 || colors.length > 0 || brandKit.visualsAcknowledged === true),
         careerStage: !!profile.careerStage,
         goals: !!(profile.goals && profile.goals.length > 0),
+        // New branding fields
+        colorPalette: !!(colors.length > 0),
+        typography: !!brandKit.fonts,
+        aestheticStyle: !!brandKit.aestheticStyle,
     };
 
     // Level 2: Release Context (Transient)
@@ -299,6 +354,19 @@ export async function runOnboardingConversation(
 ): Promise<{ text: string, functionCalls?: any[] }> {
 
     const { coreMissing, releaseMissing, coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
+    const currentPhase = determinePhase(userProfile);
+
+    // Phase-specific focus instructions
+    const phaseInstructions: Record<OnboardingPhase, string> = {
+        identity_intro: "CURRENT FOCUS: Get their name and story. Build rapport first.",
+        identity_core: "CURRENT FOCUS: Career stage, genre, and goals. These shape everything.",
+        identity_branding: "CURRENT FOCUS: Visual identity — colors, fonts, aesthetic style. This powers AI image generation.",
+        identity_visuals: "CURRENT FOCUS: Visual assets — press photos, logo, references. If they have none, get acknowledgment and move on.",
+        release_intro: "CURRENT FOCUS: Transition to the current release. What are they promoting?",
+        release_details: "CURRENT FOCUS: Release specifics — title, type, mood, themes.",
+        release_assets: "CURRENT FOCUS: Release assets — cover art, tracklist, lyrics.",
+        complete: "PROFILE COMPLETE: Both identity and release are solid. Confirm and wrap up.",
+    };
 
     const baseInstruction = `You are "indii" — a seasoned music industry creative director with 15+ years working with artists from underground scenes to platinum acts. You've seen it all: the bedroom producers who became headliners, the viral moments that changed careers, the artists who burned out and the ones who built empires.
 
@@ -338,6 +406,13 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 - The project they're promoting NOW — this drives the campaign
 - Title, type (single/EP/album), mood, themes, the story of THIS release
 
+**${phaseInstructions[currentPhase]}**
+
+**CONVERSATION FLOW (State Machine):**
+Phase 1 (Identity): intro → bio → genre → career_stage → goals → branding (colors, fonts, aesthetic) → visuals
+Phase 2 (Release): intro → title → type → mood → themes → assets
+NEVER jump phases. Complete each topic before moving on. If a topic is done, skip it.
+
 **INTERVIEW TECHNIQUES:**
 1. **Don't interrogate — converse**: Each question should flow from the last answer
 2. **Share micro-insights**: "Genre blending is smart — algorithms actually reward that now"
@@ -359,8 +434,11 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 - genre → options: House, Techno, Hip-Hop, R&B, Pop, Indie, Electronic, Rock, Other
 - goals → options: Grow fanbase, Get playlisted, Touring, Sync licensing, Label deal
 - mood → options: Dark & moody, Euphoric, Introspective, High-energy, Chill
+- aesthetic_style → options: Retro 80s, Synthwave, Cyberpunk, Minimalist, Maximalist, Vintage, Futuristic, Organic/Natural, Abstract, Cinematic
+- color_vibe → options: Vibrant & Neon, Muted & Earthy, Black & White, Pastels, High Contrast, Monochrome, Warm tones, Cool tones
+- font_style → options: Bold & Geometric, Elegant Serif, Clean Sans-Serif, Vintage/Retro, Handwritten, Tech/Mono, Display/Decorative
 - NEVER show release type options when asking about visuals — this confuses users
-- If user says "none" or "starting fresh" for visuals, acknowledge it and MOVE ON to the next topic
+- **CRITICAL**: If user says "none", "starting fresh", "no visuals", "don't have any" for visuals, you MUST call \`updateProfile({ visuals_acknowledged: true })\` to mark it complete, then MOVE ON to the next topic. Do NOT ask about visuals again after they've answered.
 - If they upload an image, actually REACT to it: "This shot has main character energy" or "The lighting here is moody — is that the direction for this release?"
 - If they're stuck, don't just wait — offer creative starters: "Tell me 3 artists you'd want to open for, and I'll help draft your bio"
 - Accept skips gracefully: "Totally fine, we'll circle back" — then MOVE ON
@@ -368,12 +446,43 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 - **DISTRIBUTOR INTEL**: When an artist mentions their distributor (DistroKid, TuneCore, CD Baby, AWAL, Ditto, UnitedMasters, Amuse), IMMEDIATELY use \`shareDistributorInfo\` to show them the requirements and pro tips. This is valuable intel — cover art specs, audio formats, metadata requirements, timeline recommendations. Artists NEED this. Save their distributor to the profile too.
 - **FILE UPLOADS**: Naturally invite uploads when relevant. They can attach images (press photos, logos, reference art), documents (bio, press kit, lyrics), and audio files. If they upload music, acknowledge it and let them know: "I'll pull some metadata from this to understand the track better — I don't store your audio anywhere, it stays on your device." React to audio uploads with genuine interest: "Nice, let me take a look at what you're working with."
 
+**VISUAL BRANDING (IMPORTANT - Don't skip this!):**
+Artists need strong visual identity. Ask about these naturally during the conversation:
+
+1. **Aesthetic Style**: "What visual era or style fits your music? Retro 80s? Cyberpunk? Minimalist?"
+   - Use \`askMultipleChoice\` with question_type='aesthetic_style'
+   - Store the answer in \`brand_description\` (append to existing)
+
+2. **Colors**: "What are your brand colors? Or describe the color vibe you're going for."
+   - Use \`askMultipleChoice\` with question_type='color_vibe' for quick selection
+   - OR ask directly: "Give me 2-3 colors (hex codes or names like 'deep purple, gold')"
+   - Store in \`colors\` array via \`updateProfile({ colors: ['#8B5CF6', '#F59E0B'] })\`
+
+3. **Typography**: "What typography style fits your brand?"
+   - Use \`askMultipleChoice\` with question_type='font_style'
+   - Store in \`fonts\` field
+
+4. **What to AVOID (Negative Prompt)**: "Any visual styles you want to avoid? Like 'no cartoons' or 'no neon'?"
+   - This is GOLD for AI image generation
+   - Store in \`negative_prompt\` field
+
+**Why this matters**: These fields power the AI image generator. Without colors/aesthetic, we can't create on-brand visuals. Make it conversational: "I noticed you said 'dark and moody' — are we talking muted earth tones or high-contrast black and white?"
+
+**AFTER SILENT UPDATES (CRITICAL):**
+When you call updateProfile silently (which you should), you MUST still respond with:
+- A brief acknowledgment ("Got it!", "Nice.", "I'm with you.")
+- A natural transition to the next topic
+- OR the next question
+
+NEVER return an empty or near-empty response after updateProfile. The user should always get conversational feedback.
+
 **NEVER DO:**
 - Sound like a form or a chatbot
 - Say "Great!" or "Awesome!" at the start of every response
 - Ask multiple questions at once
 - Repeat questions they've already answered
 - Be generic — reference THEIR specific answers
+- Return empty responses after silent profile updates
 
 Only call \`finishOnboarding\` when both layers feel solid.`;
 
@@ -497,7 +606,7 @@ export function processFunctionCalls(
                 if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
                 // Handle BrandKit (Identity + Release)
-                const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor || args.visuals_acknowledged;
+                const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.aesthetic_style || args.negative_prompt || args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor || args.visuals_acknowledged;
                 const hasReleaseUpdates = args.release_title || args.release_type || args.release_artists || args.release_genre || args.release_mood || args.release_themes || args.release_lyrics;
 
                 if (hasBrandUpdates || hasReleaseUpdates) {
@@ -507,6 +616,7 @@ export function processFunctionCalls(
                     if (args.brand_description) { newBrandKit.brandDescription = args.brand_description; updates.push('Brand Description'); }
                     if (args.colors) { newBrandKit.colors = args.colors; updates.push('Colors'); }
                     if (args.fonts) { newBrandKit.fonts = args.fonts; updates.push('Fonts'); }
+                    if (args.aesthetic_style) { newBrandKit.aestheticStyle = args.aesthetic_style; updates.push('Aesthetic Style'); }
                     if (args.negative_prompt) { newBrandKit.negativePrompt = args.negative_prompt; updates.push('Negative Prompt'); }
                     if (args.visuals_acknowledged) { newBrandKit.visualsAcknowledged = true; updates.push('Visual Assets Status'); }
 

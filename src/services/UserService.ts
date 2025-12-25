@@ -66,7 +66,14 @@ export class UserService {
                 knowledgeBase: [],
                 savedWorkflows: [],
                 careerStage: 'Emerging',
-                goals: []
+                artistType: 'Solo',
+                goals: [],
+                accountType: 'artist', // Default to artist for now
+                socialStats: {
+                    followers: 0,
+                    following: 0,
+                    postCount: 0
+                }
             };
 
             await setDoc(userRef, newProfile);

@@ -31,6 +31,11 @@ export interface ElectronAPI {
         analyze: (filePath: string) => Promise<AudioAnalysisResult>;
         getMetadata: (hash: string) => Promise<any>;
     };
+
+    // Network (Main Process Fetching)
+    network: {
+        fetchUrl: (url: string) => Promise<string>;
+    };
 }
 
 declare global {
@@ -39,4 +44,4 @@ declare global {
     }
 }
 
-export {};
+export { };

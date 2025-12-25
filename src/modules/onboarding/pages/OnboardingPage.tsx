@@ -1,13 +1,41 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '@/services/onboarding/onboardingService';
-import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign } from 'lucide-react';
+import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback, generateSection, OPTION_WHITELISTS } from '@/services/onboarding/onboardingService';
+import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign, Pencil, RefreshCw, Check } from 'lucide-react';
 import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 
 type HistoryItem = { role: string; parts: { text: string }[]; toolCall?: any };
+
+// Client-side option validation - ensures AI-provided options match the question type's whitelist
+const validateOptions = (questionType: string, options: string[]): string[] => {
+    const whitelist = OPTION_WHITELISTS[questionType];
+    if (!whitelist) return options; // No whitelist = allow custom options
+
+    // Filter options to only include those in whitelist (fuzzy match)
+    return options.filter(opt => {
+        const optLower = opt.toLowerCase();
+        return whitelist.some(w => {
+            const wLower = w.toLowerCase();
+            return wLower.includes(optLower) || optLower.includes(wLower) || wLower === optLower;
+        });
+    });
+};
+
+// Semantic insight deduplication - catches paraphrased duplicates
+const isSemanticallySimilar = (a: string, b: string): boolean => {
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const wordsA = normalize(a).split(' ').filter(w => w.length > 2); // Skip tiny words
+    const wordsB = normalize(b).split(' ').filter(w => w.length > 2);
+
+    if (wordsA.length === 0 || wordsB.length === 0) return false;
+
+    const overlap = wordsA.filter(w => wordsB.includes(w)).length;
+    const similarity = overlap / Math.max(wordsA.length, wordsB.length);
+    return similarity > 0.5; // 50% word overlap = semantically similar
+};
 
 export default function OnboardingPage() {
     const { userProfile, setUserProfile, setModule } = useStore();
@@ -16,6 +44,9 @@ export default function OnboardingPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [files, setFiles] = useState<ConversationFile[]>([]);
     const [showMobileStatus, setShowMobileStatus] = useState(false); // Mobile Drawer State
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [editedBio, setEditedBio] = useState('');
+    const [isRegenerating, setIsRegenerating] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,16 +184,30 @@ export default function OnboardingPage() {
                 const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
-                // Dedupe insights: Check if this exact insight was already shown
+                // Dedupe insights: Check if this insight is semantically similar to one already shown
                 if (uiToolCall?.name === 'shareInsight' && uiToolCall.args?.insight) {
-                    const currentInsight = uiToolCall.args.insight.toLowerCase().trim();
+                    const currentInsight = uiToolCall.args.insight;
                     const alreadyShown = newHistory.some(
                         msg => msg.toolCall?.name === 'shareInsight' &&
-                        msg.toolCall?.args?.insight?.toLowerCase().trim() === currentInsight
+                        msg.toolCall?.args?.insight &&
+                        isSemanticallySimilar(msg.toolCall.args.insight, currentInsight)
                     );
                     if (alreadyShown) {
-                        console.log('[Onboarding] Deduped duplicate insight:', currentInsight.substring(0, 50));
+                        console.log('[Onboarding] Deduped similar insight:', currentInsight.substring(0, 50));
                         uiToolCall = null; // Don't show duplicate insight
+                    }
+                }
+
+                // Validate options for askMultipleChoice
+                if (uiToolCall?.name === 'askMultipleChoice' && uiToolCall.args?.options && uiToolCall.args?.question_type) {
+                    const validatedOptions = validateOptions(uiToolCall.args.question_type, uiToolCall.args.options);
+                    if (validatedOptions.length === 0) {
+                        // All options invalid - fall back to whitelist
+                        console.log('[Onboarding] All options invalid, using whitelist for:', uiToolCall.args.question_type);
+                        uiToolCall.args.options = OPTION_WHITELISTS[uiToolCall.args.question_type] || uiToolCall.args.options;
+                    } else if (validatedOptions.length !== uiToolCall.args.options.length) {
+                        console.log('[Onboarding] Filtered invalid options:', uiToolCall.args.options.length - validatedOptions.length);
+                        uiToolCall.args.options = validatedOptions;
                     }
                 }
 
@@ -212,6 +257,45 @@ export default function OnboardingPage() {
         setModule('dashboard');
     };
 
+    const handleEditBio = () => {
+        setEditedBio(userProfile.bio || '');
+        setIsEditingBio(true);
+    };
+
+    const handleSaveBio = () => {
+        setUserProfile({ ...userProfile, bio: editedBio });
+        setIsEditingBio(false);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingBio(false);
+        setEditedBio('');
+    };
+
+    const handleRegenerateBio = async () => {
+        if (isRegenerating) return;
+        setIsRegenerating(true);
+        try {
+            // Gather context from what we know about the artist
+            const context = [
+                userProfile.brandKit?.brandDescription,
+                userProfile.brandKit?.releaseDetails?.genre,
+                userProfile.brandKit?.releaseDetails?.mood,
+                userProfile.careerStage,
+                userProfile.goals?.join(', '),
+            ].filter(Boolean).join('. ');
+
+            const newBio = await generateSection('bio', context || 'Independent artist');
+            if (newBio) {
+                setUserProfile({ ...userProfile, bio: newBio });
+            }
+        } catch (error) {
+            console.error('[Onboarding] Failed to regenerate bio:', error);
+        } finally {
+            setIsRegenerating(false);
+        }
+    };
+
     const { coreProgress, releaseProgress, coreMissing, releaseMissing } = calculateProfileStatus(userProfile);
     console.log('[Onboarding] Progress:', { coreProgress, isReady: coreProgress > 50, missing: coreMissing });
     const isReadyForDashboard = coreProgress > 50; // Threshold for allowing skip/complete
@@ -232,7 +316,17 @@ export default function OnboardingPage() {
                     />
                 </div>
                 <div className="mt-4 space-y-3">
-                    {['bio', 'brandDescription', 'socials', 'visuals', 'careerStage', 'goals'].map(key => {
+                    {[
+                        { key: 'bio', label: 'Bio' },
+                        { key: 'brandDescription', label: 'Brand Description' },
+                        { key: 'socials', label: 'Social Links' },
+                        { key: 'visuals', label: 'Visual Assets' },
+                        { key: 'careerStage', label: 'Career Stage' },
+                        { key: 'goals', label: 'Goals' },
+                        { key: 'colorPalette', label: 'Color Palette' },
+                        { key: 'typography', label: 'Typography' },
+                        { key: 'aestheticStyle', label: 'Aesthetic Style' },
+                    ].map(({ key, label }) => {
                         const isMissing = coreMissing.includes(key);
                         return (
                             <div key={key} className="flex items-center gap-3 text-sm">
@@ -245,8 +339,8 @@ export default function OnboardingPage() {
                                         <CheckCircle size={12} fill="currentColor" className="text-black" />
                                     </div>
                                 )}
-                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
-                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 font-medium'}>
+                                    {label}
                                 </span>
                             </div>
                         );
@@ -267,7 +361,13 @@ export default function OnboardingPage() {
                     />
                 </div>
                 <div className="mt-4 space-y-3">
-                    {['title', 'type', 'genre', 'mood', 'themes'].map(key => {
+                    {[
+                        { key: 'title', label: 'Release Title' },
+                        { key: 'type', label: 'Release Type' },
+                        { key: 'genre', label: 'Genre' },
+                        { key: 'mood', label: 'Mood' },
+                        { key: 'themes', label: 'Themes' },
+                    ].map(({ key, label }) => {
                         const isMissing = releaseMissing.includes(key);
                         return (
                             <div key={key} className="flex items-center gap-3 text-sm">
@@ -280,8 +380,8 @@ export default function OnboardingPage() {
                                         <CheckCircle size={12} fill="currentColor" className="text-white" />
                                     </div>
                                 )}
-                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 capitalize font-medium'}>
-                                    {key === 'title' ? 'Release Title' : key.replace(/([A-Z])/g, ' $1').trim()}
+                                <span className={isMissing ? 'text-gray-500' : 'text-gray-200 font-medium'}>
+                                    {label}
                                 </span>
                             </div>
                         );
@@ -629,13 +729,68 @@ export default function OnboardingPage() {
                 <div className="pt-8 border-t border-gray-800">
                     <h4 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Live Preview</h4>
                     <div className="bg-[#161b22] rounded-xl p-4 border border-gray-800">
-                        {userProfile.bio ? (
+                        {userProfile.bio || isEditingBio ? (
                             <div className="mb-4">
-                                <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Bio</p>
-                                <p className="text-sm text-gray-300 leading-relaxed">{userProfile.bio}</p>
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs text-gray-500 uppercase font-bold">Bio</p>
+                                    {!isEditingBio && (
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={handleRegenerateBio}
+                                                disabled={isRegenerating}
+                                                className="p-1.5 text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 rounded-md transition-colors disabled:opacity-50"
+                                                title="Regenerate with AI"
+                                            >
+                                                <RefreshCw size={14} className={isRegenerating ? 'animate-spin' : ''} />
+                                            </button>
+                                            <button
+                                                onClick={handleEditBio}
+                                                className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                                                title="Edit bio"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                {isEditingBio ? (
+                                    <div className="space-y-2">
+                                        <textarea
+                                            value={editedBio}
+                                            onChange={(e) => setEditedBio(e.target.value)}
+                                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                                            rows={4}
+                                            placeholder="Write your bio..."
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={handleSaveBio}
+                                                className="px-3 py-1.5 text-xs bg-white text-black rounded-md hover:bg-gray-200 transition-colors flex items-center gap-1"
+                                            >
+                                                <Check size={12} /> Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-300 leading-relaxed">{userProfile.bio}</p>
+                                )}
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-600 italic text-center py-4">Bio will appear here...</p>
+                            <div className="py-4 text-center">
+                                <p className="text-sm text-gray-600 italic mb-2">Bio will appear here...</p>
+                                <button
+                                    onClick={handleEditBio}
+                                    className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                                >
+                                    + Add manually
+                                </button>
+                            </div>
                         )}
 
                         {(userProfile.brandKit.releaseDetails.title || userProfile.brandKit.releaseDetails.genre) && (
@@ -652,6 +807,49 @@ export default function OnboardingPage() {
                                         <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit.releaseDetails.type}</span>
                                     )}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Color Palette Preview */}
+                        {userProfile.brandKit.colors && userProfile.brandKit.colors.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-700/50">
+                                <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Brand Colors</p>
+                                <div className="flex gap-2 flex-wrap">
+                                    {userProfile.brandKit.colors.map((color, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="w-8 h-8 rounded-lg border border-white/10 shadow-sm"
+                                            style={{ backgroundColor: color }}
+                                            title={color}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Aesthetic, Fonts & Avoid Preview */}
+                        {(userProfile.brandKit.aestheticStyle || userProfile.brandKit.fonts || userProfile.brandKit.negativePrompt) && (
+                            <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-3">
+                                {userProfile.brandKit.aestheticStyle && (
+                                    <div>
+                                        <p className="text-xs text-gray-500 uppercase font-bold">Aesthetic</p>
+                                        <span className="inline-block mt-1 text-sm text-purple-300 bg-purple-500/10 px-2 py-1 rounded">
+                                            {userProfile.brandKit.aestheticStyle}
+                                        </span>
+                                    </div>
+                                )}
+                                {userProfile.brandKit.fonts && (
+                                    <div>
+                                        <p className="text-xs text-gray-500 uppercase font-bold">Typography</p>
+                                        <p className="text-sm text-gray-300">{userProfile.brandKit.fonts}</p>
+                                    </div>
+                                )}
+                                {userProfile.brandKit.negativePrompt && (
+                                    <div>
+                                        <p className="text-xs text-gray-500 uppercase font-bold">Avoid</p>
+                                        <p className="text-sm text-gray-400 italic">{userProfile.brandKit.negativePrompt}</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

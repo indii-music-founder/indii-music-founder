@@ -31,5 +31,14 @@ export interface UserProfile {
     knowledgeBase?: KnowledgeDocument[];
     savedWorkflows?: SavedWorkflow[];
     careerStage?: string;
+    artistType?: 'Solo' | 'Band' | 'Collective';
     goals?: string[];
+
+    // Social & Commerce
+    accountType: 'fan' | 'artist' | 'label';
+    socialStats?: {
+        followers: number;
+        following: number;
+        postCount: number;
+    };
 }

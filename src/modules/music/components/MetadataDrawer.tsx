@@ -1,8 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { GoldenMetadata, RoyaltySplit } from '@/services/metadata/types';
-import { CheckCircle, ShieldCheck, AlertCircle, Plus, Trash2, Save } from 'lucide-react';
+import { ShieldCheck, Plus, Trash, AlertTriangle, FileText, CheckCircle, Save, AlertCircle, BookOpen, Scale, Fingerprint } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+
+import { UserService } from '@/services/UserService';
+import { identifyPlatform } from '@/services/knowledge/SamplePlatforms';
+import { licenseScannerService } from '@/services/knowledge/LicenseScannerService';
+import { useStore } from '@/core/store';
 
 interface MetadataDrawerProps {
     isOpen: boolean;
@@ -13,8 +17,24 @@ interface MetadataDrawerProps {
 
 export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose, metadata, onUpdate }) => {
     const toast = useToast();
+    const { user } = useStore();
     const [splits, setSplits] = useState<RoyaltySplit[]>(metadata.splits);
     const [localData, setLocalData] = useState<GoldenMetadata>(metadata);
+    const [artistType, setArtistType] = useState<'Solo' | 'Band' | 'Collective'>('Solo');
+    const [isScanning, setIsScanning] = useState<number | null>(null); // Index of sample being scanned
+
+    // Fetch User Profile on Mount
+    useEffect(() => {
+        if (user) {
+            UserService.getUserProfile(user.uid).then(p => {
+                if (p?.artistType) setArtistType(p.artistType);
+                // Auto-fix splits if Solo and empty
+                if (p?.artistType === 'Solo' && metadata.splits.length === 1 && metadata.splits[0].percentage !== 100) {
+                    // Logic handled by user interaction, not auto-overwrite to avoid data loss
+                }
+            });
+        }
+    }, [user]);
 
     // Sync external changes
     useEffect(() => {
@@ -28,9 +48,75 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
     // Validation Logic
     const validate = (): boolean => {
         if (!localData.trackTitle || !localData.artistName) return false;
-        if (!localData.isrc) return false; // ISRC is mandatory effectively
+        if (!localData.isrc) return false;
         if (!isValidSplits) return false;
+
+        // Sample Clearance Validation
+        if (localData.containsSamples) {
+            const uncleared = localData.samples?.some(s => !s.cleared || !s.sourceName);
+            if (uncleared) return false;
+            if (!localData.samples?.length) return false; // If containsSamples is true, there must be samples
+        }
+
         return true;
+    };
+
+    const handleAddSample = () => {
+        const newSamples = [...(localData.samples || []), { sourceName: '', cleared: false }];
+        setLocalData({ ...localData, samples: newSamples });
+    };
+
+    const updateSample = (index: number, field: string, value: any) => {
+        const newSamples = [...(localData.samples || [])];
+        if (newSamples[index]) {
+            (newSamples[index] as any)[field] = value;
+
+            // Auto-detect platform when source name changes
+            if (field === 'sourceName') {
+                const platform = identifyPlatform(value);
+                if (platform) {
+                    newSamples[index].cleared = platform.defaultLicenseType === 'Royalty-Free';
+                    newSamples[index].clearanceDetails = {
+                        licenseType: platform.defaultLicenseType,
+                        termsSummary: platform.termsSummary,
+                        platformId: platform.id
+                    };
+                }
+            }
+
+            setLocalData({ ...localData, samples: newSamples });
+        }
+    };
+
+    const removeSample = (index: number) => {
+        const newSamples = localData.samples?.filter((_, i) => i !== index);
+        setLocalData({ ...localData, samples: newSamples });
+    };
+
+    const handleScanUrl = async (index: number, url: string) => {
+        if (!url) return;
+        setIsScanning(index);
+
+        try {
+            const analysis = await licenseScannerService.scanUrl(url);
+
+            const newSamples = [...(localData.samples || [])];
+            if (newSamples[index]) {
+                newSamples[index].cleared = analysis.licenseType === 'Royalty-Free';
+                newSamples[index].sourceName = analysis.platformName || newSamples[index].sourceName;
+                newSamples[index].clearanceDetails = {
+                    licenseType: analysis.licenseType,
+                    termsSummary: analysis.termsSummary,
+                    platformId: 'ai-scan'
+                };
+                setLocalData({ ...localData, samples: newSamples });
+                toast.success('License Terms Extracted via AI');
+            }
+        } catch (error) {
+            toast.error('Scan failed');
+        } finally {
+            setIsScanning(null);
+        }
     };
 
     const handleSave = () => {
@@ -95,6 +181,24 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
                             />
                         </div>
                     </div>
+
+                    {/* Sonic Fingerprint (New) */}
+                    {localData.masterFingerprint && (
+                        <div className="mt-3 p-2 bg-purple-900/10 border border-purple-500/20 rounded flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Fingerprint size={14} className="text-purple-400" />
+                                <div>
+                                    <span className="block text-[10px] uppercase text-purple-400 font-bold tracking-wider">Sonic ID</span>
+                                    <span className="block text-[10px] font-mono text-gray-400 truncate w-32" title={localData.masterFingerprint}>
+                                        {localData.masterFingerprint}
+                                    </span>
+                                </div>
+                            </div>
+                            <span className="text-[9px] bg-purple-500/10 text-purple-300 px-1 py-0.5 rounded border border-purple-500/20">
+                                COMPOSITE
+                            </span>
+                        </div>
+                    )}
                 </section>
 
                 {/* 2. Royalty Splits */}
@@ -150,7 +254,7 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
                                         onClick={() => setSplits(splits.filter((_, i) => i !== idx))}
                                         className="text-red-900 hover:text-red-500 transition-colors"
                                     >
-                                        <Trash2 size={12} />
+                                        <Trash size={12} />
                                     </button>
                                 </div>
                             </div>
@@ -164,9 +268,115 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
                     </div>
                 </section>
 
-                {/* 3. Rights Admin */}
+                {/* 3. Sample Clearance (NEW) */}
                 <section>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">3. Collections</h4>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                        <span>3. Sample Clearance</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-500">Contains Samples?</span>
+                            <input
+                                type="checkbox"
+                                checked={localData.containsSamples}
+                                onChange={(e) => setLocalData({ ...localData, containsSamples: e.target.checked })}
+                                className="toggle-checkbox"
+                            />
+                        </div>
+                    </h4>
+
+                    {localData.containsSamples && (
+                        <div className="space-y-3 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+                            {!localData.samples?.length && (
+                                <div className="text-center p-4 border border-dashed border-gray-700 rounded">
+                                    <AlertTriangle className="mx-auto text-yellow-500 mb-2" size={20} />
+                                    <p className="text-xs text-gray-400 mb-2">Unclear samples cause copyright strikes.</p>
+                                    <button onClick={handleAddSample} className="text-xs bg-gray-800 px-3 py-1 rounded text-white hover:bg-gray-700">
+                                        + Add Sample Source
+                                    </button>
+                                </div>
+                            )}
+
+                            {localData.samples?.map((sample, idx) => (
+                                <div key={idx} className="flex flex-col gap-2 p-2 bg-black/40 rounded border border-gray-700">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1 space-y-2">
+                                            <input
+                                                className="w-full bg-[#0d1117] border border-gray-700 rounded p-1.5 text-xs text-white placeholder-gray-600 focus:border-purple-500 outline-none"
+                                                placeholder="Sample Source / Platform (e.g. Splice)"
+                                                value={sample.sourceName}
+                                                onChange={(e) => updateSample(idx, 'sourceName', e.target.value)}
+                                            />
+
+                                            {/* AI Scan Input */}
+                                            {!sample.cleared && (
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        className="flex-1 bg-[#0d1117] border border-gray-700 rounded p-1.5 text-[10px] text-gray-400 placeholder-gray-700 focus:border-blue-500 outline-none"
+                                                        placeholder="Paste URL to Policy/Terms (AI Scan)"
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') handleScanUrl(idx, e.currentTarget.value);
+                                                        }}
+                                                    />
+                                                    <button
+                                                        disabled={isScanning === idx}
+                                                        className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[9px] hover:bg-blue-500/20 transition-colors"
+                                                        onClick={(e) => {
+                                                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                                            handleScanUrl(idx, input.value);
+                                                        }}
+                                                    >
+                                                        {isScanning === idx ? 'SCANNING...' : 'SCAN'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button onClick={() => removeSample(idx)} className="text-red-500 hover:text-red-400">
+                                            <Trash size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={sample.cleared}
+                                                onChange={(e) => updateSample(idx, 'cleared', e.target.checked)}
+                                            />
+                                            <span>Cleared?</span>
+                                        </label>
+                                        {sample.cleared && <span className="text-xs text-green-500 flex items-center gap-1"><CheckCircle size={10} /> Valid</span>}
+                                    </div>
+
+                                    {/* Legal Footnote */}
+                                    {sample.clearanceDetails && (
+                                        <div className="mt-1 p-2 bg-blue-900/20 border border-blue-900/50 rounded flex gap-2 items-start">
+                                            <Scale className="text-blue-400 shrink-0 mt-0.5" size={12} />
+                                            <div>
+                                                <div className="text-[10px] text-blue-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                                                    {sample.clearanceDetails.licenseType}
+                                                    <span className="text-gray-500">•</span>
+                                                    Verified Platform
+                                                </div>
+                                                <p className="text-[10px] text-gray-400 leading-tight">
+                                                    {sample.clearanceDetails.termsSummary}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                            {localData.samples && localData.samples.length > 0 && (
+                                <button onClick={handleAddSample} className="w-full py-1 text-xs text-gray-400 hover:text-white border border-gray-800 rounded">
+                                    + Add Another
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </section>
+
+                <div className="h-px bg-gray-800 my-2" />
+
+                {/* 4. Rights & Admin */}
+                <section>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">4. Rights Admin</h4>
                     <div className="grid grid-cols-2 gap-2">
                         <div>
                             <label className="block text-xs text-gray-500 mb-1">PRO</label>

@@ -22,7 +22,22 @@ export interface GoldenMetadata {
     pro: 'ASCAP' | 'BMI' | 'SESAC' | 'GMR' | 'None';
     publisher: string;
 
-    // 4. Verification
+    // 4. Content Content & Clearance
+    containsSamples: boolean;
+    masterFingerprint?: string; // The "Sonic ID" of the track itself
+    samples?: {
+        fingerprint?: string; // Unique ID of the sample file
+        sourceName: string; // e.g. "Splice: Funky Drum Loop 001"
+        cleared: boolean;
+        licenseFile?: string; // Path or URL to license PDF
+        clearanceDetails?: {
+            licenseType: string;
+            termsSummary: string;
+            platformId?: string;
+        };
+    }[];
+
+    // 5. Verification
     isGolden: boolean; // Computed flag: true only if schema is valid and splits sum to 100%
 }
 
@@ -35,5 +50,7 @@ export const INITIAL_METADATA: GoldenMetadata = {
     splits: [{ legalName: 'Self', role: 'songwriter', percentage: 100, email: '' }],
     pro: 'None',
     publisher: 'Self-Published',
+    containsSamples: false,
+    samples: [],
     isGolden: false
 };

@@ -134,6 +134,7 @@ export interface BrandKit {
     colors: string[];
     fonts: string;
     brandDescription: string;
+    aestheticStyle?: string; // Visual aesthetic (e.g., "Cyberpunk", "Minimalist", "Retro 80s")
     negativePrompt: string;
     socials: SocialLinks;
     brandAssets: BrandAsset[];
