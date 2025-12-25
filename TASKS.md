@@ -1,8 +1,50 @@
 # TASKS.md - Active Work Items
 
-**Last Updated:** 2025-12-24
+**Last Updated:** 2025-12-25
 
 This is the single source of truth for pending tasks. Completed plans have been archived to `archive/`.
+
+---
+
+## Current App State (Dec 25, 2025)
+
+### Working Features
+
+- **Electron Desktop App**: Packaged and running on macOS (arm64)
+- **Google OAuth Flow**: Full deep link auth working via `indii-os://` protocol
+- **Login Bridge**: Deployed at `https://indiios-v-1-1.web.app/login-bridge`
+- **Firebase Auth**: signInWithCredential using Google OAuth tokens
+- **IPC Communication**: Secure preload bridge between main/renderer
+- **All 15 Agents**: Registered and operational (Marketing, Legal, Finance, Producer, Music, Director, Screenwriter, Video, Social, Publicist, Road, Publishing, Licensing, Brand, Generalist)
+- **Unit Tests**: 42 passing (MembershipService + CleanupService)
+
+### Auth Flow Architecture
+
+```text
+Electron App → Login Bridge (browser) → Google OAuth → Deep Link → IPC → Firebase Auth
+                                         ↓
+                              GoogleAuthProvider.credentialFromResult()
+                                         ↓
+                              indii-os://auth/callback?idToken=...&accessToken=...
+                                         ↓
+                              signInWithCredential(auth, credential)
+```
+
+### Key Files Modified (Dec 25)
+
+| File | Change |
+| ---- | ------ |
+| `landing-page/app/login-bridge/page.tsx` | Extract Google OAuth credential (not Firebase ID token) |
+| `src/core/store/slices/authSlice.ts` | IPC listener for deep link auth callbacks |
+| `src/services/AuthService.ts` | Electron detection, ELECTRON_AUTH_PENDING flow |
+| `src/modules/auth/Login.tsx` | Handle ELECTRON_AUTH_PENDING, fixed SVG path |
+| `electron/handlers/auth.ts` | Deep link parsing with token logging |
+| `forge.config.cjs` | URL scheme `indii-os://` protocol registration |
+
+### Known Issues (Non-Blocking)
+
+- GPU process crash on app close (cosmetic, `exit_code=15`)
+- Network service restart on close (cosmetic)
 
 ---
 
@@ -15,9 +57,9 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Electron Desktop App
 
-- [ ] Test full auth flow end-to-end in packaged build
-- [ ] Verify deep link protocol on macOS
-- [ ] Test on production build (signed)
+- [x] Test full auth flow end-to-end in packaged build
+- [x] Verify deep link protocol on macOS
+- [x] Test on production build (ad-hoc signed)
 
 ### Gemini 3.0 Migration (Final Steps)
 

@@ -153,6 +153,19 @@ export default function OnboardingPage() {
                 const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
+                // Dedupe insights: Check if this exact insight was already shown
+                if (uiToolCall?.name === 'shareInsight' && uiToolCall.args?.insight) {
+                    const currentInsight = uiToolCall.args.insight.toLowerCase().trim();
+                    const alreadyShown = newHistory.some(
+                        msg => msg.toolCall?.name === 'shareInsight' &&
+                        msg.toolCall?.args?.insight?.toLowerCase().trim() === currentInsight
+                    );
+                    if (alreadyShown) {
+                        console.log('[Onboarding] Deduped duplicate insight:', currentInsight.substring(0, 50));
+                        uiToolCall = null; // Don't show duplicate insight
+                    }
+                }
+
                 // --- NATURAL FALLBACK RESPONSES ---
                 // If the AI didn't return text (silent update), generate a human-sounding response
                 if (!text && updates.length > 0) {

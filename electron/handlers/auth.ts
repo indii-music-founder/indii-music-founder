@@ -84,6 +84,8 @@ export function handleDeepLink(url: string) {
         }
         if (idToken) {
             console.log("Received tokens via bridge flow, notifying renderer...");
+            console.log(`[Auth] ID Token length: ${idToken.length}`);
+            console.log(`[Auth] Access Token present: ${!!accessToken}, length: ${accessToken?.length || 0}`);
             notifyAuthSuccess({ idToken, accessToken });
             return;
         }

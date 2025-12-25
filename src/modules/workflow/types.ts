@@ -139,6 +139,7 @@ export interface BrandKit {
     brandAssets: BrandAsset[];
     referenceImages: BrandAsset[];
     releaseDetails: ReleaseDetails;
+    visualsAcknowledged?: boolean; // True if user confirmed they have no visual assets yet
 }
 
 export interface UserProfile {

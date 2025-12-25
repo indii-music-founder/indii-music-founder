@@ -217,6 +217,17 @@ export default function App() {
         }
     }, [currentModule]);
 
+    // Handle Theme Switching
+    const { userProfile } = useStore();
+    useEffect(() => {
+        const theme = userProfile?.preferences?.theme || 'dark';
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [userProfile?.preferences?.theme]);
+
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
         () => !STANDALONE_MODULES.includes(currentModule as ModuleId),

@@ -7,6 +7,17 @@ import { getDistributorRequirements, getDistributorSummaryForAI, getSupportedDis
 
 // --- Types & Enums ---
 
+// Option whitelists to ensure AI uses correct options per question type
+export const OPTION_WHITELISTS: Record<string, string[]> = {
+    release_type: ['Single', 'EP (3-6 tracks)', 'Album (7+ tracks)', 'Remix', 'DJ Mix', 'Mixtape'],
+    career_stage: ['Just starting out', 'Building momentum', 'Established', 'Industry veteran'],
+    visuals: ['Press photos', 'Logo', 'Reference images', 'Album artwork', 'None yet - starting fresh'],
+    socials: ['Instagram', 'TikTok', 'Spotify', 'SoundCloud', 'YouTube', 'None'],
+    genre: ['House', 'Techno', 'Hip-Hop', 'R&B', 'Pop', 'Indie', 'Electronic', 'Rock', 'Other'],
+    goals: ['Grow fanbase', 'Get playlisted', 'Touring', 'Sync licensing', 'Label deal', 'Brand partnerships'],
+    mood: ['Dark & moody', 'Euphoric', 'Introspective', 'High-energy', 'Chill', 'Melancholic'],
+};
+
 export enum OnboardingTools {
     UpdateProfile = 'updateProfile',
     AddImageAsset = 'addImageAsset',
@@ -26,6 +37,7 @@ export interface UpdateProfileArgs {
     colors?: string[];
     fonts?: string;
     negative_prompt?: string;
+    visuals_acknowledged?: boolean; // True when user confirms they have no visual assets yet
     // Release fields
     release_title?: string;
     release_type?: string;
@@ -83,6 +95,7 @@ const updateProfileFunction: FunctionDeclaration = {
             colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette as hex codes or color names.' },
             fonts: { type: 'STRING', description: 'Brand fonts or typography preferences.' },
             negative_prompt: { type: 'STRING', description: 'Things to AVOID in AI-generated content (e.g., "no neon colors, no cartoons").' },
+            visuals_acknowledged: { type: 'BOOLEAN', description: 'Set to true when user confirms they have no visual assets yet (e.g., "None yet - starting fresh"). This marks visuals as complete so we stop asking.' },
             career_stage: { type: 'STRING', description: 'Career stage: Emerging (just starting), Rising (building momentum), Professional (established), Legend (industry veteran).' },
             goals: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Career goals: Touring, Sync Licensing, Grow Fanbase, Label Deal, Brand Partnerships, etc.' },
 
@@ -174,16 +187,21 @@ const finishOnboardingFunction: FunctionDeclaration = {
 
 const askMultipleChoiceFunction: FunctionDeclaration = {
     name: OnboardingTools.AskMultipleChoice,
-    description: 'Presents a list of options to the user for them to select one or more. Use this for Genres, Career Stages, or quick preferences.',
+    description: 'Presents a list of options to the user. CRITICAL: You MUST set question_type and options MUST match that category. Never mix categories (e.g., never show release types when asking about visuals).',
     parameters: {
         type: 'OBJECT',
         description: 'Configuration for the multiple choice UI.',
         properties: {
+            question_type: {
+                type: 'STRING',
+                enum: ['release_type', 'career_stage', 'visuals', 'socials', 'genre', 'goals', 'mood'],
+                description: 'The category of question. Options MUST match this category exactly.'
+            },
             question: { type: 'STRING', description: 'The question to ask the user (e.g., "What is your main genre?").' },
-            options: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The list of options to display.' },
+            options: { type: 'ARRAY', items: { type: 'STRING' }, description: 'The list of options to display. Must match the question_type category.' },
             allow_multiple: { type: 'BOOLEAN', description: 'Whether the user can select multiple options.' },
         },
-        required: ['question', 'options'],
+        required: ['question_type', 'question', 'options'],
     },
 };
 
@@ -247,7 +265,8 @@ export function calculateProfileStatus(profile: UserProfile) {
         bio: !!profile.bio && profile.bio.length > 10,
         brandDescription: !!brandKit.brandDescription,
         socials: !!(socials.twitter || socials.instagram || socials.website),
-        visuals: (brandAssets.length > 0 || colors.length > 0),
+        // Visuals: complete if they have assets OR explicitly acknowledged they have none
+        visuals: (brandAssets.length > 0 || colors.length > 0 || brandKit.visualsAcknowledged === true),
         careerStage: !!profile.careerStage,
         goals: !!(profile.goals && profile.goals.length > 0),
     };
@@ -331,6 +350,17 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 - Call \`updateProfile\` SILENTLY when you get info — never say "I've updated your profile"
 - React to the CONTENT, not the data entry: "Damn, that's a strong hook" not "I've saved your release title"
 - Use \`askMultipleChoice\` for genre, career stage, goals — it's faster and feels more interactive
+
+**askMultipleChoice RULES (CRITICAL):**
+- ALWAYS set question_type to match your question category
+- visuals → options: Press photos, Logo, Reference images, Album artwork, None yet - starting fresh
+- release_type → options: Single, EP (3-6 tracks), Album (7+ tracks), Remix, DJ Mix
+- career_stage → options: Just starting out, Building momentum, Established, Industry veteran
+- genre → options: House, Techno, Hip-Hop, R&B, Pop, Indie, Electronic, Rock, Other
+- goals → options: Grow fanbase, Get playlisted, Touring, Sync licensing, Label deal
+- mood → options: Dark & moody, Euphoric, Introspective, High-energy, Chill
+- NEVER show release type options when asking about visuals — this confuses users
+- If user says "none" or "starting fresh" for visuals, acknowledge it and MOVE ON to the next topic
 - If they upload an image, actually REACT to it: "This shot has main character energy" or "The lighting here is moody — is that the direction for this release?"
 - If they're stuck, don't just wait — offer creative starters: "Tell me 3 artists you'd want to open for, and I'll help draft your bio"
 - Accept skips gracefully: "Totally fine, we'll circle back" — then MOVE ON
@@ -467,7 +497,7 @@ export function processFunctionCalls(
                 if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
                 // Handle BrandKit (Identity + Release)
-                const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor;
+                const hasBrandUpdates = args.brand_description || args.colors || args.fonts || args.negative_prompt || args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor || args.visuals_acknowledged;
                 const hasReleaseUpdates = args.release_title || args.release_type || args.release_artists || args.release_genre || args.release_mood || args.release_themes || args.release_lyrics;
 
                 if (hasBrandUpdates || hasReleaseUpdates) {
@@ -478,6 +508,7 @@ export function processFunctionCalls(
                     if (args.colors) { newBrandKit.colors = args.colors; updates.push('Colors'); }
                     if (args.fonts) { newBrandKit.fonts = args.fonts; updates.push('Fonts'); }
                     if (args.negative_prompt) { newBrandKit.negativePrompt = args.negative_prompt; updates.push('Negative Prompt'); }
+                    if (args.visuals_acknowledged) { newBrandKit.visualsAcknowledged = true; updates.push('Visual Assets Status'); }
 
                     if (args.social_twitter || args.social_instagram || args.social_spotify || args.social_soundcloud || args.social_bandcamp || args.social_beatport || args.social_website || args.pro_affiliation || args.distributor) {
                         newBrandKit.socials = {

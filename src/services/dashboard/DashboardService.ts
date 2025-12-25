@@ -43,7 +43,7 @@ export class DashboardService {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
 
-            // Get projects from store or return mock data
+            // Get projects from store
             if (state.projects && state.projects.length > 0) {
                 return state.projects.map((p: any) => ({
                     id: p.id,
@@ -54,23 +54,7 @@ export class DashboardService {
                 }));
             }
 
-            // Mock data for development
-            return [
-                {
-                    id: 'proj_1',
-                    name: 'Neon City Campaign',
-                    lastModified: Date.now() - 10000000,
-                    assetCount: 12,
-                    thumbnail: undefined
-                },
-                {
-                    id: 'proj_2',
-                    name: 'Summer Lookbook',
-                    lastModified: Date.now() - 50000000,
-                    assetCount: 45,
-                    thumbnail: undefined
-                }
-            ];
+            return [];
         } catch {
             return [];
         }
@@ -91,15 +75,24 @@ export class DashboardService {
 
             if (state.generatedHistory) {
                 state.generatedHistory.forEach((item: any) => {
-                    // Estimate size from base64 URL (rough: base64 is ~1.33x original)
+                    // Estimate size from base64 URL or content length
                     const urlLength = item.url?.length || 0;
-                    const estimatedBytes = Math.floor(urlLength * 0.75);
+                    const contentPadding = item.content?.length || 0;
+                    const estimatedBytes = Math.floor((urlLength + contentPadding) * 0.75);
 
                     if (item.type === 'video') {
                         videosBytes += estimatedBytes;
                     } else {
                         imagesBytes += estimatedBytes;
                     }
+                });
+            }
+
+            // Estimate Knowledge Base (stored documents)
+            let kbBytes = 0;
+            if (state.userProfile?.knowledgeBase) {
+                state.userProfile.knowledgeBase.forEach((doc: any) => {
+                    kbBytes += (doc.content?.length || 0) + (doc.metadata?.size || 0);
                 });
             }
 
@@ -110,7 +103,7 @@ export class DashboardService {
                 browserUsage = estimate.usage || 0;
             }
 
-            const usedBytes = imagesBytes + videosBytes + browserUsage;
+            const usedBytes = imagesBytes + videosBytes + kbBytes + browserUsage;
 
             return {
                 usedBytes,
@@ -120,10 +113,11 @@ export class DashboardService {
                 breakdown: {
                     images: imagesBytes,
                     videos: videosBytes,
-                    knowledgeBase: browserUsage
+                    knowledgeBase: kbBytes + browserUsage
                 }
             };
-        } catch {
+        } catch (error) {
+            console.error('[DashboardService] Failed to get storage stats:', error);
             return { usedBytes: 0, quotaBytes: STORAGE_QUOTAS.free, percentUsed: 0 };
         }
     }
@@ -289,7 +283,7 @@ export class DashboardService {
                 totalGenerations: imageCount,
                 totalMessages: agentMessages.length,
                 totalVideoSeconds,
-                totalProjects: (state.projects || []).length || 2, // Fallback to mock
+                totalProjects: (state.projects || []).length,
                 weeklyActivity,
                 topPromptWords,
                 streak
@@ -307,6 +301,7 @@ export class DashboardService {
             };
         }
     }
+
 
     static async exportBackup(): Promise<void> {
         console.log('[DashboardService] Generating backup...');

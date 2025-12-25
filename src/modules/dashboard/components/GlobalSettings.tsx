@@ -1,48 +1,91 @@
 import React, { useState } from 'react';
-import { Settings, Key, Sliders, Monitor } from 'lucide-react';
+import { Sliders, Monitor, Key, Eye, EyeOff } from 'lucide-react';
+import { useStore } from '@/core/store';
 
 export default function GlobalSettings() {
-    const [apiKey, setApiKey] = useState('**********************');
+    const { userProfile, setUserProfile } = useStore();
+    const [showKey, setShowKey] = useState(false);
+
+    const preferences = userProfile?.preferences || {};
+    const darkMode = preferences.theme === 'dark';
+    const highFidelity = preferences.highFidelityMode === true;
+
+    const handleThemeToggle = () => {
+        const newTheme = darkMode ? 'light' : 'dark';
+        setUserProfile({
+            ...userProfile,
+            preferences: {
+                ...preferences,
+                theme: newTheme
+            }
+        });
+    };
+
+    const handleFidelityToggle = () => {
+        setUserProfile({
+            ...userProfile,
+            preferences: {
+                ...preferences,
+                highFidelityMode: !highFidelity
+            }
+        });
+    };
+
+    const maskKey = (key: string) => {
+        if (!key) return '';
+        if (showKey) return key;
+        return `sk-...${key.slice(-4)}`;
+    };
 
     return (
-        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-                <Settings className="text-orange-400" size={24} />
-                <h2 className="text-lg font-bold text-white">Global Config</h2>
-            </div>
+        <div className="bg-[#161b22]/50 backdrop-blur-md border border-gray-800 rounded-xl p-6">
+            <h2 className="text-lg font-bold text-white mb-6">Global Config</h2>
 
             <div className="space-y-6">
-                {/* API Key */}
+                {/* API Key Section */}
                 <div>
-                    <label className="flex items-center gap-2 text-xs text-gray-400 mb-2 uppercase tracking-wider">
-                        <Key size={12} /> Google API Key
-                    </label>
-                    <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-blue-500 outline-none font-mono"
-                    />
+                    <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wider mb-2">
+                        <Key size={12} /> Gemini API Key
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="flex-1 bg-[#0d1117] border border-gray-800 rounded-lg px-3 py-2 text-sm text-gray-300 font-mono flex justify-between items-center">
+                            <span>{maskKey(import.meta.env.VITE_GEMINI_API_KEY || 'AIza...key')}</span>
+                            <button
+                                onClick={() => setShowKey(!showKey)}
+                                className="text-gray-500 hover:text-white transition-colors"
+                            >
+                                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Toggles */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-gray-300 text-sm">
-                            <Sliders size={14} /> High Fidelity Mode
+                            <Sliders size={14} className={highFidelity ? "text-blue-400" : "text-gray-500"} />
+                            High Fidelity Mode
                         </div>
-                        <div className="w-10 h-5 bg-blue-600 rounded-full relative cursor-pointer">
-                            <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
-                        </div>
+                        <button
+                            onClick={handleFidelityToggle}
+                            className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${highFidelity ? 'bg-blue-600' : 'bg-gray-700'}`}
+                        >
+                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${highFidelity ? 'right-1' : 'left-1'}`}></div>
+                        </button>
                     </div>
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-gray-300 text-sm">
-                            <Monitor size={14} /> Dark Mode (OLED)
+                            <Monitor size={14} className={darkMode ? "text-purple-400" : "text-gray-500"} />
+                            Dark Mode (OLED)
                         </div>
-                        <div className="w-10 h-5 bg-blue-600 rounded-full relative cursor-pointer">
-                            <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
-                        </div>
+                        <button
+                            onClick={handleThemeToggle}
+                            className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${darkMode ? 'bg-purple-600' : 'bg-gray-700'}`}
+                        >
+                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${darkMode ? 'right-1' : 'left-1'}`}></div>
+                        </button>
                     </div>
                 </div>
             </div>

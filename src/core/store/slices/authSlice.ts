@@ -110,11 +110,18 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             electronAPI.auth.onUserUpdate(async (tokenData: { idToken: string; accessToken?: string | null } | null) => {
                 if (tokenData?.idToken) {
                     console.log('[AuthSlice] Received tokens from Electron deep link');
+                    console.log(`[AuthSlice] Token details - ID Token: ${tokenData.idToken.substring(0, 10)}..., Access Token: ${!!tokenData.accessToken}`);
+
                     try {
                         const { auth } = await import('@/services/firebase');
+                        console.log('[AuthSlice] Initializing Google Credential with tokens...');
                         const { signInWithCredential, GoogleAuthProvider } = await import('firebase/auth');
                         const credential = GoogleAuthProvider.credential(tokenData.idToken, tokenData.accessToken);
-                        await signInWithCredential(auth, credential);
+
+                        console.log('[AuthSlice] Signing in with credential...');
+                        const result = await signInWithCredential(auth, credential);
+                        console.log('[AuthSlice] deeply link sign-in success:', result.user.uid);
+
                         // onAuthStateChanged will handle the rest
                     } catch (error) {
                         console.error('[AuthSlice] Failed to sign in with Electron tokens:', error);

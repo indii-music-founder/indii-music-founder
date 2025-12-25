@@ -120,7 +120,8 @@
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.15",
-    "webpack-obfuscator": "^3.5.1"
+    "webpack-obfuscator": "^3.5.1",
+    "ytdl-core": "^4.11.5"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.53.3"
