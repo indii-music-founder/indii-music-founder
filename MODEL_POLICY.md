@@ -9,7 +9,7 @@
 
 ## TL;DR - The Golden Rule
 
-```
+```text
 USE ONLY GEMINI 3.x MODELS. NEVER USE GEMINI 1.5 OR 2.0.
 ```
 
@@ -34,15 +34,15 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 
 ## Approved Models (ONLY THESE ARE ALLOWED)
 
-| Purpose | Model ID | Notes |
-|---------|----------|-------|
-| **Text/Reasoning (Complex)** | `gemini-3-pro-preview` | Agents, analysis, complex tasks |
-| **Text/Reasoning (Fast)** | `gemini-3-flash-preview` | Routing, simple tasks, high-throughput |
-| **Image Generation** | `gemini-3-pro-image-preview` | All image synthesis (Nano Banana Pro) |
-| **Audio Generation (TTS)** | `gemini-2.5-pro-tts` | High-quality speech synthesis |
-| **Audio Generation (Fast)** | `gemini-2.5-flash-tts` | Low-latency speech synthesis |
-| **Video Generation** | `veo-3.1-generate-preview` | Standard video generation |
-| **Video Generation (Fast)** | `veo-3.1-fast-generate-preview` | Draft/preview videos only |
+| Purpose                      | Model ID                        | Notes                                  |
+| ---------------------------- | ------------------------------- | -------------------------------------- |
+| **Text/Reasoning (Complex)** | `gemini-3-pro-preview`          | Agents, analysis, complex tasks        |
+| **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput |
+| **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)  |
+| **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis          |
+| **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis           |
+| **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation              |
+| **Video Generation (Fast)**  | `veo-3.1-fast-generate-preview` | Draft/preview videos only              |
 
 ---
 
@@ -109,13 +109,13 @@ const response = await AI.generateContent({
 
 ## Model Selection Guide
 
-| Task Type | Use This | Model ID |
-|-----------|----------|----------|
-| Agent reasoning | `AI_MODELS.TEXT.AGENT` | `gemini-3-pro-preview` |
-| Fast routing/simple tasks | `AI_MODELS.TEXT.FAST` | `gemini-3-flash-preview` |
-| Image generation | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
-| Audio/TTS generation | `AI_MODELS.AUDIO.PRO` | `gemini-2.5-pro-tts` |
-| Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
+| Task Type                 | Use This                       | Model ID                       |
+| ------------------------- | ------------------------------ | ------------------------------ |
+| Agent reasoning           | `AI_MODELS.TEXT.AGENT`         | `gemini-3-pro-preview`         |
+| Fast routing/simple tasks | `AI_MODELS.TEXT.FAST`          | `gemini-3-flash-preview`       |
+| Image generation          | `AI_MODELS.IMAGE.GENERATION`   | `gemini-3-pro-image-preview`   |
+| Audio/TTS generation      | `AI_MODELS.AUDIO.PRO`          | `gemini-2.5-pro-tts`           |
+| Video generation          | `AI_MODELS.VIDEO.GENERATION`   | `veo-3.1-generate-preview`     |
 
 ---
 
@@ -177,9 +177,9 @@ Before submitting any code that uses AI models, verify:
 
 ## Incident History
 
-| Date | Issue | Cause | Resolution |
-|------|-------|-------|------------|
-| 2025-12-24 | `gemini-1.5-flash` in ai-models.ts | AI agent "downgraded" for debugging | Reverted to `gemini-3-flash-preview` |
+| Date       | Issue                                | Cause                                       | Resolution                               |
+| ---------- | ------------------------------------ | ------------------------------------------- | ---------------------------------------- |
+| 2025-12-24 | `gemini-1.5-flash` in `ai-models.ts` | AI agent "downgraded" for debugging reasoning | Reverted to `gemini-3-flash-preview` |
 
 **Pattern:** AI agents often suggest using older models because their training data may be outdated. **ALWAYS REFUSE** such suggestions.
 
@@ -189,4 +189,4 @@ Before submitting any code that uses AI models, verify:
 
 If you believe this policy should be changed, contact the project owner. Do not make exceptions unilaterally.
 
-**This policy was last updated: 2025-12-24**
+### This policy was last updated: 2025-12-24
