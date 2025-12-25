@@ -1,6 +1,6 @@
 # Component Kit Research & Implementation Guide
 
-This document provides a detailed analysis of three modern UI component libraries—**Prompt Kit**, **Motion Primitives**, and **Kokonut UI**—and outlines how they can be leveraged to enhance the **Rndr-AI-v1** application.
+This document provides a detailed analysis of three modern UI component libraries—**Prompt Kit**, **Motion Primitives**, and **Kokonut UI**—and outlines how they can be leveraged to enhance the **indiiOS** application.
 
 ## Executive Summary
 
@@ -123,7 +123,7 @@ npx shadcn@latest add @kokonutui/ai-input-search
 * Tailwind CSS v4 (Project uses v4)
 * `lucide-react`
 
-### Key Components for Rndr-AI-v1
+### Key Components for indiiOS
 
 #### `AI Input Search`
 

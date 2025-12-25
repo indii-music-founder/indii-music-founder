@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
+console.log('[Preload] Initializing context bridge...');
+
 interface AuthTokenData {
     idToken: string;
     accessToken?: string | null;

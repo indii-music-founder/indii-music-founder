@@ -9,6 +9,12 @@
         "dist-electron/**/*",
         "package.json"
     ],
+    "protocols": [
+        {
+            "name": "indiiOS Auth Protocol",
+            "schemes": ["indii-os"]
+        }
+    ],
     "mac": {
         "category": "public.app-category.productivity",
         "target": [
@@ -16,7 +22,9 @@
             "zip"
         ],
         "hardenedRuntime": true,
-        "gatekeeperAssess": false
+        "gatekeeperAssess": false,
+        "entitlements": "build/entitlements.mac.plist",
+        "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
         "target": [

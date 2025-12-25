@@ -21,7 +21,7 @@ The landing page features a "Business Partner" copy style, emphasizing profitabi
   * "Rights Protection" (Green)
 * **CTA:** "Launch Studio" button pointing to `https://indiios-studio.web.app`.
 
-## 2. Main Application (Rndr-AI)
+## 2. Main Application (indiiOS)
 
 ### 2.1. Navigation & Branding
 

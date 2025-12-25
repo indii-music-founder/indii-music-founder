@@ -1,6 +1,6 @@
-# 🧪 Rndr AI Test Playbook
+# 🧪 indiiOS Test Playbook
 
-This document defines the named stress test protocols used to validate Rndr AI. Use these names to quickly trigger specific testing scenarios.
+This document defines the named stress test protocols used to validate indiiOS. Use these names to quickly trigger specific testing scenarios.
 
 ## 1. The Gauntlet 🛡️
 

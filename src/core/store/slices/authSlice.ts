@@ -103,6 +103,29 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             set({ currentOrganizationId: storedOrgId });
         }
 
+        // Listen for Electron IPC auth callbacks (deep link returns)
+        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
+        if (electronAPI?.auth?.onUserUpdate) {
+            console.log('[AuthSlice] Setting up Electron IPC auth listener');
+            electronAPI.auth.onUserUpdate(async (tokenData: { idToken: string; accessToken?: string | null } | null) => {
+                if (tokenData?.idToken) {
+                    console.log('[AuthSlice] Received tokens from Electron deep link');
+                    try {
+                        const { auth } = await import('@/services/firebase');
+                        const { signInWithCredential, GoogleAuthProvider } = await import('firebase/auth');
+                        const credential = GoogleAuthProvider.credential(tokenData.idToken, tokenData.accessToken);
+                        await signInWithCredential(auth, credential);
+                        // onAuthStateChanged will handle the rest
+                    } catch (error) {
+                        console.error('[AuthSlice] Failed to sign in with Electron tokens:', error);
+                    }
+                } else if (tokenData === null) {
+                    console.log('[AuthSlice] Electron logout received');
+                    // Logout handled by Firebase onAuthStateChanged
+                }
+            });
+        }
+
         // Listen for Auth Changes
         import('@/services/firebase').then(async ({ auth }) => {
             const { onAuthStateChanged } = await import('firebase/auth');

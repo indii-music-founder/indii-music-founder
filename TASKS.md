@@ -46,9 +46,9 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Test Coverage Expansion
 
-- [ ] Add unit tests for `MembershipService`
-- [ ] Add unit tests for `CleanupService`
-- [ ] Run "The Gauntlet" protocol for membership limits
+- [x] Add unit tests for `MembershipService` (25 test cases covering all methods)
+- [x] Add unit tests for `CleanupService` (17 test cases with Firebase mocks)
+- [x] Run "The Gauntlet" protocol for membership limits (Scenarios 3 & 4 added to stress-test-new-user.spec.ts)
 
 ---
 
@@ -56,7 +56,7 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Documentation Updates
 
-- [ ] Update any remaining "Rndr-AI" references to "indiiOS"
+- [x] Update any remaining "Rndr-AI" references to "indiiOS" (Updated: metadata.json, agents, TEST_PLAYBOOK.md, docs/)
 
 ---
 

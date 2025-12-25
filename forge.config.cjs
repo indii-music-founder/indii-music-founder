@@ -31,9 +31,17 @@ module.exports = {
     }
   },
   packagerConfig: {
+    appBundleId: 'com.indii.os',
     asar: {
       integrity: true // Enforces integrity checksums on the archive (Tamper Resistance)
     },
+    // Deep Link Protocol (indii-os://)
+    protocols: [
+      {
+        name: 'indiiOS Auth Protocol',
+        schemes: ['indii-os']
+      }
+    ],
     // Exclude server-side code from Electron bundle
     ignore: (path) => {
       // Directories to exclude

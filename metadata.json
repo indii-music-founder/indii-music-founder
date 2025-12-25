@@ -1,6 +1,6 @@
 {
-  "name": "Rndr-AI-8.1",
-  "description": "Rndr-AI Studio",
+  "name": "indiiOS-8.1",
+  "description": "indiiOS Studio",
   "requestFramePermissions": [
     "camera"
   ]

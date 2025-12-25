@@ -1,4 +1,4 @@
-# Security Hardening Report: Project Rndr-AI-v1
+# Security Hardening Report: Project indiiOS
 
 **Date:** December 7, 2025
 **Status:** Commercial Grade Hardening Complete

@@ -39,6 +39,21 @@ export const AuthService = {
     },
 
     async signInWithGoogle(): Promise<User> {
+        // Check if running in Electron - use secure IPC auth flow
+        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
+        console.log('[AuthService] Checking for electronAPI:', !!electronAPI, electronAPI);
+
+        if (electronAPI?.auth) {
+            console.log('[AuthService] Using Electron IPC login flow');
+            // Opens external browser for OAuth, returns via deep link
+            await electronAPI.auth.login();
+            // Auth state handled via 'auth:user-update' IPC event listener
+            // Throw sentinel error so caller knows to wait for IPC callback
+            throw new Error('ELECTRON_AUTH_PENDING');
+        }
+
+        console.warn('[AuthService] electronAPI not found, falling back to signInWithPopup');
+        // Browser fallback: use Firebase popup
         const provider = new GoogleAuthProvider();
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;

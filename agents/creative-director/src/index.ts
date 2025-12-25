@@ -17,7 +17,7 @@ const mcpClient = new MCPClient({
 export const creativeDirector = new Agent({
   name: 'Creative Director',
   instructions: `
-    You are the Creative Director for the Rndr-AI platform.
+    You are the Creative Director for the indiiOS platform.
     Your role is to oversee the creation of visual assets (images and videos).
     
     You have access to tools that can generate images and video treatments.
