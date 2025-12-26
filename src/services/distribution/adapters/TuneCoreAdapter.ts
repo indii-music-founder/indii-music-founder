@@ -118,13 +118,14 @@ export class TuneCoreAdapter implements IDistributorAdapter {
                     estimatedLiveDate: this.calculateLiveDate(metadata.releaseDate)
                 }
             };
-        } catch (error: any) {
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             return {
                 success: false,
                 status: 'failed',
                 errors: [{
                     code: 'API_ERROR',
-                    message: error.message
+                    message: errorMessage
                 }]
             };
         }
@@ -201,10 +202,16 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         // Mock implementation for now
         return {
             releaseId,
+            distributorId: this.id,
             period,
-            amount: 0,
-            currency: 'USD',
-            breakdown: []
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
+            currencyCode: 'USD',
+            breakdown: [],
+            lastUpdated: new Date().toISOString()
         };
     }
 
@@ -214,7 +221,7 @@ export class TuneCoreAdapter implements IDistributorAdapter {
 
     // --- Private Helpers ---
 
-    private buildApiPayload(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): any {
+    private buildApiPayload(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): Record<string, unknown> {
         return {
             title: metadata.trackTitle,
             artist: metadata.artistName,
@@ -231,7 +238,7 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         };
     }
 
-    private async simulateApiRequest(method: string, endpoint: string, body: any): Promise<void> {
+    private async simulateApiRequest(method: string, endpoint: string, body: unknown): Promise<void> {
         console.log(`[TuneCore] ${method} ${endpoint}`, JSON.stringify(body, null, 2).substring(0, 100) + '...');
         // Simulate network latency
         await new Promise(resolve => setTimeout(resolve, 800));

@@ -266,4 +266,11 @@ export interface DistributorCredentials {
   accessToken?: string;
   refreshToken?: string;
   accountId?: string;
+  username?: string;
+  password?: string;
+  sftpHost?: string;
+  sftpPort?: string;
+  sftpUsername?: string;
+  sftpPassword?: string;
+  privateKey?: string;
 }

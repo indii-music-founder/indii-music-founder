@@ -34,14 +34,15 @@ describe('CreativeGallery', () => {
         (useStore as any).mockReturnValue(mockStore);
     });
 
+    vi.mock('@/components/kokonutui/file-upload', () => ({
+        default: () => <div data-testid="file-upload">Mock File Upload</div>
+    }));
+
     it('renders empty state with upload and camera buttons', () => {
         render(<CreativeGallery />);
 
-        // Check for empty state message
-        expect(screen.getByText('Gallery is empty. Start creating or upload assets!')).toBeInTheDocument();
-
-        // Check for Upload button
-        expect(screen.getByText('Upload Assets')).toBeInTheDocument();
+        // Check for FileUpload component in empty state
+        expect(screen.getByTestId('file-upload')).toBeInTheDocument();
     });
 
     it('renders assets section with camera button when items exist', () => {

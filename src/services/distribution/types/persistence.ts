@@ -10,6 +10,11 @@ export interface ReleaseDeployment {
     distributorId: DistributorId;
     status: ReleaseStatus;
 
+    // Snapshot of Release Metadata (for UI display without full lookup)
+    title?: string;
+    artist?: string;
+    coverArtUrl?: string;
+
     // External identifiers assigned by the distributor
     externalId?: string; // The distributor's internal ID for this release
     distributorReleaseId?: string; // standardized field name

@@ -24,7 +24,7 @@ export default function PublishingDashboard() {
     const [showReleaseWizard, setShowReleaseWizard] = useState(false);
 
     return (
-    return (
+
         <ErrorBoundary>
             <div className="p-8">
                 {/* Header */}

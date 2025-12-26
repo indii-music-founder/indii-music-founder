@@ -1,5 +1,7 @@
 import { DDEXParser } from './DDEXParser';
-import type { DSRReport } from './types/dsr';
+import { dsrProcessor } from './DSRProcessor';
+import type { DSRReport, RoyaltyCalculation } from './types/dsr';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 export interface ProcessedSalesBatches {
     batchId: string;
@@ -7,6 +9,7 @@ export interface ProcessedSalesBatches {
     totalRevenue: number;
     transactionCount: number;
     processedAt: string;
+    royalties: RoyaltyCalculation[];
 }
 
 /**
@@ -26,11 +29,21 @@ export class DSRService {
      * Process a DSR report and calculate earnings summary
      * In a real app, this would likely write to a database
      */
-    async processReport(report: DSRReport): Promise<ProcessedSalesBatches> {
+    async processReport(
+        report: DSRReport,
+        catalog: Map<string, ExtendedGoldenMetadata>
+    ): Promise<ProcessedSalesBatches> {
         const summary = report.summary;
 
-        // Logic to save individual transactions to database would go here
-        // for (const txn of report.transactions) { ... }
+        // Calculate Royalties via Processor
+        // In a real scenario, we might fetch config from DB
+        const royalties = await dsrProcessor.calculateRoyalties(report, catalog, {
+            distributorFeePercent: 0, // TODO: Fetch from config
+            platformFeePercent: 0
+        });
+
+        // Here we would stick the results into a database
+        // await db.royalties.insertMany(royalties);
 
         return {
             batchId: `BATCH-${Date.now()}`,
@@ -38,6 +51,7 @@ export class DSRService {
             totalRevenue: summary.totalRevenue,
             transactionCount: summary.totalUsageCount,
             processedAt: new Date().toISOString(),
+            royalties
         };
     }
 

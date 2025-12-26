@@ -8,6 +8,20 @@ import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/ty
 import { ReleaseAssets } from '../types/distributor';
 
 // Mock dependencies with factory to ensure jest-style methods are available
+vi.mock('ssh2-sftp-client', () => {
+    return {
+        default: class MockSftpClient {
+            connect = vi.fn().mockResolvedValue(true);
+            uploadDir = vi.fn().mockResolvedValue(['uploaded']);
+            list = vi.fn().mockResolvedValue([{ name: 'file1.txt' }, { name: 'file2.txt' }]);
+            end = vi.fn().mockResolvedValue(true);
+            exists = vi.fn().mockResolvedValue(false);
+            mkdir = vi.fn().mockResolvedValue(true);
+            on = vi.fn();
+        }
+    };
+});
+
 vi.mock('fs', () => {
     return {
         existsSync: vi.fn(),

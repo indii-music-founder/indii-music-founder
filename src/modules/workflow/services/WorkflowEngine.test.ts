@@ -27,6 +27,22 @@ describe('WorkflowEngine', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Mock HTMLMediaElement methods
+        Object.defineProperty(window.HTMLMediaElement.prototype, 'load', {
+            configurable: true,
+            writable: true,
+            value: vi.fn(),
+        });
+        Object.defineProperty(window.HTMLMediaElement.prototype, 'play', {
+            configurable: true,
+            writable: true,
+            value: vi.fn().mockResolvedValue(undefined),
+        });
+        Object.defineProperty(window.HTMLMediaElement.prototype, 'pause', {
+            configurable: true,
+            writable: true,
+            value: vi.fn(),
+        });
     });
 
     it('executes a simple workflow with Knowledge Base node', async () => {
@@ -72,7 +88,8 @@ describe('WorkflowEngine', () => {
             expect.anything(), // userProfile
             null,
             expect.any(Function),
-            expect.any(Function)
+            expect.any(Function),
+            undefined // fileContent defaults to undefined
         );
 
         // Check if nodes were updated to DONE

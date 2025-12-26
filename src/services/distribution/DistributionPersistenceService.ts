@@ -51,7 +51,8 @@ export class DistributionPersistenceService {
     createDeployment(
         internalReleaseId: string,
         distributorId: DistributorId,
-        initialStatus: ReleaseStatus = 'processing'
+        initialStatus: ReleaseStatus = 'processing',
+        metadata?: { title?: string; artist?: string; coverArtUrl?: string }
     ): ReleaseDeployment {
         const now = new Date().toISOString();
         const deployment: ReleaseDeployment = {
@@ -61,7 +62,10 @@ export class DistributionPersistenceService {
             status: initialStatus,
             submittedAt: now,
             lastCheckedAt: now,
-            lastUpdatedAt: now
+            lastUpdatedAt: now,
+            title: metadata?.title,
+            artist: metadata?.artist,
+            coverArtUrl: metadata?.coverArtUrl
         };
 
         this.saveDeployment(deployment);

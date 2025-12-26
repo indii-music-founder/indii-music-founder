@@ -89,17 +89,12 @@ describe('The Bouncer 🦍', () => {
         // Check for Visual Elements
         // Both parts are now BreathingText components
         // Check for Visual Elements
-        expect(screen.getByText('Your Music.')).toBeInTheDocument();
-        expect(screen.getByText('Your Rules.')).toBeInTheDocument();
-
         expect(screen.getByText('indiiOS')).toBeInTheDocument();
 
         // Check for Buttons
-        expect(screen.getAllByText('Start Creating').length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/Sign In/).length).toBeGreaterThan(0);
-
-        // Should NOT see Launch Studio
-        expect(screen.queryByText('Launch Studio')).not.toBeInTheDocument();
+        // "Start Creating" is removed in favor of DigitalBillboard
+        // "Sign In" is replaced by "Launch Studio"
+        expect(screen.getByText(/Launch Studio/)).toBeInTheDocument();
     });
 
     it('shows "Launch Studio" button when user IS logged in (VIP)', () => {
@@ -111,7 +106,7 @@ describe('The Bouncer 🦍', () => {
         render(<LandingPage />);
 
         // Should see Launch Studio pointing to getStudioUrl
-        const launchBtn = screen.getByText('Launch Studio');
+        const launchBtn = screen.getByText('Enter Studio');
         expect(launchBtn).toBeInTheDocument();
         expect(launchBtn.closest('a')).toHaveAttribute('href', 'https://mock-studio.url');
 

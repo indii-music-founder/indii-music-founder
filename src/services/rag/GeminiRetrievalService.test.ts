@@ -7,6 +7,14 @@ vi.mock('@/config/env', () => ({
         apiKey: 'test-api-key',
         VITE_FUNCTIONS_URL: 'http://mock-functions',
         VITE_RAG_PROXY_URL: 'http://mock-proxy'
+    },
+    firebaseConfig: {
+        apiKey: "mock",
+        authDomain: "mock",
+        projectId: "mock",
+        storageBucket: "mock",
+        messagingSenderId: "mock",
+        appId: "mock"
     }
 }));
 

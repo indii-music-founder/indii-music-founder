@@ -149,13 +149,14 @@ export class CDBabyAdapter implements IDistributorAdapter {
                 }
             };
 
-        } catch (error: any) {
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error during delivery';
             return {
                 success: false,
                 status: 'failed',
                 errors: [{
                     code: 'DELIVERY_ERROR',
-                    message: error.message || 'Unknown error during delivery'
+                    message: errorMessage
                 }]
             };
         }
@@ -207,10 +208,16 @@ export class CDBabyAdapter implements IDistributorAdapter {
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
         return {
             releaseId,
+            distributorId: this.id,
             period,
-            amount: 0,
-            currency: 'USD',
-            breakdown: []
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
+            currencyCode: 'USD',
+            breakdown: [],
+            lastUpdated: new Date().toISOString()
         };
     }
 
