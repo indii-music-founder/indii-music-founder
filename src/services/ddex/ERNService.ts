@@ -1,4 +1,5 @@
 import { DDEXParser } from './DDEXParser';
+import { ERNMapper } from './ERNMapper';
 import type { ERNMessage } from './types/ern';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DDEX_CONFIG } from '@/core/config/ddex';
@@ -23,44 +24,19 @@ export class ERNService {
             const timestamp = new Date().toISOString();
             const releaseId = metadata.upc || `R-${Date.now()}`;
 
-            const ern: ERNMessage = {
-                messageSchemaVersionId: DDEX_CONFIG.ERN_VERSION,
-                messageHeader: {
-                    messageId: `MSG-${Date.now()}`,
-                    messageThreadId: `THREAD-${Date.now()}`,
-                    messageSender: {
-                        partyId: senderPartyId,
-                        partyName: metadata.labelName || DDEX_CONFIG.PARTY_NAME,
-                    },
-                    messageRecipient: {
-                        partyId: recipientPartyId,
-                        partyName: 'Distributor',
-                    },
-                    messageCreatedDateTime: timestamp,
-                    messageControlType: 'LiveMessage',
+            // Use the Mapper to generate a complete ERN object
+            const ern = ERNMapper.mapMetadataToERN(metadata, {
+                messageId: `MSG-${Date.now()}`,
+                sender: {
+                    partyId: senderPartyId,
+                    partyName: metadata.labelName || DDEX_CONFIG.PARTY_NAME,
                 },
-                releaseList: [
-                    {
-                        releaseId: {
-                            icpn: metadata.upc || '',
-                            catalogNumber: metadata.catalogNumber || '',
-                        },
-                        releaseReference: 'R1',
-                        releaseType: metadata.releaseType || 'Single',
-                        releaseTitle: {
-                            titleText: metadata.releaseTitle || metadata.trackTitle || 'Untitled Release',
-                        },
-                        displayArtistName: metadata.artistName || 'Unknown Artist',
-                        contributors: [], // TODO: Map contributors from metadata
-                        labelName: metadata.labelName || 'Independent',
-                        genre: { genre: metadata.genre || 'Pop' },
-                        parentalWarningType: metadata.explicit ? 'Explicit' : 'NotExplicit',
-                        releaseResourceReferenceList: [], // Populated below
-                    },
-                ],
-                resourceList: [], // TODO: Map resources (audio/image) from metadata
-                dealList: [], // TODO: Define deals
-            };
+                recipient: {
+                    partyId: recipientPartyId,
+                    partyName: 'Distributor', // Ideally fetched from distributor config
+                },
+                createdDateTime: timestamp,
+            });
 
             // Generate XML using the parser
             const xml = DDEXParser.buildERN(ern);

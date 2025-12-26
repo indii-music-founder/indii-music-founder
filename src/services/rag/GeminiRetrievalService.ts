@@ -329,19 +329,7 @@ export class GeminiRetrievalService {
         return this.fetch('files');
     }
 
-    // --- Legacy Corpus Compatibility Methods ---
-    async initCorpus(displayName: string): Promise<string> {
-        console.warn("Corpus/AQA is deprecated. Please update to `uploadFile`.");
-        return "deprecated-corpus";
-    }
-
-    async createCorpus() { throw new Error("Deprecated"); }
-    async listCorpora() { throw new Error("Deprecated"); }
-    async createDocument() { throw new Error("Deprecated"); }
-    async ingestText() { throw new Error("Deprecated"); }
-    async deleteCorpus() { return; }
-    async deleteDocument() { return; }
-    async listDocuments() { return { documents: [] }; }
+    // --- Legacy Corpus Compatibility Methods Removed ---
 }
 
 export const GeminiRetrieval = new GeminiRetrievalService();

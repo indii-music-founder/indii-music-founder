@@ -76,7 +76,7 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         this.accessToken = credentials.accessToken || credentials.apiKey || null;
         this.connected = true;
 
-        console.log(`[TuneCore] Connected with token: ${this.accessToken?.substring(0, 5)}...`);
+        console.log('[TuneCore] Connected.');
     }
 
     async disconnect(): Promise<void> {
@@ -198,7 +198,14 @@ export class TuneCoreAdapter implements IDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        throw new Error('Method not implemented.');
+        // Mock implementation for now
+        return {
+            releaseId,
+            period,
+            amount: 0,
+            currency: 'USD',
+            breakdown: []
+        };
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {

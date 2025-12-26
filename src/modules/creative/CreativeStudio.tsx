@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import CreativeNavbar from './components/CreativeNavbar';
 import CreativeGallery from './components/CreativeGallery';
 import InfiniteCanvas from './components/InfiniteCanvas';
@@ -80,37 +81,37 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     }, [pendingPrompt, generationMode]);
 
     return (
-        <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
-            <CreativeNavbar />
+        <ErrorBoundary>
+            <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
+                <CreativeNavbar />
 
-
-
-            <div className="flex-1 flex overflow-hidden relative">
-                {/* Main Workspace */}
-                <div className="flex-1 flex flex-col relative min-w-0 bg-[#0f0f0f]">
-                    {viewMode === 'gallery' && <CreativeGallery />}
-                    {viewMode === 'canvas' && <InfiniteCanvas />}
-                    {viewMode === 'showroom' && <Showroom />}
-                    {viewMode === 'video_production' && <VideoWorkflow />}
+                <div className="flex-1 flex overflow-hidden relative">
+                    {/* Main Workspace */}
+                    <div className="flex-1 flex flex-col relative min-w-0 bg-[#0f0f0f]">
+                        {viewMode === 'gallery' && <CreativeGallery />}
+                        {viewMode === 'canvas' && <InfiniteCanvas />}
+                        {viewMode === 'showroom' && <Showroom />}
+                        {viewMode === 'video_production' && <VideoWorkflow />}
+                    </div>
                 </div>
-            </div>
 
-            {/* Global Overlay */}
-            {selectedItem && (
-                <CreativeCanvas
-                    item={selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                    onSendToWorkflow={(type, item) => {
-                        // type is 'firstFrame' | 'lastFrame'
-                        const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
-                        setVideoInput(type, item);
-                        setGenerationMode('video');
-                        setViewMode('video_production');
-                        setSelectedItem(null);
-                        toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
-                    }}
-                />
-            )}
-        </div>
+                {/* Global Overlay */}
+                {selectedItem && (
+                    <CreativeCanvas
+                        item={selectedItem}
+                        onClose={() => setSelectedItem(null)}
+                        onSendToWorkflow={(type, item) => {
+                            // type is 'firstFrame' | 'lastFrame'
+                            const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
+                            setVideoInput(type, item);
+                            setGenerationMode('video');
+                            setViewMode('video_production');
+                            setSelectedItem(null);
+                            toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
+                        }}
+                    />
+                )}
+            </div>
+        </ErrorBoundary>
     );
 }

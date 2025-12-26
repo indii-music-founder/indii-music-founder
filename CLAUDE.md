@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant's Guide to indiiOS
 
-**Last Updated:** 2025-12-05
+**Last Updated:** 2025-12-26
 **Repository:** Rndr-AI-v1 (indiiOS - The AI-Native Creative Studio)
 **Purpose:** Comprehensive guide for AI assistants to understand codebase structure, conventions, and development workflows.
 
@@ -63,6 +63,7 @@ Rndr-AI-v1/
 │   │   ├── music/               # Music Analysis
 │   │   ├── workflow/            # Workflow Lab (node editor)
 │   │   ├── marketing/           # Marketing & Campaign management
+│   │   ├── publishing/          # Music distribution & royalties
 │   │   ├── legal/               # Legal dashboard
 │   │   ├── dashboard/           # Main dashboard
 │   │   └── onboarding/          # User onboarding
@@ -72,6 +73,10 @@ Rndr-AI-v1/
 │   │   ├── image/               # Image generation services
 │   │   ├── video/               # Video generation services
 │   │   ├── rag/                 # RAG & file search
+│   │   ├── distribution/        # Music distribution (adapters, persistence)
+│   │   ├── ddex/                # DDEX standards (ERN, DSR parsing)
+│   │   ├── security/            # Credential management (keytar)
+│   │   ├── metadata/            # GoldenMetadata types
 │   │   └── firebase.ts          # Firebase initialization
 │   ├── components/               # Shared UI components
 │   │   ├── ui/                  # Base UI components
@@ -710,6 +715,43 @@ this.functions = {
 - `LegalAgent` - Contract analysis, IP clause extraction
 
 **README:** `src/modules/legal/README.md`
+
+### 10.7 Publishing (`src/modules/publishing/`)
+
+**Purpose:** Music distribution, DDEX integration, royalty management
+
+**Key Components:**
+
+- `PublishingDashboard.tsx` - Main dashboard with stats & releases
+- `components/ReleaseWizard.tsx` - Step-by-step release creation
+
+**Services (`src/services/distribution/`):**
+
+- `DistributorService.ts` - Main facade for multi-distributor releases
+- `DistributionPersistenceService.ts` - Electron-store persistence
+- `adapters/DistroKidAdapter.ts` - DistroKid integration
+- `adapters/TuneCoreAdapter.ts` - TuneCore integration
+- `adapters/CDBabyAdapter.ts` - CD Baby integration
+- `adapters/SymphonicAdapter.ts` - Symphonic DDEX integration
+
+**DDEX Services (`src/services/ddex/`):**
+
+- `ERNService.ts` - Electronic Release Notification generation
+- `DSRService.ts` - Digital Sales Report parsing
+- `DDEXParser.ts` - XML↔JSON conversion
+- `DDEXValidator.ts` - Schema validation
+
+**Security (`src/services/security/`):**
+
+- `CredentialService.ts` - Keytar-based secure credential storage
+
+**Types:**
+
+- `src/services/distribution/types/distributor.ts` - `DistributorId`, `ReleaseStatus`, `ReleaseAssets`
+- `src/services/metadata/types.ts` - `ExtendedGoldenMetadata`
+- `src/services/ddex/types/dsr.ts` - `DSRReport`, `DSRTransaction`
+
+**Implementation Plan:** See [docs/DDEX_IMPLEMENTATION_PLAN.md](docs/DDEX_IMPLEMENTATION_PLAN.md) for Phase 8 UI components
 
 ---
 

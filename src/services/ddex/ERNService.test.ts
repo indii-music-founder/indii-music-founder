@@ -1,0 +1,98 @@
+import { describe, it, expect } from 'vitest';
+import { ERNService } from './ERNService';
+import { ERNMapper } from './ERNMapper';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { DDEX_CONFIG } from '@/core/config/ddex';
+
+const MOCK_METADATA: ExtendedGoldenMetadata = {
+    trackTitle: 'Midnight City',
+    artistName: 'M83',
+    isrc: 'USM831100012',
+    explicit: false,
+    genre: 'Electronic',
+    labelName: 'Mute Records',
+    dpid: 'PADPIDA001',
+    splits: [
+        { legalName: 'M83', role: 'songwriter', percentage: 100, email: 'anthony@m83.com' }
+    ],
+    pro: 'ASCAP',
+    publisher: 'Downtown Music',
+    containsSamples: false,
+    isGolden: true,
+    releaseType: 'Single',
+    releaseDate: '2011-10-18',
+    territories: ['Worldwide'],
+    distributionChannels: ['streaming', 'download'],
+    upc: '123456789012',
+    catalogNumber: 'MUTE123',
+    marketingComment: 'Hit single',
+    aiGeneratedContent: {
+        isFullyAIGenerated: false,
+        isPartiallyAIGenerated: false
+    }
+};
+
+describe('ERNService', () => {
+    const ernService = new ERNService();
+
+    it('should generate a valid ERN object from metadata', async () => {
+        const result = await ernService.generateERN(MOCK_METADATA);
+        expect(result.success).toBe(true);
+        expect(result.xml).toBeDefined();
+        // Basic XML check
+        expect(result.xml).toContain('Midnight City');
+        expect(result.xml).toContain('M83');
+        expect(result.xml).toContain('USM831100012');
+    });
+
+    it('should include correct AI flags in generated XML', async () => {
+        const aiMetadata = {
+            ...MOCK_METADATA,
+            aiGeneratedContent: {
+                isFullyAIGenerated: true,
+                isPartiallyAIGenerated: false,
+                aiToolsUsed: ['Suno', 'Udio']
+            }
+        };
+        const result = await ernService.generateERN(aiMetadata);
+        // XMLBuilder might flatten booleans, checking logic
+        // Depending on parser implementation, verify structure via parse
+        const parseResult = ernService.parseERN(result.xml!);
+        expect(parseResult.success).toBe(true);
+        const release = parseResult.data!.releaseList[0];
+        expect(release.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
+    });
+});
+
+describe('ERNMapper', () => {
+    it('should map contributors correctly', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA,
+            splits: [
+                { legalName: 'Artist A', role: 'performer', percentage: 50, email: '' },
+                { legalName: 'Writer B', role: 'songwriter', percentage: 50, email: '' }
+            ],
+            artistName: 'Artist A'
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, {
+            messageId: '1',
+            sender: { partyId: 'P1', partyName: 'S' },
+            recipient: { partyId: 'P2', partyName: 'R' },
+            createdDateTime: new Date().toISOString()
+        });
+
+        const release = ern.releaseList[0];
+        const contributors = release.contributors;
+
+        // Expect Artist A as MainArtist
+        const mainArtist = contributors.find(c => c.name === 'Artist A');
+        expect(mainArtist).toBeDefined();
+        expect(mainArtist?.role).toBe('MainArtist');
+
+        // Expect Writer B as Composer
+        const composer = contributors.find(c => c.name === 'Writer B');
+        expect(composer).toBeDefined();
+        expect(composer?.role).toBe('Composer');
+    });
+});

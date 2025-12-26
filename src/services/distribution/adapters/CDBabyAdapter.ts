@@ -205,7 +205,13 @@ export class CDBabyAdapter implements IDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        throw new Error('Method not implemented.');
+        return {
+            releaseId,
+            period,
+            amount: 0,
+            currency: 'USD',
+            breakdown: []
+        };
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {

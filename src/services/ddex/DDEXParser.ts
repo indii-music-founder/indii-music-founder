@@ -231,6 +231,16 @@ class DDEXParserImpl {
       genre: { genre: String(((r?.ReleaseDetailsByTerritory as Record<string, unknown>)?.Genre as Record<string, unknown>)?.GenreText || '') },
       parentalWarningType: 'NoAdviceAvailable' as const,
       releaseResourceReferenceList: [],
+      aiGenerationInfo: r?.AIGenerationInfo ? {
+        isFullyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsFullyAIGenerated === true,
+        isPartiallyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsPartiallyAIGenerated === true,
+        aiToolsUsed: (r.AIGenerationInfo as Record<string, any>).AIToolsUsed?.AIToolUsed
+          ? Array.isArray((r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed)
+            ? (r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed
+            : [(r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed]
+          : [],
+        humanContributionDescription: (r.AIGenerationInfo as Record<string, any>).HumanContributionDescription
+      } : undefined
     }));
   }
 
@@ -257,6 +267,16 @@ class DDEXParserImpl {
         ReleaseResourceReferenceList: {
           ReleaseResourceReference: r.releaseResourceReferenceList,
         },
+        ...(r.aiGenerationInfo ? {
+          AIGenerationInfo: {
+            IsFullyAIGenerated: r.aiGenerationInfo.isFullyAIGenerated,
+            IsPartiallyAIGenerated: r.aiGenerationInfo.isPartiallyAIGenerated,
+            AIToolsUsed: {
+              AIToolUsed: r.aiGenerationInfo.aiToolsUsed
+            },
+            HumanContributionDescription: r.aiGenerationInfo.humanContributionDescription
+          }
+        } : {})
       })),
     };
   }
