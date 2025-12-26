@@ -21,7 +21,8 @@ export const MODULE_IDS = [
     'licensing',
     'showroom',
     'onboarding',
-    'select-org'
+    'select-org',
+    'agent'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];

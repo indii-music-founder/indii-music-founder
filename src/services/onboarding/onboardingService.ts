@@ -33,7 +33,7 @@ export function determinePhase(profile: UserProfile): OnboardingPhase {
     if (!profile.bio || profile.bio.length < 10) return 'identity_intro';
 
     // Core identity incomplete
-    if (coreMissing.includes('careerStage') || coreMissing.includes('goals')) return 'identity_core';
+    if (coreMissing.includes('careerStage') || coreMissing.includes('goals') || coreMissing.includes('distributor')) return 'identity_core';
 
     // Branding incomplete (colors, fonts, aesthetic)
     const brandKit = profile.brandKit || {};
@@ -65,6 +65,8 @@ export const OPTION_WHITELISTS: Record<string, string[]> = {
     aesthetic_style: ['Retro 80s', 'Synthwave', 'Cyberpunk', 'Minimalist', 'Maximalist', 'Vintage', 'Futuristic', 'Organic/Natural', 'Abstract', 'Cinematic'],
     color_vibe: ['Vibrant & Neon', 'Muted & Earthy', 'Black & White', 'Pastels', 'High Contrast', 'Monochrome', 'Warm tones', 'Cool tones'],
     font_style: ['Bold & Geometric', 'Elegant Serif', 'Clean Sans-Serif', 'Vintage/Retro', 'Handwritten', 'Tech/Mono', 'Display/Decorative'],
+    // Distributor
+    distributor: ['Symphonic', 'CD Baby', 'DistroKid', 'TuneCore'],
 };
 
 export enum OnboardingTools {
@@ -245,7 +247,7 @@ const askMultipleChoiceFunction: FunctionDeclaration = {
         properties: {
             question_type: {
                 type: 'STRING',
-                enum: ['release_type', 'career_stage', 'visuals', 'socials', 'genre', 'goals', 'mood', 'aesthetic_style', 'color_vibe', 'font_style'],
+                enum: ['release_type', 'career_stage', 'visuals', 'socials', 'genre', 'goals', 'mood', 'aesthetic_style', 'color_vibe', 'font_style', 'distributor'],
                 description: 'The category of question. Options MUST match this category exactly.'
             },
             question: { type: 'STRING', description: 'The question to ask the user (e.g., "What is your main genre?").' },
@@ -324,6 +326,7 @@ export function calculateProfileStatus(profile: UserProfile) {
         colorPalette: !!(colors.length > 0),
         typography: !!brandKit.fonts,
         aestheticStyle: !!brandKit.aestheticStyle,
+        distributor: !!socials.distributor,
     };
 
     // Level 2: Release Context (Transient)
@@ -359,7 +362,7 @@ export async function runOnboardingConversation(
     // Phase-specific focus instructions
     const phaseInstructions: Record<OnboardingPhase, string> = {
         identity_intro: "CURRENT FOCUS: Get their name and story. Build rapport first.",
-        identity_core: "CURRENT FOCUS: Career stage, genre, and goals. These shape everything.",
+        identity_core: "CURRENT FOCUS: Career stage, genre, goals, and DISTRIBUTOR. These shape everything.",
         identity_branding: "CURRENT FOCUS: Visual identity — colors, fonts, aesthetic style. This powers AI image generation.",
         identity_visuals: "CURRENT FOCUS: Visual assets — press photos, logo, references. If they have none, get acknowledgment and move on.",
         release_intro: "CURRENT FOCUS: Transition to the current release. What are they promoting?",
@@ -399,7 +402,7 @@ export async function runOnboardingConversation(
 **LAYER 1: ARTIST IDENTITY** (${coreProgress}% complete)
 ${coreMissing.length > 0 ? `Still need: ${coreMissing.map(m => m.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}` : '✓ Identity locked in'}
 - The permanent DNA: Who they ARE, not just what they're releasing
-- Career stage, goals, visual brand, social presence, the origin story
+- Career stage, goals, visual brand, social presence, DISTRIBUTOR, the origin story
 
 **LAYER 2: CURRENT RELEASE** (${releaseProgress}% complete)
 ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}` : '✓ Release details captured'}
@@ -409,7 +412,7 @@ ${releaseMissing.length > 0 ? `Still need: ${releaseMissing.map(m => m.replace(/
 **${phaseInstructions[currentPhase]}**
 
 **CONVERSATION FLOW (State Machine):**
-Phase 1 (Identity): intro → bio → genre → career_stage → goals → branding (colors, fonts, aesthetic) → visuals
+Phase 1 (Identity): intro → bio → genre → career_stage → goals → distributor → branding (colors, fonts, aesthetic) → visuals
 Phase 2 (Release): intro → title → type → mood → themes → assets
 NEVER jump phases. Complete each topic before moving on. If a topic is done, skip it.
 
@@ -437,13 +440,15 @@ NEVER jump phases. Complete each topic before moving on. If a topic is done, ski
 - aesthetic_style → options: Retro 80s, Synthwave, Cyberpunk, Minimalist, Maximalist, Vintage, Futuristic, Organic/Natural, Abstract, Cinematic
 - color_vibe → options: Vibrant & Neon, Muted & Earthy, Black & White, Pastels, High Contrast, Monochrome, Warm tones, Cool tones
 - font_style → options: Bold & Geometric, Elegant Serif, Clean Sans-Serif, Vintage/Retro, Handwritten, Tech/Mono, Display/Decorative
+- distributor → options: Symphonic, CD Baby, DistroKid, TuneCore
 - NEVER show release type options when asking about visuals — this confuses users
 - **CRITICAL**: If user says "none", "starting fresh", "no visuals", "don't have any" for visuals, you MUST call \`updateProfile({ visuals_acknowledged: true })\` to mark it complete, then MOVE ON to the next topic. Do NOT ask about visuals again after they've answered.
 - If they upload an image, actually REACT to it: "This shot has main character energy" or "The lighting here is moody — is that the direction for this release?"
 - If they're stuck, don't just wait — offer creative starters: "Tell me 3 artists you'd want to open for, and I'll help draft your bio"
 - Accept skips gracefully: "Totally fine, we'll circle back" — then MOVE ON
 - Keep responses punchy. You're not writing essays. 2-4 sentences max unless diving deep.
-- **DISTRIBUTOR INTEL**: When an artist mentions their distributor (DistroKid, TuneCore, CD Baby, AWAL, Ditto, UnitedMasters, Amuse), IMMEDIATELY use \`shareDistributorInfo\` to show them the requirements and pro tips. This is valuable intel — cover art specs, audio formats, metadata requirements, timeline recommendations. Artists NEED this. Save their distributor to the profile too.
+- **DISTRIBUTOR SELECTION**: This is critical. You MUST ask "Who do you distribute with?" if it's missing (check Identity layer). Use \`askMultipleChoice\` with question_type='distributor'.
+- **DISTRIBUTOR INTEL**: When they select a distributor, IMMEDIATELY use \`shareDistributorInfo\` to show them the requirements and pro tips. This is valuable intel — cover art specs, audio formats, metadata requirements, timeline recommendations. Artists NEED this. Save their distributor to the profile too.
 - **FILE UPLOADS**: Naturally invite uploads when relevant. They can attach images (press photos, logos, reference art), documents (bio, press kit, lyrics), and audio files. If they upload music, acknowledge it and let them know: "I'll pull some metadata from this to understand the track better — I don't store your audio anywhere, it stays on your device." React to audio uploads with genuine interest: "Nice, let me take a look at what you're working with."
 
 **VISUAL BRANDING (IMPORTANT - Don't skip this!):**
@@ -708,7 +713,7 @@ export function processFunctionCalls(
 // --- Natural Fallback Response Generator ---
 // These replace robotic "I processed that" messages with human, contextual responses
 
-type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes';
+type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor';
 
 // Educational context for each topic - helps users understand WHY we need this info
 const topicContext: Record<TopicKey, { name: string; why: string; examples: string[] }> = {
@@ -766,6 +771,11 @@ const topicContext: Record<TopicKey, { name: string; why: string; examples: stri
         name: 'what the music is about',
         why: "Themes give me hooks for storytelling — 'heartbreak anthem' writes different copy than 'summer freedom'",
         examples: ["The concept", "What inspired it", "What you want listeners to feel"]
+    },
+    distributor: {
+        name: 'your distributor',
+        why: "Every distributor has different rules for cover art and metadata. Knowing this prevents rejection headaches later.",
+        examples: ["Symphonic", "CD Baby", "DistroKid", "TuneCore"]
     }
 };
 

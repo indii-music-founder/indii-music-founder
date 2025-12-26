@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Trash2, Search, Filter, Loader2, Book, Clock } from 'lucide-react';
-import { GeminiRetrievalService } from '@/services/rag/GeminiRetrievalService';
+import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
-import { KnowledgeDocument } from '@/core/store/slices/authSlice';
 
 // Using a slightly more robust type for internal state
 interface KnowledgeDoc {
@@ -30,10 +29,10 @@ export default function KnowledgeBase() {
     const loadDocuments = async () => {
         setIsLoading(true);
         try {
-            const files = await GeminiRetrievalService.listFiles();
+            const { files } = await GeminiRetrieval.listFiles();
 
             // Map Gemini files to our UI model
-            const docs: KnowledgeDoc[] = files.map((f: any) => ({
+            const docs: KnowledgeDoc[] = (files || []).map((f: any) => ({
                 id: f.name,
                 title: f.displayName || f.name.split('/').pop(), // Fallback if no specific display name
                 type: f.mimeType.includes('pdf') ? 'PDF' : 'TXT', // Simple mapping
@@ -102,7 +101,7 @@ export default function KnowledgeBase() {
         if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return;
 
         try {
-            await GeminiRetrievalService.deleteFile(doc.rawName);
+            await GeminiRetrieval.deleteFile(doc.rawName);
             toast.success("Document deleted.");
             await loadDocuments();
         } catch (err) {

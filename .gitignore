@@ -52,3 +52,10 @@ lint_errors.txt
 
 # Landing page build output
 landing-page/out/**/*.txt
+
+# Sensitive and Temporary Storage
+credentials/
+*_staging/
+distribution-store.json
+scripts/verify-dpid-config.ts
+tsconfig.verify.json

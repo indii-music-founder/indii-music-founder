@@ -1,0 +1,179 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as fs from 'fs';
+import { SymphonicAdapter } from './SymphonicAdapter';
+import { DistroKidAdapter } from './DistroKidAdapter';
+import { TuneCoreAdapter } from './TuneCoreAdapter';
+import { CDBabyAdapter } from './CDBabyAdapter';
+import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
+import { ReleaseAssets } from '../types/distributor';
+
+// Mock dependencies with factory to ensure jest-style methods are available
+vi.mock('fs', () => {
+    return {
+        existsSync: vi.fn(),
+        mkdirSync: vi.fn(),
+        writeFileSync: vi.fn(),
+        rmSync: vi.fn(),
+        copyFileSync: vi.fn(),
+        promises: {
+            readFile: vi.fn(),
+        },
+        default: {
+            existsSync: vi.fn(),
+            mkdirSync: vi.fn(),
+            writeFileSync: vi.fn(),
+            rmSync: vi.fn(),
+            copyFileSync: vi.fn(),
+        }
+    };
+});
+
+describe('Distribution Adapters', () => {
+    let mockMetadata: ExtendedGoldenMetadata;
+    let mockAssets: ReleaseAssets;
+
+    beforeEach(() => {
+        // Reset mocks
+        vi.clearAllMocks();
+
+        // Setup common mock data
+        mockMetadata = {
+            ...INITIAL_METADATA,
+            trackTitle: 'Unit Test Track',
+            artistName: 'Unit Test Artist',
+            releaseDate: '2025-05-01',
+            genre: 'Pop',
+            upc: '123456789012',
+            isrc: 'US-TST-25-00001',
+            labelName: 'Test Records',
+            pLineYear: 2025,
+            cLineText: 'Test Records',
+            // Add missing required fields to satisfy ExtendedGoldenMetadata
+            releaseType: 'Single',
+            territories: ['Worldwide'],
+            distributionChannels: ['streaming'],
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false
+            }
+        };
+
+        mockAssets = {
+            audioFile: {
+                url: 'file:///tmp/test_audio.wav',
+                format: 'wav',
+                sizeBytes: 1000,
+                mimeType: 'audio/wav',
+                sampleRate: 44100,
+                bitDepth: 16
+            },
+            coverArt: {
+                url: 'file:///tmp/test_cover.jpg',
+                width: 3000,
+                height: 3000,
+                mimeType: 'image/jpeg',
+                sizeBytes: 2000
+            }
+        };
+
+        // Mock fs implementations
+        (fs.existsSync as unknown as ReturnType<typeof vi.fn>).mockReturnValue(true);
+        (fs.mkdirSync as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => { });
+        (fs.writeFileSync as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => { });
+        (fs.rmSync as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => { });
+        (fs.copyFileSync as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => { });
+    });
+
+    describe('SymphonicAdapter', () => {
+        it('should require connection before creating release', async () => {
+            const adapter = new SymphonicAdapter();
+            await expect(adapter.createRelease(mockMetadata, mockAssets))
+                .rejects.toThrow('Not connected');
+        });
+
+        it('should successfully build package and simulate delivery when connected', async () => {
+            const adapter = new SymphonicAdapter();
+            await adapter.connect({ apiKey: 'test-key' });
+
+            const result = await adapter.createRelease(mockMetadata, mockAssets);
+
+            expect(result.success).toBe(true);
+            expect(result.status).toBe('delivered');
+            expect(result.releaseId).toBeDefined();
+            // Verify fs calls were made by the builder
+            expect(fs.mkdirSync).toHaveBeenCalled();
+            expect(fs.writeFileSync).toHaveBeenCalled();
+        });
+    });
+
+    describe('DistroKidAdapter', () => {
+        it('should require connection before creating release', async () => {
+            const adapter = new DistroKidAdapter();
+            await expect(adapter.createRelease(mockMetadata, mockAssets))
+                .rejects.toThrow('Not connected');
+        });
+
+        it('should successfully generate CSV package when connected', async () => {
+            const adapter = new DistroKidAdapter();
+            await adapter.connect({ apiKey: 'test-key' });
+
+            const result = await adapter.createRelease(mockMetadata, mockAssets);
+
+            expect(result.success).toBe(true);
+            expect(result.status).toBe('delivered');
+            expect(result.distributorReleaseId).toBeDefined();
+            expect(fs.mkdirSync).toHaveBeenCalled();
+            // Should write CSV
+            expect(fs.writeFileSync).toHaveBeenCalled();
+        });
+    });
+
+    describe('TuneCoreAdapter (REST API)', () => {
+        it('should require connection before creating release', async () => {
+            const adapter = new TuneCoreAdapter();
+            await expect(adapter.createRelease(mockMetadata, mockAssets))
+                .rejects.toThrow('Not connected');
+        });
+
+        it('should validate metadata before sending', async () => {
+            const adapter = new TuneCoreAdapter();
+            // Force invalid metadata by casting to prevent TS error during test
+            const invalidMetadata = { ...mockMetadata, trackTitle: '' as unknown as string };
+            const validation = await adapter.validateMetadata(invalidMetadata);
+            expect(validation.isValid).toBe(false);
+            expect(validation.errors[0].code).toBe('MISSING_TITLE');
+        });
+
+        it('should simulate API delivery success', async () => {
+            const adapter = new TuneCoreAdapter();
+            await adapter.connect({ accessToken: 'test-token' });
+
+            const result = await adapter.createRelease(mockMetadata, mockAssets);
+
+            expect(result.success).toBe(true);
+            expect(result.status).toBe('delivered');
+            expect(result.releaseId).toContain('TC-');
+        });
+    });
+
+    describe('CDBabyAdapter (DDEX)', () => {
+        it('should require connection before creating release', async () => {
+            const adapter = new CDBabyAdapter();
+            await expect(adapter.createRelease(mockMetadata, mockAssets))
+                .rejects.toThrow('Not connected');
+        });
+
+        it('should successfully build DDEX package and simulate upload', async () => {
+            const adapter = new CDBabyAdapter();
+            await adapter.connect({ apiKey: 'test-key' });
+
+            const result = await adapter.createRelease(mockMetadata, mockAssets);
+
+            expect(result.success).toBe(true);
+            expect(result.status).toBe('delivered');
+            expect(result.releaseId).toContain('IND-');
+            expect(fs.mkdirSync).toHaveBeenCalled();
+            expect(fs.writeFileSync).toHaveBeenCalled(); // XML writing
+        });
+    });
+});

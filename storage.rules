@@ -1,11 +1,42 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    // User-specific storage (Private)
+
+    // ========================================
+    // USER-SPECIFIC STORAGE (Private)
+    // ========================================
+
+    // Users can only access their own storage
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Deny everything else by default (Implicit in Firestore/Storage rules, but good to be explicit/omit)
+
+    // ========================================
+    // ORGANIZATION-SCOPED STORAGE
+    // ========================================
+
+    // Org members can access org storage
+    // Note: Requires Firestore access for membership check
+    match /orgs/{orgId}/{allPaths=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
+    }
+
+    // ========================================
+    // PUBLIC ASSETS (if needed for CDN)
+    // ========================================
+
+    // Public readable assets (e.g., thumbnails, shared media)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ========================================
+    // DENY ALL OTHER ACCESS
+    // ========================================
+
+    // Any paths not explicitly matched above are denied by default
   }
 }

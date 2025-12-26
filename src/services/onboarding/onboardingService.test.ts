@@ -1,5 +1,5 @@
 
-import { calculateProfileStatus, processFunctionCalls, runOnboardingConversation, OnboardingTools } from './onboardingService';
+import { calculateProfileStatus, processFunctionCalls, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
 import type { UserProfile, ConversationFile } from '../../modules/workflow/types';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AI } from '../ai/AIService';
@@ -40,13 +40,55 @@ describe('onboardingService', () => {
                 savedWorkflows: []
             };
 
-            const { coreProgress, releaseProgress } = calculateProfileStatus(emptyProfile);
+            const { coreProgress, releaseProgress, coreMissing } = calculateProfileStatus(emptyProfile);
             expect(coreProgress).toBe(0);
             expect(releaseProgress).toBe(0);
+            expect(coreMissing).toContain('distributor');
         });
 
-        // ... existing tests kept for brevity or can be replaced since REPLACE overwrites content ...
-        // I will overwrite the whole file to ensure clean structure.
+    });
+
+    describe('determinePhase', () => {
+        const baseProfile: UserProfile = {
+            bio: 'This is a long enough bio for testing.',
+            careerStage: 'Emerging',
+            goals: ['Touring'],
+            brandKit: {
+                colors: ['#000'],
+                fonts: 'Inter',
+                brandDescription: 'Dark and moody',
+                socials: { instagram: '@test' },
+                brandAssets: [{ url: 'test', description: 'test' }],
+                referenceImages: [],
+                releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' },
+                negativePrompt: ''
+            },
+            analyzedTrackIds: [],
+            knowledgeBase: [],
+            savedWorkflows: [],
+            preferences: {}
+        };
+
+        it('should return identity_core if distributor is missing', () => {
+            const profile = { ...baseProfile, brandKit: { ...baseProfile.brandKit, socials: { instagram: '@test' } } };
+            const phase = determinePhase(profile);
+            expect(phase).toBe('identity_core');
+        });
+
+        it('should return identity_branding if distributor is provided but branding is missing', () => {
+            const profile = {
+                ...baseProfile,
+                brandKit: {
+                    ...baseProfile.brandKit,
+                    socials: { ...baseProfile.brandKit.socials, distributor: 'DistroKid' },
+                    colors: [],
+                    fonts: '',
+                    brandDescription: ''
+                }
+            };
+            const phase = determinePhase(profile);
+            expect(phase).toBe('identity_branding');
+        });
     });
 
     describe('processFunctionCalls', () => {
@@ -81,7 +123,7 @@ describe('onboardingService', () => {
                 name: OnboardingTools.UpdateProfile,
                 args: {
                     bio: 'New Bio',
-                    preferences: 'New Prefs',
+                    creative_preferences: 'New Prefs',
                     career_stage: 'Emerging',
                     goals: ['Touring']
                 }
@@ -89,7 +131,7 @@ describe('onboardingService', () => {
 
             const { updatedProfile, updates } = processFunctionCalls(calls, baseProfile, []);
             expect(updatedProfile.bio).toBe('New Bio');
-            expect(updatedProfile.preferences).toBe('New Prefs');
+            expect(updatedProfile.creativePreferences).toBe('New Prefs');
             expect(updatedProfile.careerStage).toBe('Emerging');
             expect(updatedProfile.goals).toEqual(['Touring']);
             expect(updates).toContain('Bio');

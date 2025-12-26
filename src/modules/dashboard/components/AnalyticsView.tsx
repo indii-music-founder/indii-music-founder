@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Activity, Zap, MessageSquare, Film, Flame, TrendingUp } from 'lucide-react';
 import { DashboardService, AnalyticsData } from '../../../services/dashboard/DashboardService';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';

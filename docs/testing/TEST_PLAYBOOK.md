@@ -417,3 +417,22 @@ npx vitest run src/services/agent/tools/SecurityTools.test.ts
   ```bash
   npx vitest run src/services/marketplace/MarketplaceService.test.ts
   ```
+
+## 23. The Town Square 🗣️
+
+**Scope:** Social Feed & Interaction Logic
+**Status:** **ACTIVE**
+**File:** `src/services/social/SocialService.test.ts`
+
+"The Town Square" validates the social layer, verifying posts, drops, and feed generation.
+
+- **Scenarios:**
+  - **The Soapbox**: Verifies `createPost` successfully adds new content.
+  - **The Drop**: Verifies `createPost` can attach a `productId` for Social Drops.
+  - **The Feed**: Verifies `getFeed` fetches and structures post data.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/services/social/SocialService.test.ts
+  ```

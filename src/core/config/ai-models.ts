@@ -13,7 +13,9 @@
  * - gemini-3-pro-preview (complex reasoning)
  * - gemini-3-flash-preview (fast tasks)
  * - gemini-3-pro-image-preview (image generation)
+ * - gemini-3-pro-image-preview (image generation)
  * - veo-3.1-generate-preview (video generation)
+ * - gemini-2.5-pro-ui-checkpoint (browser actuation)
  */
 
 export const AI_MODELS = {
@@ -35,6 +37,10 @@ export const AI_MODELS = {
         // Video generation model
         GENERATION: 'veo-3.1-generate-preview',
         EDIT: 'veo-3.1-generate-preview'
+    },
+    BROWSER: {
+        // Model optimized for browser interaction and UI control
+        AGENT: 'gemini-2.5-pro-ui-checkpoint',
     }
 } as const;
 
@@ -97,7 +103,9 @@ function validateModels(): void {
 ║    - gemini-3-pro-image-preview (image generation)                           ║
 ║    - gemini-2.5-pro-tts (advanced audio)                                     ║
 ║    - gemini-2.5-flash-tts (fast audio)                                       ║
+║    - gemini-2.5-flash-tts (fast audio)                                       ║
 ║    - veo-3.1-generate-preview (video generation)                             ║
+║    - gemini-2.5-pro-ui-checkpoint (browser actuation)                        ║
 ║                                                                              ║
 ║  DO NOT use gemini-1.5-*, gemini-2.0-*, or legacy gemini-pro models.         ║
 ║                                                                              ║
@@ -123,3 +131,4 @@ validateModels();
 export type TextModel = typeof AI_MODELS.TEXT[keyof typeof AI_MODELS.TEXT];
 export type ImageModel = typeof AI_MODELS.IMAGE[keyof typeof AI_MODELS.IMAGE];
 export type VideoModel = typeof AI_MODELS.VIDEO[keyof typeof AI_MODELS.VIDEO];
+export type BrowserModel = typeof AI_MODELS.BROWSER[keyof typeof AI_MODELS.BROWSER];

@@ -64,7 +64,7 @@ export default function DataStorageManager() {
 
             {/* Breakdown */}
             <div className="space-y-3 mb-6 flex-1 relative z-10">
-                {stats && [
+                {stats?.breakdown ? [
                     { label: 'Images', bytes: stats.breakdown.images, color: 'bg-blue-500' },
                     { label: 'Videos', bytes: stats.breakdown.videos, color: 'bg-green-500' },
                     { label: 'Cloud Drive', bytes: stats.breakdown.knowledgeBase, color: 'bg-purple-500' }
@@ -76,7 +76,7 @@ export default function DataStorageManager() {
                         </div>
                         <span className="text-gray-300 font-mono">{formatBytes(item.bytes)}</span>
                     </div>
-                ))}
+                )) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-3 relative z-10">

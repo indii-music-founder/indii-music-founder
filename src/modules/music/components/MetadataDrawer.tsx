@@ -49,6 +49,7 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
     const validate = (): boolean => {
         if (!localData.trackTitle || !localData.artistName) return false;
         if (!localData.isrc) return false;
+        if (!localData.labelName) return false;
         if (!isValidSplits) return false;
 
         // Sample Clearance Validation
@@ -398,6 +399,38 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
                                 value={localData.publisher}
                                 onChange={(e) => setLocalData({ ...localData, publisher: e.target.value })}
                             />
+                        </div>
+                    </div>
+                </section>
+
+                <div className="h-px bg-gray-800 my-2" />
+
+                {/* 5. DDEX & Organization */}
+                <section>
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <BookOpen size={14} /> 5. DDEX & Organization
+                    </h4>
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Label / Party Name</label>
+                            <input
+                                className="w-full bg-[#161b22] border border-gray-700 rounded p-2 text-sm text-white focus:border-purple-500 outline-none transition-colors"
+                                value={localData.labelName}
+                                onChange={(e) => setLocalData({ ...localData, labelName: e.target.value })}
+                                placeholder="e.g. IndiiOS Records"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">DPID (DDEX Party ID)</label>
+                            <input
+                                className="w-full bg-[#161b22] border border-gray-700 rounded p-2 text-sm font-mono text-blue-400 focus:border-blue-500 outline-none transition-colors"
+                                value={localData.dpid || ''}
+                                onChange={(e) => setLocalData({ ...localData, dpid: e.target.value.toUpperCase() })}
+                                placeholder="PA-DPIDA-XXXXXXXXXX-X"
+                            />
+                            <p className="text-[10px] text-gray-500 mt-1">
+                                Your unique identifier for global music distribution.
+                            </p>
                         </div>
                     </div>
                 </section>

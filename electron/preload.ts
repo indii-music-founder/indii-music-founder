@@ -36,5 +36,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Network (Main Process Fetching)
     network: {
         fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url)
-    }
+    },
+    testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
 });

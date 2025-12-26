@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { SocialPost, SocialConnection, SocialStats } from './types';
 import { UserService } from '@/services/UserService';
+import { useStore } from '@/core/store';
 
 export class SocialService {
 
@@ -92,21 +93,19 @@ export class SocialService {
      * Create a new post
      */
     static async createPost(content: string, mediaUrls: string[] = [], productId?: string): Promise<string> {
-        const user = auth.currentUser;
-        if (!user) throw new Error("Must be logged in to post");
-
-        const userProfile = await UserService.getUserProfile(user.uid);
+        const currentUser = useStore.getState().user;
+        if (!currentUser) throw new Error("Must be logged in to post");
 
         const postData = {
-            authorId: user.uid,
-            authorName: userProfile?.displayName || 'Anonymous',
-            authorAvatar: userProfile?.photoURL || '',
+            authorId: currentUser.uid,
+            authorName: currentUser.displayName || 'Anonymous',
+            authorAvatar: currentUser.photoURL || null,
             content,
             mediaUrls,
+            productId: productId || null,
             likes: 0,
             commentsCount: 0,
-            timestamp: serverTimestamp(),
-            ...(productId && { productId })
+            timestamp: serverTimestamp()
         };
 
         // Add to global 'posts' collection (and ideally user's subcollection or performing fan-out)
@@ -114,7 +113,7 @@ export class SocialService {
         const postRef = await addDoc(collection(db, 'posts'), postData);
 
         // Update user's post count
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'users', currentUser.uid);
         await updateDoc(userRef, {
             'socialStats.posts': increment(1),
             ...(productId && { 'socialStats.drops': increment(1) })

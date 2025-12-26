@@ -11,6 +11,7 @@ export default function Sidebar() {
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
+        { id: 'agent', icon: Network, label: 'Agent Tools' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },

@@ -94,7 +94,18 @@ Example: "By handling this metadata yourself, you just saved $45 in admin fees a
                         image_data: { type: "STRING", description: "Base64 string of the receipt image." },
                         mime_type: { type: "STRING", description: "MIME type (e.g. image/jpeg)." }
                     },
-                    required: ["image_data", "mime_type"]
+                }
+            },
+            {
+                name: "audit_distribution",
+                description: "Audit a track's metadata for distribution readiness to a specific partner.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackTitle: { type: "STRING" },
+                        distributor: { type: "STRING", description: "ID of the distributor (e.g. 'distrokid', 'tunecore')" }
+                    },
+                    required: ["trackTitle", "distributor"]
                 }
             }
         ]

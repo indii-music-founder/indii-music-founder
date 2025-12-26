@@ -22,7 +22,7 @@ export const FinanceTools = {
             Output strictly in JSON format: { "vendor": string, "date": string, "amount": number, "category": string, "description": string }`;
 
             const res = await AI.generateContent({
-                model: AI_MODELS.MULTIMODAL.PRO, // Gemini 3 Pro Vision
+                model: AI_MODELS.TEXT.AGENT, // Gemini 3 Pro (Multimodal)
                 contents: {
                     role: 'user',
                     parts: [
@@ -35,6 +35,39 @@ export const FinanceTools = {
             return res.text();
         } catch (e: any) {
             return `Receipt analysis failed: ${e.message}`;
+        }
+    },
+
+    audit_distribution: async (args: { trackTitle: string; distributor: string }): Promise<string> => {
+        try {
+            const { ernService } = await import('@/services/ddex/ERNService');
+            const { DISTRIBUTORS } = await import('@/core/config/distributors');
+
+            // 1. Check Distributor Config
+            const distConfig = DISTRIBUTORS[args.distributor as keyof typeof DISTRIBUTORS];
+            if (!distConfig) {
+                return JSON.stringify({
+                    status: "UNKNOWN_DISTRIBUTOR",
+                    risk: "HIGH",
+                    message: `Distributor '${args.distributor}' is not in the approved database.`,
+                    action: "Configure distributor settings."
+                });
+            }
+
+            // 2. Mock Metadata Retrieval (In real app, fetch from store)
+            // For now, we simulate a check based on "context" or return a template
+            // asking the user to provide the metadata if not available.
+            // Ideally, this tool would accept the metadata ID, but for the MVP prompt:
+
+            return JSON.stringify({
+                status: "READY_FOR_AUDIT",
+                distributor: distConfig.name,
+                party_id: distConfig.ddexPartyId,
+                message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.ddexPartyId}. Ready to generate ERN.`
+            });
+
+        } catch (error: any) {
+            return `Audit failed: ${error.message}`;
         }
     }
 };

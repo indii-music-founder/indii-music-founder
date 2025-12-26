@@ -16,7 +16,7 @@ vi.mock('firebase/firestore', () => ({
     getDoc: vi.fn(),
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
-    serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(() => ({ _toField: 'timestamp' })),
     Timestamp: {
         now: vi.fn(() => ({ seconds: 1234567890, nanoseconds: 0 })),
         fromDate: vi.fn()
@@ -83,7 +83,9 @@ describe('UserService', () => {
             knowledgeBase: [],
             savedWorkflows: [],
             careerStage: 'Emerging',
-            goals: []
+            goals: [],
+            accountType: 'artist',
+            socialStats: { followers: 100, following: 50, posts: 10, drops: 2 }
         };
 
         // Setup: getDoc returns "exists" with data

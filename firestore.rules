@@ -2,8 +2,159 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
+
+    // Check if user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is a member of the organization
+    function isOrgMember(orgId) {
+      return isAuthenticated() &&
+        request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
+    }
+
+    // Check if orgId in resource data matches and user is a member
+    function isResourceOrgMember() {
+      return isAuthenticated() && isOrgMember(resource.data.orgId);
+    }
+
+    // For creates: check orgId in incoming data
+    function isRequestOrgMember() {
+      return isAuthenticated() && isOrgMember(request.resource.data.orgId);
+    }
+
+    // ========================================
+    // USER DOCUMENTS
+    // ========================================
+
+    // Users can only read/write their own profile
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Usage tracking subcollection
+      match /usage/{date} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Saved workflows subcollection
+      match /workflows/{workflowId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Social: following subcollection
+      match /following/{targetUserId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Social: followers subcollection (write by anyone who wants to follow)
+      match /followers/{followerId} {
+        allow read: if isOwner(userId);
+        allow create, delete: if isOwner(followerId);
+      }
+    }
+
+    // ========================================
+    // ORGANIZATIONS
+    // ========================================
+
+    match /organizations/{orgId} {
+      // Only members can read
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.members;
+
+      // Anyone authenticated can create (they must include themselves as member)
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.members;
+
+      // Only members can update/delete
+      allow update, delete: if isAuthenticated() && request.auth.uid in resource.data.members;
+    }
+
+    // ========================================
+    // PROJECTS (org-scoped)
+    // ========================================
+
+    match /projects/{projectId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // HISTORY (org-scoped generation history)
+    // ========================================
+
+    match /history/{docId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // VIDEO JOBS (org-scoped)
+    // ========================================
+
+    match /videoJobs/{jobId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // DDEX RELEASES (org-scoped distribution)
+    // ========================================
+
+    match /ddexReleases/{releaseId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // DSR REPORTS (org-scoped royalty reports)
+    // ========================================
+
+    match /dsrReports/{reportId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // ROYALTY PAYMENTS (org-scoped)
+    // ========================================
+
+    match /royaltyPayments/{paymentId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // SOCIAL POSTS (user-scoped)
+    // ========================================
+
+    match /posts/{postId} {
+      // Anyone authenticated can read posts (public feed)
+      allow read: if isAuthenticated();
+
+      // Only the author can create/update/delete their posts
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // DENY ALL OTHER ACCESS
+    // ========================================
+
+    // Any paths not explicitly matched above are denied by default
   }
 }

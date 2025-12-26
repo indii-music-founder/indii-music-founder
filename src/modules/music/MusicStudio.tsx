@@ -185,7 +185,7 @@ export default function MusicStudio() {
         // Asynchronously fingerprint/analyze all loaded tracks
         // We do this one by one to avoid UI freeze, or parallel if worker supported.
         // For prototype, let's do simple loop with promises but don't block UI
-        toast.loading(`Analyzing ${tracks.length} tracks...`);
+        const batchToastId = toast.loading(`Analyzing ${tracks.length} tracks...`);
 
         (async () => {
             for (const track of tracks) {
@@ -205,7 +205,7 @@ export default function MusicStudio() {
                     console.error('Batch analysis failed for', track.name);
                 }
             }
-            toast.dismiss();
+            toast.dismiss(batchToastId);
             toast.success("Batch Analysis Complete");
         })();
 

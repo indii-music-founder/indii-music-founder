@@ -39,7 +39,7 @@ export const MerchTable: React.FC = () => {
 
     const loadProducts = async () => {
         if (!user) return;
-        const items = await MarketplaceService.getSellerProducts(user.uid);
+        const items = await MarketplaceService.getProductsByArtist(user.uid);
         setProducts(items);
     };
 

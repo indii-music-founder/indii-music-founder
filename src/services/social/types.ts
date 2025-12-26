@@ -5,10 +5,10 @@ export interface SocialPost {
     authorAvatar?: string;
     content: string;
     mediaUrls?: string[]; // Images, generated art, snippets
+    productId?: string; // ID of a product from the marketplace (Social Drop)
     likes: number;
     commentsCount: number;
     timestamp: number;
-    productId?: string; // If this post is a "Drop" for a product
 }
 
 export interface Comment {

@@ -130,6 +130,35 @@ app.on('ready', () => {
     registerAuthHandlers();
     registerAudioHandlers();
     registerNetworkHandlers();
+
+    // Test Browser Agent (Remove in prod)
+    const { ipcMain } = require('electron');
+    ipcMain.handle('test:browser-agent', async (_event: any, query?: string) => {
+        // Dynamic import to avoid issues if file doesn't exist yet during some builds
+        const { browserAgentService } = require('./services/BrowserAgentService');
+        try {
+            await browserAgentService.startSession();
+
+            if (query) {
+                console.log(`[BrowserAgent] Testing Search: ${query}`);
+                await browserAgentService.navigateTo('https://www.google.com');
+                // Google search selector is usually [name="q"]
+                await browserAgentService.typeInto('[name="q"]', query);
+                await browserAgentService.pressKey('Enter');
+                // Wait for results container
+                await browserAgentService.waitForSelector('#search');
+            } else {
+                await browserAgentService.navigateTo('https://www.google.com');
+            }
+
+            const snapshot = await browserAgentService.captureSnapshot();
+            await browserAgentService.closeSession();
+            return { success: true, ...snapshot };
+        } catch (error) {
+            console.error('Agent Test Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
     createWindow();
 });
 

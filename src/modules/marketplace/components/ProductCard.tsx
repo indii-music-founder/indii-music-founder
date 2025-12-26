@@ -1,89 +1,157 @@
 import React, { useState } from 'react';
 import { Product } from '@/services/marketplace/types';
-import { ShoppingBag, Music, Shirt, Ticket, Check } from 'lucide-react';
-import { useToast } from '@/core/context/ToastContext';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
+import { ShoppingBag, Loader2, Check } from 'lucide-react';
 
 interface ProductCardProps {
     product: Product;
+    variant?: 'default' | 'embedded';
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
-    const { id, title, description, price, type, images, sellerId } = product;
-    const toast = useToast();
+export default function ProductCard({ product, variant = 'default' }: ProductCardProps) {
+    const [purchasing, setPurchasing] = useState(false);
+    const [purchased, setPurchased] = useState(false);
     const currentUser = useStore((state) => state.user);
-    const [isPurchasing, setIsPurchasing] = useState(false);
 
-    const formatPrice = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount / 100);
-    };
+    const handlePurchase = async () => {
+        if (!currentUser) return;
 
-    const getIcon = () => {
-        switch (type) {
-            case 'song': return <Music size={16} />;
-            case 'merch': return <Shirt size={16} />;
-            case 'ticket': return <Ticket size={16} />;
-            default: return <ShoppingBag size={16} />;
-        }
-    };
-
-    const handleBuy = async () => {
-        if (!currentUser) {
-            toast.error("Please login to purchase");
-            return;
-        }
-
-        setIsPurchasing(true);
+        setPurchasing(true);
         try {
-            await MarketplaceService.purchaseProduct(id, currentUser.uid, sellerId, price);
-            toast.success(`Purchased ${title}!`);
+            await MarketplaceService.purchaseProduct(
+                product.id!,
+                currentUser.uid,
+                product.sellerId,
+                product.price
+            );
+            setPurchased(true);
         } catch (error) {
-            console.error(error);
-            toast.error("Purchase failed");
+            console.error("Purchase failed:", error);
         } finally {
-            setIsPurchasing(false);
+            setPurchasing(false);
         }
     };
 
+    const isEmbedded = variant === 'embedded';
+
+    if (isEmbedded) {
+        return (
+            <div className="flex bg-gray-900 border border-gray-700 rounded-lg overflow-hidden max-w-md">
+                <div className="w-24 h-24 flex-shrink-0 bg-gray-800">
+                    {product.images && product.images.length > 0 ? (
+                        <img
+                            src={product.images[0]}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                            <ShoppingBag className="text-white/20" size={24} />
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex-1 p-3 flex flex-col justify-center">
+                    <div className="flex justify-between items-start mb-1">
+                        <div>
+                            <h4 className="font-semibold text-white text-sm line-clamp-1">{product.title}</h4>
+                            <p className="text-xs text-gray-400 capitalize">{product.type} • {product.inventory} left</p>
+                        </div>
+                        <span className="text-green-400 font-bold text-sm">
+                            {product.currency} {product.price}
+                        </span>
+                    </div>
+
+                    <button
+                        onClick={handlePurchase}
+                        disabled={purchasing || purchased || product.inventory === 0}
+                        className={`w-full mt-auto py-1.5 px-3 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors
+                            ${purchased
+                                ? 'bg-green-600/20 text-green-400 cursor-default'
+                                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                            }`}
+                    >
+                        {purchasing ? (
+                            <Loader2 size={12} className="animate-spin" />
+                        ) : purchased ? (
+                            <>
+                                <Check size={12} /> Owned
+                            </>
+                        ) : (
+                            <>
+                                Buy Now
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Default Card (Marketplace)
     return (
-        <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden hover:border-gray-700 transition-all group">
-            {/* Image */}
-            <div className="h-48 bg-gray-900 relative overflow-hidden">
-                {images[0] ? (
-                    <img src={images[0]} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="group bg-gray-900 border border-gray-800 hover:border-blue-500/50 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
+            {/* Image Aspect Root */}
+            <div className="aspect-square relative bg-gray-800 overflow-hidden">
+                {product.images && product.images.length > 0 ? (
+                    <img
+                        src={product.images[0]}
+                        alt={product.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-700">
-                        {getIcon()}
+                    <div className="w-full h-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
+                        <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} />
                     </div>
                 )}
-                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-white flex items-center gap-1">
-                    {getIcon()} {type.toUpperCase()}
+
+                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs font-medium text-white border border-white/10">
+                    {(product.inventory || 0) > 0 ? `${product.inventory} left` : 'Sold Out'}
                 </div>
             </div>
 
             {/* Content */}
-            <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-white text-lg truncate flex-1">{title}</h3>
-                    <span className="font-mono text-green-400 font-bold ml-2">
-                        {formatPrice(price)}
-                    </span>
+            <div className="p-4 space-y-4">
+                <div>
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                        <h3 className="font-bold text-white leading-tight">{product.title}</h3>
+                        <span className="text-green-400 font-bold whitespace-nowrap">
+                            {product.currency} {product.price}
+                        </span>
+                    </div>
+                    <p className="text-sm text-gray-400 line-clamp-2">{product.description}</p>
                 </div>
-                <p className="text-gray-400 text-sm line-clamp-2 h-10 mb-4">
-                    {description}
-                </p>
 
-                <button
-                    onClick={handleBuy}
-                    disabled={isPurchasing}
-                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                    {isPurchasing ? 'Processing...' : 'Buy Now'}
-                </button>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-800">
+                    <span className="text-xs font-medium px-2 py-1 rounded bg-gray-800 text-gray-300 capitalize">
+                        {product.type}
+                    </span>
+
+                    <button
+                        onClick={handlePurchase}
+                        disabled={purchasing || purchased || product.inventory === 0}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
+                            ${purchased
+                                ? 'bg-green-600/20 text-green-400 cursor-default'
+                                : 'bg-white text-black hover:bg-gray-200'
+                            }`}
+                    >
+                        {purchasing ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Processing...
+                            </>
+                        ) : purchased ? (
+                            <>
+                                <Check size={16} />
+                                In Collection
+                            </>
+                        ) : (
+                            'Purchase'
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );
