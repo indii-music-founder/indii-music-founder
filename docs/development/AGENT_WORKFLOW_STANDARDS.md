@@ -72,5 +72,38 @@ Select the appropriate model level based on complexity.
 
 ---
 
+## Compliance Status
+
+**Last Verified:** 2025-12-26
+
+| Section | Requirement | Status | Notes |
+|---------|-------------|--------|-------|
+| 6 | Gemini 3 models only | ✅ PASS | `ai-models.ts` enforces policy |
+| 6 | Native File Search RAG | ✅ PASS | `GeminiRetrievalService` implements Files API |
+| 6 | Response handling (.text()) | ✅ PASS | All services use method call |
+| 7 | Blueprint-first protocol | ⚠️ PARTIAL | Docs exist, hook not enforced |
+| 7 | Gauntlet verification suite | ✅ PASS | `scripts/run-gauntlet.sh` |
+| 7 | Stress tests | ✅ PASS | `e2e/file-search-stress.spec.ts` |
+| 8 | Quota pre-checks | ✅ PASS | Integrated in Image/Video/RAG services |
+| 8 | Graceful degradation | ✅ PASS | `QuotaExceededError` with upgrade prompts |
+| 8 | MembershipService integration | ✅ PASS | Usage tracking in Firestore |
+| Video | Scene Extension (60s+) | ✅ PASS | `SceneExtensionService` with Veo 3.1 |
+| Video | First/Last Frame Control | ✅ PASS | Enhanced `VideoService` options |
+| Video | Reference Images (3 max) | ✅ PASS | Veo 3.1 referenceImages support |
+| Video | Native Audio Generation | ✅ PASS | `generateAudio` toggle |
+| Video | Zoomable Timeline | ✅ PASS | `ZoomableTimeline` component |
+
+**Key Files:**
+- `src/services/MembershipService.ts` - Quota tracking & enforcement
+- `src/shared/types/errors.ts` - QuotaExceededError class
+- `scripts/run-gauntlet.sh` - Verification runner
+- `docs/development/GAUNTLET_PROTOCOL.md` - Verification docs
+- `src/services/video/SceneExtensionService.ts` - 60s+ video scene chaining
+- `src/services/video/VideoService.ts` - Enhanced with Veo 3.1 features
+- `src/modules/video/store/videoEditorStore.ts` - Extended video state
+- `src/modules/video/components/ZoomableTimeline.tsx` - Timeline zoom UI
+
+---
+
 **Philosophy:**
 The relationship is analogous to a **General Contractor** (User) hiring a **Specialized Architect** (Antigravity). The User reviews capabilities and sets safety regulations, while the Architect designs and coordinates specialized sub-contractors (MCP Servers) to execute the work.

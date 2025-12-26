@@ -39,7 +39,7 @@
 
 ## RULE: THE AGENT CONSTITUTION (Technical Governance)
 
-**Reference:** See `agent.md` for strict technical rules enforced on the AI Agent.
+**Reference:** See `agents.md` for strict technical rules enforced on the AI Agent.
 
 * **Scope:** Testing protocols, architectural constraints (Service/UI separation), Code Hygiene, and Safety Checks.
-* **Enforcement:** The Agent must consult `agent.md` before executing complex tasks.
+* **Enforcement:** The Agent must consult `agents.md` before executing complex tasks.

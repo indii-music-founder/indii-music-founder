@@ -13,16 +13,18 @@ function VerifyEmailContent() {
     const mode = searchParams.get('mode');
     const oobCode = searchParams.get('oobCode');
 
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<'loading' | 'success' | 'error'>(() => {
+        if (!mode && !oobCode) return 'error';
+        return 'loading';
+    });
+    const [error, setError] = useState<string | null>(() => {
+        if (!mode && !oobCode) return 'Missing verification info.';
+        return null;
+    });
 
     useEffect(() => {
         async function verify() {
-            if (!oobCode) {
-                setStatus('error');
-                setError('Invalid verification link.');
-                return;
-            }
+            if (!oobCode) return; // Should be handled by initial state, but safe guard
 
             try {
                 await applyActionCode(auth, oobCode);
@@ -35,16 +37,8 @@ function VerifyEmailContent() {
             }
         }
 
-        if (mode === 'verifyEmail') {
+        if (mode === 'verifyEmail' && oobCode) {
             verify();
-        } else {
-            // If landing here without mode/code, maybe just show a "Check your email" message?
-            // But for now assume this page is the callback handler.
-            if (!mode && !oobCode) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setStatus('error');
-                setError('Missing verification info.');
-            }
         }
     }, [mode, oobCode]);
 

@@ -1,4 +1,6 @@
 
+import { HistoryItem } from '@/core/store/slices/creativeSlice';
+
 export interface ProjectMetadata {
     id: string;
     name: string;
@@ -29,6 +31,21 @@ export interface AnalyticsData {
     streak: number;
 }
 
+// Local interface for the parts of the store we access
+interface DashboardStoreState {
+    projects: ProjectMetadata[];
+    generatedHistory: HistoryItem[];
+    agentMessages?: unknown[]; // Optional as it might be missing
+    userProfile?: {
+        membership?: { tier: string };
+        knowledgeBase?: Array<{ content?: string; metadata?: { size?: number } }>;
+    };
+    addProject?: (p: any) => void; // Using any to avoid strict project type mismatch for now
+    removeProject?: (id: string) => void;
+    addToHistory?: (item: HistoryItem) => void;
+    removeFromHistory?: (id: string) => void;
+}
+
 // Tier-based storage quotas in bytes
 const STORAGE_QUOTAS = {
     free: 1_073_741_824,        // 1 GB
@@ -41,11 +58,11 @@ export class DashboardService {
     static async getProjects(): Promise<ProjectMetadata[]> {
         try {
             const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+            const state = useStore.getState() as unknown as DashboardStoreState;
 
             // Get projects from store
             if (state.projects && state.projects.length > 0) {
-                return state.projects.map((p: any) => ({
+                return state.projects.map((p) => ({
                     id: p.id,
                     name: p.name,
                     lastModified: p.lastModified || Date.now(),
@@ -63,7 +80,7 @@ export class DashboardService {
     static async getStorageStats(): Promise<StorageStats> {
         try {
             const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+            const state = useStore.getState() as unknown as DashboardStoreState;
 
             // Get membership tier
             const tier = state.userProfile?.membership?.tier || 'free';
@@ -74,10 +91,11 @@ export class DashboardService {
             let videosBytes = 0;
 
             if (state.generatedHistory) {
-                state.generatedHistory.forEach((item: any) => {
+                state.generatedHistory.forEach((item) => {
                     // Estimate size from base64 URL or content length
                     const urlLength = item.url?.length || 0;
-                    const contentPadding = item.content?.length || 0;
+                    // content might not exist on all HistoryItems but exists on text types
+                    const contentPadding = (item as any).content?.length || 0;
                     const estimatedBytes = Math.floor((urlLength + contentPadding) * 0.75);
 
                     if (item.type === 'video') {
@@ -91,7 +109,7 @@ export class DashboardService {
             // Estimate Knowledge Base (stored documents)
             let kbBytes = 0;
             if (state.userProfile?.knowledgeBase) {
-                state.userProfile.knowledgeBase.forEach((doc: any) => {
+                state.userProfile.knowledgeBase.forEach((doc) => {
                     kbBytes += (doc.content?.length || 0) + (doc.metadata?.size || 0);
                 });
             }
@@ -132,7 +150,7 @@ export class DashboardService {
 
         try {
             const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+            const state = useStore.getState() as unknown as DashboardStoreState;
 
             // Add to store if addProject exists
             if (typeof state.addProject === 'function') {
@@ -148,7 +166,7 @@ export class DashboardService {
     static async duplicateProject(projectId: string): Promise<ProjectMetadata> {
         try {
             const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+            const state = useStore.getState() as unknown as DashboardStoreState;
 
             // Find original project
             const projects = await this.getProjects();
@@ -170,11 +188,11 @@ export class DashboardService {
             // Copy history items if they exist
             if (state.generatedHistory) {
                 const projectHistory = state.generatedHistory.filter(
-                    (item: any) => item.projectId === projectId
+                    (item) => item.projectId === projectId
                 );
 
                 // Add duplicated items with new project ID
-                projectHistory.forEach((item: any) => {
+                projectHistory.forEach((item) => {
                     if (typeof state.addToHistory === 'function') {
                         state.addToHistory({
                             ...item,
@@ -202,7 +220,7 @@ export class DashboardService {
     static async deleteProject(projectId: string): Promise<void> {
         try {
             const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+            const state = useStore.getState() as unknown as DashboardStoreState;
 
             if (typeof state.removeProject === 'function') {
                 state.removeProject(projectId);
@@ -211,9 +229,9 @@ export class DashboardService {
             // Remove associated history
             if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
                 const toRemove = state.generatedHistory.filter(
-                    (item: any) => item.projectId === projectId
+                    (item) => item.projectId === projectId
                 );
-                toRemove.forEach((item: any) => state.removeFromHistory(item.id));
+                toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
             }
 
             console.log('[DashboardService] Project deleted:', projectId);
@@ -226,7 +244,7 @@ export class DashboardService {
     static async getAnalytics(): Promise<AnalyticsData> {
         try {
             const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+            const state = useStore.getState() as unknown as DashboardStoreState;
 
             const history = state.generatedHistory || [];
             const agentMessages = state.agentMessages || [];

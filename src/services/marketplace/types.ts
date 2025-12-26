@@ -10,7 +10,7 @@ export interface Product {
     type: ProductType;
     images: string[];
     inventory?: number; // Unlimited if undefined
-    metadata?: Record<string, any>; // For things like ISRC, Ticket Date, etc.
+    metadata?: Record<string, unknown>; // For things like ISRC, Ticket Date, etc.
     splits?: ProductSplit[]; // Revenue splits
     createdAt: string;
     isActive: boolean;

@@ -9,6 +9,16 @@ if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
     ).toString();
 }
 
+interface PDFTextItem {
+    str: string;
+    dir?: string;
+    width?: number;
+    height?: number;
+    transform?: number[];
+    fontName?: string;
+    hasEOL?: boolean;
+}
+
 export class PDFService {
     /**
      * Extracts full text from a PDF file.
@@ -24,8 +34,8 @@ export class PDFService {
             for (let i = 1; i <= pdfDocument.numPages; i++) {
                 const page = await pdfDocument.getPage(i);
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items
-                    .map((item: any) => item.str)
+                const pageText = (textContent.items as PDFTextItem[])
+                    .map((item) => item.str)
                     .join(' ');
 
                 fullText += `--- Page ${i} ---\n${pageText}\n\n`;

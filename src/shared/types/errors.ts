@@ -55,3 +55,45 @@ export class AppException extends Error {
         return new AppException(defaultCode, String(error));
     }
 }
+
+/**
+ * QuotaExceededError - Thrown when a user exceeds their membership tier limits.
+ * Contains actionable upgrade information for UI display.
+ */
+export type QuotaLimitType = 'images' | 'video' | 'storage' | 'projects' | 'resolution' | 'export';
+export type MembershipTier = 'free' | 'pro' | 'enterprise';
+
+export class QuotaExceededError extends AppException {
+    limitType: QuotaLimitType;
+    upgradeMessage: string;
+    currentTier: MembershipTier;
+    currentUsage: number;
+    maxAllowed: number;
+
+    constructor(
+        limitType: QuotaLimitType,
+        currentTier: MembershipTier,
+        upgradeMessage: string,
+        currentUsage: number,
+        maxAllowed: number
+    ) {
+        super(
+            AppErrorCode.QUOTA_EXCEEDED,
+            `Quota exceeded: ${limitType}. ${upgradeMessage}`,
+            {
+                context: {
+                    limitType,
+                    currentTier,
+                    currentUsage,
+                    maxAllowed
+                }
+            }
+        );
+        this.name = 'QuotaExceededError';
+        this.limitType = limitType;
+        this.upgradeMessage = upgradeMessage;
+        this.currentTier = currentTier;
+        this.currentUsage = currentUsage;
+        this.maxAllowed = maxAllowed;
+    }
+}

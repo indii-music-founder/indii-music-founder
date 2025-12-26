@@ -1,7 +1,8 @@
 import { useStore } from '@/core/store';
+import type { AppSlice } from '@/core/store/slices/appSlice';
 
 export const NavigationTools = {
-    switch_module: async (args: { module: any }) => {
+    switch_module: async (args: { module: AppSlice['currentModule'] }) => {
         try {
             useStore.getState().setModule(args.module);
             return `Navigated to module: ${args.module}`;

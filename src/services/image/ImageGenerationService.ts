@@ -6,6 +6,8 @@ import { env } from '@/config/env';
 import { isInlineDataPart } from '@/shared/types/ai.dto';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
+import { MembershipService } from '@/services/MembershipService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -75,6 +77,19 @@ export class ImageGenerationService {
         const results: { id: string, url: string, prompt: string }[] = [];
         const count = options.count || 1;
 
+        // Pre-flight quota check (Section 8 compliance)
+        const quotaCheck = await MembershipService.checkQuota('image', count);
+        if (!quotaCheck.allowed) {
+            const tier = await MembershipService.getCurrentTier();
+            throw new QuotaExceededError(
+                'images',
+                tier,
+                MembershipService.getUpgradeMessage(tier, 'images'),
+                quotaCheck.currentUsage,
+                quotaCheck.maxAllowed
+            );
+        }
+
         try {
             const generateImage = httpsCallable(functions, 'generateImage');
 
@@ -112,6 +127,20 @@ export class ImageGenerationService {
             console.error("Image Generation Error:", err);
             throw err;
         }
+
+        // Increment usage counter after successful generation
+        if (results.length > 0) {
+            try {
+                const { useStore } = await import('@/core/store');
+                const userId = useStore.getState().user?.uid;
+                if (userId) {
+                    await MembershipService.incrementUsage(userId, 'image', results.length);
+                }
+            } catch (e) {
+                console.warn('[ImageGenerationService] Failed to track usage:', e);
+            }
+        }
+
         return results;
     }
 

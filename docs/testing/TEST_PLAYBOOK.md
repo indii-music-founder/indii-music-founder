@@ -396,3 +396,24 @@ npx vitest src/services/agent/tools/MapsTools.test.ts src/services/agent/tools/B
 ```bash
 npx vitest run src/services/agent/tools/SecurityTools.test.ts
 ```
+
+---
+
+## 22. The Merchant 🛍️
+
+**Scope:** Commerce & Marketplace Logic
+**Status:** **ACTIVE**
+**File:** `src/services/marketplace/MarketplaceService.test.ts`
+
+"The Merchant" validates the Commerce Engine, ensuring products can be listed and purchased (mock flow).
+
+- **Scenarios:**
+  - **The Listing**: Verifies `createProduct` adds items to the database.
+  - **The Inventory**: Verifies `getProductsByArtist` retrieves specific catalogs.
+  - **The Transaction**: Verifies `purchaseProduct` records a completed sale.
+
+- **Command:**
+
+  ```bash
+  npx vitest run src/services/marketplace/MarketplaceService.test.ts
+  ```

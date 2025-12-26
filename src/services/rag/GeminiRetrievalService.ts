@@ -1,4 +1,6 @@
 import { env } from '../../config/env.ts';
+import { MembershipService } from '@/services/MembershipService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -84,6 +86,23 @@ export class GeminiRetrievalService {
         throw new Error("Gemini API request failed after retries");
     }
 
+    /**
+     * Calculate content size in MB for quota checking
+     */
+    private getContentSizeMB(content: string | Blob | Uint8Array): number {
+        let bytes: number;
+        if (typeof content === 'string') {
+            bytes = new TextEncoder().encode(content).length;
+        } else if (content instanceof Blob) {
+            bytes = content.size;
+        } else if (content instanceof Uint8Array) {
+            bytes = content.length;
+        } else {
+            bytes = 0;
+        }
+        return bytes / (1024 * 1024); // Convert to MB
+    }
+
     // --- Files API Implementation (Replaces Corpus/Document) ---
 
     /**
@@ -91,6 +110,20 @@ export class GeminiRetrievalService {
      * Supports text, PDF, and other compatible formats.
      */
     async uploadFile(displayName: string, content: string | Blob | Uint8Array, mimeType?: string): Promise<GeminiFile> {
+        // Pre-flight storage quota check (Section 8 compliance)
+        const fileSizeMB = this.getContentSizeMB(content);
+        const quotaCheck = await MembershipService.checkQuota('storage', fileSizeMB);
+        if (!quotaCheck.allowed) {
+            const tier = await MembershipService.getCurrentTier();
+            throw new QuotaExceededError(
+                'storage',
+                tier,
+                MembershipService.getUpgradeMessage(tier, 'storage'),
+                quotaCheck.currentUsage,
+                quotaCheck.maxAllowed
+            );
+        }
+
         // Determine MIME type
         let targetMime = mimeType;
         if (!targetMime) {

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { MembershipService, MembershipTier } from '@/services/MembershipService';
+import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneExtensionService';
 
 export type ClipType = 'video' | 'image' | 'text' | 'audio';
 
@@ -88,6 +89,23 @@ interface VideoEditorState {
     membershipTier: MembershipTier;
     setMembershipTier: (tier: MembershipTier) => void;
     getMaxDurationFrames: () => number;
+
+    // Scene Extension (60s+ videos)
+    extendedProject: ExtendedVideoProject | null;
+    setExtendedProject: (project: ExtendedVideoProject | null) => void;
+    updateExtendedSegment: (segmentId: string, updates: Partial<SceneSegment>) => void;
+
+    // Veo 3.1 Enhanced Options
+    referenceImages: { mimeType: string; data: string }[];
+    setReferenceImages: (images: { mimeType: string; data: string }[]) => void;
+    addReferenceImage: (image: { mimeType: string; data: string }) => void;
+    removeReferenceImage: (index: number) => void;
+    generateAudio: boolean;
+    setGenerateAudio: (enabled: boolean) => void;
+
+    // Timeline Zoom (P1)
+    timelineZoom: number;
+    setTimelineZoom: (zoom: number) => void;
 }
 
 const INITIAL_PROJECT: VideoProject = {
@@ -123,10 +141,47 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     jobId: null,
     status: 'idle',
     membershipTier: 'free',
+    extendedProject: null,
+    referenceImages: [],
+    generateAudio: true,
+    timelineZoom: 1,
 
     setJobId: (id) => set({ jobId: id }),
     setStatus: (status) => set({ status }),
     setMembershipTier: (tier) => set({ membershipTier: tier }),
+
+    // Scene Extension actions
+    setExtendedProject: (project) => set({ extendedProject: project }),
+    updateExtendedSegment: (segmentId, updates) => set((state) => {
+        if (!state.extendedProject) return state;
+        return {
+            extendedProject: {
+                ...state.extendedProject,
+                segments: state.extendedProject.segments.map((seg) =>
+                    seg.id === segmentId ? { ...seg, ...updates } : seg
+                ),
+            },
+        };
+    }),
+
+    // Reference Images actions (max 3 per Veo 3.1)
+    setReferenceImages: (images) => set({ referenceImages: images.slice(0, 3) }),
+    addReferenceImage: (image) => set((state) => {
+        if (state.referenceImages.length >= 3) {
+            console.warn('[VideoEditor] Max 3 reference images allowed');
+            return state;
+        }
+        return { referenceImages: [...state.referenceImages, image] };
+    }),
+    removeReferenceImage: (index) => set((state) => ({
+        referenceImages: state.referenceImages.filter((_, i) => i !== index),
+    })),
+
+    // Audio generation toggle
+    setGenerateAudio: (enabled) => set({ generateAudio: enabled }),
+
+    // Timeline zoom (0.25 to 4x)
+    setTimelineZoom: (zoom) => set({ timelineZoom: Math.max(0.25, Math.min(4, zoom)) }),
 
     getMaxDurationFrames: () => {
         const { membershipTier, project } = get();

@@ -72,7 +72,8 @@ export class UserService {
                 socialStats: {
                     followers: 0,
                     following: 0,
-                    postCount: 0
+                    posts: 0,
+                    drops: 0
                 }
             };
 

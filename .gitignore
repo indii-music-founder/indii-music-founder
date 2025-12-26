@@ -35,5 +35,20 @@ scripts/configure_secrets.sh
 
 # Test artifacts
 test_logs*.txt
+test_debug*.txt
+test_output*.txt
+test_failures.txt
+test_results*.txt
 
+# Build artifacts
 out/
+build_log.txt
+debug_log.txt
+lint_errors.txt
+
+# Sensitive files
+**/access_token.txt
+*.token
+
+# Landing page build output
+landing-page/out/**/*.txt

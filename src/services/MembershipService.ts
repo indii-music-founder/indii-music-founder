@@ -1,8 +1,28 @@
 /**
  * MembershipService - Centralized tier limits and quota enforcement
+ *
+ * Per AGENT_WORKFLOW_STANDARDS.md Section 8:
+ * - Pre-check quotas before high-resource operations
+ * - Provide actionable upgrade paths on limit exceeded
  */
 
+import { db } from '@/services/firebase';
+import { doc, getDoc, setDoc, updateDoc, increment, FieldValue } from 'firebase/firestore';
+
 export type MembershipTier = 'free' | 'pro' | 'enterprise';
+
+/**
+ * Daily usage tracking stored in Firestore
+ * Path: users/{userId}/usage/{YYYY-MM-DD}
+ */
+export interface DailyUsage {
+    date: string;              // YYYY-MM-DD
+    imagesGenerated: number;
+    videosGenerated: number;
+    videoSecondsGenerated: number;
+    storageUsedMB: number;     // Cumulative, not daily
+    updatedAt: number;         // Timestamp
+}
 
 export interface TierLimits {
     // Video limits (in seconds)
@@ -171,6 +191,173 @@ class MembershipServiceImpl {
         } catch {
             return 'free';
         }
+    }
+
+    // =========================================================================
+    // USAGE TRACKING (Section 8 Compliance)
+    // =========================================================================
+
+    /**
+     * Get today's date in YYYY-MM-DD format
+     */
+    private getTodayKey(): string {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    /**
+     * Get the current user ID from the store
+     */
+    private async getCurrentUserId(): Promise<string | null> {
+        try {
+            const { useStore } = await import('@/core/store');
+            const state = useStore.getState();
+            return state.user?.uid || null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Get daily usage for a user
+     */
+    async getDailyUsage(userId: string): Promise<DailyUsage> {
+        const dateKey = this.getTodayKey();
+        const usageRef = doc(db, 'users', userId, 'usage', dateKey);
+
+        try {
+            const snapshot = await getDoc(usageRef);
+            if (snapshot.exists()) {
+                return snapshot.data() as DailyUsage;
+            }
+        } catch (error) {
+            console.warn('[MembershipService] Failed to get usage:', error);
+        }
+
+        // Return default empty usage
+        return {
+            date: dateKey,
+            imagesGenerated: 0,
+            videosGenerated: 0,
+            videoSecondsGenerated: 0,
+            storageUsedMB: 0,
+            updatedAt: Date.now()
+        };
+    }
+
+    /**
+     * Increment usage counter after successful generation
+     */
+    async incrementUsage(
+        userId: string,
+        type: 'image' | 'video',
+        count: number = 1,
+        videoSeconds?: number
+    ): Promise<void> {
+        const dateKey = this.getTodayKey();
+        const usageRef = doc(db, 'users', userId, 'usage', dateKey);
+
+        try {
+            const snapshot = await getDoc(usageRef);
+
+            if (snapshot.exists()) {
+                // Update existing document
+                const updates: { [key: string]: number | FieldValue } = {
+                    updatedAt: Date.now()
+                };
+
+                if (type === 'image') {
+                    updates.imagesGenerated = increment(count);
+                } else if (type === 'video') {
+                    updates.videosGenerated = increment(count);
+                    if (videoSeconds) {
+                        updates.videoSecondsGenerated = increment(videoSeconds);
+                    }
+                }
+
+                await updateDoc(usageRef, updates);
+            } else {
+                // Create new document for today
+                const newUsage: DailyUsage = {
+                    date: dateKey,
+                    imagesGenerated: type === 'image' ? count : 0,
+                    videosGenerated: type === 'video' ? count : 0,
+                    videoSecondsGenerated: type === 'video' && videoSeconds ? videoSeconds : 0,
+                    storageUsedMB: 0,
+                    updatedAt: Date.now()
+                };
+
+                await setDoc(usageRef, newUsage);
+            }
+        } catch (error) {
+            console.error('[MembershipService] Failed to increment usage:', error);
+            // Don't throw - usage tracking shouldn't block generation
+        }
+    }
+
+    /**
+     * Check if user is within quota for a specific resource type
+     * Returns true if allowed, false if quota exceeded
+     */
+    async checkQuota(
+        type: 'image' | 'video' | 'storage',
+        amount: number = 1
+    ): Promise<{ allowed: boolean; currentUsage: number; maxAllowed: number }> {
+        const userId = await this.getCurrentUserId();
+        if (!userId) {
+            // No user = allow (will fail at auth layer anyway)
+            return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+        }
+
+        const tier = await this.getCurrentTier();
+        const limits = this.getLimits(tier);
+        const usage = await this.getDailyUsage(userId);
+
+        let currentUsage: number;
+        let maxAllowed: number;
+
+        switch (type) {
+            case 'image':
+                currentUsage = usage.imagesGenerated;
+                maxAllowed = limits.maxImagesPerDay;
+                break;
+            case 'video':
+                currentUsage = usage.videosGenerated;
+                maxAllowed = limits.maxVideoGenerationsPerDay;
+                break;
+            case 'storage':
+                currentUsage = usage.storageUsedMB;
+                maxAllowed = limits.maxStorageMB;
+                break;
+            default:
+                return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+        }
+
+        // Enterprise has unlimited for most things
+        if (tier === 'enterprise' && maxAllowed === -1) {
+            return { allowed: true, currentUsage, maxAllowed: Infinity };
+        }
+
+        const allowed = (currentUsage + amount) <= maxAllowed;
+        return { allowed, currentUsage, maxAllowed };
+    }
+
+    /**
+     * Check video duration limit
+     */
+    async checkVideoDurationQuota(durationSeconds: number): Promise<{
+        allowed: boolean;
+        maxDuration: number;
+        tierName: string;
+    }> {
+        const tier = await this.getCurrentTier();
+        const limits = this.getLimits(tier);
+        const allowed = durationSeconds <= limits.maxVideoDuration;
+
+        return {
+            allowed,
+            maxDuration: limits.maxVideoDuration,
+            tierName: this.getTierDisplayName(tier)
+        };
     }
 }
 

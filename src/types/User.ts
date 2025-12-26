@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { BrandKit, KnowledgeDocument, SavedWorkflow } from '@/modules/workflow/types';
+import { SocialStats } from '@/services/social/types';
 
 export interface UserPreferences {
     theme: 'dark' | 'light';
@@ -36,9 +37,5 @@ export interface UserProfile {
 
     // Social & Commerce
     accountType: 'fan' | 'artist' | 'label';
-    socialStats?: {
-        followers: number;
-        following: number;
-        postCount: number;
-    };
+    socialStats?: SocialStats;
 }

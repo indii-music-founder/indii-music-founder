@@ -1,139 +1,175 @@
-import { db } from '../firebase';
+import { db, auth } from '@/services/firebase';
 import {
     collection,
     doc,
     addDoc,
-    updateDoc,
-    arrayUnion,
-    arrayRemove,
+    deleteDoc,
+    getDoc,
     getDocs,
+    updateDoc,
     query,
     where,
     orderBy,
     limit,
     serverTimestamp,
-    getDoc,
-    setDoc,
-    deleteDoc
+    runTransaction,
+    increment,
+    Timestamp
 } from 'firebase/firestore';
-import { SocialPost, SocialComment, SocialConnection } from './types';
+import { SocialPost, SocialConnection, SocialStats } from './types';
+import { UserService } from '@/services/UserService';
 
 export class SocialService {
-    private static POSTS_COLLECTION = 'posts';
-    private static CONNECTIONS_COLLECTION = 'connections';
-    private static COMMENTS_COLLECTION = 'comments';
 
     /**
      * Follow a user
      */
-    static async followUser(followerId: string, followingId: string): Promise<void> {
-        const connectionId = `${followerId}_${followingId}`;
-        const connectionRef = doc(db, this.CONNECTIONS_COLLECTION, connectionId);
+    static async followUser(targetUserId: string): Promise<void> {
+        const currentUserId = auth.currentUser?.uid;
+        if (!currentUserId) throw new Error("Must be logged in to follow");
+        if (currentUserId === targetUserId) throw new Error("Cannot follow yourself");
 
-        await setDoc(connectionRef, {
-            followerId,
-            followingId,
-            createdAt: serverTimestamp()
+        const connectionRef = doc(db, 'users', currentUserId, 'following', targetUserId);
+        const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+
+        await runTransaction(db, async (transaction) => {
+            const connectionDoc = await transaction.get(connectionRef);
+            if (connectionDoc.exists()) return; // Already following
+
+            // Add 'following' record for current user
+            transaction.set(connectionRef, {
+                userId: currentUserId,
+                targetId: targetUserId,
+                status: 'following',
+                timestamp: serverTimestamp()
+            });
+
+            // Add 'follower' record for target user
+            transaction.set(followerRef, {
+                userId: targetUserId, // The user being likely followed (contextual owner)
+                followerId: currentUserId,
+                status: 'following',
+                timestamp: serverTimestamp()
+            });
+
+            // Update stats
+            const currentUserRef = doc(db, 'users', currentUserId);
+            const targetUserRef = doc(db, 'users', targetUserId);
+
+            transaction.update(currentUserRef, { 'socialStats.following': increment(1) });
+            transaction.update(targetUserRef, { 'socialStats.followers': increment(1) });
         });
     }
 
     /**
      * Unfollow a user
      */
-    static async unfollowUser(followerId: string, followingId: string): Promise<void> {
-        const connectionId = `${followerId}_${followingId}`;
-        await deleteDoc(doc(db, this.CONNECTIONS_COLLECTION, connectionId));
+    static async unfollowUser(targetUserId: string): Promise<void> {
+        const currentUserId = auth.currentUser?.uid;
+        if (!currentUserId) throw new Error("Must be logged in to unfollow");
+
+        const connectionRef = doc(db, 'users', currentUserId, 'following', targetUserId);
+        const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+
+        await runTransaction(db, async (transaction) => {
+            const connectionDoc = await transaction.get(connectionRef);
+            if (!connectionDoc.exists()) return; // Not following
+
+            transaction.delete(connectionRef);
+            transaction.delete(followerRef);
+
+            // Update stats
+            const currentUserRef = doc(db, 'users', currentUserId);
+            const targetUserRef = doc(db, 'users', targetUserId);
+
+            // Use negative increment
+            transaction.update(currentUserRef, { 'socialStats.following': increment(-1) });
+            transaction.update(targetUserRef, { 'socialStats.followers': increment(-1) });
+        });
     }
 
     /**
      * Create a new post
      */
-    static async createPost(post: Omit<SocialPost, 'id' | 'createdAt' | 'likes' | 'commentCount'>): Promise<string> {
-        const postsRef = collection(db, this.POSTS_COLLECTION);
-        const newPost = {
-            ...post,
-            likes: [],
-            commentCount: 0,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
+    static async createPost(content: string, mediaUrls: string[] = [], productId?: string): Promise<string> {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Must be logged in to post");
+
+        const userProfile = await UserService.getUserProfile(user.uid);
+
+        const postData = {
+            authorId: user.uid,
+            authorName: userProfile?.displayName || 'Anonymous',
+            authorAvatar: userProfile?.photoURL || '',
+            content,
+            mediaUrls,
+            likes: 0,
+            commentsCount: 0,
+            timestamp: serverTimestamp(),
+            ...(productId && { productId })
         };
-        const docRef = await addDoc(postsRef, newPost);
-        return docRef.id;
+
+        // Add to global 'posts' collection (and ideally user's subcollection or performing fan-out)
+        // For MVP, global collection indexed by authorId is fine.
+        const postRef = await addDoc(collection(db, 'posts'), postData);
+
+        // Update user's post count
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+            'socialStats.posts': increment(1),
+            ...(productId && { 'socialStats.drops': increment(1) })
+        });
+
+        return postRef.id;
     }
 
     /**
-     * Get Feed (posts from people you follow)
-     * Note: Firestore 'in' queries are limited to 10 items. 
-     * For production, we would duplicate posts to user feeds (Fan-out) or use a dedicated feed service.
-     * For MVP, we'll fetch connections first, then fetch posts (naive implementation).
+     * Get Feed
+     * @param userId If provided, gets specific user's posts. If null, gets Home Feed (friends + recommended).
      */
-    static async getFeed(userId: string, limitCount: number = 20): Promise<SocialPost[]> {
-        // 1. Get who I follow
-        const connectionsRef = collection(db, this.CONNECTIONS_COLLECTION);
-        const qConnections = query(connectionsRef, where('followerId', '==', userId));
-        const connectionsSnap = await getDocs(qConnections);
+    static async getFeed(userId?: string): Promise<SocialPost[]> {
+        let q;
+        const postsRef = collection(db, 'posts');
 
-        const followingIds = connectionsSnap.docs.map(d => d.data().followingId);
-
-        if (followingIds.length === 0) {
-            return []; // Follow no one
+        if (userId) {
+            // Profile Feed
+            q = query(
+                postsRef,
+                where('authorId', '==', userId),
+                orderBy('timestamp', 'desc'),
+                limit(20)
+            );
+        } else {
+            // Home Feed (MVP: Global Feed or Just recent posts)
+            // Real implementation requires fan-out or querying 'following' list.
+            // For Alpha, we'll return global latest posts.
+            q = query(
+                postsRef,
+                orderBy('timestamp', 'desc'),
+                limit(50)
+            );
         }
-
-        // 2. Fetch posts from these authors
-        // Firestore limitation: cannot filter by > 10 IDs in 'in' clause.
-        // We will chunk it or just fetch top posts if the list is small. 
-        // For MVP, just fetching recent posts from ALL and filtering in memory if list is small, 
-        // OR limiting to top 10 friends.
-
-        const safeFollowingIds = followingIds.slice(0, 10); // Limit for MVP
-
-        const postsRef = collection(db, this.POSTS_COLLECTION);
-        const qPosts = query(
-            postsRef,
-            where('authorId', 'in', safeFollowingIds),
-            orderBy('createdAt', 'desc'),
-            limit(limitCount)
-        );
-
-        const postsSnap = await getDocs(qPosts);
-        return postsSnap.docs.map(d => ({ id: d.id, ...d.data() } as SocialPost));
-    }
-
-    /**
-     * Get posts for a specific profile (Artist Wall)
-     */
-    static async getProfilePosts(authorId: string, limitCount: number = 20): Promise<SocialPost[]> {
-        const postsRef = collection(db, this.POSTS_COLLECTION);
-        const q = query(
-            postsRef,
-            where('authorId', '==', authorId),
-            orderBy('createdAt', 'desc'),
-            limit(limitCount)
-        );
 
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SocialPost));
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                timestamp: (data.timestamp as Timestamp)?.toMillis() || Date.now()
+            } as SocialPost;
+        });
     }
 
     /**
-     * Like a post
+     * Check if currently following a user
      */
-    static async toggleLike(postId: string, userId: string): Promise<boolean> {
-        const postRef = doc(db, this.POSTS_COLLECTION, postId);
-        const postSnap = await getDoc(postRef);
+    static async isFollowing(targetUserId: string): Promise<boolean> {
+        const currentUserId = auth.currentUser?.uid;
+        if (!currentUserId) return false;
 
-        if (!postSnap.exists()) return false;
-
-        const data = postSnap.data() as SocialPost;
-        const likes = data.likes || [];
-        const isLiked = likes.includes(userId);
-
-        if (isLiked) {
-            await updateDoc(postRef, { likes: arrayRemove(userId) });
-            return false;
-        } else {
-            await updateDoc(postRef, { likes: arrayUnion(userId) });
-            return true;
-        }
+        const docRef = doc(db, 'users', currentUserId, 'following', targetUserId);
+        const snapshot = await getDoc(docRef);
+        return snapshot.exists();
     }
 }

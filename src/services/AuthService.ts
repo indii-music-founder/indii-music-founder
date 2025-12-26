@@ -16,6 +16,7 @@ import { auth } from './firebase';
 import { UserService } from './UserService';
 import { UserProfile } from '@/types/User';
 
+
 export const AuthService = {
     // Email/Password
     async signUp(email: string, password: string, displayName?: string): Promise<User> {
@@ -40,7 +41,7 @@ export const AuthService = {
 
     async signInWithGoogle(): Promise<User> {
         // Check if running in Electron - use secure IPC auth flow
-        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
+        const electronAPI = typeof window !== 'undefined' ? window.electronAPI : null;
         console.log('[AuthService] Checking for electronAPI:', !!electronAPI, electronAPI);
 
         if (electronAPI?.auth) {

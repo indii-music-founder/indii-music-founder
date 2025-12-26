@@ -1,148 +1,96 @@
 # TASKS.md - Active Work Items
 
-**Last Updated:** 2025-12-25
+**Last Updated:** 2025-12-26
 
 This is the single source of truth for pending tasks. Completed plans have been archived to `archive/`.
 
 ---
 
-## Current App State (Dec 25, 2025)
+## Current App State (Dec 26, 2025)
 
 ### Working Features
 
 - **Electron Desktop App**: Packaged and running on macOS (arm64)
-- **Google OAuth Flow**: Full deep link auth working via `indii-os://` protocol
-- **Login Bridge**: Deployed at `https://indiios-v-1-1.web.app/login-bridge`
-- **Firebase Auth**: signInWithCredential using Google OAuth tokens
-- **IPC Communication**: Secure preload bridge between main/renderer
-- **All 15 Agents**: Registered and operational (Marketing, Legal, Finance, Producer, Music, Director, Screenwriter, Video, Social, Publicist, Road, Publishing, Licensing, Brand, Generalist)
-- **Unit Tests**: 42 passing (MembershipService + CleanupService)
+- **Dashboard**: Full project management (Create, Duplicate, Delete), Analytics w/ Gamification, Storage Health.
+- **Fair AI Features (Beta)**:
+  - **Economics**: Active CFO mode, Dividend forecasting.
+  - **Metadata**: GoldenMetadata Schema, MetadataDrawer.
+  - **Marketplace**: MerchTable UI for asset minting.
+- **Auth System**: Full robust implementation (Electron → Bridge → Google → IPC → Firebase).
 
-### Auth Flow Architecture
+### Known Issues (Quality & Stability)
 
-```text
-Electron App → Login Bridge (browser) → Google OAuth → Deep Link → IPC → Firebase Auth
-                                         ↓
-                              GoogleAuthProvider.credentialFromResult()
-                                         ↓
-                              indii-os://auth/callback?idToken=...&accessToken=...
-                                         ↓
-                              signInWithCredential(auth, credential)
-```
-
-### Key Files Modified (Dec 25)
-
-| File | Change |
-| ---- | ------ |
-| `landing-page/app/login-bridge/page.tsx` | Extract Google OAuth credential (not Firebase ID token) |
-| `src/core/store/slices/authSlice.ts` | IPC listener for deep link auth callbacks |
-| `src/services/AuthService.ts` | Electron detection, ELECTRON_AUTH_PENDING flow |
-| `src/modules/auth/Login.tsx` | Handle ELECTRON_AUTH_PENDING, fixed SVG path |
-| `electron/handlers/auth.ts` | Deep link parsing with token logging |
-| `forge.config.cjs` | URL scheme `indii-os://` protocol registration |
-
-### Known Issues (Non-Blocking)
-
-- GPU process crash on app close (cosmetic, `exit_code=15`)
-- Network service restart on close (cosmetic)
+- **Linting/Code Hygiene**: Significant number of ESLint errors (`react-hooks/purity`, `no-explicit-any`, `no-require-imports`).
+- **GPU Process**: Non-blocking crash on app exit.
 
 ---
 
 ## High Priority
 
-### RAG System Compatibility
+### Code Hygiene & Stability (The Big Cleanup)
 
-- [x] Resolve `fileData` support (Upgraded to Managed File Search System)
-- [x] Verify RAG results end-to-end: `npx tsx scripts/verify-rag-filesearch.ts`
+- [x] **Big Cleanup**: Fix `react-hooks/purity` and `no-require-imports` violations to ensure stability.
+- [x] **React Hooks**: Fix `set-state-in-effect` violations (e.g. `verify-email` page).
+- [ ] **Types**: Reduce explicit `any` usage in core services and store slices (InProgress: Fixed DashboardService).
 
-### Electron Desktop App
+### Fair AI Platform Phase 2: Social & Commerce
 
-- [x] Test full auth flow end-to-end in packaged build
-- [x] Verify deep link protocol on macOS
-- [x] Verify deep link protocol on macOS
-- [x] Test on production build (ad-hoc signed)
-
-### Artist Economics & Metadata (New)
-
-- [x] **Research**: Ingest History & Economics Deep Dives
-- [x] **Planning**: Create `PRODUCT_ALIGNMENT_REPORT.md` & `MASTER_IMPLEMENTATION_PLAN.md`
-- [x] **Pillar 1 (Metadata)**: Implement `GoldenMetadata` Schema & `MetadataDrawer` in MusicStudio
-- [x] **Pillar 2 (Finance)**: Upgrade `FinanceAgent` to 'Active CFO' mode with Dividend forecasting
-
-### Gemini 3.0 Migration (Final Steps)
-
-- [ ] **FUTURE/ENTERPRISE**: Migrate `generateImageV3` from AI Studio (API Key) to Vertex AI (IAM) once `gemini-3-pro-image-preview` is available on Vertex endpoints
+- [ ] **Social Layer**:
+  - [ ] Implement `SocialService` (Follow/Unfollow, Activity Feed).
+  - [ ] Update UserProfile with `accountType` (Fan/Artist/Label) and `socialStats`.
+  - [ ] Create `SocialFeed` component.
+- [ ] **Commerce Engine**:
+  - [ ] Verify `MarketplaceService` product creation flow (already initiated in `MerchTable`).
+  - [ ] Implement "Buy" flow (simulated or real integration).
+  - [ ] Link `MerchTable` to `SocialFeed` (Product drops).
 
 ---
 
 ## Medium Priority
 
-### Mobile Improvements
+### Gemini 3.0 Migration (Final Steps)
 
-- [x] Verify OnboardingModal fits mobile viewports
-- [x] Verify NewProjectModal fits mobile viewports
-- [x] Ensure input font size >= 16px (prevent iOS zoom)
-- [x] Verify touch targets >= 44x44px
-- [x] Monitor Liquid Orbs performance on low-end devices
-- [x] Implement lazy loading for Gallery images
+- [ ] **Enterprise**: Migrate `generateImageV3` from AI Studio (API Key) to Vertex AI (IAM) once `gemini-3-pro-image-preview` is available on Vertex endpoints.
 
-### Dashboard Enhancements
+### Mobile Experience Polish
 
-**Reference:** [dashboard_spec.md](./dashboard_spec.md)
-
-- [x] Storage health bar visualization
-- [x] Project duplication feature
-- [x] Analytics/Stats gamification view
-
-### Test Coverage Expansion
-
-- [x] Add unit tests for `MembershipService` (25 test cases covering all methods)
-- [x] Add unit tests for `CleanupService` (17 test cases with Firebase mocks)
-- [x] Run "The Gauntlet" protocol for membership limits (Scenarios 3 & 4 added to stress-test-new-user.spec.ts)
-
----
-
-## Low Priority
-
-### Documentation Updates
-
-- [x] Update any remaining "Rndr-AI" references to "indiiOS" (Updated: metadata.json, agents, TEST_PLAYBOOK.md, docs/)
+- [ ] **Touch Targets**: Audit new Dashboard components for mobile touchability.
+- [ ] **Performance**: Profile `AnalyticsView` animations on lower-end devices.
 
 ---
 
 ## Recently Completed (Dec 2025)
 
-### Authentication System
+### Dashboard Enhancements
 
-All 8 phases implemented. See `archive/PLAN_AUTH_SYSTEM.md` for reference.
+- [x] **Storage Health**: `DataStorageManager` with real byte calculations and tier quotas.
+- [x] **Project Mgmt**: Duplicate Project feature (metadata + history items).
+- [x] **Analytics**: `AnalyticsView` with word clouds, streaks, and activity charts.
 
-### Core Services
+### Artist Economics (Fair AI Phase 1)
 
-- MembershipService (tier limits)
-- CleanupService (database vacuum)
-- ExportService (ZIP backup)
-- VoiceService (speech-to-text/TTS)
+- [x] **Metadata**: Implemented `GoldenMetadata` schema and drawer.
+- [x] **Finance Agent**: Upgraded to forecast dividends and manage splits.
+- [x] **Marketplace UI**: `MerchTable` component created.
 
-### Features
+### Infrastructure & Mobile
 
-- Semantic Memory for Agents
-- Product Showroom (see `archive/showroom_plan.md`)
-- Voice Control integration
-- Multi-Agent Architecture (Hub-and-Spoke)
+- [x] **Mobile**: Verified Onboarding/Project modals on small screens.
+- [x] **Inputs**: Fixed iOS zoom issues (16px base font).
+- [x] **Tests**: Added coverage for `MembershipService` and `CleanupService`.
 
-### Infrastructure
+### Authentication
 
-- Gemini 3.0 model standardization
-- Firebase Functions backend migration
-- Stress testing (E2E Playwright)
+- [x] Full Electron deep-link auth flow.
+- [x] Token refresh handling.
+- [x] "Double-dipping" login UX fixed.
 
 ---
 
-## Archived Documentation
+## Archive
 
-Completed implementation plans moved to `archive/`:
-
-- `archive/PLAN_AUTH_SYSTEM.md` - Auth implementation (complete)
-- `archive/showroom_plan.md` - Showroom feature (complete)
-- `archive/implementation_plan.md` - Component kit integration (complete)
-- `archive/ROADMAP.md` - Phase 1-7 roadmap (complete)
+- `archive/PLAN_AUTH_SYSTEM.md`
+- `archive/showroom_plan.md`
+- `archive/implementation_plan.md`
+- `archive/ROADMAP.md`
+- `PLAN_DASHBOARD_ENHANCEMENTS.md` (Implementation Complete)

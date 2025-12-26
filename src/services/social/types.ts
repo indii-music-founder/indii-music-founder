@@ -2,41 +2,35 @@ export interface SocialPost {
     id: string;
     authorId: string;
     authorName: string;
-    authorAvatar: string;
+    authorAvatar?: string;
     content: string;
-    attachments: SocialAttachment[];
-    likes: string[]; // User IDs
-    commentCount: number;
-    createdAt: string; // ISO String
-    updatedAt?: string;
+    mediaUrls?: string[]; // Images, generated art, snippets
+    likes: number;
+    commentsCount: number;
+    timestamp: number;
+    productId?: string; // If this post is a "Drop" for a product
 }
 
-export interface SocialAttachment {
-    id: string;
-    type: 'image' | 'video' | 'audio' | 'link';
-    url: string;
-    thumbnailUrl?: string;
-    title?: string;
-}
-
-export interface SocialComment {
+export interface Comment {
     id: string;
     postId: string;
     authorId: string;
     authorName: string;
-    authorAvatar: string;
+    authorAvatar?: string;
     content: string;
-    likes: string[];
-    createdAt: string;
+    timestamp: number;
 }
 
 export interface SocialConnection {
-    followerId: string;
-    followingId: string;
-    createdAt: string;
+    userId: string;
+    targetId: string;
+    status: 'following' | 'blocked' | 'mutual';
+    timestamp: number;
 }
 
-export interface ArtistUpdate extends SocialPost {
-    type: 'announcement' | 'release' | 'behind-the-scenes';
-    isExclusive: boolean; // For paid subscribers/fans
+export interface SocialStats {
+    followers: number;
+    following: number;
+    posts: number;
+    drops: number; // Number of product drops
 }
