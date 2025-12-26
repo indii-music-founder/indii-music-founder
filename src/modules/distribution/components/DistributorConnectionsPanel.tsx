@@ -1,20 +1,20 @@
 import React, { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/core/store/hooks';
-import { fetchDistributors, connectDistributor } from '@/core/store/distributionSlice';
+import { useStore } from '@/core/store';
 import { DistributorCard } from './DistributorCard';
 
 export const DistributorConnectionsPanel: React.FC = () => {
-    const dispatch = useAppDispatch();
-    const { connections, loading, error } = useAppSelector(state => state.distribution);
+    // Zustand hook
+    const { distribution, fetchDistributors, connectDistributor } = useStore();
+    const { connections, loading, error } = distribution;
 
     useEffect(() => {
-        dispatch(fetchDistributors());
-    }, [dispatch]);
+        fetchDistributors();
+    }, []);
 
     const handleConnect = (id: string) => {
         // In a real app, this might open a detailed auth modal or OAuth flow
         // For now, we mock the connection action
-        dispatch(connectDistributor(id as any));
+        connectDistributor(id as any);
     };
 
     if (loading && connections.length === 0) return <div className="p-8">Loading distributors...</div>;

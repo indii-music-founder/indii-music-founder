@@ -4,6 +4,7 @@ import { registerSystemHandlers } from './handlers/system';
 import { registerAuthHandlers, handleDeepLink } from './handlers/auth';
 import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
+import { registerCredentialHandlers } from './handlers/credential';
 import { configureSecurity } from './security';
 
 // Protocol Registration
@@ -130,6 +131,7 @@ app.on('ready', () => {
     registerAuthHandlers();
     registerAudioHandlers();
     registerNetworkHandlers();
+    registerCredentialHandlers();
 
     // Test Browser Agent (Remove in prod)
     const { ipcMain } = require('electron');

@@ -20,7 +20,7 @@ export class SFTPTransporter {
     private connected = false;
     private config: SFTPConfig | null = null;
 
-    constructor() {
+    constructor(private dryRun: boolean = false) {
         this.client = new Client();
     }
 

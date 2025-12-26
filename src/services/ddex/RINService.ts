@@ -65,7 +65,7 @@ export class RINService {
                 resourceId: {
                     isrc: track.isrc || ''
                 },
-                title: track.title,
+                title: track.trackTitle,
                 contributors: contributors,
                 // Mock session for demonstration
                 studioSessions: [{

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/core/store/hooks';
-import { fetchEarnings } from '@/core/store/financeSlice';
+import { useStore } from '@/core/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
@@ -30,14 +29,16 @@ const OverviewTab = ({ data }: { data: EarningsSummary }) => (
 );
 
 export const EarningsDashboard: React.FC = () => {
-    const dispatch = useAppDispatch();
-    const { earningsSummary, loading, error } = useAppSelector(state => state.finance);
+    // Zustand hook
+    const { finance, fetchEarnings } = useStore();
+    const { earningsSummary, loading, error } = finance;
+
     const [activeTab, setActiveTab] = useState('overview');
 
     useEffect(() => {
         // Fetch data on mount
-        dispatch(fetchEarnings({ startDate: '2024-01-01', endDate: '2024-01-31' }));
-    }, [dispatch]);
+        fetchEarnings({ startDate: '2024-01-01', endDate: '2024-01-31' });
+    }, []);
 
     if (loading) return <div className="p-8">Loading earnings data...</div>;
     if (error) return <div className="p-8 text-red-500">Error: {error}</div>;

@@ -18,6 +18,8 @@ import type {
   AIGenerationInfo,
 } from './common';
 
+export type { Contributor };
+
 // ERN Message - top level
 export interface ERNMessage {
   messageSchemaVersionId: '4.3';

@@ -25,6 +25,11 @@ export interface DDEXMessageHeader {
 // Resource Types
 export type ResourceType = 'SoundRecording' | 'Video' | 'Image' | 'Text' | 'Software';
 
+export interface ResourceReference {
+  resourceId: string;
+  resourceType: ResourceType;
+}
+
 // Release Types
 export type ReleaseType =
   | 'Single'

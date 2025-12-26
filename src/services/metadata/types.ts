@@ -44,6 +44,7 @@ export interface GoldenMetadata {
             platformId?: string;
         };
     }[];
+    lyrics?: string;
 
     // 5. Verification
     isGolden: boolean; // Computed flag: true only if schema is valid and splits sum to 100%
@@ -58,6 +59,7 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     id?: string;
 
     // Release Information
+    tracks?: GoldenMetadata[];
     releaseType: 'Single' | 'EP' | 'Album' | 'Compilation';
     releaseDate: string; // ISO 8601 date
     preOrderDate?: string;

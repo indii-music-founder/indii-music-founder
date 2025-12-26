@@ -27,6 +27,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         }
     },
 
+    // Credentials (Secure Main Process Storage)
+    credentials: {
+        save: (id: string, creds: any) => ipcRenderer.invoke('credentials:save', id, creds),
+        get: (id: string) => ipcRenderer.invoke('credentials:get', id),
+        delete: (id: string) => ipcRenderer.invoke('credentials:delete', id)
+    },
+
     // Audio (Native Processing)
     audio: {
         analyze: (filePath: string) => ipcRenderer.invoke('audio:analyze', filePath),

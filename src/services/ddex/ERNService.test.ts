@@ -4,7 +4,7 @@ import { ERNMapper } from './ERNMapper';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 
-const MOCK_METADATA: ExtendedGoldenMetadata = {
+export const MOCK_METADATA: ExtendedGoldenMetadata = {
     trackTitle: 'Midnight City',
     artistName: 'M83',
     isrc: 'USM831100012',

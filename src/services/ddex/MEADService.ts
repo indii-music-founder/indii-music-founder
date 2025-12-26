@@ -53,11 +53,11 @@ export class MEADService {
             releaseReference: 'R1',
             detailsByTerritory: [{
                 territoryCode: 'Worldwide',
-                displayArtistName: metadata.artist,
+                displayArtistName: metadata.artistName,
                 artistBiographies: this.extractBiographies(metadata),
                 promotionalDetails: {
-                    headline: metadata.title,
-                    marketingMessage: metadata.description // Assuming description is used for marketing
+                    headline: metadata.releaseTitle || metadata.trackTitle || 'Untitled Release',
+                    marketingMessage: metadata.marketingComment // Assuming description is used for marketing
                 }
             }],
             resourceList: resources
@@ -90,10 +90,10 @@ export class MEADService {
         // If we had a specific 'artistBio' field, we'd map it here.
         // For now, mapping description as a biography if it looks long enough?
         // Or just omitting for now until metadata model extends.
-        if (metadata.description) {
+        if (metadata.marketingComment) {
             return [{
-                artistName: metadata.artist,
-                biographyText: metadata.description,
+                artistName: metadata.artistName,
+                biographyText: metadata.marketingComment,
                 biographyType: 'Promotional'
             }];
         }

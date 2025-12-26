@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, user, logout } = useStore();
@@ -23,6 +23,7 @@ export default function Sidebar() {
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
+        { id: 'distribution', icon: Globe, label: 'Distribution' },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
         { id: 'showroom', icon: Layout, label: 'Product Showroom' },
     ];
