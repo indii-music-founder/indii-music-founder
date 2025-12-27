@@ -119,7 +119,7 @@ export const env = {
 // NOTE: Firebase API keys are PUBLIC by design (security is enforced via Firestore rules).
 // These fallbacks are required for Firebase Hosting where env vars aren't available at runtime.
 export const firebaseDefaultConfig = {
-    apiKey: "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM", // Production Key (public, secured by Firestore rules)
+    apiKey: "", // Enforce VITE_FIREBASE_API_KEY in .env
     authDomain: "indiios-v-1-1.firebaseapp.com",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",

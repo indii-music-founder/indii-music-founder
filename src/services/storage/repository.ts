@@ -1,4 +1,4 @@
-import { openDB, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
 import { db, storage, auth } from '../firebase';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
@@ -6,7 +6,6 @@ import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
 const WORKFLOWS_STORE = 'workflows';
-const SYNC_QUEUE_STORE = 'syncQueue';
 
 // ============================================================================
 // Sync Queue for offline-first asset uploads
@@ -137,9 +136,14 @@ export async function getAssetFromStorage(id: string): Promise<string> {
     throw new Error(`Asset ${id} not found locally or in cloud`);
 }
 
+interface Workflow {
+    id: string;
+    [key: string]: any; // Allow other properties
+}
+
 // --- Workflows (JSON) ---
 
-export async function saveWorkflowToStorage(workflow: any): Promise<void> {
+export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
     const dbLocal = await initDB();
     const workflowId = workflow.id || crypto.randomUUID();
     const workflowWithId = { ...workflow, id: workflowId, updatedAt: new Date().toISOString() };
@@ -159,7 +163,7 @@ export async function saveWorkflowToStorage(workflow: any): Promise<void> {
     }
 }
 
-export async function getWorkflowFromStorage(id: string): Promise<any> {
+export async function getWorkflowFromStorage(id: string): Promise<Workflow | undefined> {
     const dbLocal = await initDB();
 
     // 1. Try Cloud first for Workflows (to get latest version across devices)
@@ -193,7 +197,7 @@ export async function getWorkflowFromStorage(id: string): Promise<any> {
     return undefined;
 }
 
-export async function getAllWorkflowsFromStorage(): Promise<any[]> {
+export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
     const dbLocal = await initDB();
 
     // 1. Get Local

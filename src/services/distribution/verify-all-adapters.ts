@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { SymphonicAdapter } from './adapters/SymphonicAdapter';
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
 import { TuneCoreAdapter } from './adapters/TuneCoreAdapter';
@@ -41,19 +44,7 @@ async function runVerification() {
         }
     } as ExtendedGoldenMetadata;
 
-    // 2. Setup Mock Assets (using local placeholders if available, or just mock URLs)
-    // Note: ensure these paths exist or the builders might complain. 
-    // For this test script, we expect the builders to handle "file://" paths.
-    // We will assume a 'test-assets' folder exists or create a dummy file on the fly if needed.
-    // Actually, let's use a dummy path that we won't actually read in "Dry Run" mode if possible,
-    // but our builders DO copy files. So we need real files.
-    // Let's create dummy files first in a temp dir.
-
-    // We can rely on the fact that we can just create empty files for the test.
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
-
+    // 2. Setup Mock Assets
     const tempDir = path.join(os.tmpdir(), 'indiiOS_verify_assets');
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 

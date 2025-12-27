@@ -27,11 +27,11 @@ export class BrowserAgentService {
             // Launch Puppeteer
             // Note: In production, we might need to handle executable paths carefully 
             // if we want to use the bundled Chromium.
+            // SECURITY: Removed --no-sandbox for host safety. If running in some Linux environments (Docker),
+            // this might need to be conditionally added back with strict URL filtering.
             this.browser = await puppeteer.launch({
                 headless: true, // Run hidden
                 args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
                     '--disable-accelerated-2d-canvas',
                     '--no-first-run',
@@ -122,6 +122,25 @@ export class BrowserAgentService {
     async waitForSelector(selector: string, timeout = 10000): Promise<void> {
         if (!this.page) throw new Error('Session not started');
         await this.page.waitForSelector(selector, { timeout });
+    }
+
+    /**
+     * Performs an action (click or type) on a selector.
+     */
+    async performAction(action: 'click' | 'type', selector: string, text?: string): Promise<{ success: boolean; error?: string }> {
+        if (!this.page) throw new Error('Session not started');
+        try {
+            await this.page.waitForSelector(selector, { timeout: 10000 });
+            if (action === 'click') {
+                await this.page.click(selector);
+            } else if (action === 'type') {
+                if (text === undefined) throw new Error('Text is required for type action');
+                await this.page.type(selector, text, { delay: 50 });
+            }
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: String(error) };
+        }
     }
 
     /**

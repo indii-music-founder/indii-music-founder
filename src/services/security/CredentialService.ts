@@ -14,11 +14,8 @@ export interface Credentials {
  */
 export class CredentialService {
 
-    /**
-     * Save credentials for a specific distributor
-     */
     async saveCredentials(distributorId: DistributorId, credentials: Credentials): Promise<void> {
-        // @ts-ignore
+        if (!window.electronAPI?.credentials) throw new Error('Electron API not available');
         await window.electronAPI.credentials.save(distributorId, credentials);
     }
 
@@ -26,7 +23,7 @@ export class CredentialService {
      * Retrieve credentials for a specific distributor
      */
     async getCredentials(distributorId: DistributorId): Promise<Credentials | null> {
-        // @ts-ignore
+        if (!window.electronAPI?.credentials) throw new Error('Electron API not available');
         return await window.electronAPI.credentials.get(distributorId);
     }
 
@@ -34,7 +31,7 @@ export class CredentialService {
      * Delete credentials for a specific distributor
      */
     async deleteCredentials(distributorId: DistributorId): Promise<boolean> {
-        // @ts-ignore
+        if (!window.electronAPI?.credentials) throw new Error('Electron API not available');
         return await window.electronAPI.credentials.delete(distributorId);
     }
 }

@@ -22,7 +22,7 @@ This license is effective until terminated...
 
 console.log('[Test] Setting up Mock Electron Environment...');
 
-// @ts-ignore
+// @ts-expect-error - polyfilling window for node environment in tests to mock Electron APIs
 global.window = {
     electronAPI: {
         network: {
@@ -34,7 +34,7 @@ global.window = {
             }
         }
     }
-};
+} as any;
 
 async function runTest() {
     console.log('[Test] Starting License Scanner Verification...');

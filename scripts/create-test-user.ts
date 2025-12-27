@@ -1,22 +1,36 @@
+import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { env } from '../src/config/env';
 
-// Hardcode config because env might be flaky in scripts
+// Support ESM __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from project root
+config({ path: path.join(__dirname, '../.env') });
+
 const firebaseConfig = {
-    apiKey: "AIzaSyCXQDyy5Bc0-ZNoZwI41Zrx9AqhdxUjvQo",
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
-    storageBucket: "image_bucket-indiios",
-    appId: "1:223837784072:web:3af738739465ea4095e9bd"
+    apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indiios-v-1-1.firebaseapp.com",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indiios-v-1-1",
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "gs://indiios-alpha-electron",
+    appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:3af738739465ea4095e9bd"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 async function main() {
-    const email = "automator@indiios.com";
-    const password = "AutomatorPass123!";
+    const email = process.env.AUDITOR_EMAIL;
+    const password = process.env.AUDITOR_PASSWORD;
+
+    if (!email || !password) {
+        console.error("❌ CRTICAL ERROR: Test credentials not found in env.");
+        console.error("   Please set AUDITOR_EMAIL and AUDITOR_PASSWORD in your .env file.");
+        process.exit(1);
+    }
 
     try {
         console.log(`Attempting to create user: ${email}...`);

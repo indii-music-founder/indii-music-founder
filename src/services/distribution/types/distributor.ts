@@ -4,6 +4,7 @@
  */
 
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+export type { ExtendedGoldenMetadata };
 import type { DateRange, ValidationResult, ValidationError } from '@/services/ddex/types/common';
 
 // Re-export specific DDEX types needed by consumers

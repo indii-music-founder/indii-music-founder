@@ -66,7 +66,7 @@ async function checkVertexAI() {
 
         if (!response.ok) {
             console.log('❌ Vertex AI Failed');
-            // @ts-ignore
+            // @ts-expect-error - ignoring intentional type stress test
             const msg = data.error?.message || response.statusText;
             console.log('   Error:', msg);
 

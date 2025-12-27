@@ -1,6 +1,7 @@
 import { AgentConfig } from "@/services/agent/types";
 import systemPrompt from './prompt.md?raw';
 import { LegalTools } from "@/services/agent/tools/LegalTools";
+import { AnalysisTools } from "@/services/agent/tools/AnalysisTools";
 
 export const LegalAgent: AgentConfig = {
     id: "legal",
@@ -17,10 +18,10 @@ export const LegalAgent: AgentConfig = {
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        fileData: { type: "STRING", description: "Base64 encoded file data." },
-                        mimeType: { type: "STRING", description: "MIME type of the file (e.g., application/pdf)." }
+                        file_data: { type: "STRING", description: "Base64 encoded file data." },
+                        mime_type: { type: "STRING", description: "MIME type of the file (e.g., application/pdf)." }
                     },
-                    required: ["fileData"]
+                    required: ["file_data"]
                 }
             },
             {
@@ -51,7 +52,7 @@ export const LegalAgent: AgentConfig = {
         ]
     }],
     functions: {
-        analyze_contract: LegalTools.analyze_contract,
+        analyze_contract: AnalysisTools.analyze_contract,
         draft_contract: LegalTools.draft_contract,
         generate_nda: LegalTools.generate_nda
     }

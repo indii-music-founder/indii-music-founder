@@ -1,14 +1,16 @@
-
+import { config } from 'dotenv';
 import { firebaseDefaultConfig } from '../src/config/env';
 import fs from 'fs';
 import path from 'path';
+
+config({ path: path.join(__dirname, '../.env') });
 
 console.log('--- Auth Configuration Audit ---');
 
 const landingPageConfigPath = path.join(__dirname, '../landing-page/app/lib/firebase.ts');
 const landingPageContent = fs.readFileSync(landingPageConfigPath, 'utf8');
 
-const expectedKey = "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM";
+const expectedKey = process.env.VITE_FIREBASE_API_KEY || "";
 const expectedAppId = "1:223837784072:web:3af738739465ea4095e9bd";
 
 console.log('1. Checking Electron App Config (src/config/env.ts):');

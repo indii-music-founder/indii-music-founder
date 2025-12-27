@@ -1,4 +1,5 @@
-import { Essentia, EssentiaWASM } from 'essentia.js';
+// Lazy-load essentia.js (2.6MB) only when audio analysis is needed
+type EssentiaModule = typeof import('essentia.js');
 
 export interface AudioFeatures {
     bpm: number;
@@ -11,33 +12,42 @@ export interface AudioFeatures {
 }
 
 export class AudioAnalysisService {
-    private essentia: any;
-    private isReady: boolean = false;
+    private essentia: InstanceType<EssentiaModule['Essentia']> | null = null;
+    private initPromise: Promise<void> | null = null;
 
-    constructor() {
-        this.init();
-    }
+    private async init(): Promise<void> {
+        if (this.essentia) return;
 
-    private async init() {
-        try {
-            // Initialize Essentia with WASM backend
-            this.essentia = new Essentia(EssentiaWASM);
-            this.isReady = true;
-            console.log('Essentia Audio Analysis Engine initialized.');
-        } catch (error) {
-            console.error('Failed to initialize Essentia:', error);
+        // Prevent concurrent initialization
+        if (this.initPromise) {
+            return this.initPromise;
         }
+
+        this.initPromise = (async () => {
+            try {
+                console.log('Loading Essentia.js audio analysis engine...');
+                // Dynamic import - only loads when this method is called
+                const { Essentia, EssentiaWASM } = await import('essentia.js') as EssentiaModule;
+                this.essentia = new Essentia(EssentiaWASM);
+                console.log('Essentia Audio Analysis Engine initialized.');
+            } catch (error) {
+                this.initPromise = null; // Allow retry on failure
+                console.error('Failed to initialize Essentia:', error);
+                throw error;
+            }
+        })();
+
+        return this.initPromise;
     }
 
     /**
      * Analyzes an audio file to extract high-level features.
      */
     async analyze(file: File | Blob): Promise<AudioFeatures> {
-        if (!this.isReady) {
-            await this.init();
-        }
+        // Lazy-load essentia.js on first use
+        await this.init();
 
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioContext = new (window.AudioContext || (window as unknown as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 

@@ -30,7 +30,7 @@ service firebase.storage {
     // Public readable assets (e.g., thumbnails, shared media)
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false; // SECURITY: Restrict unauthorized writes to public assets
     }
 
     // ========================================

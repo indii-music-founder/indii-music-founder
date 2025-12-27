@@ -45,7 +45,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
         });
 
         // Handle both potential response formats (v1 vs v1beta/alpha differences)
-        const embedding = (result as any).embedding || (result as any).embeddings?.[0];
+        const res = result as { embedding?: { values: number[] }, embeddings?: Array<{ values: number[] }> };
+        const embedding = res.embedding || res.embeddings?.[0];
+        if (!embedding) throw new Error("No embedding found in response");
         return embedding.values;
     } catch (error) {
         console.error("Failed to generate embedding:", error);
@@ -152,7 +154,7 @@ async function expandQuery(originalQuery: string): Promise<string[]> {
 export async function localQueryStore(
     documents: KnowledgeDocument[],
     query: string,
-    updateDocStatus?: (docId: string, status: KnowledgeDocumentIndexingStatus) => void
+    _updateDocStatus?: (docId: string, status: KnowledgeDocumentIndexingStatus) => void
 ): Promise<KnowledgeAsset> {
 
     // 1. Query Expansion Phase
@@ -166,7 +168,7 @@ export async function localQueryStore(
     let queryEmbedding: number[] | null = null;
     try {
         queryEmbedding = await generateEmbedding(query);
-    } catch (e) {
+    } catch {
         console.warn("Failed to generate query embedding, falling back to keyword only.");
     }
 

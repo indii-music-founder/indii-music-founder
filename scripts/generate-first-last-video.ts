@@ -6,9 +6,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+config({ path: path.join(__dirname, '../.env') });
 
 // Read images and convert to data URIs
 const firstFramePath = path.join(__dirname, '../landing-page/public/nana-banana/first-frame.png');
@@ -37,7 +40,7 @@ import { initializeApp } from 'firebase/app';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const firebaseConfig = {
-    apiKey: process.env.VITE_API_KEY || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
+    apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
     authDomain: "indiios-v-1-1.firebaseapp.com",
     projectId: "indiios-v-1-1",
 };
@@ -63,7 +66,7 @@ try {
                 imageBytes: lastFrame.split(',')[1]
             }
         },
-        apiKey: process.env.VITE_API_KEY || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM"
+        apiKey: process.env.VITE_API_KEY
     });
 
     console.log('✓ Video generation response:', JSON.stringify(response.data, null, 2));

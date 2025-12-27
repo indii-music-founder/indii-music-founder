@@ -1,6 +1,6 @@
 # TASKS.md - Active Work Items
 
-**Last Updated:** 2025-12-26
+**Last Updated:** 2025-12-27
 
 This is the single source of truth for pending tasks. Completed plans have been archived to `archive/`.
 
@@ -20,8 +20,8 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Known Issues (Quality & Stability)
 
-- **Linting/Code Hygiene**: Significant number of ESLint errors (`react-hooks/purity`, `no-explicit-any`, `no-require-imports`).
-- **GPU Process**: Non-blocking crash on app exit.
+- **GPU Process**: Non-blocking crash on app exit (Monitored via `main.ts` hooks).
+- **Audit Status**: All critical lint and security issues resolved (See `AUDIT_REPORT.md`).
 
 ---
 
@@ -31,7 +31,7 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 - [x] **Big Cleanup**: Fix `react-hooks/purity` and `no-require-imports` violations to ensure stability.
 - [x] **React Hooks**: Fix `set-state-in-effect` violations (e.g. `verify-email` page).
-- [ ] **Types**: Reduce explicit `any` usage in core services and store slices (InProgress: Fixed DashboardService).
+- [x] **Types**: Reduce explicit `any` usage in core services and store slices (Fixed: DashboardService, DistributorService, MerchTable).
 
 ### Fair AI Platform Phase 2: Social & Commerce
 

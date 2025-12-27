@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StorageMigrationService } from './StorageMigrationService';
 import { auth } from '../firebase';
-import { initDB } from './repository';
-import { uploadBytes } from 'firebase/storage';
-import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../firebase', () => ({
@@ -41,7 +38,8 @@ describe('StorageMigrationService', () => {
     });
 
     it('should throw if user not logged in', async () => {
-        (auth as any).currentUser = null;
+        // @ts-expect-error - overriding for test
+        auth.currentUser = null;
         await expect(service.migrateAllData()).rejects.toThrow("User must be logged in");
     });
 

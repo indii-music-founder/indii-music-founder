@@ -43,6 +43,13 @@ export interface ElectronAPI {
         performAction: (action: 'click' | 'type', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
     };
+
+    // Credentials
+    credentials: {
+        save: (id: string, creds: any) => Promise<void>;
+        get: (id: string) => Promise<any | null>;
+        delete: (id: string) => Promise<boolean>;
+    };
 }
 
 declare global {

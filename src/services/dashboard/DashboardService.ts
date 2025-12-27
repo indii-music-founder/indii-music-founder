@@ -40,7 +40,7 @@ interface DashboardStoreState {
         membership?: { tier: string };
         knowledgeBase?: Array<{ content?: string; metadata?: { size?: number } }>;
     };
-    addProject?: (p: any) => void; // Using any to avoid strict project type mismatch for now
+    addProject?: (p: ProjectMetadata) => void;
     removeProject?: (id: string) => void;
     addToHistory?: (item: HistoryItem) => void;
     removeFromHistory?: (id: string) => void;
@@ -95,7 +95,7 @@ export class DashboardService {
                     // Estimate size from base64 URL or content length
                     const urlLength = item.url?.length || 0;
                     // content might not exist on all HistoryItems but exists on text types
-                    const contentPadding = (item as any).content?.length || 0;
+                    const contentPadding = (item as HistoryItem & { content?: string }).content?.length || 0;
                     const estimatedBytes = Math.floor((urlLength + contentPadding) * 0.75);
 
                     if (item.type === 'video') {
@@ -250,16 +250,16 @@ export class DashboardService {
             const agentMessages = state.agentMessages || [];
 
             // Count generations
-            const imageCount = history.filter((h: any) => h.type === 'image').length;
-            const videoItems = history.filter((h: any) => h.type === 'video');
-            const totalVideoSeconds = videoItems.reduce((sum: number, v: any) => sum + (v.duration || 5), 0);
+            const imageCount = history.filter((h) => h.type === 'image').length;
+            const videoItems = history.filter((h) => h.type === 'video');
+            const totalVideoSeconds = videoItems.reduce((sum: number, v) => sum + ((v as any).duration || 5), 0);
 
             // Weekly activity (last 7 days)
             const now = Date.now();
             const dayMs = 24 * 60 * 60 * 1000;
             const weeklyActivity = Array(7).fill(0);
 
-            history.forEach((item: any) => {
+            history.forEach((item) => {
                 const daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
                 if (daysAgo >= 0 && daysAgo < 7) {
                     weeklyActivity[6 - daysAgo]++;
@@ -278,7 +278,7 @@ export class DashboardService {
 
             // Word cloud from prompts
             const allPrompts = history
-                .map((h: any) => h.prompt || '')
+                .map((h) => h.prompt || '')
                 .join(' ')
                 .toLowerCase();
 

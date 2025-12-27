@@ -449,9 +449,9 @@ class DistributorServiceImpl {
   /**
    * Get all releases with their deployment statuses for the dashboard
    */
-  getAllReleases() {
+  getAllReleases(): DashboardRelease[] {
     const deployments = this.store.getAllDeployments();
-    const grouped: Record<string, any> = {};
+    const grouped: Record<string, DashboardRelease> = {};
 
     deployments.forEach((d) => {
       if (!grouped[d.internalReleaseId]) {
@@ -480,6 +480,15 @@ class DistributorServiceImpl {
 
     return Object.values(grouped);
   }
+}
+
+export interface DashboardRelease {
+  id: string;
+  title: string;
+  artist: string;
+  coverArtUrl?: string;
+  releaseDate?: string;
+  deployments: Record<string, { status: string }>;
 }
 
 // Export singleton instance

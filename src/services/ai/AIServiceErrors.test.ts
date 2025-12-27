@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AI } from './AIService';
 import { AppErrorCode } from '@/shared/types/errors';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // Mock the Google Generative AI SDK
 const mockGenerateContent = vi.fn();
 
 class MockGoogleGenerativeAI {
-    constructor(_apiKey: string) {}
+    constructor(_apiKey: string) { }
     getGenerativeModel() {
         return {
             generateContent: mockGenerateContent
@@ -44,7 +45,7 @@ describe('AIService Error Handling', () => {
         mockGenerateContent.mockRejectedValue(new Error('Generic failure'));
 
         await expect(AI.generateContent({
-            model: 'gemini-pro',
+            model: AI_MODELS.TEXT.FAST,
             contents: { role: 'user', parts: [] }
         })).rejects.toThrow('Generic failure');
     });
@@ -56,7 +57,7 @@ describe('AIService Error Handling', () => {
         mockGenerateContent.mockRejectedValue(error);
 
         await expect(AI.generateContent({
-            model: 'gemini-pro',
+            model: AI_MODELS.TEXT.FAST,
             contents: { role: 'user', parts: [] }
         })).rejects.toThrow(/Quota exceeded/);
     }, 15000); // Increase timeout to allow retries to exhaust
@@ -67,7 +68,7 @@ describe('AIService Error Handling', () => {
         mockGenerateContent.mockRejectedValue(error);
 
         await expect(AI.generateContent({
-            model: 'gemini-pro',
+            model: AI_MODELS.TEXT.FAST,
             contents: { role: 'user', parts: [] }
         })).rejects.toThrow(/Safety violation/);
     });
@@ -93,7 +94,7 @@ describe('AIService Error Handling', () => {
             });
 
         const result = await AI.generateContent({
-            model: 'gemini-pro',
+            model: AI_MODELS.TEXT.FAST,
             contents: { role: 'user', parts: [] }
         });
 

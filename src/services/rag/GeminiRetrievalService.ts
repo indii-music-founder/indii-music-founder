@@ -2,7 +2,7 @@ import { env } from '../../config/env.ts';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
 
-const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+
 
 // Switch to File API resource types
 import { AI_MODELS } from '../../core/config/ai-models.ts';
@@ -75,11 +75,12 @@ export class GeminiRetrievalService {
 
                 if (response.status === 204) return {}; // No content
                 return response.json();
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
                 attempt++;
                 if (attempt >= maxRetries) throw error;
                 const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
-                console.warn(`Gemini Network Error (${endpoint}). Retrying in ${waitTime}ms...`, error);
+                console.warn(`Gemini Network Error (${endpoint}). Retrying in ${waitTime}ms...`, errorMessage);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
         }
@@ -145,7 +146,7 @@ export class GeminiRetrievalService {
                 'Content-Type': targetMime,
                 'X-Goog-Upload-Header-Content-Meta-Session-Data': JSON.stringify({ displayName })
             },
-            body: content
+            body: content as BodyInit
         });
 
         const file = response.file as GeminiFile;
@@ -207,9 +208,10 @@ export class GeminiRetrievalService {
             this.defaultStoreName = createRes.name;
             console.log("Created new FileSearchStore:", this.defaultStoreName);
             return this.defaultStoreName!;
-        } catch (e: any) {
-            console.error("Failed to create FileSearchStore:", e);
-            throw new Error(`FileSearchStore Linkage Failed: ${e.message}`);
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.error("Failed to create FileSearchStore:", err);
+            throw new Error(`FileSearchStore Linkage Failed: ${err.message}`);
         }
     }
 
@@ -261,11 +263,9 @@ export class GeminiRetrievalService {
                 console.log("File imported successfully.");
             }
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Import to store failed:", e);
-            // Verify if it failed because it's already there? 
-            // For now throw to be safe
-            throw e;
+            throw e as Error;
         }
     }
 
@@ -279,7 +279,7 @@ export class GeminiRetrievalService {
      * If fileUri is null/empty, it searches the entire store.
      */
     async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string) {
-        let tools: any[] | undefined;
+        let tools: Array<{ fileSearch: { fileSearchStoreNames: string[] } }> | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
@@ -301,7 +301,7 @@ export class GeminiRetrievalService {
             }
         }
 
-        const body: any = {
+        const body = {
             contents: [{
                 role: 'user',
                 parts: [
@@ -311,10 +311,9 @@ export class GeminiRetrievalService {
             }],
             generationConfig: {
                 temperature: 0.0
-            }
+            },
+            ...(tools ? { tools } : {})
         };
-
-        if (tools) body.tools = tools;
 
         return this.fetch(`models/${targetModel}:generateContent`, {
             method: 'POST',

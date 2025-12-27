@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Plus, DollarSign, Tag, Image as ImageIcon } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
@@ -19,37 +19,30 @@ export const MerchTable: React.FC = () => {
     const [title, setTitle] = useState('');
     const [inventory, setInventory] = useState('100');
 
-    useEffect(() => {
-        if (user) {
-            loadProducts();
-            loadAssets();
-        }
-    }, [user]);
-
-    // Dynamic Pricing Logic based on Scarcity
-    useEffect(() => {
-        const stock = parseInt(inventory);
-        if (!isNaN(stock)) {
-            if (stock === 1) setPrice('49.99'); // 1-of-1 "Golden"
-            else if (stock < 10) setPrice('19.99'); // Limited Edition
-            else if (stock < 100) setPrice('4.99'); // Rare
-            else setPrice('0.99'); // Standard
-        }
-    }, [inventory]);
-
-    const loadProducts = async () => {
+    const loadProducts = useCallback(async () => {
         if (!user) return;
         const items = await MarketplaceService.getProductsByArtist(user.uid);
         setProducts(items);
-    };
+    }, [user]);
 
-    const loadAssets = async () => {
+    const loadAssets = useCallback(async () => {
         if (!user) return;
         const profile = await UserService.getUserProfile(user.uid);
         if (profile?.brandKit?.referenceImages) {
             setAssets(profile.brandKit.referenceImages);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        const init = async () => {
+            await Promise.all([loadProducts(), loadAssets()]);
+        };
+         
+        init();
+    }, [loadProducts, loadAssets]);
+
+    // Dynamic Pricing Logic based on Scarcity
+    // Price is set in the onChange handler or on mount
 
     const handleMint = async () => {
         if (!user || !selectedAsset) return;
@@ -160,7 +153,17 @@ export const MerchTable: React.FC = () => {
                                     type="number"
                                     className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white outline-none focus:border-blue-500"
                                     value={inventory}
-                                    onChange={e => setInventory(e.target.value)}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setInventory(val);
+                                        const stock = parseInt(val);
+                                        if (!isNaN(stock)) {
+                                            if (stock === 1) setPrice('49.99');
+                                            else if (stock < 10) setPrice('19.99');
+                                            else if (stock < 100) setPrice('4.99');
+                                            else setPrice('0.99');
+                                        }
+                                    }}
                                 />
                             </div>
                         </div>

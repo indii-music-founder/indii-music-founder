@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { syncWorkflows, initDB } from './repository';
+import { syncWorkflows } from './repository';
 import { openDB } from 'idb';
 import { setDoc } from 'firebase/firestore';
 
@@ -28,9 +28,15 @@ vi.mock('firebase/firestore', () => ({
 // Better to mock `idb.openDB`.
 
 describe('repository syncWorkflows', () => {
-    let mockPut: any;
-    let mockGet: any;
-    let mockGetAll: any;
+    interface MockIDB {
+        put: any;
+        get: any;
+        getAll: any;
+    }
+
+    let mockPut: ReturnType<typeof vi.fn>;
+    let mockGet: ReturnType<typeof vi.fn>;
+    let mockGetAll: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -38,11 +44,11 @@ describe('repository syncWorkflows', () => {
         mockGet = vi.fn();
         mockGetAll = vi.fn();
 
-        (openDB as any).mockResolvedValue({
+        (vi.mocked(openDB)).mockResolvedValue({
             put: mockPut,
             get: mockGet,
             getAll: mockGetAll
-        });
+        } as any);
     });
 
     it('should push local workflows to cloud', async () => {

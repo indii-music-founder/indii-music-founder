@@ -10,11 +10,6 @@ import {
     Contributor,
     ReleaseId,
     TitleText,
-    DealTerms,
-    Usage,
-    ReleaseDetailsByTerritory,
-    ResourceId,
-    Resource as ERNResource,
     GenreWithSubGenre,
 } from './types/ern';
 import {
@@ -22,12 +17,9 @@ import {
     DPID,
     TerritoryCode,
     ReleaseType,
-    CommercialModelType,
-    UseType,
     ContributorRole,
     ParentalWarningType,
 } from './types/common';
-import { DDEX_CONFIG } from '@/core/config/ddex';
 
 /**
  * ERN Mapper

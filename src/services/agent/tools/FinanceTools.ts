@@ -33,8 +33,9 @@ export const FinanceTools = {
             });
 
             return res.text();
-        } catch (e: any) {
-            return `Receipt analysis failed: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            return `Receipt analysis failed: ${errorMessage}`;
         }
     },
 
@@ -66,8 +67,9 @@ export const FinanceTools = {
                 message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.ddexPartyId}. Ready to generate ERN.`
             });
 
-        } catch (error: any) {
-            return `Audit failed: ${error.message}`;
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            return `Audit failed: ${errorMessage}`;
         }
     }
 };

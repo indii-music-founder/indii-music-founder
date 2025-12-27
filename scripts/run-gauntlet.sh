@@ -50,7 +50,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "PHASE 2: Unit Tests"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-run_test "MembershipService Tests" "npm run test -- --grep 'MembershipService' --run"
+run_test "MembershipService Tests" "npm run test -- -t 'MembershipService' --run"
 run_test "All Unit Tests" "npm run test -- --run"
 
 # ============================================================================

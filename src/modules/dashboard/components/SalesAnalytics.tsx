@@ -11,7 +11,6 @@ export default function SalesAnalytics() {
 
     useEffect(() => {
         if (!currentUser) return;
-        setLoading(true);
         RevenueService.getChartData(currentUser.uid, period)
             .then(setChartData)
             .finally(() => setLoading(false));
@@ -44,14 +43,20 @@ export default function SalesAnalytics() {
 
                 <div className="flex bg-gray-800 rounded-lg p-1">
                     <button
-                        onClick={() => setPeriod('week')}
+                        onClick={() => {
+                            setPeriod('week');
+                            setLoading(true);
+                        }}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-all
                             ${period === 'week' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                     >
                         7D
                     </button>
                     <button
-                        onClick={() => setPeriod('month')}
+                        onClick={() => {
+                            setPeriod('month');
+                            setLoading(true);
+                        }}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-all
                             ${period === 'month' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                     >

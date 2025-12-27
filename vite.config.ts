@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import WebpackObfuscator from 'webpack-obfuscator';
 
 export default defineConfig({
   base: './',
@@ -94,6 +93,14 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 3000,
+    // Use terser for more aggressive console stripping
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,  // Remove all console.* calls
+        drop_debugger: true, // Remove debugger statements
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -114,6 +121,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
-    exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**'], // Exclude e2e and compiled functions from unit tests
+    exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**', '**/.git/**'], // Exclude e2e and compiled functions from unit tests
   },
 });

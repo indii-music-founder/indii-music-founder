@@ -3,9 +3,8 @@ import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
-import { Editing } from '@/services/image/EditingService'; // For completeness
 import { auth } from '@/services/firebase';
-import { MonitorPlay, Sparkles, Loader2, ChevronDown, ChevronUp, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
+import { MonitorPlay, Sparkles, Loader2, ChevronDown, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import StudioNavControls from './StudioNavControls';
 import ImageSubMenu from './ImageSubMenu';
@@ -21,7 +20,7 @@ import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 import AI_Input_Search from '@/components/kokonutui/ai-input-search';
 
 export default function CreativeNavbar() {
-    const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, addUploadedImage, generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode, prompt, setPrompt } = useStore();
+    const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, prompt, setPrompt } = useStore();
     const toast = useToast();
     // const [prompt, setPrompt] = useState(''); // Removed local state
     const [isGenerating, setIsGenerating] = useState(false);

@@ -1,54 +1,17 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
-import type { ToolFunctionArgs, AgentContext } from '../types';
 
 // ============================================================================
 // Types for VideoTools
 // ============================================================================
 
-interface GenerateVideoArgs extends ToolFunctionArgs {
-    prompt: string;
-    image?: string;
-    duration?: number;
-}
 
-interface GenerateMotionBrushArgs extends ToolFunctionArgs {
-    image: string;
-    mask: string;
-    prompt?: string;
-}
 
-interface BatchEditVideosArgs extends ToolFunctionArgs {
-    prompt: string;
-    videoIndices?: number[];
-}
 
-interface ExtendVideoArgs extends ToolFunctionArgs {
-    videoUrl: string;
-    prompt: string;
-    direction: 'start' | 'end';
-}
 
-interface UpdateKeyframeArgs extends ToolFunctionArgs {
-    clipId: string;
-    property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation';
-    frame: number;
-    value: number;
-    easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
-}
 
-interface GenerateVideoChainArgs extends ToolFunctionArgs {
-    prompt: string;
-    startImage: string;
-    totalDuration: number;
-}
 
-interface InterpolateSequenceArgs extends ToolFunctionArgs {
-    firstFrame: string;
-    lastFrame: string;
-    prompt?: string;
-}
 
 interface VideoGenerationOptions {
     prompt: string;

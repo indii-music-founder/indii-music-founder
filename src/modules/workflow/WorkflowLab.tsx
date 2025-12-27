@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import WorkflowEditor from './components/WorkflowEditor';
 import NodePanel from './components/NodePanel';
-import WorkflowNodeInspector from './components/WorkflowNodeInspector';
 import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
 import WorkflowTemplateModal from './components/WorkflowTemplateModal';
 import WorkflowLoadModal from './components/WorkflowLoadModal';
 import { useStore } from '../../core/store';
-import { Play, Loader2, GitBranch, Sparkles, LayoutTemplate, X, ArrowRight, Save, FolderOpen } from 'lucide-react';
+import { Play, Loader2, GitBranch, Sparkles, LayoutTemplate, Save, FolderOpen } from 'lucide-react';
 import { WorkflowEngine } from './services/WorkflowEngine';
 import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
 import { Status, SavedWorkflow } from './types';
-import { saveWorkflow, getUserWorkflows, loadWorkflow } from './services/workflowPersistence';
+import { getUserWorkflows } from './services/workflowPersistence';
 import { auth } from '../../services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
@@ -22,12 +21,10 @@ export default function WorkflowLab() {
     const [workflowName, setWorkflowName] = useState('My Workflow');
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [authLoading, setAuthLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
-            setAuthLoading(false);
             if (user) {
                 console.log("WorkflowLab: User authenticated:", user.uid);
             } else {

@@ -23,8 +23,8 @@ export async function runAgenticWorkflow(
     onUpdate("Initializing Gemini Knowledge Base...");
 
     let responseText = "No answer found.";
-    let sources: Attribution[] = [];
-    let reasoning = ["Query started"];
+    const sources: Attribution[] = [];
+    const reasoning = ["Query started"];
     let files: any[] = [];
 
     // 1. Retrieval Phase (Safe Failover)
@@ -106,12 +106,12 @@ export async function runAgenticWorkflow(
 export async function processForKnowledgeBase(
     content: string | File | Blob,
     fileName: string,
-    extraMetadata: { size?: string; type?: string; originalDate?: string } = {}
+    _extraMetadata: { size?: string; type?: string; originalDate?: string } = {}
 ): Promise<{ title: string; content: string; entities: string[]; tags: string[]; embeddingId?: string }> {
     // 1. Extract Metadata (Title, Summary) using standard Gemini
     // We only do this if content is a string or we can read it easily for metadata extraction
     let displayTitle = fileName;
-    let reportContent = typeof content === 'string' ? content : "Binary Content (PDF/Other)";
+    // content is used below in various conditionals
 
     if (typeof content === 'string') {
         const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;

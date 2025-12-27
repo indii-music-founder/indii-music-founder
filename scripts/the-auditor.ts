@@ -1,17 +1,36 @@
+import { config } from 'dotenv';
+import path from 'path';
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, uploadBytes, deleteObject } from 'firebase/storage';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { fileURLToPath } from 'url';
+
+// Support ESM __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from project root
+config({ path: path.join(__dirname, '../.env') });
 
 // Protocol 16: The Auditor
 // Verifies Live Infrastructure Configuration & Security
 
 const firebaseConfig = {
-    apiKey: "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
-    storageBucket: "gs://indiios-alpha-electron", // VERIFIED BUCKET
-    appId: "1:223837784072:web:3af738739465ea4095e9bd"
+    apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indiios-v-1-1.firebaseapp.com",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indiios-v-1-1",
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "indiios-alpha-electron.firebasestorage.app",
+    appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:3af738739465ea4095e9bd"
 };
+
+const email = process.env.AUDITOR_EMAIL;
+const password = process.env.AUDITOR_PASSWORD;
+
+if (!email || !password) {
+    console.error("❌ CRTICAL ERROR: Test credentials not found in env.");
+    console.error("   Please set AUDITOR_EMAIL and AUDITOR_PASSWORD in your .env file.");
+    process.exit(1);
+}
 
 async function audit() {
     console.log("📝 The Auditor: Initiating Live Infrastructure Audit...");
@@ -22,8 +41,6 @@ async function audit() {
 
     // 1. Authentication Audit
     console.log("\n🔒 Auditing Authentication Provider...");
-    const email = "automator@indiios.com";
-    const password = "AutomatorPass123!";
     let user;
     try {
         const cred = await signInWithEmailAndPassword(auth, email, password);

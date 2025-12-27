@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { PlayerRef } from '@remotion/player';
-import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Volume2, VolumeX, Eye, EyeOff, Settings, Layers, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Settings, Layers, Image as ImageIcon } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../../services/firebase';
 import { useVideoEditorStore, VideoClip } from '../store/videoEditorStore';
@@ -30,9 +30,9 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         removeTrack,
         setIsPlaying,
         setCurrentTime,
-        setSelectedClipId, // Action from store to set selected clip ID
+        setSelectedClipId,
         isPlaying,
-        currentTime
+        currentTime,
     } = useVideoEditorStore();
     const playerRef = useRef<PlayerRef>(null);
     const initializedRef = useRef(false);

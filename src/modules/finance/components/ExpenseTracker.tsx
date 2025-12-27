@@ -28,7 +28,7 @@ export const ExpenseTracker: React.FC = () => {
 
     const toast = useToast();
 
-    const processFile = async (file: File) => {
+    const processFile = useCallback(async (file: File) => {
         setIsAnalyzing(true);
         try {
             const reader = new FileReader();
@@ -68,9 +68,9 @@ export const ExpenseTracker: React.FC = () => {
             toast.error("Failed to analyze receipt.");
             setIsAnalyzing(false);
         }
-    };
+    }, [toast]);
 
-    const handleManualSubmit = (e: React.FormEvent) => {
+    const handleManualSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         if (!manualForm.vendor || !manualForm.amount) {
             toast.error("Vendor and Amount are required.");
@@ -96,11 +96,11 @@ export const ExpenseTracker: React.FC = () => {
             amount: 0,
             description: ''
         });
-    };
+    }, [manualForm, toast]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         acceptedFiles.forEach(processFile);
-    }, []);
+    }, [processFile]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'image/*': [] } });
 

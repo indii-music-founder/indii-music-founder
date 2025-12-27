@@ -1,6 +1,7 @@
 import { DistributorService } from './DistributorService';
 import { credentialService } from '../security/CredentialService';
-import { IDistributorAdapter, DistributorId, ReleaseResult, ReleaseStatus, DistributorEarnings, DistributorRequirements, ValidationResult } from './types/distributor';
+import { IDistributorAdapter, DistributorId, ReleaseResult, ReleaseStatus, DistributorEarnings, DistributorRequirements, ValidationResult, ExtendedGoldenMetadata, ReleaseAssets, DistributorCredentials } from './types/distributor';
+import { DateRange } from '../ddex/types/common';
 
 // Mock Adapter for testing
 class MockAdapter implements IDistributorAdapter {
@@ -45,19 +46,19 @@ class MockAdapter implements IDistributorAdapter {
     };
 
     async isConnected() { return false; }
-    async connect(creds: any) { console.log('Mock connected', creds); }
+    async connect(creds: DistributorCredentials) { console.log('Mock connected', creds); }
     async disconnect() { console.log('Mock disconnected'); }
 
-    async createRelease(metadata: any, assets: any): Promise<ReleaseResult> {
-        console.log('Mock release created', metadata.title);
+    async createRelease(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): Promise<ReleaseResult> {
+        console.log('Mock release created', metadata.trackTitle);
         return { success: true, status: 'processing', releaseId: 'mock-123' };
     }
 
-    async updateRelease(releaseId: string, updates: any): Promise<ReleaseResult> {
+    async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         return { success: true, status: 'processing', releaseId };
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         return 'live';
     }
 
@@ -65,7 +66,7 @@ class MockAdapter implements IDistributorAdapter {
         return { success: true, status: 'takedown_requested', releaseId };
     }
 
-    async getEarnings(releaseId: string, period: any): Promise<DistributorEarnings> {
+    async getEarnings(releaseId: string, _period: DateRange): Promise<DistributorEarnings> {
         return {
             distributorId: 'distrokid',
             releaseId,
@@ -81,15 +82,15 @@ class MockAdapter implements IDistributorAdapter {
         };
     }
 
-    async getAllEarnings(period: any): Promise<DistributorEarnings[]> {
+    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
         return [];
     }
 
-    async validateMetadata(metadata: any): Promise<ValidationResult> {
+    async validateMetadata(_metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         return { isValid: true, errors: [], warnings: [] };
     }
 
-    async validateAssets(assets: any): Promise<ValidationResult> {
+    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
         return { isValid: true, errors: [], warnings: [] };
     }
 }
@@ -125,7 +126,7 @@ async function verifyConnection() {
 
     try {
         await DistributorService.connect(distId);
-    } catch (e) {
+    } catch {
         console.log('✅ Correctly failed to connect without credentials');
     }
 }

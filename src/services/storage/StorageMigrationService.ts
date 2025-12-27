@@ -1,6 +1,6 @@
 import { db, storage } from '../firebase';
-import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes } from 'firebase/storage';
 import { initDB } from './repository';
 import { auth } from '../firebase';
 
