@@ -17,13 +17,6 @@ export class AgentExecutor {
             throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and no Generalist registered.`);
         }
 
-        console.log(`[AgentExecutor] Executing with agent: ${agent.name} (${agent.id})`);
-
-        // Log if semantic memories were retrieved
-        if (context.relevantMemories && context.relevantMemories.length > 0) {
-            console.log(`[AgentExecutor] Injecting ${context.relevantMemories.length} semantic memories into context`);
-        }
-
         try {
             const response = await agent.execute(userGoal, {
                 currentProjectId: context.currentProjectId,

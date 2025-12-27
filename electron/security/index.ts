@@ -54,39 +54,34 @@ export function configureSecurity(session: Session) {
         return false;
     });
 
-    // 4. Certificate Pinning
-    const VALID_FINGERPRINTS = [
-        'sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', // Placeholder
-        'sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='  // Backup
-    ];
+    // 4. Certificate Verification
+    // Trusts Google/Firebase domains via standard certificate verification.
+    // NOTE: Certificate pinning for api.indii.os is disabled until the API is deployed.
+    // When deploying a custom API, generate real certificate fingerprints using:
+    //   openssl s_client -connect api.indii.os:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
 
     session.setCertificateVerifyProc((request, callback) => {
         const { hostname, verificationResult } = request;
 
+        // Allow localhost for development
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return callback(0);
         }
 
+        // Trust Google/Firebase services with standard cert verification
         const trustedSuffixes = [
             '.googleapis.com',
             '.google.com',
             '.firebaseapp.com',
-            '.googleusercontent.com'
+            '.googleusercontent.com',
+            '.jsdelivr.net'  // For Tesseract.js language data
         ];
 
         if (trustedSuffixes.some(suffix => hostname.endsWith(suffix))) {
             return callback(verificationResult === 'net::OK' ? 0 : -2);
         }
 
-        if (hostname === 'api.indii.os') {
-            if (verificationResult !== 'net::OK') {
-                return callback(-2);
-            }
-            // Simulated pinning check
-            const isPinned = VALID_FINGERPRINTS.includes('sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
-            return isPinned ? callback(0) : callback(-2);
-        }
-
+        // Default: use standard certificate verification
         return callback(verificationResult === 'net::OK' ? 0 : -2);
     });
 

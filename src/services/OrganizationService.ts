@@ -60,7 +60,24 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
         }
     }
 
-    async switchOrganization(orgId: string) {
+    async switchOrganization(orgId: string): Promise<string> {
+        // Validate user is authenticated
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('Must be authenticated to switch organizations');
+        }
+
+        // Validate user is a member of the target organization
+        const orgDoc = await getDoc(doc(db, 'organizations', orgId));
+        if (!orgDoc.exists()) {
+            throw new Error(`Organization ${orgId} not found`);
+        }
+
+        const members = orgDoc.data()?.members || [];
+        if (!members.includes(userId)) {
+            throw new Error(`You are not a member of this organization`);
+        }
+
         localStorage.setItem('currentOrgId', orgId);
         return orgId;
     }

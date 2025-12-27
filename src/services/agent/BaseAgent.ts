@@ -125,8 +125,6 @@ export class BaseAgent implements SpecializedAgent {
     }
 
     async execute(task: string, context?: any, onProgress?: AgentProgressCallback): Promise<AgentResponse> {
-        console.log(`[${this.name}] Received task: ${task}`);
-
         // Lazy import AI Service to prevent circular deps during registry loading
         const { AI } = await import('@/services/ai/AIService');
 
@@ -202,8 +200,6 @@ ${task}
 
             if (functionCall) {
                 const { name, args } = functionCall;
-                console.log(`[${this.name}] Tool Call: ${name}`, args);
-
                 onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
 
                 // Check local functions first (specialist specific)

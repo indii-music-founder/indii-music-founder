@@ -87,7 +87,7 @@ export class VideoGenerationService {
         if (!quotaCheck.allowed) {
             const tier = await MembershipService.getCurrentTier();
             throw new QuotaExceededError(
-                'videos',
+                'video',
                 tier,
                 MembershipService.getUpgradeMessage(tier, 'video'),
                 quotaCheck.currentUsage,

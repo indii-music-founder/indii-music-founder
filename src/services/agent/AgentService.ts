@@ -41,8 +41,6 @@ export class AgentService {
             if (!agentId) {
                 agentId = await this.orchestrator.determineAgent(context, text);
             }
-            console.log(`[AgentService] Selected Agent: ${agentId} ${forcedAgentId ? '(Forced)' : '(Auto)'}`);
-
             // 3. Execute Agent
             const responseId = uuidv4();
             const { addAgentMessage, updateAgentMessage } = useStore.getState();
@@ -104,8 +102,6 @@ export class AgentService {
 
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];
-
-        console.log(`[AgentService] Delegating task to ${agentId}: "${task}"`);
 
         return await this.executor.execute(agentId, task, context);
     }

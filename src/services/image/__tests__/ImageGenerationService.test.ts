@@ -3,7 +3,6 @@ import { ImageGeneration } from '../ImageGenerationService';
 import { AI } from '../../ai/AIService';
 
 // Mock the AI service
-// Mock the AI service
 vi.mock('../../ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
@@ -19,6 +18,16 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('@/services/firebase', () => ({
     functions: {}
+}));
+
+// Mock MembershipService to allow quota checks in tests
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
+        getCurrentTier: vi.fn().mockResolvedValue('pro'),
+        getUpgradeMessage: vi.fn().mockReturnValue('Upgrade to Pro for more'),
+        incrementUsage: vi.fn().mockResolvedValue(undefined),
+    }
 }));
 
 describe('ImageGenerationService', () => {

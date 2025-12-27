@@ -10,6 +10,16 @@ vi.mock('../../ai/AIService', () => ({
     }
 }));
 
+// Mock MembershipService to allow quota checks in tests
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
+        checkVideoDurationQuota: vi.fn().mockResolvedValue({ allowed: true, maxDuration: 3600, tierName: 'Pro' }),
+        getCurrentTier: vi.fn().mockResolvedValue('pro'),
+        getUpgradeMessage: vi.fn().mockReturnValue('Upgrade to Pro for more'),
+    }
+}));
+
 describe('VideoGenerationService', () => {
     beforeEach(() => {
         vi.clearAllMocks();

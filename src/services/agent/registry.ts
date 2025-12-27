@@ -49,7 +49,7 @@ export class AgentRegistry {
 
     register(agent: SpecializedAgent) {
         this.agents.set(agent.id, agent);
-        console.log(`[AgentRegistry] Registered: ${agent.name} (${agent.id})`);
+        // Debug logging removed for production
     }
 
     get(id: string): SpecializedAgent | undefined {
