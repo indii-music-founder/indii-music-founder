@@ -4,9 +4,11 @@ import { BaseAgent } from './BaseAgent';
 import { AGENT_CONFIGS } from './agentConfig';
 import { GeneralistAgent } from './specialists/GeneralistAgent'; // Import the "Agent Zero" explicitly
 
+import { AgentContext } from './types';
+
 export interface AgentResponse {
     text: string;
-    data?: any;
+    data?: unknown;
 }
 
 export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;
@@ -17,7 +19,7 @@ export interface SpecializedAgent {
     description: string;
     color: string;
     category: 'manager' | 'department' | 'specialist';
-    execute(task: string, context?: any, onProgress?: AgentProgressCallback): Promise<AgentResponse>;
+    execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback): Promise<AgentResponse>;
 }
 
 export class AgentRegistry {

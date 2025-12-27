@@ -20,20 +20,18 @@ interface VideoEditorProps {
 }
 
 export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
-    const {
-        project,
-        setProject,
-        updateClip,
-        addClip,
-        removeClip,
-        addTrack,
-        removeTrack,
-        setIsPlaying,
-        setCurrentTime,
-        setSelectedClipId,
-        isPlaying,
-        currentTime,
-    } = useVideoEditorStore();
+    const project = useVideoEditorStore(state => state.project);
+    const setProject = useVideoEditorStore(state => state.setProject);
+    const updateClip = useVideoEditorStore(state => state.updateClip);
+    const addClip = useVideoEditorStore(state => state.addClip);
+    const removeClip = useVideoEditorStore(state => state.removeClip);
+    const addTrack = useVideoEditorStore(state => state.addTrack);
+    const removeTrack = useVideoEditorStore(state => state.removeTrack);
+    const setIsPlaying = useVideoEditorStore(state => state.setIsPlaying);
+    const setCurrentTime = useVideoEditorStore(state => state.setCurrentTime);
+    const setSelectedClipId = useVideoEditorStore(state => state.setSelectedClipId);
+    const isPlaying = useVideoEditorStore(state => state.isPlaying);
+    const currentTime = useVideoEditorStore(state => state.currentTime);
     const playerRef = useRef<PlayerRef>(null);
     const initializedRef = useRef(false);
     const toast = useToast();

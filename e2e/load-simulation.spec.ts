@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://architexture-ai-studio.web.app';
+const BASE_URL = '';
 const VIRTUAL_USERS = 20; // Number of concurrent users per worker
 
 test.describe('Load Simulation: The Flash Mob', () => {

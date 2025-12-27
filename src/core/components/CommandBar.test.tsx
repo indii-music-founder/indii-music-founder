@@ -147,7 +147,7 @@ describe('CommandBar', () => {
     });
     it('handles drag and drop events', async () => {
         render(<CommandBar />);
-        const dropZone = screen.getByPlaceholderText('Describe your task, drop files, or take a picture...').closest('div');
+        const dropZone = screen.getByTestId('command-bar-input-container');
 
         // Initial state
         expect(dropZone).not.toHaveClass('ring-4');

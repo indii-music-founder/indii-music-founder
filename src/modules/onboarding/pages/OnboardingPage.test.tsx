@@ -57,9 +57,8 @@ describe('OnboardingPage GenUI Verification', () => {
         // 1. Send user message to trigger response
         const input = screen.getByPlaceholderText(/Tell me about your music/i);
         fireEvent.change(input, { target: { value: 'Hi' } });
-        // Click the send button (it's the last button in the DOM usually, after the attachment button)
-        const buttons = screen.getAllByRole('button');
-        const sendButton = buttons[buttons.length - 1];
+
+        const sendButton = screen.getByLabelText('Send message');
         fireEvent.click(sendButton);
 
         // 2. Wait for buttons to appear

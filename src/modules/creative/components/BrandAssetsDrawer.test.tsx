@@ -82,29 +82,9 @@ describe('BrandAssetsDrawer', () => {
         render(<BrandAssetsDrawer onClose={mockOnClose} />);
 
         const file = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
-        const input = screen.getByLabelText(/Drag & Drop or/i); // Matches the label text partially or use ID
-        // The input has id="brand-asset-upload"
-        // We can select by id? `container.querySelector('#brand-asset-upload')`
-        // Or `screen.getByLabelText` if label is associated.
-        // The label has `htmlFor="brand-asset-upload"`.
-        // The label text contains "Drag & Drop or Browse".
 
-        // Note: `getByLabelText` finds the form control (input) associated with the label.
-        // But the input is hidden (`className="hidden"`).
-        // Testing library might complain about hidden input if we try to click it, but `fireEvent.change` should work on hidden inputs too?
-        // Or we use `upload` helper?
-
-        // Let's try selecting by ID directly if `getByLabelText` fails due to visibility.
-        // Actually `fireEvent.change` works on hidden inputs.
-
-        // We need to find the input.
-        // `screen.getByLabelText` might not work if the text is complex or nested.
-        // Let's try `screen.getByText('Drag & Drop or').closest('label')` then find input?
-        // Or just `document.getElementById('brand-asset-upload')`.
-
-        // Use getByLabelText to find the input associated with the label
-        // Since the input is hidden, we might need to look for it specifically or use the label connection
-        const inputElement = screen.getByLabelText(/Drag & Drop/i, { selector: 'input' });
+        // The FileUpload component has an input with aria-label="File input"
+        const inputElement = screen.getByLabelText('File input');
 
         fireEvent.change(inputElement, { target: { files: [file] } });
 

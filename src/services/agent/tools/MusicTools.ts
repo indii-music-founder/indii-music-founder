@@ -9,8 +9,9 @@ export const MusicTools = {
         try {
             const result = await window.electronAPI.audio.analyze(args.filePath);
             return JSON.stringify(result, null, 2);
-        } catch (e: any) {
-            return `Analysis failed: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Analysis failed: ${errorMessage}`;
         }
     },
 
@@ -22,8 +23,9 @@ export const MusicTools = {
             const metadata = await window.electronAPI.audio.getMetadata(args.hash);
             if (!metadata) return "No metadata found for this hash.";
             return JSON.stringify(metadata, null, 2);
-        } catch (e: any) {
-            return `Metadata lookup failed: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Metadata lookup failed: ${errorMessage}`;
         }
     }
 };

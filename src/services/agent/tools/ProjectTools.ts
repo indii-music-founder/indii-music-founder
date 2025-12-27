@@ -1,7 +1,7 @@
-import { useStore } from '@/core/store';
+import { useStore, type AppSlice } from '@/core/store';
 
 export const ProjectTools = {
-    create_project: async (args: { name: string, type: any, orgId?: string }) => {
+    create_project: async (args: { name: string, type: AppSlice['currentModule'], orgId?: string }) => {
         try {
             const store = useStore.getState();
             const targetOrgId = args.orgId || store.currentOrganizationId;
@@ -10,9 +10,10 @@ export const ProjectTools = {
             const projectId = await store.createNewProject(args.name, args.type, targetOrgId);
 
             return `Project created successfully. ID: ${projectId}`;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Tool execution failed:", error);
-            return `Failed to create project: ${error}`;
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return `Failed to create project: ${errorMessage}`;
         }
     },
 

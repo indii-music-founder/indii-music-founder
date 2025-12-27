@@ -18,8 +18,9 @@ export const StorageTools = {
             return filtered.map(item =>
                 `- [${item.type}] ${item.prompt || 'No prompt'} (${new Date(item.timestamp).toLocaleString()})`
             ).join('\n');
-        } catch (e: any) {
-            return `Failed to list files: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Failed to list files: ${errorMessage}`;
         }
     },
 
@@ -42,8 +43,9 @@ export const StorageTools = {
             return matches.map(item =>
                 `- [${item.type}] ${item.prompt || 'No prompt'} (${new Date(item.timestamp).toLocaleString()})`
             ).join('\n');
-        } catch (e: any) {
-            return `Failed to search files: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Failed to search files: ${errorMessage}`;
         }
     }
 };

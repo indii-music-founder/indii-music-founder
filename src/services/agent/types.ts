@@ -1,6 +1,5 @@
-// ============================================================================
-// Tool Parameter Schema Types
-// ============================================================================
+import { AgentMessage } from '@/core/store';
+import { UserProfile, BrandKit } from '@/modules/workflow/types';
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -33,53 +32,36 @@ export interface ToolDefinition {
 // Agent Context Types
 // ============================================================================
 
+export interface ProjectHandle {
+    id: string;
+    name: string;
+    type: string;
+}
+
+export interface DistributorInfo {
+    name: string | null;
+    isConfigured: boolean;
+    coverArtSize: { width: number; height: number };
+    audioFormat: string[];
+    promptContext: string;
+}
+
 export interface AgentContext {
     userId?: string;
     orgId?: string;
     projectId?: string;
-    chatHistory?: ChatMessage[];
+    projectHandle?: ProjectHandle;
+    chatHistory?: AgentMessage[];
+    chatHistoryString?: string;
     brandKit?: BrandKit;
     memoryContext?: string;
+    relevantMemories?: string[];
     activeModule?: string;
     userProfile?: UserProfile;
+    distributor?: DistributorInfo;
 }
 
-export interface ChatMessage {
-    role: 'user' | 'model' | 'system';
-    content: string;
-    timestamp?: number;
-}
-
-export interface BrandKit {
-    colors: string[];
-    fonts: string;
-    brandDescription: string;
-    negativePrompt: string;
-    socials: Record<string, string>;
-    brandAssets: string[];
-    referenceImages: string[];
-    releaseDetails: ReleaseDetails;
-}
-
-export interface ReleaseDetails {
-    title: string;
-    type: string;
-    artists: string;
-    genre: string;
-    mood: string;
-    themes: string;
-    lyrics: string;
-}
-
-export interface UserProfile {
-    id: string;
-    bio?: string;
-    preferences?: string;
-    brandKit?: BrandKit;
-    analyzedTrackIds?: string[];
-    knowledgeBase?: KnowledgeItem[];
-    savedWorkflows?: string[];
-}
+// Using types from @/modules/workflow/types via imports above
 
 export interface KnowledgeItem {
     id: string;

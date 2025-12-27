@@ -189,8 +189,8 @@ export default function OnboardingPage() {
                     const currentInsight = uiToolCall.args.insight;
                     const alreadyShown = newHistory.some(
                         msg => msg.toolCall?.name === 'shareInsight' &&
-                        msg.toolCall?.args?.insight &&
-                        isSemanticallySimilar(msg.toolCall.args.insight, currentInsight)
+                            msg.toolCall?.args?.insight &&
+                            isSemanticallySimilar(msg.toolCall.args.insight, currentInsight)
                     );
                     if (alreadyShown) {
                         console.log('[Onboarding] Deduped similar insight:', currentInsight.substring(0, 50));
@@ -711,6 +711,7 @@ export default function OnboardingPage() {
                         <button
                             onClick={handleSend}
                             disabled={isProcessing || (!input.trim() && files.length === 0)}
+                            aria-label="Send message"
                             className="bg-white hover:bg-gray-200 text-black p-3 md:p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Send size={20} className="md:w-6 md:h-6" />

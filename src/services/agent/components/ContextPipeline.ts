@@ -1,4 +1,5 @@
-import { ContextResolver, AgentContext } from './ContextResolver';
+import { ContextResolver } from './ContextResolver';
+import { AgentContext } from '../types';
 import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
 
@@ -26,7 +27,7 @@ export class ContextPipeline {
 
         // 3. Retrieve Relevant Memories (Semantic Long-Term Memory)
         const relevantMemories = await this.retrieveRelevantMemories(
-            stateContext.currentProjectId,
+            stateContext.projectId,
             chatHistoryString
         );
 

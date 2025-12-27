@@ -11,8 +11,6 @@ import { RoadAgent } from './definitions/RoadAgent';
 import { PublishingAgent } from './definitions/PublishingAgent';
 import { LicensingAgent } from './definitions/LicensingAgent';
 import { BrandAgent } from './definitions/BrandAgent';
-import { DevOpsAgent } from './definitions/DevOpsAgent';
-import { SecurityAgent } from './definitions/SecurityAgent';
 import { ScreenwriterAgent } from '@/agents/screenwriter/config';
 import { ProducerAgent } from '@/agents/producer/config';
 

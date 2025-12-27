@@ -230,6 +230,7 @@ function CommandBar() {
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
                 <div
+                    data-testid="command-bar-input-container"
                     className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1 relative overflow-hidden ${isDragging ? 'ring-4 ring-blue-500/50 bg-blue-500/20' : ''}`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -295,6 +296,8 @@ function CommandBar() {
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
+                                        title="Attach files"
+                                        aria-label="Attach files"
                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
                                     >
                                         <Paperclip size={14} />
@@ -305,6 +308,8 @@ function CommandBar() {
                                     <button
                                         type="button"
                                         onClick={() => cameraInputRef.current?.click()}
+                                        title="Take a picture"
+                                        aria-label="Take a picture"
                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 transition-all shadow-sm"
                                     >
                                         <Camera size={14} />

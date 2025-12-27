@@ -6,9 +6,10 @@ export const NavigationTools = {
         try {
             useStore.getState().setModule(args.module);
             return `Navigated to module: ${args.module}`;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Navigation failed:", error);
-            return `Failed to navigate: ${error}`;
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return `Failed to navigate: ${errorMessage}`;
         }
     }
 };

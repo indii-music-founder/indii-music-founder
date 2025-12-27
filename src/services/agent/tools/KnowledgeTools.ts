@@ -28,9 +28,10 @@ export const KnowledgeTools = {
                     title: s.name
                 }))
             });
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Knowledge Tool Error:", e);
-            return JSON.stringify({ error: `Failed to search knowledge base: ${e.message}` });
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return JSON.stringify({ error: `Failed to search knowledge base: ${errorMessage}` });
         }
     }
 };

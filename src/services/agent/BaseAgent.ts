@@ -1,7 +1,7 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback } from './registry';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { TOOL_REGISTRY } from './tools';
-import { AgentConfig, ToolDefinition, FunctionDeclaration } from './types';
+import { AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext } from './types';
 
 // Export types for use in definitions
 export type { AgentConfig };
@@ -98,7 +98,7 @@ export class BaseAgent implements SpecializedAgent {
     public category: 'manager' | 'department' | 'specialist';
     public systemPrompt: string;
     public tools: ToolDefinition[];
-    protected functions: Record<string, (args: any, context?: any) => Promise<any>>;
+    protected functions: Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>;
 
     constructor(config: AgentConfig) {
         this.id = config.id;
@@ -118,13 +118,16 @@ export class BaseAgent implements SpecializedAgent {
             },
             delegate_task: async ({ targetAgentId, task }, context) => {
                 const { agentService } = await import('./AgentService');
+                if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
+                    return { error: 'Invalid delegation parameters' };
+                }
                 return await agentService.runAgent(targetAgentId, task, context);
             },
-            ...(config.functions || {})
+            ...(config.functions || {} as any)
         };
     }
 
-    async execute(task: string, context?: any, onProgress?: AgentProgressCallback): Promise<AgentResponse> {
+    async execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback): Promise<AgentResponse> {
         // Lazy import AI Service to prevent circular deps during registry loading
         const { AI } = await import('@/services/ai/AIService');
 
@@ -133,8 +136,8 @@ export class BaseAgent implements SpecializedAgent {
 
         const enrichedContext = {
             ...context,
-            orgId: context?.currentOrganizationId,
-            projectId: context?.currentProjectId
+            orgId: context?.orgId,
+            projectId: context?.projectId
         };
 
         const SUPERPOWER_PROMPT = `
@@ -241,11 +244,12 @@ ${task}
             return {
                 text: response.text()
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
             console.error(`[${this.name}] Error executing task:`, error);
-            onProgress?.({ type: 'thought', content: `Error: ${error.message}` });
+            onProgress?.({ type: 'thought', content: `Error: ${errorMessage}` });
             return {
-                text: `Error executing task: ${error.message}`
+                text: `Error executing task: ${errorMessage}`
             };
         }
     }

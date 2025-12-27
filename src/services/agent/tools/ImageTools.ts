@@ -1,9 +1,31 @@
 import { useStore } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+import type { ToolFunctionArgs } from '../types';
+
+interface GenerateImageArgs extends ToolFunctionArgs {
+    prompt: string;
+    count?: number;
+    resolution?: string;
+    aspectRatio?: string;
+    negativePrompt?: string;
+    seed?: string;
+    referenceImageIndex?: number;
+    referenceAssetIndex?: number;
+    uploadedImageIndex?: number;
+}
+
+interface ExtractGridFrameArgs extends ToolFunctionArgs {
+    imageId?: string;
+    gridIndex: number;
+}
+
+interface SetEntityAnchorArgs extends ToolFunctionArgs {
+    image: string;
+}
 
 export const ImageTools = {
-    generate_image: async (args: any) => {
+    generate_image: async (args: GenerateImageArgs) => {
         try {
             const { studioControls, addToHistory, currentProjectId, userProfile } = useStore.getState();
 
@@ -55,7 +77,7 @@ export const ImageTools = {
             });
 
             if (results.length > 0) {
-                results.forEach(res => {
+                results.forEach((res: { id: string, url: string, prompt: string }) => {
                     addToHistory({
                         id: res.id,
                         url: res.url,
@@ -94,13 +116,13 @@ export const ImageTools = {
 
             // Convert HistoryItem to { mimeType, data } format
             // Assuming url is data:image/png;base64,...
-            const imageDataList = targetImages.map(img => {
+            const imageDataList = targetImages.map((img) => {
                 const match = img.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
                     return { mimeType: match[1], data: match[2] };
                 }
                 return null;
-            }).filter(img => img !== null) as { mimeType: string; data: string }[];
+            }).filter((img): img is { mimeType: string, data: string } => img !== null);
 
             if (imageDataList.length === 0) {
                 return "Could not process image data from uploads.";
@@ -120,7 +142,7 @@ export const ImageTools = {
             });
 
             if (results.length > 0) {
-                results.forEach(res => {
+                results.forEach((res: { id: string, url: string, prompt: string }) => {
                     addToHistory({
                         id: res.id,
                         url: res.url,
@@ -187,16 +209,17 @@ export const ImageTools = {
             }
             return "Failed to generate cinematic grid.";
 
-        } catch (e: any) {
-            return `Render cinematic grid failed: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Render cinematic grid failed: ${errorMessage}`;
         }
     },
-    extract_grid_frame: async (args: { imageId?: string, gridIndex: number }) => {
+    extract_grid_frame: async (args: ExtractGridFrameArgs) => {
         // Placeholder: In a real system this would use OpenCV or AI segmentation to crop the specific panel
         // For now, we'll just acknowledge the request.
         return "Extract grid frame not fully implemented. (Simulated success: Framed extracted)";
     },
-    set_entity_anchor: async (args: { image: string }) => {
+    set_entity_anchor: async (args: SetEntityAnchorArgs) => {
         try {
             const { setEntityAnchor, addToHistory, currentProjectId } = useStore.getState();
 
@@ -224,8 +247,9 @@ export const ImageTools = {
             addToHistory(anchorItem);
 
             return "Entity Anchor set successfully. Character consistency is now locked.";
-        } catch (e: any) {
-            return `Failed to set Entity Anchor: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Failed to set Entity Anchor: ${errorMessage}`;
         }
     }
 };

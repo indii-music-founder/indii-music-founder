@@ -1,30 +1,8 @@
-import { useStore } from '@/core/store';
+import { useStore, AgentMessage } from '@/core/store';
+import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
-export interface ProjectHandle {
-    id: string;
-    name: string;
-    type: string;
-}
-
-export interface DistributorInfo {
-    name: string | null;
-    isConfigured: boolean;
-    coverArtSize: { width: number; height: number };
-    audioFormat: string[];
-    promptContext: string;
-}
-
-export interface AgentContext {
-    currentProjectId?: string;
-    currentOrganizationId?: string;
-    projectHandle?: ProjectHandle;
-    userProfile?: any;
-    brandKit?: any;
-    currentModule?: string;
-    chatHistory?: any[]; // Agent messages
-    distributor?: DistributorInfo; // Distributor requirements context
-}
+import { AgentContext, ProjectHandle, DistributorInfo } from '../types';
 
 export class ContextResolver {
     async resolveContext(): Promise<AgentContext> {
@@ -59,12 +37,12 @@ export class ContextResolver {
         }
 
         return {
-            currentProjectId,
-            currentOrganizationId,
+            projectId: currentProjectId,
+            orgId: currentOrganizationId,
             projectHandle,
             userProfile,
             brandKit,
-            currentModule,
+            activeModule: currentModule,
             chatHistory: state.agentHistory || [],
             distributor
         };

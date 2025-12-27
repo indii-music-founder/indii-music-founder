@@ -32,8 +32,9 @@ export const OrganizationTools = {
             await store.loadProjects();
 
             return `Successfully switched to organization: ${org.name}`;
-        } catch (e: any) {
-            return `Failed to switch organization: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Failed to switch organization: ${errorMessage}`;
         }
     },
 
@@ -53,8 +54,9 @@ export const OrganizationTools = {
             store.setOrganization(orgId);
 
             return `Successfully created organization "${args.name}" (ID: ${orgId}) and switched to it.`;
-        } catch (e: any) {
-            return `Failed to create organization: ${e.message}`;
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Failed to create organization: ${errorMessage}`;
         }
     },
 

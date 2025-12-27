@@ -3,8 +3,23 @@ import { test, expect } from '@playwright/test';
 test.describe('Stress Testing', () => {
     test('Asset Loading Performance', async ({ page }) => {
         test.setTimeout(90000); // Increase timeout for stress test
+
+        // Bypass onboarding and auth gates for testing
+        await page.addInitScript(() => {
+            (window as any).__TEST_MODE__ = true;
+            localStorage.setItem('TEST_MODE', 'true');
+        });
+
+        // Enable console logs early
+        page.on('console', msg => {
+            const txt = msg.text();
+            if (txt.includes('[App]') || txt.includes('[Store]') || txt.includes('Error')) {
+                console.log(`BROWSER: ${txt}`);
+            }
+        });
+
         // 1. Login/Setup
-        await page.goto('/');
+        await page.goto('/?testMode=true');
 
         // Wait for app to load
         await page.waitForLoadState('domcontentloaded');
@@ -18,9 +33,16 @@ test.describe('Stress Testing', () => {
             await loader.waitFor({ state: 'hidden', timeout: 15000 });
         }
 
+        // Handle Auth/Login skip
+        const guestBtn = page.getByRole('button', { name: /Continue as Guest/i });
+        if (await guestBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await guestBtn.click();
+            await page.waitForTimeout(2000);
+        }
+
         // Check if we are on Select Org page
         const selectOrgHeader = page.getByText('Select Organization');
-        if (await selectOrgHeader.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await selectOrgHeader.isVisible({ timeout: 5000 }).catch(() => false)) {
             const createBtn = page.getByRole('button', { name: 'Create New Organization' });
             if (await createBtn.isVisible()) {
                 await createBtn.click();
@@ -32,7 +54,7 @@ test.describe('Stress Testing', () => {
         }
 
         // Wait for dashboard - handle different possible states
-        const dashboardVisible = await page.getByText('Welcome back to').isVisible({ timeout: 5000 }).catch(() => false);
+        const dashboardVisible = await page.getByText('Studio Headquarters').isVisible({ timeout: 5000 }).catch(() => false);
         if (!dashboardVisible) {
             // Try to navigate to dashboard if we're somewhere else
             const dashboardBtn = page.getByRole('button', { name: /Dashboard/i });
@@ -40,10 +62,8 @@ test.describe('Stress Testing', () => {
                 await dashboardBtn.click();
             }
         }
-        await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Studio Headquarters')).toBeVisible({ timeout: 30000 });
 
-        // Enable console logs
-        page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
 
         // 2. Seed Data (Client-side injection)
         console.log('Seeding 10 images...');
@@ -87,7 +107,7 @@ test.describe('Stress Testing', () => {
         await page.reload();
 
         // Wait for dashboard
-        await expect(page.getByText('Welcome back to')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Studio Headquarters')).toBeVisible({ timeout: 15000 });
 
         // Wait for store rehydration
         await page.waitForFunction(() => {

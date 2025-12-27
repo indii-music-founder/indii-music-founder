@@ -8,7 +8,7 @@ describe('MEADService', () => {
         // Enrich mock metadata with lyrics and description
         const richMetadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA,
-            description: 'A revolutionary album that changes everything.',
+            marketingComment: 'A revolutionary album that changes everything.',
             tracks: [
                 {
                     title: 'Track 1',

@@ -14,7 +14,7 @@ export interface AgentAction {
 export interface AgentStepResult {
     success: boolean;
     logs: string[];
-    finalData?: any;
+    finalData?: unknown;
 }
 
 export class BrowserAgentDriver {
@@ -139,7 +139,7 @@ export class BrowserAgentDriver {
 
             throw new Error('Max steps exceeded');
 
-        } catch (error) {
+        } catch (error: unknown) {
             logs.push(`[Driver] Error: ${error}`);
             return { success: false, logs };
         }

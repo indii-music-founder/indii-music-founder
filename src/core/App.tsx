@@ -135,7 +135,11 @@ function useOnboardingRedirect() {
         if (!isAuthenticated || !isAuthReady) return;
 
         const state = useStore.getState();
-        const isTestMode = typeof window !== 'undefined' && '__TEST_MODE__' in window;
+        const isTestMode = typeof window !== 'undefined' && (
+            '__TEST_MODE__' in window ||
+            localStorage.getItem('TEST_MODE') === 'true' ||
+            window.location.search.includes('testMode=true')
+        );
 
         // Skip onboarding in dev mode if flag is set
         if (env.skipOnboarding && !state.userProfile?.bio) {

@@ -10,7 +10,7 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { UploadCloud } from "lucide-react";
+import { UploadCloud, Camera } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   type DragEvent,
@@ -458,7 +458,18 @@ export default function FileUpload({
 
   const triggerFileInput = useCallback(() => {
     if (status === "uploading") return;
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.removeAttribute("capture");
+      fileInputRef.current.click();
+    }
+  }, [status]);
+
+  const triggerCamera = useCallback(() => {
+    if (status === "uploading") return;
+    if (fileInputRef.current) {
+      fileInputRef.current.setAttribute("capture", "environment");
+      fileInputRef.current.click();
+    }
   }, [status]);
 
   const resetState = useCallback(() => {
@@ -540,9 +551,20 @@ export default function FileUpload({
                       className="group flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                       onClick={triggerFileInput}
                       type="button"
+                      aria-label="Upload file"
                     >
                       <span>Upload File</span>
                       <UploadCloud className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    </button>
+
+                    <button
+                      className="group md:hidden flex w-4/5 items-center justify-center gap-2 rounded-lg bg-blue-50/50 px-4 py-2.5 font-semibold text-blue-600 text-sm transition-all duration-200 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 mt-2"
+                      onClick={triggerCamera}
+                      type="button"
+                      aria-label="Take photo"
+                    >
+                      <span>Take Photo</span>
+                      <Camera className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                     </button>
 
                     <p className="mt-3 text-gray-500 text-xs dark:text-gray-400">

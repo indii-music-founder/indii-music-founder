@@ -1,4 +1,4 @@
-import { AgentContext } from './ContextResolver';
+import { AgentContext } from '../types';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
@@ -25,7 +25,7 @@ export class AgentOrchestrator {
         ${AGENTS.map(a => `- "${a.id}" (${a.name}): ${a.description}`).join('\n')}
 
         CURRENT CONTEXT:
-        - Active Module: ${context.currentModule || 'none'}
+        - Active Module: ${context.activeModule || 'none'}
         - Project: ${context.projectHandle?.name || 'none'} (${context.projectHandle?.type || 'none'})
 
         USER REQUEST: "${userQuery}"
@@ -62,7 +62,7 @@ export class AgentOrchestrator {
                 return route;
             }
             return 'generalist';
-        } catch (e) {
+        } catch (e: unknown) {
             console.error('[AgentOrchestrator] Routing failed, defaulting to generalist.', e);
             return 'generalist';
         }

@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage } from '@/core/store';
-import { agentRegistry } from './registry';
 import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -89,16 +88,17 @@ export class AgentService {
                 updateAgentMessage(responseId, { isStreaming: false });
             }
 
-        } catch (e: any) {
-            console.error('[AgentService] Execution Failed:', e);
-            this.addSystemMessage(`❌ **Error:** ${e.message || 'Unknown error occurred.'}`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            console.error('[AgentService] Execution Failed:', error);
+            this.addSystemMessage(`❌ **Error:** ${error.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
         }
     }
-    async runAgent(agentId: string, task: string, parentContext?: any): Promise<any> {
+    async runAgent(agentId: string, task: string, parentContext?: unknown): Promise<unknown> {
         // Build a pipeline context from the parent context or fresh
-        const context = parentContext || await this.contextPipeline.buildContext();
+        const context = (parentContext as any) || await this.contextPipeline.buildContext();
 
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];

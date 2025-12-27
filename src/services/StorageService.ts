@@ -72,7 +72,8 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
             // Looking at original code: "const docRef = await addDoc(collection(db, 'history'), docData);"
             // So it generates a NEW ID in Firestore.
 
-            const id = await this.add(docData as unknown as HistoryItem);
+            // We need to type cast to any because docData contains Timestamp instead of number
+            const id = await this.add(docData as any);
             console.log("Document written with ID: ", id);
             return id;
         } catch (e) {
@@ -112,7 +113,8 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                 }
 
                 return await this.query(constraints);
-            } catch (error: any) {
+            } catch (e: unknown) {
+                const error = e as any; // Cast to access Firebase error properties
                 // Check if it's the index error
                 if (error.code === 'failed-precondition' || error.message?.includes('index')) {
                     console.warn("Firestore index missing for sorting. Falling back to client-side sorting.");
@@ -131,7 +133,11 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                     // Fallback to client-side sort using inherited query method's sorter
                     return await this.query(
                         constraints,
-                        (a, b) => b.timestamp - a.timestamp
+                        (a, b) => {
+                            const timeA = (a.timestamp as any)?.toMillis ? (a.timestamp as any).toMillis() : a.timestamp;
+                            const timeB = (b.timestamp as any)?.toMillis ? (b.timestamp as any).toMillis() : b.timestamp;
+                            return (timeB as number) - (timeA as number);
+                        }
                     );
                 }
                 throw error;
