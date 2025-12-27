@@ -41,8 +41,10 @@ export const AuthService = {
 
     async signInWithGoogle(): Promise<User> {
         // Check if running in Electron - use secure IPC auth flow
-        const electronAPI = typeof window !== 'undefined' ? window.electronAPI : null;
-        console.log('[AuthService] Checking for electronAPI:', !!electronAPI, electronAPI);
+        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
+        const isElectron = typeof window !== 'undefined' && (window as any).process?.versions?.electron;
+
+        console.log('[AuthService] Checking for electronAPI:', !!electronAPI, 'isElectron:', !!isElectron);
 
         if (electronAPI?.auth) {
             console.log('[AuthService] Using Electron IPC login flow');
@@ -51,6 +53,10 @@ export const AuthService = {
             // Auth state handled via 'auth:user-update' IPC event listener
             // Throw sentinel error so caller knows to wait for IPC callback
             throw new Error('ELECTRON_AUTH_PENDING');
+        }
+
+        if (isElectron && !electronAPI) {
+            console.error('[AuthService] CRITICAL ERROR: Running in Electron but window.electronAPI is not defined! Preload script may have failed to load.');
         }
 
         console.warn('[AuthService] electronAPI not found, falling back to signInWithPopup');

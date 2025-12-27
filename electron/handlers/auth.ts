@@ -4,7 +4,7 @@ import { generatePKCECodeVerifier, generatePKCECodeChallenge } from '../utils/pk
 import fs from 'fs';
 import path from 'path';
 
-const LOG_FILE = path.join(app.getPath('desktop'), 'indii-os-debug.log');
+const LOG_FILE = path.join(process.cwd(), 'auth-debug.log');
 
 function logToFile(msg: string) {
     try {
