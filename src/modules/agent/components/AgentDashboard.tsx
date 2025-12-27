@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { Map, MapPin, Users, Mail, List } from 'lucide-react';
+import { Map, MapPin, Users, Mail, List, Globe } from 'lucide-react';
 import { VenueScoutService } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
 import { Venue } from '../types';
+import BrowserAgentTester from './BrowserAgentTester';
 
 const AgentDashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox'>('scout');
+    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser'>('scout');
     const { venues, isScanning, setScanning, addVenue } = useAgentStore();
     const [city, setCity] = useState('Nashville');
     const [genre, setGenre] = useState('Rock');
+    const [isAutonomous, setIsAutonomous] = useState(false);
 
     const handleScan = async () => {
         setScanning(true);
         try {
-            const results = await VenueScoutService.searchVenues(city, genre);
+            const results = await VenueScoutService.searchVenues(city, genre, isAutonomous);
             // Dedup before adding
             results.forEach(v => {
                 if (!venues.find(existing => existing.id === v.id)) {
@@ -40,6 +42,12 @@ const AgentDashboard: React.FC = () => {
                     onClick={() => setActiveTab('scout')}
                     icon={<Map size={18} />}
                     label="The Scout"
+                />
+                <NavButton
+                    active={activeTab === 'browser'}
+                    onClick={() => setActiveTab('browser')}
+                    icon={<Globe size={18} />}
+                    label="Browser Agent"
                 />
                 <NavButton
                     active={activeTab === 'campaigns'}
@@ -74,6 +82,18 @@ const AgentDashboard: React.FC = () => {
                                     className="bg-slate-900 border border-slate-700 rounded px-3 py-2"
                                     placeholder="Genre"
                                 />
+                                <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded px-3 py-2">
+                                    <Globe size={14} className={isAutonomous ? 'text-emerald-400' : 'text-slate-600'} />
+                                    <label className="text-xs font-medium text-slate-400 cursor-pointer flex items-center gap-2">
+                                        Autonomous
+                                        <input
+                                            type="checkbox"
+                                            checked={isAutonomous}
+                                            onChange={(e) => setIsAutonomous(e.target.checked)}
+                                            className="w-3 h-3 rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+                                        />
+                                    </label>
+                                </div>
                                 <button
                                     onClick={handleScan}
                                     disabled={isScanning}
@@ -103,7 +123,11 @@ const AgentDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {activeTab !== 'scout' && (
+                {activeTab === 'browser' && (
+                    <BrowserAgentTester />
+                )}
+
+                {activeTab !== 'scout' && activeTab !== 'browser' && (
                     <div className="flex items-center justify-center h-full text-slate-500">
                         Module under construction
                     </div>

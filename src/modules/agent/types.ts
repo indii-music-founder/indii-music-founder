@@ -3,6 +3,7 @@ export enum AgentActionType {
     EMAIL_OUTREACH = 'EMAIL_OUTREACH',
     UPDATE_STATUS = 'UPDATE_STATUS',
     RESEARCH_CONTACT = 'RESEARCH_CONTACT',
+    BROWSER_DRIVE = 'BROWSER_DRIVE',
 }
 
 export enum GigStatus {

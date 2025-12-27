@@ -18,6 +18,7 @@ import { PromptInput, PromptInputTextarea } from '@/components/ui/prompt-input';
 
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
+import AI_Input_Search from '@/components/kokonutui/ai-input-search';
 
 export default function CreativeNavbar() {
     const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, addUploadedImage, generatedHistory, setSelectedItem, setActiveReferenceImage, setViewMode, prompt, setPrompt } = useStore();

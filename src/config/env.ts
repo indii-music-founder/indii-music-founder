@@ -117,8 +117,8 @@ export const env = {
 // Firebase defaults for the production project. These keep the web app working when
 // environment overrides are not supplied (e.g., on Firebase Hosting deployments).
 export const firebaseDefaultConfig = {
-    apiKey: "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
-    authDomain: "indiios-v-1-1.web.app",
+    apiKey: "AIzaSyDQyNRsArXlKshdVSSz8xOH3Ar0ntvbS3U",
+    authDomain: "indiios-v-1-1.firebaseapp.com",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",
     storageBucket: "indiios-v-1-1.firebasestorage.app",

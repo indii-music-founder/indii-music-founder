@@ -76,57 +76,55 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
 
             {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} />}
 
-            {msg.role !== 'system' && (
-                <div className="prose prose-invert prose-sm max-w-none break-words leading-relaxed">
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                            code({ node, inline, className, children, ...props }: any) {
-                                const match = /language-(\w+)/.exec(className || '')
-                                const isJson = match && match[1] === 'json';
+            <div className="prose prose-invert prose-sm max-w-none break-words leading-relaxed">
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                        code({ node, inline, className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || '')
+                            const isJson = match && match[1] === 'json';
 
-                                // Contract Detection (Markdown content check)
-                                const childrenStr = String(children);
-                                if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) {
-                                    return <ContractRenderer markdown={childrenStr} />;
-                                }
-
-                                if (!inline && isJson) {
-                                    try {
-                                        const content = childrenStr.replace(/\n$/, '');
-                                        const data = JSON.parse(content);
-
-                                        // Heuristic Detection
-                                        if (data.beats && (data.title || data.synopsis)) {
-                                            return <VisualScriptRenderer data={data} />;
-                                        }
-                                        if (data.elements && data.elements[0]?.type === 'slugline') {
-                                            return <ScreenplayRenderer data={data} />;
-                                        }
-                                        if (data.callTime && data.nearestHospital) {
-                                            return <CallSheetRenderer data={data} />;
-                                        }
-
-                                    } catch (e) {
-                                        // Not valid JSON or unknown type
-                                    }
-                                }
-                                return !inline && match ? (
-                                    <code className={className} {...props}>
-                                        {children}
-                                    </code>
-                                ) : (
-                                    <code className={className} {...props}>
-                                        {children}
-                                    </code>
-                                )
+                            // Contract Detection (Markdown content check)
+                            const childrenStr = String(children);
+                            if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) {
+                                return <ContractRenderer markdown={childrenStr} />;
                             }
-                        }}
-                    >
-                        {msg.text}
-                    </ReactMarkdown>
-                </div>
-            )}
+
+                            if (!inline && isJson) {
+                                try {
+                                    const content = childrenStr.replace(/\n$/, '');
+                                    const data = JSON.parse(content);
+
+                                    // Heuristic Detection
+                                    if (data.beats && (data.title || data.synopsis)) {
+                                        return <VisualScriptRenderer data={data} />;
+                                    }
+                                    if (data.elements && data.elements[0]?.type === 'slugline') {
+                                        return <ScreenplayRenderer data={data} />;
+                                    }
+                                    if (data.callTime && data.nearestHospital) {
+                                        return <CallSheetRenderer data={data} />;
+                                    }
+
+                                } catch (e) {
+                                    // Not valid JSON or unknown type
+                                }
+                            }
+                            return !inline && match ? (
+                                <code className={className} {...props}>
+                                    {children}
+                                </code>
+                            ) : (
+                                <code className={className} {...props}>
+                                    {children}
+                                </code>
+                            )
+                        }
+                    }}
+                >
+                    {msg.text}
+                </ReactMarkdown>
+            </div>
             {msg.role === 'system' && <span>{msg.text}</span>}
 
             {msg.isStreaming && (

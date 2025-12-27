@@ -72,16 +72,20 @@ export class BrowserAgentService {
      * Captures a screenshot and basic page info.
      * Useful for the "Vision" part of the agent.
      */
-    async captureSnapshot(): Promise<{ title: string; url: string; screenshotBase64: string }> {
+    async captureSnapshot(): Promise<{ title: string; url: string; text: string; screenshotBase64: string }> {
         if (!this.page) throw new Error('Session not started');
 
         const title = await this.page.title();
         const url = this.page.url();
         const screenshotBuffer = await this.page.screenshot({ encoding: 'base64', type: 'jpeg', quality: 80 });
 
+        // Extract Main Text
+        const text = await this.page.evaluate(() => document.body.innerText);
+
         return {
             title,
             url,
+            text,
             screenshotBase64: screenshotBuffer as string
         };
     }

@@ -19,16 +19,20 @@ export class LicenseScannerService {
      */
     async scanUrl(url: string): Promise<LicenseAnalysis> {
         try {
-            // 1. Fetch Content (Bypass CORS)
-            if (!window.electronAPI?.network?.fetchUrl) {
-                throw new Error('Network API not available. Are you in the Electron app?');
+            // 1. Fetch Content via Browser Agent (Handles JS/SPA)
+            if (!window.electronAPI?.agent?.navigateAndExtract) {
+                throw new Error('Agent API not available. Are you in the Electron app?');
             }
 
-            console.log('[LicenseScanner] Fetching URL:', url);
-            const htmlContent = await window.electronAPI.network.fetchUrl(url);
+            console.log('[LicenseScanner] Navigating via Agent:', url);
+            const result = await window.electronAPI.agent.navigateAndExtract(url);
 
-            // 2. Truncate content to avoid token limits (keep first 15k chars, usually contains header/terms)
-            const truncatedContent = htmlContent.substring(0, 15000);
+            if (!result.success || !result.text) {
+                throw new Error(result.error || 'Failed to extract text from page');
+            }
+
+            // 2. Truncate content 
+            const truncatedContent = result.text.substring(0, 15000);
 
             // 3. AI Analysis
             const prompt = `

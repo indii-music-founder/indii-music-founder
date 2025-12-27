@@ -8,7 +8,8 @@
 The **indiiOS** agent system is built on a **Hub-and-Spoke** architecture designed for scalability and specialization, now powered exclusively by **Gemini 3** preview models.
 
 * **The Hub (Orchestrator)**: `AgentService` ("indii"). It handles user interaction, context management, and high-level strategy. It leverages `gemini-3-pro-preview` with **High Thinking** for strategic planning.
-* **The Spokes (Specialists)**: Specialized agents (Legal, Marketing, Music) that extend `BaseAgent`. These use `gemini-3-flash-preview` for specialized tasks or `gemini-3-pro-preview` for complex domain analysis.
+* **The Spokes (Specialists)**: Specialized agents (Legal, Marketing, Music, **Browser**) that extend `BaseAgent`. These use `gemini-3-flash-preview` for specialized tasks or `gemini-3-pro-preview` for complex domain analysis.
+* **Autonomous Browsing (Gemini Drive)**: A specialized capability that allows agents to actuate a Puppeteer instance via visual reasoning. See [AUTONOMOUS_BROWSER_AGENT.md](./AUTONOMOUS_BROWSER_AGENT.md) for details.
 * **The Memory/Context Layer**: Powered by the **Gemini File Search API**, providing native RAG capabilities with long-context awareness.
 * **The Glue**: `AgentRegistry` and the `delegate_task` tool.
 

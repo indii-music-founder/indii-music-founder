@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import FileUpload from '@/components/kokonutui/file-upload';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -161,37 +162,15 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 {activeTab === 'upload' ? (
                     /* Upload Area */
                     <div className="space-y-4">
-                        <div
-                            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 mb-6 ${isDragging ? 'border-white bg-white/10 scale-[1.02]' : 'border-gray-700 hover:border-gray-500 hover:bg-[#1a1a1a] bg-[#0f0f0f]'}`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                        >
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                className="hidden"
-                                id="brand-asset-upload"
-                                onChange={handleFileInput}
-                            />
-                            <label
-                                htmlFor="brand-asset-upload"
-                                className="cursor-pointer flex flex-col items-center gap-3 w-full"
-                            >
-                                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-white text-black' : 'bg-gray-800 text-gray-400 group-hover:text-white'}`}>
-                                    <Upload size={24} />
-                                </div>
-                                <div className="space-y-1 text-center">
-                                    <span className="block text-sm text-white font-medium">
-                                        Drag &amp; Drop or Browse
-                                    </span>
-                                    <span className="block text-xs text-gray-500">
-                                        Upload PNG, JPG, SVG brand assets
-                                    </span>
-                                </div>
-                            </label>
-                        </div>
+                        <FileUpload
+                            onUploadSuccess={(file) => {
+                                processFiles([file]);
+                            }}
+                            acceptedFileTypes={['image/*']}
+                            multiple={true}
+                            immediate={true}
+                            className="bg-transparent border-none p-0"
+                        />
 
                         {/* Mobile Camera Option */}
                         <div className="md:hidden">

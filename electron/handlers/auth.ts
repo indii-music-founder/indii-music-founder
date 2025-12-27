@@ -1,6 +1,18 @@
-import { ipcMain, BrowserWindow, shell, session } from 'electron';
+import { ipcMain, BrowserWindow, shell, session, app } from 'electron';
 import { authStorage } from '../services/AuthStorage';
 import { generatePKCECodeVerifier, generatePKCECodeChallenge } from '../utils/pkce';
+import fs from 'fs';
+import path from 'path';
+
+const LOG_FILE = path.join(app.getPath('desktop'), 'indii-os-debug.log');
+
+function logToFile(msg: string) {
+    try {
+        fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] [Auth] ${msg}\n`);
+    } catch (e) {
+        console.error('Failed to write to log file', e);
+    }
+}
 
 // In-memory storage for pending auth flows
 const pendingVerifier: string | null = null;
@@ -52,16 +64,19 @@ export function registerAuthHandlers() {
 }
 
 export function handleDeepLink(url: string) {
+    logToFile(`handleDeepLink received URL: ${url}`);
     console.log("Deep link received:", url);
     try {
         const urlObj = new URL(url);
 
         if (urlObj.protocol !== 'indii-os:') {
+            logToFile(`Error: Invalid protocol ${urlObj.protocol}`);
             console.error('Blocked deep link with invalid protocol:', urlObj.protocol);
             return;
         }
 
         if (urlObj.hostname !== 'auth' || urlObj.pathname !== '/callback') {
+            logToFile(`Warning: Unexpected host/path ${urlObj.hostname}${urlObj.pathname}`);
             console.warn('Blocked deep link with unexpected host/path:', urlObj.toString());
             return;
         }
@@ -70,6 +85,7 @@ export function handleDeepLink(url: string) {
         const error = urlObj.searchParams.get('error');
 
         if (error) {
+            logToFile(`Auth Error from URL: ${error}`);
             console.error("Auth Error:", error);
             notifyAuthError(error);
             return;
@@ -80,26 +96,18 @@ export function handleDeepLink(url: string) {
         const refreshToken = urlObj.searchParams.get('refreshToken');
 
         if (refreshToken) {
+            logToFile(`Received Refresh Token (len: ${refreshToken.length})`);
             authStorage.saveToken(refreshToken).catch(err => console.error("Failed to save refresh token:", err));
         }
         if (idToken) {
+            logToFile(`Success: Tokens found. ID: ${idToken.substring(0, 10)}..., Access: ${!!accessToken}`);
             console.log("Received tokens via bridge flow, notifying renderer...");
-            console.log(`[Auth] ID Token length: ${idToken.length}`);
-            console.log(`[Auth] Access Token present: ${!!accessToken}, length: ${accessToken?.length || 0}`);
             notifyAuthSuccess({ idToken, accessToken });
             return;
         }
-
-        // PKCE Flow logic omitted for brevity as it seemed unused in main.ts logic (implicit flow preferred via bridge), 
-        // but restoring if needed:
-        if (code && pendingVerifier) {
-            // ... PKCE exchange logic ...
-            // Simplified for now assuming Bridge Flow is primary.
-            // If the user needs PKCE, we can add the exchange logic back here. 
-            // For now, let's keep it safe.
-            console.log("PKCE Code received but flow not fully implemented in refactor yet.");
-        }
+        logToFile("No tokens or errors found in deep link.");
     } catch (e) {
+        logToFile(`Exception in handleDeepLink: ${String(e)}`);
         console.error("Failed to parse deep link:", e);
         notifyAuthError('Invalid auth callback');
     }

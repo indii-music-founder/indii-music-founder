@@ -8,6 +8,13 @@ import { getColorForModule } from '../theme/moduleColors';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { voiceService } from '@/services/ai/VoiceService';
+import { cn } from '@/lib/utils';
+import {
+    PromptInput,
+    PromptInputTextarea,
+    PromptInputActions,
+    PromptInputAction
+} from '@/components/ui/prompt-input';
 
 interface DelegateMenuProps {
     isOpen: boolean;
@@ -248,20 +255,26 @@ function CommandBar() {
                         )}
                     </AnimatePresence>
 
-                    <form onSubmit={handleSubmit}>
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                    <PromptInput
+                        value={input}
+                        onValueChange={setInput}
+                        onSubmit={() => handleSubmit({ preventDefault: () => { } } as any)}
+                        className={cn(
+                            "bg-transparent border-none shadow-none",
+                            isDragging && "opacity-50"
+                        )}
+                        disabled={isProcessing}
+                    >
+                        <PromptInputTextarea
                             placeholder={isDragging ? "" : "Describe your task, drop files, or take a picture..."}
-                            className="w-full bg-transparent text-gray-200 placeholder-gray-600 px-4 py-3 outline-none rounded-t-xl"
+                            className="text-gray-200 placeholder-gray-600"
                         />
 
                         {/* Attachments Preview */}
                         <AttachmentList attachments={attachments} onRemove={removeAttachment} />
 
                         {/* Toolbar */}
-                        <div className="flex items-center justify-between px-2 pb-2">
+                        <PromptInputActions className="px-2 pb-2">
                             <div className="flex items-center gap-1">
                                 <input
                                     type="file"
@@ -278,23 +291,26 @@ function CommandBar() {
                                     accept="image/*"
                                     capture="environment"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
-                                >
-                                    <Paperclip size={14} />
-                                    <span className="hidden sm:inline">Attach</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => cameraInputRef.current?.click()}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 transition-all shadow-sm"
-                                    title="Take a picture"
-                                >
-                                    <Camera size={14} />
-                                    <span className="text-xs font-medium">Camera</span>
-                                </button>
+                                <PromptInputAction tooltip="Attach files">
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                    >
+                                        <Paperclip size={14} />
+                                        <span className="hidden sm:inline">Attach</span>
+                                    </button>
+                                </PromptInputAction>
+                                <PromptInputAction tooltip="Take a picture">
+                                    <button
+                                        type="button"
+                                        onClick={() => cameraInputRef.current?.click()}
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 transition-all shadow-sm"
+                                    >
+                                        <Camera size={14} />
+                                        <span className="text-xs font-medium">Camera</span>
+                                    </button>
+                                </PromptInputAction>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
                                 <div className="relative">
                                     <button
@@ -318,15 +334,18 @@ function CommandBar() {
                             </div>
 
                             <div className="flex items-center gap-2">
+                                <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice input"}>
+                                    <button
+                                        type="button"
+                                        onClick={handleMicClick}
+                                        className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+                                    >
+                                        <Mic size={14} />
+                                    </button>
+                                </PromptInputAction>
                                 <button
                                     type="button"
-                                    onClick={handleMicClick}
-                                    className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
-                                >
-                                    <Mic size={14} />
-                                </button>
-                                <button
-                                    type="submit"
+                                    onClick={(e) => handleSubmit(e as any)}
                                     disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
                                 >
@@ -340,8 +359,8 @@ function CommandBar() {
                                     )}
                                 </button>
                             </div>
-                        </div>
-                    </form>
+                        </PromptInputActions>
+                    </PromptInput>
                 </div>
 
                 <div className="flex justify-end mt-2">

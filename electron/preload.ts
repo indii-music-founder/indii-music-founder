@@ -44,5 +44,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     network: {
         fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url)
     },
+    // Agent Capabilities
+    agent: {
+        navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),
+        performAction: (action: string, selector: string, text?: string) => ipcRenderer.invoke('agent:perform-action', action, selector, text),
+        captureState: () => ipcRenderer.invoke('agent:capture-state'),
+    },
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
 });

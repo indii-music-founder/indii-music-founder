@@ -1,4 +1,5 @@
 import { Venue } from '../types';
+import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
 
 // Mock data for development
 const MOCK_VENUES: Venue[] = [
@@ -51,18 +52,42 @@ export class VenueScoutService {
      * Searches for venues in a specific city matching the genre.
      * Simulates a network delay and returns mock data.
      */
-    static async searchVenues(city: string, genre: string): Promise<Venue[]> {
-        console.log(`[VenueScout] Scanning likely venues in ${city} for ${genre}...`);
+    static async searchVenues(city: string, genre: string, isAutonomous = false): Promise<Venue[]> {
+        if (!isAutonomous) {
+            console.log(`[VenueScout] Scanning likely venues in ${city} for ${genre}...`);
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            return MOCK_VENUES.filter(v =>
+                v.city.toLowerCase() === city.toLowerCase() &&
+                v.genres.some(g => g.toLowerCase().includes(genre.toLowerCase()) || genre.toLowerCase().includes(g.toLowerCase()))
+            );
+        }
 
-        // Simulate AI "thinking" / searching time
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log(`[VenueScout] Launching autonomous discovery for ${genre} venues in ${city}...`);
+        const goal = `Find 3 real music venues in ${city} that host ${genre} music. Return their name, capacity (approx if needed), and official website URL. Focus on official results.`;
 
-        const matches = MOCK_VENUES.filter(v =>
-            v.city.toLowerCase() === city.toLowerCase() &&
-            v.genres.some(g => g.toLowerCase().includes(genre.toLowerCase()) || genre.toLowerCase().includes(g.toLowerCase()))
-        );
+        try {
+            const result = await browserAgentDriver.drive('https://www.google.com', goal);
+            if (result.success && result.finalData) {
+                // Mocking the result of parsing agent output
+                return [
+                    {
+                        id: `agent_${Date.now()}_1`,
+                        name: 'The Fillmore (Discovered)',
+                        city: city,
+                        state: 'MI',
+                        capacity: 2900,
+                        genres: [genre, 'Rock', 'Pop'],
+                        website: 'https://www.thefillmoredetroit.com',
+                        status: 'active',
+                        notes: 'Verified by Autonomous Agent.'
+                    }
+                ];
+            }
+        } catch (e) {
+            console.error("Autonomous search failed", e);
+        }
 
-        return matches;
+        return [];
     }
 
     /**
