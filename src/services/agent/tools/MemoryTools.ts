@@ -1,8 +1,6 @@
 import { useStore } from '@/core/store';
 import { memoryService } from '@/services/agent/MemoryService';
-import { AI } from '@/services/ai/AIService';
 import type { ToolFunctionArgs } from '../types';
-import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for MemoryTools
@@ -15,11 +13,6 @@ interface SaveMemoryArgs extends ToolFunctionArgs {
 
 interface RecallMemoriesArgs extends ToolFunctionArgs {
     query: string;
-}
-
-interface VerifyOutputArgs extends ToolFunctionArgs {
-    goal: string;
-    content: string;
 }
 
 // ============================================================================
@@ -61,29 +54,5 @@ export const MemoryTools = {
     read_history: async (): Promise<string> => {
         const history = useStore.getState().agentHistory;
         return history.slice(-5).map(h => `${h.role}: ${h.text.substring(0, 50)}...`).join('\n');
-    },
-
-    verify_output: async (args: VerifyOutputArgs): Promise<string> => {
-        try {
-            const prompt = `
-            CRITIQUE REQUEST:
-            Goal: "${args.goal}"
-            Content to Verify: "${args.content}"
-
-            Task: Rate this content on a scale of 1-10 based on how well it meets the goal.
-            If score < 7, provide specific improvements.
-            Output JSON: { "score": number, "reason": "string", "pass": boolean }
-            `;
-
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                config: { responseMimeType: 'application/json' }
-            });
-
-            return `Verification Result: ${res.text()}`;
-        } catch (e: unknown) {
-            return `Verification failed: ${getErrorMessage(e)}`;
-        }
     }
 };

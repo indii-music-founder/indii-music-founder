@@ -1,4 +1,3 @@
-import { useStore } from '@/core/store';
 import type { ToolFunctionArgs } from '../types';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -15,9 +14,7 @@ interface AnalyzeContractArgs extends ToolFunctionArgs {
     mime_type: string;
 }
 
-interface SearchKnowledgeArgs extends ToolFunctionArgs {
-    query: string;
-}
+// Note: search_knowledge moved to KnowledgeTools
 
 interface VerifyOutputArgs extends ToolFunctionArgs {
     goal: string;
@@ -91,21 +88,7 @@ export const AnalysisTools = {
         }
     },
 
-    search_knowledge: async (args: SearchKnowledgeArgs): Promise<string> => {
-        try {
-            const { runAgenticWorkflow } = await import('@/services/rag/ragService');
-            const { useStore } = await import('@/core/store');
-            const { userProfile } = useStore.getState();
-
-            const onUpdate = (msg: string) => console.log(`[RAG]: ${msg}`);
-            const onDocStatus = () => { };
-
-            const result = await runAgenticWorkflow(args.query, userProfile, null, onUpdate, onDocStatus);
-            return `RAG Search Result: ${result.asset.content}`;
-        } catch (e: unknown) {
-            return `Knowledge search failed: ${getErrorMessage(e)}`;
-        }
-    },
+    // Note: search_knowledge moved to KnowledgeTools
 
     verify_output: async (args: VerifyOutputArgs): Promise<string> => {
         try {

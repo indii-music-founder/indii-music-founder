@@ -1,5 +1,3 @@
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
 import { AI } from '@/services/ai/AIService';
 import type { ToolFunctionArgs } from '../types';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -7,11 +5,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // ============================================================================
 // Types for LegalTools
 // ============================================================================
-
-interface AnalyzeContractArgs extends ToolFunctionArgs {
-    fileData: string;
-    mimeType: string;
-}
+// Note: analyze_contract moved to AnalysisTools (in TOOL_REGISTRY)
 
 interface DraftContractArgs extends ToolFunctionArgs {
     type: string;
@@ -22,13 +16,6 @@ interface DraftContractArgs extends ToolFunctionArgs {
 interface GenerateNdaArgs extends ToolFunctionArgs {
     parties: string[];
     purpose: string;
-}
-
-interface ContractAnalysisResult {
-    summary?: string;
-    clauses?: string[];
-    risks?: string[];
-    [key: string]: unknown;
 }
 
 // ============================================================================
@@ -47,23 +34,6 @@ function getErrorMessage(error: unknown): string {
 // ============================================================================
 
 export const LegalTools = {
-    analyze_contract: async (args: AnalyzeContractArgs): Promise<string> => {
-        try {
-            const analyzeContract = httpsCallable<
-                { fileData: string; mimeType: string },
-                ContractAnalysisResult
-            >(functions, 'analyzeContract');
-
-            const result = await analyzeContract({
-                fileData: args.fileData,
-                mimeType: args.mimeType || 'application/pdf'
-            });
-            return JSON.stringify(result.data, null, 2);
-        } catch (e: unknown) {
-            return `Contract analysis failed: ${getErrorMessage(e)}`;
-        }
-    },
-
     draft_contract: async (args: DraftContractArgs): Promise<string> => {
         try {
             const systemPrompt = `

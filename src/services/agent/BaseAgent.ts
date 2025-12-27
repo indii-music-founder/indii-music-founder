@@ -178,10 +178,22 @@ ${SUPERPOWER_PROMPT}
 ${task}
 `;
 
-        // Merge specialist tools with superpowers
+        // Collect all tool names from specialist's tools to avoid duplicates
+        const specialistToolNames = new Set(
+            (this.tools || [])
+                .flatMap(t => t.functionDeclarations || [])
+                .map(f => f.name)
+        );
+
+        // Filter SUPERPOWER_TOOLS to exclude any already defined by specialist
+        const filteredSuperpowers = SUPERPOWER_TOOLS.filter(
+            tool => !specialistToolNames.has(tool.name)
+        );
+
+        // Merge specialist tools with filtered superpowers
         const allTools: ToolDefinition[] = [
             ...(this.tools || []),
-            { functionDeclarations: SUPERPOWER_TOOLS }
+            ...(filteredSuperpowers.length > 0 ? [{ functionDeclarations: filteredSuperpowers }] : [])
         ];
 
         try {

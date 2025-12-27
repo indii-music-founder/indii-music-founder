@@ -1,19 +1,7 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LegalTools } from './LegalTools';
 
-// Mock Firebase functions
-const mockHttpsCallable = vi.fn();
-vi.mock('firebase/functions', () => ({
-    httpsCallable: (functionsInstance: any, name: string) => {
-        return (data: any) => mockHttpsCallable(data);
-    },
-    getFunctions: vi.fn()
-}));
-
-vi.mock('@/services/firebase', () => ({
-    functions: {}
-}));
+// Note: analyze_contract tests moved to AnalysisTools.test.ts
 
 // Mock AIService
 const mockGenerateContent = vi.fn();
@@ -28,31 +16,7 @@ describe('LegalTools', () => {
         vi.clearAllMocks();
     });
 
-    it('analyze_contract calls cloud function correctly', async () => {
-        mockHttpsCallable.mockResolvedValue({
-            data: { risk_score: 85, summary: 'Safe contract' }
-        });
-
-        const result = await LegalTools.analyze_contract({
-            fileData: 'base64data',
-            mimeType: 'application/pdf'
-        });
-
-        expect(JSON.parse(result)).toEqual({ risk_score: 85, summary: 'Safe contract' });
-    });
-
-    it('analyze_contract handles errors gracefully', async () => {
-        mockHttpsCallable.mockRejectedValue(new Error('Cloud function failed'));
-
-        const result = await LegalTools.analyze_contract({
-            fileData: 'base64data',
-            mimeType: 'application/pdf'
-        });
-
-        expect(result).toContain('Contract analysis failed');
-    });
-
-    it('generate_nda returns mock data (for now)', async () => {
+    it('generate_nda returns generated NDA', async () => {
         mockGenerateContent.mockResolvedValue({
             text: () => '[MOCK] Generated NDA for Alice and Bob'
         });
@@ -63,5 +27,18 @@ describe('LegalTools', () => {
 
         expect(result).toContain('[MOCK] Generated NDA');
         expect(result).toContain('Alice and Bob');
+    });
+
+    it('draft_contract generates contract text', async () => {
+        mockGenerateContent.mockResolvedValue({
+            text: () => '# LEGAL AGREEMENT\n\nThis agreement is between...'
+        });
+        const result = await LegalTools.draft_contract({
+            type: 'Sync License',
+            parties: ['Artist', 'Label'],
+            terms: 'Exclusive rights for 2 years'
+        });
+
+        expect(result).toContain('LEGAL AGREEMENT');
     });
 });
