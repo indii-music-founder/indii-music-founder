@@ -25,6 +25,11 @@ function VerifyEmailContent() {
     useEffect(() => {
         async function verify() {
             if (!oobCode) return; // Should be handled by initial state, but safe guard
+            if (!auth) {
+                setStatus('error');
+                setError('Authentication service not available');
+                return;
+            }
 
             try {
                 await applyActionCode(auth, oobCode);

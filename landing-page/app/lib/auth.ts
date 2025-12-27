@@ -20,6 +20,7 @@ const STUDIO_URL = process.env.NEXT_PUBLIC_STUDIO_URL || (process.env.NODE_ENV =
  * Sign in with email and password
  */
 export async function signInWithEmail(email: string, password: string) {
+  if (!auth) throw new Error('Firebase Auth not initialized');
   const result = await signInWithEmailAndPassword(auth, email, password);
   await updateLastLogin(result.user.uid);
   return result.user;
@@ -29,6 +30,7 @@ export async function signInWithEmail(email: string, password: string) {
  * Create new account with email and password
  */
 export async function signUpWithEmail(email: string, password: string, displayName: string) {
+  if (!auth) throw new Error('Firebase Auth not initialized');
   const result = await createUserWithEmailAndPassword(auth, email, password);
 
   // Update display name
@@ -50,6 +52,7 @@ export async function signUpWithEmail(email: string, password: string, displayNa
  * Sign out current user
  */
 export async function logOut() {
+  if (!auth) throw new Error('Firebase Auth not initialized');
   await signOut(auth);
 }
 
@@ -57,6 +60,7 @@ export async function logOut() {
  * Send password reset email
  */
 export async function resetPassword(email: string) {
+  if (!auth) throw new Error('Firebase Auth not initialized');
   await sendPasswordResetEmail(auth, email);
 }
 
@@ -64,6 +68,7 @@ export async function resetPassword(email: string) {
  * Create user document in Firestore
  */
 async function createUserDocument(user: User, displayName?: string) {
+  if (!db) throw new Error('Firestore not initialized');
   const userRef = doc(db, 'users', user.uid);
   await setDoc(userRef, {
     uid: user.uid,
@@ -80,6 +85,7 @@ async function createUserDocument(user: User, displayName?: string) {
  * Update last login timestamp
  */
 async function updateLastLogin(uid: string) {
+  if (!db) throw new Error('Firestore not initialized');
   const userRef = doc(db, 'users', uid);
   await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
 }

@@ -23,10 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Skip auth listener if Firebase not initialized (SSR/build time)
+        if (!auth) {
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
 
-            if (firebaseUser) {
+            if (firebaseUser && db) {
                 // Fetch user profile
                 try {
                     const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
