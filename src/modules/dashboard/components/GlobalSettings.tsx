@@ -69,9 +69,9 @@ export default function GlobalSettings() {
                         </div>
                         <button
                             onClick={handleFidelityToggle}
-                            className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${highFidelity ? 'bg-blue-600' : 'bg-gray-700'}`}
+                            className={`w-12 h-7 rounded-full relative transition-colors duration-200 ${highFidelity ? 'bg-blue-600' : 'bg-gray-700'}`}
                         >
-                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${highFidelity ? 'right-1' : 'left-1'}`}></div>
+                            <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${highFidelity ? 'right-1.5' : 'left-1.5'}`}></div>
                         </button>
                     </div>
 
@@ -82,9 +82,9 @@ export default function GlobalSettings() {
                         </div>
                         <button
                             onClick={handleThemeToggle}
-                            className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${darkMode ? 'bg-purple-600' : 'bg-gray-700'}`}
+                            className={`w-12 h-7 rounded-full relative transition-colors duration-200 ${darkMode ? 'bg-purple-600' : 'bg-gray-700'}`}
                         >
-                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${darkMode ? 'right-1' : 'left-1'}`}></div>
+                            <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${darkMode ? 'right-1.5' : 'left-1.5'}`}></div>
                         </button>
                     </div>
                 </div>

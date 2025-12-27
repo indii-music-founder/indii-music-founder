@@ -6,11 +6,20 @@ interface NewProjectModalProps {
     onClose: () => void;
     onCreate: (name: string, type: 'creative' | 'music' | 'marketing' | 'legal') => Promise<void>;
     error: string | null;
+    initialName?: string;
+    initialType?: 'creative' | 'music' | 'marketing' | 'legal';
 }
 
-export default function NewProjectModal({ isOpen, onClose, onCreate, error }: NewProjectModalProps) {
-    const [name, setName] = useState('');
-    const [type, setType] = useState<'creative' | 'music' | 'marketing' | 'legal'>('creative');
+export default function NewProjectModal({ isOpen, onClose, onCreate, error, initialName = '', initialType = 'creative' }: NewProjectModalProps) {
+    const [name, setName] = useState(initialName);
+    const [type, setType] = useState<'creative' | 'music' | 'marketing' | 'legal'>(initialType);
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setName(initialName);
+            setType(initialType);
+        }
+    }, [isOpen, initialName, initialType]);
 
     if (!isOpen) return null;
 

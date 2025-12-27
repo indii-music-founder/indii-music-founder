@@ -40,6 +40,11 @@ const TEMPLATES: Template[] = [
 export default function ProjectHub() {
     const [projects, setProjects] = useState<ProjectMetadata[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Template selection state
+    const [selectedTemplateName, setSelectedTemplateName] = useState('');
+    const [selectedTemplateType, setSelectedTemplateType] = useState<'creative' | 'music' | 'marketing' | 'legal'>('creative');
+
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const { setModule, setProject } = useStore();
     const toast = useToast();
@@ -97,6 +102,18 @@ export default function ProjectHub() {
         }
     };
 
+    const handleTemplateClick = (template: Template) => {
+        setSelectedTemplateName(template.name);
+        setSelectedTemplateType(template.type);
+        setIsModalOpen(true);
+    };
+
+    const handleManualCreateClick = () => {
+        setSelectedTemplateName('');
+        setSelectedTemplateType('creative'); // Default
+        setIsModalOpen(true);
+    };
+
     return (
         <div className="h-full flex flex-col space-y-8 pb-12">
             {/* Header Area */}
@@ -105,89 +122,109 @@ export default function ProjectHub() {
                     <h2 className="text-2xl font-bold text-white tracking-tight">Active Projects</h2>
                     <p className="text-gray-500 text-sm mt-1">Manage and evolve your current studio sessions.</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-full flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95"
-                >
-                    <FolderPlus size={18} />
-                    <span className="font-semibold text-sm">Create New</span>
-                </button>
+                {projects.length > 0 && (
+                    <button
+                        onClick={handleManualCreateClick}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-full flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                    >
+                        <FolderPlus size={18} />
+                        <span className="font-semibold text-sm">Create New</span>
+                    </button>
+                )}
             </div>
 
-            {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projects.map(project => (
-                    <div
-                        key={project.id}
-                        onClick={() => handleOpenProject(project.id)}
-                        className="bg-[#161b22]/50 backdrop-blur-md border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-500 hover:bg-[#1c2128]/70 transition-all cursor-pointer group relative"
-                    >
-                        <div className="h-44 bg-gray-900/50 relative overflow-hidden">
-                            {project.thumbnail ? (
-                                <img src={project.thumbnail} alt={project.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-800 bg-gradient-to-br from-gray-900 to-black">
-                                    <Image size={40} className="group-hover:scale-110 transition-transform duration-500 opacity-20" />
-                                </div>
-                            )}
-
-                            {/* Overlay Controls */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-
-                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity" ref={openMenuId === project.id ? menuRef : null}>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenMenuId(openMenuId === project.id ? null : project.id);
-                                    }}
-                                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all"
-                                >
-                                    <MoreVertical size={16} />
-                                </button>
-                                {openMenuId === project.id && (
-                                    <div className="absolute top-full right-0 mt-2 bg-[#1c2128]/95 backdrop-blur-xl border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[160px] animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDuplicateProject(project.id);
-                                            }}
-                                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:bg-white/10 transition-colors"
-                                        >
-                                            <Copy size={15} />
-                                            <span>Duplicate Project</span>
-                                        </button>
-                                        <div className="h-px bg-gray-800 mx-2" />
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteProject(project.id);
-                                            }}
-                                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                                        >
-                                            <Trash2 size={15} />
-                                            <span>Delete Permanently</span>
-                                        </button>
+            {/* Projects Grid or Hero Empty State */}
+            {projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {projects.map(project => (
+                        <div
+                            key={project.id}
+                            onClick={() => handleOpenProject(project.id)}
+                            className="bg-[#161b22]/50 backdrop-blur-md border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-500 hover:bg-[#1c2128]/70 transition-all cursor-pointer group relative"
+                        >
+                            <div className="h-44 bg-gray-900/50 relative overflow-hidden">
+                                {project.thumbnail ? (
+                                    <img src={project.thumbnail} alt={project.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-800 bg-gradient-to-br from-gray-900 to-black">
+                                        <Image size={40} className="group-hover:scale-110 transition-transform duration-500 opacity-20" />
                                     </div>
                                 )}
-                            </div>
-                        </div>
 
-                        <div className="p-5">
-                            <h3 className="text-white font-bold text-lg mb-1.5 flex items-center justify-between">
-                                {project.name}
-                                <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-40 transition-opacity" />
-                            </h3>
-                            <div className="flex items-center justify-between text-xs font-medium uppercase tracking-tighter">
-                                <span className="flex items-center gap-1.5 text-gray-400">
-                                    <Clock size={12} className="text-blue-500" />
-                                    {new Date(project.lastModified).toLocaleDateString()}
-                                </span>
-                                <span className="text-gray-500">{project.assetCount} Assets</span>
+                                {/* Overlay Controls */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+
+                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity" ref={openMenuId === project.id ? menuRef : null}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenMenuId(openMenuId === project.id ? null : project.id);
+                                        }}
+                                        className="p-3 bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                    >
+                                        <MoreVertical size={18} />
+                                    </button>
+                                    {openMenuId === project.id && (
+                                        <div className="absolute top-full right-0 mt-2 bg-[#1c2128]/95 backdrop-blur-xl border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[160px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDuplicateProject(project.id);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                                            >
+                                                <Copy size={15} />
+                                                <span>Duplicate Project</span>
+                                            </button>
+                                            <div className="h-px bg-gray-800 mx-2" />
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteProject(project.id);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                                            >
+                                                <Trash2 size={15} />
+                                                <span>Delete Permanently</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="p-5">
+                                <h3 className="text-white font-bold text-lg mb-1.5 flex items-center justify-between">
+                                    {project.name}
+                                    <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-40 transition-opacity" />
+                                </h3>
+                                <div className="flex items-center justify-between text-xs font-medium uppercase tracking-tighter">
+                                    <span className="flex items-center gap-1.5 text-gray-400">
+                                        <Clock size={12} className="text-blue-500" />
+                                        {new Date(project.lastModified).toLocaleDateString()}
+                                    </span>
+                                    <span className="text-gray-500">{project.assetCount} Assets</span>
+                                </div>
                             </div>
                         </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="bg-[#161b22]/30 border border-gray-800 rounded-2xl p-10 text-center flex flex-col items-center justify-center space-y-6">
+                    <div className="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-2">
+                        <FolderPlus className="text-gray-500" size={32} />
                     </div>
-                ))}
-            </div>
+                    <div className="max-w-md space-y-2">
+                        <h3 className="text-2xl font-bold text-white">No active projects</h3>
+                        <p className="text-gray-400">Your studio is currently empty. Start by creating a project manually, or use one of the templates below.</p>
+                    </div>
+                    <button
+                        onClick={handleManualCreateClick}
+                        className="bg-white text-black hover:bg-gray-200 px-6 py-3 rounded-full font-bold transition-transform active:scale-95 shadow-lg shadow-white/10"
+                    >
+                        Create First Project
+                    </button>
+                </div>
+            )}
 
             {/* Templates Area */}
             <div className="pt-4">
@@ -205,6 +242,7 @@ export default function ProjectHub() {
                     {TEMPLATES.map(template => (
                         <div
                             key={template.id}
+                            onClick={() => handleTemplateClick(template)}
                             className="group relative bg-[#161b22]/30 border border-gray-800/50 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all cursor-pointer"
                         >
                             <div className="h-32 relative">
@@ -233,6 +271,8 @@ export default function ProjectHub() {
                 onClose={() => setIsModalOpen(false)}
                 onCreate={handleCreateProject}
                 error={null}
+                initialName={selectedTemplateName}
+                initialType={selectedTemplateType}
             />
         </div>
     );

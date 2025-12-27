@@ -47,7 +47,7 @@ export default function DataStorageManager() {
                     </div>
                     <div className="w-full h-3 bg-gray-900 rounded-full overflow-hidden border border-white/5">
                         <div
-                            className={`h-full bg-gradient-to-r ${getBarColor(stats.percentUsed)} transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.3)]`}
+                            className={`h-full bg-gradient-to-r ${getBarColor(stats.percentUsed)} transition-all duration-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]`}
                             style={{ width: `${Math.max(stats.percentUsed, 1)}%` }}
                         />
                     </div>

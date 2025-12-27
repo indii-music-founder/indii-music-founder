@@ -47,7 +47,7 @@ export default function SalesAnalytics() {
                             setPeriod('week');
                             setLoading(true);
                         }}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all min-w-[44px] min-h-[44px]
                             ${period === 'week' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                     >
                         7D
@@ -57,7 +57,7 @@ export default function SalesAnalytics() {
                             setPeriod('month');
                             setLoading(true);
                         }}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all min-w-[44px] min-h-[44px]
                             ${period === 'month' ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                     >
                         30D
