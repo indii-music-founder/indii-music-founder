@@ -168,12 +168,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         import('@/services/firebase').then(async ({ auth }) => {
             const { onAuthStateChanged } = await import('firebase/auth');
 
-            // Bypass for E2E Tests
+            // Bypass for E2E Tests/Unit Tests that explicitly want to disable Auth
             // @ts-expect-error test mode flag
-            const isTestMode = window.__TEST_MODE__ || localStorage.getItem('TEST_MODE') === 'true';
-            console.log('[AuthSlice] Checking Test Mode:', isTestMode);
-            if (isTestMode) {
-                console.log("[AuthSlice] Test Mode detected - skipping Firebase Auth listener");
+            const isAuthDisabled = (window.__DISABLE_AUTH__ || localStorage.getItem('DISABLE_AUTH') === 'true');
+            if (isAuthDisabled) {
+                console.log("[AuthSlice] Auth Disabled Mode detected - skipping Firebase Auth listener");
                 return;
             }
 

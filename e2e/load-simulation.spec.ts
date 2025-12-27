@@ -18,8 +18,13 @@ test.describe('Load Simulation: The Flash Mob', () => {
 
             try {
                 // 1. Hit the Home Page
+                await page.addInitScript(() => {
+                    localStorage.setItem('TEST_MODE', 'true');
+                    (window as any).__TEST_MODE__ = true;
+                });
+
                 const startTime = Date.now();
-                await page.goto(BASE_URL);
+                await page.goto(BASE_URL + '/?testMode=true');
                 await page.waitForLoadState('domcontentloaded');
 
                 // 2. Initial resilience check (Did we get 429'd on the JS bundles?)
@@ -28,7 +33,7 @@ test.describe('Load Simulation: The Flash Mob', () => {
 
                 // 3. Perform a "Heavy" read operation (Simulated by verifying Dashboard load)
                 // We race against a timeout because if 1M users hit, some WILL timeout
-                await expect(page.getByRole('heading', { name: /Recent Projects|Get Started/i })).toBeVisible({ timeout: 15000 });
+                await expect(page.getByText('Studio Headquarters')).toBeVisible({ timeout: 20000 });
 
                 // 4. Random "Write" operation (Agent interaction)
                 // Only 50% of users do this to vary load

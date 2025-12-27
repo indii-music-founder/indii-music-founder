@@ -19,8 +19,9 @@ service cloud.firestore {
 
     // Check if user is a member of the organization
     function isOrgMember(orgId) {
-      return isAuthenticated() &&
-        request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
+      let orgPath = /databases/$(database)/documents/organizations/$(orgId);
+      return isAuthenticated() && exists(orgPath) &&
+        request.auth.uid in get(orgPath).data.members;
     }
 
     // Check if orgId in resource data matches and user is a member

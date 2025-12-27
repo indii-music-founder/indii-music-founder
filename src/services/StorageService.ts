@@ -100,13 +100,10 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                     limit(limitCount)
                 ];
 
-                // Add userId constraint for personal workspace
-                if (orgId === 'org-default' || orgId === 'personal') {
-                    if (auth.currentUser) {
+                // If personal org, we must filter by userId to match security rules
+                if (orgId === 'personal') {
+                    if (auth.currentUser?.uid) {
                         constraints.push(where('userId', '==', auth.currentUser.uid));
-                        // Note: Mixed where/orderBy involving different fields requires an index.
-                        // where(orgId) + where(userId) + orderBy(timestamp)
-                        // If index is missing, we catch it below.
                     } else {
                         return [];
                     }

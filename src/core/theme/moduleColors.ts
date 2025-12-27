@@ -168,6 +168,22 @@ export const moduleColors: Record<AppSlice['currentModule'], ModuleColor> = {
         ring: 'focus-within:ring-indigo-400/50',
         hoverText: 'hover:text-indigo-200',
         hoverBg: 'hover:bg-indigo-400/5',
+    },
+    agent: {
+        text: 'text-violet-400',
+        bg: 'bg-violet-400/10',
+        border: 'border-violet-400',
+        ring: 'focus-within:ring-violet-400/50',
+        hoverText: 'hover:text-violet-200',
+        hoverBg: 'hover:bg-violet-400/5',
+    },
+    distribution: {
+        text: 'text-sky-400',
+        bg: 'bg-sky-400/10',
+        border: 'border-sky-400',
+        ring: 'focus-within:ring-sky-400/50',
+        hoverText: 'hover:text-sky-200',
+        hoverBg: 'hover:bg-sky-400/5',
     }
 };
 
