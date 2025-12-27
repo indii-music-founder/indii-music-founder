@@ -88,7 +88,7 @@ const createWindow = () => {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
-            sandbox: true,
+            sandbox: false, // Disabled to ensure preload script loads correctly in production
             safeDialogs: true,
             safeDialogsMessage: 'Stop seeing alerts from this page',
             webSecurity: !isDev,

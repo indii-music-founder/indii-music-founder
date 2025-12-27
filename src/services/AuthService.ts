@@ -40,23 +40,26 @@ export const AuthService = {
     },
 
     async signInWithGoogle(): Promise<User> {
-        // Check if running in Electron - use secure IPC auth flow
+        // Robust Electron detection that works even if 'process' is sandboxed/hidden
+        const isElectron = /Electron/i.test(navigator.userAgent);
         const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
-        const isElectron = typeof window !== 'undefined' && (window as any).process?.versions?.electron;
 
-        console.log('[AuthService] Checking for electronAPI:', !!electronAPI, 'isElectron:', !!isElectron);
+        console.log('[AuthService] Environment Check:', { isElectron, hasAPI: !!electronAPI });
 
-        if (electronAPI?.auth) {
+        if (isElectron) {
+            if (!electronAPI?.auth) {
+                // FAIL FAST: Do not fallback to popup - it won't work in production
+                const error = new Error('ELECTRON_BRIDGE_MISSING');
+                console.error('[AuthService] Critical Error: Electron Bridge missing. Preload failed?');
+                throw error;
+            }
+
             console.log('[AuthService] Using Electron IPC login flow');
-            // Opens external browser for OAuth, returns via deep link
             await electronAPI.auth.login();
-            // Auth state handled via 'auth:user-update' IPC event listener
-            // Throw sentinel error so caller knows to wait for IPC callback
-            throw new Error('ELECTRON_AUTH_PENDING');
-        }
 
-        if (isElectron && !electronAPI) {
-            console.error('[AuthService] CRITICAL ERROR: Running in Electron but window.electronAPI is not defined! Preload script may have failed to load.');
+            // Wait for the auth:user-update event handler to process the token
+            // This promise never resolves here - the app state update handles navigation
+            return new Promise(() => { });
         }
 
         console.warn('[AuthService] electronAPI not found, falling back to signInWithPopup');

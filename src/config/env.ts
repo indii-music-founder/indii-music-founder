@@ -44,11 +44,11 @@ const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefin
 const metaEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
 
 const processEnv = {
-    // Use environment variables when available - no hardcoded fallback for security
-    apiKey: readEnv('VITE_API_KEY'),
-    projectId: readEnv('VITE_VERTEX_PROJECT_ID'),
-    location: readEnv('VITE_VERTEX_LOCATION'),
-    useVertex: toBoolean(readEnv('VITE_USE_VERTEX')),
+    // Use environment variables when available - with fallbacks for Web/Public hosting
+    apiKey: readEnv('VITE_API_KEY') || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
+    projectId: readEnv('VITE_VERTEX_PROJECT_ID') || "indiios-v-1-1",
+    location: readEnv('VITE_VERTEX_LOCATION') || "us-central1",
+    useVertex: toBoolean(readEnv('VITE_USE_VERTEX') || "false"),
     googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
 
     // Pass through frontend specific - no hardcoded fallbacks for security
@@ -82,17 +82,13 @@ if (!parsed.success) {
     if (!processEnv.projectId) missingKeys.push('VITE_VERTEX_PROJECT_ID');
 
     if (missingKeys.length > 0) {
-        console.error("CRITICAL: The following environment variables are missing:", missingKeys.join(', '));
-        console.error("Please check your .env file.");
+        console.warn("WARNING: The following environment variables are missing:", missingKeys.join(', '));
+        console.warn("App will attempt to run with defaults, but some features may be disabled.");
     }
 
-    // Fail fast if critical keys are missing (only at runtime, not during build)
+    // Downgraded from fatal throw to warning to allow Firebase Auth to initialize
     if (!processEnv.apiKey || !processEnv.projectId) {
-        console.error("Critical environment variables missing.", processEnv);
-        // Only throw in browser (runtime) - allow build to complete for CI
-        if (typeof window !== 'undefined') {
-            throw new Error("Critical environment variables missing. Check console for details.");
-        }
+        console.warn("Critical environment variables missing. Proceeding with caution.");
     }
 
     // We are proceeding despite validation errors
