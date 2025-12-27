@@ -36,14 +36,14 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Fair AI Platform Phase 2: Social & Commerce
 
-- [ ] **Social Layer**:
-  - [ ] Implement `SocialService` (Follow/Unfollow, Activity Feed).
-  - [ ] Update UserProfile with `accountType` (Fan/Artist/Label) and `socialStats`.
-  - [ ] Create `SocialFeed` component.
-- [ ] **Commerce Engine**:
-  - [ ] Verify `MarketplaceService` product creation flow (already initiated in `MerchTable`).
-  - [ ] Implement "Buy" flow (simulated or real integration).
-  - [ ] Link `MerchTable` to `SocialFeed` (Product drops).
+- [x] **Social Layer**:
+  - [x] Implement `SocialService` (Follow/Unfollow, Activity Feed) - `src/services/social/SocialService.ts`
+  - [x] Update UserProfile with `accountType` (Fan/Artist/Label) and `socialStats` - `src/types/User.ts`
+  - [x] Create `SocialFeed` component - `src/modules/social/components/SocialFeed.tsx`
+- [x] **Commerce Engine**:
+  - [x] Verify `MarketplaceService` product creation flow - `src/services/marketplace/MarketplaceService.ts`
+  - [x] Implement "Buy" flow (MOCK payment) - `ProductCard.tsx` calls `purchaseProduct`
+  - [x] Link `MerchTable` to `SocialFeed` (Product drops) - SocialFeed has product picker, posts embed products
 
 ---
 
@@ -55,8 +55,12 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Mobile Experience Polish
 
-- [ ] **Touch Targets**: Audit new Dashboard components for mobile touchability.
-- [ ] **Performance**: Profile `AnalyticsView` animations on lower-end devices.
+- [x] **Touch Targets**: Audit and fix Dashboard components for mobile (44x44px minimum):
+  - [x] GlobalSettings: Toggle switches enlarged to `w-12 h-7`
+  - [x] ProjectHub: Menu button increased to `p-3` with `min-w-[44px]`
+  - [x] SalesAnalytics: Period buttons increased to `px-4 py-2` with min dimensions
+  - [x] ReferenceImageManager: Delete button enlarged to `p-2.5` with min dimensions
+- [x] **Performance**: Fixed `DataStorageManager` progress bar animation (1000ms → 500ms)
 
 ---
 

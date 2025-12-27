@@ -133,9 +133,9 @@ export default function ReferenceImageManager() {
                                 <span className="text-[10px] text-white font-medium truncate flex-1">{img.description}</span>
                                 <button
                                     onClick={() => handleDelete(idx)}
-                                    className="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg"
+                                    className="p-2.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                                 >
-                                    <Trash2 size={12} />
+                                    <Trash2 size={16} />
                                 </button>
                             </div>
                         </div>

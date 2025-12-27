@@ -140,9 +140,9 @@ export default function ProjectHub() {
                                         e.stopPropagation();
                                         setOpenMenuId(openMenuId === project.id ? null : project.id);
                                     }}
-                                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all"
+                                    className="p-3 bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
                                 >
-                                    <MoreVertical size={16} />
+                                    <MoreVertical size={18} />
                                 </button>
                                 {openMenuId === project.id && (
                                     <div className="absolute top-full right-0 mt-2 bg-[#1c2128]/95 backdrop-blur-xl border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[160px] animate-in fade-in slide-in-from-top-2 duration-200">
