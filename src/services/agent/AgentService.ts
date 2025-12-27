@@ -3,6 +3,7 @@ import { useStore, AgentMessage } from '@/core/store';
 import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
+import { AgentContext } from './types';
 
 export class AgentService {
     private isProcessing = false;
@@ -96,14 +97,17 @@ export class AgentService {
             this.isProcessing = false;
         }
     }
-    async runAgent(agentId: string, task: string, parentContext?: unknown): Promise<unknown> {
+
+
+    async runAgent(agentId: string, task: string, parentContext?: AgentContext): Promise<unknown> {
         // Build a pipeline context from the parent context or fresh
-        const context = (parentContext as any) || await this.contextPipeline.buildContext();
+        const context = parentContext || await this.contextPipeline.buildContext();
 
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];
+        if (!context.chatHistoryString) context.chatHistoryString = '';
 
-        return await this.executor.execute(agentId, task, context);
+        return await this.executor.execute(agentId, task, context as any);
     }
 
     private addSystemMessage(text: string) {

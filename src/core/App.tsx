@@ -106,7 +106,9 @@ function useAppInitialization() {
     const { initializeAuth, initializeHistory, loadProjects, isAuthReady, isAuthenticated } = useStore();
 
     useEffect(() => {
-        if ((window as any).__TEST_MODE__ || localStorage.getItem('TEST_MODE') === 'true') return;
+        // Only skip initialization if explicitly requested (e.g. unit tests)
+        if ((window as any).__DISABLE_AUTH__ ||
+            localStorage.getItem('DISABLE_AUTH') === 'true') return;
         initializeAuth();
 
         // Handle direct navigation to /select-org

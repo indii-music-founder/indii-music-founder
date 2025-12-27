@@ -28,11 +28,6 @@ vi.mock('firebase/firestore', () => ({
 // Better to mock `idb.openDB`.
 
 describe('repository syncWorkflows', () => {
-    interface MockIDB {
-        put: any;
-        get: any;
-        getAll: any;
-    }
 
     let mockPut: ReturnType<typeof vi.fn>;
     let mockGet: ReturnType<typeof vi.fn>;

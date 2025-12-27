@@ -1,13 +1,20 @@
 import React from 'react';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
+import type { ModuleId } from '../store/slices/appSlice';
 import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, user, logout } = useStore();
 
+    interface SidebarItem {
+        id: ModuleId;
+        icon: React.ElementType;
+        label: string;
+    }
+
     // Grouped navigation items based on the screenshot
-    const managerItems = [
+    const managerItems: SidebarItem[] = [
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road Manager' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
@@ -17,7 +24,7 @@ export default function Sidebar() {
         { id: 'video', icon: Film, label: 'Video Producer' },
     ];
 
-    const departmentItems = [
+    const departmentItems: SidebarItem[] = [
         { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
         { id: 'social', icon: Network, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },
@@ -28,13 +35,13 @@ export default function Sidebar() {
         { id: 'showroom', icon: Layout, label: 'Product Showroom' },
     ];
 
-    const toolItems = [
+    const toolItems: SidebarItem[] = [
         { id: 'music', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
     ];
 
-    const NavItem = ({ item, isActive }: { item: any, isActive: boolean }) => {
+    const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
         const colors = getColorForModule(item.id);
 
         return (

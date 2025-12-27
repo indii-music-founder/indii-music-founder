@@ -8,8 +8,10 @@ export interface Project {
     orgId: string;
 }
 
+export type ModuleId = 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom' | 'agent' | 'distribution';
+
 export interface AppSlice {
-    currentModule: 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom';
+    currentModule: ModuleId;
     currentProjectId: string;
     projects: Project[];
     setModule: (module: AppSlice['currentModule']) => void;

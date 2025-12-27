@@ -7,9 +7,6 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    doc,
-    updateDoc,
-    increment,
     Timestamp
 } from 'firebase/firestore';
 import { Product, Purchase } from './types';
@@ -81,7 +78,8 @@ export class MarketplaceService {
         const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
 
         // 4. Update Inventory (if applicable) and Sales Stats (Social Drops)
-        const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
+        // 4. Update Inventory (if applicable) and Sales Stats (Social Drops)
+        // const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
         // await updateDoc(productRef, { inventory: increment(-1) }); // If we tracked inventory
 
         // 5. Trigger fulfillment (e.g. grant access to digital asset)

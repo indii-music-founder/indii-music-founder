@@ -13,7 +13,7 @@ vi.mock('../../ai/AIService', () => ({
 // Mock Firebase Functions
 const mockHttpsCallable = vi.fn();
 vi.mock('firebase/functions', () => ({
-    httpsCallable: (functions: any, name: string) => mockHttpsCallable
+    httpsCallable: (_functions: any, _name: string) => mockHttpsCallable
 }));
 
 vi.mock('@/services/firebase', () => ({

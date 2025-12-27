@@ -2,7 +2,7 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { isInlineDataPart, isTextPart, type ContentPart } from '@/shared/types/ai.dto';
+import { isInlineDataPart, isTextPart } from '@/shared/types/ai.dto';
 
 export class EditingService {
 
@@ -27,6 +27,7 @@ export class EditingService {
                 prompt: options.prompt + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '')
             });
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const data = result.data as any;
             const part = data.candidates?.[0]?.content?.parts?.[0];
 
@@ -223,6 +224,7 @@ export class EditingService {
         projectContext?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const contents: any = { role: 'user', parts: [] };
             options.images.forEach((img, idx) => {
                 contents.parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
@@ -300,6 +302,7 @@ export class EditingService {
                 }
 
                 // Step 3: Generate Frame
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const contents: any = { role: 'user', parts: [] };
                 if (previousImage) {
                     contents.parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });

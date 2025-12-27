@@ -56,7 +56,7 @@ describe('Storage Security Rules', () => {
         const context = testEnv.authenticatedContext(userId);
 
         // Try uploading a file to /users/user-123/test.txt
-        const result = await context.storage().ref(`users/${userId}/test.txt`).put(new Blob(['test content'], { type: 'text/plain' }));
+        await context.storage().ref(`users/${userId}/test.txt`).put(new Blob(['test content'], { type: 'text/plain' }));
 
         // Check if upload was successful. 
         // The `put` promise resolves on success. If it rejected, the test fails.
@@ -89,12 +89,14 @@ describe('Storage Security Rules', () => {
         try {
             await context.storage().ref('users/user-123/hack.txt').put(new Blob(['hack'], { type: 'text/plain' }));
             throw new Error('Should have failed');
-        } catch (e: any) {
+        } catch {
             // Expect permission denied
             // The error code from Firebase Storage rules rejection usually contains 'permission-denied' or 403
+            /*
             if (!e.code && !e.message.includes('permission')) { // loosely check
                 // throw e; 
             }
+            */
         }
     });
 
@@ -104,7 +106,7 @@ describe('Storage Security Rules', () => {
         try {
             await alice.storage().ref('users/bob/malicious.txt').put(new Blob(['hack'], { type: 'text/plain' }));
             throw new Error('Should have failed');
-        } catch (e: any) {
+        } catch {
             // Expected failure
         }
     });
@@ -121,7 +123,7 @@ describe('Storage Security Rules', () => {
         try {
             await alice.storage().ref(`users/${bobId}/secret.txt`).getDownloadURL();
             throw new Error('Should have failed');
-        } catch (e) {
+        } catch {
             // Expected
         }
     });

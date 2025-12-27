@@ -1,9 +1,10 @@
-import { AI } from '@/services/ai/AIService';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AI } from '../ai/AIService';
+import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
+import { ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '@/modules/workflow/types';
 import type { FunctionDeclaration } from '@/shared/types/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { getDistributorRequirements, getDistributorSummaryForAI, getSupportedDistributors } from './distributorRequirements';
+import { getSupportedDistributors } from './distributorRequirements';
 
 // --- Types & Enums ---
 
@@ -306,8 +307,8 @@ const shareDistributorInfoFunction: FunctionDeclaration = {
 
 export function calculateProfileStatus(profile: UserProfile) {
     // Safe access to nested properties
-    // FIX: Cast fallback to any to avoid "Property does not exist on type '{}'" errors when profile data is incomplete
-    const brandKit = profile.brandKit || ({} as any);
+    // FIX: Cast fallback to Partial to avoid "Property does not exist on type '{}'" errors when profile data is incomplete
+    const brandKit = profile.brandKit || ({} as Partial<typeof profile.brandKit>);
     const releaseDetails = brandKit.releaseDetails || {};
     const socials = brandKit.socials || {};
     const brandAssets = brandKit.brandAssets || [];
@@ -350,11 +351,11 @@ export function calculateProfileStatus(profile: UserProfile) {
 // --- Main Service Logic ---
 
 export async function runOnboardingConversation(
-    history: { role: string, parts: any[] }[],
+    history: { role: string, parts: ContentPart[] }[],
     userProfile: UserProfile,
     mode: 'onboarding' | 'update',
     files: ConversationFile[] = []
-): Promise<{ text: string, functionCalls?: any[] }> {
+): Promise<{ text: string, functionCalls?: FunctionCallPart['functionCall'][] }> {
 
     const { coreMissing, releaseMissing, coreProgress, releaseProgress } = calculateProfileStatus(userProfile);
     const currentPhase = determinePhase(userProfile);
@@ -590,7 +591,7 @@ ALWAYS preserve what they're NOT changing.`;
 }
 
 export function processFunctionCalls(
-    functionCalls: any[],
+    functionCalls: FunctionCallPart['functionCall'][],
     currentProfile: UserProfile,
     files: ConversationFile[]
 ): { updatedProfile: UserProfile, isFinished: boolean, updates: string[] } {
@@ -661,7 +662,7 @@ export function processFunctionCalls(
                 break;
             }
             case OnboardingTools.AddImageAsset: {
-                const args = call.args as AddImageAssetArgs;
+                const args = call.args as unknown as AddImageAssetArgs;
                 const file = files.find(f => f.file.name === args.file_name);
                 if (file && file.base64) {
                     const newAsset: BrandAsset = {
@@ -685,7 +686,7 @@ export function processFunctionCalls(
                 break;
             }
             case OnboardingTools.AddTextAssetToKnowledgeBase: {
-                const args = call.args as AddTextAssetArgs;
+                const args = call.args as unknown as AddTextAssetArgs;
                 const docFile = files.find(f => f.file.name === args.file_name);
                 if (docFile && docFile.content) {
                     const newDoc: KnowledgeDocument = {
@@ -835,8 +836,7 @@ function randomPick<T>(arr: T[]): T {
 
 export function generateNaturalFallback(
     updates: string[],
-    nextMissing: TopicKey | null,
-    isReleaseContext: boolean = false
+    nextMissing: TopicKey | null
 ): string {
     // If we have updates, acknowledge them naturally (without listing them robotically)
     const ack = updates.length > 0

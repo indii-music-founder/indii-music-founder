@@ -3,7 +3,7 @@
  * Smartly chunks text into smaller pieces for RAG ingestion.
  * Respects paragraph and sentence boundaries to preserve semantic meaning.
  */
-export function smartChunk(text: string, maxChunkSize: number = 1000, overlap: number = 100): string[] {
+export function smartChunk(text: string, maxChunkSize: number = 1000): string[] {
     if (!text) return [];
     if (text.length <= maxChunkSize) return [text];
 

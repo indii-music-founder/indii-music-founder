@@ -7,7 +7,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 // Switch to File API resource types
 import { AI_MODELS } from '../../core/config/ai-models.ts';
 
-interface GeminiFile {
+export interface GeminiFile {
     name: string; // "files/..."
     displayName: string;
     mimeType: string;

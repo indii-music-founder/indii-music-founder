@@ -27,9 +27,25 @@ export const db = initializeFirestore(app, {
 });
 export const storage = getStorage(app);
 export const auth = getAuth(app);
-// signInAnonymously(auth).catch(console.error);
 export const functions = getFunctions(app);
 
-// if (env.DEV) {
-//     connectFunctionsEmulator(functions, "127.0.0.1", 5001);
-// }
+
+
+// Expose for e2e testing
+import { doc, setDoc } from 'firebase/firestore';
+
+declare global {
+    interface Window {
+        db: typeof db;
+        auth: typeof auth;
+        firestore: { doc: typeof doc; setDoc: typeof setDoc };
+        functions: typeof functions;
+    }
+}
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+    window.db = db;
+    window.auth = auth;
+    window.firestore = { doc, setDoc };
+    window.functions = functions;
+}
