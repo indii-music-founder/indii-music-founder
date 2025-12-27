@@ -2,6 +2,7 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
+import { GeminiFile } from './GeminiRetrievalService';
 
 interface Attribution {
     sourceId?: string;
@@ -25,7 +26,7 @@ export async function runAgenticWorkflow(
     let responseText = "No answer found.";
     const sources: Attribution[] = [];
     const reasoning = ["Query started"];
-    let files: any[] = [];
+    let files: GeminiFile[] = [];
 
     // 1. Retrieval Phase (Safe Failover)
     try {

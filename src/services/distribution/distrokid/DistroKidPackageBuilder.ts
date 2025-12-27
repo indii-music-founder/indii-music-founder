@@ -22,7 +22,7 @@ export class DistroKidPackageBuilder {
     async buildPackage(
         metadata: ExtendedGoldenMetadata,
         assets: ReleaseAssets,
-        releaseId: string
+        _releaseId: string
     ): Promise<{ packagePath: string; files: string[] }> {
         // 1. Create Release Folder
         const safeTitle = metadata.trackTitle.replace(/[^a-zA-Z0-9]/g, '_');

@@ -159,12 +159,12 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         };
     }
 
-    async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
+    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
         // Basic check
         return { isValid: true, errors: [], warnings: [] };
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         if (!this.connected) {
             throw new Error('Not connected to TuneCore');
         }
@@ -215,7 +215,7 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         };
     }
 
-    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
         return [];
     }
 

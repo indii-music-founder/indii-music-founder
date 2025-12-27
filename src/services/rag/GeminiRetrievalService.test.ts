@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GeminiRetrievalService } from './GeminiRetrievalService';
+import { describe, it, vi, beforeEach } from 'vitest';
 
 // Mock env
 vi.mock('@/config/env', () => ({
@@ -23,10 +22,8 @@ const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
 describe('GeminiRetrievalService', () => {
-    let service: GeminiRetrievalService;
-
     beforeEach(() => {
-        service = new GeminiRetrievalService();
+        // _service = new GeminiRetrievalService();
         fetchMock.mockClear();
     });
 
@@ -79,7 +76,7 @@ describe('GeminiRetrievalService', () => {
 
         // The task was "RAG: Move retry logic to Service".
         // I added `waitForResource`.
-        // The script `scripts/test-music-biz-rag.ts` had a retry loop AROUND service calls.
+        // The script `scripts / test - music - biz - rag.ts` had a retry loop AROUND service calls.
         // To make the SERVICE robust, `fetch` should ideally retry internaly OR we provide a high-level method that retries.
 
         // If I want `fetch` to auto-retry 429s (which is "robust"), I should implement the loop in `fetch`.

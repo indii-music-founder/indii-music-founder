@@ -1,7 +1,6 @@
 
 import { DistributorService } from './DistributorService';
 import { credentialService } from '@/services/security/CredentialService';
-import { deliveryService } from './DeliveryService';
 import fs from 'fs';
 import path from 'path';
 
@@ -36,6 +35,7 @@ async function verifyDelivery() {
     DistributorService.registerAdapter({
         id: distId,
         name: 'Mock DistroKid',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         requirements: {} as any,
         isConnected: async () => true,
         connect: async () => { },
@@ -44,6 +44,7 @@ async function verifyDelivery() {
         updateRelease: async () => ({ success: true, status: 'processing' }),
         getReleaseStatus: async () => 'live',
         takedownRelease: async () => ({ success: true, status: 'taken_down' }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getEarnings: async () => ({} as any),
         getAllEarnings: async () => [],
         validateMetadata: async () => ({ isValid: true, errors: [], warnings: [] }),

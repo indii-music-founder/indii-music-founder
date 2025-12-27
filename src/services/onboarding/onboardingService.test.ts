@@ -219,7 +219,7 @@ describe('onboardingService', () => {
                 text: () => 'Hello',
                 functionCalls: () => [{ name: 'updateProfile', args: { bio: 'Hi' } }]
             };
-            (AI.generateContent as any).mockResolvedValue(mockResponse);
+            (AI.generateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
             const result = await runOnboardingConversation(
                 [{ role: 'user', parts: [{ text: 'hi' }] }],

@@ -34,9 +34,18 @@ export const functions = getFunctions(app);
 // Expose for e2e testing
 import { doc, setDoc } from 'firebase/firestore';
 
+declare global {
+    interface Window {
+        db: typeof db;
+        auth: typeof auth;
+        firestore: { doc: typeof doc; setDoc: typeof setDoc };
+        functions: typeof functions;
+    }
+}
+
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-    (window as any).db = db;
-    (window as any).auth = auth;
-    (window as any).firestore = { doc, setDoc };
-    (window as any).functions = functions;
+    window.db = db;
+    window.auth = auth;
+    window.firestore = { doc, setDoc };
+    window.functions = functions;
 }

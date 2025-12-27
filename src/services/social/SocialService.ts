@@ -3,7 +3,6 @@ import {
     collection,
     doc,
     addDoc,
-    deleteDoc,
     getDoc,
     getDocs,
     updateDoc,
@@ -16,8 +15,7 @@ import {
     increment,
     Timestamp
 } from 'firebase/firestore';
-import { SocialPost, SocialConnection, SocialStats } from './types';
-import { UserService } from '@/services/UserService';
+import { SocialPost } from './types';
 import { useStore } from '@/core/store';
 
 export class SocialService {
