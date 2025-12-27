@@ -24,9 +24,12 @@ logToFile(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv
 // Protocol Registration
 if (process.defaultApp) {
     if (process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient('indii-os', process.execPath, [path.resolve(process.argv[1])]);
+        const scriptPath = path.resolve(process.argv[1]);
+        logToFile(`Setting default protocol client in DEV mode. Script: ${scriptPath}`);
+        app.setAsDefaultProtocolClient('indii-os', process.execPath, [scriptPath]);
     }
 } else {
+    // Production/Bundled
     app.setAsDefaultProtocolClient('indii-os');
 }
 

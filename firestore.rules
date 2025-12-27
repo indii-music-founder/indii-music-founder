@@ -93,9 +93,9 @@ service cloud.firestore {
     // ========================================
 
     match /history/{docId} {
-      allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember();
-      allow update, delete: if isResourceOrgMember();
+        allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+        allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
+        allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
     }
 
     // ========================================
