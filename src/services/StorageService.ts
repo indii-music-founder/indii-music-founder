@@ -119,7 +119,8 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                     const { auth } = await import('./firebase');
                     const constraints = [where('orgId', '==', orgId), limit(limitCount)];
 
-                    if (orgId === 'org-default' || orgId === 'personal') {
+                    // Only filter by userId for personal org (matches primary query path logic)
+                    if (orgId === 'personal') {
                         if (auth.currentUser) {
                             constraints.push(where('userId', '==', auth.currentUser.uid));
                         } else {

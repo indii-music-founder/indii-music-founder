@@ -9,6 +9,11 @@ export default function LoginBridge() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!app) {
+            setError('Firebase not initialized');
+            setStatus('error');
+            return;
+        }
         const auth = getAuth(app);
 
         // Check if already logged in - but we need to force a fresh sign-in to get OAuth tokens
@@ -42,6 +47,7 @@ export default function LoginBridge() {
         setError(null);
 
         try {
+            if (!app) throw new Error('Firebase not initialized');
             const auth = getAuth(app);
             const provider = new GoogleAuthProvider();
             provider.addScope('profile');

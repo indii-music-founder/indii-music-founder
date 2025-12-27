@@ -19,6 +19,9 @@ export default function SignupForm() {
 
 
     useEffect(() => {
+        // Skip if Firebase not initialized (SSR/build time)
+        if (!auth) return;
+
         // Also check if user is ALREADY authenticated (loop protection)
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {

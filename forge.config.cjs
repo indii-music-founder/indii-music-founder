@@ -69,7 +69,11 @@ module.exports = {
       teamId: process.env.APPLE_TEAM_ID
     } : undefined,
   },
-  rebuildConfig: {},
+  rebuildConfig: {
+    // Skip rebuilding canvas - fabric.js uses browser Canvas API in Electron renderer
+    // canvas is only needed for server-side rendering, not in browser context
+    onlyModules: []  // Empty array means don't rebuild any native modules
+  },
   makers: [
     {
       name: '@electron-forge/maker-squirrel',

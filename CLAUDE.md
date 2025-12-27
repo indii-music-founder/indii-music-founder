@@ -981,6 +981,34 @@ manualChunks: {
 - Increase min instances for critical functions (costs more)
 - Implement request queueing with Inngest
 
+### 13.7 Electron Forge Build Fails with Spaced Paths (node-gyp)
+
+**Problem:** Running `npm run make` fails when the project is located in a path containing spaces (e.g., `/Volumes/X SSD 2025/...`). The `canvas` native module (dependency of `fabric`) fails to rebuild because node-gyp doesn't properly quote paths with spaces.
+
+**Error signature:**
+
+```text
+clang++: error: no such file or directory: 'SSD'
+clang++: error: no such file or directory: '2025/Users/...'
+Error: node-gyp failed to rebuild '.../node_modules/fabric/node_modules/canvas'
+```
+
+**Root cause:** node-gyp passes include paths (`-I/Volumes/X SSD 2025/...`) without proper quoting, causing the compiler to interpret path segments as separate arguments.
+
+**Fix:** Configure `rebuildConfig` in `forge.config.cjs` to skip native module rebuilds:
+
+```javascript
+rebuildConfig: {
+  // Skip rebuilding canvas - fabric.js uses browser Canvas API in Electron renderer
+  // canvas is only needed for server-side rendering, not in browser context
+  onlyModules: []  // Empty array means don't rebuild any native modules
+},
+```
+
+**Why this works:** In Electron's renderer process (Chromium), fabric.js uses the browser's native HTML5 Canvas API. The `canvas` npm package is only needed for server-side/Node.js canvas rendering, which isn't used in our Electron app.
+
+**Alternative (if native modules ARE needed):** Move the project to a path without spaces (e.g., `/Users/name/Projects/indiiOS`).
+
 ---
 
 ## 14. Common Tasks
