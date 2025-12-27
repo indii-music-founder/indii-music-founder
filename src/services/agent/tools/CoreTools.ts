@@ -120,7 +120,10 @@ export const CoreTools = {
     },
 
     request_approval: async (args: RequestApprovalArgs): Promise<string> => {
-        return `[APPROVAL REQUESTED] Content: "${args.content}". Please wait for user confirmation. (Note: UI integration pending)`;
+        // SAFETY: Auto-reject until UI approval flow is implemented
+        // This prevents high-stakes actions from executing without real user confirmation
+        console.warn('[CoreTools] request_approval called but UI not integrated - auto-rejecting for safety');
+        return `[APPROVAL DENIED - SAFETY] Action "${args.content}" was automatically denied. The approval UI is not yet implemented. Please perform this action manually outside the agent system.`;
     },
 
     set_mode: async (args: SetModeArgs): Promise<string> => {

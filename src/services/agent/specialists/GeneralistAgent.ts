@@ -315,8 +315,15 @@ export class GeneralistAgent extends BaseAgent {
 
         } catch (err: any) {
             console.error("Generalist Loop Error:", err);
-            onProgress?.({ type: 'thought', content: `Error: ${err.message}` });
-            return { text: `Error: ${err.message}` };
+            onProgress?.({ type: 'thought', content: `Error: ${err.message || 'Unknown error'}` });
+            iterations++; // Ensure we increment even on error to prevent infinite loops
+
+            // After 3 consecutive errors, give up
+            if (iterations >= 3) {
+                return { text: `Error after ${iterations} attempts: ${err.message || 'Unknown error'}` };
+            }
+            // Otherwise continue to retry
+            continue;
         }
 
         iterations++;

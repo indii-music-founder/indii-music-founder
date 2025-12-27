@@ -304,8 +304,9 @@ class MembershipServiceImpl {
     ): Promise<{ allowed: boolean; currentUsage: number; maxAllowed: number }> {
         const userId = await this.getCurrentUserId();
         if (!userId) {
-            // No user = allow (will fail at auth layer anyway)
-            return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+            // No user = deny quota (must be authenticated for any generation)
+            console.warn('[MembershipService] Quota check denied: No authenticated user');
+            return { allowed: false, currentUsage: 0, maxAllowed: 0 };
         }
 
         const tier = await this.getCurrentTier();

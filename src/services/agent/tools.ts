@@ -13,9 +13,11 @@ import { KnowledgeTools } from './tools/KnowledgeTools';
 import { ProjectTools } from './tools/ProjectTools';
 import { NavigationTools } from './tools/NavigationTools';
 import { MapsTools } from './tools/MapsTools';
-import { execute_bigquery_query, get_table_schema } from './tools/BigQueryTools';
-import { list_clusters, get_cluster_status, scale_deployment, list_instances, restart_service } from './tools/DevOpsTools';
-import { check_api_status, scan_content, rotate_credentials, verify_zero_touch_prod, check_core_dump_policy, audit_workload_isolation } from './tools/SecurityTools';
+// DISABLED: Mock implementations - not production ready (returns fake data)
+// Re-enable when real GCP SDK integrations are implemented
+// import { execute_bigquery_query, get_table_schema } from './tools/BigQueryTools';
+// import { list_clusters, get_cluster_status, scale_deployment, list_instances, restart_service } from './tools/DevOpsTools';
+// import { check_api_status, scan_content, rotate_credentials, verify_zero_touch_prod, check_core_dump_policy, audit_workload_isolation } from './tools/SecurityTools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -30,19 +32,20 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...ProjectTools,
     ...NavigationTools,
     ...MapsTools,
-    execute_bigquery_query,
-    get_table_schema,
-    list_clusters,
-    get_cluster_status,
-    scale_deployment,
-    list_instances,
-    restart_service,
-    check_api_status,
-    scan_content,
-    rotate_credentials,
-    verify_zero_touch_prod,
-    check_core_dump_policy,
-    audit_workload_isolation,
+    // DISABLED: Mock tools removed from registry
+    // execute_bigquery_query,
+    // get_table_schema,
+    // list_clusters,
+    // get_cluster_status,
+    // scale_deployment,
+    // list_instances,
+    // restart_service,
+    // check_api_status,
+    // scan_content,
+    // rotate_credentials,
+    // verify_zero_touch_prod,
+    // check_core_dump_policy,
+    // audit_workload_isolation,
     ...PUBLICIST_TOOLS
 };
 
@@ -82,17 +85,4 @@ AVAILABLE TOOLS:
 32. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
 33. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.
 34. get_distance_matrix(origins: string[], destinations: string[]) - Calculate travel time and distance between locations.
-35. execute_bigquery_query(query: string) - Execute a SQL query on the BigQuery data warehouse.
-36. get_table_schema(table_id: string) - Get the schema for a BigQuery table.
-37. list_clusters() - List GKE clusters.
-38. get_cluster_status(cluster_id: string) - Get status of a GKE cluster.
-39. scale_deployment(deployment: string, replicas: number, namespace?: string) - Scale a K8s deployment.
-40. list_instances() - List GCE instances.
-41. restart_service(service_name: string) - Restart a service.
-42. check_api_status(api_name: string) - Check Apigee API status.
-43. scan_content(text: string) - Scan content for PII/safety (Model Armor).
-44. rotate_credentials(service_name: string) - Rotate service credentials.
-45. verify_zero_touch_prod(service_name: string) - Verify ZTP automation (NoPe).
-46. check_core_dump_policy(service_name: string) - Check if core dumps are disabled.
-47. audit_workload_isolation(service_name: string, workload_type: string) - Check workload isolation ring.
 `;

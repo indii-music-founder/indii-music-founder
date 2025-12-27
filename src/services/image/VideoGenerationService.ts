@@ -2,6 +2,8 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
+import { MembershipService } from '@/services/MembershipService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 export class VideoGenerationService {
 
@@ -80,6 +82,19 @@ export class VideoGenerationService {
 
         const finalPrompt = fullPrompt + timeContext + ingredientsContext;
 
+        // Pre-flight quota check (Section 8 compliance)
+        const quotaCheck = await MembershipService.checkQuota('video', 1);
+        if (!quotaCheck.allowed) {
+            const tier = await MembershipService.getCurrentTier();
+            throw new QuotaExceededError(
+                'videos',
+                tier,
+                MembershipService.getUpgradeMessage(tier, 'video'),
+                quotaCheck.currentUsage,
+                quotaCheck.maxAllowed
+            );
+        }
+
         const videoUri = await AI.generateVideo({
             model,
             prompt: finalPrompt,
@@ -118,6 +133,19 @@ export class VideoGenerationService {
         const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
         const results: { id: string, url: string, prompt: string }[] = [];
         let currentFirstFrame = options.firstFrame;
+
+        // Pre-flight duration quota check
+        const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
+        if (!durationCheck.allowed) {
+            const tier = await MembershipService.getCurrentTier();
+            throw new QuotaExceededError(
+                'video_duration',
+                tier,
+                `Video duration ${options.totalDuration}s exceeds ${durationCheck.tierName} tier limit of ${durationCheck.maxDuration}s`,
+                options.totalDuration,
+                durationCheck.maxDuration
+            );
+        }
 
         try {
             for (let i = 0; i < numBlocks; i++) {

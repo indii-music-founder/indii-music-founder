@@ -5,9 +5,11 @@ export function configureSecurity(session: Session) {
     session.webRequest.onHeadersReceived((details, callback) => {
         const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
 
+        // SECURITY: Use 'wasm-unsafe-eval' instead of 'unsafe-eval' in production
+        // This allows WASM (needed for Essentia.js, PDF.js, Tesseract.js) but blocks JS eval()
         const scriptSrc = isDev
             ? "* 'unsafe-inline' 'unsafe-eval'"
-            : "'self' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com";
+            : "'self' 'wasm-unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://cdn.jsdelivr.net";
 
         const defaultSrc = isDev ? "*" : "'none'";
         const styleSrc = isDev
