@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { NarrativeTools } from './NarrativeTools';
 import { ImageTools } from './ImageTools';
 import { VideoTools } from './VideoTools';
@@ -43,13 +43,13 @@ describe('Filmmaking Grammar Tools', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore.getState as any).mockReturnValue({
+        vi.mocked(useStore.getState).mockReturnValue({
             currentProjectId: 'test-project',
             entityAnchor: null,
             setEntityAnchor: mockSetEntityAnchor,
             addToHistory: mockAddToHistory,
             studioControls: { resolution: '1080p', aspectRatio: '16:9' }
-        });
+        } as ReturnType<typeof useStore.getState>);
     });
 
     describe('NarrativeTools', () => {
@@ -59,9 +59,9 @@ describe('Filmmaking Grammar Tools', () => {
                 beats: [{ beat: 1, name: "Intro" }]
             };
 
-            (AI.generateContent as any).mockResolvedValue({
+            vi.mocked(AI.generateContent).mockResolvedValue({
                 text: () => JSON.stringify(mockResponse)
-            });
+            } as Awaited<ReturnType<typeof AI.generateContent>>);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
             expect(result).toContain("Test Script");
@@ -72,16 +72,16 @@ describe('Filmmaking Grammar Tools', () => {
     describe('ImageTools', () => {
         it('render_cinematic_grid should include entity anchor if set', async () => {
             // Mock store with entity anchor
-            (useStore.getState as any).mockReturnValue({
+            vi.mocked(useStore.getState).mockReturnValue({
                 currentProjectId: 'test-project',
                 entityAnchor: { url: 'data:image/png;base64,mockanchordata' },
                 addToHistory: mockAddToHistory
-            });
+            } as ReturnType<typeof useStore.getState>);
 
-            (ImageGeneration.generateImages as any).mockResolvedValue([{
+            vi.mocked(ImageGeneration.generateImages).mockResolvedValue([{
                 id: 'grid-1',
                 url: 'http://grid-url'
-            }]);
+            }] as Awaited<ReturnType<typeof ImageGeneration.generateImages>>);
 
             await ImageTools.render_cinematic_grid({ prompt: "A forest scene" });
 
@@ -104,10 +104,10 @@ describe('Filmmaking Grammar Tools', () => {
 
     describe('VideoTools', () => {
         it('interpolate_sequence should call generateVideo with first and last frames', async () => {
-            (VideoGeneration.generateVideo as any).mockResolvedValue([{
+            vi.mocked(VideoGeneration.generateVideo).mockResolvedValue([{
                 id: 'vid-1',
                 url: 'http://video-url'
-            }]);
+            }] as Awaited<ReturnType<typeof VideoGeneration.generateVideo>>);
 
             await VideoTools.interpolate_sequence({
                 firstFrame: "data:image/png;base64,start",

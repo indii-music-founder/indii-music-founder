@@ -17,12 +17,12 @@ const mockOrderBy = vi.fn();
 const mockAddDoc = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
-    collection: (...args: any[]) => mockCollection(...args),
-    addDoc: (...args: any[]) => mockAddDoc(...args),
-    getDocs: (...args: any[]) => mockGetDocs(...args),
-    query: (...args: any[]) => mockQuery(...args),
-    orderBy: (...args: any[]) => mockOrderBy(...args),
-    where: (...args: any[]) => mockWhere(...args),
+    collection: (...args: unknown[]) => mockCollection(...args),
+    addDoc: (...args: unknown[]) => mockAddDoc(...args),
+    getDocs: (...args: unknown[]) => mockGetDocs(...args),
+    query: (...args: unknown[]) => mockQuery(...args),
+    orderBy: (...args: unknown[]) => mockOrderBy(...args),
+    where: (...args: unknown[]) => mockWhere(...args),
     doc: vi.fn(),
     getDoc: vi.fn()
 }));
