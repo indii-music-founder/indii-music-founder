@@ -116,14 +116,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                 return;
             }
 
-            // CRITICAL: Check for Google redirect result FIRST
-            // This catches the user returning from Google OAuth
-            try {
-                const { AuthService } = await import('@/services/AuthService');
-                await AuthService.handleRedirectResult();
-            } catch (err) {
-                console.error("[AuthSlice] Redirect result error:", err);
-            }
+            // Legacy redirect check removed - using popup flow
+            // check skipped
 
             // Then listen for auth state changes
             // Note: On redirect return, profile syncs twice (in handleRedirectResult and here).

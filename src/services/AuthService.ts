@@ -14,8 +14,7 @@ import {
     sendEmailVerification,
     User,
     GoogleAuthProvider,
-    signInWithRedirect,
-    getRedirectResult,
+    signInWithPopup, // Add this
     EmailAuthProvider,
     linkWithCredential,
     signInAnonymously,
@@ -43,35 +42,26 @@ export const AuthService = {
         return userCredential.user;
     },
 
-    // Google Sign-In - REDIRECT ONLY (works on all platforms)
+    // Google Sign-In - POPUP (Native support in Electron/Chrome)
     async signInWithGoogle(): Promise<void> {
-        console.log('[Auth] Starting Google sign-in via redirect...');
+        console.log('[Auth] Starting Google sign-in via popup...');
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
 
-        // This redirects away from the app to Google
-        // When user returns, handleRedirectResult() picks up the result
-        await signInWithRedirect(auth, provider);
-        // Code after this line never runs - page redirects
-    },
-
-    // Called on app load to check if we're returning from Google
-    async handleRedirectResult(): Promise<User | null> {
-        console.log('[Auth] Checking for redirect result...');
         try {
-            const result = await getRedirectResult(auth);
-            if (result && result.user) {
-                console.log('[Auth] Redirect success! User:', result.user.email);
-                await UserService.syncUserProfile(result.user);
-                return result.user;
-            }
-            console.log('[Auth] No redirect result (normal page load)');
-            return null;
+            const result = await signInWithPopup(auth, provider);
+            console.log('[Auth] Popup success! User:', result.user.email);
+            await UserService.syncUserProfile(result.user);
         } catch (error: any) {
-            console.error('[Auth] Redirect error:', error.code, error.message);
+            console.error('[Auth] Popup error:', error.code, error.message);
             throw error;
         }
+    },
+
+    // Legacy/Fallback - kept for compatibility if needed, but unused in main flow
+    async handleRedirectResult(): Promise<User | null> {
+        return null;
     },
 
     // Guest/Anonymous
