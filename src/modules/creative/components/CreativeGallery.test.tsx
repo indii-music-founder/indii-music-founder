@@ -57,7 +57,7 @@ describe('CreativeGallery', () => {
         expect(screen.getByText('Take Picture')).toBeInTheDocument();
     });
 
-    it('renders enhanced empty drop zone when only generated history exists', () => {
+    it('renders compact Add Asset card when only generated history exists', () => {
         (useStore as any).mockReturnValue({
             ...mockStore,
             generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test' }],
@@ -66,11 +66,7 @@ describe('CreativeGallery', () => {
 
         render(<CreativeGallery />);
 
-        // Check for "Drop files here" text
-        expect(screen.getByText('Drop files here')).toBeInTheDocument();
-
-        // Check for "Take Picture" button inside drop zone
-        const takePictureButtons = screen.getAllByText('Take Picture');
-        expect(takePictureButtons.length).toBeGreaterThan(0);
+        // Check for compact "Add Asset" card (replaced large drop zone)
+        expect(screen.getByText('Add Asset')).toBeInTheDocument();
     });
 });
