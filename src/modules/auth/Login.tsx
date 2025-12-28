@@ -56,6 +56,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
         try {
             // Web: Redirects to Google (page unloads)
             // Electron: Opens popup (awaits result)
+            // Unified Popup Flow
+            // This waits for the popup to complete (no page reload)
             await AuthService.signInWithGoogle();
         } catch (err: any) {
             console.error("Google Login Error:", err);

@@ -47,6 +47,9 @@ export const AuthService = {
     // Google Sign-In - Hybrid (Redirect for Web, Popup for Electron)
     async signInWithGoogle(): Promise<void> {
         console.log('[Auth] Starting Google sign-in...');
+    // Google Sign-In - Unified Popup Flow (Works on Web & Electron & Mobile)
+    async signInWithGoogle(): Promise<void> {
+        console.log('[Auth] Starting Google sign-in (Popup Flow)...');
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
@@ -69,6 +72,19 @@ export const AuthService = {
             }
         } catch (error: any) {
             console.error('[Auth] Sign-in error:', error.code, error.message);
+            // We now use Popup for EVERYTHING. 
+            // It prevents the "redirect hang" on mobile and works in Electron.
+            const result = await signInWithPopup(auth, provider);
+            console.log('[Auth] Popup success! User:', result.user.email);
+            await UserService.syncUserProfile(result.user);
+        } catch (error: any) {
+            console.error('[Auth] Sign-in error:', error.code, error.message);
+            if (error.code === 'auth/popup-blocked') {
+                throw new Error('Pop-up was blocked. Please allow pop-ups for this site.');
+            }
+            if (error.code === 'auth/popup-closed-by-user') {
+                throw new Error('Sign-in cancelled by user.');
+            }
             throw error;
         }
     },
