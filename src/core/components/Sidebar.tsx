@@ -165,6 +165,11 @@ export default function Sidebar() {
                         </button>
                     )}
                 </div>
+                {isSidebarOpen && (
+                    <p className="mt-4 text-[10px] text-gray-600 text-center italic">
+                        made by Detroit, for the world.
+                    </p>
+                )}
             </div>
         </div>
     );

@@ -126,12 +126,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             }
 
             // Then listen for auth state changes
+            // Note: On redirect return, profile syncs twice (in handleRedirectResult and here).
+            // This is harmless (just updates lastLoginAt) - keeping simple over optimized.
             onAuthStateChanged(auth, async (user: User | null) => {
                 console.log("[AuthSlice] Auth State Changed:", user ? `User ${user.uid} (Anon: ${user.isAnonymous})` : 'Logged Out');
                 if (user) {
-                    // ALLOW ANONYMOUS ACCESS
-                    // We treat anonymous users as authenticated for the purpose of app access
-                    // Specific modules can check user.isAnonymous if they need to restrict features
                     const isAuthenticated = !!user;
                     set({ user, isAuthenticated, isAuthReady: true });
 
