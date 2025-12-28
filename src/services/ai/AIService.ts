@@ -370,7 +370,7 @@ export class AIService {
         try {
             const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(
                 functions,
-                'generateImage'
+                'generateImageV3'
             );
 
             const response = await this.withRetry(() => generateImageFn({

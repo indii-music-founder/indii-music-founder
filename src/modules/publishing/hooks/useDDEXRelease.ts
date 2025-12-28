@@ -3,13 +3,26 @@
  * Manages state for DDEX release creation workflow
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
+
+// Map display names from onboarding to DistributorId
+const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
+  'distrokid': 'distrokid',
+  'tunecore': 'tunecore',
+  'cd baby': 'cdbaby',
+  'cdbaby': 'cdbaby',
+  'symphonic': 'symphonic',
+  'ditto': 'ditto',
+  'ditto music': 'ditto',
+  'unitedmasters': 'unitedmasters',
+  'united masters': 'unitedmasters',
+};
 
 // Audio format type matching DDEXReleaseRecord
 type AudioFormat = 'wav' | 'flac' | 'mp3';
@@ -97,7 +110,7 @@ export interface UseDDEXReleaseReturn {
 const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'review'];
 
 export function useDDEXRelease(): UseDDEXReleaseReturn {
-  const { currentOrganizationId, organizations, user } = useStore();
+  const { currentOrganizationId, organizations, user, userProfile } = useStore();
 
   // Get current organization
   const activeOrg = useMemo(() =>
@@ -108,10 +121,27 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   // For now, use a default project ID (can be enhanced later)
   const activeProjectId = 'default-project';
 
+  // Get user's preferred distributor from onboarding profile
+  const userDistributor = useMemo(() => {
+    const profileDistributor = userProfile?.brandKit?.socials?.distributor?.toLowerCase();
+    if (profileDistributor && DISTRIBUTOR_NAME_MAP[profileDistributor]) {
+      return DISTRIBUTOR_NAME_MAP[profileDistributor];
+    }
+    return 'distrokid'; // Fallback default
+  }, [userProfile?.brandKit?.socials?.distributor]);
+
   const [currentStep, setCurrentStep] = useState<WizardStep>('metadata');
   const [metadata, setMetadata] = useState<Partial<ExtendedGoldenMetadata>>(INITIAL_EXTENDED_METADATA);
-  const [selectedDistributors, setSelectedDistributors] = useState<DistributorId[]>(['distrokid']);
+  const [selectedDistributors, setSelectedDistributors] = useState<DistributorId[]>([userDistributor]);
   const [assets, setAssets] = useState<Partial<ReleaseAssets>>(INITIAL_ASSETS);
+
+  // Sync distributor selection when userProfile changes (e.g., after onboarding)
+  useEffect(() => {
+    if (userDistributor && selectedDistributors.length === 1 && selectedDistributors[0] !== userDistributor) {
+      // Only auto-update if user hasn't made manual selections
+      setSelectedDistributors([userDistributor]);
+    }
+  }, [userDistributor]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);
@@ -268,12 +298,12 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   const resetWizard = useCallback(() => {
     setCurrentStep('metadata');
     setMetadata(INITIAL_EXTENDED_METADATA);
-    setSelectedDistributors(['distrokid']);
+    setSelectedDistributors([userDistributor]); // Use user's preferred distributor
     setAssets(INITIAL_ASSETS);
     setIsSubmitting(false);
     setSubmitError(null);
     setReleaseId(null);
-  }, []);
+  }, [userDistributor]);
 
   return {
     currentStep,

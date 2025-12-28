@@ -10,7 +10,8 @@ interface Template {
     name: string;
     description: string;
     type: 'creative' | 'music' | 'marketing' | 'legal';
-    image: string;
+    gradient: string;
+    icon: React.ElementType;
 }
 
 const TEMPLATES: Template[] = [
@@ -19,21 +20,24 @@ const TEMPLATES: Template[] = [
         name: 'Promo Run',
         description: 'Multi-platform social campaign with synced visuals.',
         type: 'marketing',
-        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80'
+        gradient: 'from-orange-600/30 to-red-600/30',
+        icon: Wand2
     },
     {
         id: 'single-release',
         name: 'Single Release',
         description: 'Complete release cycle: music, art, and metadata.',
         type: 'music',
-        image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80'
+        gradient: 'from-purple-600/30 to-pink-600/30',
+        icon: Image
     },
     {
         id: 'brand-identity',
         name: 'Brand Identity',
         description: 'Generate high-fidelity logotypes and color suites.',
         type: 'creative',
-        image: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&q=80'
+        gradient: 'from-blue-600/30 to-cyan-600/30',
+        icon: FolderPlus
     }
 ];
 
@@ -239,30 +243,35 @@ export default function ProjectHub() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {TEMPLATES.map(template => (
-                        <div
-                            key={template.id}
-                            onClick={() => handleTemplateClick(template)}
-                            className="group relative bg-[#161b22]/30 border border-gray-800/50 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all cursor-pointer"
-                        >
-                            <div className="h-32 relative">
-                                <img src={template.image} alt={template.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 opacity-40 group-hover:opacity-60" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] to-transparent opacity-80" />
-                                <div className="absolute inset-0 flex items-center justify-center scale-90 group-hover:scale-100 transition-transform duration-500">
-                                    <div className="w-12 h-12 bg-purple-600/90 rounded-full flex items-center justify-center text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Plus size={20} />
+                    {TEMPLATES.map(template => {
+                        const TemplateIcon = template.icon;
+                        return (
+                            <div
+                                key={template.id}
+                                onClick={() => handleTemplateClick(template)}
+                                className="group relative bg-[#161b22]/30 border border-gray-800/50 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all cursor-pointer"
+                            >
+                                <div className={`h-32 relative bg-gradient-to-br ${template.gradient}`}>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <TemplateIcon size={40} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                                    </div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] to-transparent opacity-80" />
+                                    <div className="absolute inset-0 flex items-center justify-center scale-90 group-hover:scale-100 transition-transform duration-500">
+                                        <div className="w-12 h-12 bg-purple-600/90 rounded-full flex items-center justify-center text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Plus size={20} />
+                                        </div>
                                     </div>
                                 </div>
+                                <div className="p-5 relative -mt-4">
+                                    <span className="inline-block px-2 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-bold rounded uppercase mb-2">
+                                        {template.type}
+                                    </span>
+                                    <h3 className="text-white font-bold text-base mb-1">{template.name}</h3>
+                                    <p className="text-gray-400 text-xs leading-relaxed">{template.description}</p>
+                                </div>
                             </div>
-                            <div className="p-5 relative -mt-4">
-                                <span className="inline-block px-2 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-bold rounded uppercase mb-2">
-                                    {template.type}
-                                </span>
-                                <h3 className="text-white font-bold text-base mb-1">{template.name}</h3>
-                                <p className="text-gray-400 text-xs leading-relaxed">{template.description}</p>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

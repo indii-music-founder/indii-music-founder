@@ -18,38 +18,15 @@ export const createFinanceSlice: StateCreator<FinanceSlice> = (set, get) => ({
     },
     fetchEarnings: async (period) => {
         set((state) => ({ finance: { ...state.finance, loading: true } }));
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate latency
 
-        // Mock Data matching EarningsSummary structure
-        const mockSummary: EarningsSummary = {
-            period: {
-                startDate: period.startDate,
-                endDate: period.endDate
-            },
-            totalNetRevenue: 1250.50,
-            totalGrossRevenue: 1500.00,
-            totalStreams: 154000,
-            totalDownloads: 500,
-            currencyCode: 'USD',
-            byPlatform: [
-                { platformName: 'Spotify', revenue: 800.00, streams: 120000, downloads: 0 },
-                { platformName: 'Apple Music', revenue: 350.50, streams: 34000, downloads: 0 },
-                { platformName: 'iTunes', revenue: 100.00, streams: 0, downloads: 500 }
-            ],
-            byTerritory: [
-                { territoryCode: 'US', territoryName: 'United States', revenue: 600.00, streams: 90000, downloads: 300 },
-                { territoryCode: 'GB', territoryName: 'United Kingdom', revenue: 300.00, streams: 30000, downloads: 100 },
-                { territoryCode: 'DE', territoryName: 'Germany', revenue: 150.00, streams: 14000, downloads: 50 },
-                { territoryCode: 'JP', territoryName: 'Japan', revenue: 200.50, streams: 20000, downloads: 50 }
-            ],
-            byRelease: []
-        };
+        // TODO: Replace with real DSR parsing when backend is ready
+        // const summary = await FinanceService.fetchEarnings(orgId, period);
 
         set((state) => ({
             finance: {
                 ...state.finance,
                 loading: false,
-                earningsSummary: mockSummary
+                earningsSummary: null // No data until real backend integration
             }
         }));
     }

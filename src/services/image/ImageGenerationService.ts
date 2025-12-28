@@ -91,7 +91,7 @@ export class ImageGenerationService {
         }
 
         try {
-            const generateImage = httpsCallable(functions, 'generateImage');
+            const generateImage = httpsCallable(functions, 'generateImageV3');
 
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
@@ -106,21 +106,21 @@ export class ImageGenerationService {
 
             const data = result.data as any;
 
-            if (!data.candidates || data.candidates.length === 0) {
-                console.warn("No candidates in response");
+            // Cloud Function returns { images: [{ bytesBase64Encoded, mimeType }] }
+            if (!data.images || data.images.length === 0) {
+                console.warn("No images in response");
                 return [];
             }
 
-            for (const candidate of data.candidates) {
-                for (const part of candidate.content?.parts || []) {
-                    if (part.inlineData) {
-                        const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                        results.push({
-                            id: crypto.randomUUID(),
-                            url,
-                            prompt: options.prompt
-                        });
-                    }
+            for (const img of data.images) {
+                if (img.bytesBase64Encoded) {
+                    const mimeType = img.mimeType || 'image/png';
+                    const url = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                    results.push({
+                        id: crypto.randomUUID(),
+                        url,
+                        prompt: options.prompt
+                    });
                 }
             }
         } catch (err) {
