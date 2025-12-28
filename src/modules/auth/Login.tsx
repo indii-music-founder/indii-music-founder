@@ -50,13 +50,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
         setError(null);
         setLoading(true);
         try {
+            // This redirects to Google - page will reload when user returns
             await AuthService.signInWithGoogle();
+            // Code below never runs - we redirect away
         } catch (err: any) {
-            // ELECTRON_AUTH_PENDING means auth is happening in external browser
-            if (err.message === 'ELECTRON_AUTH_PENDING') {
-                // Keep loading state - auth callback will update via IPC
-                return;
-            }
             console.error("Google Login Error:", err);
             setError(err.message || "Google sign in failed.");
             setLoading(false);

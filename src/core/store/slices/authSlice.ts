@@ -103,28 +103,29 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             set({ currentOrganizationId: storedOrgId });
         }
 
-        // Simplified: Just listen for Firebase Auth state changes
-        // Firebase SDK handles auth persistence automatically (IndexedDB)
-        // No need for complex IPC token exchange - signInWithPopup works in Electron too
+        // Firebase Auth initialization
         import('@/services/firebase').then(async ({ auth }) => {
             const { onAuthStateChanged } = await import('firebase/auth');
 
-            // Bypass for E2E Tests/Unit Tests that explicitly want to disable Auth
+            // Bypass for E2E Tests/Unit Tests
             // @ts-expect-error test mode flag
             const isAuthDisabled = (window.__DISABLE_AUTH__ || localStorage.getItem('DISABLE_AUTH') === 'true');
             if (isAuthDisabled) {
-                console.log("[AuthSlice] Auth Disabled Mode detected - skipping Firebase Auth listener");
+                console.log("[AuthSlice] Auth Disabled - skipping");
+                set({ isAuthReady: true });
                 return;
             }
 
-            // Handle redirect result for mobile auth flow
-            // This picks up the auth result after user is redirected back from Google
-            import('@/services/AuthService').then(({ AuthService }) => {
-                AuthService.handleRedirectResult().catch((err) => {
-                    console.error("[AuthSlice] Redirect result error:", err);
-                });
-            });
+            // CRITICAL: Check for Google redirect result FIRST
+            // This catches the user returning from Google OAuth
+            try {
+                const { AuthService } = await import('@/services/AuthService');
+                await AuthService.handleRedirectResult();
+            } catch (err) {
+                console.error("[AuthSlice] Redirect result error:", err);
+            }
 
+            // Then listen for auth state changes
             onAuthStateChanged(auth, async (user: User | null) => {
                 console.log("[AuthSlice] Auth State Changed:", user ? `User ${user.uid} (Anon: ${user.isAnonymous})` : 'Logged Out');
                 if (user) {
