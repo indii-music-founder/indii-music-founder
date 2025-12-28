@@ -1,4 +1,4 @@
-import * as keytar from 'keytar';
+import keytar from 'keytar';
 
 const SERVICE_NAME = 'IndiiOS';
 const ACCOUNT_NAME = 'GoogleRefreshToken';
