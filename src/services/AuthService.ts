@@ -14,7 +14,9 @@ import {
     sendEmailVerification,
     User,
     GoogleAuthProvider,
-    signInWithPopup, // Add this
+    signInWithPopup,
+    signInWithRedirect, // Add this
+    getRedirectResult, // Add this
     EmailAuthProvider,
     linkWithCredential,
     signInAnonymously,
@@ -42,26 +44,45 @@ export const AuthService = {
         return userCredential.user;
     },
 
-    // Google Sign-In - POPUP (Native support in Electron/Chrome)
+    // Google Sign-In - Unified Popup Flow (Works on Web & Electron & Mobile)
     async signInWithGoogle(): Promise<void> {
-        console.log('[Auth] Starting Google sign-in via popup...');
+        console.log('[Auth] Starting Google sign-in (Popup Flow)...');
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
 
         try {
+            // We now use Popup for EVERYTHING. 
+            // It prevents the "redirect hang" on mobile and works in Electron.
             const result = await signInWithPopup(auth, provider);
             console.log('[Auth] Popup success! User:', result.user.email);
             await UserService.syncUserProfile(result.user);
         } catch (error: any) {
-            console.error('[Auth] Popup error:', error.code, error.message);
+            console.error('[Auth] Sign-in error:', error.code, error.message);
+            if (error.code === 'auth/popup-blocked') {
+                throw new Error('Pop-up was blocked. Please allow pop-ups for this site.');
+            }
+            if (error.code === 'auth/popup-closed-by-user') {
+                throw new Error('Sign-in cancelled by user.');
+            }
             throw error;
         }
     },
 
-    // Legacy/Fallback - kept for compatibility if needed, but unused in main flow
+    // Handle the result returning from a redirect (Web only)
     async handleRedirectResult(): Promise<User | null> {
-        return null;
+        try {
+            const result = await getRedirectResult(auth);
+            if (result) {
+                console.log('[Auth] Redirect result received:', result.user.email);
+                await UserService.syncUserProfile(result.user);
+                return result.user;
+            }
+            return null;
+        } catch (error: any) {
+            console.error('[Auth] Redirect result error:', error);
+            throw error;
+        }
     },
 
     // Guest/Anonymous
