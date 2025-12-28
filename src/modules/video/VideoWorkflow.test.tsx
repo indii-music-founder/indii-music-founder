@@ -55,9 +55,16 @@ vi.mock('@/services/image/VideoGenerationService', () => ({
 // Mock Firestore
 const mockOnSnapshot = vi.fn();
 vi.mock('firebase/firestore', () => ({
-    getFirestore: vi.fn(),
+    getFirestore: vi.fn(() => ({})),
+    initializeFirestore: vi.fn(() => ({})),
+    persistentLocalCache: vi.fn(),
+    persistentMultipleTabManager: vi.fn(),
     doc: vi.fn(),
-    onSnapshot: (...args: any[]) => mockOnSnapshot(...args)
+    onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
+    collection: vi.fn(),
+    addDoc: vi.fn(),
+    setDoc: vi.fn(),
+    updateDoc: vi.fn()
 }));
 
 // Mock Firebase Functions
@@ -67,16 +74,8 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
-    httpsCallable: () => vi.fn().mockResolvedValue({
-        data: {
-            result: {
-                success: true,
-                data: {
-                    url: 'https://example.com/video.mp4'
-                }
-            }
-        }
-    }),
+    getFunctions: vi.fn(() => ({})),
+    httpsCallable: vi.fn(() => Promise.resolve({ data: { success: true } })),
 }));
 
 // Mock CreativeGallery component since we are testing VideoWorkflow logic

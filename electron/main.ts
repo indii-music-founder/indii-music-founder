@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
-import { registerAuthHandlers, handleDeepLink } from './handlers/auth';
+// import { registerAuthHandlers, handleDeepLink } from './handlers/auth';
 import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
 import { registerCredentialHandlers } from './handlers/credential';
@@ -180,7 +180,7 @@ if (!gotTheLock) {
         const url = commandLine.find(arg => arg.startsWith('indii-os://'));
         if (url) {
             log.info(`Handling deep link from second-instance: ${url}`);
-            handleDeepLink(url);
+            // handleDeepLink(url);
         }
     });
 
@@ -188,13 +188,13 @@ if (!gotTheLock) {
     app.on('open-url', (event, url) => {
         event.preventDefault();
         log.info(`open-url event received: ${url}`);
-        handleDeepLink(url);
+        // handleDeepLink(url);
     });
 
     app.on('ready', () => {
         log.info('App Ready (Primary Instance)');
         registerSystemHandlers();
-        registerAuthHandlers();
+        // registerAuthHandlers(); // Removed
         registerAudioHandlers();
         registerNetworkHandlers();
         registerCredentialHandlers();
