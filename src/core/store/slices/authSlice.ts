@@ -103,68 +103,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             set({ currentOrganizationId: storedOrgId });
         }
 
-        // Listen for Electron IPC auth callbacks (deep link returns)
-        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
-        console.log('[AuthSlice] Checking for electronAPI:', !!electronAPI);
-
-        if (electronAPI?.auth?.onUserUpdate) {
-            console.log('[AuthSlice] Setting up Electron IPC auth listener');
-            electronAPI.auth.onUserUpdate(async (tokenData: { idToken: string; accessToken?: string | null } | null) => {
-                console.log('[AuthSlice] Electron onUserUpdate callback triggered', !!tokenData);
-
-                if (tokenData?.idToken) {
-                    console.log('[AuthSlice] Received tokens from Electron deep link');
-                    console.log(`[AuthSlice] Token details - ID Token Length: ${tokenData.idToken.length}, Access Token Length: ${tokenData.accessToken?.length || 0}`);
-
-                    try {
-                        const { auth } = await import('@/services/firebase');
-                        console.log('[AuthSlice] Initializing Google Credential with tokens...');
-                        const { signInWithCredential, GoogleAuthProvider } = await import('firebase/auth');
-
-                        // First attempt: ID Token + Access Token (if available)
-                        try {
-                            console.log('[AuthSlice] Attempting sign-in with ID Token + Access Token...');
-                            const credential = GoogleAuthProvider.credential(tokenData.idToken, tokenData.accessToken);
-                            const result = await signInWithCredential(auth, credential);
-                            console.log('[AuthSlice] Deep link sign-in success (Method: ID+Access):', result.user.uid);
-                        } catch (primaryError: any) {
-                            console.error('[AuthSlice] Primary sign-in attempt failed:', primaryError.code, primaryError.message);
-
-                            // If we have an access token and failed, try again with JUST the ID token
-                            if (tokenData.accessToken) {
-                                console.warn('[AuthSlice] Sign-in with Access Token failed. Retrying with ID Token only...');
-                                try {
-                                    const credentialRetry = GoogleAuthProvider.credential(tokenData.idToken);
-                                    const resultRetry = await signInWithCredential(auth, credentialRetry);
-                                    console.log('[AuthSlice] Deep link sign-in success (Method: ID Only):', resultRetry.user.uid);
-                                } catch (retryError: any) {
-                                    console.error('[AuthSlice] Retry sign-in failed as well:', retryError.code, retryError.message);
-                                    throw retryError;
-                                }
-                            } else {
-                                throw primaryError; // Re-throw if no fallback possible
-                            }
-                        }
-
-                        // onAuthStateChanged will handle the rest
-                    } catch (error: any) {
-                        console.error('[AuthSlice] Failed to sign in with Electron tokens (All attempts):', error.code, error.message);
-                        // Optional: Could expose this error to the UI via state if needed
-                    }
-                } else if (tokenData === null) {
-                    console.log('[AuthSlice] Electron logout signal received via IPC');
-                    // Logout handled by Firebase onAuthStateChanged
-                } else {
-                    console.warn('[AuthSlice] Received incomplete token data from Electron:', tokenData);
-                }
-            });
-        } else {
-            if (typeof window !== 'undefined' && (window as any).process?.versions?.electron) {
-                console.error('[AuthSlice] ERROR: Running in Electron but electronAPI.auth.onUserUpdate is missing!');
-            }
-        }
-
-        // Listen for Auth Changes
+        // Simplified: Just listen for Firebase Auth state changes
+        // Firebase SDK handles auth persistence automatically (IndexedDB)
+        // No need for complex IPC token exchange - signInWithPopup works in Electron too
         import('@/services/firebase').then(async ({ auth }) => {
             const { onAuthStateChanged } = await import('firebase/auth');
 
@@ -175,6 +116,14 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                 console.log("[AuthSlice] Auth Disabled Mode detected - skipping Firebase Auth listener");
                 return;
             }
+
+            // Handle redirect result for mobile auth flow
+            // This picks up the auth result after user is redirected back from Google
+            import('@/services/AuthService').then(({ AuthService }) => {
+                AuthService.handleRedirectResult().catch((err) => {
+                    console.error("[AuthSlice] Redirect result error:", err);
+                });
+            });
 
             onAuthStateChanged(auth, async (user: User | null) => {
                 console.log("[AuthSlice] Auth State Changed:", user ? `User ${user.uid} (Anon: ${user.isAnonymous})` : 'Logged Out');

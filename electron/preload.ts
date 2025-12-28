@@ -1,11 +1,6 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 console.log('[Preload] Initializing context bridge...');
-
-interface AuthTokenData {
-    idToken: string;
-    accessToken?: string | null;
-}
 
 contextBridge.exposeInMainWorld('electronAPI', {
     // General
@@ -13,18 +8,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     setPrivacyMode: (enabled: boolean) => ipcRenderer.invoke('privacy:toggle-protection', enabled),
 
-    // Auth (Secure Main Process Flow)
+    // Auth (Simplified - login handled via Firebase SDK in renderer)
     auth: {
-        login: () => ipcRenderer.invoke('auth:login-google'),
+        // Login is now handled directly via Firebase signInWithPopup in the renderer
+        // No need for IPC - it works natively in Electron's Chromium
         logout: () => ipcRenderer.invoke('auth:logout'),
-        onUserUpdate: (callback: (user: AuthTokenData | null) => void) => {
-            const handler = (_event: IpcRendererEvent, user: AuthTokenData | null) => callback(user);
-            ipcRenderer.on('auth:user-update', handler);
-            // Return unsubscribe function to prevent memory leaks
-            return () => {
-                ipcRenderer.removeListener('auth:user-update', handler);
-            };
-        }
     },
 
     // Credentials (Secure Main Process Storage)

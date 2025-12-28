@@ -8,12 +8,20 @@ import {
     User,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     EmailAuthProvider,
     linkWithCredential,
     signInAnonymously
 } from 'firebase/auth';
 import { auth } from './firebase';
 import { UserService } from './UserService';
+
+// Detect mobile devices (iOS Safari doesn't support popups well)
+const isMobile = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+};
 import { UserProfile } from '@/types/User';
 
 
@@ -39,38 +47,45 @@ export const AuthService = {
         return user;
     },
 
-    async signInWithGoogle(): Promise<User> {
-        // Robust Electron detection that works even if 'process' is sandboxed/hidden
-        const isElectron = /Electron/i.test(navigator.userAgent);
-        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
+    async signInWithGoogle(): Promise<User | null> {
+        const provider = new GoogleAuthProvider();
+        provider.addScope('profile');
+        provider.addScope('email');
 
-        console.log('[AuthService] Environment Check:', { isElectron, hasAPI: !!electronAPI });
-
-        if (isElectron) {
-            if (!electronAPI?.auth) {
-                // FAIL FAST: Do not fallback to popup - it won't work in production
-                const error = new Error('ELECTRON_BRIDGE_MISSING');
-                console.error('[AuthService] Critical Error: Electron Bridge missing. Preload failed?');
-                throw error;
-            }
-
-            console.log('[AuthService] Using Electron IPC login flow');
-            await electronAPI.auth.login();
-
-            // Wait for the auth:user-update event handler to process the token
-            // This promise never resolves here - the app state update handles navigation
-            return new Promise(() => { });
+        // Mobile devices (iOS/Android) don't handle popups well
+        // Use redirect flow instead
+        if (isMobile()) {
+            console.log('[AuthService] Mobile detected - using signInWithRedirect');
+            await signInWithRedirect(auth, provider);
+            // User will be redirected to Google, then back to app
+            // getRedirectResult is called on page load in authSlice
+            return null; // Won't reach here - redirect happens
         }
 
-        console.warn('[AuthService] electronAPI not found, falling back to signInWithPopup');
-        // Browser fallback: use Firebase popup
-        const provider = new GoogleAuthProvider();
+        // Desktop/Electron: Use popup (faster, no page reload)
+        console.log('[AuthService] Desktop detected - using signInWithPopup');
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
 
         await UserService.syncUserProfile(user);
 
         return user;
+    },
+
+    // Handle redirect result (called on page load for mobile flow)
+    async handleRedirectResult(): Promise<User | null> {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result?.user) {
+                console.log('[AuthService] Redirect result received:', result.user.uid);
+                await UserService.syncUserProfile(result.user);
+                return result.user;
+            }
+            return null;
+        } catch (error) {
+            console.error('[AuthService] Redirect result error:', error);
+            throw error;
+        }
     },
 
     async signInAnonymously(): Promise<User> {
