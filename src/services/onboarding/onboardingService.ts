@@ -836,7 +836,8 @@ function randomPick<T>(arr: T[]): T {
 
 export function generateNaturalFallback(
     updates: string[],
-    nextMissing: TopicKey | null
+    nextMissing: TopicKey | null,
+    isReleaseContext?: boolean
 ): string {
     // If we have updates, acknowledge them naturally (without listing them robotically)
     const ack = updates.length > 0

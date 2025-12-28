@@ -48,8 +48,15 @@ describe('Filmmaking Grammar Tools', () => {
             entityAnchor: null,
             setEntityAnchor: mockSetEntityAnchor,
             addToHistory: mockAddToHistory,
-            studioControls: { resolution: '1080p', aspectRatio: '16:9' }
-        } as ReturnType<typeof useStore.getState>);
+            studioControls: { resolution: '1080p', aspectRatio: '16:9' },
+            isSidebarOpen: true,
+            activeModule: 'filmmaking',
+            sidebarView: 'tools',
+            isCommandBarOpen: false,
+            isSettingsOpen: false,
+            isProfileOpen: false,
+            isNotificationsOpen: false,
+        } as any);
     });
 
     describe('NarrativeTools', () => {
@@ -75,8 +82,15 @@ describe('Filmmaking Grammar Tools', () => {
             vi.mocked(useStore.getState).mockReturnValue({
                 currentProjectId: 'test-project',
                 entityAnchor: { url: 'data:image/png;base64,mockanchordata' },
-                addToHistory: mockAddToHistory
-            } as ReturnType<typeof useStore.getState>);
+                addToHistory: mockAddToHistory,
+                isSidebarOpen: true,
+                activeModule: 'filmmaking',
+                sidebarView: 'tools',
+                isCommandBarOpen: false,
+                isSettingsOpen: false,
+                isProfileOpen: false,
+                isNotificationsOpen: false,
+            } as any);
 
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue([{
                 id: 'grid-1',

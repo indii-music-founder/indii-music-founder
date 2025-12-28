@@ -185,29 +185,30 @@ export default function OnboardingPage() {
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
                 // Dedupe insights: Check if this insight is semantically similar to one already shown
-                if (uiToolCall?.name === 'shareInsight' && uiToolCall.args?.insight) {
-                    const currentInsight = uiToolCall.args.insight;
+                if (uiToolCall?.name === 'shareInsight' && (uiToolCall.args as any)?.insight) {
+                    const currentInsight = (uiToolCall.args as any).insight;
                     const alreadyShown = newHistory.some(
                         msg => msg.toolCall?.name === 'shareInsight' &&
-                            msg.toolCall?.args?.insight &&
-                            isSemanticallySimilar(msg.toolCall.args.insight, currentInsight)
+                            (msg.toolCall?.args as any)?.insight &&
+                            isSemanticallySimilar((msg.toolCall.args as any).insight, currentInsight)
                     );
                     if (alreadyShown) {
-                        console.log('[Onboarding] Deduped similar insight:', currentInsight.substring(0, 50));
+                        console.log('[Onboarding] Deduped similar insight:', typeof currentInsight === 'string' ? currentInsight.substring(0, 50) : 'Non-string insight');
                         uiToolCall = null; // Don't show duplicate insight
                     }
                 }
 
                 // Validate options for askMultipleChoice
-                if (uiToolCall?.name === 'askMultipleChoice' && uiToolCall.args?.options && uiToolCall.args?.question_type) {
-                    const validatedOptions = validateOptions(uiToolCall.args.question_type, uiToolCall.args.options);
+                if (uiToolCall?.name === 'askMultipleChoice' && (uiToolCall.args as any)?.options && (uiToolCall.args as any)?.question_type) {
+                    const args = uiToolCall.args as any;
+                    const validatedOptions = validateOptions(args.question_type, args.options);
                     if (validatedOptions.length === 0) {
                         // All options invalid - fall back to whitelist
-                        console.log('[Onboarding] All options invalid, using whitelist for:', uiToolCall.args.question_type);
-                        uiToolCall.args.options = OPTION_WHITELISTS[uiToolCall.args.question_type] || uiToolCall.args.options;
-                    } else if (validatedOptions.length !== uiToolCall.args.options.length) {
-                        console.log('[Onboarding] Filtered invalid options:', uiToolCall.args.options.length - validatedOptions.length);
-                        uiToolCall.args.options = validatedOptions;
+                        console.log('[Onboarding] All options invalid, using whitelist for:', args.question_type);
+                        args.options = OPTION_WHITELISTS[args.question_type] || args.options;
+                    } else if (validatedOptions.length !== args.options.length) {
+                        console.log('[Onboarding] Filtered invalid options:', args.options.length - validatedOptions.length);
+                        args.options = validatedOptions;
                     }
                 }
 
@@ -473,11 +474,10 @@ export default function OnboardingPage() {
                                                         handleSend(option);
                                                     }}
                                                     disabled={hasBeenAnswered}
-                                                    className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                                                        hasBeenAnswered
+                                                    className={`px-4 py-2 rounded-lg text-sm transition-all ${hasBeenAnswered
                                                             ? 'bg-black/10 border border-white/5 text-gray-600 cursor-not-allowed opacity-50'
                                                             : 'bg-black/20 hover:bg-white hover:text-black border border-white/10 transform hover:scale-105'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {option}
                                                 </button>
