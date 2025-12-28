@@ -17,10 +17,10 @@ import {
 import { auth } from './firebase';
 import { UserService } from './UserService';
 
-// Detect mobile devices (iOS Safari doesn't support popups well)
-const isMobile = (): boolean => {
+// Detect if running in Electron (only place where popup works reliably)
+const isElectron = (): boolean => {
     if (typeof window === 'undefined') return false;
-    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    return !!(window as any).electronAPI;
 };
 import { UserProfile } from '@/types/User';
 
@@ -52,24 +52,22 @@ export const AuthService = {
         provider.addScope('profile');
         provider.addScope('email');
 
-        // Mobile devices (iOS/Android) don't handle popups well
-        // Use redirect flow instead
-        if (isMobile()) {
-            console.log('[AuthService] Mobile detected - using signInWithRedirect');
-            await signInWithRedirect(auth, provider);
-            // User will be redirected to Google, then back to app
-            // getRedirectResult is called on page load in authSlice
-            return null; // Won't reach here - redirect happens
+        // Electron: Use popup (works reliably in Chromium)
+        if (isElectron()) {
+            console.log('[AuthService] Electron detected - using signInWithPopup');
+            const userCredential = await signInWithPopup(auth, provider);
+            const user = userCredential.user;
+            await UserService.syncUserProfile(user);
+            return user;
         }
 
-        // Desktop/Electron: Use popup (faster, no page reload)
-        console.log('[AuthService] Desktop detected - using signInWithPopup');
-        const userCredential = await signInWithPopup(auth, provider);
-        const user = userCredential.user;
-
-        await UserService.syncUserProfile(user);
-
-        return user;
+        // Web browsers (desktop & mobile): Use redirect
+        // Popups are unreliable - blocked by Safari, popup blockers, etc.
+        console.log('[AuthService] Web browser detected - using signInWithRedirect');
+        await signInWithRedirect(auth, provider);
+        // User will be redirected to Google, then back to app
+        // getRedirectResult is called on page load in authSlice
+        return null; // Won't reach here - redirect happens
     },
 
     // Handle redirect result (called on page load for mobile flow)
