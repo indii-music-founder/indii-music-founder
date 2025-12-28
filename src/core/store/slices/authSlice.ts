@@ -116,8 +116,20 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                 return;
             }
 
-            // Legacy redirect check removed - using popup flow
-            // check skipped
+            // Handle Redirect Result (Critical for Mobile/Web)
+            try {
+                // We don't await this blocking interaction to allow UI to render,
+                // but we kick it off immediately. Use a small delay if needed or proper async handling.
+                // However, onAuthStateChanged also fires. getting redirect result ensures we catch errors 
+                // and explicitly sync profile if it wasn't a standard auth state change.
+                import('@/services/AuthService').then(({ AuthService }) => {
+                    AuthService.handleRedirectResult().catch(err => {
+                        console.error("[AuthSlice] Handle Redirect Error:", err);
+                    });
+                });
+            } catch (e) {
+                console.warn("[AuthSlice] Redirect handling skipped or failed", e);
+            }
 
             // Then listen for auth state changes
             // Note: On redirect return, profile syncs twice (in handleRedirectResult and here).

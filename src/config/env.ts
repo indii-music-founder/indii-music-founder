@@ -45,7 +45,7 @@ const metaEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined
 
 const processEnv = {
     // Use environment variables when available - with fallbacks for Web/Public hosting
-    apiKey: readEnv('VITE_API_KEY') || "AIzaSyDQyNRsArXlKshdVSSz8xOH3Ar0ntvbS3U",
+    apiKey: readEnv('VITE_API_KEY') || "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w",
     projectId: readEnv('VITE_VERTEX_PROJECT_ID') || "indiios-v-1-1",
     location: readEnv('VITE_VERTEX_LOCATION') || "us-central1",
     useVertex: toBoolean(readEnv('VITE_USE_VERTEX') || "false"),
@@ -115,14 +115,14 @@ export const env = {
 // NOTE: Firebase API keys are PUBLIC by design (security is enforced via Firestore rules).
 // These fallbacks are required for Firebase Hosting where env vars aren't available at runtime.
 export const firebaseDefaultConfig = {
-    apiKey: "AIzaSyDQyNRsArXlKshdVSSz8xOH3Ar0ntvbS3U", // Public Firebase API Key
-    authDomain: "indiios-v-1-1.firebaseapp.com",
+    apiKey: "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w", // Public Firebase API Key
+    authDomain: "indiios-studio.web.app",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",
     storageBucket: "indiios-v-1-1.firebasestorage.app",
     messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd", // Primary Web App ID
-    measurementId: "G-KNWPRGE5JK" // Matching Analytics ID
+    appId: "1:223837784072:web:3af738739465ea4095e9bd", // Use active Backend App ID
+    measurementId: "G-T6V8WPE7Z7" // Use matching active Analytics ID
 };
 
 // Resolved Firebase configuration that never falls back to unrelated API keys

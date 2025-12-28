@@ -3,14 +3,14 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDQyNRsArXlKshdVSSz8xOH3Ar0ntvbS3U",
-  authDomain: "indiios-v-1-1.firebaseapp.com",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w",
+  authDomain: "indiios-v-1-1.web.app",
   databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
   projectId: "indiios-v-1-1",
   storageBucket: "indiios-v-1-1.firebasestorage.app",
   messagingSenderId: "223837784072",
-  appId: "1:223837784072:web:28eabcf0c5dd985395e9bd",
-  measurementId: "G-KNWPRGE5JK"
+  appId: "1:223837784072:web:3af738739465ea4095e9bd",
+  measurementId: "G-T6V8WPE7Z7"
 };
 
 // Only initialize Firebase on the client side to prevent SSG build errors

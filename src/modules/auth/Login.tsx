@@ -41,7 +41,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
             // App.tsx handles state update via auth listener
         } catch (err: any) {
             console.error("Login Error:", err);
-            setError(err.message || "Failed to sign in. Check your credentials.");
+            if (err.code === 'auth/invalid-credential') {
+                setError("Incorrect email or password. If you signed in with Google before, try that.");
+            } else {
+                setError(err.message || "Failed to sign in. Check your credentials.");
+            }
             setLoading(false);
         }
     };
@@ -50,9 +54,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onNavigate }) => {
         setError(null);
         setLoading(true);
         try {
-            // This redirects to Google - page will reload when user returns
+            // Web: Redirects to Google (page unloads)
+            // Electron: Opens popup (awaits result)
             await AuthService.signInWithGoogle();
-            // Code below never runs - we redirect away
         } catch (err: any) {
             console.error("Google Login Error:", err);
             setError(err.message || "Google sign in failed.");

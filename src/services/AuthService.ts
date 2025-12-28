@@ -14,7 +14,9 @@ import {
     sendEmailVerification,
     User,
     GoogleAuthProvider,
-    signInWithPopup, // Add this
+    signInWithPopup,
+    signInWithRedirect, // Add this
+    getRedirectResult, // Add this
     EmailAuthProvider,
     linkWithCredential,
     signInAnonymously,
@@ -42,26 +44,49 @@ export const AuthService = {
         return userCredential.user;
     },
 
-    // Google Sign-In - POPUP (Native support in Electron/Chrome)
+    // Google Sign-In - Hybrid (Redirect for Web, Popup for Electron)
     async signInWithGoogle(): Promise<void> {
-        console.log('[Auth] Starting Google sign-in via popup...');
+        console.log('[Auth] Starting Google sign-in...');
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
 
+        // Robust Electron detection
+        const isElectron = typeof window !== 'undefined' &&
+            ((window as any).electronAPI || (window as any).ipcRenderer || navigator.userAgent.includes('Electron'));
+
         try {
-            const result = await signInWithPopup(auth, provider);
-            console.log('[Auth] Popup success! User:', result.user.email);
-            await UserService.syncUserProfile(result.user);
+            if (isElectron) {
+                console.log('[Auth] Environment: Electron (using Popup)');
+                const result = await signInWithPopup(auth, provider);
+                console.log('[Auth] Popup success! User:', result.user.email);
+                await UserService.syncUserProfile(result.user);
+            } else {
+                console.log('[Auth] Environment: Web (using Redirect)');
+                // This promise resolves when the specific redirect action starts, 
+                // but the actual sign-in completes after page reload.
+                await signInWithRedirect(auth, provider);
+            }
         } catch (error: any) {
-            console.error('[Auth] Popup error:', error.code, error.message);
+            console.error('[Auth] Sign-in error:', error.code, error.message);
             throw error;
         }
     },
 
-    // Legacy/Fallback - kept for compatibility if needed, but unused in main flow
+    // Handle the result returning from a redirect (Web only)
     async handleRedirectResult(): Promise<User | null> {
-        return null;
+        try {
+            const result = await getRedirectResult(auth);
+            if (result) {
+                console.log('[Auth] Redirect result received:', result.user.email);
+                await UserService.syncUserProfile(result.user);
+                return result.user;
+            }
+            return null;
+        } catch (error: any) {
+            console.error('[Auth] Redirect result error:', error);
+            throw error;
+        }
     },
 
     // Guest/Anonymous
