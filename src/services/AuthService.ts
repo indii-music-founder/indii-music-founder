@@ -42,9 +42,6 @@ export const AuthService = {
         return userCredential.user;
     },
 
-    // Google Sign-In - Hybrid (Redirect for Web, Popup for Electron)
-    async signInWithGoogle(): Promise<void> {
-        console.log('[Auth] Starting Google sign-in...');
     // Google Sign-In - Unified Popup Flow (Works on Web & Electron & Mobile)
     async signInWithGoogle(): Promise<void> {
         console.log('[Auth] Starting Google sign-in (Popup Flow)...');
@@ -52,26 +49,8 @@ export const AuthService = {
         provider.addScope('profile');
         provider.addScope('email');
 
-        // Robust Electron detection
-        const isElectron = typeof window !== 'undefined' &&
-            ((window as any).electronAPI || (window as any).ipcRenderer || navigator.userAgent.includes('Electron'));
-
         try {
-            if (isElectron) {
-                console.log('[Auth] Environment: Electron (using Popup)');
-                const result = await signInWithPopup(auth, provider);
-                console.log('[Auth] Popup success! User:', result.user.email);
-                await UserService.syncUserProfile(result.user);
-            } else {
-                console.log('[Auth] Environment: Web (using Redirect)');
-                // This promise resolves when the specific redirect action starts, 
-                // but the actual sign-in completes after page reload.
-                await signInWithRedirect(auth, provider);
-            }
-        } catch (error: any) {
-            console.error('[Auth] Sign-in error:', error.code, error.message);
-            // We now use Popup for EVERYTHING. 
-            // It prevents the "redirect hang" on mobile and works in Electron.
+            // We now use Popup for EVERYTHING to prevent redirect hangs on mobile.
             const result = await signInWithPopup(auth, provider);
             console.log('[Auth] Popup success! User:', result.user.email);
             await UserService.syncUserProfile(result.user);
