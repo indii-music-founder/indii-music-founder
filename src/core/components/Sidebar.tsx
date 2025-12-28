@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import type { ModuleId } from '../store/slices/appSlice';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, user, logout } = useStore();
@@ -158,10 +158,10 @@ export default function Sidebar() {
                     {isSidebarOpen && (
                         <button
                             onClick={() => logout()}
-                            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors"
                             title="Sign Out"
                         >
-                            <ChevronLeft size={14} className="rotate-180" />
+                            <LogOut size={14} />
                         </button>
                     )}
                 </div>

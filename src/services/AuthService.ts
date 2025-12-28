@@ -18,15 +18,21 @@ import {
     getRedirectResult,
     EmailAuthProvider,
     linkWithCredential,
-    signInAnonymously
+    signInAnonymously,
+    updateProfile
 } from 'firebase/auth';
 import { auth } from './firebase';
 import { UserService } from './UserService';
 
 export const AuthService = {
     // Email/Password
-    async signUp(email: string, password: string): Promise<User> {
+    async signUp(email: string, password: string, displayName?: string): Promise<User> {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        if (displayName) {
+            await updateProfile(userCredential.user, { displayName });
+        }
+
         await UserService.syncUserProfile(userCredential.user);
         return userCredential.user;
     },
