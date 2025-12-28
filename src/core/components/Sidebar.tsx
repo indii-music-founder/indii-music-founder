@@ -139,7 +139,7 @@ export default function Sidebar() {
                     </div>
                 )}
 
-                <div className={`flex items-center gap-3 ${!isSidebarOpen ? 'justify-center' : ''}`}>
+                <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-bold text-white">
                             {user?.email?.[0].toUpperCase() || (user?.isAnonymous ? 'G' : 'U')}
@@ -155,15 +155,13 @@ export default function Sidebar() {
                             </p>
                         </div>
                     )}
-                    {isSidebarOpen && (
-                        <button
-                            onClick={() => logout()}
-                            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors"
-                            title="Sign Out"
-                        >
-                            <LogOut size={14} />
-                        </button>
-                    )}
+                    <button
+                        onClick={() => logout()}
+                        className={`p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors ${!isSidebarOpen ? 'mt-1' : ''}`}
+                        title="Sign Out"
+                    >
+                        <LogOut size={14} />
+                    </button>
                 </div>
                 {isSidebarOpen && (
                     <p className="mt-4 text-[10px] text-gray-600 text-center italic">
