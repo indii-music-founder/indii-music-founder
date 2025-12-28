@@ -117,6 +117,14 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                 return;
             }
 
+            // Handle redirect result for mobile auth flow
+            // This picks up the auth result after user is redirected back from Google
+            import('@/services/AuthService').then(({ AuthService }) => {
+                AuthService.handleRedirectResult().catch((err) => {
+                    console.error("[AuthSlice] Redirect result error:", err);
+                });
+            });
+
             onAuthStateChanged(auth, async (user: User | null) => {
                 console.log("[AuthSlice] Auth State Changed:", user ? `User ${user.uid} (Anon: ${user.isAnonymous})` : 'Logged Out');
                 if (user) {

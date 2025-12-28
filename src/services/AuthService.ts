@@ -8,12 +8,20 @@ import {
     User,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     EmailAuthProvider,
     linkWithCredential,
     signInAnonymously
 } from 'firebase/auth';
 import { auth } from './firebase';
 import { UserService } from './UserService';
+
+// Detect mobile devices (iOS Safari doesn't support popups well)
+const isMobile = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+};
 import { UserProfile } from '@/types/User';
 
 
@@ -39,21 +47,45 @@ export const AuthService = {
         return user;
     },
 
-    async signInWithGoogle(): Promise<User> {
-        // Simplified: Use Firebase's signInWithPopup directly
-        // Works in both browser AND Electron (Chromium-based)
-        console.log('[AuthService] Using Firebase signInWithPopup');
-
+    async signInWithGoogle(): Promise<User | null> {
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
 
+        // Mobile devices (iOS/Android) don't handle popups well
+        // Use redirect flow instead
+        if (isMobile()) {
+            console.log('[AuthService] Mobile detected - using signInWithRedirect');
+            await signInWithRedirect(auth, provider);
+            // User will be redirected to Google, then back to app
+            // getRedirectResult is called on page load in authSlice
+            return null; // Won't reach here - redirect happens
+        }
+
+        // Desktop/Electron: Use popup (faster, no page reload)
+        console.log('[AuthService] Desktop detected - using signInWithPopup');
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
 
         await UserService.syncUserProfile(user);
 
         return user;
+    },
+
+    // Handle redirect result (called on page load for mobile flow)
+    async handleRedirectResult(): Promise<User | null> {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result?.user) {
+                console.log('[AuthService] Redirect result received:', result.user.uid);
+                await UserService.syncUserProfile(result.user);
+                return result.user;
+            }
+            return null;
+        } catch (error) {
+            console.error('[AuthService] Redirect result error:', error);
+            throw error;
+        }
     },
 
     async signInAnonymously(): Promise<User> {
