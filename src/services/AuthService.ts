@@ -15,8 +15,6 @@ import {
     User,
     GoogleAuthProvider,
     signInWithPopup,
-    signInWithRedirect, // Add this
-    getRedirectResult, // Add this
     EmailAuthProvider,
     linkWithCredential,
     signInAnonymously,
@@ -69,21 +67,6 @@ export const AuthService = {
         }
     },
 
-    // Handle the result returning from a redirect (Web only)
-    async handleRedirectResult(): Promise<User | null> {
-        try {
-            const result = await getRedirectResult(auth);
-            if (result) {
-                console.log('[Auth] Redirect result received:', result.user.email);
-                await UserService.syncUserProfile(result.user);
-                return result.user;
-            }
-            return null;
-        } catch (error: any) {
-            console.error('[Auth] Redirect result error:', error);
-            throw error;
-        }
-    },
 
     // Guest/Anonymous
     async signInAnonymously(): Promise<User> {
