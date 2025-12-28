@@ -458,22 +458,33 @@ export default function OnboardingPage() {
                                 <div className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</div>
 
                                 {/* Generative UI Renderer - Multiple Choice */}
-                                {msg.toolCall && msg.toolCall.name === 'askMultipleChoice' && (
-                                    <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        {msg.toolCall.args.options.map((option: string) => (
-                                            <button
-                                                key={option}
-                                                onClick={() => {
-                                                    setInput(option);
-                                                    handleSend(option); // Pass option directly to avoid stale state
-                                                }}
-                                                className="bg-black/20 hover:bg-white hover:text-black border border-white/10 px-4 py-2 rounded-lg text-sm transition-all transform hover:scale-105"
-                                            >
-                                                {option}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                                {msg.toolCall && msg.toolCall.name === 'askMultipleChoice' && (() => {
+                                    // Check if this question has been answered (user message came after this one)
+                                    const hasBeenAnswered = history.slice(idx + 1).some(m => m.role === 'user');
+
+                                    return (
+                                        <div className="mt-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            {msg.toolCall.args.options.map((option: string) => (
+                                                <button
+                                                    key={option}
+                                                    onClick={() => {
+                                                        if (hasBeenAnswered) return; // Don't allow clicking answered options
+                                                        setInput(option);
+                                                        handleSend(option);
+                                                    }}
+                                                    disabled={hasBeenAnswered}
+                                                    className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                                                        hasBeenAnswered
+                                                            ? 'bg-black/10 border border-white/5 text-gray-600 cursor-not-allowed opacity-50'
+                                                            : 'bg-black/20 hover:bg-white hover:text-black border border-white/10 transform hover:scale-105'
+                                                    }`}
+                                                >
+                                                    {option}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Industry Insight Card */}
                                 {msg.toolCall && msg.toolCall.name === 'shareInsight' && (
