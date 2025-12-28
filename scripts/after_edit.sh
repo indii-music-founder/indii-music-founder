@@ -6,14 +6,14 @@ CHANGED_FILE="$1"
 echo "🤖 Guardrails active on: $CHANGED_FILE"
 
 # 1. Frontend Guardrails (JavaScript/TypeScript)
-if [[ "$CHANGED_FILE" == *".ts"* ]] || [[ "$CHANGED_FILE" == *".tsx"* ]]; then
+if [[ "$CHANGED_FILE" == *.ts ]] || [[ "$CHANGED_FILE" == *.tsx ]]; then
     # Automatically fix syntax/linting errors so the AI doesn't have to
     echo "Running ESLint Fix..."
     npx eslint "$CHANGED_FILE" --fix
 fi
 
 # 2. Backend Guardrails (Rust/Server) - As per Source 17
-if [[ "$CHANGED_FILE" == *".rs"* ]]; then
+if [[ "$CHANGED_FILE" == *.rs ]]; then
     echo "Running Cargo Clippy..."
     # --allow-dirty ensures it runs even with uncommitted changes
     cargo clippy --fix --allow-dirty --allow-staged
