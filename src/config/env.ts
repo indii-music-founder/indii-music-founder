@@ -121,8 +121,8 @@ export const firebaseDefaultConfig = {
     projectId: "indiios-v-1-1",
     storageBucket: "indiios-v-1-1.firebasestorage.app",
     messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:3af738739465ea4095e9bd", // Use active Backend App ID
-    measurementId: "G-T6V8WPE7Z7" // Use matching active Analytics ID
+    appId: "1:223837784072:web:3af738739465ea4095e9bd", // Primary Web App ID
+    measurementId: "G-T6V8WPE7Z7" // Matching Analytics ID
 };
 
 // Resolved Firebase configuration that never falls back to unrelated API keys
