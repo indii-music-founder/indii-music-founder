@@ -39,15 +39,9 @@ describe('ImageGenerationService', () => {
         it('should generate images successfully', async () => {
             const mockResponse = {
                 data: {
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: {
-                                    mimeType: 'image/png',
-                                    data: 'base64data'
-                                }
-                            }]
-                        }
+                    images: [{
+                        bytesBase64Encoded: 'base64data',
+                        mimeType: 'image/png'
                     }]
                 }
             };
