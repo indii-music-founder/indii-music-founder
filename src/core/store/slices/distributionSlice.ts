@@ -19,78 +19,30 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
     },
     fetchDistributors: async () => {
         set((state) => ({ distribution: { ...state.distribution, loading: true } }));
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate latency
 
-        const mockDistributors: DistributorConnection[] = [
-            {
-                distributorId: 'distrokid',
-                isConnected: true,
-                accountId: 'dk_12345',
-                accountEmail: 'artist@indii.os',
-                lastSyncedAt: new Date().toISOString(),
-                features: {
-                    canCreateRelease: true,
-                    canUpdateRelease: true,
-                    canTakedown: true,
-                    canFetchEarnings: true,
-                    canFetchAnalytics: false
-                }
-            },
-            {
-                distributorId: 'cdbaby',
-                isConnected: false,
-                features: {
-                    canCreateRelease: true,
-                    canUpdateRelease: false,
-                    canTakedown: true,
-                    canFetchEarnings: true,
-                    canFetchAnalytics: true
-                }
-            },
-            {
-                distributorId: 'tunecore',
-                isConnected: false,
-                features: {
-                    canCreateRelease: true,
-                    canUpdateRelease: true,
-                    canTakedown: true,
-                    canFetchEarnings: true,
-                    canFetchAnalytics: true
-                }
-            }
-        ];
+        // TODO: Replace with real Firestore query when backend is ready
+        // const connections = await DistributionService.fetchConnections(orgId);
 
         set((state) => ({
             distribution: {
                 ...state.distribution,
                 loading: false,
-                connections: mockDistributors
+                connections: [] // Empty until real backend integration
             }
         }));
     },
     connectDistributor: async (distributorId: DistributorId) => {
         set((state) => ({ distribution: { ...state.distribution, loading: true } }));
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        set((state) => {
-            const newConnections = state.distribution.connections.map(d => {
-                if (d.distributorId === distributorId) {
-                    return {
-                        ...d,
-                        isConnected: true,
-                        lastSyncedAt: new Date().toISOString()
-                    };
-                }
-                return d;
-            });
+        // TODO: Replace with real OAuth flow when backend is ready
+        // await DistributionService.initiateOAuth(distributorId);
 
-            return {
-                distribution: {
-                    ...state.distribution,
-                    loading: false,
-                    connections: newConnections
-                }
-            };
-        });
+        set((state) => ({
+            distribution: {
+                ...state.distribution,
+                loading: false,
+                error: 'Distributor connections coming soon. Backend integration required.'
+            }
+        }));
     }
 });

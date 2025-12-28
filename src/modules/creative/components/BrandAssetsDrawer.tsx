@@ -76,7 +76,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         try {
             const { functions } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
-            const generateImage = httpsCallable(functions, 'generateImage');
+            const generateImage = httpsCallable(functions, 'generateImageV3');
 
             const response = await generateImage({
                 prompt: prompt + " -- style: high quality, professional brand asset",

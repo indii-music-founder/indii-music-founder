@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
-import CreativeNavbar from './components/CreativeNavbar';
 import CreativeGallery from './components/CreativeGallery';
 import InfiniteCanvas from './components/InfiniteCanvas';
 import Showroom from './components/Showroom';
 import VideoWorkflow from '../video/VideoWorkflow';
-import { LayoutGrid, Maximize2, Store, Film } from 'lucide-react';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
@@ -83,8 +81,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     return (
         <ErrorBoundary>
             <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
-                <CreativeNavbar />
-
                 <div className="flex-1 flex overflow-hidden relative">
                     {/* Main Workspace */}
                     <div className="flex-1 flex flex-col relative min-w-0 bg-[#0f0f0f]">

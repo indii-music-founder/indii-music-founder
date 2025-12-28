@@ -24,32 +24,13 @@ const CampaignDashboard: React.FC = () => {
                 <button
                     className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors"
                     onClick={() => {
-                        // Create a dummy campaign for demonstration
-                        setSelectedCampaign({
-                            id: 'demo-campaign',
-                            title: 'Demo Campaign',
-                            type: 'social_media',
-                            status: 'draft',
-                            brief: 'A demo campaign',
-                            startDate: new Date().toISOString().split('T')[0],
-                            durationDays: 7,
-                            posts: [
-                                {
-                                    id: 'post-1',
-                                    day: 1,
-                                    platform: 'Twitter',
-                                    content: 'Hello world',
-                                    copy: 'Excited to announce our new campaign! #launch',
-                                    imageAsset: { title: 'Launch Image', imageUrl: '' },
-                                    status: 'pending',
-                                    time: '10:00'
-                                }
-                            ]
-                        } as any);
+                        // TODO: Open campaign creation modal when backend is ready
+                        // For now, show empty state
                     }}
                 >
                     Create New Campaign
                 </button>
+                <p className="text-gray-500 text-xs mt-4">Campaign creation coming soon</p>
             </div>
         );
     }

@@ -91,7 +91,7 @@ export class ImageGenerationService {
         }
 
         try {
-            const generateImage = httpsCallable(functions, 'generateImage');
+            const generateImage = httpsCallable(functions, 'generateImageV3');
 
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
