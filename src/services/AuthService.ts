@@ -40,31 +40,14 @@ export const AuthService = {
     },
 
     async signInWithGoogle(): Promise<User> {
-        // Robust Electron detection that works even if 'process' is sandboxed/hidden
-        const isElectron = /Electron/i.test(navigator.userAgent);
-        const electronAPI = typeof window !== 'undefined' ? (window as any).electronAPI : null;
+        // Simplified: Use Firebase's signInWithPopup directly
+        // Works in both browser AND Electron (Chromium-based)
+        console.log('[AuthService] Using Firebase signInWithPopup');
 
-        console.log('[AuthService] Environment Check:', { isElectron, hasAPI: !!electronAPI });
-
-        if (isElectron) {
-            if (!electronAPI?.auth) {
-                // FAIL FAST: Do not fallback to popup - it won't work in production
-                const error = new Error('ELECTRON_BRIDGE_MISSING');
-                console.error('[AuthService] Critical Error: Electron Bridge missing. Preload failed?');
-                throw error;
-            }
-
-            console.log('[AuthService] Using Electron IPC login flow');
-            await electronAPI.auth.login();
-
-            // Wait for the auth:user-update event handler to process the token
-            // This promise never resolves here - the app state update handles navigation
-            return new Promise(() => { });
-        }
-
-        console.warn('[AuthService] electronAPI not found, falling back to signInWithPopup');
-        // Browser fallback: use Firebase popup
         const provider = new GoogleAuthProvider();
+        provider.addScope('profile');
+        provider.addScope('email');
+
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
 
