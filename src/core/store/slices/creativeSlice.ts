@@ -119,43 +119,19 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         });
     },
     initializeHistory: async () => {
-        const { auth } = await import('@/services/firebase');
-        const { onAuthStateChanged, signInAnonymously } = await import('firebase/auth');
         const { StorageService } = await import('@/services/StorageService');
 
         return new Promise<void>((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    try {
-                        const history = await StorageService.loadHistory();
-                        set({ generatedHistory: history });
-                    } catch (error) {
-                        console.error("Error loading history:", error);
-                    }
-                    unsubscribe();
+            // bypass auth check for Ground Zero
+            StorageService.loadHistory()
+                .then(history => {
+                    set({ generatedHistory: history });
                     resolve();
-                } else {
-                    try {
-                        await signInAnonymously(auth);
-                        // The onAuthStateChanged will fire again, so we don't need to do anything here
-                        // but for safety in this specific promise logic:
-                        if (auth.currentUser) {
-                            const history = await StorageService.loadHistory();
-                            set({ generatedHistory: history });
-                            unsubscribe();
-                            resolve();
-                        }
-                    } catch (e: any) {
-                        if (e.code === 'auth/admin-restricted-operation') {
-                            console.debug("Anonymous authentication disabled. Proceeding as Guest.");
-                        } else {
-                            console.error("Anonymous sign-in failed:", e);
-                        }
-                        unsubscribe();
-                        resolve();
-                    }
-                }
-            });
+                })
+                .catch(error => {
+                    console.error("Error loading history:", error);
+                    resolve();
+                });
         });
     },
     updateHistoryItem: (id, updates) => set((state) => ({

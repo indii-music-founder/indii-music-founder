@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
-import { db, storage, auth } from '../firebase';
+import { db, storage } from '../firebase';
+const CURRENT_USER_ID = 'superuser-id';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 
@@ -36,7 +37,7 @@ function queueAssetForSync(id: string, blob: Blob): void {
  * Process the sync queue - call this when online connectivity is restored
  */
 export async function processSyncQueue(): Promise<void> {
-    const user = auth.currentUser;
+    const user = { uid: CURRENT_USER_ID };
     if (!user || syncQueue.size === 0) return;
 
     console.log(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
@@ -93,7 +94,7 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
     await dbLocal.put(STORE_NAME, blob, id);
 
     // 2. Sync to Cloud if logged in
-    const user = auth.currentUser;
+    const user = { uid: CURRENT_USER_ID };
     if (user) {
         try {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
@@ -118,19 +119,16 @@ export async function getAssetFromStorage(id: string): Promise<string> {
     }
 
     // 2. Try Cloud if missing locally
-    const user = auth.currentUser;
-    if (user) {
-        try {
-            const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
-            const cloudBlob = await getBlob(storageRef);
+    try {
+        const storageRef = ref(storage, `users/${CURRENT_USER_ID}/assets/${id}`);
+        const cloudBlob = await getBlob(storageRef);
 
-            // Save to local cache
-            await dbLocal.put(STORE_NAME, cloudBlob, id);
+        // Save to local cache
+        await dbLocal.put(STORE_NAME, cloudBlob, id);
 
-            return URL.createObjectURL(cloudBlob);
-        } catch (error) {
-            console.warn(`Failed to fetch asset ${id} from cloud:`, error);
-        }
+        return URL.createObjectURL(cloudBlob);
+    } catch (error) {
+        console.warn(`Failed to fetch asset ${id} from cloud:`, error);
     }
 
     throw new Error(`Asset ${id} not found locally or in cloud`);
@@ -152,7 +150,7 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
     await dbLocal.put(WORKFLOWS_STORE, workflowWithId);
 
     // 2. Sync to Cloud
-    const user = auth.currentUser;
+    const user = { uid: CURRENT_USER_ID };
     if (user) {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', workflowId);
@@ -178,7 +176,7 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
 
     if (workflow) return workflow;
 
-    const user = auth.currentUser;
+    const user = { uid: CURRENT_USER_ID };
     if (user) {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', id);
@@ -204,7 +202,7 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
     const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
 
     // 2. Merge with Cloud if logged in
-    const user = auth.currentUser;
+    const user = { uid: CURRENT_USER_ID };
     if (user) {
         try {
             const collectionRef = collection(db, 'users', user.uid, 'workflows');
@@ -228,7 +226,7 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
 }
 
 export async function syncWorkflows(): Promise<void> {
-    const user = auth.currentUser;
+    const user = { uid: CURRENT_USER_ID };
     if (!user) return;
 
     const dbLocal = await initDB();

@@ -2,7 +2,7 @@ import { db, storage } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { initDB } from './repository';
-import { auth } from '../firebase';
+// import { auth } from '../firebase'; // Removed
 
 const STORE_NAME = 'assets';
 const WORKFLOWS_STORE = 'workflows';
@@ -20,7 +20,7 @@ export class StorageMigrationService {
     }
 
     async migrateAllData(): Promise<void> {
-        const user = auth.currentUser;
+        const user = { uid: 'superuser-id' };
         if (!user) throw new Error("User must be logged in to migrate data");
 
         console.log("Starting migration for user:", user.uid);

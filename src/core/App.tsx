@@ -8,7 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import ChatOverlay from './components/ChatOverlay';
-import { AuthLogin } from '../modules/auth/Login';
+// import { AuthLogin } from '../modules/auth/Login'; // REMOVED
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 
@@ -23,7 +23,7 @@ const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDash
 const VideoStudio = lazy(() => import('../modules/video/VideoStudio'));
 const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
-const SelectOrg = lazy(() => import('../modules/auth/SelectOrg'));
+// const SelectOrg = lazy(() => import('../modules/auth/SelectOrg')); // REMOVED
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
 const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
 const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
@@ -37,7 +37,6 @@ const OnboardingPage = lazy(() => import('../modules/onboarding/pages/Onboarding
 const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
-
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -69,7 +68,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'showroom': Showroom,
     'onboarding': OnboardingPage,
     'agent': AgentDashboard,
-    'select-org': SelectOrg,
+    // 'select-org': SelectOrg, // REMOVED
     'distribution': DistributionDashboard,
 };
 
@@ -106,24 +105,17 @@ function useAppInitialization() {
     const { initializeAuth, initializeHistory, loadProjects, isAuthReady, isAuthenticated } = useStore();
 
     useEffect(() => {
-        // Only skip initialization if explicitly requested (e.g. unit tests)
-        if ((window as any).__DISABLE_AUTH__ ||
-            localStorage.getItem('DISABLE_AUTH') === 'true') return;
-        initializeAuth();
-
-        // Handle direct navigation to /select-org
-        if (window.location.pathname === '/select-org') {
-            useStore.setState({ currentModule: 'select-org' });
-        }
+        // Initialize Core System
+        initializeAuth(); // This now just sets up the profile
 
         // Reset agent open state on mount
         useStore.setState({ isAgentOpen: false });
     }, [initializeAuth]);
 
-    // Load data when authenticated
+    // Load data when ready (which is always now)
     useEffect(() => {
         if (isAuthenticated && isAuthReady) {
-            console.log('[App] User authenticated, loading data...');
+            console.log('[App] System ready, loading data...');
             initializeHistory();
             loadProjects();
         }
@@ -136,54 +128,9 @@ function useOnboardingRedirect() {
     useEffect(() => {
         if (!isAuthenticated || !isAuthReady) return;
 
-        const state = useStore.getState();
-        const isTestMode = typeof window !== 'undefined' && (
-            '__TEST_MODE__' in window ||
-            localStorage.getItem('TEST_MODE') === 'true' ||
-            window.location.search.includes('testMode=true')
-        );
+        // Skip onboarding logic check for now in Ground Zero rebuild
+        // We assume the superuser profile is complete enough.
 
-        // Skip onboarding in dev mode if flag is set
-        if (env.skipOnboarding && !state.userProfile?.bio) {
-            console.log('[App] DevEx: Skipping onboarding via env flag');
-            useStore.setState({
-                userProfile: {
-                    ...state.userProfile,
-                    id: state.user?.uid || 'dev-user',
-                    bio: 'Dev Mode Auto-Generated Bio',
-                    preferences: '{}',
-                    brandKit: state.userProfile?.brandKit || {
-                        colors: [],
-                        fonts: '',
-                        brandDescription: '',
-                        negativePrompt: '',
-                        socials: {},
-                        brandAssets: [],
-                        referenceImages: [],
-                        releaseDetails: {
-                            title: '', type: 'Single', artists: '', genre: '',
-                            mood: '', themes: '', lyrics: ''
-                        }
-                    },
-                    analyzedTrackIds: [],
-                    knowledgeBase: [],
-                    savedWorkflows: []
-                }
-            });
-            return;
-        }
-
-        // Redirect to onboarding if profile is incomplete
-        const shouldRedirectToOnboarding =
-            !state.userProfile?.bio &&
-            currentModule !== 'onboarding' &&
-            currentModule !== 'select-org' &&
-            !isTestMode;
-
-        if (shouldRedirectToOnboarding) {
-            console.log('[App] New user detected, redirecting to onboarding');
-            useStore.setState({ currentModule: 'onboarding' });
-        }
     }, [isAuthenticated, isAuthReady, currentModule]);
 }
 
@@ -263,12 +210,8 @@ export default function App() {
                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                         <ErrorBoundary>
                             <Suspense fallback={<LoadingFallback />}>
-                                {/* Auth Gate (Bypass in Test Mode) */}
-                                {(!isAuthReady || !isAuthenticated) && !((window as any).__TEST_MODE__ || localStorage.getItem('TEST_MODE') === 'true') ? (
-                                    <AuthLogin />
-                                ) : (
-                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
-                                )}
+                                { /* Direct Module Rendering - No Auth Gate */}
+                                <ModuleRenderer moduleId={currentModule as ModuleId} />
                             </Suspense>
                         </ErrorBoundary>
                     </div>

@@ -152,18 +152,15 @@ export default function TestPlaybookPanel() {
                 <button
                     onClick={async () => {
                         if (confirm('NUCLEAR RESET: This will clear all local storage, session storage, and sign out of Firebase. Continue?')) {
-                            try {
-                                const { signOut } = await import('firebase/auth');
-                                const { auth } = await import('@/services/firebase');
-                                await signOut(auth);
-                            } catch (e) {
-                                console.warn("Firebase signout failed (might be offline):", e);
-                            }
+                            // Skip firebase logout
+                            console.log("Resetting local state...");
+
                             localStorage.clear();
                             sessionStorage.clear();
                             window.location.reload();
                         }
-                    }}
+                    }
+                    }
                     className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded flex items-center justify-center gap-2 transition-colors shadow-lg shadow-red-900/20"
                 >
                     <div className="w-2 h-2 rounded-full bg-white animate-pulse" />

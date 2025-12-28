@@ -60,8 +60,9 @@ export default function VideoWorkflow() {
 
         const setupListener = async () => {
             try {
-                const { getFirestore, doc, onSnapshot } = await import('firebase/firestore');
-                const db = getFirestore();
+                const { doc, onSnapshot } = await import('firebase/firestore');
+                // Dynamically import db from our service to ensure app is initialized
+                const { db } = await import('@/services/firebase');
 
                 unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
                     if (docSnapshot.exists()) {

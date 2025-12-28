@@ -1,6 +1,6 @@
 import { useStore } from '@/core/store';
 import { OrganizationService } from '@/services/OrganizationService';
-import { auth } from '@/services/firebase';
+// import { auth } from '@/services/firebase'; // Removed
 
 export const OrganizationTools = {
     list_organizations: async () => {
@@ -23,7 +23,7 @@ export const OrganizationTools = {
         }
 
         try {
-            await OrganizationService.switchOrganization(args.orgId);
+            await OrganizationService.switchOrganization(args.orgId, store.userProfile?.id || 'superuser-id');
             // The service updates localStorage, but we might need to trigger store update if not reactive
             // store.setOrganization is not always enough if it needs full reload
             store.setOrganization(args.orgId);
@@ -40,15 +40,16 @@ export const OrganizationTools = {
 
     create_organization: async (args: { name: string }) => {
         try {
-            const orgId = await OrganizationService.createOrganization(args.name);
             const store = useStore.getState();
+            const userId = store.userProfile?.id || 'superuser-id';
+            const orgId = await OrganizationService.createOrganization(args.name, userId);
 
             // Manually add to store to reflect immediate change
             const newOrg = {
                 id: orgId,
                 name: args.name,
                 plan: 'free' as const,
-                members: [auth.currentUser?.uid || 'me']
+                members: [userId]
             };
             store.addOrganization(newOrg);
             store.setOrganization(orgId);

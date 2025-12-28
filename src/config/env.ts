@@ -27,13 +27,8 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     DEV: z.boolean().default(false),
 
     // Firebase specific overrides (optional)
-    firebaseApiKey: z.string().optional(),
-    firebaseAuthDomain: z.string().optional(),
     firebaseProjectId: z.string().optional(),
     firebaseStorageBucket: z.string().optional(),
-    firebaseAppId: z.string().optional(),
-    firebaseMeasurementId: z.string().optional(),
-    firebaseMessagingSenderId: z.string().optional(),
     firebaseDatabaseURL: z.string().url().optional(),
 
     skipOnboarding: z.boolean().default(false),
@@ -59,13 +54,8 @@ const processEnv = {
         : (nodeEnv === 'development' || toBoolean(readEnv('DEV'))),
 
     // Firebase specific overrides
-    firebaseApiKey: readEnv('VITE_FIREBASE_API_KEY'),
-    firebaseAuthDomain: readEnv('VITE_FIREBASE_AUTH_DOMAIN'),
     firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
     firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
-    firebaseAppId: readEnv('VITE_FIREBASE_APP_ID'),
-    firebaseMeasurementId: readEnv('VITE_FIREBASE_MEASUREMENT_ID'),
-    firebaseMessagingSenderId: readEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
     firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL'),
 
     skipOnboarding: toBoolean(readEnv('VITE_SKIP_ONBOARDING')),
@@ -116,7 +106,7 @@ export const env = {
 // These fallbacks are required for Firebase Hosting where env vars aren't available at runtime.
 export const firebaseDefaultConfig = {
     apiKey: "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w", // Public Firebase API Key
-    authDomain: "indiios-studio.web.app",
+    authDomain: "indiios-studio.web.app", // Keep domain for hosting context but not for auth
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",
     storageBucket: "indiios-v-1-1.firebasestorage.app",
@@ -130,12 +120,12 @@ export const firebaseDefaultConfig = {
 const firebaseEnv = parsed.success ? parsed.data : processEnv;
 
 export const firebaseConfig = {
-    apiKey: firebaseEnv.firebaseApiKey || firebaseDefaultConfig.apiKey,
-    authDomain: firebaseEnv.firebaseAuthDomain || firebaseDefaultConfig.authDomain,
+    apiKey: firebaseDefaultConfig.apiKey, // Hardcoded public key is fine for public firestore access
+    authDomain: firebaseDefaultConfig.authDomain,
     databaseURL: firebaseEnv.firebaseDatabaseURL || firebaseDefaultConfig.databaseURL,
     projectId: firebaseEnv.firebaseProjectId || firebaseDefaultConfig.projectId,
     storageBucket: firebaseEnv.firebaseStorageBucket || firebaseDefaultConfig.storageBucket,
-    messagingSenderId: firebaseEnv.firebaseMessagingSenderId || firebaseDefaultConfig.messagingSenderId,
-    appId: firebaseEnv.firebaseAppId || firebaseDefaultConfig.appId,
-    measurementId: firebaseEnv.firebaseMeasurementId || firebaseDefaultConfig.measurementId,
+    messagingSenderId: firebaseDefaultConfig.messagingSenderId,
+    appId: firebaseDefaultConfig.appId,
+    measurementId: firebaseDefaultConfig.measurementId,
 };

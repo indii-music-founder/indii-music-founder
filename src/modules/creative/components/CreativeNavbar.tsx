@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
-import { auth } from '@/services/firebase';
+// import { auth } from '@/services/firebase'; // Removed
 import { MonitorPlay, Sparkles, Loader2, ChevronDown, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import StudioNavControls from './StudioNavControls';
@@ -164,7 +164,7 @@ export default function CreativeNavbar() {
                         <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">indiiOS</h1>
                         <div className="h-4 w-px bg-gray-700"></div>
                         <span className="text-[10px] text-gray-500 font-mono" id="debug-uid">
-                            {auth.currentUser?.uid || 'No User'}
+                            {'Superuser'}
                         </span>
 
                         {/* Mode Dropdown */}

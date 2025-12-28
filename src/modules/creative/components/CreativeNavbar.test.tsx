@@ -112,7 +112,7 @@ describe('CreativeNavbar', () => {
     it('renders correctly', () => {
         render(<CreativeNavbar />);
         expect(screen.getByText('indiiOS')).toBeInTheDocument();
-        expect(screen.getByText('test-user-id')).toBeInTheDocument();
+        expect(screen.getByText('Superuser')).toBeInTheDocument();
         // "Image" text is in the mode dropdown button
         expect(screen.getByText('Image')).toBeInTheDocument();
     });

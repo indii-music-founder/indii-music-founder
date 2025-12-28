@@ -1,4 +1,5 @@
-import { db, auth } from '@/services/firebase';
+// import { db, auth } from '@/services/firebase'; // Removed auth
+import { db } from '@/services/firebase';
 import {
     collection,
     doc,
@@ -24,8 +25,7 @@ export class SocialService {
      * Follow a user
      */
     static async followUser(targetUserId: string): Promise<void> {
-        const currentUserId = auth.currentUser?.uid;
-        if (!currentUserId) throw new Error("Must be logged in to follow");
+        const currentUserId = 'superuser-id'; // Ground Zero
         if (currentUserId === targetUserId) throw new Error("Cannot follow yourself");
 
         const connectionRef = doc(db, 'users', currentUserId, 'following', targetUserId);
@@ -64,8 +64,7 @@ export class SocialService {
      * Unfollow a user
      */
     static async unfollowUser(targetUserId: string): Promise<void> {
-        const currentUserId = auth.currentUser?.uid;
-        if (!currentUserId) throw new Error("Must be logged in to unfollow");
+        const currentUserId = 'superuser-id'; // Ground Zero
 
         const connectionRef = doc(db, 'users', currentUserId, 'following', targetUserId);
         const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
@@ -91,8 +90,8 @@ export class SocialService {
      * Create a new post
      */
     static async createPost(content: string, mediaUrls: string[] = [], productId?: string): Promise<string> {
-        const currentUser = useStore.getState().user;
-        if (!currentUser) throw new Error("Must be logged in to post");
+        const userProfile = useStore.getState().userProfile;
+        const currentUser = { uid: userProfile.id, displayName: userProfile.displayName, photoURL: userProfile.photoURL }; // Mock user object
 
         const postData = {
             authorId: currentUser.uid,
@@ -162,8 +161,7 @@ export class SocialService {
      * Check if currently following a user
      */
     static async isFollowing(targetUserId: string): Promise<boolean> {
-        const currentUserId = auth.currentUser?.uid;
-        if (!currentUserId) return false;
+        const currentUserId = 'superuser-id'; // Ground Zero
 
         const docRef = doc(db, 'users', currentUserId, 'following', targetUserId);
         const snapshot = await getDoc(docRef);

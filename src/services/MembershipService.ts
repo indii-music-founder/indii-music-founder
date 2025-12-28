@@ -211,7 +211,7 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
-            return state.user?.uid || null;
+            return state.userProfile?.id || null;
         } catch {
             return null;
         }

@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
 
 import { firebaseConfig } from '@/config/env';
 
@@ -26,7 +25,6 @@ export const db = initializeFirestore(app, {
     })
 });
 export const storage = getStorage(app);
-export const auth = getAuth(app);
 export const functions = getFunctions(app);
 
 
@@ -37,7 +35,6 @@ import { doc, setDoc } from 'firebase/firestore';
 declare global {
     interface Window {
         db: typeof db;
-        auth: typeof auth;
         firestore: { doc: typeof doc; setDoc: typeof setDoc };
         functions: typeof functions;
     }
@@ -45,7 +42,6 @@ declare global {
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
     window.db = db;
-    window.auth = auth;
     window.firestore = { doc, setDoc };
     window.functions = functions;
 }

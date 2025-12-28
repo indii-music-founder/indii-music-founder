@@ -1,7 +1,7 @@
 
 import { where, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { FirestoreService } from './FirestoreService';
-import { db, auth } from './firebase';
+import { db } from './firebase';
 
 export interface Organization {
     id: string;
@@ -16,21 +16,20 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
         super('organizations');
     }
 
-    async createOrganization(name: string): Promise<string> {
-        const user = auth.currentUser;
-        if (!user) throw new Error("User must be logged in to create an organization");
+    async createOrganization(name: string, userId: string): Promise<string> {
+        if (!userId) throw new Error("User ID is required to create an organization");
 
         const orgData: Omit<Organization, 'id'> = {
             name,
-            ownerId: user.uid,
-            members: [user.uid],
+            ownerId: userId,
+            members: [userId],
             createdAt: Date.now()
         };
 
         const id = await this.add(orgData);
 
         // Also update the user's profile to include this org (legacy requirement)
-        await this.addUserToOrg(user.uid, id);
+        await this.addUserToOrg(userId, id);
 
         return id;
     }
@@ -60,11 +59,9 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
         }
     }
 
-    async switchOrganization(orgId: string): Promise<string> {
-        // Validate user is authenticated
-        const userId = auth.currentUser?.uid;
+    async switchOrganization(orgId: string, userId: string): Promise<string> {
         if (!userId) {
-            throw new Error('Must be authenticated to switch organizations');
+            throw new Error('User ID required to switch organizations');
         }
 
         // Validate user is a member of the target organization

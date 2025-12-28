@@ -11,8 +11,6 @@ import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
 import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
-import { auth } from '../../services/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 export default function WorkflowLab() {
@@ -20,18 +18,12 @@ export default function WorkflowLab() {
     const [isRunning, setIsRunning] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    // Mock user for Ground Zero rebuild
+    const [currentUser, setCurrentUser] = useState<any>({ uid: 'superuser-id', email: 'superuser@indii.os' });
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-            if (user) {
-                console.log("WorkflowLab: User authenticated:", user.uid);
-            } else {
-                console.log("WorkflowLab: User not authenticated");
-            }
-        });
-        return () => unsubscribe();
+        // No-op auth listener replacement
+        console.log("WorkflowLab: Superuser active");
     }, []);
 
     const handleRunWorkflow = async () => {
