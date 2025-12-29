@@ -76,8 +76,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@agents': path.resolve(__dirname, './agents'),
-      'ssh2-sftp-client': path.resolve(__dirname, './src/mocks/ssh2-sftp-client.ts'),
-      'electron-store': path.resolve(__dirname, './src/mocks/electron-store.ts'),
     },
   },
   server: {

@@ -306,5 +306,4 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
         </article>
     );
 });
-
 export default SocialFeed;
