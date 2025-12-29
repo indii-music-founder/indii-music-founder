@@ -227,7 +227,14 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
         if (data) {
             try {
-                const item = JSON.parse(data) as HistoryItem;
+                let item: HistoryItem;
+                try {
+                    item = JSON.parse(data) as HistoryItem;
+                } catch (e) {
+                    console.error("Failed to parse dropped item", e);
+                    return;
+                }
+
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 // Calculate frame based on drop position (rough approximation)

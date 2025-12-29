@@ -222,7 +222,20 @@ export class CDBabyAdapter implements IDistributorAdapter {
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [];
+        // Mock implementation to match getEarnings behavior and ensure consistency
+        return [{
+            releaseId: 'mock-release-id',
+            distributorId: this.id,
+            period,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
+            currencyCode: 'USD',
+            breakdown: [],
+            lastUpdated: new Date().toISOString()
+        }];
     }
 
     private calculateLiveDate(releaseDate?: string): string {

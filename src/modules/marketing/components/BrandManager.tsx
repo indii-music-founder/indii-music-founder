@@ -97,7 +97,14 @@ const BrandManager: React.FC = () => {
                 config: { responseMimeType: 'application/json' }
             });
 
-            const result = JSON.parse(res.text() || '{}') as AnalysisResult;
+            let result: AnalysisResult;
+            try {
+                result = JSON.parse(res.text() || '{}') as AnalysisResult;
+            } catch (e) {
+                console.error("Failed to parse analysis result", e);
+                throw new Error("Failed to parse analysis result");
+            }
+
             setAnalysisResult(result);
             toast.success("Analysis complete");
         } catch (error) {
