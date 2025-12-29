@@ -144,7 +144,7 @@ export interface BrandKit {
 }
 
 export interface UserProfile {
-    id?: string; // Added for reference image path construction
+    id: string; // Mandatory for Beta reliability
     uid?: string; // Add uid for compatibility
     email?: string | null;
     displayName?: string | null;

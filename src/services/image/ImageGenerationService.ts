@@ -132,7 +132,7 @@ export class ImageGenerationService {
         if (results.length > 0) {
             try {
                 const { useStore } = await import('@/core/store');
-                const userId = useStore.getState().user?.uid;
+                const userId = useStore.getState().userProfile?.id;
                 if (userId) {
                     await MembershipService.incrementUsage(userId, 'image', results.length);
                 }

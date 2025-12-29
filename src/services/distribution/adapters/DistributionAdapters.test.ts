@@ -7,7 +7,16 @@ import { CDBabyAdapter } from './CDBabyAdapter';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
 
-// Mock dependencies with factory to ensure jest-style methods are available
+// Mock Electron Bridge for SFTP
+vi.stubGlobal('electronAPI', {
+    sftp: {
+        connect: vi.fn().mockResolvedValue(true),
+        uploadDirectory: vi.fn().mockResolvedValue({ success: true, files: ['Metadata.xml', '01_Track.wav'] }),
+        isConnected: vi.fn().mockResolvedValue(true),
+        disconnect: vi.fn().mockResolvedValue(true)
+    }
+});
+
 vi.mock('ssh2-sftp-client', () => {
     return {
         default: class MockSftpClient {

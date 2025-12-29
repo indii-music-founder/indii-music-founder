@@ -36,6 +36,7 @@ describe('CampaignManager', () => {
         durationDays: 7,
         startDate: '2023-01-01',
         assetType: 'campaign' as const,
+        status: CampaignStatus.PENDING,
         posts: [
             {
                 id: 'p1',

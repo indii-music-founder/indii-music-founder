@@ -16,6 +16,10 @@ import { FinanceSlice, createFinanceSlice } from './slices/financeSlice';
 import { DistributionSlice, createDistributionSlice } from './slices/distributionSlice';
 import { FileSystemSlice, createFileSystemSlice } from './slices/fileSystemSlice';
 
+export type { AgentMessage, AgentThought } from './slices/agentSlice';
+export type { AppSlice } from './slices/appSlice';
+export type { CanvasImage } from './slices/creativeSlice';
+
 export interface StoreState extends
     AppSlice,
     ProfileSlice,

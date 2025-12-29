@@ -356,7 +356,7 @@ class SceneExtensionServiceImpl {
     private async trackUsage(numSegments: number, totalDurationSeconds: number): Promise<void> {
         try {
             const { useStore } = await import('@/core/store');
-            const userId = useStore.getState().user?.uid;
+            const userId = useStore.getState().userProfile?.id;
             if (userId) {
                 await MembershipService.incrementUsage(userId, 'video', numSegments, totalDurationSeconds);
             }

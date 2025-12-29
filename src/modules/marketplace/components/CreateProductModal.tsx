@@ -12,7 +12,7 @@ interface CreateProductModalProps {
 
 export default function CreateProductModal({ onClose, onProductCreated }: CreateProductModalProps) {
     const toast = useToast();
-    const currentUser = useStore((state) => state.user);
+    const currentUser = useStore((state) => state.userProfile);
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -27,7 +27,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
         setIsLoading(true);
         try {
             await MarketplaceService.createProduct({
-                sellerId: currentUser.uid,
+                sellerId: currentUser.id,
                 title,
                 description,
                 price: Math.round(parseFloat(price) * 100), // Convert to cents

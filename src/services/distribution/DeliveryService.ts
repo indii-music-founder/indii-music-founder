@@ -1,7 +1,6 @@
 
-import path from 'path';
 import { credentialService } from '@/services/security/CredentialService';
-// import { SFTPTransporter, SFTPConfig } from './transport/SFTPTransporter';
+import { SFTPTransporter } from './transport/SFTPTransporter';
 import { DistributorId } from './types/distributor';
 // import { ERNService } from '@/services/ddex/ERNService'; // TODO: integrate when ERNService is ready for full pkg generation
 // import { PackageBuilder } from '@/services/ddex/PackageBuilder'; // Potential future service
@@ -14,10 +13,10 @@ export interface DeliveryResult {
 }
 
 export class DeliveryService {
-    // private transporter: SFTPTransporter;
+    private transporter: SFTPTransporter;
 
     constructor() {
-        // this.transporter = new SFTPTransporter();
+        this.transporter = new SFTPTransporter();
     }
 
     /**
@@ -54,6 +53,10 @@ export class DeliveryService {
 
         } catch (error) {
             console.error('[DeliveryService] Delivery failed:', error);
+            // Ensure we disconnect on error
+            if (await this.transporter.isConnected()) {
+                await this.transporter.disconnect();
+            }
 
             return {
                 success: false,

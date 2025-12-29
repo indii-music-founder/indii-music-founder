@@ -28,8 +28,7 @@ vi.mock('./hooks/useSocial', () => ({
     useSocial: vi.fn(() => ({
         stats: { followers: 124500, following: 100, posts: 50, drops: 12 },
         scheduledPosts: [],
-        posts: [], // Added missing property
-        scheduledPosts: [], posts: [],
+        posts: [],
         isLoading: false,
         isFeedLoading: false, // Added missing property
         filter: 'all', // Added missing property

@@ -32,6 +32,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     network: {
         fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url)
     },
+
+    // SFTP (Distribution)
+    sftp: {
+        connect: (config: any) => ipcRenderer.invoke('sftp:connect', config),
+        uploadDirectory: (localPath: string, remotePath: string) => ipcRenderer.invoke('sftp:upload-directory', localPath, remotePath),
+        disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
+        isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
+    },
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),

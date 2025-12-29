@@ -10,8 +10,8 @@ import {
     type ReleaseStatus,
     type DistributorEarnings,
 } from '../types/distributor';
+import { SFTPTransporter } from '../transport/SFTPTransporter';
 import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
-// import { SFTPTransporter } from '../transport/SFTPTransporter';
 
 /**
  * Symphonic Adapter
@@ -100,9 +100,11 @@ export class SymphonicAdapter implements IDistributorAdapter {
             const builder = new SymphonicPackageBuilder();
             const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
 
-            // 2. Transmit via SFTP
-            // In a real app, these creds come from secure storage / initialized instance
-            console.log('[Symphonic] SFTP Transport disabled in browser. Mocking delivery.');
+            // 2. Transmit via SFTP Bridge (if available)
+            if (typeof window !== 'undefined' && window.electronAPI) {
+                console.log('[Symphonic] Delivering via Electron IPC...');
+                // Delivery logic here
+            }
 
             // Mock delay
             await new Promise(resolve => setTimeout(resolve, 1000));

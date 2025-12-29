@@ -12,6 +12,11 @@ vi.mock('@/core/store', () => ({
     }),
 }));
 
+const mockTimestamp = {
+    toDate: () => new Date(),
+    toLocaleDateString: () => new Date().toLocaleDateString(),
+} as any;
+
 const mockRequests: LicenseRequest[] = [
     {
         id: 'req1',
@@ -19,8 +24,8 @@ const mockRequests: LicenseRequest[] = [
         artist: 'Artist A',
         usage: 'Film',
         status: 'checking',
-        requestedAt: new Date(),
-        updatedAt: new Date(),
+        requestedAt: mockTimestamp,
+        updatedAt: mockTimestamp,
     }
 ];
 

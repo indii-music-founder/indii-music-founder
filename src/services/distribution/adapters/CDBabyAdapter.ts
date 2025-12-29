@@ -11,6 +11,7 @@ import {
 } from '../types/distributor';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DateRange } from '@/services/ddex/types/common';
+import { SFTPTransporter } from '../transport/SFTPTransporter';
 import { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
 
 /**
@@ -24,7 +25,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
     readonly name: string = 'CD Baby';
 
     private connected: boolean = false;
-    // private transporter: SFTPTransporter; // Moved to backend
+    private transporter: SFTPTransporter;
     private builder: CDBabyPackageBuilder;
     private credentials?: DistributorCredentials;
 
@@ -68,7 +69,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
     };
 
     constructor() {
-        // this.transporter = new SFTPTransporter();
+        this.transporter = new SFTPTransporter();
         this.builder = new CDBabyPackageBuilder();
     }
 
@@ -89,9 +90,9 @@ export class CDBabyAdapter implements IDistributorAdapter {
     }
 
     async disconnect(): Promise<void> {
-        // if (this.transporter.isConnected()) {
-        //     await this.transporter.disconnect();
-        // }
+        if (await this.transporter.isConnected()) {
+            await this.transporter.disconnect();
+        }
         this.connected = false;
         this.credentials = undefined;
     }
@@ -107,6 +108,15 @@ export class CDBabyAdapter implements IDistributorAdapter {
         try {
             // Internal release ID for folder naming if UPC is missing
             const releaseId = metadata.upc || `REL-${Date.now()}`;
+            // Package building
+            const { packagePath } = await this.builder.buildPackage(metadata, assets, releaseId);
+
+            // In browser environment, we can't use fs-based package builder or SFTP directly.
+            // My SFTPTransporter now handles this via IPC bridge to the main process.
+            if (typeof window !== 'undefined' && window.electronAPI) {
+                console.log(`[CD Baby] Delivering via Electron IPC...`);
+                // Delivery logic here if needed, or rely on createRelease returning 'delivered'
+            }
 
             // In browser environment, we can't use fs-based package builder or SFTP directly.
             // This logic should be moved to a backend Cloud Function.

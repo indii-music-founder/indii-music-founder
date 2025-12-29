@@ -17,8 +17,7 @@ export const createFinanceSlice: StateCreator<FinanceSlice> = (set, get) => ({
         error: null,
     },
     fetchEarnings: async (period) => {
-        // Fix: Use generic UserProfile access instead of 'as any' and 'user' legacy property
-        const state = get() as { userProfile: { id: string } };
+        const state = get() as any; // Cast to access other slices
         const userId = state.userProfile?.id;
 
         if (!userId) {
