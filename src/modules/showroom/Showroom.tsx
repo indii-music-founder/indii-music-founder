@@ -23,10 +23,12 @@ export default function Showroom() {
             toast.error("Please select a valid image file (JPG, PNG).");
             return;
         }
-        setSelectedAsset(file);
+        setSelectedAsset(URL.createObjectURL(file)); // Store URL string
         setMockupImage(null);
         setVideoUrl(null);
         toast.success(`${file.name} ready for staging.`);
+    };
+
     const handleAssetUpload = (base64: string) => {
         setSelectedAsset(base64);
         setMockupImage(null);

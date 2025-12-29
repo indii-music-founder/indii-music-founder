@@ -14,7 +14,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 // Studio app URL for refunds after auth
-const STUDIO_URL = process.env.NEXT_PUBLIC_STUDIO_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:4242' : 'https://indiios-studio.web.app');
+const STUDIO_URL = import.meta.env.VITE_STUDIO_URL || (import.meta.env.DEV ? 'http://localhost:4242' : 'https://indiios-studio.web.app');
 
 /**
  * Sign in with email and password

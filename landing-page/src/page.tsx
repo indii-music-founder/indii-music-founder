@@ -1,7 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
+import { Suspense, lazy } from 'react';
+// import Link from 'next/link'; // Not used in this file
 import { motion, useScroll, useTransform } from 'framer-motion';
 // import PulseButton from './components/ui/PulseButton';
 // import BreathingText from './components/ui/BreathingText';
@@ -11,10 +11,7 @@ import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
 
 // Dynamically import 3D canvas to avoid SSR issues
-const SoundscapeCanvas = dynamic(() => import('./components/3d/SoundscapeCanvas'), {
-  ssr: false,
-  loading: () => <div className="fixed inset-0 bg-void" />
-});
+const SoundscapeCanvas = lazy(() => import('./components/3d/SoundscapeCanvas'));
 
 import FeatureShowcase from './components/FeatureShowcase';
 import TechSpecs from './components/TechSpecs';
@@ -35,7 +32,9 @@ export default function Home() {
       {/* 1. The Subliminal Background */}
       <AudioManager />
       <motion.div style={{ y: bgY }} className="absolute inset-0 z-0">
-        <SoundscapeCanvas />
+        <Suspense fallback={<div className="fixed inset-0 bg-void" />}>
+          <SoundscapeCanvas />
+        </Suspense>
       </motion.div>
 
       {/* 2. Content Overlay */}
