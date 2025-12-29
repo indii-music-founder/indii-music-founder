@@ -24,9 +24,9 @@ describe('ShowroomService', () => {
     it('should generate a mockup using EditingService', async () => {
         const mockAsset = 'data:image/png;base64,mockdata';
         const mockPrompt = 'A cozy living room';
-        const mockResult = { id: '1', url: 'https://mockup.url', prompt: 'prompt' };
+        const mockResult = { id: '1', url: 'https://mockup.url', prompt: 'prompt', width: 1024, height: 1024, createdAt: 100 };
 
-        (Editing.generateComposite as any).mockResolvedValue(mockResult);
+        vi.mocked(Editing.generateComposite).mockResolvedValue(mockResult);
 
         const url = await ShowroomService.generateMockup(mockAsset, 'T-Shirt', mockPrompt);
 
@@ -40,9 +40,9 @@ describe('ShowroomService', () => {
     it('should animate a scene using VideoGenerationService', async () => {
         const mockImage = 'https://mockup.url';
         const mockPrompt = 'Camera pans around';
-        const mockResult = [{ id: '1', url: 'https://video.url', prompt: 'prompt' }];
+        const mockResult = [{ id: '1', url: 'https://video.url', prompt: 'prompt', duration: 4, createdAt: 100 }];
 
-        (VideoGeneration.generateVideo as any).mockResolvedValue(mockResult);
+        vi.mocked(VideoGeneration.generateVideo).mockResolvedValue(mockResult);
 
         const url = await ShowroomService.generateVideo(mockImage, mockPrompt);
 
@@ -54,13 +54,13 @@ describe('ShowroomService', () => {
     });
 
     it('should throw error if mockup generation fails', async () => {
-        (Editing.generateComposite as any).mockResolvedValue(null);
+        vi.mocked(Editing.generateComposite).mockResolvedValue(null);
         await expect(ShowroomService.generateMockup('data:image/png;base64,data', 'T-Shirt', 'prompt'))
             .rejects.toThrow('Failed to generate mockup image.');
     });
 
     it('should throw error if video generation fails', async () => {
-        (VideoGeneration.generateVideo as any).mockResolvedValue([]);
+        vi.mocked(VideoGeneration.generateVideo).mockResolvedValue([]);
         await expect(ShowroomService.generateVideo('mock.jpg', 'prompt'))
             .rejects.toThrow('Failed to animate scene.');
     });

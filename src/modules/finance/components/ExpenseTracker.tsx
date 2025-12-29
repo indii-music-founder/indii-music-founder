@@ -3,14 +3,20 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, DollarSign, Camera, CheckCircle, Loader2, Plus, X } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
-import { FinanceService, Expense } from '@/services/finance/FinanceService';
+import { useFinance } from '../hooks/useFinance';
+import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
 
 export const ExpenseTracker: React.FC = () => {
-    const { user } = useStore();
-    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const { userProfile } = useStore();
+    const {
+        expenses,
+        expensesLoading: isLoading,
+        actions: { loadExpenses, addExpense }
+    } = useFinance();
+
+    // UI State for analysis only
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
     // Manual Entry State
     const [showManualEntry, setShowManualEntry] = useState(false);
@@ -21,26 +27,14 @@ export const ExpenseTracker: React.FC = () => {
 
     const toast = useToast();
 
-    const loadExpenses = useCallback(async () => {
-        if (!user) return;
-        setIsLoading(true);
-        try {
-            const data = await FinanceService.getExpenses(user.uid);
-            setExpenses(data);
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to load expenses.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user, toast]);
+    // Initial load handled by effect below
 
     useEffect(() => {
         loadExpenses();
     }, [loadExpenses]);
 
     const processFile = useCallback(async (file: File) => {
-        if (!user) return;
+        if (!userProfile?.id) return;
         setIsAnalyzing(true);
         try {
             const reader = new FileReader();
@@ -54,6 +48,8 @@ export const ExpenseTracker: React.FC = () => {
                 });
 
                 const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
+                if (jsonMatch && userProfile?.id) {
+                    const data = JSON.parse(jsonMatch[0]);
                 if (jsonMatch) {
                     let data;
                     try {
@@ -66,7 +62,7 @@ export const ExpenseTracker: React.FC = () => {
                     }
 
                     const expenseData = {
-                        userId: user.uid,
+                        userId: userProfile.id,
                         vendor: data.vendor || 'Unknown Vendor',
                         date: data.date || new Date().toISOString().split('T')[0],
                         amount: Number(data.amount) || 0,
@@ -74,8 +70,7 @@ export const ExpenseTracker: React.FC = () => {
                         description: data.description || '',
                     };
 
-                    await FinanceService.addExpense(expenseData);
-                    loadExpenses();
+                    await addExpense(expenseData);
                     toast.success(`Scanned receipt from ${expenseData.vendor}`);
                 } else {
                     toast.error("Could not read receipt data.");
@@ -88,11 +83,11 @@ export const ExpenseTracker: React.FC = () => {
             toast.error("Failed to analyze receipt.");
             setIsAnalyzing(false);
         }
-    }, [user, toast, loadExpenses]);
+    }, [userProfile?.id, toast, addExpense]);
 
     const handleManualSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
+        if (!userProfile?.id) return;
         if (!manualForm.vendor || !manualForm.amount) {
             toast.error("Vendor and Amount are required.");
             return;
@@ -100,7 +95,7 @@ export const ExpenseTracker: React.FC = () => {
 
         try {
             const expenseData = {
-                userId: user.uid,
+                userId: userProfile.id as string,
                 vendor: manualForm.vendor,
                 date: manualForm.date || new Date().toISOString().split('T')[0],
                 amount: Number(manualForm.amount),
@@ -108,7 +103,7 @@ export const ExpenseTracker: React.FC = () => {
                 description: manualForm.description || 'Manual Entry',
             };
 
-            await FinanceService.addExpense(expenseData);
+            await addExpense(expenseData);
             toast.success("Expense added manually.");
             setShowManualEntry(false);
             setManualForm({
@@ -118,12 +113,11 @@ export const ExpenseTracker: React.FC = () => {
                 amount: 0,
                 description: ''
             });
-            loadExpenses();
         } catch (e) {
             console.error(e);
             toast.error("Failed to add expense.");
         }
-    }, [user, manualForm, toast, loadExpenses]);
+    }, [userProfile?.id, manualForm, toast, addExpense]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         acceptedFiles.forEach(processFile);

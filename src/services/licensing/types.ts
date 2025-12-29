@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export type LicenseStatus = 'active' | 'expired' | 'pending' | 'revoked';
 export type LicenseRequestStatus = 'checking' | 'pending_approval' | 'negotiating' | 'approved' | 'rejected' | 'completed';
 
@@ -8,12 +10,12 @@ export interface License {
     licenseType: string;
     status: LicenseStatus;
     agreementUrl?: string;
-    startDate?: any; // Firestore Timestamp
-    endDate?: any; // Firestore Timestamp
+    startDate?: Timestamp;
+    endDate?: Timestamp;
     usage: string;
     notes?: string;
-    createdAt?: any;
-    updatedAt?: any;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
 }
 
 export interface LicenseRequest {
@@ -26,6 +28,6 @@ export interface LicenseRequest {
     notes?: string;
     sourceUrl?: string;
     aiAnalysis?: string;
-    requestedAt?: any;
-    updatedAt?: any;
+    requestedAt?: Timestamp;
+    updatedAt?: Timestamp;
 }

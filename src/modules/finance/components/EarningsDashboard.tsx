@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStore } from '@/core/store';
+import { useFinance } from '../hooks/useFinance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
@@ -29,15 +29,15 @@ const OverviewTab = ({ data }: { data: EarningsSummary }) => (
 );
 
 export const EarningsDashboard: React.FC = () => {
-    // Zustand hook
-    const { finance, fetchEarnings } = useStore();
-    const { earningsSummary, loading, error } = finance;
+    // Custom hook
+    const { earningsSummary, earningsLoading: loading, earningsError: error } = useFinance();
 
     const [activeTab, setActiveTab] = useState('overview');
 
     useEffect(() => {
-        // Fetch data on mount
-        fetchEarnings({ startDate: '2024-01-01', endDate: '2024-01-31' });
+        // Initial fetch is handled by the hook for the default window
+        // But if we wanted to be explicit or change date:
+        // actions.loadEarnings('2024-01-01', '2024-01-31');
     }, []);
 
     if (loading) return <div className="p-8">Loading earnings data...</div>;

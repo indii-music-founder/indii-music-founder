@@ -636,3 +636,25 @@ src/modules/workflow/**
 src/modules/video/**
 src/modules/dashboard/**
 ```
+
+---
+
+## 9. Social Media Module Next Steps (Post-Beta Logic)
+
+**Status:** Logic completed (BETA_READY), pending production verification.
+
+**Tasks:**
+
+- [ ] **Release Candidate Testing:**
+  - Deploy current build to staging environment.
+  - Verify `useSocial` hook behavior in production build.
+  - Test `SocialDashboard` with live Firebase data.
+
+- [ ] **User Acceptance Testing (UAT):**
+  - Verify "Create Post" flow with attached products (Social Drops).
+  - Validate real-time stats updates (Reach, Engagement).
+  - Test "Share" functionality across platforms.
+
+- [ ] **Documentation Verification:**
+  - Audit `docs/HOOKS.md` for complete API accuracy.
+  - Audit `walkthrough.md` for process integrity.

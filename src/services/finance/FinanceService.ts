@@ -1,4 +1,5 @@
 import { db } from '@/services/firebase';
+import * as Sentry from '@sentry/react';
 import {
     collection,
     addDoc,
@@ -35,29 +36,39 @@ export class FinanceService {
             createdAt: serverTimestamp(),
         };
 
-        const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), expenseData);
-        return docRef.id;
+        try {
+            const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), expenseData);
+            return docRef.id;
+        } catch (error) {
+            Sentry.captureException(error);
+            throw error;
+        }
     }
 
     /**
      * Get all expenses for a user.
      */
     static async getExpenses(userId: string): Promise<Expense[]> {
-        const q = query(
-            collection(db, this.EXPENSES_COLLECTION),
-            where('userId', '==', userId),
-            orderBy('createdAt', 'desc')
-        );
+        try {
+            const q = query(
+                collection(db, this.EXPENSES_COLLECTION),
+                where('userId', '==', userId),
+                orderBy('createdAt', 'desc')
+            );
 
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString()
-            } as Expense;
-        });
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: (data.createdAt as Timestamp)?.toDate().toISOString()
+                } as Expense;
+            });
+        } catch (error) {
+            Sentry.captureException(error);
+            throw error;
+        }
     }
 
     /**

@@ -229,6 +229,8 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     );
 });
 
+export default SocialFeed;
+
 
 
 // Sub-component for individual items to handle async product fetching if needed
