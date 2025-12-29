@@ -4,7 +4,7 @@ import * as Tone from 'tone';
 import { Activity, File, FileAudio, Folder, HardDrive, Music, Pause, Play, SkipBack, SkipForward, Trash2, Upload, Volume2, ShieldCheck, Download } from 'lucide-react';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { useToast } from '@/core/context/ToastContext';
-import { fileSystemService } from '@/services/FileSystemService';
+import { nativeFileSystemService } from '@/services/NativeFileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { MetadataDrawer } from './components/MetadataDrawer';
@@ -25,7 +25,7 @@ interface LoadedAudio {
 
 export default function MusicStudio() {
     // Services & State
-    const [fsSupported] = useState(() => fileSystemService.isSupported());
+    const [fsSupported] = useState(() => nativeFileSystemService.isSupported());
     const [loadedAudio, setLoadedAudio] = useState<LoadedAudio[]>([]);
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -113,7 +113,7 @@ export default function MusicStudio() {
     };
 
     const handlePickFile = async () => {
-        const result = await fileSystemService.pickAudioFile();
+        const result = await nativeFileSystemService.pickAudioFile();
         if (result) {
             const url = URL.createObjectURL(result.file);
             // @ts-expect-error File.path is provided by Electron's file picker
@@ -160,10 +160,10 @@ export default function MusicStudio() {
     };
 
     const handlePickDirectory = async () => {
-        const directoryHandle = await fileSystemService.pickDirectory();
+        const directoryHandle = await nativeFileSystemService.pickDirectory();
         if (!directoryHandle) return;
 
-        const files = await fileSystemService.getAudioFilesFromDirectory(directoryHandle);
+        const files = await nativeFileSystemService.getAudioFilesFromDirectory(directoryHandle);
         if (files.length === 0) {
             toast.info('No audio files found in that folder');
             return;
@@ -210,7 +210,7 @@ export default function MusicStudio() {
             toast.success("Batch Analysis Complete");
         })();
 
-        await fileSystemService.saveDirectoryHandle('music-library', directoryHandle);
+        await nativeFileSystemService.saveDirectoryHandle('music-library', directoryHandle);
     };
 
     const handleRemoveTrack = (e: React.MouseEvent, id: string) => {

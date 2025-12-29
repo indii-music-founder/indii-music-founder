@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fileSystemService } from './FileSystemService';
+import { nativeFileSystemService } from './NativeFileSystemService';
 
 // Mock IndexedDB
 const mockIDBStore: Record<string, unknown> = {};
@@ -109,14 +109,14 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn();
       (globalThis as typeof window).showDirectoryPicker = vi.fn();
 
-      expect(fileSystemService.isSupported()).toBe(true);
+      expect(nativeFileSystemService.isSupported()).toBe(true);
     });
 
     it('returns false when File System Access API is not available', () => {
       delete (globalThis as Partial<typeof window>).showOpenFilePicker;
       delete (globalThis as Partial<typeof window>).showDirectoryPicker;
 
-      expect(fileSystemService.isSupported()).toBe(false);
+      expect(nativeFileSystemService.isSupported()).toBe(false);
     });
   });
 
@@ -125,7 +125,7 @@ describe('FileSystemService', () => {
       delete (globalThis as Partial<typeof window>).showOpenFilePicker;
       delete (globalThis as Partial<typeof window>).showDirectoryPicker;
 
-      const result = await fileSystemService.pickAudioFile();
+      const result = await nativeFileSystemService.pickAudioFile();
       expect(result).toBeNull();
     });
 
@@ -142,7 +142,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn().mockResolvedValue([mockHandle]);
       (globalThis as typeof window).showDirectoryPicker = vi.fn();
 
-      const result = await fileSystemService.pickAudioFile();
+      const result = await nativeFileSystemService.pickAudioFile();
 
       expect(result).not.toBeNull();
       expect(result?.file.name).toBe('song.mp3');
@@ -156,7 +156,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn().mockRejectedValue(abortError);
       (globalThis as typeof window).showDirectoryPicker = vi.fn();
 
-      const result = await fileSystemService.pickAudioFile();
+      const result = await nativeFileSystemService.pickAudioFile();
       expect(result).toBeNull();
     });
 
@@ -166,7 +166,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn().mockRejectedValue(otherError);
       (globalThis as typeof window).showDirectoryPicker = vi.fn();
 
-      await expect(fileSystemService.pickAudioFile()).rejects.toThrow('Permission denied');
+      await expect(nativeFileSystemService.pickAudioFile()).rejects.toThrow('Permission denied');
     });
   });
 
@@ -175,7 +175,7 @@ describe('FileSystemService', () => {
       delete (globalThis as Partial<typeof window>).showOpenFilePicker;
       delete (globalThis as Partial<typeof window>).showDirectoryPicker;
 
-      const result = await fileSystemService.pickMultipleAudioFiles();
+      const result = await nativeFileSystemService.pickMultipleAudioFiles();
       expect(result).toEqual([]);
     });
 
@@ -201,7 +201,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn().mockResolvedValue([mockHandle1, mockHandle2]);
       (globalThis as typeof window).showDirectoryPicker = vi.fn();
 
-      const result = await fileSystemService.pickMultipleAudioFiles();
+      const result = await nativeFileSystemService.pickMultipleAudioFiles();
 
       expect(result).toHaveLength(2);
       expect(result[0].file.name).toBe('song1.mp3');
@@ -214,7 +214,7 @@ describe('FileSystemService', () => {
       delete (globalThis as Partial<typeof window>).showOpenFilePicker;
       delete (globalThis as Partial<typeof window>).showDirectoryPicker;
 
-      const result = await fileSystemService.pickDirectory();
+      const result = await nativeFileSystemService.pickDirectory();
       expect(result).toBeNull();
     });
 
@@ -230,7 +230,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn();
       (globalThis as typeof window).showDirectoryPicker = vi.fn().mockResolvedValue(mockDirHandle);
 
-      const result = await fileSystemService.pickDirectory();
+      const result = await nativeFileSystemService.pickDirectory();
 
       expect(result).toBe(mockDirHandle);
     });
@@ -242,7 +242,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showOpenFilePicker = vi.fn();
       (globalThis as typeof window).showDirectoryPicker = vi.fn().mockRejectedValue(abortError);
 
-      const result = await fileSystemService.pickDirectory();
+      const result = await nativeFileSystemService.pickDirectory();
       expect(result).toBeNull();
     });
   });
@@ -293,7 +293,7 @@ describe('FileSystemService', () => {
         requestPermission: vi.fn(),
       };
 
-      const result = await fileSystemService.getAudioFilesFromDirectory(
+      const result = await nativeFileSystemService.getAudioFilesFromDirectory(
         mockDirHandle as unknown as FileSystemDirectoryHandle
       );
 
@@ -327,7 +327,7 @@ describe('FileSystemService', () => {
           requestPermission: vi.fn(),
         };
 
-        const result = await fileSystemService.getAudioFilesFromDirectory(
+        const result = await nativeFileSystemService.getAudioFilesFromDirectory(
           mockDirHandle as unknown as FileSystemDirectoryHandle
         );
 
@@ -357,7 +357,7 @@ describe('FileSystemService', () => {
       globalThis.URL.revokeObjectURL = mockRevokeObjectURL;
       globalThis.document.createElement = mockCreateElement;
 
-      const result = await fileSystemService.saveFile('output.wav', new Blob(['audio']));
+      const result = await nativeFileSystemService.saveFile('output.wav', new Blob(['audio']));
 
       expect(result).toBeNull();
       expect(mockCreateElement).toHaveBeenCalledWith('a');
@@ -380,7 +380,7 @@ describe('FileSystemService', () => {
       (globalThis as typeof window).showSaveFilePicker = vi.fn().mockResolvedValue(mockHandle);
 
       const content = new Blob(['audio data']);
-      const result = await fileSystemService.saveFile('output.wav', content);
+      const result = await nativeFileSystemService.saveFile('output.wav', content);
 
       expect(result).toBe(mockHandle);
       expect(mockHandle.createWritable).toHaveBeenCalled();
@@ -409,7 +409,7 @@ describe('FileSystemService', () => {
         requestPermission: vi.fn(),
       };
 
-      const result = await fileSystemService.readFileAsArrayBuffer(
+      const result = await nativeFileSystemService.readFileAsArrayBuffer(
         mockHandle as unknown as FileSystemFileHandle
       );
 
@@ -437,7 +437,7 @@ describe('FileSystemService', () => {
         requestPermission: vi.fn(),
       };
 
-      const result = await fileSystemService.readFileAsText(
+      const result = await nativeFileSystemService.readFileAsText(
         mockHandle as unknown as FileSystemFileHandle
       );
 
@@ -458,7 +458,7 @@ describe('FileSystemService', () => {
         requestPermission: vi.fn(),
       };
 
-      const result = await fileSystemService.getFileMetadata(
+      const result = await nativeFileSystemService.getFileMetadata(
         mockHandle as unknown as FileSystemFileHandle
       );
 
@@ -479,24 +479,24 @@ describe('FileSystemService', () => {
       };
 
       // Save the handle
-      await fileSystemService.saveDirectoryHandle('lib-1', mockDirHandle as unknown as FileSystemDirectoryHandle);
+      await nativeFileSystemService.saveDirectoryHandle('lib-1', mockDirHandle as unknown as FileSystemDirectoryHandle);
 
       // List saved handles
-      const handles = await fileSystemService.listSavedHandles();
+      const handles = await nativeFileSystemService.listSavedHandles();
       expect(handles).toContainEqual({ id: 'lib-1', name: 'MyMusic', kind: 'directory' });
 
       // Retrieve the handle
-      const retrieved = await fileSystemService.getSavedDirectoryHandle('lib-1');
+      const retrieved = await nativeFileSystemService.getSavedDirectoryHandle('lib-1');
       expect(retrieved).not.toBeNull();
 
       // Remove the handle
-      await fileSystemService.removeSavedHandle('lib-1');
-      const handlesAfterRemove = await fileSystemService.listSavedHandles();
+      await nativeFileSystemService.removeSavedHandle('lib-1');
+      const handlesAfterRemove = await nativeFileSystemService.listSavedHandles();
       expect(handlesAfterRemove).not.toContainEqual({ id: 'lib-1', name: 'MyMusic', kind: 'directory' });
     });
 
     it('returns null for non-existent handle', async () => {
-      const result = await fileSystemService.getSavedDirectoryHandle('non-existent');
+      const result = await nativeFileSystemService.getSavedDirectoryHandle('non-existent');
       expect(result).toBeNull();
     });
   });
@@ -520,7 +520,7 @@ describe('FileSystemService Edge Cases', () => {
       requestPermission: vi.fn(),
     };
 
-    const result = await fileSystemService.getAudioFilesFromDirectory(
+    const result = await nativeFileSystemService.getAudioFilesFromDirectory(
       mockDirHandle as unknown as FileSystemDirectoryHandle
     );
 
@@ -566,7 +566,7 @@ describe('FileSystemService Edge Cases', () => {
 
     const mockDirHandle = createNestedDir(3, 'deep.mp3');
 
-    const result = await fileSystemService.getAudioFilesFromDirectory(
+    const result = await nativeFileSystemService.getAudioFilesFromDirectory(
       mockDirHandle as unknown as FileSystemDirectoryHandle
     );
 
@@ -609,7 +609,7 @@ describe('FileSystemService Edge Cases', () => {
       requestPermission: vi.fn(),
     };
 
-    const result = await fileSystemService.getAudioFilesFromDirectory(
+    const result = await nativeFileSystemService.getAudioFilesFromDirectory(
       mockDirHandle as unknown as FileSystemDirectoryHandle
     );
 
