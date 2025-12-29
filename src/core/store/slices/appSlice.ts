@@ -8,7 +8,7 @@ export interface Project {
     orgId: string;
 }
 
-export type ModuleId = 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom' | 'agent' | 'distribution';
+export type ModuleId = 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom' | 'agent' | 'distribution' | 'files';
 
 export interface AppSlice {
     currentModule: ModuleId;
@@ -35,7 +35,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     projects: [],
     setModule: (module) => set({
         currentModule: module,
-        isRightPanelOpen: module === 'creative' || module === 'video'
+        isRightPanelOpen: module === 'creative' || module === 'video' || module === 'files'
     }),
     setProject: (id) => set({ currentProjectId: id }),
     addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),

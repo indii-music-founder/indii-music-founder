@@ -41,9 +41,9 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-// Mock FileSystemService
-vi.mock('@/services/FileSystemService', () => ({
-    fileSystemService: {
+// Mock NativeFileSystemService
+vi.mock('@/services/NativeFileSystemService', () => ({
+    nativeFileSystemService: {
         isSupported: vi.fn().mockReturnValue(true),
         listSavedHandles: vi.fn().mockResolvedValue([]),
         pickAudioFile: vi.fn().mockResolvedValue(null),
@@ -128,30 +128,30 @@ describe('MusicStudio File System Integration', () => {
     });
 
     it('calls pickAudioFile when File button is clicked', async () => {
-        const { fileSystemService } = await import('@/services/FileSystemService');
+        const { nativeFileSystemService } = await import('@/services/NativeFileSystemService');
 
         render(<MusicStudio />);
         fireEvent.click(screen.getByText('File'));
 
         await waitFor(() => {
-            expect(fileSystemService.pickAudioFile).toHaveBeenCalled();
+            expect(nativeFileSystemService.pickAudioFile).toHaveBeenCalled();
         });
     });
 
     it('calls pickDirectory when Folder button is clicked', async () => {
-        const { fileSystemService } = await import('@/services/FileSystemService');
+        const { nativeFileSystemService } = await import('@/services/NativeFileSystemService');
 
         render(<MusicStudio />);
         fireEvent.click(screen.getByText('Folder'));
 
         await waitFor(() => {
-            expect(fileSystemService.pickDirectory).toHaveBeenCalled();
+            expect(nativeFileSystemService.pickDirectory).toHaveBeenCalled();
         });
     });
 
     it('shows unsupported message when FS API not available', async () => {
-        const { fileSystemService } = await import('@/services/FileSystemService');
-        vi.mocked(fileSystemService.isSupported).mockReturnValue(false);
+        const { nativeFileSystemService } = await import('@/services/NativeFileSystemService');
+        vi.mocked(nativeFileSystemService.isSupported).mockReturnValue(false);
 
         render(<MusicStudio />);
 

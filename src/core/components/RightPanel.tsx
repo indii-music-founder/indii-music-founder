@@ -1,8 +1,9 @@
 import React from 'react';
 import { useStore } from '../store';
-import { ChevronLeft, ChevronRight, Layers, Palette, Film } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder } from 'lucide-react';
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
+import { ResourceTree } from '@/components/project/ResourceTree';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RightPanel() {
@@ -15,6 +16,17 @@ export default function RightPanel() {
                 return <CreativePanel toggleRightPanel={toggleRightPanel} />;
             case 'video':
                 return <VideoPanel toggleRightPanel={toggleRightPanel} />;
+            case 'files':
+                return (
+                    <div className="h-full flex flex-col bg-[#0d1117] relative">
+                        <div className="absolute top-2 right-2 z-10">
+                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors">
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                        <ResourceTree className="flex-1 p-2" />
+                    </div>
+                );
             default:
                 return (
                     <div className="flex flex-col h-full">
@@ -37,7 +49,7 @@ export default function RightPanel() {
         }
     };
 
-    const handleToolClick = (module: 'creative' | 'video') => {
+    const handleToolClick = (module: 'creative' | 'video' | 'files') => {
         setModule(module);
     };
 
@@ -83,6 +95,15 @@ export default function RightPanel() {
                             >
                                 <Film size={20} />
                                 {currentModule === 'video' && <div className="absolute inset-0 rounded-xl bg-blue-500/10 blur-sm" />}
+                            </button>
+
+                            <button
+                                onClick={() => handleToolClick('files')}
+                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'files' ? 'bg-green-500/20 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                title="Project Files"
+                            >
+                                <Folder size={20} />
+                                {currentModule === 'files' && <div className="absolute inset-0 rounded-xl bg-green-500/10 blur-sm" />}
                             </button>
                         </div>
                     </motion.div>
