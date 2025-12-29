@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useToast } from '@/core/hooks/useToast';
+import { useToast } from '@/core/context/ToastContext';
 import AssetRack, { ProductType } from './components/AssetRack';
 import ScenarioBuilder from './components/ScenarioBuilder';
 import ShowroomStage from './components/ShowroomStage';
 import { ShowroomService } from '@/services/showroom/ShowroomService';
 
 export default function Showroom() {
-    const { toast } = useToast();
+    const toast = useToast();
 
     // State
     const [selectedAsset, setSelectedAsset] = useState<File | null>(null);
@@ -20,21 +20,13 @@ export default function Showroom() {
 
     const handleAssetSelect = (file: File) => {
         if (!file.type.startsWith('image/')) {
-            toast({
-                title: "Invalid File Type",
-                message: "Please select a valid image file (JPG, PNG).",
-                type: "error"
-            });
+            toast.error("Please select a valid image file (JPG, PNG).");
             return;
         }
         setSelectedAsset(file);
         setMockupImage(null);
         setVideoUrl(null);
-        toast({
-            title: "Asset Loaded",
-            message: `${file.name} ready for staging.`,
-            type: "success"
-        });
+        toast.success(`${file.name} ready for staging.`);
     };
 
     const handleGenerate = async () => {
@@ -46,18 +38,10 @@ export default function Showroom() {
         try {
             const resultUrl = await ShowroomService.generateMockup(selectedAsset, productType, scenePrompt);
             setMockupImage(resultUrl);
-            toast({
-                title: "Mockup Generated",
-                message: "High-fidelity rendering complete.",
-                type: "success"
-            });
+            toast.success("High-fidelity rendering complete.");
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Generation Failed",
-                message: "Could not generate mockup. Please try again.",
-                type: "error"
-            });
+            toast.error("Could not generate mockup. Please try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -70,18 +54,10 @@ export default function Showroom() {
         try {
             const resultVideo = await ShowroomService.animateScene(mockupImage, motionPrompt);
             setVideoUrl(resultVideo);
-            toast({
-                title: "Animation Complete",
-                message: "Scene successfully animated.",
-                type: "success"
-            });
+            toast.success("Scene successfully animated.");
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Animation Failed",
-                message: "Could not animate scene. Please verify credits and try again.",
-                type: "error"
-            });
+            toast.error("Could not animate scene. Please verify credits and try again.");
         } finally {
             setIsGenerating(false);
         }

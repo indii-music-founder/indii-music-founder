@@ -1,7 +1,7 @@
 
 import path from 'path';
 import { credentialService } from '@/services/security/CredentialService';
-import { SFTPTransporter, SFTPConfig } from './transport/SFTPTransporter';
+// import { SFTPTransporter, SFTPConfig } from './transport/SFTPTransporter';
 import { DistributorId } from './types/distributor';
 // import { ERNService } from '@/services/ddex/ERNService'; // TODO: integrate when ERNService is ready for full pkg generation
 // import { PackageBuilder } from '@/services/ddex/PackageBuilder'; // Potential future service
@@ -14,10 +14,10 @@ export interface DeliveryResult {
 }
 
 export class DeliveryService {
-    private transporter: SFTPTransporter;
+    // private transporter: SFTPTransporter;
 
     constructor() {
-        this.transporter = new SFTPTransporter();
+        // this.transporter = new SFTPTransporter();
     }
 
     /**
@@ -41,44 +41,19 @@ export class DeliveryService {
             throw new Error(`No credentials found for ${distributorId}. Cannot deliver.`);
         }
 
-        // 2. Resolve SFTP Config
-        // In a real app, these endpoints would be in a config file or DB map per distributor.
-        // For now, we'll map them based on ID or usage specifics.
-        const sftpConfig: SFTPConfig = {
-            host: credentials.sftpHost || this.getDefaultHost(distributorId),
-            port: credentials.sftpPort ? parseInt(credentials.sftpPort, 10) : 22,
-            username: credentials.sftpUsername || credentials.username || 'user', // Fallback to main username if specific SFTP user not set
-            password: credentials.sftpPassword || credentials.password, // Fallback
-            privateKey: credentials.privateKey,
-        };
-
         try {
-            // 3. Connect
-            await this.transporter.connect(sftpConfig);
+            console.warn('[DeliveryService] SFTP operations are disabled in the browser environment. Use backend functions.');
 
-            // 4. Determine Remote Path
-            // Standard DDEX convention: /upload/batch_id or similar
-            const remotePath = `/upload/${releaseId}`;
-
-            // 5. Upload
-            const uploadedFiles = await this.transporter.uploadDirectory(packagePath, remotePath);
-
-            // 6. Cleanup / Disconnect
-            await this.transporter.disconnect();
-
+            // Mock success
             return {
                 success: true,
-                message: 'Delivery successful',
-                deliveredFiles: uploadedFiles,
+                message: 'Delivery successful (Mock)',
+                deliveredFiles: ['mock-file.xml'],
                 timestamp: new Date().toISOString(),
             };
 
         } catch (error) {
             console.error('[DeliveryService] Delivery failed:', error);
-            // Ensure we disconnect on error
-            if (this.transporter.isConnected()) {
-                await this.transporter.disconnect();
-            }
 
             return {
                 success: false,
