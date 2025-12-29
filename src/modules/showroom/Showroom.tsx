@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { useToast } from '@/core/hooks/useToast';
+import { useToast } from '@/core/context/ToastContext';
 import AssetRack, { ProductType } from './components/AssetRack';
 import ScenarioBuilder from './components/ScenarioBuilder';
 import ShowroomStage from './components/ShowroomStage';
 import { ShowroomService } from '@/services/showroom/ShowroomService';
 
 export default function Showroom() {
-    const { toast } = useToast();
+    const toastContext = useToast(); const toast = (args: any) => { if (args.type === "error") toastContext.error(args.message); else if (args.type === "success") toastContext.success(args.message); else toastContext.info(args.message); };
 
     // State
-    const [selectedAsset, setSelectedAsset] = useState<File | null>(null);
-    const [productType, setProductType] = useState<ProductType>('clothing');
+    const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+    const [productType, setProductType] = useState<ProductType>('T-Shirt');
     const [scenePrompt, setScenePrompt] = useState('');
     const [motionPrompt, setMotionPrompt] = useState('');
 
@@ -18,21 +18,13 @@ export default function Showroom() {
     const [mockupImage, setMockupImage] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-    const handleAssetSelect = (file: File) => {
-        if (!file.type.startsWith('image/')) {
-            toast({
-                title: "Invalid File Type",
-                message: "Please select a valid image file (JPG, PNG).",
-                type: "error"
-            });
-            return;
-        }
-        setSelectedAsset(file);
+    const handleAssetUpload = (base64: string) => {
+        setSelectedAsset(base64);
         setMockupImage(null);
         setVideoUrl(null);
         toast({
             title: "Asset Loaded",
-            message: `${file.name} ready for staging.`,
+            message: "Design ready for staging.",
             type: "success"
         });
     };
@@ -68,7 +60,7 @@ export default function Showroom() {
 
         setIsGenerating(true);
         try {
-            const resultVideo = await ShowroomService.animateScene(mockupImage, motionPrompt);
+            const resultVideo = await ShowroomService.generateVideo(mockupImage, motionPrompt);
             setVideoUrl(resultVideo);
             toast({
                 title: "Animation Complete",
@@ -97,8 +89,8 @@ export default function Showroom() {
                 {/* Column 1: Asset Rack */}
                 <div className="w-[320px] h-full flex-shrink-0 border-r border-white/5 bg-black/40 backdrop-blur-xl">
                     <AssetRack
-                        onAssetSelect={handleAssetSelect}
-                        selectedAsset={selectedAsset}
+                        onAssetUpload={handleAssetUpload}
+                        productAsset={selectedAsset}
                         productType={productType}
                         onTypeChange={setProductType}
                     />

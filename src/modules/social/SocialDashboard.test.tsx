@@ -27,7 +27,7 @@ vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
 vi.mock('./hooks/useSocial', () => ({
     useSocial: vi.fn(() => ({
         stats: { followers: 124500, following: 100, posts: 50, drops: 12 },
-        scheduledPosts: [],
+        scheduledPosts: [], posts: [],
         isLoading: false,
         actions: {
             schedulePost: vi.fn(),
@@ -61,7 +61,7 @@ describe('SocialDashboard', () => {
     it('displays stats', () => {
         render(<SocialDashboard />);
         expect(screen.getByText('Total Reach')).toBeInTheDocument();
-        expect(screen.getByText('Following')).toBeInTheDocument();
+        expect(screen.getAllByText('Following')[0]).toBeInTheDocument();
         expect(screen.getByText('Posts')).toBeInTheDocument();
     });
 });
