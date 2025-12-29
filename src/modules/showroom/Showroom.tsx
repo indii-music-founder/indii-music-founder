@@ -6,7 +6,7 @@ import ShowroomStage from './components/ShowroomStage';
 import { ShowroomService } from '@/services/showroom/ShowroomService';
 
 export default function Showroom() {
-    const toastContext = useToast(); const toast = (args: any) => { if (args.type === "error") toastContext.error(args.message); else if (args.type === "success") toastContext.success(args.message); else toastContext.info(args.message); };
+    const toast = useToast();
 
     // State
     const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
@@ -22,11 +22,7 @@ export default function Showroom() {
         setSelectedAsset(base64);
         setMockupImage(null);
         setVideoUrl(null);
-        toast({
-            title: "Asset Loaded",
-            message: "Design ready for staging.",
-            type: "success"
-        });
+        toast.success("Design ready for staging.");
     };
 
     const handleGenerate = async () => {
@@ -38,18 +34,10 @@ export default function Showroom() {
         try {
             const resultUrl = await ShowroomService.generateMockup(selectedAsset, productType, scenePrompt);
             setMockupImage(resultUrl);
-            toast({
-                title: "Mockup Generated",
-                message: "High-fidelity rendering complete.",
-                type: "success"
-            });
+            toast.success("High-fidelity rendering complete.");
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Generation Failed",
-                message: "Could not generate mockup. Please try again.",
-                type: "error"
-            });
+            toast.error("Could not generate mockup. Please try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -62,18 +50,10 @@ export default function Showroom() {
         try {
             const resultVideo = await ShowroomService.generateVideo(mockupImage, motionPrompt);
             setVideoUrl(resultVideo);
-            toast({
-                title: "Animation Complete",
-                message: "Scene successfully animated.",
-                type: "success"
-            });
+            toast.success("Scene successfully animated.");
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Animation Failed",
-                message: "Could not animate scene. Please verify credits and try again.",
-                type: "error"
-            });
+            toast.error("Could not animate scene. Please verify credits and try again.");
         } finally {
             setIsGenerating(false);
         }
