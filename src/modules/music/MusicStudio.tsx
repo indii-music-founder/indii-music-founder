@@ -9,7 +9,7 @@ import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnaly
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { MetadataDrawer } from './components/MetadataDrawer';
 import { GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 interface LoadedAudio {
     id: string;
@@ -239,7 +239,7 @@ export default function MusicStudio() {
             description="Audio Analysis & Management"
             icon={<Music className="text-purple-500" />}
         >
-            <ErrorBoundary>
+            <ModuleErrorBoundary moduleName="Music Studio">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)]">
 
                     {/* Left Drawer: Library (3 cols) */}
@@ -468,7 +468,7 @@ export default function MusicStudio() {
                         </button>
                     </div>
                 </div>
-            </ErrorBoundary>
+            </ModuleErrorBoundary>
         </ModuleDashboard>
     );
 }
