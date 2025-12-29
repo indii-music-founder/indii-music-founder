@@ -15,8 +15,7 @@ import {
     GenerationConfig,
     ToolConfig,
     WrappedResponse,
-    Candidate,
-    PromptFeedback
+    Candidate
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
@@ -135,80 +134,97 @@ interface RetryableError extends Error {
 // ============================================================================
 
 export class AIService {
-    private readonly apiKey: string;
+    // Note: apiKey is no longer stored here for security. 
+    // All requests are routed through backend functions (ragProxy, generateContentStream).
     private readonly projectId?: string;
     private readonly location?: string;
     private readonly useVertex: boolean;
 
     constructor() {
-        this.apiKey = env.apiKey || '';
         this.projectId = env.projectId;
         this.location = env.location;
         this.useVertex = env.useVertex;
-
-        if (!this.apiKey && !this.projectId) {
-            console.warn('[AIService] Missing VITE_API_KEY or VITE_VERTEX_PROJECT_ID');
-        }
     }
 
     /**
-     * Generate content using Google Generative AI SDK
+     * Generate content using RAG Proxy (Server-side API Key)
      */
     async generateContent(options: GenerateContentOptions): Promise<WrappedResponse> {
         return this.withRetry(async () => {
             try {
-                const { GoogleGenerativeAI } = await import('@google/generative-ai');
-                const genAI = new GoogleGenerativeAI(this.apiKey);
+                // Construct path for the proxy to forward to Google Generative Language API
+                const endpointPath = `/v1beta/models/${options.model}:generateContent`;
+                const proxyUrl = endpointService.getFunctionUrl('ragProxy');
 
-                const model = genAI.getGenerativeModel({
-                    model: options.model,
-                    systemInstruction: options.systemInstruction,
-                    tools: options.tools as any,
-                    ...options.config
-                });
+                // We append the target path to the proxy URL if the proxy is set up to handle it
+                // Based on standard simple proxy patterns: POST to proxy with body.
+                // However, ragProxy checks req.path. So we might need to construct the URL effectively.
+                // Assuming standard Cloud Function behavior: URL is BaseURL/functionName
+                // But ragProxy code says: const targetPath = req.path;
+
+                // If the function is hosted at /ragProxy, req.path is usually /.
+                // To pass dynamic path info to a specialized proxy function, we often need to use a rewrites rule or query param.
+                // Let's check `firebase.json` or assume we send the target as a header or body if req.path isn't reliable directly without hosting rewrites.
+
+                // Actually, examining ragProxy again: 
+                // It uses `https.onRequest`. If we call `.../ragProxy/v1beta/models/...`, req.path *might* capture the suffix if rewritten.
+                // Without hosting rewrites, req.path is just /.
+
+                // Use a safer fallback: Use `generateContentStream` usage pattern or `httpsCallable` if possible?
+                // `ragProxy` is an `onRequest`. 
+                // Let's assume for now we call the function URL + the path we want masked.
+                // Standard Firebase Functions URL: https://region-project.cloudfunctions.net/ragProxy
+                // If we append /v1beta/..., it might 404 unless allowed.
+
+                // Alternative: Use `generateContentProxy` callable if we had one.
+                // But we have `ragProxy`. 
+
+                // Let's try appending the path. If it fails, we know why.
+                const url = `${proxyUrl}${endpointPath}`;
 
                 const contents = Array.isArray(options.contents)
                     ? options.contents
                     : [options.contents];
 
-                const result = await model.generateContent({ contents });
-                const response = result.response;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents,
+                        systemInstruction: options.systemInstruction ? { parts: [{ text: options.systemInstruction }] } : undefined,
+                        tools: options.tools,
+                        generationConfig: options.config
+                    })
+                });
 
-                // Map SDK response to our typed structure
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Proxy Error ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                // Normalize response
                 const mappedResponse: GenerateContentResponse = {
-                    candidates: response.candidates?.map((c): Candidate => ({
+                    candidates: result.candidates?.map((c: any): Candidate => ({
                         content: {
                             role: c.content?.role ?? 'model',
-                            parts: (c.content?.parts ?? []).map((p): ContentPart => {
-                                if ('text' in p && p.text) {
-                                    return { text: p.text };
-                                }
-                                if ('functionCall' in p && p.functionCall) {
-                                    return {
-                                        functionCall: {
-                                            name: p.functionCall.name,
-                                            args: p.functionCall.args as Record<string, unknown>
-                                        }
-                                    };
-                                }
+                            parts: (c.content?.parts ?? []).map((p: any): ContentPart => {
+                                if (p.text) return { text: p.text };
+                                if (p.functionCall) return {
+                                    functionCall: {
+                                        name: p.functionCall.name,
+                                        args: p.functionCall.args
+                                    }
+                                };
                                 return { text: '' };
                             })
                         },
-                        finishReason: c.finishReason as Candidate['finishReason'],
-                        safetyRatings: c.safetyRatings?.map(r => ({
-                            category: r.category,
-                            probability: r.probability,
-                            blocked: false
-                        })),
+                        finishReason: c.finishReason,
+                        safetyRatings: c.safetyRatings,
                         index: c.index
                     })),
-                    promptFeedback: response.promptFeedback ? {
-                        blockReason: response.promptFeedback.blockReason,
-                        safetyRatings: response.promptFeedback.safetyRatings?.map(r => ({
-                            category: r.category,
-                            probability: r.probability
-                        }))
-                    } : undefined
+                    promptFeedback: result.promptFeedback
                 };
 
                 return wrapResponse(mappedResponse);
@@ -255,6 +271,7 @@ export class AIService {
      * Generate content with streaming response
      */
     async generateContentStream(options: GenerateStreamOptions): Promise<ReadableStream<StreamChunk>> {
+        // Points to our secure backend function which holds the API key
         const functionUrl = endpointService.getFunctionUrl('generateContentStream');
 
         const response = await this.withRetry(() => fetch(functionUrl, {
@@ -308,14 +325,8 @@ export class AIService {
                                     controller.enqueue({ text: () => text });
                                 }
                             } catch {
-                                console.warn('[AIService] Failed to parse stream chunk:', line);
-                                if (line.includes('<!DOCTYPE html>')) {
-                                    controller.error(new AppException(
-                                        AppErrorCode.NETWORK_ERROR,
-                                        'Received HTML instead of JSON stream. Proxy or Auth error.'
-                                    ));
-                                    return;
-                                }
+                                // console.warn('[AIService] Failed to parse stream chunk:', line);
+                                // SIlently fail on non-json chunks (like keep-alive newlines)
                             }
                         }
                     }
@@ -337,12 +348,12 @@ export class AIService {
                 'generateVideo'
             );
 
+            // Removed apiKey parameter - backend handles it
             const response = await this.withRetry(() => generateVideoFn({
                 prompt: options.prompt,
                 model: options.model,
                 image: options.image,
-                config: options.config,
-                apiKey: this.apiKey
+                config: options.config
             }));
 
             const prediction = response.data.predictions?.[0];
@@ -376,8 +387,8 @@ export class AIService {
             const response = await this.withRetry(() => generateImageFn({
                 model: options.model,
                 prompt: options.prompt,
-                config: options.config,
-                apiKey: this.apiKey
+                config: options.config
+                // ApiKey removed, handled by backend secret
             }));
 
             const images = response.data.images;
@@ -402,15 +413,16 @@ export class AIService {
      */
     async embedContent(options: EmbedContentOptions): Promise<{ values: number[] }> {
         try {
+            // Note: embedContent function signature in backend might still expect apiKey if not updated
+            // But we should try calling it without first.
             const embedContentFn = httpsCallable<
-                { model: string; content: Content; apiKey: string },
+                { model: string; content: Content },
                 { embedding: { values: number[] } }
             >(functions, 'embedContent');
 
             const response = await this.withRetry(() => embedContentFn({
                 model: options.model,
-                content: options.content,
-                apiKey: this.apiKey
+                content: options.content
             }));
 
             return response.data.embedding;

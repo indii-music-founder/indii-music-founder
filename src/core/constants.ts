@@ -23,7 +23,8 @@ export const MODULE_IDS = [
     'onboarding',
     'select-org',
     'agent',
-    'distribution'
+    'distribution',
+    'files'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];

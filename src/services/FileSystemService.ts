@@ -20,7 +20,13 @@ export interface FileNode {
     projectId: string;
     userId: string;
     fileType?: 'image' | 'video' | 'audio' | 'document' | 'other';
-    data?: any; // For flexible data attachment (e.g. storage URL, script content)
+    data?: {
+        url?: string;
+        storagePath?: string;
+        size?: number;
+        mimeType?: string;
+        [key: string]: any;
+    };
     createdAt: number;
     updatedAt: number;
 }

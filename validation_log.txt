@@ -1,0 +1,514 @@
+
+> indii-os@0.0.0 test
+> vitest
+
+
+[1m[44m DEV [49m[22m [34mv4.0.16 [39m[90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron[39m
+
+ [32m✓[39m src/modules/creative/components/CreativeGallery.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+[90mstdout[2m | src/modules/onboarding/pages/OnboardingPage.test.tsx[2m > [22m[2mOnboardingPage GenUI Verification[2m > [22m[2mRenders Multiple Choice buttons when Agent calls askMultipleChoice tool
+[22m[39m[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+[Onboarding] Function Calls: [ [32m'askMultipleChoice'[39m ]
+[Onboarding] Updates: []
+[Onboarding] New Profile State: {}
+
+[90mstdout[2m | src/modules/onboarding/pages/OnboardingPage.test.tsx[2m > [22m[2mOnboardingPage GenUI Verification[2m > [22m[2mRenders Multiple Choice buttons when Agent calls askMultipleChoice tool
+[22m[39m[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+
+[90mstdout[2m | src/modules/onboarding/pages/OnboardingPage.test.tsx[2m > [22m[2mOnboardingPage GenUI Verification[2m > [22m[2mRenders Multiple Choice buttons when Agent calls askMultipleChoice tool
+[22m[39m[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+[Onboarding] Function Calls: [ [32m'askMultipleChoice'[39m ]
+[Onboarding] Updates: []
+[Onboarding] New Profile State: {}
+
+[90mstdout[2m | src/modules/onboarding/pages/OnboardingPage.test.tsx[2m > [22m[2mOnboardingPage GenUI Verification[2m > [22m[2mRenders Multiple Choice buttons when Agent calls askMultipleChoice tool
+[22m[39m[Onboarding] Progress: { coreProgress: [33m0[39m, isReady: [33mfalse[39m, missing: [] }
+
+ [32m✓[39m src/modules/onboarding/pages/OnboardingPage.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 120[2mms[22m[39m
+[90mstdout[2m | src/services/agent/AgentArchitecture.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/dashboard/components/ReferenceImageManager.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 192[2mms[22m[39m
+[90mstderr[2m | src/core/components/SidebarNavigation.test.tsx
+[22m[39mSpeech Recognition API not supported in this browser.
+
+[90mstdout[2m | src/core/components/SidebarNavigation.test.tsx[2m > [22m[2mSidebar Navigation Integration[2m > [22m[2mrenders correct dashboard for Brand Manager
+[22m[39m[App] System ready, loading data...
+[App] Current Module: brand
+
+[90mstderr[2m | src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m3. Dynamic Orchestration[2m > [22m[2mshould fallback to generalist if LLM fails
+[22m[39m[AgentOrchestrator] Routing failed, defaulting to generalist. Error: LLM Error
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/AgentArchitecture.test.ts:133:63
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+[90mstderr[2m | src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m7. Glass Box UI Verification[2m > [22m[2mshould update store with thoughts when onProgress is triggered
+[22m[39m[2025-12-29T05:16:48.085Z]  @firebase/firestore: Firestore (12.6.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+[90mstdout[2m | src/services/agent/GeneralistAgent.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/GeneralistAgent.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+[90mstdout[2m | src/core/components/SidebarNavigation.test.tsx[2m > [22m[2mSidebar Navigation Integration[2m > [22m[2mrenders correct dashboard for Campaign Manager
+[22m[39m[App] System ready, loading data...
+[App] Current Module: campaign
+
+[90mstderr[2m | src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m7. Glass Box UI Verification[2m > [22m[2mshould update store with thoughts when onProgress is triggered
+[22m[39mError listing documents in projects/p1/memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m7. Glass Box UI Verification[2m > [22m[2mshould update store with thoughts when onProgress is triggered
+[22m[39m[MemoryService] Error retrieving memories: [FirebaseError: Missing or insufficient permissions.] {
+  code: [32m'permission-denied'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+ [32m✓[39m src/services/agent/AgentArchitecture.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 379[2mms[22m[39m
+       [33m[2m✓[22m[39m should update store with thoughts when onProgress is triggered [33m 363[2mms[22m[39m
+ [32m✓[39m src/core/components/CommandBar.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 156[2mms[22m[39m
+[90mstdout[2m | src/core/components/SidebarNavigation.test.tsx[2m > [22m[2mSidebar Navigation Integration[2m > [22m[2mrenders correct dashboard for Publicist
+[22m[39m[App] System ready, loading data...
+[App] Current Module: publicist
+
+ [32m✓[39m src/modules/creative/components/BrandAssetsDrawer.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 198[2mms[22m[39m
+[90mstdout[2m | src/services/agent/AgentIntegration.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/AgentIntegration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+[90mstdout[2m | src/core/components/SidebarNavigation.test.tsx[2m > [22m[2mSidebar Navigation Integration[2m > [22m[2mrenders correct dashboard for Publishing
+[22m[39m[App] System ready, loading data...
+[App] Current Module: publishing
+
+ [32m✓[39m src/services/social/SocialService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/modules/creative/components/StudioNavControls.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m src/core/components/ChatOverlay.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 90[2mms[22m[39m
+[90mstdout[2m | src/core/components/SidebarNavigation.test.tsx[2m > [22m[2mSidebar Navigation Integration[2m > [22m[2mrenders correct dashboard for Finance
+[22m[39m[App] System ready, loading data...
+[App] Current Module: finance
+
+[90mstdout[2m | src/services/agent/agent_restore.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/core/components/SidebarNavigation.test.tsx[2m > [22m[2mSidebar Navigation Integration[2m > [22m[2mrenders correct dashboard for Licensing
+[22m[39m[App] System ready, loading data...
+[App] Current Module: licensing
+
+[90mstderr[2m | src/services/agent/agent_restore.test.ts[2m > [22m[2mAgent Zero Restoration[2m > [22m[2mrequest_approval tool should return waiting message
+[22m[39m[CoreTools] request_approval called but UI not integrated - auto-rejecting for safety
+
+ [32m✓[39m src/services/agent/agent_restore.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/core/components/RightPanel.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/core/components/SidebarNavigation.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 2305[2mms[22m[39m
+     [33m[2m✓[22m[39m renders all sidebar items [33m 308[2mms[22m[39m
+     [33m[2m✓[22m[39m renders correct dashboard for Brand Manager [33m 356[2mms[22m[39m
+     [33m[2m✓[22m[39m renders correct dashboard for Campaign Manager [33m 322[2mms[22m[39m
+     [33m[2m✓[22m[39m renders correct dashboard for Publicist [33m 321[2mms[22m[39m
+     [33m[2m✓[22m[39m renders correct dashboard for Publishing [33m 314[2mms[22m[39m
+     [33m[2m✓[22m[39m renders correct dashboard for Finance [33m 313[2mms[22m[39m
+     [33m[2m✓[22m[39m renders correct dashboard for Licensing [33m 319[2mms[22m[39m
+[90mstderr[2m | src/modules/video/VideoWorkflow.test.tsx[2m > [22m[2mVideoWorkflow[2m > [22m[2mlistens for job completion and updates history with orgId
+[22m[39mFailed to setup job listener: [FirebaseError: Expected first argument to doc() to be a CollectionReference, a DocumentReference or FirebaseFirestore] {
+  code: [32m'invalid-argument'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+
+[90mstderr[2m | src/modules/creative/CreativeStudio.test.tsx[2m > [22m[2mCreativeStudio[2m > [22m[2mhandles generation errors gracefully
+[22m[39mImage generation failed: Error: Generation failed
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/modules/creative/CreativeStudio.test.tsx:114:46
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+ [32m✓[39m src/modules/creative/CreativeStudio.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/modules/video/VideoWorkflow.test.tsx [2m([22m[2m6 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 391[2mms[22m[39m
+[90mstdout[2m | src/services/agent/specialists/GeneralistAgent.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/services/agent/tools/FilmmakingTools.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/tools/FilmmakingTools.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/agent/specialists/GeneralistAgent.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+[90mstdout[2m | src/services/agent/tools/BigQueryTools.test.ts[2m > [22m[2mBigQueryTools (Mock)[2m > [22m[2mexecute_bigquery_query returns sales data
+[22m[39m[BigQuery Mock] Executing query: SELECT * FROM sales WHERE year = 2025
+
+[90mstdout[2m | src/modules/creative/components/CreativeNavbar.test.tsx
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/services/ai/AIServiceErrors.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstderr[2m | src/services/ai/AIServiceErrors.test.ts[2m > [22m[2mAIService Error Handling[2m > [22m[2mshould forward generic errors from proxy
+[22m[39m[AIService] Generate Content Failed: Proxy Error 500: Generic proxy failure
+
+[90mstderr[2m | src/services/ai/AIServiceErrors.test.ts[2m > [22m[2mAIService Error Handling[2m > [22m[2mshould retry on transient QUOTA_EXCEEDED error and succeed
+[22m[39m[AIService] Generate Content Failed: Proxy Error 429: QUOTA_EXCEEDED
+
+[90mstderr[2m | src/services/ai/AIServiceErrors.test.ts[2m > [22m[2mAIService Error Handling[2m > [22m[2mshould retry on transient QUOTA_EXCEEDED error and succeed
+[22m[39m[AIService] Operation failed, retrying in 1000ms... (3 attempts left)
+
+[90mstdout[2m | src/services/agent/tools/DevOpsTools.test.ts[2m > [22m[2mDevOpsTools (Mock)[2m > [22m[2mlist_clusters returns mocked clusters
+[22m[39m[DevOps Mock] Listing GKE clusters
+
+ [32m✓[39m src/modules/creative/components/CreativeNavbar.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 183[2mms[22m[39m
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[Symphonic] Initiating release delivery: Unit Test Track
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[SymphonicBuilder] Built package at /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/ddex_staging/123456789012 with 3 files.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[SFTP] Connecting to ftp.symphonicms.com:22...
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[SFTP] Connected.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[SFTP] Uploading directory: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/ddex_staging/123456789012 -> /Test Records/SYM-1766985411746
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[SFTP] Upload complete: /Test Records/SYM-1766985411746
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mSymphonicAdapter[2m > [22m[2mshould successfully build package and simulate delivery when connected
+[22m[39m[SFTP] Disconnected.
+
+[90mstderr[2m | src/services/ai/AIServiceErrors.test.ts[2m > [22m[2mAIService Error Handling[2m > [22m[2mshould retry on transient QUOTA_EXCEEDED error and succeed
+[22m[39m[AIService] Generate Content Failed: Proxy Error 503: Service Unavailable
+
+[90mstderr[2m | src/services/ai/AIServiceErrors.test.ts[2m > [22m[2mAIService Error Handling[2m > [22m[2mshould retry on transient QUOTA_EXCEEDED error and succeed
+[22m[39m[AIService] Operation failed, retrying in 2000ms... (2 attempts left)
+
+[90mstdout[2m | src/services/agent/tools/DevOpsTools.test.ts[2m > [22m[2mDevOpsTools (Mock)[2m > [22m[2mget_cluster_status returns healthy for prod
+[22m[39m[DevOps Mock] Getting status for cluster: prod-cluster-1
+
+[90mstdout[2m | src/services/agent/tools/DevOpsTools.test.ts[2m > [22m[2mDevOpsTools (Mock)[2m > [22m[2mget_cluster_status returns warning for dev
+[22m[39m[DevOps Mock] Getting status for cluster: dev-cluster-1
+
+[90mstdout[2m | src/services/agent/tools/DevOpsTools.test.ts[2m > [22m[2mDevOpsTools (Mock)[2m > [22m[2mscale_deployment returns success message
+[22m[39m[DevOps Mock] Scaling deployment frontend to 5 replicas
+
+[90mstdout[2m | src/services/agent/tools/DevOpsTools.test.ts[2m > [22m[2mDevOpsTools (Mock)[2m > [22m[2mlist_instances returns mocked VMs
+[22m[39m[DevOps Mock] Listing GCE instances
+
+[90mstdout[2m | src/services/agent/tools/DevOpsTools.test.ts[2m > [22m[2mDevOpsTools (Mock)[2m > [22m[2mrestart_service returns success
+[22m[39m[DevOps Mock] Restarting service: payment-service
+
+[90mstdout[2m | src/services/agent/tools/VideoTools.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/services/agent/tools/BigQueryTools.test.ts[2m > [22m[2mBigQueryTools (Mock)[2m > [22m[2mexecute_bigquery_query returns budget data
+[22m[39m[BigQuery Mock] Executing query: SHOW ME THE Marketing BUDGET
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mDistroKidAdapter[2m > [22m[2mshould successfully generate CSV package when connected
+[22m[39m[DistroKid] Initiating release build: Unit Test Track
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mDistroKidAdapter[2m > [22m[2mshould successfully generate CSV package when connected
+[22m[39m[DistroKidBuilder] Built package: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/distrokid_staging/DK_Unit_Test_Track_1766985412282
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mDistroKidAdapter[2m > [22m[2mshould successfully generate CSV package when connected
+[22m[39m[DistroKid] Package created at: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/distrokid_staging/DK_Unit_Test_Track_1766985412282
+[DistroKid] Ready for manual/bulk upload tool.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mTuneCoreAdapter (REST API)[2m > [22m[2mshould simulate API delivery success
+[22m[39m[TuneCore] Connected.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mTuneCoreAdapter (REST API)[2m > [22m[2mshould simulate API delivery success
+[22m[39m[TuneCore] Initiating API transmission for: Unit Test Track
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mTuneCoreAdapter (REST API)[2m > [22m[2mshould simulate API delivery success
+[22m[39m[TuneCore] POST /v1/releases {
+  "title": "Unit Test Track",
+  "artist": "Unit Test Artist",
+  "genre": "Pop",
+  "upc": "12345678...
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[CD Baby] Connected. Ready to transmit as simulated_user.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[CD Baby] Starting release process for: Unit Test Track
+[CD Baby] Building DDEX Package...
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[CDBabyBuilder] Built package at /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/ddex_staging/cdbaby/123456789012 with 3 files.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[SFTP] Connecting to sftp.cdbaby.com:22...
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[SFTP] Connected.
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[CD Baby] Uploading 3 files from /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/ddex_staging/cdbaby/123456789012...
+[SFTP] Uploading directory: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/ddex_staging/cdbaby/123456789012 -> /upload/123456789012
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[SFTP] Upload complete: /upload/123456789012
+
+[90mstdout[2m | src/services/distribution/adapters/DistributionAdapters.test.ts[2m > [22m[2mDistribution Adapters[2m > [22m[2mCDBabyAdapter (DDEX)[2m > [22m[2mshould successfully build DDEX package and simulate upload
+[22m[39m[SFTP] Disconnected.
+
+ [32m✓[39m src/services/distribution/adapters/DistributionAdapters.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1958[2mms[22m[39m
+       [33m[2m✓[22m[39m should successfully build package and simulate delivery when connected [33m 635[2mms[22m[39m
+       [33m[2m✓[22m[39m should successfully generate CSV package when connected [33m 503[2mms[22m[39m
+       [33m[2m✓[22m[39m should simulate API delivery success [33m 803[2mms[22m[39m
+ [32m✓[39m src/modules/video/components/ReviewStep.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 90[2mms[22m[39m
+[90mstdout[2m | src/services/agent/tools/BigQueryTools.test.ts[2m > [22m[2mBigQueryTools (Mock)[2m > [22m[2mexecute_bigquery_query returns ROI data
+[22m[39m[BigQuery Mock] Executing query: Calculate ROI for campaigns
+
+ [32m✓[39m src/services/ai/AIServiceErrors.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 3015[2mms[22m[39m
+     [33m[2m✓[22m[39m should retry on transient QUOTA_EXCEEDED error and succeed [33m 3007[2mms[22m[39m
+ [32m✓[39m src/services/agent/tools/DevOpsTools.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2818[2mms[22m[39m
+     [33m[2m✓[22m[39m list_clusters returns mocked clusters [33m 812[2mms[22m[39m
+     [33m[2m✓[22m[39m restart_service returns success [33m 2002[2mms[22m[39m
+ [32m✓[39m src/services/agent/tools/VideoTools.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2009[2mms[22m[39m
+       [33m[2m✓[22m[39m should chain overlapping video generation steps [33m 2004[2mms[22m[39m
+ [32m✓[39m src/modules/video/editor/components/VideoTimeline.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+[90mstdout[2m | src/modules/social/SocialDashboard.test.tsx
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/design/ThePrinter.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 63[2mms[22m[39m
+ [32m✓[39m src/modules/workflow/components/UniversalNode.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/modules/social/SocialDashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+ [32m✓[39m src/components/kokonutui/file-upload.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/modules/creative/components/CanvasToolbar.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+Not implemented: HTMLMediaElement's load() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's load() method
+Not implemented: HTMLMediaElement's pause() method
+Not implemented: HTMLMediaElement's load() method
+Not implemented: HTMLMediaElement's pause() method
+ [32m✓[39m landing-page/app/TheBouncer.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mgenerates itinerary when inputs are valid
+[22m[39mMock httpsCallable called for: generateItinerary
+Mock function executed for generateItinerary with data: {
+  locations: [ [32m'New York'[39m ],
+  dates: { start: [32m'2023-10-01'[39m, end: [32m'2023-10-10'[39m }
+}
+
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mchecks logistics after generating itinerary
+[22m[39mMock httpsCallable called for: generateItinerary
+Mock function executed for generateItinerary with data: {
+  locations: [ [32m'New York'[39m ],
+  dates: { start: [32m'2023-10-01'[39m, end: [32m'2023-10-10'[39m }
+}
+
+[90mstdout[2m | src/modules/touring/RoadManager.test.tsx[2m > [22m[2mRoadManager[2m > [22m[2mchecks logistics after generating itinerary
+[22m[39mMock httpsCallable called for: checkLogistics
+Mock function executed for checkLogistics with data: {
+  itinerary: {
+    tourName: [32m'Test Tour'[39m,
+    stops: [ [36m[Object][39m ],
+    totalDistance: [32m'1000 km'[39m,
+    estimatedBudget: [32m'$50000'[39m
+  }
+}
+
+ [32m✓[39m src/modules/touring/RoadManager.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 87[2mms[22m[39m
+[90mstdout[2m | src/modules/marketing/MarketingDashboard.test.tsx
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/services/agent/tools/BigQueryTools.test.ts[2m > [22m[2mBigQueryTools (Mock)[2m > [22m[2mexecute_bigquery_query returns default message for unknown query
+[22m[39m[BigQuery Mock] Executing query: SELECT * FROM unknown_table
+
+ [32m✓[39m src/modules/marketing/MarketingDashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/modules/video/editor/components/VideoPropertiesPanel.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+[90mstderr[2m | src/modules/marketing/components/CampaignManager.test.tsx[2m > [22m[2mCampaignManager[2m > [22m[2mcalls executeCampaign when execute button is clicked
+[22m[39mAn update to CampaignManager inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/modules/marketing/components/CampaignManager.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+[90mstdout[2m | src/modules/creative/components/__tests__/CreativeCanvas.test.tsx
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/creative/components/__tests__/CreativeCanvas.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+[90mstdout[2m | src/modules/music/MusicStudio.test.tsx
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/music/MusicStudio.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[32m 95[2mms[22m[39m
+ [32m✓[39m src/modules/marketing/components/BrandManager.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/modules/legal/LegalDashboard.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m src/services/agent/tools/SecurityTools.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 505[2mms[22m[39m
+       [33m[2m✓[22m[39m should simulate credential rotation [33m 502[2mms[22m[39m
+ [32m✓[39m src/modules/dashboard/Dashboard.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+[90mstderr[2m | src/modules/video/store/videoEditorStore.test.ts[2m > [22m[2museVideoEditorStore[2m > [22m[2menforces standard duration limit
+[22m[39mProject duration limited to 8 minutes (Free tier). Upgrade to Pro for longer video durations
+
+ [32m✓[39m src/modules/video/store/videoEditorStore.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+[90mstdout[2m | src/services/agent/tools/BigQueryTools.test.ts[2m > [22m[2mBigQueryTools (Mock)[2m > [22m[2mget_table_schema returns sales schema
+[22m[39m[BigQuery Mock] Getting schema for: sales_data
+
+[90mstdout[2m | src/services/agent/tools/BigQueryTools.test.ts[2m > [22m[2mBigQueryTools (Mock)[2m > [22m[2mget_table_schema returns error for unknown table
+[22m[39m[BigQuery Mock] Getting schema for: unknown_table
+
+ [32m✓[39m src/services/agent/tools/BigQueryTools.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 6072[2mms[22m[39m
+     [33m[2m✓[22m[39m execute_bigquery_query returns sales data [33m 1555[2mms[22m[39m
+     [33m[2m✓[22m[39m execute_bigquery_query returns budget data [33m 1511[2mms[22m[39m
+     [33m[2m✓[22m[39m execute_bigquery_query returns ROI data [33m 1502[2mms[22m[39m
+     [33m[2m✓[22m[39m execute_bigquery_query returns default message for unknown query [33m 1502[2mms[22m[39m
+ [32m✓[39m src/test/3d-components.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/specialists/verification.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/services/ddex/RINService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+[90mstderr[2m | src/services/NativeFileSystemService.test.ts[2m > [22m[2mFileSystemService[2m > [22m[2mpickAudioFile[2m > [22m[2mreturns null when API is not supported
+[22m[39m[FileSystem] File System Access API not supported
+
+[90mstderr[2m | src/services/NativeFileSystemService.test.ts[2m > [22m[2mFileSystemService[2m > [22m[2mpickMultipleAudioFiles[2m > [22m[2mreturns empty array when API is not supported
+[22m[39m[FileSystem] File System Access API not supported
+
+[90mstderr[2m | src/services/NativeFileSystemService.test.ts[2m > [22m[2mFileSystemService[2m > [22m[2mpickDirectory[2m > [22m[2mreturns null when API is not supported
+[22m[39m[FileSystem] File System Access API not supported
+
+ [32m✓[39m src/services/NativeFileSystemService.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+[90mstdout[2m | src/services/image/__tests__/ImageGenerationService.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/music/services/AudioAnalysisEngine.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+[90mstderr[2m | src/services/image/__tests__/ImageGenerationService.test.ts[2m > [22m[2mImageGenerationService[2m > [22m[2mgenerateImages[2m > [22m[2mshould handle errors gracefully
+[22m[39mImage Generation Error: Error: AI Error
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/image/__tests__/ImageGenerationService.test.ts:59:49
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+ [32m✓[39m src/services/image/__tests__/ImageGenerationService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 63[2mms[22m[39m
+ [32m✓[39m src/services/marketplace/MarketplaceService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/components/project/ResourceTree.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 73[2mms[22m[39m
+[90mstdout[2m | src/services/agent/tools/LegalTools.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/tools/LegalTools.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstdout[2m | src/modules/workflow/services/WorkflowEngine.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/modules/workflow/services/WorkflowEngine.test.ts[2m > [22m[2mWorkflowEngine[2m > [22m[2mexecutes a simple workflow with Knowledge Base node
+[22m[39mWorkflow Output: RAG Result Content
+
+[90mstdout[2m | src/modules/workflow/services/WorkflowEngine.test.ts[2m > [22m[2mWorkflowEngine[2m > [22m[2mexecutes a simple workflow with Knowledge Base node
+[22m[39mWorkflow Execution Complete
+
+ [32m✓[39m src/modules/workflow/services/WorkflowEngine.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+[90mstdout[2m | src/services/image/__tests__/VideoGenerationService.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/image/__tests__/VideoGenerationService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/services/ddex/MEADService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+[90mstderr[2m | src/services/CleanupService.test.ts[2m > [22m[2mCleanupService[2m > [22m[2mstorage scanning[2m > [22m[2mhandles storage scanning errors gracefully
+[22m[39mError scanning storage: Error: Storage access denied
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/CleanupService.test.ts:431:43
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:37
+    at Traces.$ [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.U4xDYhzZ.js:115:27[90m)[39m
+    at trace [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:12[90m)[39m
+
+ [32m✓[39m src/services/CleanupService.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/services/ddex/ERNDistribution.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+[90mstdout[2m | src/services/agent/FinanceIntegration.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/FinanceIntegration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/services/ddex/ERNService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+[90mstdout[2m | src/services/onboarding/onboardingService.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/onboarding/onboardingService.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/services/agent/tools/MapsTools.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/services/agent/tools/MusicTools.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+[90mstdout[2m | src/services/image/__tests__/EditingService.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+[90mstdout[2m | src/services/image/__tests__/EditingService.test.ts[2m > [22m[2mEditingService[2m > [22m[2mmultiMaskEdit[2m > [22m[2mshould process masks sequentially and return variations
+[22m[39mStarting Multi-Mask Edit with [33m2[39m masks. Generating [33m2[39m variations.
+
+ [32m✓[39m src/services/image/__tests__/EditingService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/modules/workflow/utils/validationUtils.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/rag/GeminiRetrievalService.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/OrganizationService.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstdout[2m | src/services/agent/components/AgentOrchestrator.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/components/AgentOrchestrator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ProjectService.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+[90mstdout[2m | src/services/agent/specialists/specialists_tools.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/services/agent/MemoryService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[90mstdout[2m | src/services/agent/tools/StandardGrammar.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/video/TheAnarchist.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/agent/tools/StandardGrammar.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/services/agent/specialists/specialists_tools.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/ddex/DSRService.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+[90mstdout[2m | src/services/storage/repository.test.ts[2m > [22m[2mrepository syncWorkflows[2m > [22m[2mshould push local workflows to cloud
+[22m[39mSyncing 2 workflows to cloud...
+
+[90mstdout[2m | src/services/storage/repository.test.ts[2m > [22m[2mrepository syncWorkflows[2m > [22m[2mshould push local workflows to cloud
+[22m[39mWorkflow sync complete.
+
+ [32m✓[39m src/services/storage/repository.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/StorageService.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/fileSystemSlice.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/modules/workflow/TheArchitect.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/modules/video/TheDirector.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+[90mstdout[2m | src/services/agent/specialists/specialists.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/core/config/EndpointService.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+[90mstdout[2m | src/modules/publicist/PublicistAgent.test.ts
+[22m[39m[AI_MODELS] Model policy validation passed. All models are approved.
+
+ [32m✓[39m src/modules/publicist/PublicistAgent.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/agent/specialists/specialists.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [2m[90m↓[39m[22m storage.rules.test.ts [2m([22m[2m5 tests[22m[2m | [22m[33m5 skipped[39m[2m)[22m
+
+[2m Test Files [22m [1m[32m82 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (83)[39m
+[2m      Tests [22m [1m[32m429 passed[39m[22m[2m | [22m[33m6 skipped[39m[90m (435)[39m
+[2m   Start at [22m 00:16:46
+[2m   Duration [22m 14.47s[2m (transform 2.83s, setup 4.71s, import 10.58s, tests 22.07s, environment 26.47s)[22m
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

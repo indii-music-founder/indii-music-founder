@@ -24,6 +24,15 @@ service firebase.storage {
     }
 
     // ========================================
+    // PROJECT-SPECIFIC STORAGE
+    // ========================================
+
+    // Allow users to upload to their own folder within a project
+    match /projects/{projectId}/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ========================================
     // PUBLIC ASSETS (if needed for CDN)
     // ========================================
 

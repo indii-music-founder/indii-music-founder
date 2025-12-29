@@ -37,6 +37,7 @@ const OnboardingPage = lazy(() => import('../modules/onboarding/pages/Onboarding
 const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
+const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -68,6 +69,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'showroom': Showroom,
     'onboarding': OnboardingPage,
     'agent': AgentDashboard,
+    'files': FilePreview,
     // 'select-org': SelectOrg, // REMOVED
     'distribution': DistributionDashboard,
 };

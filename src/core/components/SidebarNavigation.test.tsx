@@ -187,16 +187,23 @@ describe('Sidebar Navigation Integration', () => {
                 displayName: 'Test User',
                 email: 'test@example.com'
             },
+            userProfile: {
+                id: 'test-uid',
+                displayName: 'Test User',
+                email: 'test@example.com',
+                bio: 'Mock User Bio'
+            },
             logout: mockLogout,
         });
 
         render(<Sidebar />);
 
-        expect(screen.getByText('Test User')).toBeInTheDocument();
-        expect(screen.getByText('test@example.com')).toBeInTheDocument();
-        expect(screen.getByTitle('Sign Out')).toBeInTheDocument();
+        expect(screen.getByText('Creative Director')).toBeInTheDocument();
+        expect(screen.getByText('Mock User Bio')).toBeInTheDocument();
+        expect(screen.getByText('System Active')).toBeInTheDocument();
+        expect(screen.getByTitle('Reload System')).toBeInTheDocument();
 
-        fireEvent.click(screen.getByTitle('Sign Out'));
+        fireEvent.click(screen.getByTitle('Reload System'));
         expect(mockLogout).toHaveBeenCalled();
     });
 });
