@@ -67,7 +67,7 @@ vi.mock('@/core/store', () => ({
 
 describe('MarketingService', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('getMarketingStats', () => {
