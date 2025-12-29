@@ -17,7 +17,7 @@ interface MetadataDrawerProps {
 
 export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose, metadata, onUpdate }) => {
     const toast = useToast();
-    const { user } = useStore();
+    const { userProfile } = useStore();
     const [splits, setSplits] = useState<RoyaltySplit[]>(metadata.splits);
     const [localData, setLocalData] = useState<GoldenMetadata>(metadata);
     const [artistType, setArtistType] = useState<'Solo' | 'Band' | 'Collective'>('Solo');
@@ -25,8 +25,8 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
 
     // Fetch User Profile on Mount
     useEffect(() => {
-        if (user) {
-            UserService.getUserProfile(user.uid).then(p => {
+        if (userProfile) {
+            UserService.getUserProfile(userProfile.id).then(p => {
                 if (p?.artistType) setArtistType(p.artistType);
                 // Auto-fix splits if Solo and empty
                 if (p?.artistType === 'Solo' && metadata.splits.length === 1 && metadata.splits[0].percentage !== 100) {
@@ -34,7 +34,7 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
                 }
             });
         }
-    }, [user]);
+    }, [userProfile]);
 
     // Sync external changes
     useEffect(() => {

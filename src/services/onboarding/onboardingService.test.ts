@@ -15,6 +15,7 @@ describe('onboardingService', () => {
     describe('calculateProfileStatus', () => {
         it('should return 0% progress for an empty profile', () => {
             const emptyProfile: UserProfile = {
+                id: 'test-user',
                 bio: '',
                 preferences: '',
                 brandKit: {
@@ -50,6 +51,7 @@ describe('onboardingService', () => {
 
     describe('determinePhase', () => {
         const baseProfile: UserProfile = {
+            id: 'test-user',
             bio: 'This is a long enough bio for testing.',
             careerStage: 'Emerging',
             goals: ['Touring'],
@@ -93,6 +95,7 @@ describe('onboardingService', () => {
 
     describe('processFunctionCalls', () => {
         const baseProfile: UserProfile = {
+            id: 'test-user',
             bio: '',
             preferences: '',
             brandKit: {

@@ -144,7 +144,7 @@ export class VideoService {
             if (uri) {
                 try {
                     const { useStore } = await import('@/core/store');
-                    const userId = useStore.getState().user?.uid;
+                    const userId = useStore.getState().userProfile?.id;
                     if (userId) {
                         await MembershipService.incrementUsage(userId, 'video', 1, durationSeconds);
                     }

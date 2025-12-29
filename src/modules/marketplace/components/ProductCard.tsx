@@ -12,7 +12,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, variant = 'default' }: ProductCardProps) {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
-    const currentUser = useStore((state) => state.user);
+    const currentUser = useStore((state) => state.userProfile);
 
     const handlePurchase = async () => {
         if (!currentUser) return;
@@ -21,7 +21,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
         try {
             await MarketplaceService.purchaseProduct(
                 product.id!,
-                currentUser.uid,
+                currentUser.id,
                 product.sellerId,
                 product.price
             );

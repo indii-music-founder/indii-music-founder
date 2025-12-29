@@ -115,7 +115,7 @@ export default function LicensingDashboard() {
                                                     DRAFT AGREEMENT
                                                 </button>
                                                 <span className="text-[10px] font-medium text-gray-600">
-                                                    Requested • {request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString() : request.requestedAt.toDate().toLocaleDateString()}
+                                                    Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString() : request.requestedAt.toDate().toLocaleDateString()) : 'N/A'}
                                                 </span>
                                             </div>
                                         </div>

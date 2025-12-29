@@ -10,8 +10,8 @@ interface UserProfileHeaderProps {
 }
 
 export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
-    const currentUser = useStore((state) => state.user);
-    const targetId = userId || currentUser?.uid;
+    const currentUser = useStore((state) => state.userProfile);
+    const targetId = userId || currentUser?.id;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isFollowing, setIsFollowing] = useState(false);
@@ -38,7 +38,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     };
 
     const checkFollowStatus = async () => {
-        if (targetId && currentUser && targetId !== currentUser.uid) {
+        if (targetId && currentUser && targetId !== currentUser.id) {
             const status = await SocialService.isFollowing(targetId);
             setIsFollowing(status);
         }
@@ -92,7 +92,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
 
     const { displayName, bio, photoURL, brandKit, socialStats, accountType } = profile;
     const bannerUrl = brandKit?.brandAssets?.find(a => a.category === 'environment' || a.category === 'other')?.url || brandKit?.brandAssets?.[0]?.url;
-    const isOwnProfile = currentUser?.uid === targetId;
+    const isOwnProfile = currentUser?.id === targetId;
 
     return (
         <div className="relative bg-[#0d1117] border-b border-gray-800">

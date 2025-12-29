@@ -11,10 +11,9 @@ interface MarketplaceStorefrontProps {
 }
 
 export default function MarketplaceStorefront({ artistId }: MarketplaceStorefrontProps) {
-    const currentUser = useStore((state) => state.user);
-    // If no artistId provided, default to current user's store (Dashboard view) or global?
+    const currentUser = useStore((state) => state.userProfile);
     // For profile usage, artistId should be passed.
-    const targetId = artistId || currentUser?.uid;
+    const targetId = artistId || currentUser?.id;
 
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,7 +38,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
         }
     };
 
-    const isOwner = currentUser?.uid === targetId;
+    const isOwner = currentUser?.id === targetId;
 
     if (!targetId) {
         return <div className="p-8 text-center text-gray-500">Store not found</div>;

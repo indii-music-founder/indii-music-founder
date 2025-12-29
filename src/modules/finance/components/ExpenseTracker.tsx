@@ -27,8 +27,6 @@ export const ExpenseTracker: React.FC = () => {
 
     const toast = useToast();
 
-    // Initial load handled by effect below
-
     useEffect(() => {
         loadExpenses();
     }, [loadExpenses]);
@@ -36,51 +34,50 @@ export const ExpenseTracker: React.FC = () => {
     const processFile = useCallback(async (file: File) => {
         if (!userProfile?.id) return;
         setIsAnalyzing(true);
+
         try {
             const reader = new FileReader();
             reader.onload = async () => {
-                const base64String = reader.result?.toString().split(',')[1];
-                if (!base64String) return;
-
-                const resultJson = await FinanceTools.analyze_receipt({
-                    image_data: base64String,
-                    mime_type: file.type
-                });
-
-                const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
-                if (jsonMatch && userProfile?.id) {
-                    const data = JSON.parse(jsonMatch[0]);
-                if (jsonMatch) {
-                    let data;
-                    try {
-                        data = JSON.parse(jsonMatch[0]);
-                    } catch (e) {
-                         console.error("Failed to parse receipt JSON", e);
-                         toast.error("Failed to parse receipt data.");
-                         setIsAnalyzing(false);
-                         return;
+                try {
+                    const base64String = reader.result?.toString().split(',')[1];
+                    if (!base64String) {
+                        setIsAnalyzing(false);
+                        return;
                     }
 
-                    const expenseData = {
-                        userId: userProfile.id,
-                        vendor: data.vendor || 'Unknown Vendor',
-                        date: data.date || new Date().toISOString().split('T')[0],
-                        amount: Number(data.amount) || 0,
-                        category: data.category || 'Other',
-                        description: data.description || '',
-                    };
+                    const resultJson = await FinanceTools.analyze_receipt({
+                        image_data: base64String,
+                        mime_type: file.type
+                    });
 
-                    await addExpense(expenseData);
-                    toast.success(`Scanned receipt from ${expenseData.vendor}`);
-                } else {
-                    toast.error("Could not read receipt data.");
+                    const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
+                    if (jsonMatch && userProfile?.id) {
+                        const data = JSON.parse(jsonMatch[0]);
+                        const expenseData = {
+                            userId: userProfile.id,
+                            vendor: data.vendor || 'Unknown Vendor',
+                            date: data.date || new Date().toISOString().split('T')[0],
+                            amount: Number(data.amount) || 0,
+                            category: data.category || 'Other',
+                            description: data.description || '',
+                        };
+
+                        await addExpense(expenseData);
+                        toast.success(`Scanned receipt from ${expenseData.vendor}`);
+                    } else {
+                        toast.error("Could not read receipt data.");
+                    }
+                } catch (e) {
+                    console.error("Receipt analysis error:", e);
+                    toast.error("Failed to analyze receipt.");
+                } finally {
+                    setIsAnalyzing(false);
                 }
-                setIsAnalyzing(false);
             };
             reader.readAsDataURL(file);
         } catch (e) {
             console.error(e);
-            toast.error("Failed to analyze receipt.");
+            toast.error("Failed to read file.");
             setIsAnalyzing(false);
         }
     }, [userProfile?.id, toast, addExpense]);
@@ -236,7 +233,6 @@ export const ExpenseTracker: React.FC = () => {
             )}
 
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-                {/* Visual List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20">
@@ -299,4 +295,3 @@ export const ExpenseTracker: React.FC = () => {
         </div>
     );
 };
-

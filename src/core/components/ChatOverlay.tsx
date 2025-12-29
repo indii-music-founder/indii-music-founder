@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, memo, useMemo } from 'react';
-import { useStore, AgentMessage } from '@/core/store';
-import { AgentThought } from '@/core/store/slices/agentSlice';
+import { useStore, AgentMessage, AgentThought } from '@/core/store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';

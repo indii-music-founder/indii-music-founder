@@ -7,7 +7,7 @@ import { UserService } from '@/services/UserService';
 import { useToast } from '@/core/context/ToastContext';
 
 export const MerchTable: React.FC = () => {
-    const { user } = useStore();
+    const { userProfile } = useStore();
     const toast = useToast();
     const [products, setProducts] = useState<Product[]>([]);
     const [assets, setAssets] = useState<any[]>([]); // From BrandKit
@@ -20,24 +20,24 @@ export const MerchTable: React.FC = () => {
     const [inventory, setInventory] = useState('100');
 
     const loadProducts = useCallback(async () => {
-        if (!user) return;
-        const items = await MarketplaceService.getProductsByArtist(user.uid);
+        if (!userProfile) return;
+        const items = await MarketplaceService.getProductsByArtist(userProfile.id);
         setProducts(items);
-    }, [user]);
+    }, [userProfile]);
 
     const loadAssets = useCallback(async () => {
-        if (!user) return;
-        const profile = await UserService.getUserProfile(user.uid);
+        if (!userProfile) return;
+        const profile = await UserService.getUserProfile(userProfile.id);
         if (profile?.brandKit?.referenceImages) {
             setAssets(profile.brandKit.referenceImages);
         }
-    }, [user]);
+    }, [userProfile]);
 
     useEffect(() => {
         const init = async () => {
             await Promise.all([loadProducts(), loadAssets()]);
         };
-         
+
         init();
     }, [loadProducts, loadAssets]);
 
@@ -45,11 +45,11 @@ export const MerchTable: React.FC = () => {
     // Price is set in the onChange handler or on mount
 
     const handleMint = async () => {
-        if (!user || !selectedAsset) return;
+        if (!userProfile || !selectedAsset) return;
 
         try {
             await MarketplaceService.createProduct({
-                sellerId: user.uid,
+                sellerId: userProfile.id,
                 title: title || selectedAsset.description || 'Untitled Asset',
                 description: selectedAsset.description || 'AI Generated Asset',
                 price: parseFloat(price) * 100, // Cents
@@ -62,7 +62,7 @@ export const MerchTable: React.FC = () => {
                     tags: selectedAsset.tags
                 },
                 splits: [
-                    { recipientId: user.uid, role: 'artist', percentage: 100 }
+                    { recipientId: userProfile.id, role: 'artist', percentage: 100 }
                 ]
             });
 
