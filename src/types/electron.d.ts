@@ -37,6 +37,14 @@ export interface ElectronAPI {
         fetchUrl: (url: string) => Promise<string>;
     };
 
+    // SFTP (Distribution)
+    sftp: {
+        connect: (config: any) => Promise<{ success: boolean; error?: string }>;
+        uploadDirectory: (localPath: string, remotePath: string) => Promise<{ success: boolean; files?: string[]; error?: string }>;
+        disconnect: () => Promise<{ success: boolean }>;
+        isConnected: () => Promise<boolean>;
+    };
+
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;

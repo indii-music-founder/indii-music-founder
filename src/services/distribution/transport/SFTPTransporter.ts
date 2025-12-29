@@ -1,9 +1,7 @@
 /**
  * SFTP Transporter
- * Handles secure file transmission to distributor endpoints
+ * Handles secure file transmission to distributor endpoints via Electron IPC
  */
-
-import Client from 'ssh2-sftp-client';
 
 export interface SFTPConfig {
     host: string;
@@ -14,12 +12,10 @@ export interface SFTPConfig {
 }
 
 export class SFTPTransporter {
-    private client: Client;
     private connected = false;
     private config: SFTPConfig | null = null;
 
     constructor(private dryRun: boolean = false) {
-        this.client = new Client();
     }
 
     /**
@@ -27,17 +23,22 @@ export class SFTPTransporter {
      */
     async connect(config: SFTPConfig): Promise<void> {
         this.config = config;
+        if (this.dryRun) {
+            console.log('[SFTP] Dry run connected.');
+            this.connected = true;
+            return;
+        }
+
         try {
             console.log(`[SFTP] Connecting to ${config.host}:${config.port || 22}...`);
-            await this.client.connect({
-                host: config.host,
-                port: config.port || 22,
-                username: config.username,
-                password: config.password,
-                privateKey: config.privateKey,
-            });
-            this.connected = true;
-            console.log('[SFTP] Connected.');
+            // Use Electron Bridge
+            if (window.electronAPI?.sftp) {
+                await window.electronAPI.sftp.connect(config);
+                this.connected = true;
+                console.log('[SFTP] Connected via Electron.');
+            } else {
+                throw new Error('SFTP not available in this environment');
+            }
         } catch (error) {
             console.error('[SFTP] Connection failed:', error);
             throw error;
@@ -52,26 +53,23 @@ export class SFTPTransporter {
         if (!this.connected) throw new Error('SFTP client not connected');
 
         console.log(`[SFTP] Uploading directory: ${localPath} -> ${remotePath}`);
-        const uploadedFiles: string[] = [];
+
+        if (this.dryRun) {
+            console.log('[SFTP] Dry run upload complete.');
+            return ['dry_run_file_1.xml', 'dry_run_file_2.mp3'];
+        }
 
         try {
-            // Ensure remote directory exists
-            const remoteExists = await this.client.exists(remotePath);
-            if (!remoteExists) {
-                await this.client.mkdir(remotePath, true);
+            if (window.electronAPI?.sftp) {
+                const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath);
+                if (result.success && result.files) {
+                    console.log(`[SFTP] Upload complete: ${remotePath}`);
+                    return result.files;
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
             }
-
-            // Upload directory contents
-            await this.client.uploadDir(localPath, remotePath, {
-                useFastput: true, // Use fastput for better performance
-            });
-
-            // List uploaded files (simplification, reliable way to know what was uploaded)
-            const list = await this.client.list(remotePath);
-            uploadedFiles.push(...list.map(item => item.name));
-
-            console.log(`[SFTP] Upload complete: ${remotePath}`);
-            return uploadedFiles;
+            throw new Error('SFTP not available in this environment');
         } catch (error) {
             console.error(`[SFTP] Upload failed:`, error);
             throw error;
@@ -80,11 +78,13 @@ export class SFTPTransporter {
 
     /**
      * Check if connected
-     * Note: ssh2-sftp-client doesn't have a direct 'isConnected' property exposed easily 
-     * without side effects, but we can track our own state.
      */
-    isConnected(): boolean {
-        return this.connected;
+    async isConnected(): Promise<boolean> { // Changed to async to match IPC
+        if (this.dryRun) return this.connected;
+        if (window.electronAPI?.sftp) {
+            return await window.electronAPI.sftp.isConnected();
+        }
+        return false;
     }
 
     /**
@@ -92,7 +92,9 @@ export class SFTPTransporter {
      */
     async disconnect(): Promise<void> {
         if (this.connected) {
-            await this.client.end();
+            if (!this.dryRun && window.electronAPI?.sftp) {
+                await window.electronAPI.sftp.disconnect();
+            }
             this.connected = false;
             this.config = null;
             console.log('[SFTP] Disconnected.');

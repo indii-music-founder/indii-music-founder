@@ -11,9 +11,9 @@ import {
 } from '../types/distributor';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DateRange } from '@/services/ddex/types/common';
-import { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
+// import { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
-import * as path from 'path';
+// import * as path from 'path';
 
 /**
  * Adapter for CD Baby
@@ -26,7 +26,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
 
     private connected: boolean = false;
     private transporter: SFTPTransporter;
-    private builder: CDBabyPackageBuilder;
+    private builder: any | null = null;
     private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
@@ -70,7 +70,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
 
     constructor() {
         this.transporter = new SFTPTransporter();
-        this.builder = new CDBabyPackageBuilder();
+        // Builder instantiated lazily
     }
 
     async isConnected(): Promise<boolean> {
@@ -96,7 +96,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
     }
 
     async disconnect(): Promise<void> {
-        if (this.transporter.isConnected()) {
+        if (await this.transporter.isConnected()) {
             await this.transporter.disconnect();
         }
         this.connected = false;
@@ -119,8 +119,11 @@ export class CDBabyAdapter implements IDistributorAdapter {
         try {
             // Internal release ID for folder naming if UPC is missing
             const releaseId = metadata.upc || `REL-${Date.now()}`;
-            // Correct usage of buildPackage based on CDBabyPackageBuilder definition
-            const { packagePath, files } = await this.builder.buildPackage(metadata, assets, releaseId);
+
+            // Lazy build
+            const { CDBabyPackageBuilder } = await import('../cdbaby/CDBabyPackageBuilder');
+            const builder = new CDBabyPackageBuilder();
+            const { packagePath, files } = await builder.buildPackage(metadata, assets, releaseId);
 
             // 3. Transmit via SFTP
             // Configure transporter with simulated credentials from connect()

@@ -10,7 +10,6 @@ import {
     type ReleaseStatus,
     type DistributorEarnings,
 } from '../types/distributor';
-import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
 
 /**
@@ -97,6 +96,7 @@ export class SymphonicAdapter implements IDistributorAdapter {
 
         try {
             // 1. Build Package
+            const { SymphonicPackageBuilder } = await import('../symphonic/SymphonicPackageBuilder');
             const builder = new SymphonicPackageBuilder();
             const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
 

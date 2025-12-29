@@ -1,5 +1,4 @@
 
-import path from 'path';
 import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter, SFTPConfig } from './transport/SFTPTransporter';
 import { DistributorId } from './types/distributor';
@@ -76,7 +75,7 @@ export class DeliveryService {
         } catch (error) {
             console.error('[DeliveryService] Delivery failed:', error);
             // Ensure we disconnect on error
-            if (this.transporter.isConnected()) {
+            if (await this.transporter.isConnected()) {
                 await this.transporter.disconnect();
             }
 

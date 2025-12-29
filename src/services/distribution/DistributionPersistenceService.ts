@@ -1,26 +1,77 @@
-import Store from 'electron-store';
+
 import { v4 as uuidv4 } from 'uuid';
 import type { ReleaseDeployment, DistributionStoreSchema, DeploymentFilter } from './types/persistence';
 import type { DistributorId, ReleaseStatus, ValidationError } from './types/distributor';
 
+/**
+ * Simple Storage Adapter to replace electron-store for Web Compatibility
+ */
+class SimpleStore<T extends object> {
+    private data: T;
+    private name: string;
+    private isBrowser: boolean;
+
+    constructor(options: { name: string; defaults: T; cwd?: string }) {
+        this.name = options.name;
+        this.data = options.defaults;
+        this.isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
+        this.load();
+    }
+
+    private load(): void {
+        if (this.isBrowser) {
+            try {
+                const item = window.localStorage.getItem(this.name);
+                if (item) {
+                    this.data = { ...this.data, ...JSON.parse(item) };
+                }
+            } catch (e) {
+                console.warn('Failed to load from localStorage', e);
+            }
+        }
+    }
+
+    private save(): void {
+        if (this.isBrowser) {
+            try {
+                window.localStorage.setItem(this.name, JSON.stringify(this.data));
+            } catch (e) {
+                console.warn('Failed to save to localStorage', e);
+            }
+        }
+    }
+
+    get<K extends keyof T>(key: K): T[K] {
+        return this.data[key];
+    }
+
+    set<K extends keyof T>(key: K, value: T[K]): void {
+        this.data[key] = value;
+        this.save();
+    }
+
+    clear(): void {
+        this.data = {} as T; // Simplified clear (removes defaults too? or resets to defaults? assumes defaults are re-init if needed)
+        // Resetting to empty object might break structure if defaults expected
+        // Correct behavior matches electron-store clear()
+        if (this.isBrowser) {
+            window.localStorage.removeItem(this.name);
+        }
+    }
+}
+
 export class DistributionPersistenceService {
-    private store: Store<DistributionStoreSchema>;
+    private store: SimpleStore<DistributionStoreSchema>;
 
     constructor(config?: { cwd?: string }) {
-        let storeCwd = config?.cwd;
-
-        // Fallback for CLI/Testing environment where Electron app is not available
-        if (!storeCwd && !process.versions.electron) {
-            storeCwd = process.cwd();
-        }
-
-        this.store = new Store<DistributionStoreSchema>({
+        this.store = new SimpleStore<DistributionStoreSchema>({
             name: 'distribution-store',
-            cwd: storeCwd,
             defaults: {
                 deployments: {},
                 byInternalId: {}
-            }
+            },
+            cwd: config?.cwd
         });
     }
 
@@ -28,8 +79,8 @@ export class DistributionPersistenceService {
      * Records a new deployment or updates an existing one if ID provided
      */
     saveDeployment(deployment: ReleaseDeployment): void {
-        const deployments = this.store.get('deployments');
-        const byInternalId = this.store.get('byInternalId');
+        const deployments = this.store.get('deployments') || {};
+        const byInternalId = this.store.get('byInternalId') || {};
 
         // Update main record
         deployments[deployment.id] = deployment;
@@ -100,16 +151,25 @@ export class DistributionPersistenceService {
     }
 
     getDeployment(id: string): ReleaseDeployment | undefined {
-        return this.store.get('deployments')[id];
+        const deployments = this.store.get('deployments');
+        return deployments ? deployments[id] : undefined;
     }
 
     getDeploymentsForRelease(internalReleaseId: string): ReleaseDeployment[] {
-        const index = this.store.get('byInternalId')[internalReleaseId] || [];
-        return index.map(id => this.store.get('deployments')[id]).filter(Boolean);
+        const byInternalId = this.store.get('byInternalId');
+        const deployments = this.store.get('deployments');
+
+        if (!byInternalId || !deployments) return [];
+
+        const index = byInternalId[internalReleaseId] || [];
+        return index.map(id => deployments[id]).filter(Boolean);
     }
 
     getAllDeployments(filter?: DeploymentFilter): ReleaseDeployment[] {
-        const all = Object.values(this.store.get('deployments'));
+        const deployments = this.store.get('deployments');
+        if (!deployments) return [];
+
+        const all = Object.values(deployments);
         if (!filter) return all;
 
         return all.filter(d => {

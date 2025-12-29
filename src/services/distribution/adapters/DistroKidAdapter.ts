@@ -15,7 +15,7 @@ import {
  * DistroKid Adapter
  * Integration with DistroKid (Simulated Bulk Upload)
  */
-import { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
+// import { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -95,6 +95,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
 
         try {
             // 1. Build Package (Simulating Bulk Upload Preparation)
+            const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
             const builder = new DistroKidPackageBuilder();
             const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
 
