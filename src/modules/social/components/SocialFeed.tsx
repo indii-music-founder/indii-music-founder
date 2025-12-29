@@ -16,26 +16,33 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
     const [loading, setLoading] = useState(true);
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
+    const [filter, setFilter] = useState<'all' | 'following' | 'mine'>('all');
+
+    // Quick Post Shortcuts
+    const shortcuts = [
+        { label: "Announce Drop", icon: "🚀", text: "New Drop Alert! 🚨 [Product Name] is now live. Cop it before it's gone!" },
+        { label: "Behind the Scenes", icon: "🎬", text: "In the lab cooking up something special... 🧪 #StudioFlow" },
+        { label: "Thank You", icon: "🙏", text: "Big love to everyone showing support on the latest track! Y'all are the best. ❤️" }
+    ];
 
     // Drop State
     const [artistProducts, setArtistProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [showProductPicker, setShowProductPicker] = useState(false);
 
-    const currentUser = useStore((state) => state.user);
+    const userProfile = useStore((state) => state.userProfile);
 
     useEffect(() => {
         loadFeed();
-        const user = currentUser as any;
-        if (user?.accountType === 'artist' || user?.accountType === 'label') {
+        if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
             loadArtistProducts();
         }
-    }, [userId, currentUser]);
+    }, [userId, userProfile]);
 
     const loadArtistProducts = async () => {
-        if (!currentUser) return;
+        if (!userProfile?.id) return;
         try {
-            const products = await MarketplaceService.getProductsByArtist(currentUser.uid);
+            const products = await MarketplaceService.getProductsByArtist(userProfile.id);
             setArtistProducts(products);
         } catch (error) {
             console.error("Failed to load products for picker:", error);
@@ -45,7 +52,7 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
     const loadFeed = async () => {
         setLoading(true);
         try {
-            const fetchedPosts = await SocialService.getFeed(userId);
+            const fetchedPosts = await SocialService.getFeed(userId, filter);
             setPosts(fetchedPosts);
         } catch (error) {
             console.error("Failed to load social feed:", error);
@@ -53,6 +60,11 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
             setLoading(false);
         }
     };
+
+    // Reload feed when filter changes
+    useEffect(() => {
+        loadFeed();
+    }, [filter]);
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) return;
@@ -87,11 +99,29 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
     return (
         <div className="flex flex-col h-full bg-[#0d1117] text-white">
             {/* Post Input */}
-            {(!userId || userId === currentUser?.uid) && (
+            {(!userId || userId === userProfile?.id) && (
                 <div className="p-4 border-b border-gray-800">
+                    {/* Shortcuts */}
+                    <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+                        {shortcuts.map(s => (
+                            <button
+                                key={s.label}
+                                onClick={() => setNewPostContent(s.text)}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-full text-xs font-medium text-gray-300 transition-colors whitespace-nowrap"
+                            >
+                                <span>{s.icon}</span>
+                                {s.label}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 relative overflow-hidden">
-                            {currentUser?.photoURL && <img src={currentUser.photoURL} alt="Me" className="w-full h-full object-cover" />}
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 relative overflow-hidden text-white flex items-center justify-center font-bold">
+                            {userProfile?.avatarUrl ? (
+                                <img src={userProfile.avatarUrl} alt="Me" className="w-full h-full object-cover" />
+                            ) : (
+                                <span>{userProfile?.id?.substring(0, 1).toUpperCase() || 'U'}</span>
+                            )}
                         </div>
                         <div className="flex-1">
                             <textarea
@@ -147,7 +177,7 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
                                     <button className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800">
                                         <ImageIcon size={20} />
                                     </button>
-                                    {((currentUser as any)?.accountType === 'artist' || (currentUser as any)?.accountType === 'label') && (
+                                    {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(!showProductPicker)}
                                             className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative
@@ -173,6 +203,23 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
                     </div>
                 </div>
             )}
+
+            {/* Feed Tabs */}
+            <div className="flex border-b border-gray-800">
+                {(['all', 'following', 'mine'] as const).map((f) => (
+                    <button
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors relative
+                            ${filter === f ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                        {filter === f && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full mx-12"></div>
+                        )}
+                    </button>
+                ))}
+            </div>
 
             {/* Feed List */}
             <div className="flex-1 overflow-y-auto">

@@ -160,6 +160,10 @@ export interface UserProfile {
     analyzedTrackIds: string[];
     knowledgeBase: KnowledgeDocument[];
     savedWorkflows: SavedWorkflow[];
+
+    // UI Overrides
+    accountType?: 'artist' | 'label' | 'fan' | 'admin';
+    avatarUrl?: string; // Legacy support
 }
 
 export interface AudioAnalysisJob {

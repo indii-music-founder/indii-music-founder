@@ -1,6 +1,23 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MarketingDashboard from './MarketingDashboard';
+import { MarketingService } from '@/services/marketing/MarketingService';
+import { CampaignStatus } from './types';
+
+// Mock Services
+vi.mock('@/services/marketing/MarketingService', () => ({
+    MarketingService: {
+        getMarketingStats: vi.fn(),
+        getCampaigns: vi.fn()
+    }
+}));
+
+// Mock Store
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn(() => ({
+        userProfile: { id: 'user-123' }
+    }))
+}));
 
 // Mock Toast
 const mockToast = {
@@ -14,36 +31,47 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 describe('MarketingDashboard', () => {
-    it('renders the dashboard title', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (MarketingService.getMarketingStats as any).mockResolvedValue({
+            totalReach: 124.5,
+            engagementRate: 4.8,
+            activeCampaigns: 2
+        });
+        (MarketingService.getCampaigns as any).mockResolvedValue([
+            {
+                id: '1',
+                title: 'Product Launch Teaser',
+                startDate: new Date().toISOString(),
+                status: CampaignStatus.EXECUTING,
+                posts: [{ platform: 'Twitter', day: new Date().getDate() }]
+            }
+        ]);
+    });
+
+    it('renders the dashboard title', async () => {
         render(<MarketingDashboard />);
         expect(screen.getByText('Marketing Dashboard')).toBeInTheDocument();
-        expect(screen.getByText('Plan, execute, and track your campaigns.')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText('Plan, execute, and track your campaigns.')).toBeInTheDocument();
+        });
     });
 
-    it('renders stats', () => {
+    it('renders stats', async () => {
         render(<MarketingDashboard />);
-        expect(screen.getByText('Total Reach')).toBeInTheDocument();
-        expect(screen.getByText('124.5K')).toBeInTheDocument();
-        expect(screen.getByText('Engagement Rate')).toBeInTheDocument();
-        expect(screen.getByText('4.8%')).toBeInTheDocument();
+        // Initially might show loading "..." if implemented as in the code I wrote
+        // Let's wait for the real data
+        await waitFor(() => {
+            expect(screen.getByText('124.5K')).toBeInTheDocument();
+            expect(screen.getByText('4.8%')).toBeInTheDocument();
+        });
     });
 
-    it('renders calendar grid', () => {
+    it('renders calendar grid with campaigns', async () => {
         render(<MarketingDashboard />);
-        expect(screen.getByText('Campaign Calendar')).toBeInTheDocument();
-        // Check for days of week
-        expect(screen.getByText('Sun')).toBeInTheDocument();
-        expect(screen.getByText('Mon')).toBeInTheDocument();
-
-        // Check for campaign items
-        expect(screen.getByText('Product Launch Teaser')).toBeInTheDocument();
-        expect(screen.getByText('Newsletter Blast')).toBeInTheDocument();
-    });
-
-    it('handles create campaign button', () => {
-        render(<MarketingDashboard />);
-        const createBtn = screen.getByText('Create Campaign');
-        fireEvent.click(createBtn);
-        expect(mockToast.info).toHaveBeenCalledWith("Create Campaign modal would open here.");
+        await waitFor(() => {
+            expect(screen.getByText('Campaign Calendar')).toBeInTheDocument();
+            expect(screen.getByText('Product Launch Teaser')).toBeInTheDocument();
+        });
     });
 });

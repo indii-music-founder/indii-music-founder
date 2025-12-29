@@ -20,14 +20,9 @@ export default function Showroom() {
         if (!productAsset || !scenePrompt) return;
         setIsGenerating(true);
         try {
-            // Simulate generation for now since actual API is not connected
-            // In real flow: await ShowroomService.generateMockup(productAsset, productType, scenePrompt);
+            const url = await ShowroomService.generateMockup(productAsset, productType, scenePrompt);
+            setMockupImage(url);
 
-            // Artificial delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // For demo, just reuse the asset but ideally we'd get a new image
-            setMockupImage(productAsset);
             addAgentMessage({
                 id: Date.now().toString(),
                 role: 'system',
@@ -36,6 +31,12 @@ export default function Showroom() {
             });
         } catch (e) {
             console.error(e);
+            addAgentMessage({
+                id: Date.now().toString(),
+                role: 'system',
+                text: '❌ Failed to generate mockup. Please try again.',
+                timestamp: Date.now()
+            });
         } finally {
             setIsGenerating(false);
         }
@@ -45,18 +46,23 @@ export default function Showroom() {
         if (!mockupImage || !motionPrompt) return;
         setIsGenerating(true);
         try {
-            // Artificial delay
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            const url = await ShowroomService.generateVideo(mockupImage, motionPrompt);
+            setVideoUrl(url);
 
-            setVideoUrl("https://example.com/demo.mp4"); // Placeholder
             addAgentMessage({
                 id: Date.now().toString(),
                 role: 'system',
-                text: '🎬 Video generation simulation complete.',
+                text: '🎬 Video generated successfully.',
                 timestamp: Date.now()
             });
         } catch (e) {
             console.error(e);
+            addAgentMessage({
+                id: Date.now().toString(),
+                role: 'system',
+                text: '❌ Failed to animate scene. Please try again.',
+                timestamp: Date.now()
+            });
         } finally {
             setIsGenerating(false);
         }

@@ -1,37 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Megaphone, Calendar, Plus, TrendingUp, Users, MoreHorizontal, UserPlus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import CreatePostModal from './components/CreatePostModal';
 import AccountCreationWizard from './components/AccountCreationWizard';
-import { ScheduledPost } from './types';
+import SocialFeed from './components/SocialFeed';
+import { SocialService } from '@/services/social/SocialService';
+import { SocialStats, ScheduledPost } from '@/services/social/types';
 
 export default function SocialDashboard() {
     const toast = useToast();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAccountWizardOpen, setIsAccountWizardOpen] = useState(false);
-    const [localPosts, setLocalPosts] = useState<ScheduledPost[]>([]);
+    const [stats, setStats] = useState<SocialStats | null>(null);
+    const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
 
-    const handleCreatePost = (post: ScheduledPost) => {
-        setLocalPosts([...localPosts, post]);
-        toast.success("Post scheduled successfully!");
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const [statsData, postsData] = await Promise.all([
+                SocialService.getDashboardStats(),
+                SocialService.getScheduledPosts()
+            ]);
+            setStats(statsData);
+            setScheduledPosts(postsData);
+        } catch (error) {
+            console.error("Failed to load dashboard data", error);
+        }
     };
 
-    // Mock Calendar Data
-    const daysInMonth = 30; // Simplified
-    const startDay = 2; // Tuesday
+    const handleCreatePost = async (post: any) => {
+        try {
+            // Convert to service type (Date -> number)
+            const scheduledTimeNum = post.scheduledTime instanceof Date
+                ? post.scheduledTime.getTime()
+                : new Date(post.scheduledTime).getTime();
 
-    const campaigns = [
-        { day: 5, title: "Product Launch Teaser", type: "social", platform: "Instagram" },
-        { day: 12, title: "Blog Post: AI Trends", type: "content", platform: "Medium" },
-        { day: 15, title: "Newsletter Blast", type: "email", platform: "Mailchimp" },
-        { day: 24, title: "Feature Highlight Video", type: "video", platform: "YouTube" },
-        ...localPosts.map(p => ({
-            day: p.day,
-            title: p.copy.substring(0, 20) + "...",
-            type: "social",
-            platform: p.platform
-        }))
-    ];
+            await SocialService.schedulePost({
+                platform: post.platform,
+                copy: post.copy,
+                imageAsset: post.imageAsset,
+                day: post.day,
+                scheduledTime: scheduledTimeNum
+            });
+
+            toast.success("Post scheduled successfully!");
+            loadData();
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to schedule post");
+        }
+    };
+
+    // Dynamic Calendar Data for current month
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const startDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+
+    const campaigns = scheduledPosts.map(p => ({
+        day: new Date(p.scheduledTime || Date.now()).getDate(),
+        title: p.copy.substring(0, 20) + "...",
+        type: "social",
+        platform: p.platform
+    }));
 
     const renderCalendarGrid = () => {
         const days = [];
@@ -94,7 +127,7 @@ export default function SocialDashboard() {
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
                     <div>
                         <p className="text-gray-400 text-sm mb-1">Total Reach</p>
-                        <h3 className="text-2xl font-bold">124.5K</h3>
+                        <h3 className="text-2xl font-bold">{(stats?.followers || 0).toLocaleString()}</h3>
                         <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
                             <TrendingUp size={12} /> +12% this month
                         </span>
@@ -105,8 +138,8 @@ export default function SocialDashboard() {
                 </div>
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
                     <div>
-                        <p className="text-gray-400 text-sm mb-1">Engagement Rate</p>
-                        <h3 className="text-2xl font-bold">4.8%</h3>
+                        <p className="text-gray-400 text-sm mb-1">Following</p>
+                        <h3 className="text-2xl font-bold">{(stats?.following || 0).toLocaleString()}</h3>
                         <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
                             <TrendingUp size={12} /> +0.5% this month
                         </span>
@@ -117,10 +150,10 @@ export default function SocialDashboard() {
                 </div>
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
                     <div>
-                        <p className="text-gray-400 text-sm mb-1">Active Campaigns</p>
-                        <h3 className="text-2xl font-bold">3</h3>
+                        <p className="text-gray-400 text-sm mb-1">Posts</p>
+                        <h3 className="text-2xl font-bold">{(stats?.posts || 0).toLocaleString()}</h3>
                         <span className="text-gray-500 text-xs mt-1">
-                            2 scheduled
+                            {scheduledPosts.length} scheduled
                         </span>
                     </div>
                     <div className="p-3 bg-pink-500/10 rounded-lg text-pink-400">
@@ -161,6 +194,11 @@ export default function SocialDashboard() {
                 <div className="grid grid-cols-7 bg-[#0d1117]">
                     {renderCalendarGrid()}
                 </div>
+            </div>
+
+            {/* Social Feed */}
+            <div className="mt-8">
+                <SocialFeed />
             </div>
 
             {isCreateModalOpen && (

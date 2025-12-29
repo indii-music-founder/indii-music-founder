@@ -15,17 +15,32 @@ import type {
   DistributorConnection,
   DistributorCredentials,
   IDistributorAdapter,
+  DashboardRelease,
+  ReleaseStatus,
 } from './types/distributor';
 
 
-// Import persistence
 import { distributionStore } from './DistributionPersistenceService';
 import { credentialService } from '@/services/security/CredentialService';
 import { deliveryService, DeliveryResult } from './DeliveryService';
 
+// Import default adapters
+import { DistroKidAdapter } from './adapters/DistroKidAdapter';
+import { TuneCoreAdapter } from './adapters/TuneCoreAdapter';
+import { CDBabyAdapter } from './adapters/CDBabyAdapter';
+import { SymphonicAdapter } from './adapters/SymphonicAdapter';
+
 class DistributorServiceImpl {
   private adapters: Map<DistributorId, IDistributorAdapter> = new Map();
   private store: typeof distributionStore = distributionStore;
+
+  constructor() {
+    // Register default adapters for Alpha release
+    this.registerAdapter(new DistroKidAdapter());
+    this.registerAdapter(new TuneCoreAdapter());
+    this.registerAdapter(new CDBabyAdapter());
+    this.registerAdapter(new SymphonicAdapter());
+  }
 
   // Allow injection for testing
   setPersistenceService(service: typeof distributionStore) {
@@ -482,14 +497,5 @@ class DistributorServiceImpl {
   }
 }
 
-export interface DashboardRelease {
-  id: string;
-  title: string;
-  artist: string;
-  coverArtUrl?: string;
-  releaseDate?: string;
-  deployments: Record<string, { status: string }>;
-}
-
-// Export singleton instance
+// Export singleton
 export const DistributorService = new DistributorServiceImpl();

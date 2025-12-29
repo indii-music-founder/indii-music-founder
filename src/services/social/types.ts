@@ -34,3 +34,30 @@ export interface SocialStats {
     posts: number;
     drops: number; // Number of product drops
 }
+
+export enum CampaignStatus {
+    PENDING = 'PENDING',
+    EXECUTING = 'EXECUTING',
+    DONE = 'DONE',
+    FAILED = 'FAILED',
+}
+
+export interface ImageAsset {
+    assetType: 'image';
+    title: string;
+    imageUrl: string;
+    caption: string;
+}
+
+export interface ScheduledPost {
+    id: string;
+    platform: 'Twitter' | 'Instagram' | 'LinkedIn';
+    copy: string;
+    imageAsset: ImageAsset;
+    day: number; // Keep for backward compatibility or relative scheduling
+    scheduledTime?: number; // Changed to number (timestamp) for serialization
+    status: CampaignStatus;
+    errorMessage?: string;
+    postId?: string; // If posted, reference to the actual post
+    authorId: string;
+}

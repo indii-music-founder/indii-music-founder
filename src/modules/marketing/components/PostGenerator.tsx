@@ -4,6 +4,7 @@ import { Megaphone, Copy, Image as ImageIcon, Loader2, Wand2, Upload } from 'luc
 import { useToast } from '@/core/context/ToastContext';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { AI } from '@/services/ai/AIService';
+import { SocialService } from '@/services/social/SocialService';
 
 interface PostContent {
     platform: string;
@@ -32,6 +33,7 @@ export default function PostGenerator() {
     const [vibe, setVibe] = useState('Professional');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const [isScheduling, setIsScheduling] = useState(false);
 
     // Result State
     const [result, setResult] = useState<PostContent | null>(null);
@@ -125,7 +127,7 @@ export default function PostGenerator() {
                 prompt: prompt
             });
 
-            setResult(prev => prev ? { ...prev, generatedImageBase64: base64 } : null);
+            setResult((prev: PostContent | null) => prev ? { ...prev, generatedImageBase64: base64 } : null);
         } catch (error) {
             console.error("Image Gen Error:", error);
             toast.error("Failed to generate image. Using text only.");
@@ -137,6 +139,34 @@ export default function PostGenerator() {
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         toast.success("Copied to clipboard!");
+    };
+
+    const handleSchedulePost = async () => {
+        if (!result) return;
+        setIsScheduling(true);
+
+        try {
+            await SocialService.schedulePost({
+                platform: (platform.charAt(0).toUpperCase() + platform.slice(1)) as 'Twitter' | 'Instagram' | 'LinkedIn',
+                copy: result.caption + "\n\n" + result.hashtags.join(' '),
+                imageAsset: {
+                    assetType: 'image',
+                    title: topic,
+                    imageUrl: result.generatedImageBase64 ? `data:image/png;base64,${result.generatedImageBase64}` : '',
+                    caption: result.caption
+                },
+                day: 0,
+                scheduledTime: Date.now() + (24 * 60 * 60 * 1000), // Default to tomorrow
+            });
+
+            toast.success("Post scheduled for tomorrow!");
+            // Optional: reset or redirect
+        } catch (error) {
+            console.error("Schedule Error:", error);
+            toast.error("Failed to schedule post.");
+        } finally {
+            setIsScheduling(false);
+        }
     };
 
     return (
@@ -271,7 +301,7 @@ export default function PostGenerator() {
                                     className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
                                 />
                                 <div className="flex flex-wrap gap-2 mt-2">
-                                    {result.hashtags.map(tag => (
+                                    {result.hashtags.map((tag: string) => (
                                         <span key={tag} className="text-xs text-blue-400 bg-blue-900/20 px-2 py-1 rounded">
                                             {tag}
                                         </span>
@@ -281,7 +311,12 @@ export default function PostGenerator() {
 
                             {/* Actions */}
                             <div className="flex justify-end pt-4 border-t border-gray-800">
-                                <button className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-bold rounded-lg transition-colors">
+                                <button
+                                    onClick={handleSchedulePost}
+                                    disabled={isScheduling}
+                                    className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isScheduling && <Loader2 className="animate-spin" size={16} />}
                                     Schedule Post
                                 </button>
                             </div>

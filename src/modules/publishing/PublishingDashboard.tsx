@@ -8,27 +8,59 @@ import { Book, Plus, Music, DollarSign, Globe, Clock, CheckCircle, AlertCircle, 
 import ReleaseWizard from './components/ReleaseWizard';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { useStore } from '@/core/store';
+import { useReleases } from './hooks/useReleases';
+
 
 export default function PublishingDashboard() {
     const [showReleaseWizard, setShowReleaseWizard] = useState(false);
 
-    // Get distribution state from store
-    const distribution = useStore((state) => state.distribution);
-    const fetchDistributors = useStore((state) => state.fetchDistributors);
-    const finance = useStore((state) => state.finance);
+    const { currentOrganizationId, finance, distribution, fetchDistributors, fetchEarnings, setModule } = useStore();
+    const { releases, loading: releasesLoading } = useReleases(currentOrganizationId);
 
-    // Fetch distributors on mount
+    // Initial data fetch
     useEffect(() => {
-        fetchDistributors();
-    }, [fetchDistributors]);
-
-    // Build stats from real data (all zeros until backend connected)
+        if (currentOrganizationId) {
+            fetchDistributors();
+            // Fetch earnings for the last 30 days
+            const endDate = new Date().toISOString().split('T')[0];
+            const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            fetchEarnings({ startDate, endDate });
+        }
+    }, [currentOrganizationId, fetchDistributors, fetchEarnings]);
     const stats = [
-        { label: 'Total Releases', value: '0', icon: Music, color: 'blue' },
-        { label: 'Live on DSPs', value: '0', icon: Globe, color: 'green' },
-        { label: 'Pending Review', value: '0', icon: Clock, color: 'yellow' },
-        { label: 'Total Earnings', value: finance.earningsSummary ? `$${finance.earningsSummary.totalNetRevenue.toFixed(2)}` : '$0.00', icon: DollarSign, color: 'purple' }
+        {
+            label: 'Total Releases',
+            value: releases.length.toString(),
+            icon: Music,
+            color: 'blue'
+        },
+        {
+            label: 'Live on DSPs',
+            value: releases.filter(r => (r.status as string) === 'live').length.toString(),
+            icon: Globe,
+            color: 'green'
+        },
+        {
+            label: 'Pending Review',
+            value: releases.filter(r => [
+                'metadata_complete',
+                'assets_uploaded',
+                'validating',
+                'pending_review',
+                'approved',
+                'delivering'
+            ].includes(r.status)).length.toString(),
+            icon: Clock,
+            color: 'yellow'
+        },
+        {
+            label: 'Total Earnings',
+            value: finance.earningsSummary ? `$${finance.earningsSummary.totalNetRevenue.toFixed(2)}` : '$0.00',
+            icon: DollarSign,
+            color: 'purple'
+        }
     ];
+
 
     return (
 
@@ -77,28 +109,87 @@ export default function PublishingDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Releases List */}
                     <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-6">
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-white">Your Releases</h3>
                         </div>
 
-                        {/* Empty state - releases will be loaded from Firestore when backend is ready */}
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                                <Music size={32} className="text-gray-600" />
+                        {releasesLoading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 size={32} className="text-gray-500 animate-spin" />
                             </div>
-                            <h4 className="text-lg font-medium text-white mb-2">No releases yet</h4>
-                            <p className="text-gray-400 text-sm mb-4 max-w-sm">
-                                Create your first release to distribute your music to streaming platforms worldwide.
-                            </p>
-                            <button
-                                onClick={() => setShowReleaseWizard(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 transition-colors"
-                            >
-                                <Plus size={16} />
-                                Create First Release
-                            </button>
-                        </div>
+                        ) : releases.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                    <Music size={32} className="text-gray-600" />
+                                </div>
+                                <h4 className="text-lg font-medium text-white mb-2">No releases yet</h4>
+                                <p className="text-gray-400 text-sm mb-4 max-w-sm">
+                                    Create your first release to distribute your music to streaming platforms worldwide.
+                                </p>
+                                <button
+                                    onClick={() => setShowReleaseWizard(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 transition-colors"
+                                >
+                                    <Plus size={16} />
+                                    Create First Release
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {releases.map((release) => (
+                                    <div
+                                        key={release.id}
+                                        className="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-gray-600 transition-all group pointer-events-auto cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center">
+                                                {release.assets.coverArtUrl ? (
+                                                    <img src={release.assets.coverArtUrl} alt={release.metadata.trackTitle} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Music size={20} className="text-gray-500" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium text-white group-hover:text-blue-400 transition-colors">
+                                                    {release.metadata.trackTitle}
+                                                </h4>
+                                                <p className="text-sm text-gray-400">
+                                                    {release.metadata.artistName} • {release.metadata.releaseType}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div className="text-right hidden sm:block">
+                                                <p className="text-sm text-gray-300">
+                                                    {new Date(release.createdAt).toLocaleDateString()}
+                                                </p>
+                                                <p className="text-xs text-gray-500 capitalize">
+                                                    {release.status.replace('_', ' ')}
+                                                </p>
+                                            </div>
+                                            <div className={`
+                                                px-3 py-1 rounded-full text-xs font-medium border
+                                                ${(release.status as string) === 'live' ? 'bg-green-500/10 border-green-500/30 text-green-400' : ''}
+                                                ${[
+                                                    'metadata_complete',
+                                                    'assets_uploaded',
+                                                    'validating',
+                                                    'pending_review',
+                                                    'approved',
+                                                    'delivering'
+                                                ].includes(release.status) ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : ''}
+                                                ${release.status === 'draft' ? 'bg-gray-500/10 border-gray-500/30 text-gray-400' : ''}
+                                                ${release.status === 'taken_down' ? 'bg-red-500/10 border-red-500/30 text-red-400' : ''}
+                                            `}>
+                                                {(release.status as string) === 'live' ? 'Live' : release.status.replace('_', ' ')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
+
 
                     {/* Sidebar */}
                     <div className="space-y-6">
@@ -136,7 +227,10 @@ export default function PublishingDashboard() {
                                     ))}
                                 </div>
                             )}
-                            <button className="w-full mt-4 px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors text-sm">
+                            <button
+                                onClick={() => setModule('distribution')}
+                                className="w-full mt-4 px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                            >
                                 Connect Distributor
                             </button>
                         </div>
@@ -204,7 +298,7 @@ export default function PublishingDashboard() {
                         onComplete={(releaseId) => {
                             console.log('Release created:', releaseId);
                             setShowReleaseWizard(false);
-                            // TODO: Refresh releases list
+                            // hook updates automatically via onSnapshot
                         }}
                     />
                 )}

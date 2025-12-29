@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Shield, Upload, CheckCircle, AlertTriangle, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { AI } from '@/services/ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
+import { db } from '@/services/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface AnalysisResult {
     isConsistent: boolean;
@@ -13,11 +15,12 @@ interface AnalysisResult {
 }
 
 const BrandManager: React.FC = () => {
-    const { userProfile } = useStore();
+    const { userProfile, updateBrandKit } = useStore();
     const toast = useToast();
     const [guidelines, setGuidelines] = useState<string>('');
     const [contentToCheck, setContentToCheck] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
     React.useEffect(() => {
@@ -36,6 +39,28 @@ const BrandManager: React.FC = () => {
         }
     }, [userProfile, guidelines]);
 
+    const handleSaveGuidelines = async () => {
+        if (!userProfile?.id) return;
+        setIsSaving(true);
+        try {
+            // Update local store
+            updateBrandKit({ brandDescription: guidelines });
+
+            // Persist to Firestore
+            const userRef = doc(db, 'users', userProfile.id);
+            await updateDoc(userRef, {
+                'brandKit.brandDescription': guidelines
+            });
+
+            toast.success("Brand guidelines saved.");
+        } catch (error) {
+            console.error("Failed to save guidelines:", error);
+            toast.error("Failed to save guidelines to profile.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleAnalyze = async () => {
         if (!guidelines || !contentToCheck) {
             toast.error("Please provide both brand guidelines and content to check.");
@@ -46,9 +71,33 @@ const BrandManager: React.FC = () => {
         setAnalysisResult(null);
 
         try {
-            const analyzeBrand = httpsCallable(functions, 'analyzeBrand');
-            const response = await analyzeBrand({ content: contentToCheck, guidelines });
-            const result = response.data as AnalysisResult;
+            const prompt = `
+            Analyze the following marketing content for brand consistency:
+            Brand Guidelines: ${guidelines}
+            Content to Analyze: ${contentToCheck}
+
+            Please provide:
+            1. A consistency score (0-100).
+            2. A boolean "isConsistent" flag (true if score >= 80).
+            3. A list of specific issues (e.g., tone mismatch, color misuse).
+            4. Suggestions for improvement.
+
+            Format the output ONLY as JSON:
+            {
+              "score": number,
+              "isConsistent": boolean,
+              "issues": string[],
+              "suggestions": string[]
+            }
+            `;
+
+            const res = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: { role: 'user', parts: [{ text: prompt }] },
+                config: { responseMimeType: 'application/json' }
+            });
+
+            const result = JSON.parse(res.text() || '{}') as AnalysisResult;
             setAnalysisResult(result);
             toast.success("Analysis complete");
         } catch (error) {
@@ -69,12 +118,22 @@ const BrandManager: React.FC = () => {
                             <Shield className="text-white" size={20} />
                             Brand Guidelines
                         </h3>
-                        <textarea
-                            value={guidelines}
-                            onChange={(e) => setGuidelines(e.target.value)}
-                            placeholder="Paste your brand guidelines here (e.g., tone of voice, forbidden words, core values)..."
-                            className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-white focus:ring-1 focus:ring-white outline-none resize-none"
-                        />
+                        <div className="space-y-4">
+                            <textarea
+                                value={guidelines}
+                                onChange={(e) => setGuidelines(e.target.value)}
+                                placeholder="Paste your brand guidelines here (e.g., tone of voice, forbidden words, core values)..."
+                                className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-white focus:ring-1 focus:ring-white outline-none resize-none"
+                            />
+                            <button
+                                onClick={handleSaveGuidelines}
+                                disabled={isSaving || !guidelines}
+                                className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                                {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                                Save Guidelines
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">

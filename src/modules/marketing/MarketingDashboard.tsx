@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Megaphone, TrendingUp, Users, Calendar, MoreHorizontal, Plus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
+import { MarketingService } from '@/services/marketing/MarketingService';
+import { CampaignAsset } from './types';
+import CreateCampaignModal from './components/CreateCampaignModal';
 
 import BrandManager from './components/BrandManager';
-
 import PostGenerator from './components/PostGenerator';
 
 export default function MarketingDashboard() {
@@ -13,9 +15,34 @@ export default function MarketingDashboard() {
     const { currentModule } = useStore();
 
     const [activeTab, setActiveTab] = useState<'overview' | 'generator' | 'brand'>('overview');
+    const [stats, setStats] = useState<{ totalReach: number, engagementRate: number, activeCampaigns: number } | null>(null);
+    const [campaigns, setCampaigns] = useState<CampaignAsset[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        try {
+            const [statsData, campaignsData] = await Promise.all([
+                MarketingService.getMarketingStats(),
+                MarketingService.getCampaigns()
+            ]);
+            setStats(statsData as any);
+            setCampaigns(campaignsData);
+        } catch (error) {
+            console.error("Failed to load marketing data", error);
+            toast.error("Failed to load dashboard data");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleCreateCampaign = () => {
-        toast.info("Create Campaign modal would open here.");
+        setIsCreateModalOpen(true);
     };
 
     // Actions Component
@@ -36,16 +63,9 @@ export default function MarketingDashboard() {
         </>
     );
 
-    // Mock Calendar Data
+    // Calendar logic
     const daysInMonth = 30; // Simplified
     const startDay = 2; // Tuesday
-
-    const campaigns = [
-        { day: 5, title: "Product Launch Teaser", type: "social", platform: "Instagram" },
-        { day: 12, title: "Blog Post: AI Trends", type: "content", platform: "Medium" },
-        { day: 15, title: "Newsletter Blast", type: "email", platform: "Mailchimp" },
-        { day: 24, title: "Feature Highlight Video", type: "video", platform: "YouTube" },
-    ];
 
     const renderCalendarGrid = () => {
         const days = [];
@@ -55,7 +75,13 @@ export default function MarketingDashboard() {
         }
         // Days
         for (let i = 1; i <= daysInMonth; i++) {
-            const campaign = campaigns.find(c => c.day === i);
+            // Find campaign for this day (simplified logic using day field if exists or parsing startDate)
+            const campaign = campaigns.find(c => {
+                if (c.posts?.[0]?.day === i) return true;
+                const start = new Date(c.startDate);
+                return !isNaN(start.getTime()) && start.getDate() === i;
+            });
+
             days.push(
                 <div key={i} className="h-32 bg-[#0d1117] border border-gray-800/50 p-2 relative group hover:bg-[#161b22] transition-colors">
                     <span className="text-gray-500 text-sm font-mono">{i}</span>
@@ -64,7 +90,7 @@ export default function MarketingDashboard() {
                             <div className="font-bold text-blue-300 truncate">{campaign.title}</div>
                             <div className="text-blue-400/70 flex items-center gap-1 mt-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                {campaign.platform}
+                                {campaign.posts?.[0]?.platform || "Campaign"}
                             </div>
                         </div>
                     )}
@@ -98,7 +124,9 @@ export default function MarketingDashboard() {
                         <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-gray-400 text-sm mb-1">Total Reach</p>
-                                <h3 className="text-2xl font-bold">124.5K</h3>
+                                <h3 className="text-2xl font-bold">
+                                    {isLoading ? "..." : (stats?.totalReach || 0).toLocaleString()}K
+                                </h3>
                                 <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
                                     <TrendingUp size={12} /> +12% this month
                                 </span>
@@ -110,7 +138,9 @@ export default function MarketingDashboard() {
                         <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-gray-400 text-sm mb-1">Engagement Rate</p>
-                                <h3 className="text-2xl font-bold">4.8%</h3>
+                                <h3 className="text-2xl font-bold">
+                                    {isLoading ? "..." : (stats?.engagementRate || 0)}%
+                                </h3>
                                 <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
                                     <TrendingUp size={12} /> +0.5% this month
                                 </span>
@@ -122,9 +152,11 @@ export default function MarketingDashboard() {
                         <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-gray-400 text-sm mb-1">Active Campaigns</p>
-                                <h3 className="text-2xl font-bold">3</h3>
+                                <h3 className="text-2xl font-bold">
+                                    {isLoading ? "..." : (stats?.activeCampaigns || 0)}
+                                </h3>
                                 <span className="text-gray-500 text-xs mt-1">
-                                    2 scheduled
+                                    {campaigns.length} total
                                 </span>
                             </div>
                             <div className="p-3 bg-pink-500/10 rounded-lg text-pink-400">
@@ -132,6 +164,13 @@ export default function MarketingDashboard() {
                             </div>
                         </div>
                     </div>
+
+                    {isCreateModalOpen && (
+                        <CreateCampaignModal
+                            onClose={() => setIsCreateModalOpen(false)}
+                            onSave={loadData}
+                        />
+                    )}
 
                     {/* Calendar Section */}
                     <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden">

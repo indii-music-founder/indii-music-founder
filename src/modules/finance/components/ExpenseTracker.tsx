@@ -1,23 +1,16 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, DollarSign, Camera, CheckCircle, Loader2, Plus, X } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
-
-interface Expense {
-    id: string;
-    vendor: string;
-    date: string;
-    amount: number;
-    category: string;
-    description: string;
-    receiptUrl?: string; // In a real app, upload to storage first
-}
+import { FinanceService, Expense } from '@/services/finance/FinanceService';
+import { useStore } from '@/core/store';
 
 export const ExpenseTracker: React.FC = () => {
+    const { user } = useStore();
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Manual Entry State
     const [showManualEntry, setShowManualEntry] = useState(false);
@@ -28,7 +21,26 @@ export const ExpenseTracker: React.FC = () => {
 
     const toast = useToast();
 
+    const loadExpenses = useCallback(async () => {
+        if (!user) return;
+        setIsLoading(true);
+        try {
+            const data = await FinanceService.getExpenses(user.uid);
+            setExpenses(data);
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to load expenses.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user, toast]);
+
+    useEffect(() => {
+        loadExpenses();
+    }, [loadExpenses]);
+
     const processFile = useCallback(async (file: File) => {
+        if (!user) return;
         setIsAnalyzing(true);
         try {
             const reader = new FileReader();
@@ -41,22 +53,21 @@ export const ExpenseTracker: React.FC = () => {
                     mime_type: file.type
                 });
 
-                // The tool returns a JSON string (hopefully). 
-                // Gemini is usually good, but let's parse safely.
-                // It might return conversational text too, so we need to extract JSON.
                 const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     const data = JSON.parse(jsonMatch[0]);
-                    const newExpense: Expense = {
-                        id: Date.now().toString(),
+                    const expenseData = {
+                        userId: user.uid,
                         vendor: data.vendor || 'Unknown Vendor',
-                        date: data.date || new Date().toISOString(),
+                        date: data.date || new Date().toISOString().split('T')[0],
                         amount: Number(data.amount) || 0,
                         category: data.category || 'Other',
                         description: data.description || '',
                     };
-                    setExpenses(prev => [newExpense, ...prev]);
-                    toast.success(`Scanned receipt from ${newExpense.vendor}`);
+
+                    await FinanceService.addExpense(expenseData);
+                    loadExpenses();
+                    toast.success(`Scanned receipt from ${expenseData.vendor}`);
                 } else {
                     toast.error("Could not read receipt data.");
                 }
@@ -68,35 +79,42 @@ export const ExpenseTracker: React.FC = () => {
             toast.error("Failed to analyze receipt.");
             setIsAnalyzing(false);
         }
-    }, [toast]);
+    }, [user, toast, loadExpenses]);
 
-    const handleManualSubmit = useCallback((e: React.FormEvent) => {
+    const handleManualSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!user) return;
         if (!manualForm.vendor || !manualForm.amount) {
             toast.error("Vendor and Amount are required.");
             return;
         }
 
-        const newExpense: Expense = {
-            id: Date.now().toString(),
-            vendor: manualForm.vendor,
-            date: manualForm.date || new Date().toISOString(),
-            amount: Number(manualForm.amount),
-            category: manualForm.category || 'Other',
-            description: manualForm.description || 'Manual Entry',
-        };
+        try {
+            const expenseData = {
+                userId: user.uid,
+                vendor: manualForm.vendor,
+                date: manualForm.date || new Date().toISOString().split('T')[0],
+                amount: Number(manualForm.amount),
+                category: manualForm.category || 'Other',
+                description: manualForm.description || 'Manual Entry',
+            };
 
-        setExpenses(prev => [newExpense, ...prev]);
-        toast.success("Expense added manually.");
-        setShowManualEntry(false);
-        setManualForm({
-            date: new Date().toISOString().split('T')[0],
-            category: 'Equipment',
-            vendor: '',
-            amount: 0,
-            description: ''
-        });
-    }, [manualForm, toast]);
+            await FinanceService.addExpense(expenseData);
+            toast.success("Expense added manually.");
+            setShowManualEntry(false);
+            setManualForm({
+                date: new Date().toISOString().split('T')[0],
+                category: 'Equipment',
+                vendor: '',
+                amount: 0,
+                description: ''
+            });
+            loadExpenses();
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to add expense.");
+        }
+    }, [user, manualForm, toast, loadExpenses]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         acceptedFiles.forEach(processFile);
@@ -105,7 +123,7 @@ export const ExpenseTracker: React.FC = () => {
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'image/*': [] } });
 
     return (
-        <div className="bg-[#0d1117] rounded-xl border border-gray-800 flex flex-col h-[600px]">
+        <div className="bg-[#0d1117] rounded-xl border border-gray-800 flex flex-col h-[600px] relative">
             <div className="p-6 border-b border-gray-800 flex justify-between items-center">
                 <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -217,27 +235,33 @@ export const ExpenseTracker: React.FC = () => {
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
                 {/* Visual List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                    {expenses.length === 0 && (
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <Loader2 className="animate-spin text-gray-600 mb-2" />
+                            <p className="text-gray-500 text-sm">Loading expenses...</p>
+                        </div>
+                    ) : expenses.length === 0 ? (
                         <div className="text-center text-gray-500 py-10">
                             No expenses recorded yet. Note your costs to calculate tax deductions.
                         </div>
+                    ) : (
+                        expenses.map(expense => (
+                            <div key={expense.id} className="bg-[#161b22] p-4 rounded-lg border border-gray-800 flex justify-between items-center hover:border-gray-700 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
+                                        <CheckCircle size={18} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-white font-medium">{expense.vendor}</h4>
+                                        <p className="text-xs text-gray-400">{expense.date} • {expense.category}</p>
+                                    </div>
+                                </div>
+                                <div className="text-white font-mono font-bold">
+                                    -${expense.amount.toFixed(2)}
+                                </div>
+                            </div>
+                        ))
                     )}
-                    {expenses.map(expense => (
-                        <div key={expense.id} className="bg-[#161b22] p-4 rounded-lg border border-gray-800 flex justify-between items-center hover:border-gray-700 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
-                                    <CheckCircle size={18} />
-                                </div>
-                                <div>
-                                    <h4 className="text-white font-medium">{expense.vendor}</h4>
-                                    <p className="text-xs text-gray-400">{expense.date} • {expense.category}</p>
-                                </div>
-                            </div>
-                            <div className="text-white font-mono font-bold">
-                                -${expense.amount.toFixed(2)}
-                            </div>
-                        </div>
-                    ))}
                 </div>
 
                 {/* Drop Zone */}
@@ -272,3 +296,4 @@ export const ExpenseTracker: React.FC = () => {
         </div>
     );
 };
+

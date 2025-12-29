@@ -26,9 +26,13 @@ export interface ScheduledPost {
 }
 
 export interface CampaignAsset {
+    id?: string;
     assetType: 'campaign';
     title: string;
+    description?: string;
     durationDays: number;
     startDate: string;
+    endDate?: string;
     posts: ScheduledPost[];
+    status: CampaignStatus;
 }
