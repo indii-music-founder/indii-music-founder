@@ -135,7 +135,7 @@ export class DashboardService {
                 }
             };
         } catch (error) {
-            console.error('[DashboardService] Failed to get storage stats:', error);
+            // Silently fail in beta production build, just return empty stats
             return { usedBytes: 0, quotaBytes: STORAGE_QUOTAS.free, percentUsed: 0 };
         }
     }
@@ -157,7 +157,7 @@ export class DashboardService {
                 state.addProject(newProject);
             }
         } catch (error) {
-            console.error('[DashboardService] Failed to add project to store:', error);
+            // Failed to add to store, but we return the object anyway
         }
 
         return newProject;
@@ -209,10 +209,8 @@ export class DashboardService {
                 state.addProject(duplicate);
             }
 
-            console.log('[DashboardService] Project duplicated:', duplicate.id);
             return duplicate;
         } catch (error) {
-            console.error('[DashboardService] Failed to duplicate project:', error);
             throw error;
         }
     }
@@ -234,9 +232,7 @@ export class DashboardService {
                 toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
             }
 
-            console.log('[DashboardService] Project deleted:', projectId);
         } catch (error) {
-            console.error('[DashboardService] Failed to delete project:', error);
             throw error;
         }
     }
@@ -252,7 +248,13 @@ export class DashboardService {
             // Count generations
             const imageCount = history.filter((h) => h.type === 'image').length;
             const videoItems = history.filter((h) => h.type === 'video');
-            const totalVideoSeconds = videoItems.reduce((sum: number, v) => sum + ((v as any).duration || 5), 0);
+            const totalVideoSeconds = videoItems.reduce((sum: number, v) => {
+                // Check if the history item effectively has a duration property
+                // Currently HistoryItem type doesn't support duration, so we default to 5
+                // In a real implementation, we should update HistoryItem interface
+                const duration = (v as unknown as { duration?: number }).duration || 5;
+                return sum + duration;
+            }, 0);
 
             // Weekly activity (last 7 days)
             const now = Date.now();
@@ -307,7 +309,6 @@ export class DashboardService {
                 streak
             };
         } catch (error) {
-            console.error('[DashboardService] Failed to get analytics:', error);
             return {
                 totalGenerations: 0,
                 totalMessages: 0,
@@ -322,7 +323,6 @@ export class DashboardService {
 
 
     static async exportBackup(): Promise<void> {
-        console.log('[DashboardService] Generating backup...');
 
         try {
             const { useStore } = await import('@/core/store');
@@ -350,9 +350,7 @@ export class DashboardService {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            console.log('[DashboardService] Backup exported successfully');
         } catch (error) {
-            console.error('[DashboardService] Export backup failed:', error);
             throw error;
         }
     }

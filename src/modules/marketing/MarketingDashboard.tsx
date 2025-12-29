@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Megaphone, TrendingUp, Users, Calendar, MoreHorizontal, Plus, Activity } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
-import { useMarketing } from './hooks/useMarketing';
+import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import CreateCampaignModal from './components/CreateCampaignModal';
 import BrandManager from './components/BrandManager';
 import PostGenerator from './components/PostGenerator';
@@ -13,7 +13,14 @@ export default function MarketingDashboard() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     // Use the new Beta hook
-    const { stats, campaigns, loading, error, createCampaign } = useMarketing();
+    // Use the new Beta hook
+    const {
+        stats,
+        campaigns,
+        isLoading,
+        error,
+        actions
+    } = useMarketing();
 
     // Actions Component
     const DashboardActions = (
@@ -114,21 +121,21 @@ export default function MarketingDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <StatusCard
                             title="Total Reach"
-                            value={loading ? "..." : (stats?.totalReach || 0).toLocaleString()}
+                            value={isLoading ? "..." : (stats?.totalReach || 0).toLocaleString()}
                             icon={<Users size={24} />}
                             trend="+12% this month"
                             color="blue"
                         />
                         <StatusCard
                             title="Engagement Rate"
-                            value={loading ? "..." : (stats?.engagementRate || 0) + '%'}
+                            value={isLoading ? "..." : (stats?.engagementRate || 0) + '%'}
                             icon={<Activity size={24} />}
                             trend="+0.5% this month"
                             color="purple"
                         />
                         <StatusCard
                             title="Active Campaigns"
-                            value={loading ? "..." : (stats?.activeCampaigns || 0).toString()}
+                            value={isLoading ? "..." : (stats?.activeCampaigns || 0).toString()}
                             icon={<Megaphone size={24} />}
                             subtext={`${campaigns.length} total`}
                             color="pink"

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Sentry from '@sentry/react';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 
@@ -43,5 +43,27 @@ export function useReleases(orgId: string | undefined) {
         return () => unsubscribe();
     }, [orgId]);
 
-    return useMemo(() => ({ releases, loading, error }), [releases, loading, error]);
+    const deleteRelease = useCallback(async (releaseId: string) => {
+        try {
+            const releaseRef = doc(db, 'ddexReleases', releaseId);
+            await deleteDoc(releaseRef);
+        } catch (err) {
+            console.error('Error deleting release:', err);
+            Sentry.captureException(err);
+            throw err;
+        }
+    }, []);
+
+    const archiveRelease = useCallback(async (releaseId: string) => {
+        try {
+            const releaseRef = doc(db, 'ddexReleases', releaseId);
+            await updateDoc(releaseRef, { status: 'archived' });
+        } catch (err) {
+            console.error('Error archiving release:', err);
+            Sentry.captureException(err);
+            throw err;
+        }
+    }, []);
+
+    return useMemo(() => ({ releases, loading, error, deleteRelease, archiveRelease }), [releases, loading, error, deleteRelease, archiveRelease]);
 }

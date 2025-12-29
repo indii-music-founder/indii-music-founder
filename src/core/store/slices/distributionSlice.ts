@@ -9,6 +9,7 @@ export interface DistributionSlice {
         availableDistributors: DistributorId[];
         releases: DashboardRelease[];
         loading: boolean;
+        isConnecting: boolean;
         error: string | null;
     };
     fetchDistributors: () => Promise<void>;
@@ -24,6 +25,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         availableDistributors: [],
         releases: [],
         loading: false,
+        isConnecting: false,
         error: null,
     },
     fetchDistributors: async () => {
@@ -53,7 +55,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         }
     },
     connectDistributor: async (distributorId: DistributorId) => {
-        set((state) => ({ distribution: { ...state.distribution, loading: true, error: null } }));
+        set((state) => ({ distribution: { ...state.distribution, isConnecting: true, error: null } }));
 
         try {
             // For Alpha, we simulate connection with mock credentials if none provided
@@ -75,6 +77,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
                 distribution: {
                     ...state.distribution,
                     loading: false,
+                    isConnecting: false,
                     error: error instanceof Error ? error.message : 'Failed to connect distributor'
                 }
             }));

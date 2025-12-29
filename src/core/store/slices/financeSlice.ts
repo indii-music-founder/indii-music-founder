@@ -17,14 +17,21 @@ export const createFinanceSlice: StateCreator<FinanceSlice> = (set, get) => ({
         error: null,
     },
     fetchEarnings: async (period) => {
-        const { user } = (get() as any);
-        if (!user) return;
+        // Fix: Use generic UserProfile access instead of 'as any' and 'user' legacy property
+        const state = get() as { userProfile: { id: string } };
+        const userId = state.userProfile?.id;
+
+        if (!userId) {
+            console.warn('[FinanceSlice] No user ID found for fetching earnings.');
+            return;
+        }
 
         set((state) => ({ finance: { ...state.finance, loading: true } }));
 
         try {
             const { FinanceService } = await import('@/services/finance/FinanceService');
-            const summary = await FinanceService.fetchEarnings(user.uid);
+            // Fix: Use userId (from userProfile) instead of user.uid
+            const summary = await FinanceService.fetchEarnings(userId);
 
             set((state) => ({
                 finance: {

@@ -34,14 +34,10 @@ export class MarketingService {
             return snapshot.data() as { totalReach: number; engagementRate: number; activeCampaigns: number };
         }
 
-        // Aggregate active campaigns count manually as a fallback
-        const campaigns = await this.getCampaigns();
-        const activeCount = campaigns.filter(c => c.status === CampaignStatus.EXECUTING).length;
-
         return {
             totalReach: 0,
             engagementRate: 0,
-            activeCampaigns: activeCount
+            activeCampaigns: 0
         };
     }
 
@@ -59,6 +55,7 @@ export class MarketingService {
         );
 
         const snapshot = await getDocs(q);
+        console.log('DEBUG: Campaigns Snapshot Size:', snapshot.docs.length);
         return snapshot.docs.map(doc => {
             const data = doc.data();
             // validate data structure if needed, or cast with caution

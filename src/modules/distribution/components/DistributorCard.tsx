@@ -55,7 +55,7 @@ export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, on
                                 </p>
                                 <p className="text-[11px] text-gray-400 flex items-center justify-between">
                                     <span>Last Sync</span>
-                                    <span className="text-gray-300 font-medium">{new Date(connection.lastSyncedAt!).toLocaleDateString()}</span>
+                                    <span className="text-gray-300 font-medium">{connection.lastSyncedAt ? new Date(connection.lastSyncedAt).toLocaleDateString() : 'Never'}</span>
                                 </p>
                             </div>
                         ) : (
@@ -69,8 +69,8 @@ export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, on
                         onClick={() => !connection.isConnected && onConnect(connection.distributorId)}
                         disabled={connection.isConnected || isConnecting}
                         className={`w-full py-2.5 px-4 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${connection.isConnected
-                                ? 'bg-gray-800/50 text-gray-500 cursor-default border border-gray-700/30'
-                                : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-white/5'
+                            ? 'bg-gray-800/50 text-gray-500 cursor-default border border-gray-700/30'
+                            : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-white/5'
                             }`}
                     >
                         {connection.isConnected ? (

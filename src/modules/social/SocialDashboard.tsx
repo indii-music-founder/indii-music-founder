@@ -3,9 +3,11 @@ import { Megaphone, Calendar, Plus, TrendingUp, Users, MoreHorizontal, UserPlus 
 import { useToast } from '@/core/context/ToastContext';
 import CreatePostModal from './components/CreatePostModal';
 import AccountCreationWizard from './components/AccountCreationWizard';
-import SocialFeed from './components/SocialFeed';
+import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost } from '@/services/social/types';
+import { useStore } from '@/core/store';
 import { useSocial } from './hooks/useSocial';
+import SocialFeed from './components/SocialFeed';
 
 export default function SocialDashboard() {
     const toast = useToast();
@@ -16,13 +18,12 @@ export default function SocialDashboard() {
     const {
         stats,
         scheduledPosts,
-        schedulePost,
-        refreshDashboard
+        actions
     } = useSocial(); // No userId needed for my dashboard
 
     useEffect(() => {
-        refreshDashboard();
-    }, [refreshDashboard]);
+        actions.refreshDashboard();
+    }, [actions]);
 
     const handleCreatePost = async (post: any) => {
         try {
@@ -31,7 +32,7 @@ export default function SocialDashboard() {
                 ? post.scheduledTime.getTime()
                 : new Date(post.scheduledTime).getTime();
 
-            const success = await schedulePost({
+            const success = await actions.schedulePost({
                 platform: post.platform,
                 copy: post.copy,
                 imageAsset: post.imageAsset,

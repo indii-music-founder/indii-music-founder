@@ -12,13 +12,14 @@ interface SocialFeedProps {
     userId?: string;
 }
 
-export default function SocialFeed({ userId }: SocialFeedProps) {
+// Memoized to prevent re-renders when parent state changes but props don't
+const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     const {
         posts,
-        feedLoading: loading,
+        isFeedLoading: loading,
         filter,
         setFilter,
-        createPost
+        actions: { createPost }
     } = useSocial(userId);
 
     const [newPostContent, setNewPostContent] = useState('');
@@ -228,10 +229,12 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
     );
 }
 
+
+
 // Sub-component for individual items to handle async product fetching if needed
 // or we can pass products from a global store. For MVP, we'll fetch product if ID exists.
 // Ideally, the feed query should join this data, but NoSQL :)
-function FeedItem({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) {
+const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
