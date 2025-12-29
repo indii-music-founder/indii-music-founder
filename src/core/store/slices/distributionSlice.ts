@@ -14,6 +14,8 @@ export interface DistributionSlice {
     fetchDistributors: () => Promise<void>;
     connectDistributor: (distributorId: DistributorId) => Promise<void>;
     fetchReleases: () => Promise<void>;
+    setReleases: (releases: DashboardRelease[]) => void;
+    subscribeToReleases: () => () => void;
 }
 
 export const createDistributionSlice: StateCreator<DistributionSlice> = (set, get) => ({
@@ -106,5 +108,40 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
                 }
             }));
         }
+    },
+    setReleases: (releases: DashboardRelease[]) => {
+        set((state) => ({
+            distribution: {
+                ...state.distribution,
+                releases,
+                loading: false,
+                error: null
+            }
+        }));
+    },
+    subscribeToReleases: () => {
+        const { currentOrganizationId } = get() as any;
+
+        if (!currentOrganizationId) {
+            return () => { };
+        }
+
+        set((state) => ({ distribution: { ...state.distribution, loading: true } }));
+
+        return DistributionSyncService.subscribeToReleases(
+            currentOrganizationId,
+            (releases) => {
+                get().setReleases(releases);
+            },
+            (error) => {
+                set((state) => ({
+                    distribution: {
+                        ...state.distribution,
+                        loading: false,
+                        error: error.message
+                    }
+                }));
+            }
+        );
     }
 });

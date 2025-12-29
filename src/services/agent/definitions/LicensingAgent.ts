@@ -2,6 +2,11 @@ import { AgentConfig } from "../types";
 import systemPrompt from '@agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
+import { AI } from "@/services/ai/AIService";
+import { AI_MODELS } from "@/core/config/ai-models";
+import { LegalTools } from "../tools/LegalTools";
+import { ToolFunctionArgs } from "../types";
+import { LicenseRequest } from "../../licensing/types";
 
 export const LicensingAgent: AgentConfig = {
     id: 'licensing',
@@ -54,14 +59,45 @@ export const LicensingAgent: AgentConfig = {
             };
         },
         analyze_contract: async (args: { file_data: string, mime_type: string }) => {
-            // This would ideally use LegalTools or a specialized AI prompt
-            return {
-                success: true,
-                data: {
-                    summary: "Contract analysis triggered. Reviewing terms for sync and master use.",
-                    next_steps: "Awaiting legal counsel verification."
-                }
-            };
+            try {
+                const prompt = `You are a legal expert. Analyze this license/contract and provide a summary of its key terms, specifically regarding commercial use, attribution requirements, and duration.
+                
+                Document Content (Base64 or Text representation): ${args.file_data.substring(0, 1000)}[...]`;
+
+                const response = await AI.generateContent({
+                    model: AI_MODELS.TEXT.FAST,
+                    contents: { role: 'user', parts: [{ text: prompt }] }
+                });
+
+                return {
+                    success: true,
+                    data: {
+                        summary: response.text(),
+                        next_steps: "Awaiting legal counsel verification of AI analysis."
+                    }
+                };
+            } catch (error) {
+                return { success: false, error: "Failed to analyze contract: " + (error as Error).message };
+            }
+        },
+        draft_license: async (args: { type: string, parties: string[], terms: string }) => {
+            try {
+                const contract = await LegalTools.draft_contract({
+                    type: args.type,
+                    parties: args.parties,
+                    terms: args.terms
+                });
+
+                return {
+                    success: true,
+                    data: {
+                        contract,
+                        message: "Initial draft generated. Review and finalize before signing."
+                    }
+                };
+            } catch (error) {
+                return { success: false, error: "Failed to draft license: " + (error as Error).message };
+            }
         }
     },
     tools: [{
@@ -90,6 +126,19 @@ export const LicensingAgent: AgentConfig = {
                         mime_type: { type: "STRING", description: "Mime type." }
                     },
                     required: ["file_data", "mime_type"]
+                }
+            },
+            {
+                name: "draft_license",
+                description: "Draft a new licensing agreement or contract.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        type: { type: "STRING", description: "The type of agreement (e.g., Sync License, Master Use, NDA)." },
+                        parties: { type: "ARRAY", items: { type: "STRING" }, description: "List of parties involved." },
+                        terms: { type: "STRING", description: "Key terms and conditions to include." }
+                    },
+                    required: ["type", "parties", "terms"]
                 }
             }
         ]

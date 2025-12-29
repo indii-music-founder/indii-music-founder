@@ -70,6 +70,10 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     updateMetadata,
     selectedDistributors,
     toggleDistributor,
+    assets,
+    updateAssets,
+    uploadAsset,
+    uploadProgress,
     isStepValid,
     validationErrors,
     goToNextStep,
@@ -456,35 +460,109 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
   const renderAssetsStep = () => (
     <div className="space-y-6">
       {/* Audio Upload */}
-      <div className="bg-gray-800/30 border border-gray-700 border-dashed rounded-xl p-8 text-center">
-        <Upload size={48} className="mx-auto text-gray-500 mb-4" />
-        <h3 className="text-lg font-medium text-white mb-2">Upload Audio File</h3>
-        <p className="text-sm text-gray-400 mb-4">
-          WAV or FLAC, 44.1kHz or higher, 16-bit or 24-bit
-        </p>
-        <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-          Choose File
-        </button>
-        <p className="text-xs text-gray-500 mt-3">
-          Audio upload integration coming soon
-        </p>
+      <div className={`
+        bg-gray-800/30 border-2 border-dashed rounded-xl p-8 text-center transition-all
+        ${assets.audioFile ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 hover:border-gray-600'}
+      `}>
+        {assets.audioFile ? (
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle size={32} className="text-green-400" />
+            </div>
+            <h3 className="text-lg font-medium text-white mb-1">Audio Uploaded</h3>
+            <p className="text-sm text-gray-400 mb-4">{assets.audioFile.format.toUpperCase()} • {(assets.audioFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB</p>
+            <button
+              onClick={() => updateAssets({ audioFile: undefined })}
+              className="text-sm text-red-400 hover:text-red-300"
+            >
+              Replace File
+            </button>
+          </div>
+        ) : (
+          <>
+            <Upload size={48} className="mx-auto text-gray-500 mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">Upload Audio File</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              WAV or FLAC, 44.1kHz or higher, 16-bit or 24-bit
+            </p>
+            <div className="relative inline-block">
+              <input
+                type="file"
+                accept=".wav,.flac,.mp3"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) await uploadAsset('audio', file);
+                }}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+              <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors pointer-events-none">
+                Choose File
+              </button>
+            </div>
+            {uploadProgress.audio > 0 && uploadProgress.audio < 100 && (
+              <div className="mt-4 w-full max-w-xs mx-auto bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  style={{ width: `${uploadProgress.audio}%` }}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Cover Art Upload */}
-      <div className="bg-gray-800/30 border border-gray-700 border-dashed rounded-xl p-8 text-center">
-        <div className="w-32 h-32 mx-auto bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-          <Music size={48} className="text-gray-500" />
-        </div>
-        <h3 className="text-lg font-medium text-white mb-2">Upload Cover Art</h3>
-        <p className="text-sm text-gray-400 mb-4">
-          3000x3000 pixels, JPG or PNG, RGB color mode
-        </p>
-        <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-          Choose Image
-        </button>
-        <p className="text-xs text-gray-500 mt-3">
-          Cover art upload integration coming soon
-        </p>
+      <div className={`
+        bg-gray-800/30 border-2 border-dashed rounded-xl p-8 text-center transition-all
+        ${assets.coverArt ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 hover:border-gray-600'}
+      `}>
+        {assets.coverArt ? (
+          <div className="flex flex-col items-center">
+            <div className="w-32 h-32 mx-auto rounded-lg mb-4 overflow-hidden border border-gray-700">
+              <img src={assets.coverArt.url} alt="Cover Art" className="w-full h-full object-cover" />
+            </div>
+            <h3 className="text-lg font-medium text-white mb-1">Cover Art Uploaded</h3>
+            <p className="text-sm text-gray-400 mb-4">{assets.coverArt.width}x{assets.coverArt.height} • {(assets.coverArt.sizeBytes / (1024 * 1024)).toFixed(2)} MB</p>
+            <button
+              onClick={() => updateAssets({ coverArt: undefined })}
+              className="text-sm text-red-400 hover:text-red-300"
+            >
+              Replace Image
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="w-32 h-32 mx-auto bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
+              <Music size={48} className="text-gray-500" />
+            </div>
+            <h3 className="text-lg font-medium text-white mb-2">Upload Cover Art</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              3000x3000 pixels, JPG or PNG, RGB color mode
+            </p>
+            <div className="relative inline-block">
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) await uploadAsset('cover', file);
+                }}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+              <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors pointer-events-none">
+                Choose Image
+              </button>
+            </div>
+            {uploadProgress.cover > 0 && uploadProgress.cover < 100 && (
+              <div className="mt-4 w-full max-w-xs mx-auto bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  style={{ width: `${uploadProgress.cover}%` }}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -536,6 +614,39 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             <div className="flex justify-between">
               <dt className="text-gray-400">Label</dt>
               <dd className="text-white">{metadata.labelName || '-'}</dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Assets Summary */}
+        <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
+          <h4 className="font-medium text-white mb-3 flex items-center gap-2">
+            <Upload size={18} /> Assets
+          </h4>
+          <dl className="space-y-3 text-sm">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded shrink-0 flex items-center justify-center ${assets.audioFile ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                <Music size={16} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-gray-400 text-xs">Audio File</p>
+                <p className="text-white truncate">{assets.audioFile ? `${assets.audioFile.format.toUpperCase()} • ${(assets.audioFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : 'Missing'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded shrink-0 overflow-hidden ${assets.coverArt ? 'bg-green-500/20' : 'bg-red-500/20 text-red-400'}`}>
+                {assets.coverArt ? (
+                  <img src={assets.coverArt.url} alt="Cover Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Music size={16} />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-gray-400 text-xs">Cover Art</p>
+                <p className="text-white truncate">{assets.coverArt ? `${assets.coverArt.width}x${assets.coverArt.height} • ${(assets.coverArt.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : 'Missing'}</p>
+              </div>
             </div>
           </dl>
         </div>

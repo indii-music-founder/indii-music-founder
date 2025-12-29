@@ -9,25 +9,31 @@ export default function LicensingDashboard() {
     const [requests, setRequests] = useState<LicenseRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Expose for agent tools interaction if needed via window injection (typical in this architecture)
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [activeLicenses, pendingRequests] = await Promise.all([
-                    licensingService.getActiveLicenses(),
-                    licensingService.getPendingRequests()
-                ]);
-                setLicenses(activeLicenses);
-                setRequests(pendingRequests);
-            } catch (error) {
-                console.error('Failed to fetch licensing data:', error);
-            } finally {
-                setIsLoading(false);
-            }
+        if (typeof window !== 'undefined') {
+            (window as any).licensingService = licensingService;
+        }
+    }, []);
+
+    useEffect(() => {
+        const unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
+            setLicenses(data);
+            // Only set isLoading to false if it's still true, to avoid unnecessary re-renders
+            // and to ensure it's set after the first data load from either subscription.
+            if (isLoading) setIsLoading(false);
+        });
+
+        const unsubscribeRequests = licensingService.subscribeToPendingRequests((data) => {
+            setRequests(data);
+            // Only set isLoading to false if it's still true.
+            if (isLoading) setIsLoading(false);
+        });
+
+        return () => {
+            unsubscribeLicenses();
+            unsubscribeRequests();
         };
-
-        fetchData();
-
-        // In a production app, we would use onSnapshot for real-time updates
     }, []);
 
     return (

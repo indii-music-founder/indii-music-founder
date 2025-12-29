@@ -11,7 +11,8 @@ import {
     serverTimestamp,
     increment,
     updateDoc,
-    Timestamp
+    Timestamp,
+    setDoc
 } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
@@ -83,5 +84,19 @@ export class MarketingService {
 
         const docRef = await addDoc(collection(db, 'campaigns'), campaignData);
         return docRef.id;
+    }
+
+    /**
+     * Update Marketing Stats
+     */
+    static async updateMarketingStats(stats: { totalReach?: number; engagementRate?: number; activeCampaigns?: number }) {
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) throw new Error("User not authenticated");
+
+        const statsRef = doc(db, 'users', userProfile.id, 'stats', 'marketing');
+        await setDoc(statsRef, {
+            ...stats,
+            lastUpdated: serverTimestamp()
+        }, { merge: true });
     }
 }

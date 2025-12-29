@@ -145,7 +145,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       // Only auto-update if user hasn't made manual selections
       setSelectedDistributors([userDistributor]);
     }
-  }, [userDistributor]);
+  }, [userDistributor, selectedDistributors]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);

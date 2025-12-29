@@ -1,7 +1,7 @@
 
 import { FirestoreService } from '../FirestoreService';
 import { License, LicenseRequest } from './types';
-import { query, where, orderBy, limit } from 'firebase/firestore';
+import { query, where, orderBy, limit, Unsubscribe } from 'firebase/firestore';
 
 export class LicensingService {
     private licensesStore = new FirestoreService<License>('licenses');
@@ -50,6 +50,26 @@ export class LicensingService {
      */
     async updateRequestStatus(id: string, status: LicenseRequest['status']): Promise<void> {
         return this.updateRequest(id, { status });
+    }
+
+    /**
+     * Subscribe to real-time active licenses.
+     */
+    subscribeToActiveLicenses(callback: (licenses: License[]) => void): Unsubscribe {
+        return this.licensesStore.subscribe([
+            where('status', '==', 'active'),
+            orderBy('updatedAt', 'desc')
+        ], callback);
+    }
+
+    /**
+     * Subscribe to real-time pending requests.
+     */
+    subscribeToPendingRequests(callback: (requests: LicenseRequest[]) => void): Unsubscribe {
+        return this.requestsStore.subscribe([
+            where('status', 'in', ['checking', 'pending_approval', 'negotiating']),
+            orderBy('updatedAt', 'desc')
+        ], callback);
     }
 }
 

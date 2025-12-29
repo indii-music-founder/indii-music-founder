@@ -52,7 +52,8 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
     const loadFeed = async () => {
         setLoading(true);
         try {
-            const fetchedPosts = await SocialService.getFeed(userId, filter);
+            const targetId = filter === 'mine' ? userProfile?.id : userId;
+            const fetchedPosts = await SocialService.getFeed(targetId, filter);
             setPosts(fetchedPosts);
         } catch (error) {
             console.error("Failed to load social feed:", error);

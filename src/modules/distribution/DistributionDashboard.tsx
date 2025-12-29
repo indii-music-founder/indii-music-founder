@@ -6,11 +6,12 @@ import { useStore } from '@/core/store';
 import { ReleaseStatus } from '@/services/distribution/types/distributor';
 
 export default function DistributionDashboard() {
-    const { distribution, fetchReleases } = useStore();
-    const { releases } = distribution;
+    const { distribution, subscribeToReleases } = useStore();
+    const { releases, loading, error } = distribution;
 
     useEffect(() => {
-        fetchReleases();
+        const unsubscribe = subscribeToReleases();
+        return () => unsubscribe();
     }, []);
 
     return (
@@ -49,7 +50,23 @@ export default function DistributionDashboard() {
                             <p className="text-gray-400">Track the status of your releases across all connected platforms.</p>
                         </div>
 
-                        {releases.length === 0 ? (
+                        {loading && releases.length === 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="h-64 rounded-2xl bg-gray-900/50 animate-pulse border border-gray-800" />
+                                ))}
+                            </div>
+                        ) : error ? (
+                            <div className="p-8 border border-red-900/50 rounded-2xl bg-red-900/10 text-center">
+                                <p className="text-red-400">{error}</p>
+                                <button
+                                    onClick={() => subscribeToReleases()}
+                                    className="mt-4 px-4 py-2 bg-red-900/20 hover:bg-red-900/30 text-red-400 rounded-lg transition-colors"
+                                >
+                                    Retry Connection
+                                </button>
+                            </div>
+                        ) : releases.length === 0 ? (
                             <div className="flex flex-col items-center justify-center p-20 border border-gray-800 rounded-2xl bg-gray-900/20 text-center">
                                 <div className="p-4 rounded-full bg-gray-800/50 mb-4">
                                     <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
