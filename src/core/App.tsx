@@ -8,7 +8,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import ChatOverlay from './components/ChatOverlay';
-// import { AuthLogin } from '../modules/auth/Login'; // REMOVED
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 
@@ -23,7 +22,6 @@ const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDash
 const VideoStudio = lazy(() => import('../modules/video/VideoStudio'));
 const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
-// const SelectOrg = lazy(() => import('../modules/auth/SelectOrg')); // REMOVED
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
 const RoadManager = lazy(() => import('../modules/touring/RoadManager'));
 const SocialDashboard = lazy(() => import('../modules/social/SocialDashboard'));
@@ -70,7 +68,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'onboarding': OnboardingPage,
     'agent': AgentDashboard,
     'files': FilePreview,
-    // 'select-org': SelectOrg, // REMOVED
     'distribution': DistributionDashboard,
 };
 

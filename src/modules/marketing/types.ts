@@ -36,3 +36,9 @@ export interface CampaignAsset {
     posts: ScheduledPost[];
     status: CampaignStatus;
 }
+
+export interface MarketingStats {
+    totalReach: number;
+    engagementRate: number;
+    activeCampaigns: number;
+}

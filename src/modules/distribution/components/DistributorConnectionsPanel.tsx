@@ -47,7 +47,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
                         key={dist.distributorId}
                         connection={dist}
                         onConnect={handleConnect}
-                        isConnecting={loading}
+                        isConnecting={distribution.isConnecting}
                     />
                 ))}
             </div>

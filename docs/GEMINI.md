@@ -1,6 +1,6 @@
-# Gemini 3 Technical Specifications (BETA RELEASE)
+# Gemini 3 Technical Specifications (BETA RELEASE V5.0)
 
-This document outlines the technical parameters and best practices for utilizing **Gemini 3** series models within the indiiOS ecosystem.
+This document outlines the technical parameters and best practices for utilizing **Gemini 3** series models within the indiiOS ecosystem. Version 5.0 marks the shift to **High-Fidelity Production** standards.
 
 ---
 
@@ -18,7 +18,7 @@ All AI interactions must adhere to the [Model Usage Policy](file:///Volumes/X%20
 
 ---
 
-## 🧠 Reasoning & "Thinking" Levels
+## 🧠 Reasoning & "Thinking" Levels (Cortex V5)
 
 Gemini 3 models support dynamic reasoning intensities. Use the appropriate level for the task complexity.
 
@@ -35,7 +35,7 @@ Gemini 3 models support dynamic reasoning intensities. Use the appropriate level
 - `HIGH`: (Default) Architectural planning, multi-step orchestration.
 
 > [!IMPORTANT]
-> **Thought Signatures**: Always capture and pass back the `thought_signature` in conversational chains to maintain context continuity.
+> **Thought Signatures**: Always capture and pass back the `thought_signature` in conversational chains to maintain context continuity. This is mandatory for Beta compliance.
 
 ---
 
@@ -48,12 +48,12 @@ Control output quality via `media_resolution` parameter:
 - `low`: Quick previews.
 - `medium`: Standard web display.
 - `high`: (Default) High-fidelity assets.
-- `ultra_high`: Print/Production grade.
+- `ultra_high`: Print/Production grade (requires explicit user intent).
 
 ### Modality Notes
 
 - **PDFs**: Handled under the `IMAGE` modality. Large PDFs should be processed via GCS URIs.
-- **Images**: Pro models preserve native aspect ratio. Avoid aggressive cropping in the request.
+- **Images**: Pro models preserve native aspect ratio. Avoid aggressive cropping.
 
 ---
 
@@ -70,5 +70,10 @@ To maximize factuality and minimize hallucination in production:
 ## ⚡ Performance Optimization
 
 - **Context Window**: Maximize the use of the 2M token window for large codebase analysis.
-- **Caching**: Frequently used context blocks (e.g., library docs) should be context-cached where supported.
-- **Batched Inputs**: For bulk processing (e.g., analyzing 500+ lyrics), use asynchronous batching to avoid rate limits.
+- **Caching**: Frequently used context blocks (e.g., library docs) should be context-cached.
+- **Batched Inputs**: For bulk processing, use asynchronous batching to avoid rate limits.
+
+---
+
+> [!CAUTION]
+> **Beta Policy Enforcement**: Manual hardcoding of model strings is forbidden. Always use `AI_MODELS` from `@/core/config/ai-models`.

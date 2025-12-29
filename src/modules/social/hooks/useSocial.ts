@@ -1,118 +1,124 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SocialService } from '@/services/social/SocialService';
-import { SocialPost, SocialStats, ScheduledPost } from '@/services/social/types';
-import { useToast } from '@/core/context/ToastContext';
+import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types';
 import { useStore } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
+import * as Sentry from '@sentry/react';
 
 export function useSocial(userId?: string) {
+    const { userProfile } = useStore();
     const toast = useToast();
-    const userProfile = useStore((state) => state.userProfile);
 
-    // Feed State
+    // State
+    const [stats, setStats] = useState<SocialStats>({ followers: 0, following: 0, posts: 0, drops: 0 });
     const [posts, setPosts] = useState<SocialPost[]>([]);
-    const [feedLoading, setFeedLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'following' | 'mine'>('all');
-
-    // Dashboard State
-    const [stats, setStats] = useState<SocialStats | null>(null);
     const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
-    const [dashboardLoading, setDashboardLoading] = useState(true);
 
-    /**
-     * Load Main Feed
-     */
-    const loadFeed = useCallback(async () => {
-        setFeedLoading(true);
+    // Loading States
+    const [isLoading, setIsLoading] = useState(true);
+    const [isFeedLoading, setIsFeedLoading] = useState(true);
+
+    // Filters
+    const [filter, setFilter] = useState<'all' | 'following' | 'mine'>('all');
+    const [error, setError] = useState<string | null>(null);
+
+    const loadDashboardData = useCallback(async () => {
+        if (!userProfile?.id) return;
+
         try {
-            // Determine target ID based on filter
-            // If filter is 'mine', use current user profile ID
-            // If filter is 'following', SocialService likely handles logic, but usually needs a user context
-            // If userId is passed (viewing another profile), that takes precedence unless filter overrides
+            const [fetchedStats, fetchedScheduled] = await Promise.all([
+                SocialService.getDashboardStats(),
+                SocialService.getScheduledPosts(userProfile.id)
+            ]);
 
+            setStats(fetchedStats);
+            setScheduledPosts(fetchedScheduled);
+        } catch (err) {
+            console.error("Failed to load social dashboard:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to load dashboard stats.");
+        }
+    }, [userProfile?.id, toast]);
+
+    const loadFeed = useCallback(async () => {
+        setIsFeedLoading(true);
+        try {
             const targetId = filter === 'mine' ? userProfile?.id : userId;
-
             const fetchedPosts = await SocialService.getFeed(targetId, filter);
             setPosts(fetchedPosts);
-        } catch (error) {
-            console.error("Failed to load social feed:", error);
-            toast.error("Failed to refresh feed");
+        } catch (err) {
+            console.error("Failed to load feed:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to refresh feed.");
         } finally {
-            setFeedLoading(false);
+            setIsFeedLoading(false);
         }
-    }, [filter, userProfile?.id, userId, toast]);
+    }, [filter, userId, userProfile?.id, toast]);
 
-    /**
-     * Load Dashboard Stats & Scheduled Posts
-     */
-    const loadDashboardData = useCallback(async () => {
-        setDashboardLoading(true);
+    // Initial Data Fetch
+    useEffect(() => {
+        const init = async () => {
+            setIsLoading(true);
+            await Promise.all([loadDashboardData(), loadFeed()]);
+            setIsLoading(false);
+        };
+        init();
+    }, [loadDashboardData, loadFeed]);
+
+    // Actions
+    const schedulePost = useCallback(async (post: Omit<ScheduledPost, 'id' | 'status' | 'authorId'>) => {
+        if (!userProfile?.id) {
+            toast.error("You must be logged in to schedule posts.");
+            return false;
+        }
+
         try {
-            const [statsData, postsData] = await Promise.all([
-                SocialService.getDashboardStats(),
-                SocialService.getScheduledPosts()
-            ]);
-            setStats(statsData);
-            setScheduledPosts(postsData);
-        } catch (error) {
-            console.error("Failed to load dashboard data", error);
-            toast.error("Failed to load dashboard stats");
-        } finally {
-            setDashboardLoading(false);
+            await SocialService.schedulePost(post);
+            toast.success("Post scheduled successfully!");
+            loadDashboardData(); // Refresh calendar data
+            return true;
+        } catch (err) {
+            console.error("Error scheduling post:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to schedule post.");
+            return false;
         }
-    }, [toast]);
+    }, [userProfile?.id, loadDashboardData, toast]);
 
-    /**
-     * Create a new post
-     */
     const createPost = useCallback(async (content: string, mediaUrls: string[] = [], productId?: string) => {
         try {
             await SocialService.createPost(content, mediaUrls, productId);
             toast.success("Post published!");
-            loadFeed(); // Refresh feed
+            loadFeed(); // Refresh feed immediately
+            loadDashboardData(); // Update stats
             return true;
-        } catch (error) {
-            console.error("Failed to create post:", error);
-            toast.error("Failed to publish post");
+        } catch (err) {
+            console.error("Failed to create post:", err);
+            Sentry.captureException(err);
+            toast.error("Failed to publish post.");
             return false;
         }
-    }, [loadFeed, toast]);
-
-    /**
-     * Schedule a post
-     */
-    const schedulePost = useCallback(async (post: Omit<ScheduledPost, 'id' | 'status' | 'authorId'>) => {
-        try {
-            // Convert Date to number if needed (handled by caller mostly, but type enforces number)
-            await SocialService.schedulePost(post);
-            toast.success("Post scheduled successfully!");
-            loadDashboardData(); // Refresh calendar
-            return true;
-        } catch (error) {
-            console.error("Failed to schedule post:", error);
-            toast.error("Failed to schedule post");
-            return false;
-        }
-    }, [loadDashboardData, toast]);
-
-    // Initial Load Effects
-    useEffect(() => {
-        loadFeed();
-    }, [loadFeed]);
+    }, [loadFeed, loadDashboardData, toast]);
 
     return {
-        // Feed
+        // Data
+        stats,
         posts,
-        feedLoading,
+        scheduledPosts,
+
+        // UI State
+        isLoading, // Global initial load
+        isFeedLoading, // Specific feed updates
+        error,
         filter,
         setFilter,
-        refreshFeed: loadFeed,
-        createPost,
 
-        // Dashboard
-        stats,
-        scheduledPosts,
-        dashboardLoading,
-        refreshDashboard: loadDashboardData,
-        schedulePost,
+        // Actions
+        actions: {
+            schedulePost,
+            createPost,
+            refreshDashboard: loadDashboardData,
+            refreshFeed: loadFeed
+        }
     };
 }

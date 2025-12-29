@@ -23,9 +23,18 @@ vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
     ),
 }));
 
-// Mock store
-vi.mock('@/core/store', () => ({
-    useStore: vi.fn(),
+// Mock useSocial to avoid direct store dependencies
+vi.mock('./hooks/useSocial', () => ({
+    useSocial: vi.fn(() => ({
+        stats: { followers: 124500, following: 100, posts: 50, drops: 12 },
+        scheduledPosts: [],
+        isLoading: false,
+        actions: {
+            schedulePost: vi.fn(),
+            createPost: vi.fn(),
+            refreshDashboard: vi.fn()
+        }
+    }))
 }));
 
 describe('SocialDashboard', () => {
@@ -52,7 +61,7 @@ describe('SocialDashboard', () => {
     it('displays stats', () => {
         render(<SocialDashboard />);
         expect(screen.getByText('Total Reach')).toBeInTheDocument();
-        expect(screen.getByText('Engagement Rate')).toBeInTheDocument();
-        expect(screen.getByText('Active Campaigns')).toBeInTheDocument();
+        expect(screen.getByText('Following')).toBeInTheDocument();
+        expect(screen.getByText('Posts')).toBeInTheDocument();
     });
 });

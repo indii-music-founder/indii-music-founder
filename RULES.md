@@ -1,4 +1,4 @@
-# Operational Rules & Constraints (BETA RELEASE V4.0)
+# Operational Rules & Constraints (BETA RELEASE V5.0)
 
 ## RULE: THE AGENT0 EVOLUTION PROTOCOL (Strict Architecture)
 
@@ -39,8 +39,10 @@
 
 **Goal:** Ensure every commit is ready for the Beta release.
 
+* **No Simulation:** All database/external adapters MUST be integrated with functional backends (Firestore/Cloud Functions). Mock data is only allowed in specific `*.test.ts` files.
 * **No Zombie Code:** All commented-out code blocks must be deleted. No `// console.log` or placeholders.
-* **Type Integrity:** Zero `any` types allowed in new or modified files. Strict interface compliance is mandatory.
+* **Type Integrity:** Zero `any` types allowed. Strict interface compliance is mandatory. Unused imports/variables are terminal build errors.
+* **Atomic Selection:** When using `useStore`, always select specific slices to minimize re-renders. Component-level "God selections" (selecting the entire state) are forbidden.
 * **Accessibility (A11y):** All interactive elements must have appropriate ARIA labels and keyboard focus support.
 * **Performance:** Use `React.memo` and `useCallback` for all high-frequency UI components to prevent unnecessary re-renders.
 * **Linting:** Run `npm run lint:fix` before every checkpoint.
@@ -53,8 +55,8 @@
 
 * **Framework:** **Tailwind CSS v4** (CSS-first config) exclusively. No legacy v3 configs.
 * **Typography:** Variable fonts only (**Inter**, **Geist**, **Outfit**).
-* **Aesthetic:** "Liquid Logic." Use glassmorphism, subtle borders (`border-white/5`), and organic 3D shapes.
-* **Animation:** Use `framer-motion` for all transitions. No abrupt state changes.
+* **Aesthetic:** "Liquid Logic V2." Use glassmorphism, subtle borders (`border-white/5`), organic 3D shapes, and **premium gradients**.
+* **Animation:** Use `framer-motion` for all transitions. No abrupt state changes. UI must feel "reactive and alive."
 
 ---
 

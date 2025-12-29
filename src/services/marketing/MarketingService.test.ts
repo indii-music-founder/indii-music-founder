@@ -67,7 +67,7 @@ vi.mock('@/core/store', () => ({
 
 describe('MarketingService', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('getMarketingStats', () => {
@@ -93,14 +93,14 @@ describe('MarketingService', () => {
 
             const stats = await MarketingService.getMarketingStats();
             expect(stats.activeCampaigns).toBe(0);
-            expect(stats.totalReach).toBe(124500); // Mock fallback value
+            expect(stats.totalReach).toBe(0); // Mock fallback value
         });
     });
 
     describe('getCampaigns', () => {
         it('should fetch campaigns for the current user', async () => {
             const mockCampaign = { title: 'Test Campaign', startDate: '2023-12-01' };
-            mockGetDocs.mockResolvedValueOnce({
+            mockGetDocs.mockResolvedValue({
                 docs: [{ id: '1', data: () => mockCampaign }]
             });
 

@@ -4,13 +4,15 @@ import PublishingDashboard from './PublishingDashboard';
 
 // Mock dependencies
 const mockDeleteRelease = vi.fn();
+const mockArchiveRelease = vi.fn();
 const mockToastPromise = vi.fn();
 
 vi.mock('./hooks/useReleases', () => ({
     useReleases: vi.fn(() => ({
         releases: [],
         loading: false,
-        deleteRelease: mockDeleteRelease
+        deleteRelease: mockDeleteRelease,
+        archiveRelease: mockArchiveRelease
     }))
 }));
 
@@ -105,11 +107,11 @@ describe('PublishingDashboard', () => {
     });
 
     it('shows skeleton loading state', () => {
-        (useReleases as any).mockReturnValue({
+        (useReleases as any).mockImplementation(() => ({
             releases: [],
             loading: true,
             deleteRelease: mockDeleteRelease
-        });
+        }));
 
         render(<PublishingDashboard />);
 
@@ -168,7 +170,8 @@ describe('PublishingDashboard', () => {
         fireEvent.click(selectAllBtn);
 
         // Verify Bulk Action Bar appears
-        expect(screen.getByText('2')).toBeInTheDocument(); // Count badge
+        const selectedCount = screen.getByText('2', { selector: '.rounded-full' }); // More specific
+        expect(selectedCount).toBeInTheDocument();
         expect(screen.getByText('Selected')).toBeInTheDocument();
         expect(screen.getByText('Deselect All')).toBeInTheDocument();
 
@@ -179,8 +182,8 @@ describe('PublishingDashboard', () => {
 
     it('handles search and filtering correctly', () => {
         const mockReleases = [
-            { id: '1', metadata: { trackTitle: 'Apple' }, status: 'live' },
-            { id: '2', metadata: { trackTitle: 'Banana' }, status: 'draft' }
+            { id: '1', metadata: { trackTitle: 'Apple', artistName: 'A', releaseType: 'Single' }, status: 'live', assets: {} },
+            { id: '2', metadata: { trackTitle: 'Banana', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
         ];
 
         (useReleases as any).mockReturnValue({
@@ -191,7 +194,7 @@ describe('PublishingDashboard', () => {
         render(<PublishingDashboard />);
 
         // Search
-        const searchInput = screen.getByPlaceholderText('Search catalog...');
+        const searchInput = screen.getByPlaceholderText('Search releases...');
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getByText('Apple')).toBeInTheDocument();
         expect(screen.queryByText('Banana')).not.toBeInTheDocument();
@@ -236,13 +239,45 @@ describe('PublishingDashboard', () => {
         // For now, let's just find the button in the 'fixed' container.
 
         const floatingBar = screen.getByText('Selected').closest('div')?.parentElement;
-        const deleteBtn = floatingBar?.querySelectorAll('button')[1]; // Second button is delete
+        const deleteBtn = floatingBar?.querySelectorAll('button')[2]; // Third button is delete (Deselect, Archive, Delete)
 
         fireEvent.click(deleteBtn!);
 
         expect(global.confirm).toHaveBeenCalled();
         expect(mockToastPromise).toHaveBeenCalled();
         expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+        expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+    });
+
+    it('executes bulk archive with toast promise', async () => {
+        // Mock global confirm
+        global.confirm = vi.fn(() => true);
+
+        const mockReleases = [
+            { id: '1', metadata: { trackTitle: 'Archive Me' }, status: 'live', assets: {} }
+        ];
+
+        (useReleases as any).mockReturnValue({
+            releases: mockReleases,
+            loading: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
+        });
+
+        render(<PublishingDashboard />);
+
+        // Select the item
+        const selectAllBtn = screen.getByText('Select All');
+        fireEvent.click(selectAllBtn);
+
+        // Find archive button
+        const archiveBtn = screen.getByText('Archive');
+
+        fireEvent.click(archiveBtn);
+
+        expect(global.confirm).toHaveBeenCalled();
+        expect(mockToastPromise).toHaveBeenCalled();
+        expect(mockArchiveRelease).toHaveBeenCalledWith('1');
     });
 
     it('navigates to distribution module via Manage Distributors', () => {
@@ -253,7 +288,7 @@ describe('PublishingDashboard', () => {
 
         render(<PublishingDashboard />);
 
-        const manageBtn = screen.getByText('Manage Distributors');
+        const manageBtn = screen.getByText('Manage Connections');
         fireEvent.click(manageBtn);
 
         expect(mockSetModule).toHaveBeenCalledWith('distribution');
