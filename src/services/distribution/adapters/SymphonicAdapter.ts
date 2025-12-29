@@ -11,7 +11,7 @@ import {
     type DistributorEarnings,
 } from '../types/distributor';
 import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
-import { SFTPTransporter } from '../transport/SFTPTransporter';
+// import { SFTPTransporter } from '../transport/SFTPTransporter';
 
 /**
  * Symphonic Adapter
@@ -102,15 +102,10 @@ export class SymphonicAdapter implements IDistributorAdapter {
 
             // 2. Transmit via SFTP
             // In a real app, these creds come from secure storage / initialized instance
-            const transporter = new SFTPTransporter(true); // Default to Dry Run
-            await transporter.connect({
-                host: 'ftp.symphonicms.com', // Placeholder host
-                username: this.partnerId || 'symphonic_partner',
-                // password: this.apiKey 
-            });
+            console.log('[Symphonic] SFTP Transport disabled in browser. Mocking delivery.');
 
-            await transporter.uploadDirectory(packagePath, `/${metadata.labelName}/${releaseId}`);
-            await transporter.disconnect();
+            // Mock delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             return {
                 success: true,

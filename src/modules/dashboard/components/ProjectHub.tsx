@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { DashboardService, ProjectMetadata } from '../../../services/dashboard/DashboardService';
+import { DashboardService, ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { FolderPlus, Clock, Image, MoreVertical, Copy, Trash2, Wand2, ArrowUpRight, Plus } from 'lucide-react';
 import { useStore } from '@/core/store';
 import NewProjectModal from './NewProjectModal';

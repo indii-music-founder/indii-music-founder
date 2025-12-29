@@ -234,6 +234,11 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 // Sub-component for individual items to handle async product fetching if needed
 // or we can pass products from a global store. For MVP, we'll fetch product if ID exists.
 // Ideally, the feed query should join this data, but NoSQL :)
+export default SocialFeed;
+
+// Sub-component for individual items to handle async product fetching if needed
+// or we can pass products from a global store. For MVP, we'll fetch product if ID exists.
+// Ideally, the feed query should join this data, but NoSQL :)
 const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 

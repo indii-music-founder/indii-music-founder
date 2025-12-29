@@ -11,7 +11,7 @@ import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
 import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 export default function WorkflowLab() {
     const { nodes, edges, setNodes, setEdges } = useStore();
@@ -157,7 +157,7 @@ export default function WorkflowLab() {
     };
 
     return (
-        <ErrorBoundary>
+        <ModuleErrorBoundary moduleName="Workflow Lab">
             <div className="flex h-full bg-[#0f0f0f]">
                 {/* Sidebar */}
                 <div className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col">
@@ -272,6 +272,6 @@ export default function WorkflowLab() {
                     />
                 )}
             </div>
-        </ErrorBoundary>
+        </ModuleErrorBoundary>
     );
 }

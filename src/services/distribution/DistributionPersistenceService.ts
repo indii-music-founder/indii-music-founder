@@ -1,22 +1,52 @@
-import Store from 'electron-store';
 import { v4 as uuidv4 } from 'uuid';
 import type { ReleaseDeployment, DistributionStoreSchema, DeploymentFilter } from './types/persistence';
 import type { DistributorId, ReleaseStatus, ValidationError } from './types/distributor';
 
-export class DistributionPersistenceService {
-    private store: Store<DistributionStoreSchema>;
+// Simple in-memory/localStorage mock for browser compatibility
+class SimpleStore<T> {
+    private data: T;
+    private key: string;
 
-    constructor(config?: { cwd?: string }) {
-        let storeCwd = config?.cwd;
+    constructor(options: { name: string; defaults: T }) {
+        this.key = options.name;
+        this.data = options.defaults;
 
-        // Fallback for CLI/Testing environment where Electron app is not available
-        if (!storeCwd && !process.versions.electron) {
-            storeCwd = process.cwd();
+        if (typeof localStorage !== 'undefined') {
+            const saved = localStorage.getItem(this.key);
+            if (saved) {
+                try {
+                    this.data = JSON.parse(saved);
+                } catch (e) {
+                    console.warn('Failed to parse saved store', e);
+                }
+            }
         }
+    }
 
-        this.store = new Store<DistributionStoreSchema>({
+    get<K extends keyof T>(key: K): T[K] {
+        return this.data[key];
+    }
+
+    set<K extends keyof T>(key: K, value: T[K]): void {
+        this.data[key] = value;
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.key, JSON.stringify(this.data));
+        }
+    }
+
+    clear(): void {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(this.key);
+        }
+    }
+}
+
+export class DistributionPersistenceService {
+    private store: SimpleStore<DistributionStoreSchema>;
+
+    constructor(_config?: { cwd?: string }) {
+        this.store = new SimpleStore<DistributionStoreSchema>({
             name: 'distribution-store',
-            cwd: storeCwd,
             defaults: {
                 deployments: {},
                 byInternalId: {}

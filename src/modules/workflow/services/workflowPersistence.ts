@@ -11,8 +11,23 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
             userId,
             updatedAt: new Date().toISOString(),
             // Ensure we don't save undefined values which Firestore dislikes
-            nodes: workflow.nodes.map(node => JSON.parse(JSON.stringify(node))),
-            edges: workflow.edges.map(edge => JSON.parse(JSON.stringify(edge)))
+            // Using JSON.parse(JSON.stringify()) is a common way to strip undefined
+            nodes: workflow.nodes.map(node => {
+                try {
+                    return JSON.parse(JSON.stringify(node));
+                } catch (e) {
+                    console.error("Failed to serialize node", node, e);
+                    throw e;
+                }
+            }),
+            edges: workflow.edges.map(edge => {
+                try {
+                    return JSON.parse(JSON.stringify(edge));
+                } catch (e) {
+                    console.error("Failed to serialize edge", edge, e);
+                    throw e;
+                }
+            })
         };
 
         if (workflow.id) {

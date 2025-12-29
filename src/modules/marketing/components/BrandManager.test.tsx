@@ -11,20 +11,29 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-// Mock Firebase Functions
-vi.mock('@/services/firebase', () => ({
-    functions: {},
+// Mock AI Service
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => JSON.stringify({
+                isConsistent: true,
+                score: 95,
+                issues: [],
+                suggestions: ['Great job!']
+            })
+        })
+    }
 }));
 
-vi.mock('firebase/functions', () => ({
-    httpsCallable: () => vi.fn().mockResolvedValue({
-        data: {
-            isConsistent: true,
-            score: 95,
-            issues: [],
-            suggestions: ['Great job!']
-        }
-    }),
+// Mock Firebase Functions (still needed for saveGuidelines potentially)
+vi.mock('@/services/firebase', () => ({
+    functions: {},
+    db: {}
+}));
+
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(),
+    updateDoc: vi.fn()
 }));
 
 describe('BrandManager', () => {

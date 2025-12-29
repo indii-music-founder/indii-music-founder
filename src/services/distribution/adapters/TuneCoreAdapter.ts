@@ -215,8 +215,22 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         };
     }
 
-    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
-        return [];
+    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+        // Mock implementation to match getEarnings behavior and ensure consistency
+        // This acts as a placeholder for real API integration later.
+        return [{
+            releaseId: 'mock-release-id',
+            distributorId: this.id,
+            period,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
+            currencyCode: 'USD',
+            breakdown: [],
+            lastUpdated: new Date().toISOString()
+        }];
     }
 
     // --- Private Helpers ---
