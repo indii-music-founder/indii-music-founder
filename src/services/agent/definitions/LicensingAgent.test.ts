@@ -22,6 +22,24 @@ vi.mock('@agents/licensing/prompt.md?raw', () => ({
     default: 'Mock System Prompt'
 }));
 
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn()
+    }
+}));
+
+vi.mock('../tools/LegalTools', () => ({
+    LegalTools: {
+        draft_contract: vi.fn()
+    }
+}));
+
+vi.mock('@/core/config/ai-models', () => ({
+    AI_MODELS: {
+        TEXT: { FAST: 'mock-model' }
+    }
+}));
+
 describe('LicensingAgent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -97,7 +115,12 @@ describe('LicensingAgent', () => {
     });
 
     describe('analyze_contract', () => {
-        it('should return a placeholder analysis', async () => {
+        it('should use AI to analyze contract data', async () => {
+            const { AI } = await import('@/services/ai/AIService');
+            vi.mocked(AI.generateContent).mockResolvedValue({
+                text: () => "Mocked AI analysis summary."
+            } as any);
+
             const args = {
                 file_data: 'base64data',
                 mime_type: 'application/pdf'
@@ -105,8 +128,28 @@ describe('LicensingAgent', () => {
 
             const result = await (LicensingAgent.functions!.analyze_contract as any)(args);
 
+            expect(AI.generateContent).toHaveBeenCalled();
             expect(result.success).toBe(true);
-            expect(result.data.summary).toContain('analysis'); // Changed from 'analyzed' to 'analysis'
+            expect(result.data.summary).toBe("Mocked AI analysis summary.");
+        });
+    });
+
+    describe('draft_license', () => {
+        it('should use LegalTools to draft a contract', async () => {
+            const { LegalTools } = await import('../tools/LegalTools');
+            vi.mocked(LegalTools.draft_contract).mockResolvedValue("Mocked Contract Content");
+
+            const args = {
+                type: 'Sync License',
+                parties: ['Artist', 'Label'],
+                terms: 'Commercial use for 1 year'
+            };
+
+            const result = await (LicensingAgent.functions!.draft_license as any)(args);
+
+            expect(LegalTools.draft_contract).toHaveBeenCalledWith(args);
+            expect(result.success).toBe(true);
+            expect(result.data.contract).toBe("Mocked Contract Content");
         });
     });
 });
