@@ -9,8 +9,8 @@ export default function Showroom() {
     const toast = useToast();
 
     // State
-    const [selectedAsset, setSelectedAsset] = useState<File | null>(null);
-    const [productType, setProductType] = useState<ProductType>('clothing');
+    const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+    const [productType, setProductType] = useState<ProductType>('T-Shirt');
     const [scenePrompt, setScenePrompt] = useState('');
     const [motionPrompt, setMotionPrompt] = useState('');
 
@@ -27,6 +27,11 @@ export default function Showroom() {
         setMockupImage(null);
         setVideoUrl(null);
         toast.success(`${file.name} ready for staging.`);
+    const handleAssetUpload = (base64: string) => {
+        setSelectedAsset(base64);
+        setMockupImage(null);
+        setVideoUrl(null);
+        toast.success("Design ready for staging.");
     };
 
     const handleGenerate = async () => {
@@ -52,7 +57,7 @@ export default function Showroom() {
 
         setIsGenerating(true);
         try {
-            const resultVideo = await ShowroomService.animateScene(mockupImage, motionPrompt);
+            const resultVideo = await ShowroomService.generateVideo(mockupImage, motionPrompt);
             setVideoUrl(resultVideo);
             toast.success("Scene successfully animated.");
         } catch (error) {
@@ -73,8 +78,8 @@ export default function Showroom() {
                 {/* Column 1: Asset Rack */}
                 <div className="w-[320px] h-full flex-shrink-0 border-r border-white/5 bg-black/40 backdrop-blur-xl">
                     <AssetRack
-                        onAssetSelect={handleAssetSelect}
-                        selectedAsset={selectedAsset}
+                        onAssetUpload={handleAssetUpload}
+                        productAsset={selectedAsset}
                         productType={productType}
                         onTypeChange={setProductType}
                     />
