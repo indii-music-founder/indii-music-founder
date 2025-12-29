@@ -11,7 +11,9 @@ import {
     where,
     QueryConstraint,
     Timestamp,
-    DocumentData
+    DocumentData,
+    onSnapshot,
+    Unsubscribe
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -94,6 +96,23 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             return results.sort(sorter);
         }
         return results;
+    }
+
+    /**
+     * Subscribes to real-time updates for a query.
+     */
+    subscribe(constraints: QueryConstraint[], callback: (data: T[]) => void, onError?: (error: Error) => void): Unsubscribe {
+        const q = query(this.collection, ...constraints);
+        return onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as unknown as T));
+            callback(data);
+        }, (error) => {
+            console.error(`Error in subscription to ${this.collectionPath}:`, error);
+            if (onError) onError(error as Error);
+        });
     }
 }
 

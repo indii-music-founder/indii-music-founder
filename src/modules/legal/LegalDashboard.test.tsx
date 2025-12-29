@@ -11,18 +11,33 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-vi.mock('@/services/firebase', () => ({
-    functions: {},
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => JSON.stringify({
+                score: 85,
+                summary: 'Test Summary',
+                risks: ['Risk 1', 'Risk 2']
+            })
+        }),
+        parseJSON: (text: string) => JSON.parse(text),
+    },
 }));
 
-vi.mock('firebase/functions', () => ({
-    httpsCallable: () => vi.fn().mockResolvedValue({
-        data: {
-            score: 85,
-            summary: 'Test Summary',
-            risks: ['Risk 1', 'Risk 2']
-        }
-    }),
+vi.mock('@/services/agent/tools/LegalTools', () => ({
+    LegalTools: {
+        generate_nda: vi.fn().mockResolvedValue('Mock NDA Content'),
+        draft_contract: vi.fn().mockResolvedValue('Mock IP Assignment Content'),
+    },
+}));
+
+vi.mock('@/core/config/ai-models', () => ({
+    AI_MODELS: {
+        TEXT: {
+            FAST: 'fast-model',
+            AGENT: 'agent-model',
+        },
+    },
 }));
 
 describe('LegalDashboard', () => {

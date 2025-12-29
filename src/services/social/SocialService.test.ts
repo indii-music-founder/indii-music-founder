@@ -149,4 +149,35 @@ describe('SocialService', () => {
             expect(feed[0].timestamp).toBe(1000);
         });
     });
+    describe('schedulePost', () => {
+        it('should add a post to scheduled_posts collection', async () => {
+            mockAddDoc.mockResolvedValueOnce({ id: 'scheduled-id' });
+
+            const post = {
+                platform: 'Twitter' as const,
+                copy: 'Test scheduled post',
+                imageAsset: {
+                    assetType: 'image' as const,
+                    title: 'Test',
+                    imageUrl: 'http://test.com/img.png',
+                    caption: 'Caption'
+                },
+                day: 0,
+                scheduledTime: Date.now()
+            };
+
+            const id = await SocialService.schedulePost(post);
+
+            expect(mockCollection).toHaveBeenCalledWith({}, 'scheduled_posts');
+            expect(mockAddDoc).toHaveBeenCalledWith(
+                'MOCK_COLLECTION_REF',
+                expect.objectContaining({
+                    authorId: 'user-123',
+                    platform: 'Twitter',
+                    status: 'PENDING'
+                })
+            );
+            expect(id).toBe('scheduled-id');
+        });
+    });
 });

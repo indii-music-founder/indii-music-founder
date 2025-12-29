@@ -8,6 +8,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { StorageService } from '@/services/StorageService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 
@@ -22,6 +23,8 @@ const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
   'ditto music': 'ditto',
   'unitedmasters': 'unitedmasters',
   'united masters': 'unitedmasters',
+  'awal': 'awal',
+  'amuse': 'amuse'
 };
 
 // Audio format type matching DDEXReleaseRecord
@@ -86,6 +89,8 @@ export interface UseDDEXReleaseReturn {
   // Assets
   assets: Partial<ReleaseAssets>;
   updateAssets: (updates: Partial<ReleaseAssets>) => void;
+  uploadAsset: (type: 'audio' | 'cover', file: File) => Promise<string>;
+  uploadProgress: { audio: number; cover: number };
 
   // Validation
   isStepValid: (step: WizardStep) => boolean;
@@ -110,7 +115,7 @@ export interface UseDDEXReleaseReturn {
 const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', 'assets', 'review'];
 
 export function useDDEXRelease(): UseDDEXReleaseReturn {
-  const { currentOrganizationId, organizations, user, userProfile } = useStore();
+  const { currentOrganizationId, organizations, userProfile } = useStore();
 
   // Get current organization
   const activeOrg = useMemo(() =>
@@ -134,6 +139,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   const [metadata, setMetadata] = useState<Partial<ExtendedGoldenMetadata>>(INITIAL_EXTENDED_METADATA);
   const [selectedDistributors, setSelectedDistributors] = useState<DistributorId[]>([userDistributor]);
   const [assets, setAssets] = useState<Partial<ReleaseAssets>>(INITIAL_ASSETS);
+  const [uploadProgress, setUploadProgress] = useState({ audio: 0, cover: 0 });
 
   // Sync distributor selection when userProfile changes (e.g., after onboarding)
   useEffect(() => {
@@ -141,7 +147,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       // Only auto-update if user hasn't made manual selections
       setSelectedDistributors([userDistributor]);
     }
-  }, [userDistributor]);
+  }, [userDistributor, selectedDistributors]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);
@@ -164,6 +170,52 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   const updateAssets = useCallback((updates: Partial<ReleaseAssets>) => {
     setAssets(prev => ({ ...prev, ...updates }));
   }, []);
+
+  // Upload asset
+  const uploadAsset = useCallback(async (type: 'audio' | 'cover', file: File) => {
+    if (!activeOrg?.id || !userProfile?.id) {
+      throw new Error('Missing organization or user context');
+    }
+
+    const path = `orgs/${activeOrg.id}/releases/pending/${Date.now()}_${file.name}`;
+
+    try {
+      const url = await StorageService.uploadFileWithProgress(
+        file,
+        path,
+        (progress) => {
+          setUploadProgress(prev => ({ ...prev, [type]: progress }));
+        }
+      );
+
+      // Extract metadata from file if audio
+      if (type === 'audio') {
+        const audioInfo = {
+          url,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          format: (file.name.split('.').pop()?.toLowerCase() || 'wav') as 'wav' | 'flac' | 'mp3' | 'aac',
+          sampleRate: 44100, // Placeholder, would ideally use audio context to detect
+          bitDepth: 16       // Placeholder
+        };
+        updateAssets({ audioFile: audioInfo });
+      } else {
+        const coverInfo = {
+          url,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          width: 3000,  // Placeholder
+          height: 3000  // Placeholder
+        };
+        updateAssets({ coverArt: coverInfo });
+      }
+
+      return url;
+    } catch (error) {
+      console.error(`Error uploading ${type} asset:`, error);
+      throw error;
+    }
+  }, [activeOrg, userProfile, updateAssets]);
 
   // Validation errors
   const getValidationErrors = useCallback((step: WizardStep): string[] => {
@@ -230,7 +282,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
   // Submit release
   const submitRelease = useCallback(async (): Promise<string> => {
-    if (!activeOrg?.id || !user?.uid) {
+    if (!activeOrg?.id || !userProfile?.id) {
       throw new Error('Missing organization or user context');
     }
 
@@ -247,7 +299,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
         orgId: activeOrg.id,
         projectId: activeProjectId,
-        userId: user.uid,
+        userId: userProfile.id,
         metadata: metadata as ExtendedGoldenMetadata,
         assets: {
           audioUrl: assets.audioFile?.url || '',
@@ -292,7 +344,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [activeOrg, activeProjectId, user, metadata, assets, selectedDistributors]);
+  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors]);
 
   // Reset wizard
   const resetWizard = useCallback(() => {
@@ -314,6 +366,8 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     toggleDistributor,
     assets,
     updateAssets,
+    uploadAsset,
+    uploadProgress,
     isStepValid,
     validationErrors,
     goToNextStep,

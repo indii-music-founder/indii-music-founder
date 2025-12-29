@@ -3,22 +3,36 @@
 echo "🛑 Gatekeeper Active: Verifying completion..."
 
 # 1. RUN THE VERIFICATION (The "Truth")
-# This is the binary success criteria mentioned in Source 6.
-# Replace 'npm test' with your specific build/verify command.
-npm test > validation_log.txt 2>&1
-TEST_EXIT_CODE=$?
+# If RUN_GAUNTLET is true, run the full verification suite
+if [ "$RUN_GAUNTLET" = "true" ]; then
+    echo "🛡️ FULL GAUNTLET MODE: Running comprehensive verification..."
+    ./scripts/run-gauntlet.sh
+    TEST_EXIT_CODE=$?
+else
+    echo "🧪 QUICK VERIFY: Running unit tests..."
+    # This is the binary success criteria mentioned in Source 6.
+    npm test -- --run > validation_log.txt 2>&1
+    TEST_EXIT_CODE=$?
+fi
 
 # 2. CHECK FOR FAILURE
 if [ $TEST_EXIT_CODE -ne 0 ]; then
-    echo "❌ GATEKEEPER BLOCK: Tests failed."
-    echo "You claimed to be done, but the verification failed."
-    echo "Here are the errors you need to fix in the next loop:"
+    echo "❌ GATEKEEPER BLOCK: Verification failed."
+    echo "You claimed to be done, but the system detected issues."
+    echo ""
+    echo "CRITICAL ERRORS FOUND:"
     echo "---------------------------------------------------"
-    # Output the tail of the log so the AI sees why it failed
-    tail -n 20 validation_log.txt
+    if [ "$RUN_GAUNTLET" = "true" ]; then
+        echo "Check the Gauntlet output above for failures."
+    else
+        # Output the tail of the log so the AI sees why it failed
+        tail -n 25 validation_log.txt
+    fi
     echo "---------------------------------------------------"
+    echo ""
+    echo "📝 Tip: Review the errors above, fix the code, and run on_stop again."
     
-    # EXIT 1 is critical. This tells the loop "DO NOT EXIT".
+    # EXIT 1 is critical. This tells the agent "DO NOT EXIT".
     exit 1
 fi
 

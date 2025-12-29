@@ -1,170 +1,323 @@
 // import { db, auth } from '@/services/firebase'; // Removed auth
-import { db } from '@/services/firebase';
+import { db } from "@/services/firebase";
 import {
-    collection,
-    doc,
-    addDoc,
-    getDoc,
-    getDocs,
-    updateDoc,
-    query,
-    where,
-    orderBy,
-    limit,
-    serverTimestamp,
-    runTransaction,
-    increment,
-    Timestamp
-} from 'firebase/firestore';
-import { SocialPost } from './types';
-import { useStore } from '@/core/store';
+  collection,
+  doc,
+  addDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp,
+  runTransaction,
+  increment,
+  Timestamp,
+  deleteDoc,
+  setDoc,
+} from "firebase/firestore";
+import {
+  SocialPost,
+  SocialStats,
+  ScheduledPost,
+  CampaignStatus,
+} from "./types";
+import { useStore } from "@/core/store";
 
 export class SocialService {
+  /**
+   * Follow a user
+   */
+  static async followUser(targetUserId: string): Promise<void> {
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id) throw new Error("User not authenticated");
+    const currentUserId = userProfile.id;
 
-    /**
-     * Follow a user
-     */
-    static async followUser(targetUserId: string): Promise<void> {
-        const currentUserId = 'superuser-id'; // Ground Zero
-        if (currentUserId === targetUserId) throw new Error("Cannot follow yourself");
+    const connectionRef = doc(
+      db,
+      "users",
+      currentUserId,
+      "following",
+      targetUserId,
+    );
+    const followerRef = doc(
+      db,
+      "users",
+      targetUserId,
+      "followers",
+      currentUserId,
+    );
 
-        const connectionRef = doc(db, 'users', currentUserId, 'following', targetUserId);
-        const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+    await runTransaction(db, async (transaction) => {
+      const connectionDoc = await transaction.get(connectionRef);
+      if (connectionDoc.exists()) return; // Already following
 
-        await runTransaction(db, async (transaction) => {
-            const connectionDoc = await transaction.get(connectionRef);
-            if (connectionDoc.exists()) return; // Already following
+      transaction.set(connectionRef, {
+        timestamp: serverTimestamp(),
+      });
+      transaction.set(followerRef, {
+        timestamp: serverTimestamp(),
+      });
 
-            // Add 'following' record for current user
-            transaction.set(connectionRef, {
-                userId: currentUserId,
-                targetId: targetUserId,
-                status: 'following',
-                timestamp: serverTimestamp()
-            });
+      // Update stats
+      const currentUserRef = doc(db, "users", currentUserId);
+      const targetUserRef = doc(db, "users", targetUserId);
 
-            // Add 'follower' record for target user
-            transaction.set(followerRef, {
-                userId: targetUserId, // The user being likely followed (contextual owner)
-                followerId: currentUserId,
-                status: 'following',
-                timestamp: serverTimestamp()
-            });
+      transaction.update(currentUserRef, {
+        "socialStats.following": increment(1),
+      });
+      transaction.update(targetUserRef, {
+        "socialStats.followers": increment(1),
+      });
+    });
+  }
 
-            // Update stats
-            const currentUserRef = doc(db, 'users', currentUserId);
-            const targetUserRef = doc(db, 'users', targetUserId);
+  /**
+   * Get Social Dashboard Stats
+   */
+  static async getDashboardStats(): Promise<SocialStats> {
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id)
+      return { followers: 0, following: 0, posts: 0, drops: 0 };
 
-            transaction.update(currentUserRef, { 'socialStats.following': increment(1) });
-            transaction.update(targetUserRef, { 'socialStats.followers': increment(1) });
-        });
+    const userRef = doc(db, "users", userProfile.id);
+    const snapshot = await getDoc(userRef);
+
+    if (snapshot.exists() && snapshot.data().socialStats) {
+      return snapshot.data().socialStats as SocialStats;
     }
 
+    // Return calculated/real stats if no specific stats exist
+    // Note: Real reach/engagement would come from an aggregation document or external API
+    return {
+      followers:
+        snapshot.exists() && snapshot.data().socialStats?.followers
+          ? snapshot.data().socialStats.followers
+          : 0,
+      following:
+        snapshot.exists() && snapshot.data().socialStats?.following
+          ? snapshot.data().socialStats.following
+          : 0,
+      posts:
+        snapshot.exists() && snapshot.data().socialStats?.posts
+          ? snapshot.data().socialStats.posts
+          : 0,
+      drops:
+        snapshot.exists() && snapshot.data().socialStats?.drops
+          ? snapshot.data().socialStats.drops
+          : 0,
+    };
+  }
+
+  /**
+   * Schedule a post
+   */
+  static async schedulePost(
+    post: Omit<ScheduledPost, "id" | "status" | "authorId">,
+  ): Promise<string> {
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id) throw new Error("User not authenticated");
+
+    const newPost: Omit<ScheduledPost, "id"> = {
+      ...post,
+      authorId: userProfile.id,
+      status: CampaignStatus.PENDING,
+      // Ensure scheduledTime is a number (timestamp)
+      scheduledTime:
+        typeof post.scheduledTime === "string"
+          ? new Date(post.scheduledTime).getTime()
+          : post.scheduledTime,
+    };
+
+    const docRef = await addDoc(collection(db, "scheduled_posts"), newPost);
+    return docRef.id;
+  }
+
+  /**
+   * Get Scheduled Posts
+   */
+  static async getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
+    const userProfile = useStore.getState().userProfile;
+    const targetUserId = userId || userProfile?.id;
+
+    if (!targetUserId) return [];
+
+    const q = query(
+      collection(db, "scheduled_posts"),
+      where("authorId", "==", targetUserId),
+      where("status", "==", CampaignStatus.PENDING),
+      orderBy("scheduledTime", "asc"),
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as ScheduledPost[];
+  }
+
+  /**
     /**
      * Unfollow a user
      */
-    static async unfollowUser(targetUserId: string): Promise<void> {
-        const currentUserId = 'superuser-id'; // Ground Zero
+  static async unfollowUser(targetUserId: string): Promise<void> {
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id) throw new Error("User not authenticated");
+    const currentUserId = userProfile.id;
 
-        const connectionRef = doc(db, 'users', currentUserId, 'following', targetUserId);
-        const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+    const connectionRef = doc(
+      db,
+      "users",
+      currentUserId,
+      "following",
+      targetUserId,
+    );
+    const followerRef = doc(
+      db,
+      "users",
+      targetUserId,
+      "followers",
+      currentUserId,
+    );
 
-        await runTransaction(db, async (transaction) => {
-            const connectionDoc = await transaction.get(connectionRef);
-            if (!connectionDoc.exists()) return; // Not following
+    await runTransaction(db, async (transaction) => {
+      const connectionDoc = await transaction.get(connectionRef);
+      if (!connectionDoc.exists()) return; // Not following
 
-            transaction.delete(connectionRef);
-            transaction.delete(followerRef);
+      transaction.delete(connectionRef);
+      transaction.delete(followerRef);
 
-            // Update stats
-            const currentUserRef = doc(db, 'users', currentUserId);
-            const targetUserRef = doc(db, 'users', targetUserId);
+      // Update stats
+      const currentUserRef = doc(db, "users", currentUserId);
+      const targetUserRef = doc(db, "users", targetUserId);
 
-            // Use negative increment
-            transaction.update(currentUserRef, { 'socialStats.following': increment(-1) });
-            transaction.update(targetUserRef, { 'socialStats.followers': increment(-1) });
-        });
+      // Use negative increment
+      transaction.update(currentUserRef, {
+        "socialStats.following": increment(-1),
+      });
+      transaction.update(targetUserRef, {
+        "socialStats.followers": increment(-1),
+      });
+    });
+  }
+
+  /**
+   * Create a new post
+   */
+  static async createPost(
+    content: string,
+    mediaUrls: string[] = [],
+    productId?: string,
+  ): Promise<string> {
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id) throw new Error("User not authenticated");
+    const currentUser = {
+      uid: userProfile.id,
+      displayName: userProfile.displayName,
+      photoURL: userProfile.photoURL,
+    }; // Mock user object
+
+    const postData = {
+      authorId: currentUser.uid,
+      authorName: currentUser.displayName || "Anonymous",
+      authorAvatar: currentUser.photoURL || null,
+      content,
+      mediaUrls,
+      productId: productId || null,
+      likes: 0,
+      commentsCount: 0,
+      timestamp: serverTimestamp(),
+    };
+
+    // Add to global 'posts' collection (and ideally user's subcollection or performing fan-out)
+    // For MVP, global collection indexed by authorId is fine.
+    const postRef = await addDoc(collection(db, "posts"), postData);
+
+    // Update user's post count
+    const userRef = doc(db, "users", currentUser.uid);
+    await updateDoc(userRef, {
+      "socialStats.posts": increment(1),
+      ...(productId && { "socialStats.drops": increment(1) }),
+    });
+
+    return postRef.id;
+  }
+
+  /**
+   * Get Feed
+   * @param userId If provided, gets specific user's posts. If null, gets Home Feed (friends + recommended).
+   */
+  static async getFeed(
+    userId?: string,
+    filter: "all" | "following" | "mine" = "all",
+  ): Promise<SocialPost[]> {
+    const postsRef = collection(db, "posts");
+    let q;
+
+    if (userId) {
+      // Specific user's feed (Profile or 'Mine' tab)
+      q = query(
+        postsRef,
+        where("authorId", "==", userId),
+        orderBy("timestamp", "desc"),
+        limit(50),
+      );
+    } else if (filter === "following") {
+      // Placeholder: currently global, but intended for mutuals
+      q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
+    } else {
+      // 'all' or fallback Home Feed
+      q = query(postsRef, orderBy("timestamp", "desc"), limit(50));
     }
 
-    /**
-     * Create a new post
-     */
-    static async createPost(content: string, mediaUrls: string[] = [], productId?: string): Promise<string> {
-        const userProfile = useStore.getState().userProfile;
-        const currentUser = { uid: userProfile.id, displayName: userProfile.displayName, photoURL: userProfile.photoURL }; // Mock user object
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        timestamp: (data.timestamp as Timestamp)?.toMillis() || Date.now(),
+      } as SocialPost;
+    });
+  }
 
-        const postData = {
-            authorId: currentUser.uid,
-            authorName: currentUser.displayName || 'Anonymous',
-            authorAvatar: currentUser.photoURL || null,
-            content,
-            mediaUrls,
-            productId: productId || null,
-            likes: 0,
-            commentsCount: 0,
-            timestamp: serverTimestamp()
-        };
+  /**
+   * Check if currently following a user
+   */
+  static async isFollowing(targetUserId: string): Promise<boolean> {
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id) return false;
+    const currentUserId = userProfile.id;
 
-        // Add to global 'posts' collection (and ideally user's subcollection or performing fan-out)
-        // For MVP, global collection indexed by authorId is fine.
-        const postRef = await addDoc(collection(db, 'posts'), postData);
+    const docRef = doc(db, "users", currentUserId, "following", targetUserId);
+    const snapshot = await getDoc(docRef);
+    return snapshot.exists();
+  }
+  /**
+   * Manually recalculate stats for a user.
+   */
+  static async recalculateStats(userId: string): Promise<SocialStats> {
+    const postsSnap = await getDocs(
+      query(collection(db, "posts"), where("authorId", "==", userId)),
+    );
+    const followingSnap = await getDocs(
+      collection(db, `users/${userId}/following`),
+    );
 
-        // Update user's post count
-        const userRef = doc(db, 'users', currentUser.uid);
-        await updateDoc(userRef, {
-            'socialStats.posts': increment(1),
-            ...(productId && { 'socialStats.drops': increment(1) })
-        });
+    const stats: SocialStats = {
+      posts: postsSnap.size,
+      following: followingSnap.size,
+      followers: 0, // Need collection for this
+      drops: postsSnap.docs.filter((doc) => !!doc.data().productId).length,
+    };
 
-        return postRef.id;
-    }
-
-    /**
-     * Get Feed
-     * @param userId If provided, gets specific user's posts. If null, gets Home Feed (friends + recommended).
-     */
-    static async getFeed(userId?: string): Promise<SocialPost[]> {
-        let q;
-        const postsRef = collection(db, 'posts');
-
-        if (userId) {
-            // Profile Feed
-            q = query(
-                postsRef,
-                where('authorId', '==', userId),
-                orderBy('timestamp', 'desc'),
-                limit(20)
-            );
-        } else {
-            // Home Feed (MVP: Global Feed or Just recent posts)
-            // Real implementation requires fan-out or querying 'following' list.
-            // For Alpha, we'll return global latest posts.
-            q = query(
-                postsRef,
-                orderBy('timestamp', 'desc'),
-                limit(50)
-            );
-        }
-
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                timestamp: (data.timestamp as Timestamp)?.toMillis() || Date.now()
-            } as SocialPost;
-        });
-    }
-
-    /**
-     * Check if currently following a user
-     */
-    static async isFollowing(targetUserId: string): Promise<boolean> {
-        const currentUserId = 'superuser-id'; // Ground Zero
-
-        const docRef = doc(db, 'users', currentUserId, 'following', targetUserId);
-        const snapshot = await getDoc(docRef);
-        return snapshot.exists();
-    }
+    await setDoc(
+      doc(db, "users", userId),
+      { socialStats: stats },
+      { merge: true },
+    );
+    return stats;
+  }
 }

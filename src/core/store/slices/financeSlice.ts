@@ -17,17 +17,32 @@ export const createFinanceSlice: StateCreator<FinanceSlice> = (set, get) => ({
         error: null,
     },
     fetchEarnings: async (period) => {
+        const { user } = (get() as any);
+        if (!user) return;
+
         set((state) => ({ finance: { ...state.finance, loading: true } }));
 
-        // TODO: Replace with real DSR parsing when backend is ready
-        // const summary = await FinanceService.fetchEarnings(orgId, period);
+        try {
+            const { FinanceService } = await import('@/services/finance/FinanceService');
+            const summary = await FinanceService.fetchEarnings(user.uid);
 
-        set((state) => ({
-            finance: {
-                ...state.finance,
-                loading: false,
-                earningsSummary: null // No data until real backend integration
-            }
-        }));
+            set((state) => ({
+                finance: {
+                    ...state.finance,
+                    loading: false,
+                    earningsSummary: summary,
+                    error: null
+                }
+            }));
+        } catch (error: any) {
+            set((state) => ({
+                finance: {
+                    ...state.finance,
+                    loading: false,
+                    error: error.message
+                }
+            }));
+        }
     }
+
 });

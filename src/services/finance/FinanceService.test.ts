@@ -1,0 +1,116 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FinanceService, Expense } from './FinanceService';
+
+// --- Mocks ---
+
+const {
+    mockAddDoc,
+    mockGetDocs,
+    mockQuery,
+    mockCollection,
+    mockWhere,
+    mockOrderBy
+} = vi.hoisted(() => {
+    return {
+        mockAddDoc: vi.fn(),
+        mockGetDocs: vi.fn(),
+        mockQuery: vi.fn(),
+        mockCollection: vi.fn(),
+        mockWhere: vi.fn(),
+        mockOrderBy: vi.fn(),
+    }
+});
+
+vi.mock('@/services/firebase', () => ({
+    db: {},
+}));
+
+vi.mock('firebase/firestore', () => ({
+    addDoc: mockAddDoc,
+    getDocs: mockGetDocs,
+    query: mockQuery,
+    collection: mockCollection,
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    serverTimestamp: () => 'MOCK_TIMESTAMP',
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
+    increment: vi.fn(),
+    Timestamp: {
+        now: () => ({ toDate: () => new Date() })
+    }
+}));
+
+// --- Test Suite ---
+
+describe('FinanceService', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockCollection.mockReturnValue('MOCK_COLLECTION_REF');
+    });
+
+    describe('addExpense', () => {
+        it('should successfully add an expense and return the ID', async () => {
+            const expense: Omit<Expense, 'id' | 'createdAt'> = {
+                userId: 'user-123',
+                vendor: 'Test Vendor',
+                amount: 50.00,
+                category: 'Equipment',
+                date: '2024-03-20',
+                description: 'Test expense'
+            };
+
+            mockAddDoc.mockResolvedValueOnce({ id: 'new-expense-id' });
+
+            const result = await FinanceService.addExpense(expense);
+
+            expect(mockCollection).toHaveBeenCalled();
+            expect(mockAddDoc).toHaveBeenCalledWith(
+                'MOCK_COLLECTION_REF',
+                expect.objectContaining({
+                    ...expense,
+                    createdAt: 'MOCK_TIMESTAMP'
+                })
+            );
+            expect(result).toBe('new-expense-id');
+        });
+    });
+
+    describe('getExpenses', () => {
+        it('should fetch and format expenses for a user', async () => {
+            const mockDocs = [
+                {
+                    id: 'exp-1',
+                    data: () => ({
+                        userId: 'user-123',
+                        vendor: 'Vendor 1',
+                        amount: 100,
+                        createdAt: { toDate: () => new Date('2024-03-20') }
+                    })
+                }
+            ];
+
+            mockGetDocs.mockResolvedValueOnce({ docs: mockDocs });
+
+            const expenses = await FinanceService.getExpenses('user-123');
+
+            expect(mockQuery).toHaveBeenCalled();
+            expect(mockWhere).toHaveBeenCalledWith('userId', '==', 'user-123');
+            expect(mockOrderBy).toHaveBeenCalledWith('createdAt', 'desc');
+            expect(expenses).toHaveLength(1);
+            expect(expenses[0].id).toBe('exp-1');
+            expect(expenses[0].vendor).toBe('Vendor 1');
+        });
+    });
+
+    describe('fetchEarnings', () => {
+        it('should return simulated earnings data', async () => {
+            const result = await FinanceService.fetchEarnings('user-123');
+
+            expect(result).toBeDefined();
+            expect(result.totalGrossRevenue).toBeGreaterThan(0);
+            expect(result.byPlatform).toHaveLength(3);
+            expect(result.byRelease).toHaveLength(2);
+        });
+    });
+});

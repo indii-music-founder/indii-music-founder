@@ -275,3 +275,13 @@ export interface DistributorCredentials {
   sftpPassword?: string;
   privateKey?: string;
 }
+
+// Release summary for dashboard display
+export interface DashboardRelease {
+  id: string;
+  title: string;
+  artist: string;
+  coverArtUrl?: string;
+  releaseDate?: string;
+  deployments: Record<string, { status: ReleaseStatus; error?: string }>;
+}

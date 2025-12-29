@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { AI } from '@/services/ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
+import { LegalTools } from '@/services/agent/tools/LegalTools';
 
 export default function LegalDashboard() {
     const [isDragging, setIsDragging] = useState(false);
@@ -12,6 +13,7 @@ export default function LegalDashboard() {
         risks: string[];
         summary: string;
     }>(null);
+    const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const toast = useToast();
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -43,36 +45,92 @@ export default function LegalDashboard() {
         toast.info(`Analyzing ${file.name}...`);
 
         try {
-            const readFile = (file: File): Promise<string> => {
+            const readFileAsText = (file: File): Promise<string> => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result as string);
                     reader.onerror = reject;
-                    reader.readAsDataURL(file);
+                    reader.readAsText(file);
                 });
             };
 
-            const dataUrl = await readFile(file);
-            const base64Data = dataUrl.split(',')[1];
-            const mimeType = file.type || 'text/plain';
+            const content = await readFileAsText(file);
 
-            const analyzeContract = httpsCallable(functions, 'analyzeContract');
-            const result = await analyzeContract({ fileData: base64Data, mimeType });
+            const systemPrompt = `
+You are an expert entertainment lawyer. Analyze the provided contract text.
+Return a JSON response with the following structure:
+{
+  "score": number (0-100 ranking how safe/standard the contract is),
+  "summary": "a 2-3 sentence overview of the contract",
+  "risks": ["list", "of", "major", "risks", "or", "clauses", "to", "watch"]
+}
+Only return valid JSON.
+`;
 
-            const data = result.data as any;
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.FAST,
+                contents: { role: 'user', parts: [{ text: `Contract Content:\n${content}` }] },
+                systemInstruction: systemPrompt,
+                config: {
+                    response_mime_type: 'application/json'
+                } as any // Cast to any if shared types are outdated but backend supports it
+            });
+
+            const data = AI.parseJSON(response.text()) as any;
 
             setAnalysisResult({
-                score: data.score,
-                summary: data.summary,
-                risks: data.risks
+                score: data.score || 0,
+                summary: data.summary || "No summary provided.",
+                risks: data.risks || []
             });
             toast.success("Analysis complete!");
         } catch (error) {
             console.error("Analysis failed:", error);
-            toast.error("Analysis failed. Please try again.");
+            toast.error("Analysis failed. Please ensure the file contains readable text.");
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    const handleGenerateNDA = async () => {
+        setIsGenerating('NDA');
+        try {
+            const nda = await LegalTools.generate_nda({
+                parties: ['[ARTIST NAME]', '[COMPANY/INDIVIDUAL NAME]'],
+                purpose: 'general business discussion and project collaboration'
+            });
+
+            // For Alpha, we just show a success toast and could potentially download it
+            // In a real app, we'd probably open a modal with the result
+            console.log("Generated NDA:", nda);
+            toast.success("NDA Template generated! Check console for output.");
+        } catch (error) {
+            toast.error("Failed to generate NDA.");
+        } finally {
+            setIsGenerating(null);
+        }
+    };
+
+    const handleGenerateIPAssignment = async () => {
+        setIsGenerating('IP');
+        try {
+            const assignment = await LegalTools.draft_contract({
+                type: 'Intellectual Property Assignment',
+                parties: ['[ASSIGNOR NAME]', '[ASSIGNEE NAME]'],
+                terms: 'Transfer of all rights, title, and interest in and to the specified creative works.'
+            });
+            console.log("Generated IP Assignment:", assignment);
+            toast.success("IP Assignment generated! Check console for output.");
+        } catch (error) {
+            toast.error("Failed to generate IP Assignment.");
+        } finally {
+            setIsGenerating(null);
+        }
+    };
+
+    const handleFindCounsel = () => {
+        window.open('https://www.entertainmentlawyer.ca/directory', '_blank'); // Placeholder for a real directory
+        toast.info("Opening entertainment lawyer directory...");
     };
 
     return (
@@ -189,18 +247,26 @@ export default function LegalDashboard() {
                     <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Tools</h3>
                         <div className="space-y-2">
-                            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-3 group">
+                            <button
+                                onClick={handleGenerateNDA}
+                                disabled={isGenerating !== null}
+                                className={`w-full text-left p-3 rounded-lg transition-colors flex items-center gap-3 group ${isGenerating === 'NDA' ? 'opacity-50 cursor-wait' : 'hover:bg-gray-800'}`}
+                            >
                                 <div className="p-2 bg-blue-500/10 rounded group-hover:bg-blue-500/20 text-blue-400">
-                                    <FileText size={18} />
+                                    {isGenerating === 'NDA' ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
                                 </div>
                                 <div>
                                     <div className="font-medium">NDA Generator</div>
                                     <div className="text-xs text-gray-500">Create a standard NDA</div>
                                 </div>
                             </button>
-                            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-3 group">
+                            <button
+                                onClick={handleGenerateIPAssignment}
+                                disabled={isGenerating !== null}
+                                className={`w-full text-left p-3 rounded-lg transition-colors flex items-center gap-3 group ${isGenerating === 'IP' ? 'opacity-50 cursor-wait' : 'hover:bg-gray-800'}`}
+                            >
                                 <div className="p-2 bg-purple-500/10 rounded group-hover:bg-purple-500/20 text-purple-400">
-                                    <CheckCircle size={18} />
+                                    {isGenerating === 'IP' ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
                                 </div>
                                 <div>
                                     <div className="font-medium">IP Assignment</div>
@@ -215,7 +281,10 @@ export default function LegalDashboard() {
                         <p className="text-sm text-gray-400 mb-4">
                             AI analysis is for informational purposes only. Connect with a verified entertainment lawyer for binding advice.
                         </p>
-                        <button className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-colors">
+                        <button
+                            onClick={handleFindCounsel}
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-colors"
+                        >
                             Find Counsel
                         </button>
                     </div>

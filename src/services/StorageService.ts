@@ -28,6 +28,37 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
         }
     }
 
+    /**
+     * Uploads a file with progress tracking.
+     */
+    async uploadFileWithProgress(
+        file: Blob | File,
+        path: string,
+        onProgress: (progress: number) => void
+    ): Promise<string> {
+        const { uploadBytesResumable } = await import('firebase/storage');
+        const storageRef = ref(storage, path);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        return new Promise((resolve, reject) => {
+            uploadTask.on(
+                'state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    onProgress(progress);
+                },
+                (error) => {
+                    console.error("Error uploading file with progress:", error);
+                    reject(error);
+                },
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                }
+            );
+        });
+    }
+
     async deleteFile(path: string): Promise<void> {
         try {
             const storageRef = ref(storage, path);
