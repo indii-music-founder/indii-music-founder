@@ -60,7 +60,8 @@ vi.mock('@/core/store', () => ({
                 uid: 'user-123',
                 displayName: 'Test Artist',
                 photoURL: 'http://test.com/avatar.jpg'
-            }
+            },
+            userProfile: { id: 'user-123', displayName: 'Test Artist' }
         })
     }
 }));

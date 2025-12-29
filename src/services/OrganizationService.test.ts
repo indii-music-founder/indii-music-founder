@@ -44,7 +44,7 @@ describe('OrganizationService', () => {
             data: () => ({ members: ['user-123'] })
         });
 
-        const orgId = await OrganizationService.createOrganization('Test Org');
+        const orgId = await OrganizationService.createOrganization('Test Org', 'user-123');
 
         expect(mockAddDoc).toHaveBeenCalled();
         expect(orgId).toBe('new-org-id');

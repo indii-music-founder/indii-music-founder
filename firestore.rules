@@ -143,11 +143,28 @@ service cloud.firestore {
     // SOCIAL POSTS (user-scoped)
     // ========================================
 
+    // ========================================
+    // SOCIAL POSTS (user-scoped)
+    // ========================================
+
     match /posts/{postId} {
       // Anyone authenticated can read posts (public feed)
       allow read: if isAuthenticated();
 
       // Only the author can create/update/delete their posts
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // FILE NODES (Project Resources)
+    // ========================================
+
+    match /file_nodes/{nodeId} {
+      // Allow read for authenticated users (TODO: Scope to project members)
+      allow read: if isAuthenticated();
+      
+      // Allow create/update/delete only if user owns the node
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
