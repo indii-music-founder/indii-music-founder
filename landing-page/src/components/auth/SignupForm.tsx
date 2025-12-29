@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { signUpWithEmail, getStudioUrl } from '@/app/lib/auth';
+import { Link } from 'react-router-dom';
+import { signUpWithEmail, getStudioUrl } from '@/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/app/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupForm() {
@@ -146,7 +145,7 @@ export default function SignupForm() {
                 <div className="text-center text-sm">
                     <span className="text-gray-500">Already have an account?</span>{' '}
                     <Link
-                        href="/login"
+                        to="/login"
                         className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
                     >
                         Sign in

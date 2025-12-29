@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { signInWithEmail, getStudioUrl } from '@/app/lib/auth';
+import { Link, useNavigate } from 'react-router-dom';
+import { signInWithEmail, getStudioUrl } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
@@ -82,7 +82,7 @@ export default function LoginForm() {
                 <div className="flex items-center justify-between">
                     <div className="text-sm">
                         <Link
-                            href="/reset-password"
+                            to="/reset-password"
                             className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
                         >
                             Forgot your password?
@@ -122,7 +122,7 @@ export default function LoginForm() {
                 <div className="text-center text-sm">
                     <span className="text-gray-500">Don&apos;t have an account?</span>{' '}
                     <Link
-                        href="/signup"
+                        to="/signup"
                         className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
                     >
                         Sign up for free
