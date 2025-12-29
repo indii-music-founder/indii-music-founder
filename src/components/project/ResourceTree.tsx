@@ -25,44 +25,43 @@ interface ResourceTreeProps {
 export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
     const {
         currentProjectId,
-        currentUser,
-        nodes,
-        fetchNodes,
+        userProfile,
+        fileNodes,
+        fetchFileNodes,
         expandedFolderIds,
         toggleFolder,
-        selectedNodeId,
-        setSelectedNode,
-        createFolder,
+        selectedFileNodeId,
+        setSelectedFileNode,
         createFolder,
         deleteNode,
         moveNode,
         renameNode,
-        isLoading
+        isFileSystemLoading
     } = useStore();
 
     const [dragOverId, setDragOverId] = useState<string | null>(null);
 
     useEffect(() => {
         if (currentProjectId) {
-            fetchNodes(currentProjectId);
+            fetchFileNodes(currentProjectId);
         }
-    }, [currentProjectId, fetchNodes]);
+    }, [currentProjectId, fetchFileNodes]);
 
-    const rootNodes = nodes.filter((node: FileNode) => !node.parentId);
+    const rootNodes = fileNodes.filter((node: FileNode) => !node.parentId);
 
     // Simple recursive renderer
     const renderNode = (node: FileNode, depth: number = 0) => {
         const isExpanded = expandedFolderIds.includes(node.id);
-        const isSelected = selectedNodeId === node.id;
-        const hasChildren = nodes.some((n: FileNode) => n.parentId === node.id);
-        const children = nodes.filter((n: FileNode) => n.parentId === node.id);
+        const isSelected = selectedFileNodeId === node.id;
+        const hasChildren = fileNodes.some((n: FileNode) => n.parentId === node.id);
+        const children = fileNodes.filter((n: FileNode) => n.parentId === node.id);
 
         const handleToggle = (e: React.MouseEvent) => {
             e.stopPropagation();
             if (node.type === 'folder') {
                 toggleFolder(node.id);
             }
-            setSelectedNode(node.id);
+            setSelectedFileNode(node.id);
         };
 
         const handleDragStart = (e: React.DragEvent) => {
@@ -109,8 +108,9 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
 
         const handleCreateFolder = async (e: Event) => {
             e.preventDefault();
-            if (currentProjectId && currentUser) {
-                await createFolder("New Folder", node.id, currentProjectId, currentUser.uid);
+            if (currentProjectId && userProfile?.id) {
+                // Create folder INSIDE the current node
+                await createFolder("New Folder", node.id, currentProjectId, userProfile.id);
                 if (!expandedFolderIds.includes(node.id)) {
                     toggleFolder(node.id);
                 }
@@ -175,18 +175,25 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
                             <DropdownMenu.Content className="min-w-[160px] bg-[#1c1c1c] border border-white/10 rounded-md shadow-xl p-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                                {node.type === 'folder' && (
+                                    <DropdownMenu.Item
+                                        className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
+                                        onSelect={handleCreateFolder}
+                                    >
+                                        <Plus size={12} /> New Folder
+                                    </DropdownMenu.Item>
+                                )}
+                                <DropdownMenu.Item
+                                    className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
+                                    onSelect={handleRename}
+                                >
+                                    <div className="w-3" /> Rename
+                                </DropdownMenu.Item>
                                 <DropdownMenu.Item
                                     className="text-xs text-red-400 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
                                     onSelect={handleDelete}
-                                    asChild
                                 >
-                                    {/* Note: Radix UI Item usually doesn't need asChild unless custom component. But here we put spans inside? No, item content is inside. 
-    Wait, `onSelect` type is `(event: Event) => void`. 
-    I just need to make sure `renderNode` is closed properly.
-*/}
-                                    <div className="flex items-center gap-2 w-full">
-                                        <span className="flex-1">Delete</span>
-                                    </div>
+                                    <div className="w-3" /> Delete
                                 </DropdownMenu.Item>
                             </DropdownMenu.Content>
                         </DropdownMenu.Portal>
@@ -223,8 +230,8 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
     };
 
     const handleCreateRootFolder = () => {
-        if (currentProjectId && currentUser?.uid) {
-            createFolder('New Folder', null, currentProjectId, currentUser.uid);
+        if (currentProjectId && userProfile?.id) {
+            createFolder('New Folder', null, currentProjectId, userProfile.id);
         }
     };
 
@@ -236,7 +243,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
         )
     }
 
-    if (isLoading && nodes.length === 0) {
+    if (isFileSystemLoading && fileNodes.length === 0) {
         return (
             <div className={cn("flex items-center justify-center h-40", className)}>
                 <Loader2 className="animate-spin text-gray-500" size={16} />
@@ -269,7 +276,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                         No resources in this project.
                     </div>
                 ) : (
-                    <div className="space-y-0.5 min-h-full">
+                    <div className="space-y-0.5 min-h-full pb-10">
                         {rootNodes.map((node: FileNode) => renderNode(node))}
                     </div>
                 )}
