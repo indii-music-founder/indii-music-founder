@@ -10,6 +10,10 @@ export default function Showroom() {
 
     // State
     const [assetData, setAssetData] = useState<string | null>(null);
+    const toast = useToast();
+
+    // State
+    const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
     const [productType, setProductType] = useState<ProductType>('T-Shirt');
     const [scenePrompt, setScenePrompt] = useState('');
     const [motionPrompt, setMotionPrompt] = useState('');
@@ -23,6 +27,22 @@ export default function Showroom() {
         setMockupImage(null);
         setVideoUrl(null);
         success("Graphic ready for staging.");
+    const handleAssetSelect = (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            toast.error("Please select a valid image file (JPG, PNG).");
+            return;
+        }
+        setSelectedAsset(URL.createObjectURL(file)); // Store URL string
+        setMockupImage(null);
+        setVideoUrl(null);
+        toast.success(`${file.name} ready for staging.`);
+    };
+
+    const handleAssetUpload = (base64: string) => {
+        setSelectedAsset(base64);
+        setMockupImage(null);
+        setVideoUrl(null);
+        toast.success("Design ready for staging.");
     };
 
     const handleGenerate = async () => {
@@ -38,6 +58,10 @@ export default function Showroom() {
         } catch (err) {
             console.error(err);
             error("Could not generate mockup. Please try again.");
+            toast.success("High-fidelity rendering complete.");
+        } catch (error) {
+            console.error(error);
+            toast.error("Could not generate mockup. Please try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -54,6 +78,10 @@ export default function Showroom() {
         } catch (err) {
             console.error(err);
             error("Could not animate scene. Please verify credits and try again.");
+            toast.success("Scene successfully animated.");
+        } catch (error) {
+            console.error(error);
+            toast.error("Could not animate scene. Please verify credits and try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -70,6 +98,8 @@ export default function Showroom() {
                 <div className="w-[320px] h-full flex-shrink-0 border-r border-white/5 bg-black/40 backdrop-blur-xl">
                     <AssetRack
                         productAsset={assetData}
+                        onAssetUpload={handleAssetUpload}
+                        productAsset={selectedAsset}
                         productType={productType}
                         onAssetUpload={handleAssetUpload}
                         onTypeChange={setProductType}

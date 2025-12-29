@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PulseText from './PulseText';
 import PulseButton from './PulseButton';
-import Link from 'next/link';
+// import Link from 'next/link';
 
 // interface SlideData {
 //     id: string;
@@ -87,11 +87,11 @@ export default function DigitalBillboard({ user, authenticatedCta }: DigitalBill
                     </PulseText>
 
                     {/* CTA Button with Magnetic Pull (implied by layout) */}
-                    <Link href={effectiveCta.href}>
+                    <a href={effectiveCta.href}>
                         <PulseButton className="px-8 py-4 text-lg bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full font-bold hover:bg-white hover:text-black transition-all transform hover:scale-110 shadow-[0_0_30px_rgba(255,255,255,0.2)]">
                             {effectiveCta.label}
                         </PulseButton>
-                    </Link>
+                    </a>
                 </motion.div>
             </AnimatePresence>
 

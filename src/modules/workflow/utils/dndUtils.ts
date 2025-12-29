@@ -75,7 +75,17 @@ export const createNodeFromDrop = (
 
     const audioSegmentData = event.dataTransfer.getData('application/audiosegment');
     if (audioSegmentData) {
-        const { label, start, end } = JSON.parse(audioSegmentData);
+        let label, start, end;
+        try {
+            const parsed = JSON.parse(audioSegmentData);
+            label = parsed.label;
+            start = parsed.start;
+            end = parsed.end;
+        } catch (e) {
+            console.error("Failed to parse audio segment data", e);
+            return;
+        }
+
         const newNode = {
             id: `audio-segment-${+new Date()}`,
             type: 'audioSegmentNode',

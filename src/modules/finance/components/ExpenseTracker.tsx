@@ -50,6 +50,17 @@ export const ExpenseTracker: React.FC = () => {
                 const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
                 if (jsonMatch && userProfile?.id) {
                     const data = JSON.parse(jsonMatch[0]);
+                if (jsonMatch) {
+                    let data;
+                    try {
+                        data = JSON.parse(jsonMatch[0]);
+                    } catch (e) {
+                         console.error("Failed to parse receipt JSON", e);
+                         toast.error("Failed to parse receipt data.");
+                         setIsAnalyzing(false);
+                         return;
+                    }
+
                     const expenseData = {
                         userId: userProfile.id,
                         vendor: data.vendor || 'Unknown Vendor',

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeGallery from './components/CreativeGallery';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
@@ -80,7 +80,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     }, [pendingPrompt, generationMode]);
 
     return (
-        <ErrorBoundary>
+        <ModuleErrorBoundary moduleName="Creative Studio">
             <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
                 <CreativeNavbar />
                 <div className="flex-1 flex overflow-hidden relative">
@@ -110,6 +110,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     />
                 )}
             </div>
-        </ErrorBoundary>
+        </ModuleErrorBoundary>
     );
 }

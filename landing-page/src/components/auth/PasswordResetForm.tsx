@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { resetPassword } from '@/app/lib/auth';
+import { Link } from 'react-router-dom';
+import { resetPassword } from '@/lib/auth';
 import { Loader2, CheckCircle } from 'lucide-react';
 
 export default function PasswordResetForm() {
@@ -40,7 +40,7 @@ export default function PasswordResetForm() {
                 </p>
                 <div className="pt-4">
                     <Link
-                        href="/login"
+                        to="/login"
                         className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
                     >
                         Back to Sign in
@@ -98,7 +98,7 @@ export default function PasswordResetForm() {
 
                 <div className="text-center text-sm">
                     <Link
-                        href="/login"
+                        to="/login"
                         className="font-medium text-gray-400 hover:text-white transition-colors"
                     >
                         &larr; Back to Log in

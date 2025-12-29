@@ -3,7 +3,7 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w",
   authDomain: "indiios-v-1-1.web.app",
   databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
   projectId: "indiios-v-1-1",

@@ -25,7 +25,7 @@ import {
 import { useStore } from '@/core/store';
 import { useReleases } from './hooks/useReleases';
 import ReleaseWizard from './components/ReleaseWizard';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
 
@@ -212,7 +212,7 @@ export default function PublishingDashboard() {
     }
 
     return (
-        <ErrorBoundary>
+        <ModuleErrorBoundary moduleName="Publishing Dashboard">
             <div className="min-h-screen bg-[#0A0A0A] text-white">
                 <div className="max-w-7xl mx-auto px-6 py-12">
                     {/* Header */}
@@ -572,6 +572,6 @@ export default function PublishingDashboard() {
                     )}
                 </div>
             </div>
-        </ErrorBoundary>
+        </ModuleErrorBoundary>
     );
 }
