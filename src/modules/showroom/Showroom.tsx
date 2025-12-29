@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useToast } from '@/core/hooks/useToast';
+import { useToast } from '@/core/context/ToastContext';
 import AssetRack, { ProductType } from './components/AssetRack';
 import ScenarioBuilder from './components/ScenarioBuilder';
 import ShowroomStage from './components/ShowroomStage';

@@ -227,7 +227,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             </div>
         </div>
     );
-}
+});
 
 
 
@@ -305,4 +305,6 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
             </div>
         </article>
     );
-}
+});
+
+export default SocialFeed;
