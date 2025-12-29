@@ -23,6 +23,8 @@ const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
   'ditto music': 'ditto',
   'unitedmasters': 'unitedmasters',
   'united masters': 'unitedmasters',
+  'awal': 'awal',
+  'amuse': 'amuse'
 };
 
 // Audio format type matching DDEXReleaseRecord

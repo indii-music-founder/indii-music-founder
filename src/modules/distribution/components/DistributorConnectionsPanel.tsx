@@ -16,26 +16,27 @@ export const DistributorConnectionsPanel: React.FC = () => {
 
     if (loading && connections.length === 0) {
         return (
-            <div className="p-8 flex items-center justify-center min-h-[400px]">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                    <p className="text-gray-400">Loading distributors...</p>
-                </div>
+            <div className="p-12 flex flex-col items-center justify-center min-h-[400px]">
+                <div className="w-12 h-12 rounded-full border-t-2 border-white animate-spin mb-4" />
+                <p className="text-gray-500 font-bold uppercase tracking-[0.2em] text-[10px]">Scanning Connections</p>
             </div>
         );
     }
 
     return (
-        <div className="p-8">
-            <div className="mb-8">
-                <h2 className="text-3xl font-bold tracking-tight text-white mb-2">My Distributors</h2>
-                <p className="text-gray-400">
-                    Connect your existing distribution accounts to sync earnings and manage releases.
+        <div className="animate-in fade-in duration-700">
+            <div className="mb-12">
+                <h2 className="text-3xl font-black tracking-tighter text-white mb-2 uppercase italic">Management Console</h2>
+                <p className="text-gray-500 font-medium max-w-2xl">
+                    Bridge your existing distribution accounts with IndiiOS. Real-time sync for metadata, deliveries, and high-fidelity reporting.
                 </p>
             </div>
 
             {error && (
-                <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm">
+                <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-[12px] font-bold flex items-center gap-3">
+                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
                     {error}
                 </div>
             )}
@@ -52,14 +53,22 @@ export const DistributorConnectionsPanel: React.FC = () => {
             </div>
 
             {/* Recommendations Section */}
-            <div className="mt-12 p-8 border border-gray-800 rounded-xl bg-gray-900/50 border-dashed">
-                <h3 className="text-xl font-semibold text-white mb-2">Need a new distributor?</h3>
-                <p className="text-gray-400 mb-6 max-w-2xl">
-                    IndiiOS recommends partners based on your genre, budget, and career goals. Get discounted rates with our preferred partners.
-                </p>
-                <button className="px-6 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-colors">
-                    View Recommendations
-                </button>
+            <div className="mt-16 p-10 border border-gray-800/50 rounded-2xl bg-[#0F0F0F] relative overflow-hidden group">
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div>
+                        <h3 className="text-2xl font-black text-white mb-3 uppercase italic">Scale Up Your Reach</h3>
+                        <p className="text-gray-500 mb-0 font-medium max-w-xl">
+                            Looking for better metadata handling or higher royalty splits? IndiiOS power partners offer exclusive terms for our users.
+                        </p>
+                    </div>
+                    <button className="px-8 py-3 bg-white text-black rounded-xl font-black text-[12px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/5">
+                        View Preferred Partners
+                    </button>
+                </div>
+
+                {/* Background Decoration */}
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
             </div>
         </div>
     );

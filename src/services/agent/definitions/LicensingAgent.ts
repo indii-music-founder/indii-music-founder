@@ -3,7 +3,7 @@ import systemPrompt from '@agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
 import { AI } from "@/services/ai/AIService";
-import { AI_MODELS } from "@/core/config/ai-models";
+import { AI_MODELS, AI_CONFIG } from "@/core/config/ai-models";
 import { LegalTools } from "../tools/LegalTools";
 import { ToolFunctionArgs } from "../types";
 import { LicenseRequest } from "../../licensing/types";
@@ -60,20 +60,36 @@ export const LicensingAgent: AgentConfig = {
         },
         analyze_contract: async (args: { file_data: string, mime_type: string }) => {
             try {
-                const prompt = `You are a legal expert. Analyze this license/contract and provide a summary of its key terms, specifically regarding commercial use, attribution requirements, and duration.
-                
-                Document Content (Base64 or Text representation): ${args.file_data.substring(0, 1000)}[...]`;
+                // Grounding and Identity Instructions (Rule 5.4 & 6)
+                const prompt = `
+                STRICT SYSTEM INSTRUCTIONS:
+                - You are Gemini 3 Pro (High Thinking). You DO NOT fallback to simpler models.
+                - Analyze the provided legal document ONLY. Do not use external knowledge or hallucinate terms not present in the text.
+                - If the document is illegible or not a contract, state this clearly.
+
+                TASK:
+                Analyze this licensing agreement/contract. Provide a structured summary focusing on:
+                1. Commercial Use Rights (Explicitly allowed/forbidden)
+                2. Attribution Requirements (Credit obligations)
+                3. Term/Duration (Length of license)
+                4. Key Restrictions (Forbidden usages)
+
+                Document Content (Base64/Text):
+                ${args.file_data} 
+                `; // Full context - no truncation (Rule 5.10)
 
                 const response = await AI.generateContent({
-                    model: AI_MODELS.TEXT.FAST,
-                    contents: { role: 'user', parts: [{ text: prompt }] }
+                    model: AI_MODELS.TEXT.AGENT, // Upgraded to Gemini 3 Pro (Rule 2.1)
+                    contents: { role: 'user', parts: [{ text: prompt }] },
+                    // Enable High Reasoning (Rule 5.2)
+                    ...AI_CONFIG.THINKING.HIGH
                 });
 
                 return {
                     success: true,
                     data: {
                         summary: response.text(),
-                        next_steps: "Awaiting legal counsel verification of AI analysis."
+                        next_steps: "AI Analysis complete. Legal counsel review mandatory for final approval."
                     }
                 };
             } catch (error) {

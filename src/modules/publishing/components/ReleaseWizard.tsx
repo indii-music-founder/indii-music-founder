@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useDDEXRelease, WizardStep } from '../hooks/useDDEXRelease';
 import type { DistributorId } from '@/services/distribution/types/distributor';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 // Step configuration
 const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
@@ -35,7 +36,9 @@ const DISTRIBUTORS: { id: DistributorId; name: string; logo?: string }[] = [
   { id: 'cdbaby', name: 'CD Baby' },
   { id: 'ditto', name: 'Ditto Music' },
   { id: 'unitedmasters', name: 'UnitedMasters' },
-  { id: 'amuse', name: 'Amuse' }
+  { id: 'amuse', name: 'Amuse' },
+  { id: 'awal', name: 'AWAL' },
+  { id: 'symphonic', name: 'Symphonic' }
 ];
 
 // Common territories
@@ -852,5 +855,3 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
   );
 }
 
-// Type import for AI disclosure
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';

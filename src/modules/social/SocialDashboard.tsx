@@ -4,32 +4,25 @@ import { useToast } from '@/core/context/ToastContext';
 import CreatePostModal from './components/CreatePostModal';
 import AccountCreationWizard from './components/AccountCreationWizard';
 import SocialFeed from './components/SocialFeed';
-import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost } from '@/services/social/types';
+import { useSocial } from './hooks/useSocial';
 
 export default function SocialDashboard() {
     const toast = useToast();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAccountWizardOpen, setIsAccountWizardOpen] = useState(false);
-    const [stats, setStats] = useState<SocialStats | null>(null);
-    const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
+
+    // Use the hook for data
+    const {
+        stats,
+        scheduledPosts,
+        schedulePost,
+        refreshDashboard
+    } = useSocial(); // No userId needed for my dashboard
 
     useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
-        try {
-            const [statsData, postsData] = await Promise.all([
-                SocialService.getDashboardStats(),
-                SocialService.getScheduledPosts()
-            ]);
-            setStats(statsData);
-            setScheduledPosts(postsData);
-        } catch (error) {
-            console.error("Failed to load dashboard data", error);
-        }
-    };
+        refreshDashboard();
+    }, [refreshDashboard]);
 
     const handleCreatePost = async (post: any) => {
         try {
@@ -38,7 +31,7 @@ export default function SocialDashboard() {
                 ? post.scheduledTime.getTime()
                 : new Date(post.scheduledTime).getTime();
 
-            await SocialService.schedulePost({
+            const success = await schedulePost({
                 platform: post.platform,
                 copy: post.copy,
                 imageAsset: post.imageAsset,
@@ -46,11 +39,12 @@ export default function SocialDashboard() {
                 scheduledTime: scheduledTimeNum
             });
 
-            toast.success("Post scheduled successfully!");
-            loadData();
+            if (success) {
+                // toast is handled in hook
+            }
         } catch (error) {
             console.error(error);
-            toast.error("Failed to schedule post");
+            // toast is handled in hook
         }
     };
 

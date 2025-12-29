@@ -16,6 +16,9 @@ const SoundscapeCanvas = dynamic(() => import('./components/3d/SoundscapeCanvas'
   loading: () => <div className="fixed inset-0 bg-void" />
 });
 
+import FeatureShowcase from './components/FeatureShowcase';
+import TechSpecs from './components/TechSpecs';
+
 export default function Home() {
   const { user, loading } = useAuth();
   // 1. Scrollytelling Hook: Track scroll progress
@@ -27,7 +30,7 @@ export default function Home() {
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]); // Background moves slower
 
   return (
-    <main className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-center selection:bg-resonance-blue selection:text-white">
+    <main className="relative flex flex-col items-center justify-start min-h-screen overflow-hidden text-center selection:bg-resonance-blue selection:text-white">
 
       {/* 1. The Subliminal Background */}
       <AudioManager />
@@ -36,12 +39,12 @@ export default function Home() {
       </motion.div>
 
       {/* 2. Content Overlay */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full max-w-7xl mx-auto pt-20 pb-12">
 
         {/* Glass Hero Card with 2026 "Frosted" & "Human" Aesthetics */}
         <motion.div
           style={{ scale: heroScale, opacity: heroOpacity }}
-          className="relative w-full max-w-6xl min-h-[700px] flex flex-col items-center justify-center glass-panel rounded-[3rem] p-12 md:p-24 overflow-hidden border border-glass-border"
+          className="relative w-full max-w-6xl min-h-[700px] flex flex-col items-center justify-center glass-panel rounded-[3rem] p-12 md:p-24 overflow-hidden border border-glass-border mb-0"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} // smooth "Apple-style" ease
@@ -73,7 +76,7 @@ export default function Home() {
                 indiiOS
               </h1>
               <p className="font-hand text-dopamine-pink text-2xl md:text-3xl absolute -right-4 -top-8 rotate-12 glow-text-pink">
-                v2026.1
+                Beta v4.5
               </p>
             </motion.div>
 
@@ -103,17 +106,20 @@ export default function Home() {
         </motion.div>
       </div>
 
-      {/* Footer / Anchors */}
-      < motion.div
-        className="absolute bottom-8 left-0 right-0 text-center text-white/20 text-sm tracking-widest uppercase"
-        initial={{ opacity: 0 }
-        }
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2, duration: 2 }}
-      >
-        <p>Scroll to Resonate</p>
-      </motion.div >
+      {/* 3. New Sections */}
+      <FeatureShowcase />
+      <TechSpecs />
 
-    </main >
+      {/* Footer / Anchors */}
+      <motion.div
+        className="w-full py-12 text-center text-white/20 text-sm tracking-widest uppercase border-t border-white/5"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+      >
+        <p>Engineered by indiiOS Inc. © 2026</p>
+      </motion.div>
+
+    </main>
   );
 }

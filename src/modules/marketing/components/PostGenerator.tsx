@@ -83,9 +83,13 @@ export default function PostGenerator() {
         `;
 
         try {
+            // Using Gemini 3 Fast for high-throughput generation
             const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST, // Fast model for text
-                contents: { role: 'user', parts: [{ text: prompt }] }
+                model: AI_MODELS.TEXT.FAST, // gemini-3-flash-preview
+                contents: { role: 'user', parts: [{ text: prompt }] },
+                config: {
+                    temperature: 0.9, // Creative but controlled
+                }
             });
 
             const text = res.text();

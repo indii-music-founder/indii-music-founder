@@ -1,49 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Megaphone, TrendingUp, Users, Calendar, MoreHorizontal, Plus } from 'lucide-react';
-import { useToast } from '@/core/context/ToastContext';
+import React, { useState } from 'react';
+import { Megaphone, TrendingUp, Users, Calendar, MoreHorizontal, Plus, Activity } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
-import { MarketingService } from '@/services/marketing/MarketingService';
-import { CampaignAsset } from './types';
+import { useMarketing } from './hooks/useMarketing';
 import CreateCampaignModal from './components/CreateCampaignModal';
-
 import BrandManager from './components/BrandManager';
 import PostGenerator from './components/PostGenerator';
 
 export default function MarketingDashboard() {
-    const toast = useToast();
     const { currentModule } = useStore();
-
     const [activeTab, setActiveTab] = useState<'overview' | 'generator' | 'brand'>('overview');
-    const [stats, setStats] = useState<{ totalReach: number, engagementRate: number, activeCampaigns: number } | null>(null);
-    const [campaigns, setCampaigns] = useState<CampaignAsset[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [statsData, campaignsData] = await Promise.all([
-                MarketingService.getMarketingStats(),
-                MarketingService.getCampaigns()
-            ]);
-            setStats(statsData as any);
-            setCampaigns(campaignsData);
-        } catch (error) {
-            console.error("Failed to load marketing data", error);
-            toast.error("Failed to load dashboard data");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleCreateCampaign = () => {
-        setIsCreateModalOpen(true);
-    };
+    // Use the new Beta hook
+    const { stats, campaigns, loading, error, createCampaign } = useMarketing();
 
     // Actions Component
     const DashboardActions = (
@@ -55,45 +25,56 @@ export default function MarketingDashboard() {
                 <Megaphone size={18} /> Social Media
             </button>
             <button
-                onClick={handleCreateCampaign}
-                className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-pink-900/20"
             >
                 <Plus size={20} /> Create Campaign
             </button>
         </>
     );
 
-    // Calendar logic
-    const daysInMonth = 30; // Simplified
-    const startDay = 2; // Tuesday
+    // Dynamic Calendar Logic
+    const today = new Date();
+    const currentMonth = today.toLocaleString('default', { month: 'long' });
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay(); // 0 is Sunday
 
     const renderCalendarGrid = () => {
         const days = [];
+
         // Empty cells for start of month
-        for (let i = 0; i < startDay; i++) {
+        for (let i = 0; i < firstDayOfMonth; i++) {
             days.push(<div key={`empty-${i}`} className="h-32 bg-[#0d1117] border border-gray-800/50"></div>);
         }
-        // Days
+
+        // Days of month
         for (let i = 1; i <= daysInMonth; i++) {
-            // Find campaign for this day (simplified logic using day field if exists or parsing startDate)
-            const campaign = campaigns.find(c => {
-                if (c.posts?.[0]?.day === i) return true;
+            // Find active campaigns for this day
+            const campaignsForDay = campaigns.filter(c => {
                 const start = new Date(c.startDate);
-                return !isNaN(start.getTime()) && start.getDate() === i;
+                // Simple equality check for day (Beta v1 logic)
+                // In production, checking fully overlapping date ranges would be better
+                return !isNaN(start.getTime()) && start.getDate() === i && start.getMonth() === today.getMonth();
             });
 
             days.push(
                 <div key={i} className="h-32 bg-[#0d1117] border border-gray-800/50 p-2 relative group hover:bg-[#161b22] transition-colors">
-                    <span className="text-gray-500 text-sm font-mono">{i}</span>
-                    {campaign && (
-                        <div className="mt-2 p-2 rounded bg-blue-900/20 border border-blue-800/50 text-xs cursor-pointer hover:bg-blue-900/40 transition-colors">
-                            <div className="font-bold text-blue-300 truncate">{campaign.title}</div>
-                            <div className="text-blue-400/70 flex items-center gap-1 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                {campaign.posts?.[0]?.platform || "Campaign"}
+                    <span className={`text-sm font-mono ${i === today.getDate() ? 'text-pink-500 font-bold' : 'text-gray-500'}`}>
+                        {i}
+                    </span>
+
+                    <div className="mt-1 space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
+                        {campaignsForDay.map(campaign => (
+                            <div key={campaign.id} className="p-1.5 rounded bg-blue-900/20 border border-blue-800/50 text-xs cursor-pointer hover:bg-blue-900/40 transition-colors group/item">
+                                <div className="font-semibold text-blue-300 truncate">{campaign.title}</div>
+                                <div className="text-blue-400/70 flex items-center gap-1 mt-0.5 text-[10px]">
+                                    <span className="w-1 h-1 rounded-full bg-blue-500"></span>
+                                    {campaign.posts?.[0]?.platform || "Campaign"}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        ))}
+                    </div>
+
                     <button className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 transition-opacity">
                         <Plus size={14} />
                     </button>
@@ -102,6 +83,16 @@ export default function MarketingDashboard() {
         }
         return days;
     };
+
+    if (error) {
+        return (
+            <div className="p-8 text-center">
+                <div className="bg-red-500/10 text-red-400 p-4 rounded-lg inline-block">
+                    Error loading marketing data: {error.message}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <ModuleDashboard
@@ -118,66 +109,48 @@ export default function MarketingDashboard() {
             onTabChange={(val) => setActiveTab(val as any)}
         >
             {activeTab === 'overview' ? (
-                <>
+                <div className="animate-in fade-in duration-500">
                     {/* Stats Row */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-400 text-sm mb-1">Total Reach</p>
-                                <h3 className="text-2xl font-bold">
-                                    {isLoading ? "..." : (stats?.totalReach || 0).toLocaleString()}K
-                                </h3>
-                                <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                                    <TrendingUp size={12} /> +12% this month
-                                </span>
-                            </div>
-                            <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400">
-                                <Users size={24} />
-                            </div>
-                        </div>
-                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-400 text-sm mb-1">Engagement Rate</p>
-                                <h3 className="text-2xl font-bold">
-                                    {isLoading ? "..." : (stats?.engagementRate || 0)}%
-                                </h3>
-                                <span className="text-green-400 text-xs flex items-center gap-1 mt-1">
-                                    <TrendingUp size={12} /> +0.5% this month
-                                </span>
-                            </div>
-                            <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
-                                <ActivityIcon size={24} />
-                            </div>
-                        </div>
-                        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-400 text-sm mb-1">Active Campaigns</p>
-                                <h3 className="text-2xl font-bold">
-                                    {isLoading ? "..." : (stats?.activeCampaigns || 0)}
-                                </h3>
-                                <span className="text-gray-500 text-xs mt-1">
-                                    {campaigns.length} total
-                                </span>
-                            </div>
-                            <div className="p-3 bg-pink-500/10 rounded-lg text-pink-400">
-                                <Megaphone size={24} />
-                            </div>
-                        </div>
+                        <StatusCard
+                            title="Total Reach"
+                            value={loading ? "..." : (stats?.totalReach || 0).toLocaleString()}
+                            icon={<Users size={24} />}
+                            trend="+12% this month"
+                            color="blue"
+                        />
+                        <StatusCard
+                            title="Engagement Rate"
+                            value={loading ? "..." : (stats?.engagementRate || 0) + '%'}
+                            icon={<Activity size={24} />}
+                            trend="+0.5% this month"
+                            color="purple"
+                        />
+                        <StatusCard
+                            title="Active Campaigns"
+                            value={loading ? "..." : (stats?.activeCampaigns || 0).toString()}
+                            icon={<Megaphone size={24} />}
+                            subtext={`${campaigns.length} total`}
+                            color="pink"
+                        />
                     </div>
 
                     {isCreateModalOpen && (
                         <CreateCampaignModal
                             onClose={() => setIsCreateModalOpen(false)}
-                            onSave={loadData}
+                            onSave={() => {
+                                // Refresh is automatic via onSnapshot, but we close modal
+                                setIsCreateModalOpen(false);
+                            }}
                         />
                     )}
 
                     {/* Calendar Section */}
-                    <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden">
+                    <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden shadow-sm">
                         <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                            <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
                                 <Calendar size={18} className="text-gray-400" />
-                                Campaign Calendar
+                                {currentMonth} Campaign Calendar
                             </h3>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -185,7 +158,7 @@ export default function MarketingDashboard() {
                                     <span className="w-2 h-2 rounded-full bg-purple-500 ml-2"></span> Email
                                     <span className="w-2 h-2 rounded-full bg-green-500 ml-2"></span> Content
                                 </div>
-                                <button className="p-2 hover:bg-gray-800 rounded text-gray-400">
+                                <button className="p-2 hover:bg-gray-800 rounded text-gray-400 transition-colors">
                                     <MoreHorizontal size={20} />
                                 </button>
                             </div>
@@ -193,8 +166,8 @@ export default function MarketingDashboard() {
 
                         {/* Calendar Grid Header */}
                         <div className="grid grid-cols-7 bg-[#0d1117] border-b border-gray-800">
-                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+                                <div key={day} className={`py-3 text-center text-xs font-semibold ${i === 0 || i === 6 ? 'text-gray-600' : 'text-gray-500'} uppercase tracking-wider`}>
                                     {day}
                                 </div>
                             ))}
@@ -205,7 +178,7 @@ export default function MarketingDashboard() {
                             {renderCalendarGrid()}
                         </div>
                     </div>
-                </>
+                </div>
             ) : activeTab === 'brand' ? (
                 <BrandManager />
             ) : (
@@ -215,21 +188,36 @@ export default function MarketingDashboard() {
     );
 }
 
-// Helper Icon Component
-function ActivityIcon({ size, className }: { size: number, className?: string }) {
+// Helper Component for Stats
+function StatusCard({ title, value, icon, trend, subtext, color }: { title: string, value: string, icon: React.ReactNode, trend?: string, subtext?: string, color: 'blue' | 'purple' | 'pink' }) {
+    const colorClasses = {
+        blue: { bg: 'bg-blue-500/10', text: 'text-blue-400' },
+        purple: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+        pink: { bg: 'bg-pink-500/10', text: 'text-pink-400' }
+    };
+
     return (
-        <svg
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-        </svg>
+        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between hover:border-gray-700 transition-colors shadow-sm">
+            <div>
+                <p className="text-gray-400 text-sm mb-1">{title}</p>
+                <h3 className="text-2xl font-bold text-white mb-1">
+                    {value}
+                </h3>
+                {trend && (
+                    <span className="text-green-400 text-xs flex items-center gap-1">
+                        <TrendingUp size={12} /> {trend}
+                    </span>
+                )}
+                {subtext && (
+                    <span className="text-gray-500 text-xs block">
+                        {subtext}
+                    </span>
+                )}
+            </div>
+            <div className={`p-3 rounded-lg ${colorClasses[color].bg} ${colorClasses[color].text}`}>
+                {icon}
+            </div>
+        </div>
     );
 }
+

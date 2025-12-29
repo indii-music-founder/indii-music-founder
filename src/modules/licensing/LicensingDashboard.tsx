@@ -1,42 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
-import { License, LicenseRequest } from '@/services/licensing/types';
+import { LicenseRequest } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStore } from '@/core/store';
+
+import { useLicensing } from './hooks/useLicensing';
 
 export default function LicensingDashboard() {
-    const [licenses, setLicenses] = useState<License[]>([]);
-    const [requests, setRequests] = useState<LicenseRequest[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { licenses, requests, isLoading, actions } = useLicensing();
+    const { currentModule } = useStore();
 
-    // Expose for agent tools interaction if needed via window injection
+    // Global exposed service for agent interaction (Development Only)
     useEffect(() => {
-        if (typeof window !== 'undefined') {
+        if (process.env.NODE_ENV === 'development') {
             (window as any).licensingService = licensingService;
         }
     }, []);
 
-    useEffect(() => {
-        const unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
-            setLicenses(data);
-            if (isLoading) setIsLoading(false);
-        });
-
-        const unsubscribeRequests = licensingService.subscribeToPendingRequests((data) => {
-            setRequests(data);
-            if (isLoading) setIsLoading(false);
-        });
-
-        return () => {
-            unsubscribeLicenses();
-            unsubscribeRequests();
-        };
-    }, [isLoading]);
-
-    const handleDraftAction = (request: LicenseRequest) => {
-        console.log('Drafting agreement for:', request.title);
-        // Alert the user that this triggers the agent
-        alert(`Drafting ${request.usage} agreement for "${request.title}"... This will use the Licensing Agent to generate a contract draft from LegalTools.`);
+    const handleDraftAction = async (request: LicenseRequest) => {
+        await actions.draftAgreement(request);
     };
 
     if (isLoading) {

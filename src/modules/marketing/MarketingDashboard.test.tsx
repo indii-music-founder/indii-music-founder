@@ -1,77 +1,86 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MarketingDashboard from './MarketingDashboard';
-import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from './types';
 
-// Mock Services
-vi.mock('@/services/marketing/MarketingService', () => ({
-    MarketingService: {
-        getMarketingStats: vi.fn(),
-        getCampaigns: vi.fn()
-    }
+// Mock Hook
+vi.mock('./hooks/useMarketing', () => ({
+    useMarketing: vi.fn()
 }));
+import { useMarketing } from './hooks/useMarketing';
 
 // Mock Store
 vi.mock('@/core/store', () => ({
     useStore: vi.fn(() => ({
-        userProfile: { id: 'user-123' }
+        userProfile: { id: 'user-123' },
+        currentModule: 'marketing',
+        setState: vi.fn()
     }))
 }));
 
 // Mock Toast
-const mockToast = {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-};
-
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => mockToast,
+    useToast: () => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+    })
 }));
 
 describe('MarketingDashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (MarketingService.getMarketingStats as any).mockResolvedValue({
-            totalReach: 124.5,
-            engagementRate: 4.8,
-            activeCampaigns: 2
+
+        // Default Mock Return
+        (useMarketing as any).mockReturnValue({
+            stats: {
+                totalReach: 124.5,
+                engagementRate: 4.8,
+                activeCampaigns: 2
+            },
+            campaigns: [
+                {
+                    id: '1',
+                    title: 'Product Launch Teaser',
+                    startDate: new Date().toISOString(),
+                    status: CampaignStatus.EXECUTING,
+                    posts: [{ platform: 'Twitter', day: new Date().getDate() }]
+                }
+            ],
+            loading: false,
+            error: null,
+            createCampaign: vi.fn()
         });
-        (MarketingService.getCampaigns as any).mockResolvedValue([
-            {
-                id: '1',
-                title: 'Product Launch Teaser',
-                startDate: new Date().toISOString(),
-                status: CampaignStatus.EXECUTING,
-                posts: [{ platform: 'Twitter', day: new Date().getDate() }]
-            }
-        ]);
     });
 
-    it('renders the dashboard title', async () => {
+    it('renders the dashboard title', () => {
         render(<MarketingDashboard />);
         expect(screen.getByText('Marketing Dashboard')).toBeInTheDocument();
-        await waitFor(() => {
-            expect(screen.getByText('Plan, execute, and track your campaigns.')).toBeInTheDocument();
-        });
+        expect(screen.getByText('Plan, execute, and track your campaigns.')).toBeInTheDocument();
     });
 
-    it('renders stats', async () => {
+    it('renders stats from hook', () => {
         render(<MarketingDashboard />);
-        // Initially might show loading "..." if implemented as in the code I wrote
-        // Let's wait for the real data
-        await waitFor(() => {
-            expect(screen.getByText('124.5K')).toBeInTheDocument();
-            expect(screen.getByText('4.8%')).toBeInTheDocument();
-        });
+        expect(screen.getByText('124.5K')).toBeInTheDocument();
+        expect(screen.getByText('4.8%')).toBeInTheDocument();
+        expect(screen.getByText('2')).toBeInTheDocument();
     });
 
-    it('renders calendar grid with campaigns', async () => {
+    it('renders calendar grid with campaigns', () => {
         render(<MarketingDashboard />);
-        await waitFor(() => {
-            expect(screen.getByText('Campaign Calendar')).toBeInTheDocument();
-            expect(screen.getByText('Product Launch Teaser')).toBeInTheDocument();
+        expect(screen.getByText('Campaign Calendar')).toBeInTheDocument();
+        expect(screen.getByText('Product Launch Teaser')).toBeInTheDocument();
+    });
+
+    it('shows loading state correctly', () => {
+        (useMarketing as any).mockReturnValue({
+            stats: null,
+            campaigns: [],
+            loading: true,
+            error: null
         });
+
+        render(<MarketingDashboard />);
+        expect(screen.getAllByText('...')[0]).toBeInTheDocument();
     });
 });

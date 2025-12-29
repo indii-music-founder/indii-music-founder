@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import * as Sentry from '@sentry/react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
@@ -33,6 +34,7 @@ export function useReleases(orgId: string | undefined) {
             },
             (err) => {
                 console.error('Error fetching releases:', err);
+                Sentry.captureException(err);
                 setError(err as Error);
                 setLoading(false);
             }
@@ -41,5 +43,5 @@ export function useReleases(orgId: string | undefined) {
         return () => unsubscribe();
     }, [orgId]);
 
-    return { releases, loading, error };
+    return useMemo(() => ({ releases, loading, error }), [releases, loading, error]);
 }

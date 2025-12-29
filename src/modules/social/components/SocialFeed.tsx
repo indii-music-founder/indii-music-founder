@@ -6,17 +6,23 @@ import { Product } from '@/services/marketplace/types';
 import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { useStore } from '@/core/store';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag } from 'lucide-react';
+import { useSocial } from '../hooks/useSocial';
 
 interface SocialFeedProps {
     userId?: string;
 }
 
 export default function SocialFeed({ userId }: SocialFeedProps) {
-    const [posts, setPosts] = useState<SocialPost[]>([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        posts,
+        feedLoading: loading,
+        filter,
+        setFilter,
+        createPost
+    } = useSocial(userId);
+
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
-    const [filter, setFilter] = useState<'all' | 'following' | 'mine'>('all');
 
     // Quick Post Shortcuts
     const shortcuts = [
@@ -33,11 +39,10 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
     const userProfile = useStore((state) => state.userProfile);
 
     useEffect(() => {
-        loadFeed();
         if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
             loadArtistProducts();
         }
-    }, [userId, userProfile]);
+    }, [userProfile]);
 
     const loadArtistProducts = async () => {
         if (!userProfile?.id) return;
@@ -49,43 +54,22 @@ export default function SocialFeed({ userId }: SocialFeedProps) {
         }
     };
 
-    const loadFeed = async () => {
-        setLoading(true);
-        try {
-            const targetId = filter === 'mine' ? userProfile?.id : userId;
-            const fetchedPosts = await SocialService.getFeed(targetId, filter);
-            setPosts(fetchedPosts);
-        } catch (error) {
-            console.error("Failed to load social feed:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Reload feed when filter changes
-    useEffect(() => {
-        loadFeed();
-    }, [filter]);
-
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) return;
 
         setIsPosting(true);
-        try {
-            await SocialService.createPost(
-                newPostContent,
-                [],
-                selectedProductId || undefined
-            );
+        const success = await createPost(
+            newPostContent,
+            [],
+            selectedProductId || undefined
+        );
+
+        if (success) {
             setNewPostContent('');
             setSelectedProductId(null);
             setShowProductPicker(false);
-            loadFeed();
-        } catch (error) {
-            console.error("Failed to create post:", error);
-        } finally {
-            setIsPosting(false);
         }
+        setIsPosting(false);
     };
 
     const formatDate = (timestamp: number) => {

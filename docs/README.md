@@ -12,6 +12,9 @@ This directory contains detailed architectural and technical documentation for i
   - Outlines the hybrid client/server architecture.
   - Documents the migration of heavy AI tasks (Image/Video generation) to Firebase Functions and Vertex AI.
   - Lists available backend services and their triggers.
+- [Systems & Logic Hooks](./HOOKS.md)
+  - Documents the Antigravity Protocol (System AI Hooks) and Core React Hooks logic.
+  - Tracking status for Alpha release-ready hooks.
 - [Application & Code Overview](./APP_OVERVIEW.md)
   - Maps product surfaces (Landing, Studio, Electron) to repository directories.
   - Summarizes core creative suites, operational modules, and the multi-agent hub/spoke model.

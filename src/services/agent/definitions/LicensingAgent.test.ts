@@ -36,7 +36,15 @@ vi.mock('../tools/LegalTools', () => ({
 
 vi.mock('@/core/config/ai-models', () => ({
     AI_MODELS: {
-        TEXT: { FAST: 'mock-model' }
+        TEXT: {
+            FAST: 'mock-model-fast',
+            AGENT: 'mock-model-agent'
+        }
+    },
+    AI_CONFIG: {
+        THINKING: {
+            HIGH: { thinkingConfig: { thinkingLevel: "HIGH" } }
+        }
     }
 }));
 

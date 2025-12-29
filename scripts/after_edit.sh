@@ -7,9 +7,13 @@ echo "🤖 Guardrails active on: $CHANGED_FILE"
 
 # 1. Frontend Guardrails (JavaScript/TypeScript)
 if [[ "$CHANGED_FILE" == *.ts ]] || [[ "$CHANGED_FILE" == *.tsx ]]; then
-    # Automatically fix syntax/linting errors so the AI doesn't have to
+    # Automatically fix syntax/linting errors
     echo "Running ESLint Fix..."
     npx eslint "$CHANGED_FILE" --fix
+    
+    # Run Prettier to ensure consistent formatting
+    echo "Running Prettier..."
+    npx prettier --write "$CHANGED_FILE"
 fi
 
 # 2. Backend Guardrails (Rust/Server) - As per Source 17
