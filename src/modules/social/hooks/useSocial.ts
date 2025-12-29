@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types';
 import { useStore } from '@/core/store';
@@ -55,15 +57,70 @@ export function useSocial(userId?: string) {
         }
     }, [filter, userId, userProfile?.id, toast]);
 
-    // Initial Data Fetch
+    // Real-time Data Sync
     useEffect(() => {
-        const init = async () => {
-            setIsLoading(true);
-            await Promise.all([loadDashboardData(), loadFeed()]);
+        if (!userProfile?.id) return;
+        const targetId = filter === 'mine' ? userProfile.id : userId;
+
+        // 1. Stats Listener (User Document)
+        const userUnsub = onSnapshot(doc(db, "users", userProfile.id), (doc) => {
+            if (doc.exists() && doc.data().socialStats) {
+                setStats(doc.data().socialStats as SocialStats);
+            }
+        });
+
+        // 2. Scheduled Posts Listener
+        const scheduledQuery = query(
+            collection(db, "scheduled_posts"),
+            where("authorId", "==", userProfile.id),
+            where("status", "==", "PENDING"),
+            orderBy("scheduledTime", "asc")
+        );
+
+        const scheduledUnsub = onSnapshot(scheduledQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as ScheduledPost[];
+            setScheduledPosts(data);
+        });
+
+        // 3. Feed Listener
+        const postsRef = collection(db, "posts");
+        let postsQuery;
+
+        if (targetId) {
+            postsQuery = query(postsRef, where("authorId", "==", targetId), orderBy("timestamp", "desc"), limit(50));
+        } else {
+            // Fallback/All query
+            postsQuery = query(postsRef, orderBy("timestamp", "desc"), limit(50));
+        }
+
+        const feedUnsub = onSnapshot(postsQuery, (snapshot) => {
+            const data = snapshot.docs.map(doc => {
+                const d = doc.data();
+                return {
+                    id: doc.id,
+                    ...d,
+                    timestamp: d.timestamp?.toMillis ? d.timestamp.toMillis() : Date.now()
+                };
+            }) as SocialPost[];
+            setPosts(data);
+            setIsFeedLoading(false);
             setIsLoading(false);
+        }, (err) => {
+            console.error("Feed error:", err);
+            Sentry.captureException(err);
+            setError("Failed to stream feed.");
+            setIsFeedLoading(false);
+        });
+
+        return () => {
+            userUnsub();
+            scheduledUnsub();
+            feedUnsub();
         };
-        init();
-    }, [loadDashboardData, loadFeed]);
+    }, [userProfile?.id, userId, filter]);
 
     // Actions
     const schedulePost = useCallback(async (post: Omit<ScheduledPost, 'id' | 'status' | 'authorId'>) => {

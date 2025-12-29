@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { useToast } from '@/core/hooks/useToast';
+import { useToast } from '@/core/context/ToastContext';
 import AssetRack, { ProductType } from './components/AssetRack';
 import ScenarioBuilder from './components/ScenarioBuilder';
 import ShowroomStage from './components/ShowroomStage';
 import { ShowroomService } from '@/services/showroom/ShowroomService';
 
 export default function Showroom() {
-    const { toast } = useToast();
+    const { success, error } = useToast();
 
     // State
-    const [selectedAsset, setSelectedAsset] = useState<File | null>(null);
-    const [productType, setProductType] = useState<ProductType>('clothing');
+    const [assetData, setAssetData] = useState<string | null>(null);
+    const [productType, setProductType] = useState<ProductType>('T-Shirt');
     const [scenePrompt, setScenePrompt] = useState('');
     const [motionPrompt, setMotionPrompt] = useState('');
 
@@ -18,46 +18,26 @@ export default function Showroom() {
     const [mockupImage, setMockupImage] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-    const handleAssetSelect = (file: File) => {
-        if (!file.type.startsWith('image/')) {
-            toast({
-                title: "Invalid File Type",
-                message: "Please select a valid image file (JPG, PNG).",
-                type: "error"
-            });
-            return;
-        }
-        setSelectedAsset(file);
+    const handleAssetUpload = (base64: string) => {
+        setAssetData(base64);
         setMockupImage(null);
         setVideoUrl(null);
-        toast({
-            title: "Asset Loaded",
-            message: `${file.name} ready for staging.`,
-            type: "success"
-        });
+        success("Graphic ready for staging.");
     };
 
     const handleGenerate = async () => {
-        if (!selectedAsset || !scenePrompt) return;
+        if (!assetData || !scenePrompt) return;
 
         setIsGenerating(true);
         setVideoUrl(null);
 
         try {
-            const resultUrl = await ShowroomService.generateMockup(selectedAsset, productType, scenePrompt);
+            const resultUrl = await ShowroomService.generateMockup(assetData, productType, scenePrompt);
             setMockupImage(resultUrl);
-            toast({
-                title: "Mockup Generated",
-                message: "High-fidelity rendering complete.",
-                type: "success"
-            });
-        } catch (error) {
-            console.error(error);
-            toast({
-                title: "Generation Failed",
-                message: "Could not generate mockup. Please try again.",
-                type: "error"
-            });
+            success("High-fidelity rendering complete.");
+        } catch (err) {
+            console.error(err);
+            error("Could not generate mockup. Please try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -68,20 +48,12 @@ export default function Showroom() {
 
         setIsGenerating(true);
         try {
-            const resultVideo = await ShowroomService.animateScene(mockupImage, motionPrompt);
+            const resultVideo = await ShowroomService.generateVideo(mockupImage, motionPrompt);
             setVideoUrl(resultVideo);
-            toast({
-                title: "Animation Complete",
-                message: "Scene successfully animated.",
-                type: "success"
-            });
-        } catch (error) {
-            console.error(error);
-            toast({
-                title: "Animation Failed",
-                message: "Could not animate scene. Please verify credits and try again.",
-                type: "error"
-            });
+            success("Scene successfully animated.");
+        } catch (err) {
+            console.error(err);
+            error("Could not animate scene. Please verify credits and try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -97,9 +69,9 @@ export default function Showroom() {
                 {/* Column 1: Asset Rack */}
                 <div className="w-[320px] h-full flex-shrink-0 border-r border-white/5 bg-black/40 backdrop-blur-xl">
                     <AssetRack
-                        onAssetSelect={handleAssetSelect}
-                        selectedAsset={selectedAsset}
+                        productAsset={assetData}
                         productType={productType}
+                        onAssetUpload={handleAssetUpload}
                         onTypeChange={setProductType}
                     />
                 </div>
@@ -122,7 +94,7 @@ export default function Showroom() {
                         isGenerating={isGenerating}
                         onGenerate={handleGenerate}
                         onAnimate={handleAnimate}
-                        canGenerate={!!selectedAsset && !!scenePrompt}
+                        canGenerate={!!assetData && !!scenePrompt}
                         canAnimate={!!mockupImage && !!motionPrompt}
                     />
                 </div>

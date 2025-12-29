@@ -27,6 +27,20 @@ vi.mock('firebase/functions', () => ({
     }),
 }));
 
+// Mock AIService
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => JSON.stringify({
+                isConsistent: true,
+                score: 95,
+                issues: [],
+                suggestions: ['Great job!']
+            })
+        })
+    }
+}));
+
 describe('BrandManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();

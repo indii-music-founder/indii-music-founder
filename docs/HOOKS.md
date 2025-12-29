@@ -89,6 +89,8 @@ stateDiagram-v2
 
 Standalone hook wrapping Firestore reactive listeners with Sentry integration and performance memoization.
 
+- **Capabilities**: Real-time sync, `deleteRelease`, `archiveRelease` (Bulk Actions ready).
+
 #### `useDistributors`
 
 **Status:** `BETA_READY`
@@ -108,6 +110,20 @@ Orchestrates campaign analytics, ROI tracking, and performance metrics synchroni
 - **Stats Sync**: Bridges local engagement data with Firestore `marketingStats`.
 - **Campaign Logic**: Manages budget allocation and active status toggles.
 - **Beta Standards**: Sentry-integrated error tracking and unified `actions` pattern.
+
+### 💰 Finance Module
+
+#### `useFinance`
+
+**Status:** `BETA_READY`
+**Location:** `src/modules/finance/hooks/useFinance.ts`
+
+Centralized hook for financial data, including earnings summaries and expense tracking.
+
+- **Capabilities**:
+  - **Earnings**: Fetches and caches `EarningsSummary` via `FinanceService`.
+  - **Expenses**: Manages expense list and creation with Sentry integration.
+  - **Memoization**: Stabilizes object references for `actions`.
 
 ### ⚖️ Legal Module
 
@@ -129,9 +145,9 @@ Reactive data hook for the Legal Department.
 
 Centralized logic for the Social Media Department.
 
-- **Core State**: `stats`, `scheduledPosts`, `feed` (via `useSocialFeed` pattern).
+- **Core State**: `stats`, `scheduledPosts`, `feed` (direct integration).
 - **Capabilities**:
-  - **Unified Fetching**: Single entry point for dashboard stats and schedule.
+  - **Real-Time Sync**: Live Firestore listeners for stats, feed, and schedule.
   - **Scheduling Engine**: Interfaces with `SocialService` to queue posts across platforms.
   - **Beta Standards**: Type-safe service integration and strict error boundaries.
 
@@ -155,6 +171,7 @@ Drives the Remotion-based video editor.
 
 - **`useToast`**: Global notification system (`success`, `error`, `promise`).
 - **`useAutoResizeTextarea`**: UI utility for dynamic text inputs.
+- **`useShowroom`**: *Deprecated*. Showroom logic is now handled locally in `Showroom.tsx` via `ShowroomService`.
 
 ---
 

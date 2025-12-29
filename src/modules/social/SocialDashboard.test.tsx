@@ -28,11 +28,16 @@ vi.mock('./hooks/useSocial', () => ({
     useSocial: vi.fn(() => ({
         stats: { followers: 124500, following: 100, posts: 50, drops: 12 },
         scheduledPosts: [],
+        posts: [], // Added missing property
         isLoading: false,
+        isFeedLoading: false, // Added missing property
+        filter: 'all', // Added missing property
+        setFilter: vi.fn(), // Added missing property
         actions: {
             schedulePost: vi.fn(),
             createPost: vi.fn(),
-            refreshDashboard: vi.fn()
+            refreshDashboard: vi.fn(),
+            refreshFeed: vi.fn()
         }
     }))
 }));
@@ -61,7 +66,7 @@ describe('SocialDashboard', () => {
     it('displays stats', () => {
         render(<SocialDashboard />);
         expect(screen.getByText('Total Reach')).toBeInTheDocument();
-        expect(screen.getByText('Following')).toBeInTheDocument();
-        expect(screen.getByText('Posts')).toBeInTheDocument();
+        expect(screen.getAllByText('Following')[0]).toBeInTheDocument();
+        expect(screen.getAllByText('Posts')[0]).toBeInTheDocument();
     });
 });

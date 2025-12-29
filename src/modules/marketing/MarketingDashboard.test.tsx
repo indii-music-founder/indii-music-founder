@@ -47,9 +47,9 @@ describe('MarketingDashboard', () => {
                 posts: [{ platform: 'Twitter', day: new Date().getDate() }]
             }
         ],
-        loading: false,
+        isLoading: false,
         error: null,
-        createCampaign: vi.fn()
+        actions: { createCampaign: vi.fn(), refreshDashboard: vi.fn() }
     };
 
     it('renders the dashboard title', () => {
@@ -75,6 +75,19 @@ describe('MarketingDashboard', () => {
         render(<MarketingDashboard />);
         expect(screen.getByText(/Campaign Calendar/)).toBeInTheDocument();
         expect(screen.getByText('Product Launch Teaser')).toBeInTheDocument();
+    });
+
+    it('shows loading state correctly', () => {
+        (useMarketing as any).mockReturnValue({
+            stats: null,
+            campaigns: [],
+            isLoading: true,
+            error: null,
+            actions: { createCampaign: vi.fn(), refreshDashboard: vi.fn() }
+        });
+
+        render(<MarketingDashboard />);
+        expect(screen.getAllByText('...')[0]).toBeInTheDocument();
     });
 
 
