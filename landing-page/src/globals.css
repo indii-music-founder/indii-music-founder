@@ -19,12 +19,16 @@
   /* Machine Experience (MX) Gradients */
   --gradient-tech-bro: linear-gradient(135deg, #2E2EFE 0%, #00F0FF 100%);
   --gradient-dopamine: linear-gradient(135deg, #FF0099 0%, #FE2E9A 100%);
+
+  /* Font Mappings (Vite Migration) */
+  --font-geist-sans: 'Inter', sans-serif;
+  --font-geist-mono: 'JetBrains Mono', monospace;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans);
   overflow-x: hidden;
 }
 

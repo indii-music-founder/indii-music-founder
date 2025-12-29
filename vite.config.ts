@@ -102,7 +102,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,  // Remove all console.* calls
+        drop_console: false, // Keep console logs for debugging
         drop_debugger: true, // Remove debugger statements
       },
     },
@@ -126,6 +126,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
-    exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**', '**/.git/**'], // Exclude e2e and compiled functions from unit tests
+    exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**', '**/.git/**', '**/landing-page/**'], // Exclude e2e, compiled functions, and Next.js landing page from unit tests
   },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeStudio from '../creative/CreativeStudio';
 import { useStore } from '../../core/store';
 
@@ -11,8 +11,8 @@ export default function VideoStudio() {
     }, []);
 
     return (
-        <ErrorBoundary>
+        <ModuleErrorBoundary moduleName="Video Studio">
             <CreativeStudio />
-        </ErrorBoundary>
+        </ModuleErrorBoundary>
     );
 }

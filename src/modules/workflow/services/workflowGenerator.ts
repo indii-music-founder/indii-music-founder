@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AI } from '../../../services/ai/AIService';
+import { AI } from '@/services/ai/AIService';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
 import type { SavedWorkflow } from '../types';
 import { Status } from '../types';
@@ -106,7 +106,14 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
 
     const part = response.response.candidates?.[0]?.content?.parts?.[0];
     const text = (part && isTextPart(part)) ? part.text : '{}';
-    const generated = JSON.parse(text);
+    let generated;
+    try {
+        generated = JSON.parse(text);
+    } catch (e) {
+        console.error("Failed to parse workflow generation result", e);
+        // Fallback to empty workflow or throw
+        throw new Error("Failed to generate valid workflow JSON");
+    }
 
     // Post-processing to ensure internal consistency (status, etc)
     const nodes = (generated.nodes || []).map((n: any) => ({

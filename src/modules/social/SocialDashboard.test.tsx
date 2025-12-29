@@ -29,6 +29,7 @@ vi.mock('./hooks/useSocial', () => ({
         stats: { followers: 124500, following: 100, posts: 50, drops: 12 },
         scheduledPosts: [],
         posts: [], // Added missing property
+        scheduledPosts: [], posts: [],
         isLoading: false,
         isFeedLoading: false, // Added missing property
         filter: 'all', // Added missing property
@@ -68,5 +69,6 @@ describe('SocialDashboard', () => {
         expect(screen.getByText('Total Reach')).toBeInTheDocument();
         expect(screen.getAllByText('Following')[0]).toBeInTheDocument();
         expect(screen.getAllByText('Posts')[0]).toBeInTheDocument();
+        expect(screen.getByText('Posts')).toBeInTheDocument();
     });
 });

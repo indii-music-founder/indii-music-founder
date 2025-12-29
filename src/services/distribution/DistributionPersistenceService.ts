@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import type { ReleaseDeployment, DistributionStoreSchema, DeploymentFilter } from './types/persistence';
 import type { DistributorId, ReleaseStatus, ValidationError } from './types/distributor';
@@ -52,9 +51,7 @@ class SimpleStore<T extends object> {
     }
 
     clear(): void {
-        this.data = {} as T; // Simplified clear (removes defaults too? or resets to defaults? assumes defaults are re-init if needed)
-        // Resetting to empty object might break structure if defaults expected
-        // Correct behavior matches electron-store clear()
+        this.data = {} as T;
         if (this.isBrowser) {
             window.localStorage.removeItem(this.name);
         }

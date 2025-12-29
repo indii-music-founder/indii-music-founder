@@ -2,16 +2,16 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { PlayerRef } from '@remotion/player';
 import { Plus, Trash2, Settings, Layers, Image as ImageIcon } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../../services/firebase';
+import { functions } from '@/services/firebase';
 import { useVideoEditorStore, VideoClip } from '../store/videoEditorStore';
-import { HistoryItem } from '../../../core/store/slices/creativeSlice';
-import { useToast } from '../../../core/context/ToastContext';
+import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { useToast } from '@/core/context/ToastContext';
 import { EditorAssetLibrary } from './components/EditorAssetLibrary';
 import { VideoPreview } from './components/VideoPreview';
 import { VideoPropertiesPanel } from './components/VideoPropertiesPanel';
 import { VideoTimeline } from './components/VideoTimeline';
 import { StudioToolbar } from '@/components/studio/StudioToolbar';
-import { throttle } from '../../../lib/throttle';
+import { throttle } from '@/lib/throttle';
 
 const PIXELS_PER_FRAME = 2;
 
@@ -227,7 +227,14 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
         if (data) {
             try {
-                const item = JSON.parse(data) as HistoryItem;
+                let item: HistoryItem;
+                try {
+                    item = JSON.parse(data) as HistoryItem;
+                } catch (e) {
+                    console.error("Failed to parse dropped item", e);
+                    return;
+                }
+
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 // Calculate frame based on drop position (rough approximation)

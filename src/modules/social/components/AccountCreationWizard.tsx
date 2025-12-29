@@ -45,7 +45,13 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
             // Basic cleaning of markdown code blocks if present
             const cleanJson = resultStr.replace(/```json/g, '').replace(/```/g, '').trim();
-            const result = JSON.parse(cleanJson);
+            let result;
+            try {
+                result = JSON.parse(cleanJson);
+            } catch (e) {
+                console.error("Failed to parse identity JSON", e);
+                throw new Error("Invalid response format");
+            }
 
             setGeneratedIdentity(result);
             toast.success("Identity ideas generated!");
