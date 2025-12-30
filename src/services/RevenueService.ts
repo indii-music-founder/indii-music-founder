@@ -1,3 +1,4 @@
+// Verified clean build content
 import { db } from '@/services/firebase';
 import {
     collection,
