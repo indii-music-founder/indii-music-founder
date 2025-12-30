@@ -95,9 +95,21 @@ export class DistroKidAdapter implements IDistributorAdapter {
 
         try {
             // 1. Build Package (Simulating Bulk Upload Preparation)
-            const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
-            const builder = new DistroKidPackageBuilder();
-            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+            // const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
+            // const builder = new DistroKidPackageBuilder();
+            // const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+            // 1. Build Package via IPC
+            if (!window.electronAPI?.distribution) {
+                throw new Error('Electron Distribution API not available');
+            }
+
+            const buildResult = await window.electronAPI.distribution.buildPackage('distrokid', metadata, assets, releaseId);
+
+            if (!buildResult.success || !buildResult.packagePath) {
+                throw new Error(`Package build failed: ${buildResult.error}`);
+            }
+
+            const { packagePath } = buildResult;
 
             console.log(`[DistroKid] Package created at: ${packagePath}`);
             console.log('[DistroKid] Ready for manual/bulk upload tool.');
@@ -135,7 +147,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
             throw new Error('Not connected to DistroKid');
         }
 
-        console.log(`[DistroKid] Updating release ${releaseId}`);
+        console.log(`[DistroKid] Updating release ${releaseId} with updates:`, Object.keys(updates));
         return {
             success: true,
             status: 'processing',
@@ -143,7 +155,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         if (!this.connected) {
             throw new Error('Not connected to DistroKid');
         }
