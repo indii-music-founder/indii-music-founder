@@ -1,8 +1,8 @@
 
 import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter } from './transport/SFTPTransporter';
-import { DistributorId } from './types/distributor';
-// import { ERNService } from '@/services/ddex/ERNService'; // TODO: integrate when ERNService is ready for full pkg generation
+import { DistributorId, ExtendedGoldenMetadata } from './types/distributor';
+import { ernService } from '@/services/ddex/ERNService';
 // import { PackageBuilder } from '@/services/ddex/PackageBuilder'; // Potential future service
 
 export interface DeliveryResult {
@@ -17,6 +17,33 @@ export class DeliveryService {
 
     constructor() {
         this.transporter = new SFTPTransporter();
+    }
+
+    /**
+     * Validate a release package before delivery
+     * Generates and validates the ERN message from metadata
+     */
+    async validateReleasePackage(metadata: ExtendedGoldenMetadata): Promise<{ valid: boolean; errors: string[] }> {
+        // 1. Generate ERN XML
+        const generationResult = await ernService.generateERN(metadata);
+        if (!generationResult.success || !generationResult.xml) {
+            return {
+                valid: false,
+                errors: [generationResult.error || 'Failed to generate ERN XML']
+            };
+        }
+
+        // 2. Parse ERN XML to verify structure
+        const parseResult = ernService.parseERN(generationResult.xml);
+        if (!parseResult.success || !parseResult.data) {
+            return {
+                valid: false,
+                errors: [parseResult.error || 'Failed to parse generated ERN XML']
+            };
+        }
+
+        // 3. Validate ERN Content
+        return ernService.validateERNContent(parseResult.data);
     }
 
     /**
