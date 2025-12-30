@@ -6,7 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 
 interface Props {
     onClose: () => void;
-    onSave: () => void;
+    onSave: (campaignId?: string) => void;
 }
 
 export default function CreateCampaignModal({ onClose, onSave }: Props) {
@@ -27,7 +27,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
         setIsLoading(true);
         try {
-            await MarketingService.createCampaign({
+            const id = await MarketingService.createCampaign({
                 assetType: 'campaign',
                 title,
                 description,
@@ -38,7 +38,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                 posts: []
             });
             toast.success('Campaign created successfully!');
-            onSave();
+            onSave(id);
             onClose();
         } catch (error) {
             console.error(error);

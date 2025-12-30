@@ -67,6 +67,28 @@ export class MarketingService {
     }
 
     /**
+     * Get a single campaign by ID
+     */
+    static async getCampaignById(id: string): Promise<CampaignAsset | null> {
+        try {
+            const docRef = doc(db, 'campaigns', id);
+            const snapshot = await getDoc(docRef);
+
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                return {
+                    id: snapshot.id,
+                    ...data,
+                } as unknown as CampaignAsset;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching campaign:', error);
+            return null;
+        }
+    }
+
+    /**
      * Create a new campaign
      */
     static async createCampaign(campaign: Omit<CampaignAsset, 'id'>): Promise<string> {
