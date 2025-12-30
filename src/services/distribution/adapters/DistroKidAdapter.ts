@@ -147,7 +147,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
             throw new Error('Not connected to DistroKid');
         }
 
-        console.log(`[DistroKid] Updating release ${releaseId}`);
+        console.log(`[DistroKid] Updating release ${releaseId} with updates:`, Object.keys(updates));
         return {
             success: true,
             status: 'processing',
@@ -155,7 +155,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         if (!this.connected) {
             throw new Error('Not connected to DistroKid');
         }
