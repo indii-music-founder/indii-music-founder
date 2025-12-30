@@ -311,7 +311,8 @@ class DistributorServiceImpl {
    */
   async getAggregatedEarnings(
     releaseId: string,
-    period: DateRange
+    period: DateRange,
+    targetCurrency: string = 'USD'
   ): Promise<AggregatedEarnings> {
     const byDistributor = await Promise.all(
       Array.from(this.adapters.entries()).map(async ([id, adapter]) => {
@@ -343,7 +344,7 @@ class DistributorServiceImpl {
       if (!e) continue;
 
       // Determine conversion rate for this report
-      const rate = await currencyConversionService.convert(1, e.currencyCode, 'USD');
+      const rate = await currencyConversionService.convert(1, e.currencyCode, targetCurrency);
 
       // Accumulate totals
       totalStreams += e.streams;
@@ -385,7 +386,7 @@ class DistributorServiceImpl {
       totalGrossRevenue,
       totalFees,
       totalNetRevenue,
-      currencyCode: 'USD',
+      currencyCode: targetCurrency,
       byDistributor: validEarnings.filter((e) => e !== null) as typeof validEarnings[0] extends null ? never : typeof validEarnings[number][],
       byPlatform: Array.from(platformMap.entries()).map(([platform, data]) => ({
         platform,
