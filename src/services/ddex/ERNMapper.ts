@@ -227,11 +227,16 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
                     commercialModelType: commercialModel,
+                    usage: [{
+                        useType,
+                        distributionChannelType: distributionChannel
+                    }],
                     usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
