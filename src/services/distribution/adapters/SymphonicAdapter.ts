@@ -11,7 +11,7 @@ import {
     type DistributorEarnings,
 } from '../types/distributor';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
-import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
+import type { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 
 /**
  * Symphonic Adapter
@@ -107,6 +107,8 @@ export class SymphonicAdapter implements IDistributorAdapter {
                 console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
             } else {
                 console.log('[Symphonic] Building package locally...');
+                // Dynamic import for browser safety
+                const { SymphonicPackageBuilder } = await import('../symphonic/SymphonicPackageBuilder');
                 const builder = new SymphonicPackageBuilder();
                 const { packagePath } = await builder.buildPackage(metadata, assets, folderReleaseId);
                 console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);

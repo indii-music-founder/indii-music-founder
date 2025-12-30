@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+// import * as fs from 'fs';
+// import * as path from 'path';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '@/services/distribution/types/distributor';
 
@@ -13,10 +13,7 @@ export class DistroKidPackageBuilder {
     private stagingBaseDir: string;
 
     constructor(stagingDir?: string) {
-        this.stagingBaseDir = stagingDir || path.resolve(process.cwd(), 'distrokid_staging');
-        if (!fs.existsSync(this.stagingBaseDir)) {
-            fs.mkdirSync(this.stagingBaseDir, { recursive: true });
-        }
+        this.stagingBaseDir = stagingDir || '';
     }
 
     async buildPackage(
@@ -24,6 +21,16 @@ export class DistroKidPackageBuilder {
         assets: ReleaseAssets,
         _releaseId: string
     ): Promise<{ packagePath: string; files: string[] }> {
+        const fs = await import('fs');
+        const path = await import('path');
+
+        if (!this.stagingBaseDir) {
+            this.stagingBaseDir = path.resolve(process.cwd(), 'distrokid_staging');
+        }
+        if (!fs.existsSync(this.stagingBaseDir)) {
+            fs.mkdirSync(this.stagingBaseDir, { recursive: true });
+        }
+
         // 1. Create Release Folder
         const safeTitle = metadata.trackTitle.replace(/[^a-zA-Z0-9]/g, '_');
         const folderName = `DK_${safeTitle}_${Date.now()}`;
@@ -86,6 +93,7 @@ export class DistroKidPackageBuilder {
     }
 
     private async copyAsset(sourceUrl: string, destPath: string): Promise<void> {
+        const fs = await import('fs');
         const sourcePath = sourceUrl.replace('file://', '');
         if (!fs.existsSync(sourcePath)) {
             throw new Error(`Asset not found: ${sourcePath}`);
