@@ -26,7 +26,7 @@ jobs:
       - name: Build landing page
         run: |
           cd landing-page
-          rm -rf out .next
+          rm -rf dist .next
           npm ci
           NODE_ENV=production npm run build
 
@@ -41,10 +41,10 @@ jobs:
       - name: Verify build outputs
         run: |
           echo "=== Landing Page Build ==="
-          ls -la landing-page/out || echo "Landing page build not found!"
+          ls -la landing-page/dist || echo "Landing page build not found!"
           echo ""
           echo "=== Landing Page Title ==="
-          grep -o '<title>[^<]*</title>' landing-page/out/index.html || echo "No title found!"
+          grep -o '<title>[^<]*</title>' landing-page/dist/index.html || echo "No title found!"
           echo ""
           echo "=== Studio Build ==="
           ls -la dist || echo "Studio build not found!"

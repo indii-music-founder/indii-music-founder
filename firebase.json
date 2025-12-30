@@ -2,7 +2,7 @@
   "hosting": [
     {
       "target": "landing",
-      "public": "landing-page/out",
+      "public": "landing-page/dist",
       "cleanUrls": true,
       "ignore": [
         "firebase.json",
@@ -57,9 +57,6 @@
       "rules": "storage.rules"
     }
   ],
-  "extensions": {
-    "storage-resize-images": "firebase/storage-resize-images@0.3.0"
-  },
   "functions": {
     "source": "functions",
     "predeploy": [
