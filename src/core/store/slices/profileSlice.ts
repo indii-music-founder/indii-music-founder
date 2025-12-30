@@ -69,14 +69,15 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => {
         set({ userProfile: profile });
-        saveProfileToStorage(profile).catch(err => console.error("Failed to save profile:", err));
+        // Persistence Strategy: Hybrid (IndexedDB for speed + Firestore for cloud backup)
+        saveProfileToStorage(profile).catch(err => console.error("[ProfileSlice] Failed to save profile:", err));
     },
     updateBrandKit: (updates) => set((state) => {
         const newProfile = {
             ...state.userProfile,
             brandKit: { ...state.userProfile.brandKit, ...updates }
         };
-        saveProfileToStorage(newProfile).catch(err => console.error("Failed to save profile update:", err));
+        saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save profile update:", err));
         return { userProfile: newProfile };
     }),
     initializeAuth: () => {
