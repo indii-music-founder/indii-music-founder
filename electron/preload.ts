@@ -40,6 +40,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
     },
+    // Distribution
+    distribution: {
+        buildPackage: (distributorId: string, metadata: any, assets: any, releaseId: string) =>
+            ipcRenderer.invoke('distribution:build-package', distributorId, metadata, assets, releaseId),
+    },
+
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),

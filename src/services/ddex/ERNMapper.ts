@@ -258,22 +258,25 @@ export class ERNMapper {
         if (distributionChannels.includes('streaming')) {
             // Subscription Streaming (Premium)
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-
             // Ad-Supported Streaming (Free Tier)
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
-
             // Non-Interactive Streaming (Web Radio)
             addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
-            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
+        if (distributionChannels.includes('download')) {
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
         if (distributionChannels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
+        // Fallback: Default to standard set if no deals created
+        if (deals.length === 0) {
+            addDeal('SubscriptionModel', 'OnDemandStream');
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
         // 3. Physical Deals
         // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
         if (distributionChannels.includes('physical')) {
@@ -294,7 +297,6 @@ export class ERNMapper {
         const contributors: Contributor[] = [];
 
         // Ensure Display Artist is included
-        // Check if display artist is in splits, if not add as MainArtist
         const artistInSplits = splits.find(s => s.legalName === displayArtist);
         if (!artistInSplits) {
             contributors.push({
@@ -308,13 +310,12 @@ export class ERNMapper {
         splits.forEach((split, index) => {
             let role: ContributorRole;
             switch (split.role) {
-                case 'songwriter': role = 'Composer'; break; // Approximate
+                case 'songwriter': role = 'Composer'; break;
                 case 'producer': role = 'Producer'; break;
-                case 'performer': role = 'FeaturedArtist'; break; // Defaulting to featured if not main
+                case 'performer': role = 'FeaturedArtist'; break;
                 default: role = 'AssociatedPerformer';
             }
 
-            // If this split IS the display artist, map as MainArtist
             if (split.legalName === displayArtist) {
                 role = 'MainArtist';
             }
@@ -322,7 +323,7 @@ export class ERNMapper {
             contributors.push({
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2 // Start after inferred main artist if added
+                sequenceNumber: index + 2
             });
         });
 

@@ -88,11 +88,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="campaign-start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
-                                <input
-                                    id="campaign-start-date"
                             <label htmlFor="start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
@@ -107,11 +102,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="campaign-end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
-                                <input
-                                    id="campaign-end-date"
                             <label htmlFor="end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
@@ -126,10 +116,8 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         </div>
                     </div>
 
+
                     <div>
-                        <label htmlFor="campaign-platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
-                        <select
-                            id="campaign-platform"
                         <label htmlFor="platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
                         <select
                             id="platform"

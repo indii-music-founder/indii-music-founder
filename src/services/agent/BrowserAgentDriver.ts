@@ -119,18 +119,11 @@ export class BrowserAgentDriver {
                         if (!selector || !text) throw new Error('Missing params for type');
                         actionResult = await window.electronAPI.agent.performAction('type', selector, text);
                         break;
-                    case 'scroll':
-                        // selector serves as direction (default: 'down'), text as amount (default: '500')
                     case 'scroll': {
                         // selector serves as direction, text as amount
                         const direction = selector || 'down';
                         const amount = text || '500';
                         actionResult = await window.electronAPI.agent.performAction('scroll', direction, amount);
-                        break;
-                    case 'wait':
-                        // text serves as duration in ms (default: '1000')
-                        const duration = text || '1000';
-                        actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
                         break;
                     }
                     case 'wait': {

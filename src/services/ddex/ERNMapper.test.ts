@@ -19,6 +19,7 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     releaseType: 'Single',
     releaseDate: '2025-01-01',
     territories: ['Worldwide'],
+    distributionChannels: [], // To be overridden
     distributionChannels: [],
     upc: '123456789012',
     catalogNumber: 'TEST001',
@@ -41,6 +42,7 @@ describe('ERNMapper Deal Generation', () => {
         return ern.dealList || [];
     };
 
+    it('should generate Streaming deals when "streaming" channel is present', () => {
     it('should generate Streaming deals correctly', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
@@ -49,6 +51,8 @@ describe('ERNMapper Deal Generation', () => {
 
         const deals = getDeals(metadata);
 
+        // Expect 3 deals: SubscriptionModel (Premium), AdvertisementSupportedModel, SubscriptionModel (NonInteractive)
+        expect(deals).toHaveLength(3);
         // Expect 4 deals based on implementation:
         // 1. SubscriptionModel OnDemandStream Stream
         // 2. AdvertisementSupportedModel OnDemandStream Stream
@@ -69,6 +73,7 @@ describe('ERNMapper Deal Generation', () => {
         expect(adDeal).toBeDefined();
     });
 
+    it('should generate Download deals when "download" channel is present', () => {
     it('should generate Download deals correctly', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
@@ -77,29 +82,17 @@ describe('ERNMapper Deal Generation', () => {
 
         const deals = getDeals(metadata);
 
-        // Expect 1 deal: PayAsYouGoModel + PermanentDownload
-        expect(deals).toHaveLength(1);
+        // Expect 2 deals: PayAsYouGo (PermanentDownload generic) + PayAsYouGo (Download specific)
+        expect(deals.length).toBe(2);
 
-        const downloadDeal = deals.find(d =>
-            d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
-            d.dealTerms.usage[0].useType === 'PermanentDownload'
-        );
-        expect(downloadDeal).toBeDefined();
-    });
-
-    it('should generate both Streaming and Download deals when both channels are present', () => {
-        const metadata: ExtendedGoldenMetadata = {
-            ...MOCK_METADATA_BASE,
-            distributionChannels: ['streaming', 'download']
-        };
-
-        const deals = getDeals(metadata);
-
+        const commercialModels = deals.map(d => d.dealTerms.commercialModelType);
+        expect(commercialModels.every(m => m === 'PayAsYouGoModel')).toBe(true);
+        expect(deals.every(d => d.dealTerms.usage[0].useType === 'PermanentDownload')).toBe(true);
         // Expect 5 deals total (4 streaming + 1 download)
         expect(deals).toHaveLength(5);
     });
 
-    it('should fallback to default deals if no channels are specified (empty array)', () => {
+    it('should generate Fallback deals when no channels are present', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             distributionChannels: []
@@ -107,27 +100,31 @@ describe('ERNMapper Deal Generation', () => {
 
         const deals = getDeals(metadata);
 
+        // Fallback: Streaming + Download defaults -> 2 deals
+        expect(deals.length).toBe(2);
         // Fallback: Streaming (Subscription) + Download
         expect(deals.length).toBe(2);
 
         const subDeal = deals.find(d => d.dealTerms.commercialModelType === 'SubscriptionModel');
         const downloadDeal = deals.find(d => d.dealTerms.commercialModelType === 'PayAsYouGoModel');
 
-        expect(subDeal).toBeDefined();
-        expect(downloadDeal).toBeDefined();
+        const types = deals.map(d => d.dealTerms.commercialModelType);
+        expect(types).toContain('SubscriptionModel');
+        expect(types).toContain('PayAsYouGoModel');
     });
 
-    it('should correctly set territories and start date', () => {
+    it('should generate correct release date in deals', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
-            territories: ['US', 'CA'],
-            releaseDate: '2025-05-01',
-            distributionChannels: ['streaming']
+            distributionChannels: ['streaming'],
+            releaseDate: '2025-12-25'
         };
 
         const deals = getDeals(metadata);
         const deal = deals[0];
 
+        expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-12-25');
+        expect(deal.dealTerms.validityPeriod.startDate).toBe('2025-12-25');
         expect(deal.dealTerms.territoryCode).toEqual(['US', 'CA']);
         expect(deal.dealTerms.validityPeriod.startDate).toBe('2025-05-01');
         expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');

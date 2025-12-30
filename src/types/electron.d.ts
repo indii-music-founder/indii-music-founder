@@ -45,10 +45,15 @@ export interface ElectronAPI {
         isConnected: () => Promise<boolean>;
     };
 
+    // Distribution
+    distribution: {
+        buildPackage: (distributorId: string, metadata: any, assets: any, releaseId: string) => Promise<{ success: boolean; packagePath?: string; files?: string[]; error?: string }>;
+    };
+
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
-        performAction: (action: 'click' | 'type', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
+        performAction: (action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
     };
 
