@@ -15,7 +15,7 @@ import {
  * DistroKid Adapter
  * Integration with DistroKid (Simulated Bulk Upload)
  */
-// import { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
+// import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';

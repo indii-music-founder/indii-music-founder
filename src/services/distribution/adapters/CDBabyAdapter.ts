@@ -11,7 +11,7 @@ import {
     type DistributorEarnings,
 } from '../types/distributor';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
-import { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
+import type { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
 
 /**
  * CD Baby Adapter
@@ -24,7 +24,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
     private connected: boolean = false;
     private username: string | null = null;
     private transporter: SFTPTransporter;
-    private builder: CDBabyPackageBuilder;
+    private builder: CDBabyPackageBuilder | null = null;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'cdbaby',
@@ -67,7 +67,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
 
     constructor() {
         this.transporter = new SFTPTransporter();
-        this.builder = new CDBabyPackageBuilder();
+        // Builder is lazy-loaded to avoid bundling fs modules in browser
     }
 
     async isConnected(): Promise<boolean> {
@@ -117,6 +117,9 @@ export class CDBabyAdapter implements IDistributorAdapter {
                 console.log(`[CD Baby] Delivering via Electron IPC...`);
             } else {
                 console.log('[CD Baby] Building package locally...');
+                // Dynamic import to avoid browser bundling issues
+                const { CDBabyPackageBuilder } = await import('../cdbaby/CDBabyPackageBuilder');
+                this.builder = new CDBabyPackageBuilder();
                 const { packagePath } = await this.builder.buildPackage(metadata, _assets, folderReleaseId);
                 console.log(`[CD Baby] Package built at: ${packagePath}`);
                 console.warn('[CD Baby] Client-side SFTP upload is not supported. This step requires a backend function.');
