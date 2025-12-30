@@ -3,7 +3,7 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { DepartmentNodeData, LogicNodeData, Status, AnyAsset } from '../types';
 import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from '../services/nodeRegistry';
 import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil } from 'lucide-react';
-import { useStore } from '../../../core/store';
+import { useStore } from '@/core/store';
 
 const statusConfig = {
     [Status.PENDING]: { icon: Hourglass, color: 'text-gray-400' },

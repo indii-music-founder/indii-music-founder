@@ -24,7 +24,7 @@ export class ERNService {
             const distributor = DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.generic;
             const recipientPartyId = distributor.ddexPartyId;
             const timestamp = new Date().toISOString();
-            const releaseId = metadata.upc || `R-${Date.now()}`;
+            // Removed unused variable releaseId which was causing lint warning
 
             // Use the Mapper to generate a complete ERN object
             const ern = ERNMapper.mapMetadataToERN(metadata, {

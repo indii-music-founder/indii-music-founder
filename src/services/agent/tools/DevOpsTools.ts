@@ -64,3 +64,11 @@ export const restart_service = async (args: { service_name: string }) => {
         timestamp: new Date().toISOString()
     });
 };
+
+export const DevOpsTools = {
+    list_clusters,
+    get_cluster_status,
+    scale_deployment,
+    list_instances,
+    restart_service
+};
