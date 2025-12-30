@@ -125,17 +125,52 @@ export class BrowserAgentService {
     }
 
     /**
-     * Performs an action (click or type) on a selector.
+     * Scrolls the page.
      */
-    async performAction(action: 'click' | 'type', selector: string, text?: string): Promise<{ success: boolean; error?: string }> {
+    async scroll(direction: string, amount: number): Promise<void> {
+        if (!this.page) throw new Error('Session not started');
+
+        if (direction === 'top') {
+            await this.page.evaluate(() => window.scrollTo(0, 0));
+        } else if (direction === 'bottom') {
+            await this.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        } else {
+            const y = direction === 'up' ? -amount : amount;
+            await this.page.evaluate((y) => window.scrollBy(0, y), y);
+        }
+    }
+
+    /**
+     * Waits for a specified duration.
+     */
+    async wait(duration: number): Promise<void> {
+        if (!this.page) throw new Error('Session not started');
+        await new Promise(resolve => setTimeout(resolve, duration));
+    }
+
+    /**
+     * Performs an action on the page.
+     */
+    async performAction(action: string, selector: string, text?: string): Promise<{ success: boolean; error?: string }> {
         if (!this.page) throw new Error('Session not started');
         try {
-            await this.page.waitForSelector(selector, { timeout: 10000 });
             if (action === 'click') {
+                await this.page.waitForSelector(selector, { timeout: 10000 });
                 await this.page.click(selector);
             } else if (action === 'type') {
                 if (text === undefined) throw new Error('Text is required for type action');
+                await this.page.waitForSelector(selector, { timeout: 10000 });
                 await this.page.type(selector, text, { delay: 50 });
+            } else if (action === 'scroll') {
+                // selector serves as direction, text as amount
+                const direction = selector || 'down';
+                const amount = text ? parseInt(text, 10) : 500;
+                await this.scroll(direction, amount);
+            } else if (action === 'wait') {
+                const duration = text ? parseInt(text, 10) : 1000;
+                await this.wait(duration);
+            } else {
+                throw new Error(`Unsupported action: ${action}`);
             }
             return { success: true };
         } catch (error) {
