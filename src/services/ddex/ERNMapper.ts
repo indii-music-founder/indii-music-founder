@@ -227,12 +227,12 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType) => {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
                     commercialModelType: commercialModel,
-                    usage: [{ useType }],
+                    usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -252,23 +252,27 @@ export class ERNMapper {
         // 1. Streaming Deals
         if (channels.includes('streaming')) {
             // Subscription Streaming (Premium)
-            addDeal('SubscriptionModel', 'OnDemandStream');
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
 
             // Ad-Supported Streaming (Free Tier)
-            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+
+            // Non-Interactive Streaming (Web Radio)
+            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
         if (channels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         // Fallback: If no channels specified but we have a release, default to Streaming + Download
         // This ensures backward compatibility if distributionChannels is missing
         if (deals.length === 0) {
-             addDeal('SubscriptionModel', 'OnDemandStream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload');
+             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         return deals;
