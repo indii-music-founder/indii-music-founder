@@ -1,24 +1,28 @@
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
 import {
-    type IDistributorAdapter,
-    type DistributorId,
-    type DistributorRequirements,
-    type DistributorCredentials,
-    type ReleaseAssets,
-    type ReleaseResult,
-    type ReleaseStatus,
-    type DistributorEarnings,
+    IDistributorAdapter,
+    DistributorId,
+    DistributorRequirements,
+    DistributorEarnings,
+    ReleaseResult,
+    ReleaseStatus,
+    ReleaseAssets,
+    DistributorCredentials,
+    ValidationResult
 } from '../types/distributor';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { DateRange } from '@/services/ddex/types/common';
 
 /**
- * TuneCore Adapter
- * Integration with TuneCore (API Based)
+ * Adapter for TuneCore
+ * Strategy: Simulated REST API Integration
+ * Since TuneCore uses a REST API for B2B partners, we simulate HTTP requests.
  */
-
 export class TuneCoreAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'tunecore';
-    readonly name = 'TuneCore';
+    readonly name: string = 'TuneCore';
+
+    private connected: boolean = false;
+    private accessToken: string | null = null;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'tunecore',
@@ -30,156 +34,236 @@ export class TuneCoreAdapter implements IDistributorAdapter {
             aspectRatio: '1:1',
             allowedFormats: ['jpg', 'png'],
             maxSizeBytes: 20 * 1024 * 1024,
-            colorMode: 'RGB',
+            colorMode: 'RGB'
         },
         audio: {
             allowedFormats: ['wav', 'flac'],
             minSampleRate: 44100,
             recommendedSampleRate: 44100,
             minBitDepth: 16,
-            channels: 'stereo',
+            channels: 'stereo'
         },
         metadata: {
             requiredFields: ['trackTitle', 'artistName', 'genre'],
             maxTitleLength: 255,
             maxArtistNameLength: 255,
-            isrcRequired: false,
+            isrcRequired: false, // They can assign
             upcRequired: false,
             genreRequired: true,
-            languageRequired: true,
+            languageRequired: true
         },
         timing: {
             minLeadTimeDays: 7,
-            reviewTimeDays: 2,
+            reviewTimeDays: 2
         },
         pricing: {
             model: 'subscription',
             annualFee: 14.99,
-            payoutPercentage: 100,
-        },
+            payoutPercentage: 100
+        }
     };
-
-    private connected = false;
-    private apiKey: string | null = null;
 
     async isConnected(): Promise<boolean> {
         return this.connected;
     }
 
     async connect(credentials: DistributorCredentials): Promise<void> {
-        if (!credentials.apiKey) {
-            throw new Error('TuneCore requires an API key');
+        if (!credentials.accessToken && !credentials.apiKey) {
+            throw new Error('TuneCore requires Access Token or API Key');
         }
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        this.apiKey = credentials.apiKey;
+
+        // Simulate OAuth validation
+        this.accessToken = credentials.accessToken || credentials.apiKey || null;
         this.connected = true;
+
+        console.log('[TuneCore] Connected.');
     }
 
     async disconnect(): Promise<void> {
-        this.apiKey = null;
         this.connected = false;
+        this.accessToken = null;
     }
 
-    async createRelease(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): Promise<ReleaseResult> {
+    async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to TuneCore');
         }
 
         console.log(`[TuneCore] Initiating API transmission for: ${metadata.trackTitle}`);
-        const releaseId = `TC-${Date.now()}`;
 
+        // 1. Validate
+        const validation = await this.validateMetadata(metadata);
+        if (!validation.isValid) {
+            return {
+                success: false,
+                status: 'failed',
+                errors: validation.errors
+            };
+        }
+
+        // 2. Build Payload (Simulated)
+        const payload = this.buildApiPayload(metadata, assets);
+
+        // 3. Simulate Request
         try {
-            // Mock API call
-            console.log('[TuneCore] API payload sent.');
+            await this.simulateApiRequest('POST', '/v1/releases', payload);
 
+            // Success response
             return {
                 success: true,
-                status: 'processing',
-                releaseId: releaseId,
-                distributorReleaseId: `INT-TC-${Date.now()}`,
+                status: 'delivered', // Delivered to API
+                releaseId: `TC-${Date.now()}`,
                 metadata: {
-                    estimatedLiveDate: '2025-01-22',
-                    upcAssigned: metadata.upc || 'PENDING_TC',
-                    isrcAssigned: metadata.isrc || 'PENDING_TC',
-                },
+                    reviewRequired: true,
+                    estimatedLiveDate: this.calculateLiveDate(metadata.releaseDate)
+                }
             };
         } catch (error) {
-            console.error('[TuneCore] API call failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             return {
                 success: false,
                 status: 'failed',
                 errors: [{
                     code: 'API_ERROR',
-                    message: error instanceof Error ? error.message : 'Unknown API Error'
-                }],
-                releaseId
+                    message: errorMessage
+                }]
             };
         }
     }
 
-    async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
+    async validateMetadata(metadata: ExtendedGoldenMetadata, _assets?: ReleaseAssets): Promise<ValidationResult> {
+        const errors: { code: string; message: string; field: string; severity: 'error' }[] = [];
+
+        if (!metadata.trackTitle) {
+            errors.push({
+                code: 'MISSING_TITLE',
+                message: 'Track title is required',
+                field: 'trackTitle',
+                severity: 'error'
+            });
         }
-        console.log(`[TuneCore] Updating release ${releaseId}`);
+
+        if (!metadata.genre) {
+            errors.push({
+                code: 'MISSING_GENRE',
+                message: 'Genre is required',
+                field: 'genre',
+                severity: 'error'
+            });
+        }
+
         return {
-            success: true,
-            status: 'processing',
-            distributorReleaseId: releaseId,
+            isValid: errors.length === 0,
+            errors,
+            warnings: []
         };
+    }
+
+    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
+        // Basic check
+        return { isValid: true, errors: [], warnings: [] };
     }
 
     async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
         if (!this.connected) {
             throw new Error('Not connected to TuneCore');
         }
-        return 'processing';
+        // Simulated polling
+        return 'in_review';
     }
 
-    async takedownRelease(releaseId: string): Promise<ReleaseResult> {
+    async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to TuneCore');
         }
+        // Simulate PATCH request
+        console.log(`[TuneCore] PATCH /v1/releases/${releaseId}`);
+        return {
+            success: true,
+            status: 'processing',
+            releaseId: releaseId
+        };
+    }
+
+    async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
+        if (!this.connected) {
+            throw new Error('Not connected to TuneCore');
+        }
+        // Simulate DELETE request
+        console.log(`[TuneCore] DELETE /v1/releases/${_releaseId}`);
         return {
             success: true,
             status: 'takedown_requested',
-            distributorReleaseId: releaseId,
+            releaseId: _releaseId
         };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
-        }
-
+        // Mock implementation for now
         return {
-            distributorId: this.id,
             releaseId,
+            distributorId: this.id,
             period,
-            streams: 12500,
-            downloads: 30,
-            grossRevenue: 98.50,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
             distributorFee: 0,
-            netRevenue: 98.50,
+            netRevenue: 0,
             currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
             breakdown: [],
+            lastUpdated: new Date().toISOString()
         };
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        // Mock implementation to match getEarnings behavior and ensure consistency
+        // This acts as a placeholder for real API integration later.
+        return [{
+            releaseId: 'mock-release-id',
+            distributorId: this.id,
+            period,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
+            currencyCode: 'USD',
+            breakdown: [],
+            lastUpdated: new Date().toISOString()
+        }];
     }
 
-    async validateMetadata(_metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
+    // --- Private Helpers ---
+
+    private buildApiPayload(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): Record<string, unknown> {
         return {
-            isValid: true,
-            errors: [],
-            warnings: [],
+            title: metadata.trackTitle,
+            artist: metadata.artistName,
+            genre: metadata.genre,
+            upc: metadata.upc || 'auto',
+            isrc: metadata.isrc || 'auto',
+            release_date: metadata.releaseDate,
+            territories: metadata.territories,
+            // Format assets for "upload"
+            assets: [
+                { type: 'audio', format: 'wav', size: 10000 },
+                { type: 'cover', format: 'jpg', size: 5000 }
+            ]
         };
     }
 
-    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
-        return { isValid: true, errors: [], warnings: [] };
+    private async simulateApiRequest(method: string, endpoint: string, body: unknown): Promise<void> {
+        console.log(`[TuneCore] ${method} ${endpoint}`, JSON.stringify(body, null, 2).substring(0, 100) + '...');
+        // Simulate network latency
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Random failure simulation (disabled for reliable tests)
+        // if (Math.random() > 0.9) throw new Error('API Timeout');
+    }
+
+    private calculateLiveDate(releaseDate?: string): string {
+        const d = releaseDate ? new Date(releaseDate) : new Date();
+        d.setDate(d.getDate() + 7); // 7 days review
+        return d.toISOString().split('T')[0];
     }
 }
