@@ -33,6 +33,7 @@ export class ERNMapper {
             sender: DPID;
             recipient: DPID;
             createdDateTime: string;
+            messageControlType?: 'LiveMessage' | 'TestMessage';
         }
     ): ERNMessage {
         const releaseReference = 'R1';
@@ -43,7 +44,7 @@ export class ERNMapper {
             messageSender: options.sender,
             messageRecipient: options.recipient,
             messageCreatedDateTime: options.createdDateTime,
-            messageControlType: 'LiveMessage', // TODO: Make configurable for testing
+            messageControlType: options.messageControlType || 'LiveMessage',
         };
 
         // 2. Build Release List
@@ -227,6 +228,7 @@ export class ERNMapper {
 
         // Helper to create and add a deal
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
@@ -235,6 +237,7 @@ export class ERNMapper {
                         useType,
                         distributionChannelType: distributionChannel
                     }],
+                    usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -258,6 +261,10 @@ export class ERNMapper {
 
             // Ad-Supported Streaming (Free Tier)
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+
+            // Non-Interactive Streaming (Web Radio)
+            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
