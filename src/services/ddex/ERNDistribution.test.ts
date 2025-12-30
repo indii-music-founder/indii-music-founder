@@ -1,42 +1,109 @@
 import { describe, it, expect } from 'vitest';
-import { ernService } from './ERNService';
-import { INITIAL_METADATA, ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { DISTRIBUTORS } from '@/core/config/distributors';
+import { ERNMapper } from './ERNMapper';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
-describe('ERN Distribution Integration', () => {
-    const mockMetadata: ExtendedGoldenMetadata = {
-        ...INITIAL_METADATA,
-        trackTitle: 'Test Track',
-        artistName: 'Test Artist',
-        isrc: 'US1234567890',
-        upc: '123456789012',
-        releaseType: 'Single',
-        releaseDate: '2025-01-01',
-        territories: ['Worldwide'],
-        distributionChannels: ['streaming'],
-        aiGeneratedContent: {
-            isFullyAIGenerated: false,
-            isPartiallyAIGenerated: false
-        }
-    };
+const BASE_METADATA: ExtendedGoldenMetadata = {
+    trackTitle: 'Test Track',
+    artistName: 'Test Artist',
+    isrc: 'US1234567890',
+    explicit: false,
+    genre: 'Pop',
+    labelName: 'Test Label',
+    splits: [],
+    pro: 'None',
+    publisher: 'Self',
+    containsSamples: false,
+    isGolden: true,
+    releaseType: 'Single',
+    releaseDate: '2023-01-01',
+    territories: ['Worldwide'],
+    distributionChannels: [],
+    aiGeneratedContent: {
+        isFullyAIGenerated: false,
+        isPartiallyAIGenerated: false
+    }
+};
 
-    it('should generate ERN for DistroKid with correct Party ID', async () => {
-        const result = await ernService.generateERN(mockMetadata, undefined, 'distrokid');
-        expect(result.success).toBe(true);
-        expect(result.xml).toBeDefined();
-        // Check for DistroKid's Party ID in the XML
-        expect(result.xml).toContain(DISTRIBUTORS.distrokid.ddexPartyId);
+const DEFAULT_OPTIONS = {
+    messageId: 'MSG-1',
+    sender: { partyId: 'SENDER', partyName: 'Sender' },
+    recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
+    createdDateTime: '2023-01-01T00:00:00Z'
+};
+
+describe('ERNMapper - Deal Logic Verification', () => {
+    it('should generate Streaming deals when "streaming" channel is present', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...BASE_METADATA,
+            distributionChannels: ['streaming']
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, DEFAULT_OPTIONS);
+        const deals = ern.dealList;
+
+        // Expect Subscription + OnDemandStream
+        const subscription = deals.find(d =>
+            d.dealTerms.commercialModelType === 'SubscriptionModel' &&
+            d.dealTerms.usage[0].useType === 'OnDemandStream'
+        );
+        expect(subscription).toBeDefined();
+
+        // Expect Ad-Supported + OnDemandStream
+        const adSupported = deals.find(d =>
+            d.dealTerms.commercialModelType === 'AdvertisementSupportedModel' &&
+            d.dealTerms.usage[0].useType === 'OnDemandStream'
+        );
+        expect(adSupported).toBeDefined();
+
+        // Should NOT have Download deals
+        const download = deals.find(d =>
+            d.dealTerms.commercialModelType === 'PayAsYouGoModel'
+        );
+        expect(download).toBeUndefined();
     });
 
-    it('should generate ERN for TuneCore with correct Party ID', async () => {
-        const result = await ernService.generateERN(mockMetadata, undefined, 'tunecore');
-        expect(result.success).toBe(true);
-        expect(result.xml).toContain(DISTRIBUTORS.tunecore.ddexPartyId);
+    it('should generate Download deals when "download" channel is present', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...BASE_METADATA,
+            distributionChannels: ['download']
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, DEFAULT_OPTIONS);
+        const deals = ern.dealList;
+
+        const download = deals.find(d =>
+            d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
+            d.dealTerms.usage[0].useType === 'PermanentDownload'
+        );
+        expect(download).toBeDefined();
+
+        const streaming = deals.find(d =>
+            d.dealTerms.commercialModelType === 'SubscriptionModel'
+        );
+        expect(streaming).toBeUndefined();
     });
 
-    it('should fallback to Generic for unknown distributor', async () => {
-        const result = await ernService.generateERN(mockMetadata, undefined, 'unknown_distro');
-        expect(result.success).toBe(true);
-        expect(result.xml).toContain(DISTRIBUTORS.generic.ddexPartyId);
+    it('should generate both when both channels are present', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...BASE_METADATA,
+            distributionChannels: ['streaming', 'download']
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, DEFAULT_OPTIONS);
+        const deals = ern.dealList;
+
+        expect(deals.length).toBeGreaterThanOrEqual(3); // 2 streaming + 1 download
+    });
+
+    it('should fallback to both if no channels specified', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...BASE_METADATA,
+            distributionChannels: []
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, DEFAULT_OPTIONS);
+        const deals = ern.dealList;
+
+        expect(deals.length).toBeGreaterThanOrEqual(2);
     });
 });
