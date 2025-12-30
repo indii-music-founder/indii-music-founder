@@ -1,7 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
 import { ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
-import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument, BrandKit } from '@/modules/workflow/types';
+import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument, BrandKit, ReleaseDetails, SocialLinks } from '@/modules/workflow/types';
 import type { FunctionDeclaration } from '@/shared/types/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupportedDistributors } from './distributorRequirements';
@@ -37,7 +37,7 @@ export function determinePhase(profile: UserProfile): OnboardingPhase {
     if (coreMissing.includes('careerStage') || coreMissing.includes('goals') || coreMissing.includes('distributor')) return 'identity_core';
 
     // Branding incomplete (colors, fonts, aesthetic)
-    const brandKit = profile.brandKit || {};
+    const brandKit: Partial<BrandKit> = profile.brandKit || {};
     if (!brandKit.colors?.length && !brandKit.fonts && !brandKit.brandDescription) return 'identity_branding';
 
     // Visuals incomplete
@@ -309,8 +309,8 @@ export function calculateProfileStatus(profile: UserProfile) {
     // Safe access to nested properties
     // Use Partial<BrandKit> to correctly type the fallback empty object and allow safe access to optional properties
     const brandKit: Partial<BrandKit> = profile.brandKit || {};
-    const releaseDetails = brandKit.releaseDetails || {};
-    const socials = brandKit.socials || {};
+    const releaseDetails: Partial<ReleaseDetails> = brandKit.releaseDetails || {};
+    const socials: Partial<SocialLinks> = brandKit.socials || {};
     const brandAssets = brandKit.brandAssets || [];
     const colors = brandKit.colors || [];
 
