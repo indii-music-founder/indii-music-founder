@@ -176,6 +176,22 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                             </div>
                         </div>
                         <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">RESOLUTION</label>
+                            <div className="relative group">
+                                <select
+                                    value={studioControls.resolution || '1024x1024'}
+                                    onChange={(e) => setStudioControls({ resolution: e.target.value })}
+                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                                >
+                                    <option value="1024x1024">1K (Square)</option>
+                                    <option value="1280x720">HD (720p)</option>
+                                    <option value="1920x1080">FHD (1080p)</option>
+                                    <option value="3840x2160">4K (UHD)</option>
+                                </select>
+                                <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
                             <label className="text-[10px] font-bold text-gray-500 tracking-wider">STYLE PRESET</label>
                             <div className="relative group">
                                 <select className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all">
@@ -188,13 +204,21 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                 <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
                             </div>
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">SEED</label>
+                            <input
+                                type="text"
+                                pattern="[0-9]*"
+                                value={studioControls.seed || ''}
+                                onChange={(e) => setStudioControls({ seed: e.target.value })}
+                                placeholder="Random"
+                                className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all placeholder:text-gray-600"
+                            />
+                        </div>
                     </div>
 
                     {/* Advanced Settings Toggle */}
-                    <button className="w-full flex items-center justify-between p-3 bg-white/5 rounded-xl text-xs text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all border border-transparent hover:border-white/5">
-                        <span className="flex items-center gap-2"><Sliders size={12} /> Advanced Settings</span>
-                        <ChevronDown size={12} />
-                    </button>
+
                 </div>
             )}
 

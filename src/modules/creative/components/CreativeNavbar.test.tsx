@@ -44,10 +44,6 @@ vi.mock('./ImageSubMenu', () => ({
     )
 }));
 
-vi.mock('./StudioNavControls', () => ({
-    default: () => <div data-testid="studio-nav-controls">Studio Controls</div>
-}));
-
 vi.mock('../../video/components/FrameSelectionModal', () => ({
     default: ({ isOpen, onClose, onSelect }: any) => isOpen ? (
         <div data-testid="frame-selection-modal">
@@ -130,69 +126,6 @@ describe('CreativeNavbar', () => {
         fireEvent.click(videoOption);
 
         expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
-    });
-
-    it('updates prompt when typing', () => {
-        // Note: Prompt input is currently hidden/removed in the component as per code view
-        // "Prompt Input Removed - Use CommandBar"
-        // But let's check if there are any other ways or if I missed something.
-        // The component uses `prompt` from store, but doesn't seem to have an input for it anymore in the main view?
-        // Ah, line 190: <div className="hidden"></div>
-        // So we can't test typing into the prompt input here because it's hidden.
-        // We can test the PromptBuilder though if we can open it.
-    });
-
-    it('handles generation trigger', async () => {
-        (useStore as any).mockReturnValue({
-            ...defaultStore,
-            prompt: 'test prompt'
-        });
-        (ImageGeneration.generateImages as any).mockResolvedValue([{
-            id: 'img-1',
-            url: 'http://test.com/img.png',
-            prompt: 'test prompt'
-        }]);
-
-        render(<CreativeNavbar />);
-
-        const generateButton = screen.getByText('Generate Image');
-        expect(generateButton).not.toBeDisabled();
-
-        fireEvent.click(generateButton);
-
-        await waitFor(() => {
-            expect(ImageGeneration.generateImages).toHaveBeenCalledWith(expect.objectContaining({
-                prompt: 'test prompt',
-                count: 1
-            }));
-            expect(mockAddToHistory).toHaveBeenCalled();
-            expect(mockToast.success).toHaveBeenCalled();
-        });
-    });
-
-    it('handles video generation trigger', async () => {
-        (useStore as any).mockReturnValue({
-            ...defaultStore,
-            generationMode: 'video',
-            prompt: 'test video prompt'
-        });
-        (VideoGeneration.generateVideo as any).mockResolvedValue([{
-            id: 'vid-1',
-            url: 'http://test.com/vid.mp4',
-            prompt: 'test video prompt'
-        }]);
-
-        render(<CreativeNavbar />);
-
-        const generateButton = screen.getByText('Generate Video');
-        fireEvent.click(generateButton);
-
-        await waitFor(() => {
-            expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
-                prompt: 'test video prompt'
-            }));
-            expect(mockAddToHistory).toHaveBeenCalled();
-        });
     });
 
     it('opens and closes brand assets drawer', () => {

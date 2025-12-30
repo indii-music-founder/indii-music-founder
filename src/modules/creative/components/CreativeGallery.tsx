@@ -55,29 +55,12 @@ export default function CreativeGallery({ compact = false, onSelect, className =
 
     if (isEmpty) {
         return (
-            <div className="flex-1 flex items-center justify-center p-8">
-                <FileUpload
-                    acceptedFileTypes={['image/*', 'video/*']}
-                    onUploadSuccess={(file) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            if (e.target?.result) {
-                                const isVideo = file.type.startsWith('video/');
-                                addUploadedImage({
-                                    id: crypto.randomUUID(),
-                                    type: isVideo ? 'video' : 'image',
-                                    url: e.target.result as string,
-                                    prompt: file.name,
-                                    timestamp: Date.now(),
-                                    projectId: currentProjectId
-                                });
-                                toast.success("Asset uploaded successfully");
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                    }}
-                    uploadDelay={1000}
-                />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-gray-500">
+                <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-dashed border-gray-800 flex items-center justify-center mb-4">
+                    <Upload className="w-6 h-6 text-gray-600" />
+                </div>
+                <p className="text-sm font-medium">No assets yet</p>
+                <p className="text-xs opacity-60 mt-1">Upload or generate to see them here</p>
             </div>
         );
     }
