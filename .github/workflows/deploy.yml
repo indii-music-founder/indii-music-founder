@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '22.x'
           cache: 'npm'
 
       - name: Install root dependencies
@@ -28,9 +28,7 @@ jobs:
           cd landing-page
           rm -rf out .next
           npm ci
-          npm run build
-        env:
-          NODE_ENV: production
+          NODE_ENV=production npm run build
 
       - name: Build studio app
         run: npm run build:studio
