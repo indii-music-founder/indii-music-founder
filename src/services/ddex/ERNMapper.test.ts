@@ -19,6 +19,40 @@ describe('ERNMapper', () => {
             isFullyAIGenerated: false,
             isPartiallyAIGenerated: false
         }
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { Deal } from './types/ern';
+
+const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
+    trackTitle: 'Test Track',
+    artistName: 'Test Artist',
+    isrc: 'USTEST12345',
+    explicit: false,
+    genre: 'Pop',
+    labelName: 'Test Label',
+    dpid: 'PADPIDA001',
+    splits: [],
+    pro: 'None',
+    publisher: 'Self',
+    containsSamples: false,
+    isGolden: true,
+    releaseType: 'Single',
+    releaseDate: '2025-01-01',
+    territories: ['Worldwide'],
+    distributionChannels: [],
+    upc: '123456789012',
+    catalogNumber: 'TEST001',
+    aiGeneratedContent: {
+        isFullyAIGenerated: false,
+        isPartiallyAIGenerated: false
+    }
+};
+
+describe('ERNMapper Deal Generation', () => {
+    const defaultOptions = {
+        messageId: 'MSG-1',
+        sender: { partyId: 'SENDER', partyName: 'Sender' },
+        recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
+        createdDateTime: '2025-01-01T00:00:00Z'
     };
 
     const options = {
@@ -34,6 +68,20 @@ describe('ERNMapper', () => {
         expect(ern.messageHeader.messageId).toBe(options.messageId);
         expect(ern.releaseList).toHaveLength(1);
         expect(ern.dealList.length).toBeGreaterThan(0);
+    it('should generate Streaming deals correctly', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            distributionChannels: ['streaming']
+        };
+
+        const deals = getDeals(metadata);
+
+        // Expect 4 deals based on implementation:
+        // 1. SubscriptionModel OnDemandStream Stream
+        // 2. AdvertisementSupportedModel OnDemandStream Stream
+        // 3. SubscriptionModel NonInteractiveStream Stream
+        // 4. AdvertisementSupportedModel NonInteractiveStream Stream
+        expect(deals).toHaveLength(4);
 
         const mainRelease = ern.releaseList[0];
         expect(mainRelease.releaseTitle.titleText).toBe('Test Track');
@@ -57,6 +105,40 @@ describe('ERNMapper', () => {
         const streamingOnly: ExtendedGoldenMetadata = {
             ...mockMetadata,
             distributionChannels: ['streaming']
+    it('should generate Download deals correctly', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            distributionChannels: ['download']
+        };
+
+        const deals = getDeals(metadata);
+
+        // Expect 1 deal: PayAsYouGoModel + PermanentDownload
+        expect(deals).toHaveLength(1);
+
+        const downloadDeal = deals.find(d =>
+            d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
+            d.dealTerms.usage[0].useType === 'PermanentDownload'
+        );
+        expect(downloadDeal).toBeDefined();
+    });
+
+    it('should generate both Streaming and Download deals when both channels are present', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            distributionChannels: ['streaming', 'download']
+        };
+
+        const deals = getDeals(metadata);
+
+        // Expect 5 deals total (4 streaming + 1 download)
+        expect(deals).toHaveLength(5);
+    });
+
+    it('should fallback to default deals if no channels are specified (empty array)', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            distributionChannels: []
         };
         const ern = ERNMapper.mapMetadataToERN(streamingOnly, options);
 
@@ -70,6 +152,24 @@ describe('ERNMapper', () => {
         const noChannels: ExtendedGoldenMetadata = {
             ...mockMetadata,
             distributionChannels: []
+        const deals = getDeals(metadata);
+
+        // Fallback: Streaming (Subscription) + Download
+        expect(deals.length).toBe(2);
+
+        const subDeal = deals.find(d => d.dealTerms.commercialModelType === 'SubscriptionModel');
+        const downloadDeal = deals.find(d => d.dealTerms.commercialModelType === 'PayAsYouGoModel');
+
+        expect(subDeal).toBeDefined();
+        expect(downloadDeal).toBeDefined();
+    });
+
+    it('should correctly set territories and start date', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            territories: ['US', 'CA'],
+            releaseDate: '2025-05-01',
+            distributionChannels: ['streaming']
         };
         const ern = ERNMapper.mapMetadataToERN(noChannels, options);
 
@@ -77,6 +177,12 @@ describe('ERNMapper', () => {
         expect(ern.dealList.length).toBeGreaterThan(0);
         const models = ern.dealList.map(d => d.dealTerms.commercialModelType);
         expect(models).toContain('SubscriptionModel');
+        const deals = getDeals(metadata);
+        const deal = deals[0];
+
+        expect(deal.dealTerms.territoryCode).toEqual(['US', 'CA']);
+        expect(deal.dealTerms.validityPeriod.startDate).toBe('2025-05-01');
+        expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');
     });
 
     it('should map AI generation info correctly', () => {

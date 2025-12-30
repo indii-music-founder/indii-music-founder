@@ -95,21 +95,9 @@ export class DistroKidAdapter implements IDistributorAdapter {
 
         try {
             // 1. Build Package (Simulating Bulk Upload Preparation)
-            // const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
-            // const builder = new DistroKidPackageBuilder();
-            // const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
-            // 1. Build Package via IPC
-            if (!window.electronAPI?.distribution) {
-                throw new Error('Electron Distribution API not available');
-            }
-
-            const buildResult = await window.electronAPI.distribution.buildPackage('distrokid', metadata, assets, releaseId);
-
-            if (!buildResult.success || !buildResult.packagePath) {
-                throw new Error(`Package build failed: ${buildResult.error}`);
-            }
-
-            const { packagePath } = buildResult;
+            const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
+            const builder = new DistroKidPackageBuilder();
+            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
 
             console.log(`[DistroKid] Package created at: ${packagePath}`);
             console.log('[DistroKid] Ready for manual/bulk upload tool.');

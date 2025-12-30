@@ -6,6 +6,8 @@ import { serve } from "inngest/express";
 import corsLib from "cors";
 import { GoogleAuth } from "google-auth-library";
 
+// GoogleAuth is required for Vertex AI (Veo) which uses IAM, unlike Gemini API Key
+
 // Initialize Firebase Admin
 admin.initializeApp();
 
@@ -24,6 +26,11 @@ const getInngestClient = () => {
 
 /**
  * Trigger Video Generation Job
+ *
+ * This callable function acts as the bridge between the Client App (Electron)
+ * and the Asynchronous Worker Queue (Inngest).
+ *
+ * Security: protected by Firebase Auth (onCall).
  */
 export const triggerVideoJob = functions
     .runWith({
@@ -50,6 +57,17 @@ export const triggerVideoJob = functions
         }
 
         try {
+            // 2. Create Initial Job Record
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                status: "queued",
+                prompt: prompt,
+                userId: userId,
+                orgId: orgId || "personal",
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 3. Publish Event to Inngest
             const inngest = getInngestClient();
 
             await inngest.send({
@@ -92,6 +110,9 @@ export const triggerVideoJob = functions
 
 /**
  * Inngest API Endpoint
+ *
+ * This is the entry point for Inngest Cloud to call back into our functions
+ * to execute steps.
  */
 export const inngestApi = functions
     .runWith({
@@ -201,6 +222,96 @@ export const inngestApi = functions
                 });
 
                 return { success: true, videoUrl: videoUri };
+                const { jobId, prompt, options } = event.data;
+
+                try {
+                    // 1. Update status to processing
+                    await step.run("update-status-processing", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "processing",
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+
+                    // 2. Call Vertex AI (Veo)
+                    const videoUri = await step.run("generate-video-vertex", async () => {
+                        const auth = new GoogleAuth({
+                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                        });
+                        const client = await auth.getClient();
+                        const projectId = await auth.getProjectId();
+                        const accessToken = await client.getAccessToken();
+
+                        const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/veo-3.1-generate-preview:predict`;
+
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                instances: [{
+                                    prompt: prompt
+                                }],
+                                parameters: {
+                                    sampleCount: 1,
+                                    videoLength: options?.duration || "5s",
+                                    aspectRatio: options?.aspectRatio || "16:9"
+                                }
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
+                        }
+
+                        const result = await response.json();
+
+                        const prediction = result.predictions?.[0];
+                        if (!prediction) throw new Error("No predictions returned");
+
+                        // If it returns base64
+                        if (prediction.bytesBase64Encoded) {
+                             const bucket = admin.storage().bucket();
+                             const file = bucket.file(`videos/${jobId}.mp4`);
+                             await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                                 metadata: { contentType: 'video/mp4' }
+                             });
+                             await file.makePublic();
+                             return file.publicUrl();
+                        }
+
+                        // If it returns a GCS URI (e.g. videoUri)
+                        if (prediction.videoUri) {
+                            return prediction.videoUri;
+                        }
+
+                        throw new Error("Unknown response format from Veo");
+                    });
+
+                    // 3. Update status to completed
+                    await step.run("update-status-completed", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "completed",
+                            videoUrl: videoUri,
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+
+                    return { success: true, videoUrl: videoUri };
+
+                } catch (error: any) {
+                    await step.run("update-status-failed", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "failed",
+                            error: error.message || "Unknown error during video generation",
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+                    throw error; // Re-throw to let Inngest handle retry logic if needed
+                }
             }
         );
 
