@@ -341,31 +341,56 @@ export class AIService {
     /**
      * Generate video using Vertex AI backend
      */
+    /**
+     * Generate video using Vertex AI backend (via synchronous polling of Async Job)
+     */
     async generateVideo(options: GenerateVideoOptions): Promise<string> {
         try {
-            const generateVideoFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(
-                functions,
-                'generateVideo'
-            );
+            // Import dynamically to avoid circular deps if any, though likely fine here
+            const { db } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
 
-            // Removed apiKey parameter - backend handles it
-            const response = await this.withRetry(() => generateVideoFn({
+            const triggerVideoJobFn = httpsCallable(functions, 'triggerVideoJob');
+            const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            // 1. Trigger the background job
+            await this.withRetry(() => triggerVideoJobFn({
+                jobId,
                 prompt: options.prompt,
                 model: options.model,
-                image: options.image,
-                config: options.config
+                image: options.image, // Base64 image
+                ...options.config
             }));
 
-            const prediction = response.data.predictions?.[0];
+            // 2. Poll for completion
+            let attempts = 0;
+            const maxAttempts = 120; // 2 minutes (approx 1s interval)
 
-            if (!prediction) {
-                throw new AppException(
-                    AppErrorCode.INTERNAL_ERROR,
-                    'No prediction returned from video generation backend'
-                );
+            while (attempts < maxAttempts) {
+                const jobRef = doc(db, 'videoJobs', jobId);
+                const jobSnap = await getDoc(jobRef);
+
+                if (jobSnap.exists()) {
+                    const data = jobSnap.data();
+                    if (data?.status === 'complete' && data.videoUrl) {
+                        return data.videoUrl;
+                    }
+                    if (data?.status === 'failed') {
+                        throw new AppException(
+                            AppErrorCode.INTERNAL_ERROR,
+                            `Video generation failed: ${data.error || 'Unknown error'}`
+                        );
+                    }
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                attempts++;
             }
 
-            return JSON.stringify(prediction);
+            throw new AppException(
+                AppErrorCode.TIMEOUT,
+                'Video generation timed out'
+            );
 
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
