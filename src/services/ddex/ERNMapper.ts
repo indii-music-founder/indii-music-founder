@@ -35,6 +35,7 @@ export class ERNMapper {
             sender: DPID;
             recipient: DPID;
             createdDateTime: string;
+            messageControlType?: 'LiveMessage' | 'TestMessage';
         }
     ): ERNMessage {
         const releaseReference = 'R1';
@@ -45,7 +46,7 @@ export class ERNMapper {
             messageSender: options.sender,
             messageRecipient: options.recipient,
             messageCreatedDateTime: options.createdDateTime,
-            messageControlType: 'LiveMessage', // TODO: Make configurable for testing
+            messageControlType: options.messageControlType || 'LiveMessage',
         };
 
         // 2. Build Release List
@@ -234,6 +235,18 @@ export class ERNMapper {
                 dealTerms: {
                     commercialModelType: model,
                     usage: [{ useType: use }],
+        // Helper to create and add a deal
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
+            const deal: Deal = {
+                dealReference: `D${dealCounter++}`,
+                dealTerms: {
+                    commercialModelType: commercialModel,
+                    usage: [{
+                        useType,
+                        distributionChannelType: distributionChannel
+                    }],
+                    usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -261,6 +274,24 @@ export class ERNMapper {
         // Maps to PayAsYouGo model with PermanentDownload usage.
         if (distributionChannels.includes('download')) {
             createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
+        // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
+        if (channels.includes('streaming')) {
+            // Subscription Streaming (Premium)
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+
+            // Ad-Supported Streaming (Free Tier)
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+
+            // Non-Interactive Streaming (Web Radio)
+            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
+        }
+
+        // 2. Download Deals
+        // Maps 'download' channel to PayAsYouGo (Permanent Download)
+        if (channels.includes('download')) {
+            // Permanent Download (iTunes, Amazon MP3, etc.)
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         // Fallback: If no channels specified (or empty), default to Streaming + Download
@@ -268,6 +299,8 @@ export class ERNMapper {
         if (deals.length === 0) {
              createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
              createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
+             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         return deals;
