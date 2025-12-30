@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Database, Download, ExternalLink, HardDrive, Trash2 } from 'lucide-react';
-import { DashboardService, StorageStats } from '../../../services/dashboard/DashboardService';
+import { DashboardService, StorageStats } from '@/services/dashboard/DashboardService';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
-import { useStore } from '../../../core/store';
+import { useStore } from '@/core/store';
 
 export default function DataStorageManager() {
     const [stats, setStats] = useState<StorageStats | null>(null);
