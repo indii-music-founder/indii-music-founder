@@ -1,4 +1,5 @@
 
+import path from 'path';
 import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter } from './transport/SFTPTransporter';
 import { DistributorId, ExtendedGoldenMetadata } from './types/distributor';
@@ -17,6 +18,70 @@ export class DeliveryService {
 
     constructor() {
         this.transporter = new SFTPTransporter();
+    }
+
+    /**
+     * Generate the complete release package
+     * Creates the directory structure and generates the ERN XML file.
+     * Note: This method requires a Node.js environment (Electron Main) to write files to disk.
+     * In a browser environment, it will return the generated XML content but fail to write to disk.
+     */
+    async generateReleasePackage(metadata: ExtendedGoldenMetadata, outputDir: string): Promise<{ success: boolean; packagePath?: string; xml?: string; error?: string }> {
+        try {
+            // 1. Generate ERN XML
+            const generationResult = await ernService.generateERN(metadata);
+            if (!generationResult.success || !generationResult.xml) {
+                return {
+                    success: false,
+                    error: generationResult.error || 'Failed to generate ERN XML'
+                };
+            }
+
+            // 2. Write to disk if environment allows
+            try {
+                // Dynamic import to avoid bundling issues in browser
+                // @ts-expect-error - fs is not available in browser types
+                const fs = await import('fs');
+
+                if (!fs || !fs.promises) {
+                    throw new Error('FileSystem not available');
+                }
+
+                // Ensure output directory exists
+                if (!fs.existsSync(outputDir)) {
+                    await fs.promises.mkdir(outputDir, { recursive: true });
+                }
+
+                // Write ERN XML
+                const xmlPath = path.join(outputDir, 'ern.xml');
+                await fs.promises.writeFile(xmlPath, generationResult.xml, 'utf8');
+
+                // TODO: Copy assets (audio, images) to the package directory
+                // This would require reading from the source URLs/paths in metadata
+
+                return {
+                    success: true,
+                    packagePath: outputDir,
+                    xml: generationResult.xml
+                };
+
+            } catch (fsError) {
+                // If we are in a browser or fs is not available
+                console.warn('[DeliveryService] FileSystem access not available. Returning XML content only.', fsError);
+                return {
+                    success: true, // It is successful in generating the content
+                    xml: generationResult.xml,
+                    error: 'FileSystem not available - package not written to disk'
+                };
+            }
+
+        } catch (error) {
+            console.error('[DeliveryService] Failed to generate release package:', error);
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
+        }
     }
 
     /**
