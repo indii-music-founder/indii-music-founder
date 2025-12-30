@@ -10,8 +10,8 @@ import {
     type ReleaseStatus,
     type DistributorEarnings,
 } from '../types/distributor';
-import { SFTPTransporter } from '../transport/SFTPTransporter';
-import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
+// import { SFTPTransporter } from '../transport/SFTPTransporter';
+// import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 
 /**
  * Symphonic Adapter
@@ -96,9 +96,18 @@ export class SymphonicAdapter implements IDistributorAdapter {
         const releaseId = `SYM-${Date.now()}`;
 
         try {
-            // 1. Build Package
-            const builder = new SymphonicPackageBuilder();
-            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+            // 1. Build Package via IPC
+            if (!window.electronAPI?.distribution) {
+                throw new Error('Electron Distribution API not available');
+            }
+
+            const buildResult = await window.electronAPI.distribution.buildPackage('symphonic', metadata, assets, releaseId);
+
+            if (!buildResult.success || !buildResult.packagePath) {
+                throw new Error(`Package build failed: ${buildResult.error}`);
+            }
+
+            const { packagePath } = buildResult;
 
             // 2. Transmit via SFTP Bridge (if available)
             if (typeof window !== 'undefined' && window.electronAPI) {

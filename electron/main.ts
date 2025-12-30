@@ -7,6 +7,8 @@ import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
 import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
+import { registerDistributionHandlers } from './handlers/distribution';
+
 import { configureSecurity } from './security';
 
 // Configure logging
@@ -200,6 +202,7 @@ if (!gotTheLock) {
         registerNetworkHandlers();
         registerCredentialHandlers();
         registerSFTPHandlers();
+        registerDistributionHandlers();
 
 
         setupIpcHandlers();
