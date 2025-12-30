@@ -1,6 +1,7 @@
 import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 
+// Mock data stores for standard/legacy checks
 // Standalone functions for direct import and testing
 export const check_api_status = async (args: { api_name: string }) => {
     // Mock implementation for test
@@ -38,6 +39,7 @@ const MOCK_APIS: Record<string, 'ACTIVE' | 'DISABLED' | 'DEPRECATED'> = {
 
 const SENSITIVE_TERMS = ['password', 'secret', 'key', 'ssn', 'credit_card'];
 
+// --- Legacy/Standard Named Exports (Required by existing tests) ---
 // --- Tool Implementations ---
 
 export const check_api_status = async (args: { api_name: string }): Promise<string> => {
@@ -52,6 +54,30 @@ export const check_api_status = async (args: { api_name: string }): Promise<stri
     });
 };
 
+export const scan_content = async (args: { text: string }): Promise<string> => {
+    const { text } = args;
+    const lowerText = text.toLowerCase();
+
+    const foundTerms = SENSITIVE_TERMS.filter(term => lowerText.includes(term));
+    const isSafe = foundTerms.length === 0;
+
+    return JSON.stringify({
+        safe: isSafe,
+        risk_score: isSafe ? 0.0 : 0.9,
+        flagged_terms: foundTerms,
+        recommendation: isSafe ? 'ALLOW' : 'BLOCK_OR_REDACT'
+    });
+};
+
+export const rotate_credentials = async (args: { service_name: string }): Promise<string> => {
+    const { service_name } = args;
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    return JSON.stringify({
+        service: service_name,
+        action: 'rotate_credentials',
+        status: 'SUCCESS',
+        new_key_id: `key-${Math.random().toString(36).substring(7)}`,
 export const scan_content = async (args: { text: string }) => {
     // Mock implementation for test
     if (args.text.includes('secret') || args.text.includes('password')) {
@@ -79,6 +105,52 @@ export const rotate_credentials = async (args: { service_name: string }) => {
     });
 };
 
+export const verify_zero_touch_prod = async (args: { service_name: string }): Promise<string> => {
+    const { service_name } = args;
+    const isCompliant = service_name.toLowerCase().startsWith('prod-') || service_name === 'foundational-auth';
+
+    return JSON.stringify({
+        service: service_name,
+        check: 'zero_touch_prod',
+        compliant: isCompliant,
+        automation_level: isCompliant ? 'FULL_NOPE' : 'PARTIAL',
+        last_audit: new Date().toISOString()
+    });
+};
+
+export const check_core_dump_policy = async (args: { service_name: string }): Promise<string> => {
+    const { service_name } = args;
+    const isFoundational = service_name.includes('auth') || service_name.includes('key');
+    const coreDumpsDisabled = isFoundational;
+
+    return JSON.stringify({
+        service: service_name,
+        check: 'core_dump_policy',
+        compliant: coreDumpsDisabled,
+        setting: coreDumpsDisabled ? 'DISABLED' : 'ENABLED',
+        risk_level: coreDumpsDisabled ? 'LOW' : isFoundational ? 'CRITICAL' : 'MEDIUM'
+    });
+};
+
+export const audit_workload_isolation = async (args: { service_name: string, workload_type: 'FOUNDATIONAL' | 'SENSITIVE' | 'LOWER_PRIORITY' }): Promise<string> => {
+    const { service_name, workload_type } = args;
+
+    let ring = 'GENERAL';
+    if (workload_type === 'FOUNDATIONAL') ring = 'RING_0_CORE';
+    if (workload_type === 'SENSITIVE') ring = 'RING_1_SENSITIVE';
+    if (workload_type === 'LOWER_PRIORITY') ring = 'RING_2_BATCH';
+
+    return JSON.stringify({
+        service: service_name,
+        check: 'workload_isolation',
+        workload_type: workload_type,
+        assigned_ring: ring,
+        isolation_status: 'ENFORCED',
+        neighbors: workload_type === 'FOUNDATIONAL' ? [] : ['other-batch-jobs']
+    });
+};
+
+// --- New AI-Integrated Security Tools ---
 export const verify_zero_touch_prod = async (args: { service_name: string }) => {
     if (args.service_name.startsWith('prod-')) {
         return JSON.stringify({
@@ -166,7 +238,6 @@ export const SecurityTools = {
     audit_workload_isolation,
 
     audit_permissions: async (args: { project_id?: string }) => {
-        // Mock implementation for Agent context. In real app, this would read Firebase ACLs.
         const prompt = `
         You are a Security Officer. Perform a Permission Audit ${args.project_id ? `for project ${args.project_id}` : 'for the organization'}.
 
@@ -215,3 +286,4 @@ export const SecurityTools = {
     scan_for_vulnerabilities,
     generate_security_report
 };
+

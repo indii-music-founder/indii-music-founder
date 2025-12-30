@@ -55,6 +55,11 @@ describe('ERNMapper Deal Generation', () => {
         createdDateTime: '2025-01-01T00:00:00Z'
     };
 
+    const getDeals = (metadata: ExtendedGoldenMetadata): Deal[] => {
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        return ern.dealList || [];
+    };
+
     const options = {
         messageId: 'MSG-001',
         sender: 'SENDER-ID',
@@ -82,6 +87,19 @@ describe('ERNMapper Deal Generation', () => {
         // 3. SubscriptionModel NonInteractiveStream Stream
         // 4. AdvertisementSupportedModel NonInteractiveStream Stream
         expect(deals).toHaveLength(4);
+
+        const subDeal = deals.find(d =>
+            d.dealTerms.commercialModelType === 'SubscriptionModel' &&
+            d.dealTerms.usage[0].useType === 'OnDemandStream'
+        );
+        expect(subDeal).toBeDefined();
+
+        const adDeal = deals.find(d =>
+            d.dealTerms.commercialModelType === 'AdvertisementSupportedModel' &&
+            d.dealTerms.usage[0].useType === 'OnDemandStream'
+        );
+        expect(adDeal).toBeDefined();
+    });
 
         const mainRelease = ern.releaseList[0];
         expect(mainRelease.releaseTitle.titleText).toBe('Test Track');
@@ -140,6 +158,7 @@ describe('ERNMapper Deal Generation', () => {
             ...MOCK_METADATA_BASE,
             distributionChannels: []
         };
+
         const ern = ERNMapper.mapMetadataToERN(streamingOnly, options);
 
         // Subscription, AdSupported, NonInteractive (3)
@@ -171,6 +190,7 @@ describe('ERNMapper Deal Generation', () => {
             releaseDate: '2025-05-01',
             distributionChannels: ['streaming']
         };
+
         const ern = ERNMapper.mapMetadataToERN(noChannels, options);
 
         // Should default to at least some streaming deals
@@ -185,6 +205,16 @@ describe('ERNMapper Deal Generation', () => {
         expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');
     });
 
+    it('should ignore "physical" channel and fallback if it is the only channel', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            distributionChannels: ['physical']
+        };
+
+        const deals = getDeals(metadata);
+
+        // Expect fallback behavior
+        expect(deals.length).toBe(2);
     it('should map AI generation info correctly', () => {
         const aiMetadata: ExtendedGoldenMetadata = {
             ...mockMetadata,

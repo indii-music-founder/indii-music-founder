@@ -1,5 +1,5 @@
 import { Timestamp, collection, query, where, getDocs, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/core/config/firebase';
+import { db } from '@/services/firebase';
 
 export interface RevenueEntry {
     id: string;

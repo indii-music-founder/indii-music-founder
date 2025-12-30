@@ -348,6 +348,7 @@ export class ERNMapper {
         // Fallback: Default to standard set if no deals created
         if (deals.length === 0) {
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
         // 3. Physical Deals
         // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
