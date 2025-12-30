@@ -3,6 +3,8 @@
  * Validates XML messages against DDEX XSD schemas
  */
 
+import { XMLParser } from 'fast-xml-parser';
+
 export class DDEXValidator {
     /**
      * Validate an XML string against a specific schema version
@@ -61,9 +63,63 @@ export class DDEXValidator {
      * Check if a specific profile is valid for a release
      * (e.g. Audio Album vs. Video Single)
      */
-    validateProfile(xml: string, profileVersion: string = 'CommmonReleaseTypes/14/AudioAlbum'): boolean {
-        // TODO: Implement Release Profile checks
-        return true;
+    validateProfile(xml: string, profileVersion: string = 'CommonReleaseTypes/14/AudioAlbum'): boolean {
+        try {
+            const parser = new XMLParser({
+                ignoreAttributes: false,
+                attributeNamePrefix: '@_',
+                removeNSPrefix: true
+            });
+            const parsed = parser.parse(xml);
+
+            // Find Root
+            const rootKey = Object.keys(parsed).find(key => key === 'NewReleaseMessage');
+            if (!rootKey) return false;
+
+            const root = parsed[rootKey];
+
+            // Check Profile Version ID
+            const actualProfile = root['@_ReleaseProfileVersionId'];
+            if (!actualProfile || !actualProfile.includes(profileVersion)) {
+                 // Fallback logic for partial matches
+                 if (!profileVersion.includes('/') && actualProfile?.endsWith(profileVersion)) {
+                     // Acceptable
+                 } else if (actualProfile !== profileVersion) {
+                     return false;
+                 }
+            }
+
+            // Profile specific logic
+            // Assuming "AudioAlbum" or "Album" profile implies:
+            // 1. ReleaseType is 'Album'
+            // 2. Contains SoundRecording resources
+            if (profileVersion.includes('AudioAlbum')) {
+                // Check ReleaseList
+                const releaseList = root.ReleaseList?.Release;
+                if (!releaseList) return false;
+
+                const releases = Array.isArray(releaseList) ? releaseList : [releaseList];
+
+                // Must have at least one Album release
+                const hasAlbum = releases.some((r: any) => {
+                     const type = r.ReleaseType;
+                     return type === 'Album';
+                });
+
+                if (!hasAlbum) return false;
+
+                // Check ResourceList
+                const resourceList = root.ResourceList;
+                const soundRecordings = resourceList?.SoundRecording;
+
+                if (!soundRecordings) return false;
+            }
+
+            return true;
+        } catch (e) {
+            console.error('Profile validation error:', e);
+            return false;
+        }
     }
 }
 
