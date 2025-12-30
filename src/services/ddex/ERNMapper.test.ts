@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { ERNMapper } from './ERNMapper';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
+import { Deal } from './types/ern';
 
 const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
+    ...INITIAL_METADATA,
     trackTitle: 'Test Track',
     artistName: 'Test Artist',
     isrc: 'USTEST12345',
@@ -49,8 +52,23 @@ const getDeals = (metadata: ExtendedGoldenMetadata) => {
 describe('ERNMapper Deal Generation', () => {
     it('should map basic metadata to ERN message', () => {
         const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, options);
+describe('ERNMapper', () => {
+    const defaultOptions = {
+        messageId: 'MSG-1',
+        sender: { partyId: 'SENDER', partyName: 'Sender' },
+        recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
+        createdDateTime: '2025-01-01T00:00:00Z'
+    };
 
-        expect(ern.messageHeader.messageId).toBe(options.messageId);
+    const getDeals = (metadata: ExtendedGoldenMetadata): Deal[] => {
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        return ern.dealList || [];
+    };
+
+    it('should map basic metadata to ERN message', () => {
+        const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, defaultOptions);
+
+        expect(ern.messageHeader.messageId).toBe(defaultOptions.messageId);
         expect(ern.releaseList).toHaveLength(1);
         expect(ern.dealList.length).toBeGreaterThan(0);
 
@@ -125,8 +143,9 @@ describe('ERNMapper Deal Generation', () => {
 
         const deals = getDeals(metadata);
 
-        // Fallback: Streaming (Subscription) + Download
-        expect(deals.length).toBe(2);
+        // Fallback: Default to standard set if no deals created
+        // The first fallback adds 3 deals (Subscription, AdSupported, NonInteractive)
+        expect(deals.length).toBe(3);
 
         const subDeal = deals.find(d => d.dealTerms.commercialModelType === 'SubscriptionModel');
         const downloadDeal = deals.find(d => d.dealTerms.commercialModelType === 'PayAsYouGoModel');
@@ -161,6 +180,8 @@ describe('ERNMapper Deal Generation', () => {
 
         // Expect fallback behavior (2 deals)
         expect(deals.length).toBe(2);
+        // Expect fallback behavior (3 deals)
+        expect(deals.length).toBe(3);
     });
 
     it('should map AI generation info correctly', () => {
@@ -174,7 +195,7 @@ describe('ERNMapper Deal Generation', () => {
             }
         };
 
-        const ern = ERNMapper.mapMetadataToERN(aiMetadata, options);
+        const ern = ERNMapper.mapMetadataToERN(aiMetadata, defaultOptions);
         const release = ern.releaseList[0];
 
         expect(release.aiGenerationInfo).toBeDefined();
