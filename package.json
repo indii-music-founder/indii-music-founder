@@ -118,7 +118,7 @@
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
     "electron-rebuild": "^3.2.9",
-    "esbuild": "^0.27.2",
+    "esbuild": "0.25.12",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "fake-indexeddb": "^6.2.5",
@@ -138,6 +138,7 @@
     "ytdl-core": "^4.11.5"
   },
   "optionalDependencies": {
+    "@esbuild/linux-x64": "0.25.12",
     "@rollup/rollup-linux-x64-gnu": "^4.53.3"
   },
   "build": {
