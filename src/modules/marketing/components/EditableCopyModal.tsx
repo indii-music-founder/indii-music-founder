@@ -5,7 +5,7 @@ import { ScheduledPost } from '../types';
 interface EditableCopyModalProps {
     post: ScheduledPost;
     onClose: () => void;
-    onSave: (postId: string, newContent: string) => void;
+    onSave: (postId: string, newContent: string) => void | Promise<void>;
 }
 
 const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, onSave }) => {
@@ -15,8 +15,8 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
         setContent(post.copy);
     }, [post]);
 
-    const handleSave = () => {
-        onSave(post.id, content);
+    const handleSave = async () => {
+        await onSave(post.id, content);
     };
 
     return (

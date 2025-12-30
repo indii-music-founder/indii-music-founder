@@ -40,7 +40,7 @@ export class DeliveryService {
             // 2. Write to disk if environment allows
             try {
                 // Dynamic import to avoid bundling issues in browser
-                // @ts-expect-error - fs is not available in browser types
+
                 const fs = await import('fs');
 
                 if (!fs || !fs.promises) {

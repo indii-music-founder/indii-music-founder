@@ -53,7 +53,7 @@ export interface ElectronAPI {
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
-        performAction: (action: 'click' | 'type', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
+        performAction: (action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
     };
 

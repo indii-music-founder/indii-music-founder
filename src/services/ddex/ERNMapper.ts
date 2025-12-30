@@ -228,15 +228,7 @@ export class ERNMapper {
             startDate: metadata.releaseDate
         };
 
-        // Helper to create and append a deal
-        const createAndAppendDeal = (model: CommercialModelType, use: UseType) => {
-            const deal: Deal = {
-                dealReference: `D${dealCounter++}`,
-                dealTerms: {
-                    commercialModelType: model,
-                    usage: [{ useType: use }],
         // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
@@ -244,9 +236,8 @@ export class ERNMapper {
                     commercialModelType: commercialModel,
                     usage: [{
                         useType,
-                        distributionChannelType: distributionChannel
+                        distributionChannelType
                     }],
-                    usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -264,55 +255,26 @@ export class ERNMapper {
         const distributionChannels = metadata.distributionChannels || [];
 
         // 1. Streaming Deals
-        // Maps to Subscription (Premium) and Ad-Supported (Free) models with OnDemandStream usage.
         if (distributionChannels.includes('streaming')) {
-            createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
-            createAndAppendDeal('AdvertisementSupportedModel', 'OnDemandStream');
-        }
-
-        // 2. Download Deals
-        // Maps to PayAsYouGo model with PermanentDownload usage.
-        if (distributionChannels.includes('download')) {
-            createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
-        // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
-        if (channels.includes('streaming')) {
-            addDeal('SubscriptionModel', 'OnDemandStream');
-            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
             // Subscription Streaming (Premium)
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-
             // Ad-Supported Streaming (Free Tier)
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
-
             // Non-Interactive Streaming (Web Radio)
             addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
-            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
-        // Maps 'download' channel to Permanent Download (PayAsYouGo)
-        // Maps 'download' channel to PayAsYouGo (Permanent Download)
-        if (channels.includes('download')) {
+        if (distributionChannels.includes('download')) {
             addDeal('PayAsYouGoModel', 'PermanentDownload');
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // Fallback: If no channels specified (or empty), default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing or not yet populated.
-        // 3. Physical Deals
-        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
-        if (channels.includes('physical')) {
-            // Placeholder for future implementation
-        }
-
-        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing or empty
+        // Fallback: Default to standard set if no deals created
         if (deals.length === 0) {
-             createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
-             createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
-             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+            addDeal('SubscriptionModel', 'OnDemandStream');
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
         }
 
         return deals;
@@ -322,7 +284,6 @@ export class ERNMapper {
         const contributors: Contributor[] = [];
 
         // Ensure Display Artist is included
-        // Check if display artist is in splits, if not add as MainArtist
         const artistInSplits = splits.find(s => s.legalName === displayArtist);
         if (!artistInSplits) {
             contributors.push({
@@ -336,13 +297,12 @@ export class ERNMapper {
         splits.forEach((split, index) => {
             let role: ContributorRole;
             switch (split.role) {
-                case 'songwriter': role = 'Composer'; break; // Approximate
+                case 'songwriter': role = 'Composer'; break;
                 case 'producer': role = 'Producer'; break;
-                case 'performer': role = 'FeaturedArtist'; break; // Defaulting to featured if not main
+                case 'performer': role = 'FeaturedArtist'; break;
                 default: role = 'AssociatedPerformer';
             }
 
-            // If this split IS the display artist, map as MainArtist
             if (split.legalName === displayArtist) {
                 role = 'MainArtist';
             }
@@ -350,7 +310,7 @@ export class ERNMapper {
             contributors.push({
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2 // Start after inferred main artist if added
+                sequenceNumber: index + 2
             });
         });
 

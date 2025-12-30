@@ -3,8 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createProfileSlice, ProfileSlice } from './profileSlice';
 import { createStore } from 'zustand';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
-import { createProfileSlice } from './profileSlice';
-import { saveProfileToStorage } from '@/services/storage/repository';
+
 import { UserProfile } from '@/modules/workflow/types';
 
 // Mock repository
@@ -14,7 +13,7 @@ vi.mock('@/services/storage/repository', () => ({
 }));
 
 // Mock console.error to avoid noise
-const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
 describe('ProfileSlice Persistence', () => {
     let useStore: any;
@@ -112,8 +111,9 @@ describe('ProfileSlice Persistence', () => {
         // It should also persist the default profile
         expect(saveProfileToStorage).toHaveBeenCalledWith(initialDefault);
     });
-    getProfileFromStorage: vi.fn().mockResolvedValue(undefined)
-}));
+
+
+});
 
 describe('profileSlice', () => {
     let set: any;
