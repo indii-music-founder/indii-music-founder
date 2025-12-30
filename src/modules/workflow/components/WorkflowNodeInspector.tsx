@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
 import { useStore } from '@/core/store';
-import { X, Save, Sparkles, Loader2 } from 'lucide-react';
 import { AI } from '@/services/ai/AIService';
 import { isTextPart } from '@/shared/types/ai.dto';
 import { AI_MODELS } from '@/core/config/ai-models';

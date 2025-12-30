@@ -220,7 +220,8 @@ export class DistroKidAdapter implements IDistributorAdapter {
         const warnings: ValidationResult['warnings'] = [];
 
         // Check Audio
-        if (assets.audioFile.sizeBytes > 500 * 1024 * 1024) { // 500MB limit for example
+        const audioFile = (assets.audioFiles && assets.audioFiles.length > 0) ? assets.audioFiles[0] : assets.audioFile;
+        if (audioFile && audioFile.sizeBytes > 500 * 1024 * 1024) { // 500MB limit for example
             errors.push({ code: 'FILE_TOO_LARGE', message: 'Audio file exceeds maximum size', field: 'audioFile', severity: 'error' });
         }
 

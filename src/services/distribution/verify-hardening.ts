@@ -145,14 +145,14 @@ async function verifyHardening() {
     } as ExtendedGoldenMetadata;
 
     const mockAssets: ReleaseAssets = {
-        audioFile: {
+        audioFiles: [{
             url: 'file:///path/to/song.wav',
             mimeType: 'audio/wav',
             sizeBytes: 40 * 1024 * 1024,
             format: 'wav',
             sampleRate: 44100,
             bitDepth: 16,
-        },
+        }],
         coverArt: {
             url: 'file:///path/to/cover.jpg',
             mimeType: 'image/jpeg',

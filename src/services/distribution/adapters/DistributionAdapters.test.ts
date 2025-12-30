@@ -86,14 +86,14 @@ describe('Distribution Adapters', () => {
         };
 
         mockAssets = {
-            audioFile: {
+            audioFiles: [{
                 url: 'file:///tmp/test_audio.wav',
                 format: 'wav',
                 sizeBytes: 1000,
                 mimeType: 'audio/wav',
                 sampleRate: 44100,
                 bitDepth: 16
-            },
+            }],
             coverArt: {
                 url: 'file:///tmp/test_cover.jpg',
                 width: 3000,
