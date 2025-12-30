@@ -92,16 +92,9 @@ async function uploadImages(userId: string) {
 
             // Fallback to local file URL since Storage upload is flaky in script context (CORS/Referer/Auth)
             // Electron can render local files if we handle the protocol correctly.
-            // We encode the path segments to ensure spaces are handled.
-            const url = `file://${img.path.split('/').map(p => encodeURIComponent(p)).join('/').replace('%2F', '/')}`;
-
-            // Fix: encodeURIComponent encodes '/' too, we need to preserve slashes or join them back.
-            // Better way:
+            // We encode the path segments to ensure spaces and special characters are handled.
             const safePath = img.path.split('/').map(segment => encodeURIComponent(segment)).join('/');
-            // The leading slash becomes empty string -> %2F -> we need to restore logic.
-            // Actually, 'file://' + encodeURI(img.path) is cleaner but encodeURI doesn't escape # or ?.
-            // Let's use simplified replacement for spaces which is the main issue.
-            const fileUrl = `file://${img.path.replace(/ /g, '%20')}`;
+            const fileUrl = `file://${safePath}`;
 
             console.log(`Using local URL: ${fileUrl}`);
 
