@@ -600,7 +600,7 @@ export const inngestApi = functions
                                 }],
                                 parameters: {
                                     sampleCount: 1,
-                                    videoLength: options?.duration || "5s",
+                                    videoLength: options?.duration || options?.durationSeconds || "5s",
                                     aspectRatio: options?.aspectRatio || "16:9"
                                 }
                             })
