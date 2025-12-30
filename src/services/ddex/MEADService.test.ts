@@ -18,9 +18,10 @@ describe('MEADService', () => {
             ]
         } as any;
 
-        const mead = meadService.generateMEAD(richMetadata);
+        const mead = meadService.generateMEAD(richMetadata, undefined, 'TestRecipient');
 
         expect(mead.messageHeader).toBeDefined();
+        expect(mead.messageHeader.messageRecipient.partyId).toBe('TestRecipient');
         expect(mead.meadMessageContent.releases.length).toBe(1);
 
         const release = mead.meadMessageContent.releases[0];
