@@ -81,8 +81,21 @@ describe('DeliveryService Integration', () => {
     it('should copy assets when provided', async () => {
         const outputDir = '/tmp/test-output';
         const assets = {
-            audioUrl: '/source/audio.wav',
-            coverArtUrl: '/source/cover.jpg'
+            audioFiles: [{
+                url: '/source/audio.wav',
+                format: 'wav' as any,
+                sizeBytes: 1000,
+                mimeType: 'audio/wav',
+                sampleRate: 44100,
+                bitDepth: 16
+            }],
+            coverArt: {
+                url: '/source/cover.jpg',
+                width: 3000,
+                height: 3000,
+                mimeType: 'image/jpeg',
+                sizeBytes: 2000
+            }
         };
 
         const result = await deliveryService.generateReleasePackage(mockMetadata, outputDir, assets);
@@ -97,22 +110,35 @@ describe('DeliveryService Integration', () => {
 
         // Audio Copy
         expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
-            assets.audioUrl,
-            path.join(resourcesDir, 'audio.wav')
+            assets.audioFiles[0].url,
+            path.join(resourcesDir, 'A1.wav')
         );
 
         // Cover Copy
         expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
-            assets.coverArtUrl,
-            path.join(resourcesDir, 'cover.jpg')
+            assets.coverArt.url,
+            path.join(resourcesDir, 'IMG2.jpg')
         );
     });
 
     it('should handle missing asset source files gracefully (warn but proceed)', async () => {
         const outputDir = '/tmp/test-output';
         const assets = {
-            audioUrl: '/missing/audio.wav',
-            coverArtUrl: '/source/cover.jpg'
+            audioFiles: [{
+                url: '/missing/audio.wav',
+                format: 'wav' as any,
+                sizeBytes: 1000,
+                mimeType: 'audio/wav',
+                sampleRate: 44100,
+                bitDepth: 16
+            }],
+            coverArt: {
+                url: '/source/cover.jpg',
+                width: 3000,
+                height: 3000,
+                mimeType: 'image/jpeg',
+                sizeBytes: 2000
+            }
         };
 
         // Mock existsSync to return false for audio
@@ -127,13 +153,13 @@ describe('DeliveryService Integration', () => {
 
         // Should not copy audio
         expect(mockFs.promises.copyFile).not.toHaveBeenCalledWith(
-            assets.audioUrl,
+            assets.audioFiles[0].url,
             expect.anything()
         );
 
         // Should copy cover
         expect(mockFs.promises.copyFile).toHaveBeenCalledWith(
-            assets.coverArtUrl,
+            assets.coverArt.url,
             expect.anything()
         );
     });

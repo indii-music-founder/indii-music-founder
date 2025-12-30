@@ -1,4 +1,3 @@
-
 import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
 import { ImageTools } from './tools/ImageTools';
 import { VideoTools } from './tools/VideoTools';
@@ -32,17 +31,13 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...ProjectTools,
     ...NavigationTools,
     ...MapsTools,
-    ...PUBLICIST_TOOLS,
-    ...BrandTools,
-    ...MarketingTools,
-    ...RoadTools,
-    ...SecurityTools
     ...BrandTools,
     ...MarketingTools,
     ...RoadTools,
     ...SecurityTools,
     ...DevOpsTools,
-    ...PUBLICIST_TOOLS
+    ...PUBLICIST_TOOLS,
+    ...FinanceTools
 };
 
 export const BASE_TOOLS = `

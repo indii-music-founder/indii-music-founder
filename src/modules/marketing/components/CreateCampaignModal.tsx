@@ -93,11 +93,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
                                 <input
                                     id="campaign-start-date"
-                            <label htmlFor="start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
-                                <input
-                                    id="start-date"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
@@ -112,11 +107,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
                                 <input
                                     id="campaign-end-date"
-                            <label htmlFor="end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
-                                <input
-                                    id="end-date"
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
@@ -130,9 +120,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <label htmlFor="campaign-platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
                         <select
                             id="campaign-platform"
-                        <label htmlFor="platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
-                        <select
-                            id="platform"
                             value={platform}
                             onChange={(e) => setPlatform(e.target.value)}
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"

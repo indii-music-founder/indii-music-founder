@@ -50,7 +50,7 @@ export class BrowserAgentDriver {
                     Current URL: ${currentState.url}
                     Page Title: ${currentState.title}
                     
-                    Analyze the attached screenshot and the current state.
+                    Analyze the current state and the attached screenshot.
                     Determine the next action to take to achieve the goal.
                     
                     Return a JSON object with this structure:
@@ -58,8 +58,7 @@ export class BrowserAgentDriver {
                         "thought": "Reasoning for your action",
                         "action": "click" | "type" | "scroll" | "wait" | "finish" | "fail",
                         "params": {
-                            "selector": "CSS selector (click/type) OR direction (scroll: 'up'/'down'/'top'/'bottom')",
-                            "selector": "CSS selector (click/type) OR direction (scroll: 'up'|'down'|'top'|'bottom')",
+                            "selector": "CSS selector (click/type) OR direction (scroll: 'up' | 'down' | 'top' | 'bottom')",
                             "text": "Text to type (type) OR amount/duration (scroll/wait)",
                             "reason": "Reason for finishing or failing"
                         }
@@ -71,7 +70,7 @@ export class BrowserAgentDriver {
                     - If you cannot proceed, choose 'fail'.
                 `;
 
-                // Call Gemini 2.5 Pro UI
+                // Call AI
                 const response = await AI.generateContent({
                     model: AI_MODELS.BROWSER.AGENT,
                     contents: {
@@ -119,22 +118,13 @@ export class BrowserAgentDriver {
                         if (!selector || !text) throw new Error('Missing params for type');
                         actionResult = await window.electronAPI.agent.performAction('type', selector, text);
                         break;
-                    case 'scroll':
-                        // selector serves as direction (default: 'down'), text as amount (default: '500')
                     case 'scroll': {
-                        // selector serves as direction, text as amount
                         const direction = selector || 'down';
                         const amount = text || '500';
                         actionResult = await window.electronAPI.agent.performAction('scroll', direction, amount);
                         break;
-                    case 'wait':
-                        // text serves as duration in ms (default: '1000')
-                        const duration = text || '1000';
-                        actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
-                        break;
                     }
                     case 'wait': {
-                        // text serves as duration
                         const duration = text || '1000';
                         actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
                         break;
@@ -145,15 +135,9 @@ export class BrowserAgentDriver {
 
                 if (actionResult && !actionResult.success) {
                     logs.push(`[Driver] Action failed: ${actionResult.error}`);
-                    // Don't throw immediately, maybe AI can recover? 
-                    // For now, let's continue and see if next snapshot shows change.
                 }
 
                 // Get new state (snapshot)
-                // We need a separate method for "get state" without navigating, 
-                // typically 'performAction' should return the new state or we fetch it.
-                // Let's assume performAction returns the new state or we call a getState method.
-                // For this prototype, let's just re-snapshot.
                 currentState = await window.electronAPI.agent.captureState();
             }
 

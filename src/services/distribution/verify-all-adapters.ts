@@ -55,14 +55,14 @@ async function runVerification() {
     fs.writeFileSync(coverPath, 'MOCK IMAGE DATA');
 
     const mockAssets: ReleaseAssets = {
-        audioFile: {
+        audioFiles: [{
             url: `file://${audioPath}`,
             mimeType: 'audio/wav',
             format: 'wav',
             sizeBytes: 1024,
             sampleRate: 44100,
             bitDepth: 16
-        },
+        }],
         coverArt: {
             url: `file://${coverPath}`,
             mimeType: 'image/jpeg',

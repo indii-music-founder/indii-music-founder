@@ -8,7 +8,7 @@ export type { ExtendedGoldenMetadata };
 import type { DateRange, ValidationResult, ValidationError } from '@/services/ddex/types/common';
 
 // Re-export specific DDEX types needed by consumers
-export type { ValidationResult, ValidationError };
+export type { ValidationResult, ValidationError, DateRange };
 
 // Supported distributors
 export type DistributorId =

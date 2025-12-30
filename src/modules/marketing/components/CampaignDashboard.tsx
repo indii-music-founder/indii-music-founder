@@ -43,7 +43,6 @@ const CampaignDashboard: React.FC = () => {
                 </p>
                 <button
                     className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors"
-                    onClick={handleCreateCampaign}
                     onClick={handleOpenCreateModal}
                 >
                     Create New Campaign
