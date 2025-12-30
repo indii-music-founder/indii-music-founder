@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
+import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 
 export interface Organization {
     id: string;
@@ -68,13 +69,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => {
         set({ userProfile: profile });
-        // TODO: Persist to local storage or file system?
+        saveProfileToStorage(profile).catch(err => console.error("Failed to save profile:", err));
     },
     updateBrandKit: (updates) => set((state) => {
         const newProfile = {
             ...state.userProfile,
             brandKit: { ...state.userProfile.brandKit, ...updates }
         };
+        saveProfileToStorage(newProfile).catch(err => console.error("Failed to save profile update:", err));
         return { userProfile: newProfile };
     }),
     initializeAuth: () => {
@@ -83,7 +85,20 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         if (storedOrgId) {
             set({ currentOrganizationId: storedOrgId });
         }
-        // No async auth check needed. We are live.
+
+        // Load profile from storage
+        getProfileFromStorage('superuser').then((profile) => {
+            if (profile) {
+                console.log('[System] Loaded profile from storage');
+                set({ userProfile: profile });
+            } else {
+                console.log('[System] No profile found in storage, using default');
+                // Persist default profile so we have it for next time
+                saveProfileToStorage(DEFAULT_USER_PROFILE).catch(err => console.error("Failed to save default profile:", err));
+            }
+        }).catch(err => {
+            console.error('[System] Failed to load profile from storage:', err);
+        });
     },
     logout: async () => {
         console.log('[System] Logout requested - resetting session state...');

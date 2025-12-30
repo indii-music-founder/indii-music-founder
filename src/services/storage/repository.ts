@@ -3,10 +3,12 @@ import { db, storage } from '../firebase';
 const CURRENT_USER_ID = 'superuser-id';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { UserProfile } from '@/modules/workflow/types';
 
 const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
 const WORKFLOWS_STORE = 'workflows';
+const PROFILE_STORE = 'profile';
 
 // ============================================================================
 // Sync Queue for offline-first asset uploads
@@ -72,13 +74,16 @@ export async function processSyncQueue(): Promise<void> {
 // ============================================================================
 
 export async function initDB() {
-    return openDB(DB_NAME, 2, {
+    return openDB(DB_NAME, 3, {
         upgrade(db) {
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME);
             }
             if (!db.objectStoreNames.contains(WORKFLOWS_STORE)) {
                 db.createObjectStore(WORKFLOWS_STORE, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(PROFILE_STORE)) {
+                db.createObjectStore(PROFILE_STORE, { keyPath: 'id' });
             }
         },
     });
@@ -137,6 +142,54 @@ export async function getAssetFromStorage(id: string): Promise<string> {
 interface Workflow {
     id: string;
     [key: string]: any; // Allow other properties
+}
+
+// --- User Profile ---
+
+export async function saveProfileToStorage(profile: UserProfile): Promise<void> {
+    const dbLocal = await initDB();
+    // We assume single user profile for now, or key by profile.id
+    // profile.id is 'superuser' in current context
+
+    // 1. Save locally
+    await dbLocal.put(PROFILE_STORE, profile);
+
+    // 2. Sync to Cloud
+    const user = { uid: CURRENT_USER_ID };
+    if (user) {
+        try {
+            const docRef = doc(db, 'users', user.uid);
+            await setDoc(docRef, profile, { merge: true });
+        } catch (error) {
+            console.warn(`Failed to sync profile to cloud:`, error);
+        }
+    }
+}
+
+export async function getProfileFromStorage(profileId: string = 'superuser'): Promise<UserProfile | undefined> {
+    const dbLocal = await initDB();
+
+    // 1. Try Local
+    let profile = await dbLocal.get(PROFILE_STORE, profileId);
+    if (profile) return profile;
+
+    // 2. Try Cloud if missing locally
+    const user = { uid: CURRENT_USER_ID };
+    if (user) {
+        try {
+            const docRef = doc(db, 'users', user.uid);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                profile = snap.data() as UserProfile;
+                await dbLocal.put(PROFILE_STORE, profile);
+                return profile;
+            }
+        } catch (error) {
+            console.warn("Failed to fetch profile from cloud", error);
+        }
+    }
+
+    return undefined;
 }
 
 // --- Workflows (JSON) ---
