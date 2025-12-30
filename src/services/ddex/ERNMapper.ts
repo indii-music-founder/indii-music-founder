@@ -75,8 +75,6 @@ export class ERNMapper {
         const releaseId: ReleaseId = {
             icpn: metadata.upc,
             catalogNumber: metadata.catalogNumber,
-            // If single and no UPC, might use ISRC as proprietary ID or gridId?
-            // Standard practice: Releases need UPC/EAN (ICPN). Tracks have ISRCs.
         };
 
         const title: TitleText = {
@@ -91,7 +89,11 @@ export class ERNMapper {
         if (metadata.releaseType) {
             // Map internal release types to strict DDEX types if different
             // Assuming types match for now based on types.ts
-            releaseType = metadata.releaseType as ReleaseType;
+            if ((metadata.releaseType as string) === 'AudioAlbum') releaseType = 'Album';
+            else if ((metadata.releaseType as string) === 'Single') releaseType = 'Single';
+            else if ((metadata.releaseType as string) === 'VideoSingle') releaseType = 'VideoSingle' as ReleaseType;
+            else if ((metadata.releaseType as string) === 'Ringtone') releaseType = 'Ringtone' as ReleaseType;
+            else releaseType = metadata.releaseType as ReleaseType;
         }
 
         const genre: GenreWithSubGenre = {
@@ -141,10 +143,6 @@ export class ERNMapper {
         let resourceCounter = 1;
 
         // 1. Audio Resource (Primary)
-        // For a single, there is one sound recording.
-        // For albums, this would iterate over tracks.
-        // Assuming Single for ExtendedGoldenMetadata context for now.
-
         const audioRef = `A${resourceCounter++}`;
         resourceReferences.push(audioRef);
 
@@ -185,13 +183,12 @@ export class ERNMapper {
         const imageRef = `IMG${resourceCounter++}`;
         resourceReferences.push(imageRef);
 
-        // We assume there's cover art if we are distributing
         const imageResource: Resource = {
             resourceReference: imageRef,
             resourceType: 'Image',
             resourceId: {
                 proprietaryId: {
-                    proprietaryIdType: 'PartySpecific', // Or Use provided ID
+                    proprietaryIdType: 'PartySpecific',
                     id: `IMG-${metadata.isrc || Date.now()}`
                 }
             },
@@ -200,7 +197,7 @@ export class ERNMapper {
                 titleType: 'DisplayTitle'
             },
             displayArtistName: metadata.artistName,
-            contributors: [], // Usually specific to image
+            contributors: [],
             technicalDetails: {
                 // In a real scenario, we'd extract this from file metadata
             }
@@ -213,7 +210,7 @@ export class ERNMapper {
 
     private static buildDeals(
         metadata: ExtendedGoldenMetadata,
-        releaseReference: string
+        _releaseReference: string
     ): Deal[] {
         const deals: Deal[] = [];
         let dealCounter = 1;
@@ -253,6 +250,15 @@ export class ERNMapper {
 
         const distributionChannels = metadata.distributionChannels || [];
 
+        // If 'physical' is the ONLY channel, we should fallback to default digital deals
+        // because we don't handle physical, but we want to ensure deals are generated.
+        // If distributionChannels is empty, we also fallback.
+        const hasStreaming = distributionChannels.includes('streaming');
+        const hasDownload = distributionChannels.includes('download');
+        const hasPhysical = distributionChannels.includes('physical');
+        const isPhysicalOnly = hasPhysical && !hasStreaming && !hasDownload;
+        const isEmpty = distributionChannels.length === 0;
+
         // 1. Streaming Deals
         // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
         if (distributionChannels.includes('streaming')) {
@@ -265,8 +271,6 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
-        if (distributionChannels.includes('download')) {
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
         if (distributionChannels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)
@@ -275,19 +279,8 @@ export class ERNMapper {
 
         // Fallback: Default to standard set if no deals created
         if (deals.length === 0) {
-            addDeal('SubscriptionModel', 'OnDemandStream');
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
-        // 3. Physical Deals
-        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
-        if (distributionChannels.includes('physical')) {
-            // Placeholder for future implementation
-        }
-
-        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing or empty
-        if (deals.length === 0) {
-             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
         }
 
         return deals;
