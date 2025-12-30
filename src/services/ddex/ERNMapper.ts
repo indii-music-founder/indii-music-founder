@@ -33,6 +33,7 @@ export class ERNMapper {
             sender: DPID;
             recipient: DPID;
             createdDateTime: string;
+            messageControlType?: 'LiveMessage' | 'TestMessage';
         }
     ): ERNMessage {
         const releaseReference = 'R1';
@@ -43,7 +44,7 @@ export class ERNMapper {
             messageSender: options.sender,
             messageRecipient: options.recipient,
             messageCreatedDateTime: options.createdDateTime,
-            messageControlType: 'LiveMessage', // TODO: Make configurable for testing
+            messageControlType: options.messageControlType || 'LiveMessage',
         };
 
         // 2. Build Release List
@@ -226,12 +227,12 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType) => {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
                     commercialModelType: commercialModel,
-                    usage: [{ useType }],
+                    usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -253,12 +254,23 @@ export class ERNMapper {
         if (channels.includes('streaming')) {
             addDeal('SubscriptionModel', 'OnDemandStream');
             addDeal('AdvertisementSupportedModel', 'OnDemandStream');
+            // Subscription Streaming (Premium)
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+
+            // Ad-Supported Streaming (Free Tier)
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+
+            // Non-Interactive Streaming (Web Radio)
+            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
         if (channels.includes('download')) {
             addDeal('PayAsYouGoModel', 'PermanentDownload');
+            // Permanent Download (iTunes, Amazon MP3, etc.)
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         // 3. Physical Deals
@@ -270,8 +282,8 @@ export class ERNMapper {
         // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
         // This ensures backward compatibility if distributionChannels is missing or empty
         if (deals.length === 0) {
-             addDeal('SubscriptionModel', 'OnDemandStream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload');
+             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         return deals;

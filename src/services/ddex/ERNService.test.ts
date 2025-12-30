@@ -160,5 +160,26 @@ describe('ERNMapper', () => {
 
             expect(deals.length).toBeGreaterThanOrEqual(2); // At least Sub + Download
         });
+    it('should allow configuring messageControlType', () => {
+        const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA, {
+            messageId: '1',
+            sender: { partyId: 'P1', partyName: 'S' },
+            recipient: { partyId: 'P2', partyName: 'R' },
+            createdDateTime: new Date().toISOString(),
+            messageControlType: 'TestMessage'
+        });
+
+        expect(ern.messageHeader.messageControlType).toBe('TestMessage');
+    });
+
+    it('should default messageControlType to LiveMessage', () => {
+        const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA, {
+            messageId: '1',
+            sender: { partyId: 'P1', partyName: 'S' },
+            recipient: { partyId: 'P2', partyName: 'R' },
+            createdDateTime: new Date().toISOString()
+        });
+
+        expect(ern.messageHeader.messageControlType).toBe('LiveMessage');
     });
 });
