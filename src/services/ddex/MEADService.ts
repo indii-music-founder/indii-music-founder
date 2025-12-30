@@ -15,7 +15,8 @@ export class MEADService {
      */
     generateMEAD(
         metadata: ExtendedGoldenMetadata,
-        messageId: string = `MSG-${Date.now()}`
+        messageId: string = `MSG-${Date.now()}`,
+        recipientPartyId: string = 'GenericRecipient'
     ): MEADMessage {
 
         // 1. Build Content
@@ -32,7 +33,7 @@ export class MEADService {
                     partyName: DDEX_CONFIG.PARTY_NAME
                 },
                 messageRecipient: {
-                    partyId: 'GenericRecipient', // TODO: Parameterize
+                    partyId: recipientPartyId,
                     partyName: 'Distributor'
                 },
                 messageCreatedDateTime: new Date().toISOString(),
