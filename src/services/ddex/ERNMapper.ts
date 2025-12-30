@@ -214,37 +214,61 @@ export class ERNMapper {
         releaseReference: string
     ): Deal[] {
         const deals: Deal[] = [];
+        let dealCounter = 1;
 
-        // Basic Deal: Worldwide, Streaming & Download, Start Immediately
+        // Default to Worldwide if no territories specified
         const territoryCode: TerritoryCode[] = metadata.territories.length > 0
             ? (metadata.territories as TerritoryCode[])
             : ['Worldwide'];
 
-        const deal: Deal = {
-            dealReference: 'D1',
-            dealTerms: {
-                commercialModelType: 'SubscriptionModel', // Simplified. Real world needs multiple deals (AdSupported, Download, etc)
-                usage: [
-                    { useType: 'OnDemandStream' },
-                    { useType: 'PermanentDownload' }
-                ],
-                territoryCode,
-                validityPeriod: {
-                    startDate: metadata.releaseDate
-                },
-                takeDown: false,
-            },
+        const validityPeriod = {
+            startDate: metadata.releaseDate
         };
 
-        // Release Display Start Date
-        if (metadata.releaseDate) {
-            deal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
+        // Helper to create and add a deal
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType) => {
+            const deal: Deal = {
+                dealReference: `D${dealCounter++}`,
+                dealTerms: {
+                    commercialModelType: commercialModel,
+                    usage: [{ useType }],
+                    territoryCode,
+                    validityPeriod,
+                    takeDown: false,
+                },
+            };
+
+            // Release Display Start Date
+            if (metadata.releaseDate) {
+                deal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
+            }
+
+            deals.push(deal);
+        };
+
+        const channels = metadata.distributionChannels || [];
+
+        // 1. Streaming Deals
+        if (channels.includes('streaming')) {
+            // Subscription Streaming (Premium)
+            addDeal('SubscriptionModel', 'OnDemandStream');
+
+            // Ad-Supported Streaming (Free Tier)
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
         }
 
-        deals.push(deal);
+        // 2. Download Deals
+        if (channels.includes('download')) {
+            // Permanent Download (iTunes, Amazon MP3, etc.)
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
+        }
 
-        // TODO: Add more deal types based on `metadata.distributionChannels`
-        // e.g. if 'download' in channels, ensure PermanentDownload is present.
+        // Fallback: If no channels specified but we have a release, default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing
+        if (deals.length === 0) {
+             addDeal('SubscriptionModel', 'OnDemandStream');
+             addDeal('PayAsYouGoModel', 'PermanentDownload');
+        }
 
         return deals;
     }
