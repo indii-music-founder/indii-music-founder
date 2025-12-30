@@ -93,16 +93,31 @@ export class SymphonicAdapter implements IDistributorAdapter {
 
         try {
             // 1. Build Package
-            const builder = new SymphonicPackageBuilder();
-            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+            const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
 
-            console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
+            if (typeof window !== 'undefined' && window.electronAPI?.distribution) {
+                console.log('[Symphonic] Delivering via Electron IPC...');
+                const buildResult = await window.electronAPI.distribution.buildPackage('symphonic', metadata, assets, folderReleaseId);
 
-            // 2. Deliver via SFTP (Disabled for Browser/Mock)
-            // const transporter = new SFTPTransporter({ host: 'sftp.symphonic.com', ... });
-            // await transporter.upload(packagePath);
+                if (!buildResult.success || !buildResult.packagePath) {
+                    throw new Error(`Package build failed: ${buildResult.error}`);
+                }
 
-            console.log('[Symphonic] Mock upload complete.');
+                const { packagePath } = buildResult;
+                console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
+            } else {
+                console.log('[Symphonic] Building package locally...');
+                const builder = new SymphonicPackageBuilder();
+                const { packagePath } = await builder.buildPackage(metadata, assets, folderReleaseId);
+                console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
+
+                // 2. Deliver via SFTP (Disabled for Browser/Mock)
+                console.warn('[Symphonic] Client-side SFTP upload is not supported. This step requires a backend function.');
+                console.log(`[Symphonic] Mocking upload for ${releaseId}...`);
+            }
+
+            // Mock delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             return {
                 success: true,

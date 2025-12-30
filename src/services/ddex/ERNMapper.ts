@@ -148,7 +148,7 @@ export class ERNMapper {
         // If it's a Single, metadata acts as the track if tracks array is empty.
         // If it's an Album/EP, iterate metadata.tracks.
         const tracksToProcess = (metadata.tracks && metadata.tracks.length > 0)
-            ? metadata.tracks
+            ? metadata.tracks as ExtendedGoldenMetadata[]
             : [metadata]; // Treat root as the single track
 
         // 1. Audio Resources
@@ -187,40 +187,36 @@ export class ERNMapper {
                 }
             }
 
-             // Link TechnicalDetails from Assets
-             if (assets && assets.audioFiles && assets.audioFiles.length > index) {
-                // Try to match by explicit mapping if available (e.g. trackIndex) or fallback to order
+            // Link TechnicalDetails from Assets
+            if (assets && assets.audioFiles && assets.audioFiles.length > index) {
+                // @ts-ignore -assets might have trackIndex
                 const matchedAsset = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
 
                 if (matchedAsset) {
                     const ext = matchedAsset.format || 'wav';
                     audioResource.technicalDetails = {
-                        file: {
-                            fileName: `${audioRef}.${ext}`
-                        }
+                        fileName: `${audioRef}.${ext}`
                     };
                 } else {
-                     // Fallback default
+                    // Fallback default
                     audioResource.technicalDetails = {
-                        file: { fileName: `${audioRef}.wav` }
+                        fileName: `${audioRef}.wav`
                     };
                 }
-             } else if (assets && assets.audioFile && index === 0) {
-                 // Backward compatibility for singular audioFile (Single release only)
-                  const ext = assets.audioFile.format || 'wav';
-                  audioResource.technicalDetails = {
-                      file: {
-                          fileName: `${audioRef}.${ext}`
-                      }
-                  };
-             } else {
-                 // No matching asset found
-                 audioResource.technicalDetails = {
-                     file: { fileName: `${audioRef}.wav` }
-                 };
-             }
+            } else if (assets && assets.audioFile && index === 0) {
+                // Backward compatibility for singular audioFile (Single release only)
+                const ext = assets.audioFile.format || 'wav';
+                audioResource.technicalDetails = {
+                    fileName: `${audioRef}.${ext}`
+                };
+            } else {
+                // No matching asset found
+                audioResource.technicalDetails = {
+                    fileName: `${audioRef}.wav`
+                };
+            }
 
-             resources.push(audioResource);
+            resources.push(audioResource);
         });
 
         // 2. Image Resource (Cover Art)
@@ -249,18 +245,14 @@ export class ERNMapper {
         }
 
         if (assets && assets.coverArt) {
-             const ext = assets.coverArt.url.split('.').pop() || 'jpg';
-             imageResource.technicalDetails = {
-                file: {
-                    fileName: `${imageRef}.${ext}`
-                }
-             };
+            const ext = assets.coverArt.url.split('.').pop() || 'jpg';
+            imageResource.technicalDetails = {
+                fileName: `${imageRef}.${ext}`
+            };
         } else {
-             imageResource.technicalDetails = {
-                file: {
-                    fileName: `${imageRef}.jpg`
-                }
-             };
+            imageResource.technicalDetails = {
+                fileName: `${imageRef}.jpg`
+            };
         }
 
         resources.push(imageResource);
@@ -276,7 +268,7 @@ export class ERNMapper {
         let dealCounter = 1;
 
         // Default to Worldwide if no territories specified
-        const territoryCode: TerritoryCode[] = metadata.territories.length > 0
+        const territoryCode: TerritoryCode[] = (metadata.territories && metadata.territories.length > 0)
             ? (metadata.territories as TerritoryCode[])
             : ['Worldwide'];
 
@@ -310,15 +302,6 @@ export class ERNMapper {
 
         const distributionChannels = metadata.distributionChannels || [];
 
-        // If 'physical' is the ONLY channel, we should fallback to default digital deals
-        // because we don't handle physical, but we want to ensure deals are generated.
-        // If distributionChannels is empty, we also fallback.
-        const hasStreaming = distributionChannels.includes('streaming');
-        const hasDownload = distributionChannels.includes('download');
-        const hasPhysical = distributionChannels.includes('physical');
-        const isPhysicalOnly = hasPhysical && !hasStreaming && !hasDownload;
-        const isEmpty = distributionChannels.length === 0;
-
         // 1. Streaming Deals
         // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
         if (distributionChannels.includes('streaming')) {
@@ -334,14 +317,13 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
-        // Maps 'download' channel to PayAsYouGo (Permanent Download)
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
         if (distributionChannels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // Fallback: Default to standard set if no deals created
+        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
         if (deals.length === 0) {
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
