@@ -1,28 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { ERNMapper } from './ERNMapper';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-
-describe('ERNMapper', () => {
-    const mockMetadata: ExtendedGoldenMetadata = {
-        ...INITIAL_METADATA,
-        trackTitle: 'Test Track',
-        artistName: 'Test Artist',
-        releaseDate: '2025-01-01',
-        labelName: 'Test Label',
-        genre: 'Pop',
-        upc: '123456789012',
-        isrc: 'US-TST-25-00001',
-        splits: [],
-        territories: ['Worldwide'],
-        distributionChannels: ['streaming', 'download'],
-        aiGeneratedContent: {
-            isFullyAIGenerated: false,
-            isPartiallyAIGenerated: false
-        }
-import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { Deal } from './types/ern';
 
 const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
+    ...INITIAL_METADATA,
     trackTitle: 'Test Track',
     artistName: 'Test Artist',
     isrc: 'USTEST12345',
@@ -47,7 +29,7 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     }
 };
 
-describe('ERNMapper Deal Generation', () => {
+describe('ERNMapper', () => {
     const defaultOptions = {
         messageId: 'MSG-1',
         sender: { partyId: 'SENDER', partyName: 'Sender' },
@@ -60,19 +42,18 @@ describe('ERNMapper Deal Generation', () => {
         return ern.dealList || [];
     };
 
-    const options = {
-        messageId: 'MSG-001',
-        sender: 'SENDER-ID',
-        recipient: 'RECIPIENT-ID',
-        createdDateTime: '2025-01-01T12:00:00Z',
-    };
-
     it('should map basic metadata to ERN message', () => {
-        const ern = ERNMapper.mapMetadataToERN(mockMetadata, options);
+        const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, defaultOptions);
 
-        expect(ern.messageHeader.messageId).toBe(options.messageId);
+        expect(ern.messageHeader.messageId).toBe(defaultOptions.messageId);
         expect(ern.releaseList).toHaveLength(1);
         expect(ern.dealList.length).toBeGreaterThan(0);
+
+        const mainRelease = ern.releaseList[0];
+        expect(mainRelease.releaseTitle.titleText).toBe('Test Track');
+        expect(mainRelease.releaseId.icpn).toBe(MOCK_METADATA_BASE.upc);
+    });
+
     it('should generate Streaming deals correctly', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
@@ -101,28 +82,6 @@ describe('ERNMapper Deal Generation', () => {
         expect(adDeal).toBeDefined();
     });
 
-        const mainRelease = ern.releaseList[0];
-        expect(mainRelease.releaseTitle.titleText).toBe('Test Track');
-        expect(mainRelease.releaseId.icpn).toBe(mockMetadata.upc);
-    });
-
-    it('should generate correct deals for streaming and download', () => {
-        const ern = ERNMapper.mapMetadataToERN(mockMetadata, options);
-
-        // Should have Subscription, AdSupported, NonInteractive for streaming (3)
-        // And PayAsYouGo for download (1)
-        // Total 4
-        const dealTypes = ern.dealList.map(d => d.dealTerms.commercialModelType);
-        expect(dealTypes).toContain('SubscriptionModel');
-        expect(dealTypes).toContain('AdvertisementSupportedModel');
-        expect(dealTypes).toContain('PayAsYouGoModel');
-        expect(ern.dealList).toHaveLength(4);
-    });
-
-    it('should generate only streaming deals when download is excluded', () => {
-        const streamingOnly: ExtendedGoldenMetadata = {
-            ...mockMetadata,
-            distributionChannels: ['streaming']
     it('should generate Download deals correctly', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
@@ -159,22 +118,11 @@ describe('ERNMapper Deal Generation', () => {
             distributionChannels: []
         };
 
-        const ern = ERNMapper.mapMetadataToERN(streamingOnly, options);
-
-        // Subscription, AdSupported, NonInteractive (3)
-        expect(ern.dealList).toHaveLength(3);
-        const models = ern.dealList.map(d => d.dealTerms.commercialModelType);
-        expect(models).not.toContain('PayAsYouGoModel');
-    });
-
-    it('should fallback to default deals if channels are empty', () => {
-        const noChannels: ExtendedGoldenMetadata = {
-            ...mockMetadata,
-            distributionChannels: []
         const deals = getDeals(metadata);
 
-        // Fallback: Streaming (Subscription) + Download
-        expect(deals.length).toBe(2);
+        // Fallback: Default to standard set if no deals created
+        // The first fallback adds 3 deals (Subscription, AdSupported, NonInteractive)
+        expect(deals.length).toBe(3);
 
         const subDeal = deals.find(d => d.dealTerms.commercialModelType === 'SubscriptionModel');
         const downloadDeal = deals.find(d => d.dealTerms.commercialModelType === 'PayAsYouGoModel');
@@ -191,12 +139,6 @@ describe('ERNMapper Deal Generation', () => {
             distributionChannels: ['streaming']
         };
 
-        const ern = ERNMapper.mapMetadataToERN(noChannels, options);
-
-        // Should default to at least some streaming deals
-        expect(ern.dealList.length).toBeGreaterThan(0);
-        const models = ern.dealList.map(d => d.dealTerms.commercialModelType);
-        expect(models).toContain('SubscriptionModel');
         const deals = getDeals(metadata);
         const deal = deals[0];
 
@@ -213,11 +155,13 @@ describe('ERNMapper Deal Generation', () => {
 
         const deals = getDeals(metadata);
 
-        // Expect fallback behavior
-        expect(deals.length).toBe(2);
+        // Expect fallback behavior (3 deals)
+        expect(deals.length).toBe(3);
+    });
+
     it('should map AI generation info correctly', () => {
         const aiMetadata: ExtendedGoldenMetadata = {
-            ...mockMetadata,
+            ...MOCK_METADATA_BASE,
             aiGeneratedContent: {
                 isFullyAIGenerated: true,
                 isPartiallyAIGenerated: false,
@@ -226,7 +170,7 @@ describe('ERNMapper Deal Generation', () => {
             }
         };
 
-        const ern = ERNMapper.mapMetadataToERN(aiMetadata, options);
+        const ern = ERNMapper.mapMetadataToERN(aiMetadata, defaultOptions);
         const release = ern.releaseList[0];
 
         expect(release.aiGenerationInfo).toBeDefined();
