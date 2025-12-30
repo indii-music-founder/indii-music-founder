@@ -257,6 +257,8 @@ export class ERNMapper {
         // 1. Streaming Deals
         // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
         if (channels.includes('streaming')) {
+            addDeal('SubscriptionModel', 'OnDemandStream');
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
             // Subscription Streaming (Premium)
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
 
@@ -269,14 +271,22 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
+        // Maps 'download' channel to Permanent Download (PayAsYouGo)
         // Maps 'download' channel to PayAsYouGo (Permanent Download)
         if (channels.includes('download')) {
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // Fallback: If no channels specified but we have a release, default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing
+        // 3. Physical Deals
+        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
+        if (channels.includes('physical')) {
+            // Placeholder for future implementation
+        }
+
+        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing or empty
         if (deals.length === 0) {
              addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
              addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
