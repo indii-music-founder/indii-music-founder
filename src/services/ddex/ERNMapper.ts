@@ -19,6 +19,8 @@ import {
     ReleaseType,
     ContributorRole,
     ParentalWarningType,
+    CommercialModelType,
+    UseType,
 } from './types/common';
 
 /**
@@ -226,6 +228,13 @@ export class ERNMapper {
             startDate: metadata.releaseDate
         };
 
+        // Helper to create and append a deal
+        const createAndAppendDeal = (model: CommercialModelType, use: UseType) => {
+            const deal: Deal = {
+                dealReference: `D${dealCounter++}`,
+                dealTerms: {
+                    commercialModelType: model,
+                    usage: [{ useType: use }],
         // Helper to create and add a deal
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
@@ -252,11 +261,23 @@ export class ERNMapper {
             deals.push(deal);
         };
 
-        const channels = metadata.distributionChannels || [];
+        const distributionChannels = metadata.distributionChannels || [];
 
         // 1. Streaming Deals
+        // Maps to Subscription (Premium) and Ad-Supported (Free) models with OnDemandStream usage.
+        if (distributionChannels.includes('streaming')) {
+            createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
+            createAndAppendDeal('AdvertisementSupportedModel', 'OnDemandStream');
+        }
+
+        // 2. Download Deals
+        // Maps to PayAsYouGo model with PermanentDownload usage.
+        if (distributionChannels.includes('download')) {
+            createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
         // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
         if (channels.includes('streaming')) {
+            addDeal('SubscriptionModel', 'OnDemandStream');
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
             // Subscription Streaming (Premium)
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
 
@@ -269,15 +290,27 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
+        // Maps 'download' channel to Permanent Download (PayAsYouGo)
         // Maps 'download' channel to PayAsYouGo (Permanent Download)
         if (channels.includes('download')) {
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // Fallback: If no channels specified but we have a release, default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing
+        // Fallback: If no channels specified (or empty), default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing or not yet populated.
+        // 3. Physical Deals
+        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
+        if (channels.includes('physical')) {
+            // Placeholder for future implementation
+        }
+
+        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing or empty
         if (deals.length === 0) {
+             createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
+             createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
              addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
              addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }

@@ -96,6 +96,70 @@ describe('ERNMapper', () => {
         expect(composer?.role).toBe('Composer');
     });
 
+    describe('Deal Mapping', () => {
+        const BASE_METADATA: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA,
+            distributionChannels: [], // To be overridden
+        };
+
+        const OPTIONS = {
+            messageId: '1',
+            sender: { partyId: 'P1', partyName: 'S' },
+            recipient: { partyId: 'P2', partyName: 'R' },
+            createdDateTime: new Date().toISOString()
+        };
+
+        it('should generate Subscription and AdvertisementSupported deals for streaming', () => {
+            const metadata: ExtendedGoldenMetadata = {
+                ...BASE_METADATA,
+                distributionChannels: ['streaming']
+            };
+
+            const ern = ERNMapper.mapMetadataToERN(metadata, OPTIONS);
+            const deals = ern.dealList;
+
+            const subscriptionDeal = deals.find(d =>
+                d.dealTerms.commercialModelType === 'SubscriptionModel' &&
+                d.dealTerms.usage[0].useType === 'OnDemandStream'
+            );
+
+            const adSupportedDeal = deals.find(d =>
+                d.dealTerms.commercialModelType === 'AdvertisementSupportedModel' &&
+                d.dealTerms.usage[0].useType === 'OnDemandStream'
+            );
+
+            expect(subscriptionDeal).toBeDefined();
+            expect(adSupportedDeal).toBeDefined();
+        });
+
+        it('should generate PayAsYouGo deals for download', () => {
+            const metadata: ExtendedGoldenMetadata = {
+                ...BASE_METADATA,
+                distributionChannels: ['download']
+            };
+
+            const ern = ERNMapper.mapMetadataToERN(metadata, OPTIONS);
+            const deals = ern.dealList;
+
+            const downloadDeal = deals.find(d =>
+                d.dealTerms.commercialModelType === 'PayAsYouGoModel' &&
+                d.dealTerms.usage[0].useType === 'PermanentDownload'
+            );
+
+            expect(downloadDeal).toBeDefined();
+        });
+
+        it('should default to both if no channels specified (fallback)', () => {
+            const metadata: ExtendedGoldenMetadata = {
+                ...BASE_METADATA,
+                distributionChannels: [] // Empty
+            };
+
+            const ern = ERNMapper.mapMetadataToERN(metadata, OPTIONS);
+            const deals = ern.dealList;
+
+            expect(deals.length).toBeGreaterThanOrEqual(2); // At least Sub + Download
+        });
     it('should allow configuring messageControlType', () => {
         const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA, {
             messageId: '1',

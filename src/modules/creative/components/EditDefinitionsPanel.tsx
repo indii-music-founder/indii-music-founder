@@ -51,7 +51,11 @@ export default function EditDefinitionsPanel({
                     <Sparkles className="text-purple-500" size={16} />
                     Edit Definitions
                 </h3>
-                <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                <button
+                    onClick={onClose}
+                    aria-label="Close edit definitions"
+                    className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 rounded"
+                >
                     <X size={18} />
                 </button>
             </div>
@@ -92,7 +96,8 @@ export default function EditDefinitionsPanel({
                                         />
                                         <button
                                             onClick={() => onUpdateReferenceImage && onUpdateReferenceImage(color.id, null)}
-                                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                            aria-label={`Remove reference image for ${color.name}`}
+                                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-500"
                                         >
                                             <X size={12} className="text-white" />
                                         </button>
