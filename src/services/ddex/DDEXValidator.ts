@@ -89,30 +89,57 @@ export class DDEXValidator {
                  }
             }
 
-            // Profile specific logic
-            // Assuming "AudioAlbum" or "Album" profile implies:
-            // 1. ReleaseType is 'Album'
-            // 2. Contains SoundRecording resources
-            if (profileVersion.includes('AudioAlbum')) {
-                // Check ReleaseList
-                const releaseList = root.ReleaseList?.Release;
-                if (!releaseList) return false;
+            // Normalize profile for checking (e.g., 'AudioAlbum' from 'CommonReleaseTypes/14/AudioAlbum')
+            const profile = profileVersion.split('/').pop() || profileVersion;
 
-                const releases = Array.isArray(releaseList) ? releaseList : [releaseList];
+            // Helper to get array from list (handles single item or array)
+            const getArray = (item: any) => item ? (Array.isArray(item) ? item : [item]) : [];
 
-                // Must have at least one Album release
-                const hasAlbum = releases.some((r: any) => {
-                     const type = r.ReleaseType;
-                     return type === 'Album';
-                });
+            const releaseList = getArray(root.ReleaseList?.Release);
+            if (releaseList.length === 0) return false;
 
-                if (!hasAlbum) return false;
+            const resourceList = root.ResourceList || {};
 
-                // Check ResourceList
-                const resourceList = root.ResourceList;
-                const soundRecordings = resourceList?.SoundRecording;
+            switch (profile) {
+                case 'AudioAlbum':
+                    // 1. ReleaseType is 'Album'
+                    if (!releaseList.some((r: any) => r.ReleaseType === 'Album')) return false;
+                    // 2. Contains SoundRecording
+                    if (!resourceList.SoundRecording) return false;
+                    // 3. Contains Image (Cover Art is mandatory for Albums)
+                    if (!resourceList.Image) return false;
+                    break;
 
-                if (!soundRecordings) return false;
+                case 'Single':
+                    // 1. ReleaseType is 'Single'
+                    if (!releaseList.some((r: any) => r.ReleaseType === 'Single')) return false;
+                    // 2. Contains SoundRecording
+                    if (!resourceList.SoundRecording) return false;
+                    // 3. Contains Image
+                    if (!resourceList.Image) return false;
+                    break;
+
+                case 'VideoSingle':
+                    // 1. ReleaseType is 'VideoSingle'
+                    if (!releaseList.some((r: any) => r.ReleaseType === 'VideoSingle')) return false;
+                    // 2. Contains Video
+                    if (!resourceList.Video) return false;
+                    // 3. Contains Image (Thumbnail/Cover)
+                    if (!resourceList.Image) return false;
+                    break;
+
+                case 'Ringtone':
+                    // 1. ReleaseType is 'Ringtone'
+                    if (!releaseList.some((r: any) => r.ReleaseType === 'Ringtone')) return false;
+                    // 2. Contains SoundRecording
+                    if (!resourceList.SoundRecording) return false;
+                    break;
+
+                default:
+                    // For unknown profiles, we enforce basic structural integrity (ReleaseList exists)
+                    // but do not enforce specific resource types as we don't know the rules.
+                    console.warn(`Profile validation: Unknown profile type '${profile}', skipping specific checks.`);
+                    break;
             }
 
             return true;
