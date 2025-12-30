@@ -1,7 +1,7 @@
 import { AI } from '../ai/AIService';
 import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
 import { ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
-import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument } from '@/modules/workflow/types';
+import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument, BrandKit } from '@/modules/workflow/types';
 import type { FunctionDeclaration } from '@/shared/types/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupportedDistributors } from './distributorRequirements';
@@ -307,8 +307,8 @@ const shareDistributorInfoFunction: FunctionDeclaration = {
 
 export function calculateProfileStatus(profile: UserProfile) {
     // Safe access to nested properties
-    // FIX: Cast fallback to Partial to avoid "Property does not exist on type '{}'" errors when profile data is incomplete
-    const brandKit = profile.brandKit || ({} as Partial<typeof profile.brandKit>);
+    // Use Partial<BrandKit> to correctly type the fallback empty object and allow safe access to optional properties
+    const brandKit: Partial<BrandKit> = profile.brandKit || {};
     const releaseDetails = brandKit.releaseDetails || {};
     const socials = brandKit.socials || {};
     const brandAssets = brandKit.brandAssets || [];
