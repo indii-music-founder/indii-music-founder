@@ -185,6 +185,14 @@ export const moduleColors: Record<AppSlice['currentModule'], ModuleColor> = {
         hoverText: 'hover:text-sky-200',
         hoverBg: 'hover:bg-sky-400/5',
     },
+    merchandise: {
+        text: 'text-yellow-400',
+        bg: 'bg-yellow-400/10',
+        border: 'border-yellow-400',
+        ring: 'focus-within:ring-yellow-400/50',
+        hoverText: 'hover:text-yellow-200',
+        hoverBg: 'hover:bg-yellow-400/5',
+    },
     files: {
         text: 'text-slate-400',
         bg: 'bg-slate-400/10',

@@ -6,7 +6,11 @@ import { Product } from '@/services/marketplace/types';
 import { UserService } from '@/services/UserService';
 import { useToast } from '@/core/context/ToastContext';
 
-export const MerchTable: React.FC = () => {
+interface MerchTableProps {
+    isDashboardView?: boolean;
+}
+
+export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false }) => {
     const { userProfile } = useStore();
     const toast = useToast();
     const [products, setProducts] = useState<Product[]>([]);
@@ -86,7 +90,7 @@ export const MerchTable: React.FC = () => {
                 <div>
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <Package className="text-purple-400" size={20} />
-                        Merch Table
+                        {isDashboardView ? 'Product Breakdown List' : 'Merch Table'}
                     </h3>
                     <p className="text-gray-400 text-sm">Mint and sell digital collectibles directly to fans.</p>
                 </div>

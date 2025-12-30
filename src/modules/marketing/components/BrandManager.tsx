@@ -120,9 +120,10 @@ const BrandManager: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Input Section */}
                 <div className="space-y-4">
-                    <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <Shield className="text-white" size={20} />
+
+                    <div className="glass p-6 rounded-xl">
+                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 glow-text-white">
+                            <Shield className="text-primary" size={20} />
                             Brand Guidelines
                         </h3>
                         <div className="space-y-4">
@@ -130,12 +131,12 @@ const BrandManager: React.FC = () => {
                                 value={guidelines}
                                 onChange={(e) => setGuidelines(e.target.value)}
                                 placeholder="Paste your brand guidelines here (e.g., tone of voice, forbidden words, core values)..."
-                                className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-white focus:ring-1 focus:ring-white outline-none resize-none"
+                                className="w-full h-40 bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none backdrop-blur-sm"
                             />
                             <button
                                 onClick={handleSaveGuidelines}
                                 disabled={isSaving || !guidelines}
-                                className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                className="w-full py-2 bg-secondary/20 hover:bg-secondary/30 border border-secondary/50 text-secondary text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(160,32,240,0.2)] hover:shadow-[0_0_15px_rgba(160,32,240,0.4)]"
                             >
                                 {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
                                 Save Guidelines
@@ -143,23 +144,23 @@ const BrandManager: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <FileText className="text-white" size={20} />
+                    <div className="glass p-6 rounded-xl">
+                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 glow-text-white">
+                            <FileText className="text-primary" size={20} />
                             Content to Check
                         </h3>
                         <textarea
                             value={contentToCheck}
                             onChange={(e) => setContentToCheck(e.target.value)}
                             placeholder="Paste the content you want to review (e.g., social media post, blog draft)..."
-                            className="w-full h-40 bg-black/20 border border-gray-700 rounded-lg p-3 text-sm text-gray-300 focus:border-white focus:ring-1 focus:ring-white outline-none resize-none"
+                            className="w-full h-40 bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-gray-300 focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none backdrop-blur-sm"
                         />
                     </div>
 
                     <button
                         onClick={handleAnalyze}
                         disabled={isAnalyzing || !guidelines || !contentToCheck}
-                        className="w-full py-3 bg-white hover:bg-gray-200 text-black font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 bg-primary text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(255,255,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,0,0.5)] hover:bg-primary/90"
                     >
                         {isAnalyzing ? (
                             <>
@@ -176,9 +177,9 @@ const BrandManager: React.FC = () => {
                 </div>
 
                 {/* Results Section */}
-                <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 h-full">
-                    <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                        <CheckCircle className="text-white" size={20} />
+                <div className="glass p-6 rounded-xl h-full border border-white/10">
+                    <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2 glow-text-white">
+                        <CheckCircle className="text-primary" size={20} />
                         Analysis Report
                     </h3>
 

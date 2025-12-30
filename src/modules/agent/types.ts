@@ -26,9 +26,11 @@ export interface Venue {
     contactEmail?: string;
     contactName?: string;
     instagramHandle?: string;
-    status: 'active' | 'blacklisted' | 'unknown';
+    status: 'active' | 'blacklisted' | 'unknown' | 'closed';
     notes?: string;
     lastScoutedAt?: number;
+    imageUrl?: string;
+    fitScore?: number;
 }
 
 export interface GigOpportunity {

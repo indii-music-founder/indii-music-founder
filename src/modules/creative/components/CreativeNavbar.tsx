@@ -120,8 +120,6 @@ export default function CreativeNavbar() {
                     />
                 ) : (
                     <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
-                        <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Video</button>
-
                         <DaisyChainControls
                             onOpenFrameModal={(target) => {
                                 setFrameModalTarget(target);
@@ -129,8 +127,14 @@ export default function CreativeNavbar() {
                             }}
                         />
 
-                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Motion Brush</button>
-                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Director's Cut</button>
+                        <div className="h-4 w-px bg-gray-700 flex-shrink-0"></div>
+
+                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors flex items-center gap-1 hover:bg-gray-800 rounded">
+                            Motion Brush
+                        </button>
+                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors flex items-center gap-1 hover:bg-gray-800 rounded">
+                            Director's Cut
+                        </button>
 
                         {/* Brand Palette Section */}
                         <div className="h-4 w-px bg-gray-700 mx-2 flex-shrink-0"></div>

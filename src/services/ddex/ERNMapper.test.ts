@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { ERNMapper } from './ERNMapper';
-import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { Deal } from './types/ern';
 
@@ -37,34 +36,19 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     language: 'en'
 };
 
-const options = {
-    messageId: 'MSG-001',
-    sender: { partyId: 'PADPIDA0000000001', partyName: 'SENDER-ID' },
-    recipient: { partyId: 'PADPIDA0000000002', partyName: 'RECIPIENT-ID' },
-    createdDateTime: '2025-01-01T12:00:00Z',
+const defaultOptions = {
+    messageId: 'MSG-1',
+    sender: { partyId: 'SENDER', partyName: 'Sender' },
+    recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
+    createdDateTime: '2025-01-01T00:00:00Z'
 };
 
-const getDeals = (metadata: ExtendedGoldenMetadata) => {
-    const ern = ERNMapper.mapMetadataToERN(metadata, options);
-    return ern.dealList;
+const getDeals = (metadata: ExtendedGoldenMetadata): Deal[] => {
+    const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+    return ern.dealList || [];
 };
 
-describe('ERNMapper Deal Generation', () => {
-    it('should map basic metadata to ERN message', () => {
-        const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, options);
 describe('ERNMapper', () => {
-    const defaultOptions = {
-        messageId: 'MSG-1',
-        sender: { partyId: 'SENDER', partyName: 'Sender' },
-        recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
-        createdDateTime: '2025-01-01T00:00:00Z'
-    };
-
-    const getDeals = (metadata: ExtendedGoldenMetadata): Deal[] => {
-        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
-        return ern.dealList || [];
-    };
-
     it('should map basic metadata to ERN message', () => {
         const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, defaultOptions);
 

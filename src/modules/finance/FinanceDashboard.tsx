@@ -1,7 +1,7 @@
 import React from 'react';
 import { EarningsDashboard } from './components/EarningsDashboard';
 import { ExpenseTracker } from './components/ExpenseTracker';
-import { MerchTable } from './components/MerchTable';
+import { MerchandiseDashboard } from './components/MerchandiseDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function FinanceDashboard() {
@@ -31,7 +31,7 @@ export default function FinanceDashboard() {
                     </TabsContent>
 
                     <TabsContent value="merch" className="mt-0">
-                        <MerchTable />
+                        <MerchandiseDashboard />
                     </TabsContent>
                 </div>
             </Tabs>
