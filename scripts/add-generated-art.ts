@@ -94,6 +94,7 @@ async function uploadImages(userId: string) {
             // Electron can render local files if we handle the protocol correctly.
             // We encode the path segments individually to ensure special characters (like spaces, #, ?) are handled
             // while preserving the directory structure.
+            // We encode the path segments to ensure spaces and special characters are handled.
             const safePath = img.path.split('/').map(segment => encodeURIComponent(segment)).join('/');
             const fileUrl = `file://${safePath}`;
 
