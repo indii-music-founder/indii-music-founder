@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { EarningsSummary } from '@/services/ddex/types/dsr';
+import { ProfileSlice } from './profileSlice';
 
 export interface FinanceSlice {
     finance: {
@@ -10,14 +11,14 @@ export interface FinanceSlice {
     fetchEarnings: (period: { startDate: string; endDate: string }) => Promise<void>;
 }
 
-export const createFinanceSlice: StateCreator<FinanceSlice> = (set, get) => ({
+export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [], FinanceSlice> = (set, get) => ({
     finance: {
         earningsSummary: null,
         loading: false,
         error: null,
     },
     fetchEarnings: async (period) => {
-        const state = get() as any; // Cast to access other slices
+        const state = get();
         const userId = state.userProfile?.id;
 
         if (!userId) {
