@@ -20,6 +20,58 @@ const PRODUCT_ICONS: Record<ProductType, LucideIcon> = {
     'Phone Screen': Smartphone
 };
 
+interface ProductSelectorProps {
+    productType: ProductType;
+    onTypeChange: (type: ProductType) => void;
+}
+
+// Optimization: Extract ProductSelector and use React.memo to prevent re-renders
+// of the list when parent state (like isDragging) changes.
+// This ensures that the grid of buttons only updates when productType changes.
+const ProductSelector = React.memo(({ productType, onTypeChange }: ProductSelectorProps) => {
+    return (
+        <div className="mb-8 space-y-3">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wider ml-1">
+                Topology
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(PRODUCT_ICONS) as ProductType[]).map((type) => {
+                    const Icon = PRODUCT_ICONS[type];
+                    const isSelected = productType === type;
+                    return (
+                        <motion.button
+                            key={type}
+                            onClick={() => onTypeChange(type)}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`
+                                relative p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300
+                                ${isSelected
+                                    ? 'bg-white/10 border-white/20 shadow-lg shadow-blue-500/10'
+                                    : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
+                                border
+                            `}
+                        >
+                            <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-400' : 'text-gray-500'}`} />
+                            <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                                {type}
+                            </span>
+                            {isSelected && (
+                                <motion.div
+                                    layoutId="active-product"
+                                    className="absolute inset-0 rounded-xl border border-blue-500/30"
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                            )}
+                        </motion.button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+});
+ProductSelector.displayName = 'ProductSelector';
+
 export default function AssetRack({ productAsset, productType, onAssetUpload, onTypeChange }: AssetRackProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -64,44 +116,7 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
             </div>
 
             {/* Product Selector */}
-            <div className="mb-8 space-y-3">
-                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider ml-1">
-                    Topology
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                    {(Object.keys(PRODUCT_ICONS) as ProductType[]).map((type) => {
-                        const Icon = PRODUCT_ICONS[type];
-                        const isSelected = productType === type;
-                        return (
-                            <motion.button
-                                key={type}
-                                onClick={() => onTypeChange(type)}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className={`
-                                    relative p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300
-                                    ${isSelected
-                                        ? 'bg-white/10 border-white/20 shadow-lg shadow-blue-500/10'
-                                        : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
-                                    border
-                                `}
-                            >
-                                <Icon className={`w-5 h-5 ${isSelected ? 'text-blue-400' : 'text-gray-500'}`} />
-                                <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-gray-500'}`}>
-                                    {type}
-                                </span>
-                                {isSelected && (
-                                    <motion.div
-                                        layoutId="active-product"
-                                        className="absolute inset-0 rounded-xl border border-blue-500/30"
-                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                    />
-                                )}
-                            </motion.button>
-                        );
-                    })}
-                </div>
-            </div>
+            <ProductSelector productType={productType} onTypeChange={onTypeChange} />
 
             {/* Asset Dropzone */}
             <div className="flex-1 flex flex-col min-h-0">

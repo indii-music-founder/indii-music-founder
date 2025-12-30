@@ -268,6 +268,7 @@ export class ERNMapper {
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
             // Non-Interactive Streaming (Web Radio)
             addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
@@ -280,7 +281,7 @@ export class ERNMapper {
         // Fallback: Default to standard set if no deals created
         if (deals.length === 0) {
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         return deals;

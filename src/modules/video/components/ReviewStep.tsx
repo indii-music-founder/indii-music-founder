@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Video, Loader2, Image as ImageIcon, Trash2, PenTool } from 'lucide-react';
-import { HistoryItem } from '../../../core/store/slices/creativeSlice';
+import { HistoryItem } from '@/core/store/slices/creativeSlice';
 
 interface ReviewStepProps {
     finalPrompt: string;
