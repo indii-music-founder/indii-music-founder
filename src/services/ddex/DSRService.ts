@@ -2,6 +2,9 @@ import { DDEXParser } from './DDEXParser';
 import { dsrProcessor } from './DSRProcessor';
 import type { DSRReport, RoyaltyCalculation } from './types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { DISTRIBUTORS } from '@/core/config/distributors';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import type { DistributorId } from '@/services/distribution/types/distributor';
 
 export interface ProcessedSalesBatches {
     batchId: string;
@@ -35,10 +38,27 @@ export class DSRService {
     ): Promise<ProcessedSalesBatches> {
         const summary = report.summary;
 
+        // Determine Distributor Fee from Config
+        let distributorFeePercent = 0;
+
+        // Find distributor by DDEX Party ID
+        const distributorKey = Object.keys(DISTRIBUTORS).find(
+            key => DISTRIBUTORS[key].ddexPartyId === report.senderId
+        );
+
+        if (distributorKey) {
+            const adapter = DistributorService.getAdapter(distributorKey as DistributorId);
+            if (adapter) {
+                const payoutPercentage = adapter.requirements.pricing.payoutPercentage;
+                // If payout is 85%, fee is 15%
+                distributorFeePercent = Math.max(0, 100 - payoutPercentage);
+            }
+        }
+
         // Calculate Royalties via Processor
         // In a real scenario, we might fetch config from DB
         const royalties = await dsrProcessor.calculateRoyalties(report, catalog, {
-            distributorFeePercent: 0, // TODO: Fetch from config
+            distributorFeePercent,
             platformFeePercent: 0
         });
 
