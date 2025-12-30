@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { ERNMapper } from './ERNMapper';
-import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { Deal } from './types/ern';
 
@@ -37,21 +36,6 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     language: 'en'
 };
 
-const options = {
-    messageId: 'MSG-001',
-    sender: { partyId: 'PADPIDA0000000001', partyName: 'SENDER-ID' },
-    recipient: { partyId: 'PADPIDA0000000002', partyName: 'RECIPIENT-ID' },
-    createdDateTime: '2025-01-01T12:00:00Z',
-};
-
-const getDeals = (metadata: ExtendedGoldenMetadata) => {
-    const ern = ERNMapper.mapMetadataToERN(metadata, options);
-    return ern.dealList;
-};
-
-describe('ERNMapper Deal Generation', () => {
-    it('should map basic metadata to ERN message', () => {
-        const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, options);
 describe('ERNMapper', () => {
     const defaultOptions = {
         messageId: 'MSG-1',
@@ -178,9 +162,10 @@ describe('ERNMapper', () => {
 
         const deals = getDeals(metadata);
 
-        // Expect fallback behavior (2 deals)
-        expect(deals.length).toBe(2);
-        // Expect fallback behavior (3 deals)
+        // Expect fallback behavior:
+        // Since 'physical' is not handled, deals array remains empty initially.
+        // The first fallback block in ERNMapper adds 3 deals (Subscription, AdSupported, NonInteractive).
+        // The second fallback block is skipped because deals.length > 0.
         expect(deals.length).toBe(3);
     });
 

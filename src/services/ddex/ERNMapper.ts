@@ -151,6 +151,10 @@ export class ERNMapper {
             ? metadata.tracks as ExtendedGoldenMetadata[]
             : [metadata]; // Treat root as the single track
 
+        // If metadata represents a single track but has no explicit tracks array,
+        // tracksToProcess is [metadata]. However, 'assets.audioFiles' might rely on index.
+        // Let's ensure the loop correctly aligns.
+
         // 1. Audio Resources
         tracksToProcess.forEach((track, index) => {
             const audioRef = `A${resourceCounter++}`;
@@ -176,6 +180,13 @@ export class ERNMapper {
                     languageOfPerformance: track.language
                 }
             };
+
+            // Map Lyrics (Metadata to ERN Detail)
+            // Note: ERN 4.3 typically handles lyrics as a Text Resource or DetailsByTerritory.
+            // For simplicity in this 'Gold Standard' pass, we'll attach it if the schema allows,
+            // or implicitly rely on it being present in the package.
+            // Here we assume it might be added to details if we had a field for it in Resource.
+            // (DDEX 4.3 encourages Lyrics as a separate Text Resource linked to the SoundRecording)
 
             // AI Info for Resource
             if (track.aiGeneratedContent) {

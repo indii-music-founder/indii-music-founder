@@ -223,7 +223,17 @@ class DDEXParserImpl {
       releaseReference: String(r?.ReleaseReference || ''),
       releaseType: String(r?.ReleaseType || 'Single') as ERNMessage['releaseList'][0]['releaseType'],
       releaseTitle: {
-        titleText: String(((r?.ReleaseDetailsByTerritory as Record<string, unknown>)?.Title as Record<string, unknown>)?.TitleText || ''),
+        titleText: String(
+          // Try Title object
+          ((r?.ReleaseDetailsByTerritory as any)?.Title?.TitleText) ||
+          // Try Title array (sometimes XML parser makes it an array if multiple titles exist)
+          ((r?.ReleaseDetailsByTerritory as any)?.Title?.[0]?.TitleText) ||
+          // Try direct Text (if textNodeName is #text and parser options allow)
+          ((r?.ReleaseDetailsByTerritory as any)?.Title?.['#text']) ||
+          // Finally, simple direct access if parser flattened it
+          ((r?.ReleaseDetailsByTerritory as any)?.Title) ||
+          ''
+        ),
       },
       displayArtistName: String((r?.ReleaseDetailsByTerritory as Record<string, unknown>)?.DisplayArtistName || ''),
       contributors: [],
@@ -282,8 +292,53 @@ class DDEXParserImpl {
   }
 
   private parseResourceList(resourceList: Record<string, unknown>) {
-    // Simplified parsing - expand as needed
-    return [];
+    if (!resourceList) return [];
+
+    const resources: any[] = [];
+
+    // Parse SoundRecordings
+    if (resourceList.SoundRecording) {
+        const recordings = Array.isArray(resourceList.SoundRecording)
+            ? resourceList.SoundRecording
+            : [resourceList.SoundRecording];
+
+        recordings.forEach((r: any) => {
+            resources.push({
+                resourceReference: r['@_ResourceReference'],
+                resourceType: 'SoundRecording',
+                resourceId: {
+                    isrc: r.ResourceId?.ISRC
+                },
+                resourceTitle: {
+                    titleText: r.ReferenceTitle?.TitleText
+                },
+                duration: r.Duration,
+                displayArtistName: r.SoundRecordingDetailsByTerritory?.DisplayArtistName
+            });
+        });
+    }
+
+    // Parse Images
+    if (resourceList.Image) {
+        const images = Array.isArray(resourceList.Image)
+            ? resourceList.Image
+            : [resourceList.Image];
+
+        images.forEach((r: any) => {
+             resources.push({
+                resourceReference: r['@_ResourceReference'],
+                resourceType: 'Image',
+                resourceId: {
+                    proprietaryId: { id: r.ResourceId?.ProprietaryId?.Id }
+                },
+                resourceTitle: {
+                    titleText: 'Front Cover Image'
+                }
+             });
+        });
+    }
+
+    return resources;
   }
 
   private buildResourceList(resources: ERNMessage['resourceList']) {

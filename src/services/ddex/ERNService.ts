@@ -17,7 +17,8 @@ export class ERNService {
         metadata: ExtendedGoldenMetadata,
         senderPartyId: string = DDEX_CONFIG.PARTY_ID,
         distributorKey: string = 'generic',
-        assets?: ReleaseAssets
+        assets?: ReleaseAssets,
+        options?: { isTestMode?: boolean } // Added options for Test Mode
     ): Promise<{ success: boolean; xml?: string; error?: string }> {
         try {
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
@@ -38,6 +39,7 @@ export class ERNService {
                     partyName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
+                messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage' // Set Test Flag
             }, assets);
 
             // Generate XML using the parser
