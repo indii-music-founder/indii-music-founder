@@ -23,6 +23,7 @@ import type {
 import { distributionStore } from './DistributionPersistenceService';
 import { credentialService } from '@/services/security/CredentialService';
 import { deliveryService, DeliveryResult } from './DeliveryService';
+import { currencyConversionService } from './CurrencyConversionService';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
@@ -328,46 +329,53 @@ class DistributorServiceImpl {
     const validEarnings = byDistributor.filter((e) => e !== null);
 
     // Aggregate
-    const totalStreams = validEarnings.reduce((sum, e) => sum + (e?.streams || 0), 0);
-    const totalDownloads = validEarnings.reduce((sum, e) => sum + (e?.downloads || 0), 0);
-    const totalGrossRevenue = validEarnings.reduce(
-      (sum, e) => sum + (e?.grossRevenue || 0),
-      0
-    );
-    const totalFees = validEarnings.reduce(
-      (sum, e) => sum + (e?.distributorFee || 0),
-      0
-    );
-    const totalNetRevenue = validEarnings.reduce(
-      (sum, e) => sum + (e?.netRevenue || 0),
-      0
-    );
+    let totalStreams = 0;
+    let totalDownloads = 0;
+    let totalGrossRevenue = 0;
+    let totalFees = 0;
+    let totalNetRevenue = 0;
 
-    // Aggregate by platform
     const platformMap = new Map<string, { streams: number; downloads: number; revenue: number }>();
-    validEarnings.forEach((e) => {
-      e?.breakdown?.forEach((b) => {
+    const territoryMap = new Map<string, { streams: number; downloads: number; revenue: number }>();
+
+    // Process each distributor's earnings report
+    for (const e of validEarnings) {
+      if (!e) continue;
+
+      // Determine conversion rate for this report
+      const rate = await currencyConversionService.convert(1, e.currencyCode, 'USD');
+
+      // Accumulate totals
+      totalStreams += e.streams;
+      totalDownloads += e.downloads;
+      totalGrossRevenue += e.grossRevenue * rate;
+      totalFees += e.distributorFee * rate;
+      totalNetRevenue += e.netRevenue * rate;
+
+      // Accumulate breakdown by platform
+      e.breakdown?.forEach((b) => {
         const existing = platformMap.get(b.platform) || { streams: 0, downloads: 0, revenue: 0 };
         platformMap.set(b.platform, {
           streams: existing.streams + b.streams,
           downloads: existing.downloads + b.downloads,
-          revenue: existing.revenue + b.revenue,
+          revenue: existing.revenue + (b.revenue * rate),
         });
       });
-    });
 
-    // Aggregate by territory
-    const territoryMap = new Map<string, { streams: number; downloads: number; revenue: number }>();
-    validEarnings.forEach((e) => {
-      e?.breakdown?.forEach((b) => {
+      // Accumulate breakdown by territory (Note: breakdown currently doesn't carry territory explicitly in the type definition above,
+      // but assuming it matches EarningsBreakdown structure which has territoryCode)
+      // Wait, looking at types: EarningsBreakdown has platform AND territoryCode.
+      // So the same breakdown item contributes to platformMap AND territoryMap.
+
+      e.breakdown?.forEach((b) => {
         const existing = territoryMap.get(b.territoryCode) || { streams: 0, downloads: 0, revenue: 0 };
         territoryMap.set(b.territoryCode, {
           streams: existing.streams + b.streams,
           downloads: existing.downloads + b.downloads,
-          revenue: existing.revenue + b.revenue,
+          revenue: existing.revenue + (b.revenue * rate),
         });
       });
-    });
+    }
 
     return {
       releaseId,
@@ -377,7 +385,7 @@ class DistributorServiceImpl {
       totalGrossRevenue,
       totalFees,
       totalNetRevenue,
-      currencyCode: 'USD', // TODO: Handle currency conversion
+      currencyCode: 'USD',
       byDistributor: validEarnings.filter((e) => e !== null) as typeof validEarnings[0] extends null ? never : typeof validEarnings[number][],
       byPlatform: Array.from(platformMap.entries()).map(([platform, data]) => ({
         platform,
