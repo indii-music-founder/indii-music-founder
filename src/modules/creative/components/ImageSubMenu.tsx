@@ -85,9 +85,11 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
                 {userProfile.brandKit?.colors?.length > 0 && !showBrandAssets && (
                     <div className="flex gap-1">
                         {userProfile.brandKit.colors.map((color, i) => (
-                            <div
+                            <button
                                 key={i}
-                                className="w-4 h-4 rounded-full border border-gray-600 cursor-pointer hover:scale-110 transition-transform relative group"
+                                type="button"
+                                aria-label={`Copy color ${color}`}
+                                className="w-4 h-4 rounded-full border border-gray-600 hover:scale-110 cursor-pointer focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] transition-transform relative group outline-none"
                                 style={{ backgroundColor: color }}
                                 onClick={() => {
                                     navigator.clipboard.writeText(color);
@@ -97,7 +99,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
                                     {color}
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 )}
