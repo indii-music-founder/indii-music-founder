@@ -2,6 +2,7 @@ import {
     ExtendedGoldenMetadata,
     RoyaltySplit,
 } from '@/services/metadata/types';
+import { ReleaseAssets } from '@/services/distribution/types/distributor';
 import {
     ERNMessage,
     Release,
@@ -35,7 +36,8 @@ export class ERNMapper {
             recipient: DPID;
             createdDateTime: string;
             messageControlType?: 'LiveMessage' | 'TestMessage';
-        }
+        },
+        assets?: ReleaseAssets
     ): ERNMessage {
         const releaseReference = 'R1';
 
@@ -52,7 +54,7 @@ export class ERNMapper {
         const mainRelease = this.buildMainRelease(metadata, releaseReference);
 
         // 3. Build Resource List
-        const { resources, resourceReferences } = this.buildResources(metadata);
+        const { resources, resourceReferences } = this.buildResources(metadata, assets);
         // Link resources to main release
         mainRelease.releaseResourceReferenceList = resourceReferences;
 
@@ -75,8 +77,6 @@ export class ERNMapper {
         const releaseId: ReleaseId = {
             icpn: metadata.upc,
             catalogNumber: metadata.catalogNumber,
-            // If single and no UPC, might use ISRC as proprietary ID or gridId?
-            // Standard practice: Releases need UPC/EAN (ICPN). Tracks have ISRCs.
         };
 
         const title: TitleText = {
@@ -91,7 +91,11 @@ export class ERNMapper {
         if (metadata.releaseType) {
             // Map internal release types to strict DDEX types if different
             // Assuming types match for now based on types.ts
-            releaseType = metadata.releaseType as ReleaseType;
+            if ((metadata.releaseType as string) === 'AudioAlbum') releaseType = 'Album';
+            else if ((metadata.releaseType as string) === 'Single') releaseType = 'Single';
+            else if ((metadata.releaseType as string) === 'VideoSingle') releaseType = 'VideoSingle' as ReleaseType;
+            else if ((metadata.releaseType as string) === 'Ringtone') releaseType = 'Ringtone' as ReleaseType;
+            else releaseType = metadata.releaseType as ReleaseType;
         }
 
         const genre: GenreWithSubGenre = {
@@ -132,7 +136,7 @@ export class ERNMapper {
         return release;
     }
 
-    private static buildResources(metadata: ExtendedGoldenMetadata): {
+    private static buildResources(metadata: ExtendedGoldenMetadata, assets?: ReleaseAssets): {
         resources: Resource[];
         resourceReferences: string[];
     } {
@@ -140,58 +144,92 @@ export class ERNMapper {
         const resourceReferences: string[] = [];
         let resourceCounter = 1;
 
-        // 1. Audio Resource (Primary)
-        // For a single, there is one sound recording.
-        // For albums, this would iterate over tracks.
-        // Assuming Single for ExtendedGoldenMetadata context for now.
+        // Determine tracks to process
+        // If it's a Single, metadata acts as the track if tracks array is empty.
+        // If it's an Album/EP, iterate metadata.tracks.
+        const tracksToProcess = (metadata.tracks && metadata.tracks.length > 0)
+            ? metadata.tracks as ExtendedGoldenMetadata[]
+            : [metadata]; // Treat root as the single track
 
-        const audioRef = `A${resourceCounter++}`;
-        resourceReferences.push(audioRef);
+        // 1. Audio Resources
+        tracksToProcess.forEach((track, index) => {
+            const audioRef = `A${resourceCounter++}`;
+            resourceReferences.push(audioRef);
 
-        const audioResource: Resource = {
-            resourceReference: audioRef,
-            resourceType: 'SoundRecording',
-            resourceId: {
-                isrc: metadata.isrc,
-            },
-            resourceTitle: {
-                titleText: metadata.trackTitle,
-                titleType: 'DisplayTitle',
-            },
-            displayArtistName: metadata.artistName,
-            contributors: this.mapContributors(metadata.splits, metadata.artistName),
-            duration: metadata.durationFormatted ? `PT${metadata.durationFormatted.replace(':', 'M')}S` : undefined, // Simple formatting, needs robust logic
-            parentalWarningType: metadata.explicit ? 'Explicit' : 'NotExplicit',
-            soundRecordingDetails: {
-                soundRecordingType: 'MusicalWorkSoundRecording',
-                isInstrumental: metadata.isInstrumental || false,
-                languageOfPerformance: metadata.language
+            const audioResource: Resource = {
+                resourceReference: audioRef,
+                resourceType: 'SoundRecording',
+                resourceId: {
+                    isrc: track.isrc,
+                },
+                resourceTitle: {
+                    titleText: track.trackTitle,
+                    titleType: 'DisplayTitle',
+                },
+                displayArtistName: track.artistName,
+                contributors: this.mapContributors(track.splits, track.artistName),
+                duration: track.durationFormatted ? `PT${track.durationFormatted.replace(':', 'M')}S` : undefined,
+                parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',
+                soundRecordingDetails: {
+                    soundRecordingType: 'MusicalWorkSoundRecording',
+                    isInstrumental: track.isInstrumental || false,
+                    languageOfPerformance: track.language
+                }
+            };
+
+            // AI Info for Resource
+            if (track.aiGeneratedContent) {
+                audioResource.aiGenerationInfo = {
+                    isFullyAIGenerated: track.aiGeneratedContent.isFullyAIGenerated,
+                    isPartiallyAIGenerated: track.aiGeneratedContent.isPartiallyAIGenerated,
+                    aiToolsUsed: track.aiGeneratedContent.aiToolsUsed,
+                    humanContributionDescription: track.aiGeneratedContent.humanContribution
+                }
             }
-        };
 
-        // AI Info for Resource
-        if (metadata.aiGeneratedContent) {
-            audioResource.aiGenerationInfo = {
-                isFullyAIGenerated: metadata.aiGeneratedContent.isFullyAIGenerated,
-                isPartiallyAIGenerated: metadata.aiGeneratedContent.isPartiallyAIGenerated,
-                aiToolsUsed: metadata.aiGeneratedContent.aiToolsUsed,
-                humanContributionDescription: metadata.aiGeneratedContent.humanContribution
+            // Link TechnicalDetails from Assets
+            if (assets && assets.audioFiles && assets.audioFiles.length > index) {
+                // @ts-ignore -assets might have trackIndex
+                const matchedAsset = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
+
+                if (matchedAsset) {
+                    const ext = matchedAsset.format || 'wav';
+                    audioResource.technicalDetails = {
+                        fileName: `${audioRef}.${ext}`
+                    };
+                } else {
+                    // Fallback default
+                    audioResource.technicalDetails = {
+                        fileName: `${audioRef}.wav`
+                    };
+                }
+            } else if (assets && assets.audioFile && index === 0) {
+                // Backward compatibility for singular audioFile (Single release only)
+                const ext = assets.audioFile.format || 'wav';
+                audioResource.technicalDetails = {
+                    fileName: `${audioRef}.${ext}`
+                };
+            } else {
+                // No matching asset found
+                audioResource.technicalDetails = {
+                    fileName: `${audioRef}.wav`
+                };
             }
-        }
 
-        resources.push(audioResource);
+            resources.push(audioResource);
+        });
 
         // 2. Image Resource (Cover Art)
+        // Typically one cover art for the release.
         const imageRef = `IMG${resourceCounter++}`;
         resourceReferences.push(imageRef);
 
-        // We assume there's cover art if we are distributing
         const imageResource: Resource = {
             resourceReference: imageRef,
             resourceType: 'Image',
             resourceId: {
                 proprietaryId: {
-                    proprietaryIdType: 'PartySpecific', // Or Use provided ID
+                    proprietaryIdType: 'PartySpecific',
                     id: `IMG-${metadata.isrc || Date.now()}`
                 }
             },
@@ -200,26 +238,37 @@ export class ERNMapper {
                 titleType: 'DisplayTitle'
             },
             displayArtistName: metadata.artistName,
-            contributors: [], // Usually specific to image
+            contributors: [],
             technicalDetails: {
                 // In a real scenario, we'd extract this from file metadata
             }
         }
-        resources.push(imageResource);
 
+        if (assets && assets.coverArt) {
+            const ext = assets.coverArt.url.split('.').pop() || 'jpg';
+            imageResource.technicalDetails = {
+                fileName: `${imageRef}.${ext}`
+            };
+        } else {
+            imageResource.technicalDetails = {
+                fileName: `${imageRef}.jpg`
+            };
+        }
+
+        resources.push(imageResource);
 
         return { resources, resourceReferences };
     }
 
     private static buildDeals(
         metadata: ExtendedGoldenMetadata,
-        releaseReference: string
+        _releaseReference: string
     ): Deal[] {
         const deals: Deal[] = [];
         let dealCounter = 1;
 
         // Default to Worldwide if no territories specified
-        const territoryCode: TerritoryCode[] = metadata.territories.length > 0
+        const territoryCode: TerritoryCode[] = (metadata.territories && metadata.territories.length > 0)
             ? (metadata.territories as TerritoryCode[])
             : ['Worldwide'];
 
@@ -258,10 +307,13 @@ export class ERNMapper {
         if (distributionChannels.includes('streaming')) {
             // Subscription Streaming (Premium)
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+
             // Ad-Supported Streaming (Free Tier)
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+
             // Non-Interactive Streaming (Web Radio)
             addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
@@ -271,17 +323,10 @@ export class ERNMapper {
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // 3. Physical Deals
-        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
-        if (distributionChannels.includes('physical')) {
-            // Placeholder for future implementation
-        }
-
         // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing or empty
         if (deals.length === 0) {
-             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         return deals;
@@ -291,6 +336,7 @@ export class ERNMapper {
         const contributors: Contributor[] = [];
 
         // Ensure Display Artist is included
+        // Check if display artist is in splits, if not add as MainArtist
         const artistInSplits = splits.find(s => s.legalName === displayArtist);
         if (!artistInSplits) {
             contributors.push({
@@ -304,12 +350,13 @@ export class ERNMapper {
         splits.forEach((split, index) => {
             let role: ContributorRole;
             switch (split.role) {
-                case 'songwriter': role = 'Composer'; break;
+                case 'songwriter': role = 'Composer'; break; // Approximate
                 case 'producer': role = 'Producer'; break;
-                case 'performer': role = 'FeaturedArtist'; break;
+                case 'performer': role = 'FeaturedArtist'; break; // Defaulting to featured if not main
                 default: role = 'AssociatedPerformer';
             }
 
+            // If this split IS the display artist, map as MainArtist
             if (split.legalName === displayArtist) {
                 role = 'MainArtist';
             }
@@ -317,7 +364,7 @@ export class ERNMapper {
             contributors.push({
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2
+                sequenceNumber: index + 2 // Start after inferred main artist if added
             });
         });
 

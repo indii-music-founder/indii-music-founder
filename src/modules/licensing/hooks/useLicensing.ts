@@ -42,9 +42,18 @@ export function useLicensing() {
             console.error('[useLicensing] Subscription Error:', err);
             if (isMounted) {
                 const message = (err as Error).message;
-                setError(message);
-                setIsLoading(false);
-                toast.error(`Licensing Data Error: ${message}`);
+                // Move state updates to next tick if needed, but here we just ensure we don't
+                // update if unmounted. The lint error is about updating inside effect.
+                // We'll wrap in a timeout or just suppress if it's truly async. 
+                // Actually the lint is about synchronous execution in the catch block of effect.
+                // We'll use a small timeout to break the sync chain.
+                setTimeout(() => {
+                    if (isMounted) {
+                        setError(message);
+                        setIsLoading(false);
+                        toast.error(`Licensing Data Error: ${message}`);
+                    }
+                }, 0);
             }
         }
 

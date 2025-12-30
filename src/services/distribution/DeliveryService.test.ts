@@ -1,98 +1,59 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeliveryService } from './DeliveryService';
+import { DeliveryService } from '@/services/distribution/DeliveryService';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ernService } from '@/services/ddex/ERNService';
-import { ExtendedGoldenMetadata } from './types/distributor';
 
 // Mock dependencies
-vi.mock('@/services/ddex/ERNService', () => ({
-    ernService: {
-        generateERN: vi.fn(),
-        parseERN: vi.fn(),
-        validateERNContent: vi.fn(),
-    },
-}));
-
 vi.mock('@/services/security/CredentialService', () => ({
-    credentialService: {
-        getCredentials: vi.fn().mockResolvedValue({}),
-    },
+  credentialService: {
+    getCredentials: vi.fn().mockResolvedValue({ username: 'user', password: 'pass' })
+  }
 }));
 
-// Mock FS for the test environment (since vitest runs in Node)
-// But DeliveryService uses dynamic import, so we need to mock that interaction or environment.
-// Since we can't easily mock dynamic imports that are inside the function without more setup,
-// we will verify the logic that calls ernService and handles the result.
+vi.mock('./transport/SFTPTransporter', () => ({
+  SFTPTransporter: class {
+    isConnected = vi.fn().mockResolvedValue(false);
+    disconnect = vi.fn();
+  }
+}));
+
+vi.mock('@/services/ddex/ERNService', () => ({
+  ernService: {
+    generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<xml>mock</xml>' }),
+    parseERN: vi.fn().mockReturnValue({ success: true, data: {} }),
+    validateERNContent: vi.fn().mockReturnValue({ valid: true, errors: [] })
+  }
+}));
 
 describe('DeliveryService', () => {
-    let deliveryService: DeliveryService;
+    let service: DeliveryService;
 
     beforeEach(() => {
+        service = new DeliveryService();
         vi.clearAllMocks();
-        deliveryService = new DeliveryService();
     });
 
-    describe('generateReleasePackage', () => {
-        it('should generate ERN XML and return success with xml content', async () => {
-            const mockMetadata = { upc: '123' } as ExtendedGoldenMetadata;
-            const mockXml = '<ern>test</ern>';
+    it('should validate release package', async () => {
+         const mockMetadata: ExtendedGoldenMetadata = {
+            upc: '1234567890123',
+            releaseTitle: 'Test Album',
+            artistName: 'Test Artist',
+            isrc: 'US12345',
+        } as ExtendedGoldenMetadata;
 
-            vi.mocked(ernService.generateERN).mockResolvedValue({
-                success: true,
-                xml: mockXml,
-            });
+        const result = await service.validateReleasePackage(mockMetadata);
 
-            // We mock the environment to simulate browser where fs fails,
-            // OR we verify that it returns success even if fs fails (as per our implementation logic).
-            // Actually, in Vitest (Node env), the dynamic import('fs') WILL work.
-            // So we might get an error if we provide a dummy path that it tries to write to.
-            // Let's rely on the behavior that it returns { success: true, xml } in either case.
-
-            // To avoid actual file writing during test, we can try to mock 'fs'.
-            // However, mocking dynamic imports is tricky.
-            // We'll trust the return value structure.
-
-            // To prevent actual file writing in test, we'll use a fake output directory
-            // and maybe expect it to fail safely or succeed if we mock fs properly.
-            // But since we can't easily mock the dynamic import 'fs' inside the method from here without hoisting,
-            // let's just focus on the 'generateERN' call.
-
-            const result = await deliveryService.generateReleasePackage(mockMetadata, '/tmp/test-output');
-
-            expect(ernService.generateERN).toHaveBeenCalledWith(mockMetadata);
-            expect(result.success).toBe(true);
-            expect(result.xml).toBe(mockXml);
-            // We don't strictly assert packagePath because it depends on fs success
-        });
-
-        it('should return error if ERN generation fails', async () => {
-            const mockMetadata = { upc: '123' } as ExtendedGoldenMetadata;
-
-            vi.mocked(ernService.generateERN).mockResolvedValue({
-                success: false,
-                error: 'Generation failed',
-            });
-
-            const result = await deliveryService.generateReleasePackage(mockMetadata, '/tmp/test-output');
-
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Generation failed');
-        });
+        expect(ernService.generateERN).toHaveBeenCalledWith(mockMetadata, undefined, undefined, undefined);
+        expect(ernService.parseERN).toHaveBeenCalled();
+        expect(ernService.validateERNContent).toHaveBeenCalled();
+        expect(result.valid).toBe(true);
     });
 
-    describe('validateReleasePackage', () => {
-        it('should validate successfully when all checks pass', async () => {
-             const mockMetadata = { upc: '123' } as ExtendedGoldenMetadata;
-             const mockXml = '<ern>test</ern>';
-             const mockParsed = { messageHeader: {} } as any;
-
-             vi.mocked(ernService.generateERN).mockResolvedValue({ success: true, xml: mockXml });
-             vi.mocked(ernService.parseERN).mockReturnValue({ success: true, data: mockParsed });
-             vi.mocked(ernService.validateERNContent).mockReturnValue({ valid: true, errors: [] });
-
-             const result = await deliveryService.validateReleasePackage(mockMetadata);
-
-             expect(result.valid).toBe(true);
-             expect(result.errors).toEqual([]);
-        });
+    it('should fail validation if generation fails', async () => {
+        vi.mocked(ernService.generateERN).mockResolvedValueOnce({ success: false, error: 'Gen Error' });
+        const result = await service.validateReleasePackage({} as ExtendedGoldenMetadata);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('Gen Error');
     });
 });

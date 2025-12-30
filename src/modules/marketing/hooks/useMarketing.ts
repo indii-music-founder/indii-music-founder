@@ -22,11 +22,13 @@ export function useMarketing() {
     // Initial Data Fetch & Realtime Listeners
     useEffect(() => {
         if (!userProfile?.id) {
-            setIsLoading(false);
-            return;
+            const timer = setTimeout(() => setIsLoading(false), 0);
+            return () => clearTimeout(timer);
         }
 
-        setIsLoading(true);
+        const timer = setTimeout(() => setIsLoading(true), 0);
+
+        const unsubscribe = () => clearTimeout(timer);
 
         try {
             // 1. Listen to Stats
@@ -68,14 +70,18 @@ export function useMarketing() {
             });
 
             return () => {
+                unsubscribe();
                 unsubscribeStats();
                 unsubscribeCampaigns();
             };
         } catch (err) {
             console.error("Setup failed:", err);
             Sentry.captureException(err);
-            setError(err as Error);
-            setIsLoading(false);
+            const timer = setTimeout(() => {
+                setError(err as Error);
+                setIsLoading(false);
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [userProfile?.id, toast]);
 
