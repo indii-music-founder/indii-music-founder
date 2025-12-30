@@ -11,7 +11,10 @@ vi.mock('@/services/security/CredentialService', () => ({
 
 // Mock fs globally
 const mockFs = {
-    existsSync: vi.fn().mockReturnValue(false),
+    existsSync: vi.fn().mockImplementation((pathStr: string) => {
+        // Return true for files (containing extension), false for directories (to trigger mkdir)
+        return pathStr.includes('.') && !pathStr.endsWith('/');
+    }),
     promises: {
         mkdir: vi.fn().mockResolvedValue(undefined),
         writeFile: vi.fn().mockResolvedValue(undefined),

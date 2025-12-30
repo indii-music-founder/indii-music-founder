@@ -71,13 +71,21 @@ export class DeliveryService {
                                 const resourceRef = `A${resourceIndex + 1}`;
                                 const audioExt = asset.format || 'wav';
                                 const audioDest = path.join(resourcesDir, `${resourceRef}.${audioExt}`);
-                                await fs.promises.copyFile(asset.url, audioDest);
+                                if (fs.existsSync(asset.url)) {
+                                    await fs.promises.copyFile(asset.url, audioDest);
+                                } else {
+                                    console.warn(`[DeliveryService] Asset file not found: ${asset.url}`);
+                                }
                             }
                         }
                     } else if (assets.audioFile && assets.audioFile.url) {
                         const audioExt = assets.audioFile.format || 'wav';
                         const audioDest = path.join(resourcesDir, `A1.${audioExt}`);
-                        await fs.promises.copyFile(assets.audioFile.url, audioDest);
+                        if (fs.existsSync(assets.audioFile.url)) {
+                            await fs.promises.copyFile(assets.audioFile.url, audioDest);
+                        } else {
+                            console.warn(`[DeliveryService] Asset file not found: ${assets.audioFile.url}`);
+                        }
                     }
 
                     // Copy Cover Art
@@ -89,7 +97,11 @@ export class DeliveryService {
                         const trackCount = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks.length : 1;
                         const imageRef = `IMG${trackCount + 1}`;
                         const imageDest = path.join(resourcesDir, `${imageRef}.${imageExt}`);
-                        await fs.promises.copyFile(baseUrl, imageDest);
+                        if (fs.existsSync(baseUrl)) {
+                            await fs.promises.copyFile(baseUrl, imageDest);
+                        } else {
+                            console.warn(`[DeliveryService] Cover art file not found: ${baseUrl}`);
+                        }
                     }
                 }
 
