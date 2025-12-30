@@ -11,7 +11,7 @@ import ReactFlow, {
     Node
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { useStore } from '../../../core/store';
+import { useStore } from '@/core/store';
 import { validateConnection } from '../utils/validationUtils';
 import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from './CustomNodes';
 import { createNodeFromDrop } from '../utils/dndUtils';

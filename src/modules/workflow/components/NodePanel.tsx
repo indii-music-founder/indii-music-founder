@@ -1,5 +1,5 @@
 import React from 'react';
-import { useStore } from '../../../core/store';
+import { useStore } from '@/core/store';
 import { Box, Play, Sparkles, MessageSquare, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert } from 'lucide-react';
 
 export default function NodePanel() {
