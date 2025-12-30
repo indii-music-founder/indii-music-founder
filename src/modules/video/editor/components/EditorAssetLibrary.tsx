@@ -1,6 +1,6 @@
 import React from 'react';
-import { useStore } from '../../../../core/store';
-import { HistoryItem } from '../../../../core/store/slices/creativeSlice';
+import { useStore } from '@/core/store';
+import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { Image, Film, Music, FileText } from 'lucide-react';
 
 interface EditorAssetLibraryProps {

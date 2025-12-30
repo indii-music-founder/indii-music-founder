@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
 import type { InputNodeData, OutputNodeData, AudioSegmentNodeData } from '../types';
 import { Pencil, AudioWaveform, Play, Sparkles } from 'lucide-react';
-import { useStore } from '../../../core/store';
+import { useStore } from '@/core/store';
 import UniversalNode from './UniversalNode';
 
 // Re-export UniversalNode as DepartmentNode for backward compatibility in nodeTypes map
