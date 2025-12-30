@@ -1,3 +1,9 @@
+/**
+ * FraudDetectionService
+ * Implements "Trust & Safety" checks for music distribution.
+ * - Artificial Streaming Detection
+ * - Copyright / Content Recognition (stub)
+ */
 
 export interface StreamingDataPoint {
     trackId: string;
