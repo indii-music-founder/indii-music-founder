@@ -176,9 +176,6 @@ export class ERNMapper {
                     languageOfPerformance: track.language
                 }
             };
-        // 1. Audio Resource (Primary)
-        const audioRef = `A${resourceCounter++}`;
-        resourceReferences.push(audioRef);
 
             // AI Info for Resource
             if (track.aiGeneratedContent) {
@@ -288,7 +285,6 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
@@ -350,6 +346,8 @@ export class ERNMapper {
             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+        }
+
         // 3. Physical Deals
         // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
         if (distributionChannels.includes('physical')) {
