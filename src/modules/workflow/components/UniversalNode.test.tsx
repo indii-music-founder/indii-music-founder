@@ -19,7 +19,7 @@ vi.mock('../services/nodeRegistry', () => ({
     DATA_TYPE_COLORS: { text: '#fff' },
 }));
 
-vi.mock('../../../core/store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: () => ({ nodes: [] }),
 }));
 
