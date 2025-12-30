@@ -249,6 +249,7 @@ export class ERNMapper {
         const channels = metadata.distributionChannels || [];
 
         // 1. Streaming Deals
+        // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
         if (channels.includes('streaming')) {
             // Subscription Streaming (Premium)
             addDeal('SubscriptionModel', 'OnDemandStream');
@@ -258,6 +259,7 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
+        // Maps 'download' channel to PayAsYouGo (Permanent Download)
         if (channels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload');
