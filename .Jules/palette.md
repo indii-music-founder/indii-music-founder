@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility improvements for color pickers
+**Learning:** Color pickers implemented as `div`s with `onClick` are common but inaccessible. Converting them to `button` elements provides native keyboard support (tab, enter/space) and focus management without extra JavaScript. Adding `aria-label` provides necessary context for screen readers that would otherwise only see an empty element with a background color.
+**Action:** When creating color selection interfaces, always use `button` elements or `input type="radio"`/`checkbox` for selection. Ensure they have accessible labels describing the color (e.g., "Select red") rather than just visual representation.
