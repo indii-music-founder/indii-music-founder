@@ -183,5 +183,3 @@ describe('ERNMapper', () => {
         expect(ern.messageHeader.messageControlType).toBe('LiveMessage');
     });
 });
-
-});

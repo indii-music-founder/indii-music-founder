@@ -1,30 +1,32 @@
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
 import {
-    type IDistributorAdapter,
-    type DistributorId,
-    type DistributorRequirements,
-    type DistributorCredentials,
-    type ReleaseAssets,
-    type ReleaseResult,
-    type ReleaseStatus,
-    type DistributorEarnings,
+    IDistributorAdapter,
+    DistributorId,
+    DistributorRequirements,
+    DistributorEarnings,
+    ReleaseResult,
+    ReleaseStatus,
+    ReleaseAssets,
+    DistributorCredentials,
+    ValidationResult
 } from '../types/distributor';
-
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { DateRange } from '@/services/ddex/types/common';
+import { SFTPTransporter } from '../transport/SFTPTransporter';
+import { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
 
 /**
- * CD Baby Adapter
- * Integration with CD Baby (Direct/API)
+ * Adapter for CD Baby
+ * Strategy: DDEX with SFTP
+ * Uses CDBabyPackageBuilder to generate DDEX ERN and SFTPTransporter for delivery.
+ * Note: SFTP operations must be handled server-side. This adapter acts as a client bridge.
  */
-// import { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
-
 export class CDBabyAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'cdbaby';
     readonly name: string = 'CD Baby';
 
     private connected: boolean = false;
-    // private transporter: SFTPTransporter;
-    // private builder: CDBabyPackageBuilder;
+    private transporter: SFTPTransporter;
+    private builder: CDBabyPackageBuilder;
     private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
@@ -32,19 +34,19 @@ export class CDBabyAdapter implements IDistributorAdapter {
         coverArt: {
             minWidth: 1400,
             minHeight: 1400,
-            maxWidth: 4000,
-            maxHeight: 4000,
+            maxWidth: 3000,
+            maxHeight: 3000,
             aspectRatio: '1:1',
             allowedFormats: ['jpg', 'png'],
-            maxSizeBytes: 10 * 1024 * 1024,
-            colorMode: 'RGB',
+            maxSizeBytes: 20 * 1024 * 1024,
+            colorMode: 'RGB'
         },
         audio: {
             allowedFormats: ['wav', 'flac', 'mp3'],
             minSampleRate: 44100,
             recommendedSampleRate: 44100,
             minBitDepth: 16,
-            channels: 'stereo',
+            channels: 'stereo'
         },
         metadata: {
             requiredFields: ['trackTitle', 'artistName', 'genre'],
@@ -53,74 +55,61 @@ export class CDBabyAdapter implements IDistributorAdapter {
             isrcRequired: false,
             upcRequired: false,
             genreRequired: true,
-            languageRequired: true,
+            languageRequired: true
         },
         timing: {
             minLeadTimeDays: 5,
-            reviewTimeDays: 5,
+            reviewTimeDays: 2
         },
         pricing: {
             model: 'per_release',
             costPerRelease: 9.99,
-            payoutPercentage: 91,
-        },
+            payoutPercentage: 91
+        }
     };
 
     constructor() {
-        // this.transporter = new SFTPTransporter();
-        // this.builder = new CDBabyPackageBuilder();
-        this.username = null;
+        this.transporter = new SFTPTransporter();
+        this.builder = new CDBabyPackageBuilder();
     }
-
-    // Explicitly declaring username for compatibility if needed, though 'credentials' might store it
-    private username: string | null = null;
 
     async isConnected(): Promise<boolean> {
         return this.connected;
     }
 
     async connect(credentials: DistributorCredentials): Promise<void> {
-        if (!credentials.username) {
-            throw new Error('CD Baby requires a username');
+        if (!credentials.apiKey && !credentials.accessToken) {
+            throw new Error('CD Baby requires API Key (for SFTP simulation)');
         }
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        this.username = credentials.username;
+
+        this.credentials = credentials;
         this.connected = true;
+
+        const username = this.credentials?.accountId || 'simulated_user';
+        console.log(`[CD Baby] Connected. Ready to transmit as ${username}.`);
     }
 
     async disconnect(): Promise<void> {
-        // if (await this.transporter.isConnected()) {
-        //     await this.transporter.disconnect();
-        // }
+        if (await this.transporter.isConnected()) {
+            await this.transporter.disconnect();
+        }
         this.connected = false;
+        this.credentials = undefined;
     }
 
-    async createRelease(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): Promise<ReleaseResult> {
+    async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to CD Baby');
         }
 
         console.log(`[CD Baby] Starting release process for: ${metadata.trackTitle}`);
-        const releaseId = `CDB-${Date.now()}`;
+        console.log('[CD Baby] Building DDEX Package...');
 
         try {
             // Internal release ID for folder naming if UPC is missing
             const releaseId = metadata.upc || `REL-${Date.now()}`;
-            // Package building via IPC (Hybrid Safety)
-            if (!window.electronAPI?.distribution) {
-                throw new Error('Electron Distribution API not available');
-            }
-
-            console.log('[CD Baby] Building package via Main Process...');
-            // @ts-ignore - assets might be unused or passed
-            const buildResult = await window.electronAPI.distribution.buildPackage('cdbaby', metadata, _assets, releaseId);
-
-            if (!buildResult.success || !buildResult.packagePath) {
-                throw new Error(`Package build failed: ${buildResult.error}`);
-            }
-
-            const { packagePath } = buildResult;
-            console.log(`[CD Baby] Package built at: ${packagePath}`);
+            // Package building
+            const { packagePath } = await this.builder.buildPackage(metadata, assets, releaseId);
 
             // In browser environment, we can't use fs-based package builder or SFTP directly.
             // My SFTPTransporter now handles this via IPC bridge to the main process.
@@ -133,94 +122,114 @@ export class CDBabyAdapter implements IDistributorAdapter {
             // This logic should be moved to a backend Cloud Function.
             // For now, we mock the success to unblock the frontend build.
 
+            console.warn('[CD Baby] Client-side SFTP upload is not supported. This step requires a backend function.');
+            console.log(`[CD Baby] Mocking upload for ${releaseId}...`);
+
+            // Simulate delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             return {
                 success: true,
-                status: 'delivered',
-                releaseId: releaseId,
-                distributorReleaseId: `INT-CDB-${Date.now()}`,
+                status: 'delivered',  // DDEX Delivered
+                releaseId: `IND-${metadata.upc}`, // Internal Reference
                 metadata: {
-                    estimatedLiveDate: '2025-01-18',
-                    upcAssigned: metadata.upc || 'PENDING_CDB',
-                    isrcAssigned: metadata.isrc || 'PENDING_CDB',
-                },
+                    reviewRequired: true,
+                    estimatedLiveDate: this.calculateLiveDate(metadata.releaseDate)
+                }
             };
+
         } catch (error) {
-            console.error('[CD Baby] Submission failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error during delivery';
             return {
                 success: false,
                 status: 'failed',
                 errors: [{
-                    code: 'SUBMISSION_FAILED',
-                    message: error instanceof Error ? error.message : 'Unknown Submission Error'
-                }],
-                releaseId
+                    code: 'DELIVERY_ERROR',
+                    message: errorMessage
+                }]
             };
         }
+    }
+
+    async validateMetadata(metadata: ExtendedGoldenMetadata, _assets?: ReleaseAssets): Promise<ValidationResult> {
+        // CD Baby specific validations could go here
+        return { isValid: true, errors: [], warnings: [] };
+    }
+
+    async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
+        return { isValid: true, errors: [], warnings: [] };
+    }
+
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        if (!this.connected) {
+            throw new Error('Not connected to CD Baby');
+        }
+        // Simulated
+        return 'validating';
     }
 
     async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to CD Baby');
         }
-        console.log(`[CD Baby] Updating ${releaseId}`);
+        // DDEX Update (New ReleaseMessage with UpdateIndicator)
+        console.log(`[CD Baby] Sending Update message for ${releaseId}`);
         return {
             success: true,
             status: 'processing',
-            distributorReleaseId: releaseId,
+            releaseId: releaseId
         };
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
+    async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to CD Baby');
         }
-        return 'processing';
-    }
-
-    async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to CD Baby');
-        }
+        // DDEX Takedown (New ReleaseMessage with TakedownIndicator)
+        console.log(`[CD Baby] Sending Takedown message for ${_releaseId}`);
         return {
             success: true,
             status: 'takedown_requested',
-            distributorReleaseId: releaseId,
+            releaseId: _releaseId
         };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        if (!this.connected) {
-            throw new Error('Not connected to CD Baby');
-        }
-
         return {
-            distributorId: this.id,
             releaseId,
+            distributorId: this.id,
             period,
-            streams: 8500,
-            downloads: 120,
-            grossRevenue: 95.00,
-            distributorFee: 8.55, // 9%
-            netRevenue: 86.45,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
             currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
             breakdown: [],
+            lastUpdated: new Date().toISOString()
         };
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        // Mock implementation to match getEarnings behavior and ensure consistency
+        return [{
+            releaseId: 'mock-release-id',
+            distributorId: this.id,
+            period,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
+            currencyCode: 'USD',
+            breakdown: [],
+            lastUpdated: new Date().toISOString()
+        }];
     }
 
-    async validateMetadata(_metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
-        return {
-            isValid: true, // Simple mock validation
-            errors: [],
-            warnings: [],
-        };
-    }
-
-    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
-        return { isValid: true, errors: [], warnings: [] };
+    private calculateLiveDate(releaseDate?: string): string {
+        const d = releaseDate ? new Date(releaseDate) : new Date();
+        d.setDate(d.getDate() + 5); // 5 days lead time
+        return d.toISOString().split('T')[0];
     }
 }
