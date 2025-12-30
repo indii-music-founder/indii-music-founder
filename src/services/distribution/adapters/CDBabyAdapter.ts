@@ -128,14 +128,10 @@ export class CDBabyAdapter implements IDistributorAdapter {
             if (typeof window !== 'undefined' && window.electronAPI) {
                 console.log(`[CD Baby] Delivering via Electron IPC...`);
                 // Delivery logic here if needed, or rely on createRelease returning 'delivered'
+            } else {
+                 console.warn('[CD Baby] Client-side SFTP upload is not supported. This step requires a backend function.');
+                 console.log(`[CD Baby] Mocking upload for ${releaseId}...`);
             }
-
-            // In browser environment, we can't use fs-based package builder or SFTP directly.
-            // This logic should be moved to a backend Cloud Function.
-            // For now, we mock the success to unblock the frontend build.
-
-            console.warn('[CD Baby] Client-side SFTP upload is not supported. This step requires a backend function.');
-            console.log(`[CD Baby] Mocking upload for ${releaseId}...`);
 
             // Simulate delay
             await new Promise(resolve => setTimeout(resolve, 1000));

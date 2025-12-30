@@ -113,6 +113,9 @@ export class SymphonicAdapter implements IDistributorAdapter {
             if (typeof window !== 'undefined' && window.electronAPI) {
                 console.log('[Symphonic] Delivering via Electron IPC...');
                 // Delivery logic here
+            } else {
+                 console.warn('[Symphonic] Client-side SFTP upload is not supported. This step requires a backend function.');
+                 console.log(`[Symphonic] Mocking upload for ${releaseId}...`);
             }
 
             // Mock delay

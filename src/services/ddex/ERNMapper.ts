@@ -265,18 +265,12 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
-        if (distributionChannels.includes('download')) {
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
         if (distributionChannels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // Fallback: Default to standard set if no deals created
-        if (deals.length === 0) {
-            addDeal('SubscriptionModel', 'OnDemandStream');
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
         // 3. Physical Deals
         // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
         if (distributionChannels.includes('physical')) {
