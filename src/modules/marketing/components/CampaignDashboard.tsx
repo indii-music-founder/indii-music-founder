@@ -27,6 +27,10 @@ const CampaignDashboard: React.FC = () => {
         }
     };
 
+    const handleOpenCreateModal = () => {
+        setIsCreateModalOpen(true);
+    };
+
     if (!selectedCampaign) {
         return (
             <div className="p-8 flex flex-col items-center justify-center h-full text-center">
@@ -40,6 +44,7 @@ const CampaignDashboard: React.FC = () => {
                 <button
                     className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors"
                     onClick={handleCreateCampaign}
+                    onClick={handleOpenCreateModal}
                 >
                     Create New Campaign
                 </button>
