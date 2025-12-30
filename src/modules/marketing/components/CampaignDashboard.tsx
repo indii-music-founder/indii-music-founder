@@ -14,6 +14,10 @@ const CampaignDashboard: React.FC = () => {
         setSelectedCampaign(updatedCampaign);
     };
 
+    const handleCreateCampaign = () => {
+        setIsCreateModalOpen(true);
+    };
+
     const handleCreateSave = async (campaignId?: string) => {
         if (campaignId) {
             const campaign = await MarketingService.getCampaignById(campaignId);
@@ -35,7 +39,7 @@ const CampaignDashboard: React.FC = () => {
                 </p>
                 <button
                     className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors"
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={handleCreateCampaign}
                 >
                     Create New Campaign
                 </button>
