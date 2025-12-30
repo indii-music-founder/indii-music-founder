@@ -71,6 +71,12 @@ import { AI_MODELS } from '@/core/config/ai-models';
 - **Hybrid Safety:** React components must be environment-agnostic. Avoid direct Node.js imports; use IPC for Electron-specific tasks.
 - **Firebase:** If modifying schemas or storage paths, you **MUST** update `firestore.rules` or `storage.rules`.
 
+### 3.4 CI/CD & Build Integrity
+
+- **Cross-Platform Compatibility:** If adding binary dependencies (like `esbuild` or `sharp`), explicitly add their Linux counterparts (e.g., `@esbuild/linux-x64`) to `optionalDependencies` to ensure CI success.
+- **Output Verification:** ALWAYS verify the build output directory (`dist` vs `out`) locally before pushing deployment config changes.
+- **Environment Parity:** Ensure CI workflows do not set `NODE_ENV=production` globally during `npm install` if it prevents installing necessary build tools (like `devDependencies`). Apply it only to the build command.
+
 ### 3.3 Language Style Guidelines
 
 - **TypeScript:** Use `const`/`let` (no `var`), strict equality (`===`), named exports, and mandatory semicolons.

@@ -4,10 +4,10 @@
 
 This project has **two separate deployments**:
 
-1. **Landing Page** - Next.js static site with WebGL effects
+1. **Landing Page** - React + Vite static site with WebGL effects
    - URL: <https://indiios-v-1-1.web.app>
    - Source: `landing-page/`
-   - Build output: `landing-page/out/`
+   - Build output: `landing-page/dist/`
 
 2. **Studio App** - React + Vite main application
    - URL: <https://indiios-studio.web.app>
@@ -96,7 +96,7 @@ The project uses GitHub Actions for automated deployments on merge to `main`.
 
 ### Landing page and studio showing the same content
 
-This happens when `landing-page/out` doesn't exist. Build the landing page first:
+This happens when `landing-page/dist` doesn't exist. Build the landing page first:
 
 ```bash
 npm run build:landing
@@ -112,7 +112,7 @@ npm run build:landing
    cd landing-page && npm install
    ```
 
-2. Check Node.js version (requires 20.x):
+2. Check Node.js version (requires 22.x):
 
    ```bash
    node --version
@@ -133,14 +133,28 @@ npm run build:landing
    firebase target:apply hosting app indiios-studio
    ```
 
+### Build fails with "missing @esbuild/linux-x64"
+
+This occurs when building on Linux (CI) but the lockfile was generated on macOS.
+
+**Fix:** explicitly add the binary to optional dependencies:
+
+```json
+"optionalDependencies": {
+  "@esbuild/linux-x64": "0.25.12"
+}
+```
+
+Ensure the version matches your root `esbuild` version.
+
 ## Architecture
 
 ```
 Rndr-AI-v1/
-├── landing-page/          # Next.js landing site
-│   ├── app/              # Next.js app directory
+├── landing-page/          # React + Vite landing site
+│   ├── src/              # Source code
 │   ├── package.json      # Landing page dependencies
-│   └── out/              # Build output (gitignored)
+│   └── dist/             # Build output (gitignored)
 ├── src/                  # Studio app source
 ├── dist/                 # Studio build output (gitignored)
 ├── firebase.json         # Firebase hosting config
@@ -171,7 +185,7 @@ Rndr-AI-v1/
   "hosting": [
     {
       "target": "landing",
-      "public": "landing-page/out"
+      "public": "landing-page/dist"
     },
     {
       "target": "app",
