@@ -11,6 +11,7 @@ import {
     type DistributorEarnings,
 } from '../types/distributor';
 
+
 /**
  * CD Baby Adapter
  * Integration with CD Baby (Direct/API)
@@ -19,7 +20,12 @@ import {
 
 export class CDBabyAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'cdbaby';
-    readonly name = 'CD Baby';
+    readonly name: string = 'CD Baby';
+
+    private connected: boolean = false;
+    // private transporter: SFTPTransporter;
+    // private builder: CDBabyPackageBuilder;
+    private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'cdbaby',
@@ -54,13 +60,19 @@ export class CDBabyAdapter implements IDistributorAdapter {
             reviewTimeDays: 5,
         },
         pricing: {
-            model: 'pay-per-release',
-            feePerRelease: 9.99,
+            model: 'per_release',
+            costPerRelease: 9.99,
             payoutPercentage: 91,
         },
     };
 
-    private connected = false;
+    constructor() {
+        // this.transporter = new SFTPTransporter();
+        // this.builder = new CDBabyPackageBuilder();
+        this.username = null;
+    }
+
+    // Explicitly declaring username for compatibility if needed, though 'credentials' might store it
     private username: string | null = null;
 
     async isConnected(): Promise<boolean> {
@@ -77,7 +89,9 @@ export class CDBabyAdapter implements IDistributorAdapter {
     }
 
     async disconnect(): Promise<void> {
-        this.username = null;
+        // if (await this.transporter.isConnected()) {
+        //     await this.transporter.disconnect();
+        // }
         this.connected = false;
     }
 
@@ -90,8 +104,30 @@ export class CDBabyAdapter implements IDistributorAdapter {
         const releaseId = `CDB-${Date.now()}`;
 
         try {
-            // Mocking package creation process
-            console.log('[CD Baby] Package creation simulated.');
+            // Internal release ID for folder naming if UPC is missing
+            const releaseId = metadata.upc || `REL-${Date.now()}`;
+            // Package building via IPC (Hybrid Safety)
+            if (!window.electronAPI?.distribution) {
+                throw new Error('Electron Distribution API not available');
+            }
+
+            console.log('[CD Baby] Building package via Main Process...');
+            // @ts-ignore - assets might be unused or passed
+            const buildResult = await window.electronAPI.distribution.buildPackage('cdbaby', metadata, _assets, releaseId);
+
+            if (!buildResult.success || !buildResult.packagePath) {
+                throw new Error(`Package build failed: ${buildResult.error}`);
+            }
+
+            const { packagePath } = buildResult;
+            console.log(`[CD Baby] Package built at: ${packagePath}`);
+
+            // In browser environment, we can't use fs-based package builder or SFTP directly.
+            // My SFTPTransporter now handles this via IPC bridge to the main process.
+            if (typeof window !== 'undefined' && window.electronAPI) {
+                console.log(`[CD Baby] Delivering via Electron IPC...`);
+                // Delivery logic here if needed, or rely on createRelease returning 'delivered'
+            }
 
             // In browser environment, we can't use fs-based package builder or SFTP directly.
             // This logic should be moved to a backend Cloud Function.

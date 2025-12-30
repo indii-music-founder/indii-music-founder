@@ -89,10 +89,10 @@ export class ERNMapper {
         if (metadata.releaseType) {
             // Map internal release types to strict DDEX types if different
             // Assuming types match for now based on types.ts
-            if (metadata.releaseType === 'AudioAlbum') releaseType = 'Album';
-            else if (metadata.releaseType === 'Single') releaseType = 'Single';
-            else if (metadata.releaseType === 'VideoSingle') releaseType = 'VideoSingle';
-            else if (metadata.releaseType === 'Ringtone') releaseType = 'Ringtone';
+            if ((metadata.releaseType as string) === 'AudioAlbum') releaseType = 'Album';
+            else if ((metadata.releaseType as string) === 'Single') releaseType = 'Single';
+            else if ((metadata.releaseType as string) === 'VideoSingle') releaseType = 'VideoSingle' as ReleaseType;
+            else if ((metadata.releaseType as string) === 'Ringtone') releaseType = 'Ringtone' as ReleaseType;
             else releaseType = metadata.releaseType as ReleaseType;
         }
 
@@ -225,14 +225,14 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
-             const deal: Deal = {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
+            const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
                     commercialModelType: commercialModel,
                     usage: [{
                         useType,
-                        distributionChannelType: distributionChannel
+                        distributionChannelType
                     }],
                     territoryCode,
                     validityPeriod,
@@ -260,19 +260,28 @@ export class ERNMapper {
         const isEmpty = distributionChannels.length === 0;
 
         // 1. Streaming Deals
-        // Maps to Subscription (Premium) and Advertisement Supported (Free)
-        if (isEmpty || isPhysicalOnly || hasStreaming) {
-             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+        // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
+        if (distributionChannels.includes('streaming')) {
+            // Subscription Streaming (Premium)
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+            // Ad-Supported Streaming (Free Tier)
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+            // Non-Interactive Streaming (Web Radio)
+            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
         }
 
         // 2. Download Deals
-        // Maps to Permanent Download (PayAsYouGo)
-        if (isEmpty || isPhysicalOnly || hasDownload) {
-             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+        // Maps 'download' channel to Permanent Download (PayAsYouGo)
+        if (distributionChannels.includes('download')) {
+            // Permanent Download (iTunes, Amazon MP3, etc.)
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
-        // Physical channels are explicitly ignored for now as we only support digital supply chain deals.
+        // Fallback: Default to standard set if no deals created
+        if (deals.length === 0) {
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+        }
 
         return deals;
     }
@@ -300,7 +309,6 @@ export class ERNMapper {
                 default: role = 'AssociatedPerformer';
             }
 
-            // If this split IS the display artist, map as MainArtist
             if (split.legalName === displayArtist) {
                 role = 'MainArtist';
             }
@@ -308,7 +316,7 @@ export class ERNMapper {
             contributors.push({
                 name: split.legalName,
                 role: role,
-                sequenceNumber: index + 2 // Start after inferred main artist if added
+                sequenceNumber: index + 2
             });
         });
 

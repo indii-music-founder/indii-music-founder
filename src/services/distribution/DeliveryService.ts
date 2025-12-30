@@ -4,13 +4,17 @@ import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter } from './transport/SFTPTransporter';
 import { DistributorId, ExtendedGoldenMetadata } from './types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
-// import { PackageBuilder } from '@/services/ddex/PackageBuilder'; // Potential future service
 
 export interface DeliveryResult {
     success: boolean;
     message: string;
     deliveredFiles: string[];
     timestamp: string;
+}
+
+export interface ReleaseAssets {
+    audioUrl: string;
+    coverArtUrl: string;
 }
 
 export class DeliveryService {
@@ -26,7 +30,11 @@ export class DeliveryService {
      * Note: This method requires a Node.js environment (Electron Main) to write files to disk.
      * In a browser environment, it will return the generated XML content but fail to write to disk.
      */
-    async generateReleasePackage(metadata: ExtendedGoldenMetadata, outputDir: string): Promise<{ success: boolean; packagePath?: string; xml?: string; error?: string }> {
+    async generateReleasePackage(
+        metadata: ExtendedGoldenMetadata,
+        outputDir: string,
+        assets?: ReleaseAssets
+    ): Promise<{ success: boolean; packagePath?: string; xml?: string; error?: string }> {
         try {
             // 1. Generate ERN XML
             const generationResult = await ernService.generateERN(metadata);
@@ -40,7 +48,7 @@ export class DeliveryService {
             // 2. Write to disk if environment allows
             try {
                 // Dynamic import to avoid bundling issues in browser
-                // @ts-expect-error - fs is not available in browser types
+
                 const fs = await import('fs');
 
                 if (!fs || !fs.promises) {
@@ -56,8 +64,44 @@ export class DeliveryService {
                 const xmlPath = path.join(outputDir, 'ern.xml');
                 await fs.promises.writeFile(xmlPath, generationResult.xml, 'utf8');
 
-                // TODO: Copy assets (audio, images) to the package directory
-                // This would require reading from the source URLs/paths in metadata
+                // 3. Copy Assets if provided
+                if (assets) {
+                    const resourcesDir = path.join(outputDir, 'resources');
+                    if (!fs.existsSync(resourcesDir)) {
+                        await fs.promises.mkdir(resourcesDir, { recursive: true });
+                    }
+
+                    // Helper to copy file
+                    const copyAsset = async (source: string, destinationName: string) => {
+                        try {
+                            // If source is a file URL, convert to path?
+                            // For now assume absolute path or copyable string
+                            const destPath = path.join(resourcesDir, destinationName);
+
+                            // Check if source exists before copying
+                            if (fs.existsSync(source)) {
+                                await fs.promises.copyFile(source, destPath);
+                            } else {
+                                console.warn(`[DeliveryService] Asset source not found: ${source}`);
+                            }
+                        } catch (err) {
+                            console.error(`[DeliveryService] Failed to copy asset ${source}:`, err);
+                            throw err;
+                        }
+                    };
+
+                    // Copy Audio
+                    if (assets.audioUrl) {
+                        const ext = path.extname(assets.audioUrl) || '.wav';
+                        await copyAsset(assets.audioUrl, `audio${ext}`);
+                    }
+
+                    // Copy Cover Art
+                    if (assets.coverArtUrl) {
+                        const ext = path.extname(assets.coverArtUrl) || '.jpg';
+                        await copyAsset(assets.coverArtUrl, `cover${ext}`);
+                    }
+                }
 
                 return {
                     success: true,

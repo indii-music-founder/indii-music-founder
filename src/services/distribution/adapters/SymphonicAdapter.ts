@@ -10,6 +10,8 @@ import {
     type ReleaseStatus,
     type DistributorEarnings,
 } from '../types/distributor';
+// import { SFTPTransporter } from '../transport/SFTPTransporter';
+// import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 
 /**
  * Symphonic Adapter
@@ -55,7 +57,7 @@ export class SymphonicAdapter implements IDistributorAdapter {
             reviewTimeDays: 5,
         },
         pricing: {
-            model: 'pay-as-you-go', // Actually percentage usually
+            model: 'revenue_share', // Actually percentage usually
             payoutPercentage: 85,
         },
     };
@@ -90,10 +92,18 @@ export class SymphonicAdapter implements IDistributorAdapter {
         const releaseId = `SYM-${Date.now()}`;
 
         try {
-            // 1. Build DDEX Package (Simulated)
-            const { SymphonicPackageBuilder } = await import('../symphonic/SymphonicPackageBuilder');
-            const builder = new SymphonicPackageBuilder();
-            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+            // 1. Build Package via IPC
+            if (!window.electronAPI?.distribution) {
+                throw new Error('Electron Distribution API not available');
+            }
+
+            const buildResult = await window.electronAPI.distribution.buildPackage('symphonic', metadata, assets, releaseId);
+
+            if (!buildResult.success || !buildResult.packagePath) {
+                throw new Error(`Package build failed: ${buildResult.error}`);
+            }
+
+            const { packagePath } = buildResult;
 
             console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
 
