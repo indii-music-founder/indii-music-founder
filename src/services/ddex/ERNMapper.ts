@@ -151,6 +151,10 @@ export class ERNMapper {
             ? metadata.tracks as ExtendedGoldenMetadata[]
             : [metadata]; // Treat root as the single track
 
+        // If metadata represents a single track but has no explicit tracks array,
+        // tracksToProcess is [metadata]. However, 'assets.audioFiles' might rely on index.
+        // Let's ensure the loop correctly aligns.
+
         // 1. Audio Resources
         tracksToProcess.forEach((track, index) => {
             const audioRef = `A${resourceCounter++}`;

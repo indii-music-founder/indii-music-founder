@@ -162,6 +162,10 @@ describe('ERNMapper', () => {
 
         const deals = getDeals(metadata);
 
+        // Expect fallback behavior:
+        // Since 'physical' is not handled, deals array remains empty initially.
+        // The first fallback block in ERNMapper adds 3 deals (Subscription, AdSupported, NonInteractive).
+        // The second fallback block is skipped because deals.length > 0.
         // Expect fallback behavior (default is 2 deals: streaming + download fallback in buildDeals)
         // Wait, looking at ERNMapper implementation:
         // If deals.length === 0 (which happens if only physical is passed),
