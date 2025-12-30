@@ -18,7 +18,6 @@ import {
     TerritoryCode,
     ReleaseType,
     ContributorRole,
-    ParentalWarningType,
     CommercialModelType,
     UseType,
 } from './types/common';
@@ -76,8 +75,6 @@ export class ERNMapper {
         const releaseId: ReleaseId = {
             icpn: metadata.upc,
             catalogNumber: metadata.catalogNumber,
-            // If single and no UPC, might use ISRC as proprietary ID or gridId?
-            // Standard practice: Releases need UPC/EAN (ICPN). Tracks have ISRCs.
         };
 
         const title: TitleText = {
@@ -92,7 +89,11 @@ export class ERNMapper {
         if (metadata.releaseType) {
             // Map internal release types to strict DDEX types if different
             // Assuming types match for now based on types.ts
-            releaseType = metadata.releaseType as ReleaseType;
+            if (metadata.releaseType === 'AudioAlbum') releaseType = 'Album';
+            else if (metadata.releaseType === 'Single') releaseType = 'Single';
+            else if (metadata.releaseType === 'VideoSingle') releaseType = 'VideoSingle';
+            else if (metadata.releaseType === 'Ringtone') releaseType = 'Ringtone';
+            else releaseType = metadata.releaseType as ReleaseType;
         }
 
         const genre: GenreWithSubGenre = {
@@ -142,10 +143,6 @@ export class ERNMapper {
         let resourceCounter = 1;
 
         // 1. Audio Resource (Primary)
-        // For a single, there is one sound recording.
-        // For albums, this would iterate over tracks.
-        // Assuming Single for ExtendedGoldenMetadata context for now.
-
         const audioRef = `A${resourceCounter++}`;
         resourceReferences.push(audioRef);
 
@@ -186,13 +183,12 @@ export class ERNMapper {
         const imageRef = `IMG${resourceCounter++}`;
         resourceReferences.push(imageRef);
 
-        // We assume there's cover art if we are distributing
         const imageResource: Resource = {
             resourceReference: imageRef,
             resourceType: 'Image',
             resourceId: {
                 proprietaryId: {
-                    proprietaryIdType: 'PartySpecific', // Or Use provided ID
+                    proprietaryIdType: 'PartySpecific',
                     id: `IMG-${metadata.isrc || Date.now()}`
                 }
             },
@@ -201,7 +197,7 @@ export class ERNMapper {
                 titleType: 'DisplayTitle'
             },
             displayArtistName: metadata.artistName,
-            contributors: [], // Usually specific to image
+            contributors: [],
             technicalDetails: {
                 // In a real scenario, we'd extract this from file metadata
             }
@@ -214,7 +210,7 @@ export class ERNMapper {
 
     private static buildDeals(
         metadata: ExtendedGoldenMetadata,
-        releaseReference: string
+        _releaseReference: string
     ): Deal[] {
         const deals: Deal[] = [];
         let dealCounter = 1;
@@ -228,17 +224,9 @@ export class ERNMapper {
             startDate: metadata.releaseDate
         };
 
-        // Helper to create and append a deal
-        const createAndAppendDeal = (model: CommercialModelType, use: UseType) => {
-            const deal: Deal = {
-                dealReference: `D${dealCounter++}`,
-                dealTerms: {
-                    commercialModelType: model,
-                    usage: [{ useType: use }],
         // Helper to create and add a deal
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
-            const deal: Deal = {
+             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
                     commercialModelType: commercialModel,
@@ -246,7 +234,6 @@ export class ERNMapper {
                         useType,
                         distributionChannelType: distributionChannel
                     }],
-                    usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -263,57 +250,29 @@ export class ERNMapper {
 
         const distributionChannels = metadata.distributionChannels || [];
 
+        // If 'physical' is the ONLY channel, we should fallback to default digital deals
+        // because we don't handle physical, but we want to ensure deals are generated.
+        // If distributionChannels is empty, we also fallback.
+        const hasStreaming = distributionChannels.includes('streaming');
+        const hasDownload = distributionChannels.includes('download');
+        const hasPhysical = distributionChannels.includes('physical');
+        const isPhysicalOnly = hasPhysical && !hasStreaming && !hasDownload;
+        const isEmpty = distributionChannels.length === 0;
+
         // 1. Streaming Deals
-        // Maps to Subscription (Premium) and Ad-Supported (Free) models with OnDemandStream usage.
-        if (distributionChannels.includes('streaming')) {
-            createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
-            createAndAppendDeal('AdvertisementSupportedModel', 'OnDemandStream');
-        }
-
-        // 2. Download Deals
-        // Maps to PayAsYouGo model with PermanentDownload usage.
-        if (distributionChannels.includes('download')) {
-            createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
-        // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
-        if (channels.includes('streaming')) {
-            addDeal('SubscriptionModel', 'OnDemandStream');
-            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
-            // Subscription Streaming (Premium)
-            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-
-            // Ad-Supported Streaming (Free Tier)
-            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
-
-            // Non-Interactive Streaming (Web Radio)
-            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
-            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
-        }
-
-        // 2. Download Deals
-        // Maps 'download' channel to Permanent Download (PayAsYouGo)
-        // Maps 'download' channel to PayAsYouGo (Permanent Download)
-        if (channels.includes('download')) {
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
-            // Permanent Download (iTunes, Amazon MP3, etc.)
-            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
-        }
-
-        // Fallback: If no channels specified (or empty), default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing or not yet populated.
-        // 3. Physical Deals
-        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
-        if (channels.includes('physical')) {
-            // Placeholder for future implementation
-        }
-
-        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing or empty
-        if (deals.length === 0) {
-             createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
-             createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
+        // Maps to Subscription (Premium) and Advertisement Supported (Free)
+        if (isEmpty || isPhysicalOnly || hasStreaming) {
              addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+             addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+        }
+
+        // 2. Download Deals
+        // Maps to Permanent Download (PayAsYouGo)
+        if (isEmpty || isPhysicalOnly || hasDownload) {
              addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
+
+        // Physical channels are explicitly ignored for now as we only support digital supply chain deals.
 
         return deals;
     }
@@ -322,7 +281,6 @@ export class ERNMapper {
         const contributors: Contributor[] = [];
 
         // Ensure Display Artist is included
-        // Check if display artist is in splits, if not add as MainArtist
         const artistInSplits = splits.find(s => s.legalName === displayArtist);
         if (!artistInSplits) {
             contributors.push({
@@ -336,9 +294,9 @@ export class ERNMapper {
         splits.forEach((split, index) => {
             let role: ContributorRole;
             switch (split.role) {
-                case 'songwriter': role = 'Composer'; break; // Approximate
+                case 'songwriter': role = 'Composer'; break;
                 case 'producer': role = 'Producer'; break;
-                case 'performer': role = 'FeaturedArtist'; break; // Defaulting to featured if not main
+                case 'performer': role = 'FeaturedArtist'; break;
                 default: role = 'AssociatedPerformer';
             }
 
