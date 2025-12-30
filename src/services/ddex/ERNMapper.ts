@@ -19,6 +19,8 @@ import {
     ReleaseType,
     ContributorRole,
     ParentalWarningType,
+    CommercialModelType,
+    UseType,
 } from './types/common';
 
 /**
@@ -33,6 +35,7 @@ export class ERNMapper {
             sender: DPID;
             recipient: DPID;
             createdDateTime: string;
+            messageControlType?: 'LiveMessage' | 'TestMessage';
         }
     ): ERNMessage {
         const releaseReference = 'R1';
@@ -43,7 +46,7 @@ export class ERNMapper {
             messageSender: options.sender,
             messageRecipient: options.recipient,
             messageCreatedDateTime: options.createdDateTime,
-            messageControlType: 'LiveMessage', // TODO: Make configurable for testing
+            messageControlType: options.messageControlType || 'LiveMessage',
         };
 
         // 2. Build Release List
@@ -214,37 +217,103 @@ export class ERNMapper {
         releaseReference: string
     ): Deal[] {
         const deals: Deal[] = [];
+        let dealCounter = 1;
 
-        // Basic Deal: Worldwide, Streaming & Download, Start Immediately
+        // Default to Worldwide if no territories specified
         const territoryCode: TerritoryCode[] = metadata.territories.length > 0
             ? (metadata.territories as TerritoryCode[])
             : ['Worldwide'];
 
-        const deal: Deal = {
-            dealReference: 'D1',
-            dealTerms: {
-                commercialModelType: 'SubscriptionModel', // Simplified. Real world needs multiple deals (AdSupported, Download, etc)
-                usage: [
-                    { useType: 'OnDemandStream' },
-                    { useType: 'PermanentDownload' }
-                ],
-                territoryCode,
-                validityPeriod: {
-                    startDate: metadata.releaseDate
-                },
-                takeDown: false,
-            },
+        const validityPeriod = {
+            startDate: metadata.releaseDate
         };
 
-        // Release Display Start Date
-        if (metadata.releaseDate) {
-            deal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
+        // Helper to create and append a deal
+        const createAndAppendDeal = (model: CommercialModelType, use: UseType) => {
+            const deal: Deal = {
+                dealReference: `D${dealCounter++}`,
+                dealTerms: {
+                    commercialModelType: model,
+                    usage: [{ useType: use }],
+        // Helper to create and add a deal
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
+            const deal: Deal = {
+                dealReference: `D${dealCounter++}`,
+                dealTerms: {
+                    commercialModelType: commercialModel,
+                    usage: [{
+                        useType,
+                        distributionChannelType: distributionChannel
+                    }],
+                    usage: [{ useType, distributionChannelType }],
+                    territoryCode,
+                    validityPeriod,
+                    takeDown: false,
+                },
+            };
+
+            // Release Display Start Date
+            if (metadata.releaseDate) {
+                deal.dealTerms.releaseDisplayStartDate = metadata.releaseDate;
+            }
+
+            deals.push(deal);
+        };
+
+        const distributionChannels = metadata.distributionChannels || [];
+
+        // 1. Streaming Deals
+        // Maps to Subscription (Premium) and Ad-Supported (Free) models with OnDemandStream usage.
+        if (distributionChannels.includes('streaming')) {
+            createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
+            createAndAppendDeal('AdvertisementSupportedModel', 'OnDemandStream');
         }
 
-        deals.push(deal);
+        // 2. Download Deals
+        // Maps to PayAsYouGo model with PermanentDownload usage.
+        if (distributionChannels.includes('download')) {
+            createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
+        // Maps 'streaming' channel to both Subscription (Premium) and Ad-Supported (Free) models
+        if (channels.includes('streaming')) {
+            addDeal('SubscriptionModel', 'OnDemandStream');
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
+            // Subscription Streaming (Premium)
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
 
-        // TODO: Add more deal types based on `metadata.distributionChannels`
-        // e.g. if 'download' in channels, ensure PermanentDownload is present.
+            // Ad-Supported Streaming (Free Tier)
+            addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
+
+            // Non-Interactive Streaming (Web Radio)
+            addDeal('SubscriptionModel', 'NonInteractiveStream', 'Stream');
+            addDeal('AdvertisementSupportedModel', 'NonInteractiveStream', 'Stream');
+        }
+
+        // 2. Download Deals
+        // Maps 'download' channel to Permanent Download (PayAsYouGo)
+        // Maps 'download' channel to PayAsYouGo (Permanent Download)
+        if (channels.includes('download')) {
+            addDeal('PayAsYouGoModel', 'PermanentDownload');
+            // Permanent Download (iTunes, Amazon MP3, etc.)
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+        }
+
+        // Fallback: If no channels specified (or empty), default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing or not yet populated.
+        // 3. Physical Deals
+        // Note: Physical channels are currently ignored in this mapper as they require different supply chain logic.
+        if (channels.includes('physical')) {
+            // Placeholder for future implementation
+        }
+
+        // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing or empty
+        if (deals.length === 0) {
+             createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
+             createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
+             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+        }
 
         return deals;
     }

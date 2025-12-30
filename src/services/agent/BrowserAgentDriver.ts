@@ -58,8 +58,9 @@ export class BrowserAgentDriver {
                         "thought": "Reasoning for your action",
                         "action": "click" | "type" | "scroll" | "wait" | "finish" | "fail",
                         "params": {
-                            "selector": "CSS selector (required for click/type)",
-                            "text": "Text to type (required for type)",
+                            "selector": "CSS selector (click/type) OR direction (scroll: 'up'/'down'/'top'/'bottom')",
+                            "selector": "CSS selector (click/type) OR direction (scroll: 'up'|'down'|'top'|'bottom')",
+                            "text": "Text to type (type) OR amount/duration (scroll/wait)",
                             "reason": "Reason for finishing or failing"
                         }
                     }
@@ -118,7 +119,26 @@ export class BrowserAgentDriver {
                         if (!selector || !text) throw new Error('Missing params for type');
                         actionResult = await window.electronAPI.agent.performAction('type', selector, text);
                         break;
-                    // TODO: Implement scroll/wait in Main process if needed
+                    case 'scroll':
+                        // selector serves as direction (default: 'down'), text as amount (default: '500')
+                    case 'scroll': {
+                        // selector serves as direction, text as amount
+                        const direction = selector || 'down';
+                        const amount = text || '500';
+                        actionResult = await window.electronAPI.agent.performAction('scroll', direction, amount);
+                        break;
+                    case 'wait':
+                        // text serves as duration in ms (default: '1000')
+                        const duration = text || '1000';
+                        actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
+                        break;
+                    }
+                    case 'wait': {
+                        // text serves as duration
+                        const duration = text || '1000';
+                        actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
+                        break;
+                    }
                     default:
                         logs.push(`[Driver] Warning: Unsupported action ${plan.action}`);
                 }

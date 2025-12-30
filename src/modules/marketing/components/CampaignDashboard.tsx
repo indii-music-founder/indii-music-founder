@@ -1,14 +1,34 @@
 import React, { useState } from 'react';
 import CampaignManager from './CampaignManager';
+import CreateCampaignModal from './CreateCampaignModal';
+import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '../types';
 import { Megaphone } from 'lucide-react';
 
 const CampaignDashboard: React.FC = () => {
     // Placeholder state - in a real app, this would come from a store or API
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const handleUpdate = (updatedCampaign: CampaignAsset) => {
         setSelectedCampaign(updatedCampaign);
+    };
+
+    const handleCreateCampaign = () => {
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCreateSave = async (campaignId?: string) => {
+        if (campaignId) {
+            const campaign = await MarketingService.getCampaignById(campaignId);
+            if (campaign) {
+                setSelectedCampaign(campaign);
+            }
+        }
+    };
+
+    const handleOpenCreateModal = () => {
+        setIsCreateModalOpen(true);
     };
 
     if (!selectedCampaign) {
@@ -23,14 +43,18 @@ const CampaignDashboard: React.FC = () => {
                 </p>
                 <button
                     className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors"
-                    onClick={() => {
-                        // TODO: Open campaign creation modal when backend is ready
-                        // For now, show empty state
-                    }}
+                    onClick={handleCreateCampaign}
+                    onClick={handleOpenCreateModal}
                 >
                     Create New Campaign
                 </button>
-                <p className="text-gray-500 text-xs mt-4">Campaign creation coming soon</p>
+
+                {isCreateModalOpen && (
+                    <CreateCampaignModal
+                        onClose={() => setIsCreateModalOpen(false)}
+                        onSave={handleCreateSave}
+                    />
+                )}
             </div>
         );
     }

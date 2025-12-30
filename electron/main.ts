@@ -60,7 +60,7 @@ function setupIpcHandlers() {
         }
     });
 
-    ipcMain.handle('agent:perform-action', async (_event: any, action: 'click' | 'type', selector: string, text?: string) => {
+    ipcMain.handle('agent:perform-action', async (_event: any, action: string, selector: string, text?: string) => {
         const { browserAgentService } = await import('./services/BrowserAgentService');
         return await browserAgentService.performAction(action, selector, text);
     });

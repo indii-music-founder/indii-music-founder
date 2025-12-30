@@ -6,7 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 
 interface Props {
     onClose: () => void;
-    onSave: () => void;
+    onSave: (campaignId?: string) => void;
 }
 
 export default function CreateCampaignModal({ onClose, onSave }: Props) {
@@ -27,7 +27,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
         setIsLoading(true);
         try {
-            await MarketingService.createCampaign({
+            const id = await MarketingService.createCampaign({
                 assetType: 'campaign',
                 title,
                 description,
@@ -38,7 +38,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                 posts: []
             });
             toast.success('Campaign created successfully!');
-            onSave();
+            onSave(id);
             onClose();
         } catch (error) {
             console.error(error);
@@ -63,8 +63,9 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
                 <form onSubmit={handleSave} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Campaign Name *</label>
+                        <label htmlFor="campaign-title" className="block text-sm font-medium text-gray-400 mb-1">Campaign Name *</label>
                         <input
+                            id="campaign-title"
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -75,8 +76,9 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                        <label htmlFor="campaign-description" className="block text-sm font-medium text-gray-400 mb-1">Description</label>
                         <textarea
+                            id="campaign-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief overview of the campaign..."
@@ -86,10 +88,16 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
+                            <label htmlFor="campaign-start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
                                 <input
+                                    id="campaign-start-date"
+                            <label htmlFor="start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
+                                <input
+                                    id="start-date"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
@@ -99,10 +107,16 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
+                            <label htmlFor="campaign-end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
                             <div className="relative">
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
                                 <input
+                                    id="campaign-end-date"
+                            <label htmlFor="end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
+                                <input
+                                    id="end-date"
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
@@ -113,8 +127,12 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
+                        <label htmlFor="campaign-platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
                         <select
+                            id="campaign-platform"
+                        <label htmlFor="platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
+                        <select
+                            id="platform"
                             value={platform}
                             onChange={(e) => setPlatform(e.target.value)}
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
