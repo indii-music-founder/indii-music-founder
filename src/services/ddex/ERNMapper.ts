@@ -227,11 +227,16 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
                     commercialModelType: commercialModel,
+                    usage: [{
+                        useType,
+                        distributionChannelType: distributionChannel
+                    }],
                     usage: [{ useType, distributionChannelType }],
                     territoryCode,
                     validityPeriod,
@@ -267,6 +272,7 @@ export class ERNMapper {
 
         // 2. Download Deals
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
+        // Maps 'download' channel to PayAsYouGo (Permanent Download)
         if (channels.includes('download')) {
             addDeal('PayAsYouGoModel', 'PermanentDownload');
             // Permanent Download (iTunes, Amazon MP3, etc.)
