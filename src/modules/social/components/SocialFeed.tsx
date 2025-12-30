@@ -39,12 +39,6 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
     const userProfile = useStore((state) => state.userProfile);
 
-    useEffect(() => {
-        if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
-            loadArtistProducts();
-        }
-    }, [userProfile]);
-
     const loadArtistProducts = async () => {
         if (!userProfile?.id) return;
         try {
@@ -54,6 +48,18 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             console.error("Failed to load products for picker:", error);
         }
     };
+
+    useEffect(() => {
+        if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
+            // Wrap in timeout to avoid "synchronous state update" lint error
+            const timer = setTimeout(() => {
+                void loadArtistProducts();
+            }, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [userProfile]);
+
+
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) return;

@@ -13,11 +13,11 @@ import { KnowledgeTools } from './tools/KnowledgeTools';
 import { ProjectTools } from './tools/ProjectTools';
 import { NavigationTools } from './tools/NavigationTools';
 import { MapsTools } from './tools/MapsTools';
-// DISABLED: Mock implementations - not production ready (returns fake data)
-// Re-enable when real GCP SDK integrations are implemented
-// import { execute_bigquery_query, get_table_schema } from './tools/BigQueryTools';
-// import { list_clusters, get_cluster_status, scale_deployment, list_instances, restart_service } from './tools/DevOpsTools';
-// import { check_api_status, scan_content, rotate_credentials, verify_zero_touch_prod, check_core_dump_policy, audit_workload_isolation } from './tools/SecurityTools';
+import { BrandTools } from './tools/BrandTools';
+import { MarketingTools } from './tools/MarketingTools';
+import { RoadTools } from './tools/RoadTools';
+import { SecurityTools } from './tools/SecurityTools';
+import { DevOpsTools } from './tools/DevOpsTools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -32,20 +32,16 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...ProjectTools,
     ...NavigationTools,
     ...MapsTools,
-    // DISABLED: Mock tools removed from registry
-    // execute_bigquery_query,
-    // get_table_schema,
-    // list_clusters,
-    // get_cluster_status,
-    // scale_deployment,
-    // list_instances,
-    // restart_service,
-    // check_api_status,
-    // scan_content,
-    // rotate_credentials,
-    // verify_zero_touch_prod,
-    // check_core_dump_policy,
-    // audit_workload_isolation,
+    ...PUBLICIST_TOOLS,
+    ...BrandTools,
+    ...MarketingTools,
+    ...RoadTools,
+    ...SecurityTools
+    ...BrandTools,
+    ...MarketingTools,
+    ...RoadTools,
+    ...SecurityTools,
+    ...DevOpsTools,
     ...PUBLICIST_TOOLS
 };
 
@@ -85,4 +81,15 @@ AVAILABLE TOOLS:
 32. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
 33. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.
 34. get_distance_matrix(origins: string[], destinations: string[]) - Calculate travel time and distance between locations.
+35. analyze_brand_consistency(content: string, brand_guidelines?: string) - Analyze brand consistency.
+36. generate_brand_guidelines(assets_description: string, tone_keywords: string[], mission_statement: string) - Generate brand guidelines.
+37. audit_visual_assets(asset_urls: string[], brand_colors?: string[]) - Audit visual assets.
+38. create_campaign_brief(product: string, goal: string, budget?: string, duration?: string) - Create marketing campaign brief.
+39. analyze_audience(genre: string, similar_artists?: string[]) - Analyze target audience.
+40. schedule_content(campaign_start: string, platforms: string[], frequency: string) - Create content calendar.
+41. plan_tour_route(start_location: string, end_location: string, stops: string[], timeframe: string) - Plan tour route.
+42. calculate_tour_budget(crew_size: number, duration_days: number, accommodation_level: string) - Calculate tour budget.
+43. generate_itinerary(city: string, date: string, venue: string, show_time: string) - Generate daily itinerary.
+44. audit_permissions(project_id?: string) - Audit security permissions.
+45. scan_for_vulnerabilities(scope: string) - Scan for vulnerabilities.
 `;

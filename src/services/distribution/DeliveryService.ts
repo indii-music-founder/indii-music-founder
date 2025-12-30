@@ -2,7 +2,7 @@
 import path from 'path';
 import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter } from './transport/SFTPTransporter';
-import { DistributorId, ExtendedGoldenMetadata } from './types/distributor';
+import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from './types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 
 export interface DeliveryResult {
@@ -30,6 +30,7 @@ export class DeliveryService {
      * Note: This method requires a Node.js environment (Electron Main) to write files to disk.
      * In a browser environment, it will return the generated XML content but fail to write to disk.
      */
+    async generateReleasePackage(metadata: ExtendedGoldenMetadata, outputDir: string, assets?: ReleaseAssets): Promise<{ success: boolean; packagePath?: string; xml?: string; error?: string }> {
     async generateReleasePackage(
         metadata: ExtendedGoldenMetadata,
         outputDir: string,
@@ -37,7 +38,7 @@ export class DeliveryService {
     ): Promise<{ success: boolean; packagePath?: string; xml?: string; error?: string }> {
         try {
             // 1. Generate ERN XML
-            const generationResult = await ernService.generateERN(metadata);
+            const generationResult = await ernService.generateERN(metadata, undefined, undefined, assets);
             if (!generationResult.success || !generationResult.xml) {
                 return {
                     success: false,
@@ -64,6 +65,7 @@ export class DeliveryService {
                 const xmlPath = path.join(outputDir, 'ern.xml');
                 await fs.promises.writeFile(xmlPath, generationResult.xml, 'utf8');
 
+                // 3. Copy Assets
                 // 3. Copy Assets if provided
                 if (assets) {
                     const resourcesDir = path.join(outputDir, 'resources');
@@ -71,6 +73,57 @@ export class DeliveryService {
                         await fs.promises.mkdir(resourcesDir, { recursive: true });
                     }
 
+                    // Copy Audio Files (Multi-track support)
+                    if (assets.audioFiles && assets.audioFiles.length > 0) {
+                        for (let i = 0; i < assets.audioFiles.length; i++) {
+                            const asset = assets.audioFiles[i];
+                            if (asset && asset.url) {
+                                // Match naming convention in ERNMapper: A{i+1}.{ext}
+                                // Note: ERNMapper assigns IDs starting from A1, A2... based on metadata.tracks order.
+                                // We assume assets.audioFiles corresponds to this order (or trackIndex).
+
+                                // Determine index. If trackIndex is provided, use it. Otherwise use loop index.
+                                // ERNMapper resource counter starts at 1 and increments for each track.
+                                const resourceIndex = (asset.trackIndex !== undefined) ? asset.trackIndex : i;
+                                const resourceRef = `A${resourceIndex + 1}`;
+
+                                const audioExt = asset.format || 'wav';
+                                const audioDest = path.join(resourcesDir, `${resourceRef}.${audioExt}`);
+
+                                await fs.promises.copyFile(asset.url, audioDest);
+                            }
+                        }
+                    } else if (assets.audioFile && assets.audioFile.url) {
+                        // Backward compatibility for singular audioFile
+                        const audioExt = assets.audioFile.format || 'wav';
+                        const audioDest = path.join(resourcesDir, `A1.${audioExt}`);
+                        await fs.promises.copyFile(assets.audioFile.url, audioDest);
+                    }
+
+                    // Copy Cover Art
+                    if (assets.coverArt && assets.coverArt.url) {
+                         // Simple extension inference
+                        const imageExt = assets.coverArt.url.split('.').pop() || 'jpg';
+                        // ERNMapper uses continuous counter. If 5 tracks (A1-A5), Image is IMG6.
+                        // Wait, ERNMapper uses separate counter? No, `resourceCounter`.
+                        // Let's re-read ERNMapper.ts logic carefully.
+                        // audioRef = `A${resourceCounter++}`
+                        // imageRef = `IMG${resourceCounter++}`
+                        // So if we have 2 tracks: A1, A2. Then IMG3.
+                        // DeliveryService must calculate this correct index or ERNMapper must handle it.
+                        // ERNMapper puts the filename in the XML. DeliveryService must match it.
+
+                        // Recalculate counter:
+                        const trackCount = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks.length : 1;
+                        const imageResourceIndex = trackCount + 1;
+
+                        // Actually ERNMapper uses `IMG${resourceCounter}`.
+                        // So if trackCount=1: A1. IMG2.
+                        // If trackCount=2: A1, A2. IMG3.
+
+                        const imageRef = `IMG${imageResourceIndex}`;
+                        const imageDest = path.join(resourcesDir, `${imageRef}.${imageExt}`);
+                        await fs.promises.copyFile(assets.coverArt.url, imageDest);
                     // Helper to copy file
                     const copyAsset = async (source: string, destinationName: string) => {
                         try {
@@ -132,9 +185,9 @@ export class DeliveryService {
      * Validate a release package before delivery
      * Generates and validates the ERN message from metadata
      */
-    async validateReleasePackage(metadata: ExtendedGoldenMetadata): Promise<{ valid: boolean; errors: string[] }> {
+    async validateReleasePackage(metadata: ExtendedGoldenMetadata, assets?: ReleaseAssets): Promise<{ valid: boolean; errors: string[] }> {
         // 1. Generate ERN XML
-        const generationResult = await ernService.generateERN(metadata);
+        const generationResult = await ernService.generateERN(metadata, undefined, undefined, assets);
         if (!generationResult.success || !generationResult.xml) {
             return {
                 valid: false,

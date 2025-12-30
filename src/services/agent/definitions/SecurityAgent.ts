@@ -1,7 +1,7 @@
 import { AgentConfig } from '../types';
 
 export const SecurityAgent: AgentConfig = {
-    id: 'security-agent',
+    id: 'security',
     name: 'Security Guardian',
     description: 'Specialist for API security, data governance, and AI safety checks.',
     color: 'bg-red-600',
