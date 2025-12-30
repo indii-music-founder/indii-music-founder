@@ -20,6 +20,7 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     releaseDate: '2025-01-01',
     territories: ['Worldwide'],
     distributionChannels: [], // To be overridden
+    distributionChannels: [],
     upc: '123456789012',
     catalogNumber: 'TEST001',
     aiGeneratedContent: {
@@ -42,6 +43,7 @@ describe('ERNMapper Deal Generation', () => {
     };
 
     it('should generate Streaming deals when "streaming" channel is present', () => {
+    it('should generate Streaming deals correctly', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             distributionChannels: ['streaming']
@@ -51,6 +53,12 @@ describe('ERNMapper Deal Generation', () => {
 
         // Expect 3 deals: SubscriptionModel (Premium), AdvertisementSupportedModel, SubscriptionModel (NonInteractive)
         expect(deals).toHaveLength(3);
+        // Expect 4 deals based on implementation:
+        // 1. SubscriptionModel OnDemandStream Stream
+        // 2. AdvertisementSupportedModel OnDemandStream Stream
+        // 3. SubscriptionModel NonInteractiveStream Stream
+        // 4. AdvertisementSupportedModel NonInteractiveStream Stream
+        expect(deals).toHaveLength(4);
 
         const subDeal = deals.find(d =>
             d.dealTerms.commercialModelType === 'SubscriptionModel' &&
@@ -66,6 +74,7 @@ describe('ERNMapper Deal Generation', () => {
     });
 
     it('should generate Download deals when "download" channel is present', () => {
+    it('should generate Download deals correctly', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             distributionChannels: ['download']
@@ -79,6 +88,8 @@ describe('ERNMapper Deal Generation', () => {
         const commercialModels = deals.map(d => d.dealTerms.commercialModelType);
         expect(commercialModels.every(m => m === 'PayAsYouGoModel')).toBe(true);
         expect(deals.every(d => d.dealTerms.usage[0].useType === 'PermanentDownload')).toBe(true);
+        // Expect 5 deals total (4 streaming + 1 download)
+        expect(deals).toHaveLength(5);
     });
 
     it('should generate Fallback deals when no channels are present', () => {
@@ -91,6 +102,11 @@ describe('ERNMapper Deal Generation', () => {
 
         // Fallback: Streaming + Download defaults -> 2 deals
         expect(deals.length).toBe(2);
+        // Fallback: Streaming (Subscription) + Download
+        expect(deals.length).toBe(2);
+
+        const subDeal = deals.find(d => d.dealTerms.commercialModelType === 'SubscriptionModel');
+        const downloadDeal = deals.find(d => d.dealTerms.commercialModelType === 'PayAsYouGoModel');
 
         const types = deals.map(d => d.dealTerms.commercialModelType);
         expect(types).toContain('SubscriptionModel');
@@ -109,5 +125,20 @@ describe('ERNMapper Deal Generation', () => {
 
         expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-12-25');
         expect(deal.dealTerms.validityPeriod.startDate).toBe('2025-12-25');
+        expect(deal.dealTerms.territoryCode).toEqual(['US', 'CA']);
+        expect(deal.dealTerms.validityPeriod.startDate).toBe('2025-05-01');
+        expect(deal.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');
+    });
+
+    it('should ignore "physical" channel and fallback if it is the only channel', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            distributionChannels: ['physical']
+        };
+
+        const deals = getDeals(metadata);
+
+        // Expect fallback behavior
+        expect(deals.length).toBe(2);
     });
 });
