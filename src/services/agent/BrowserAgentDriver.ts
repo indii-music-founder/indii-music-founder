@@ -59,6 +59,7 @@ export class BrowserAgentDriver {
                         "action": "click" | "type" | "scroll" | "wait" | "finish" | "fail",
                         "params": {
                             "selector": "CSS selector (click/type) OR direction (scroll: 'up'/'down'/'top'/'bottom')",
+                            "selector": "CSS selector (click/type) OR direction (scroll: 'up'|'down'|'top'|'bottom')",
                             "text": "Text to type (type) OR amount/duration (scroll/wait)",
                             "reason": "Reason for finishing or failing"
                         }
@@ -120,6 +121,8 @@ export class BrowserAgentDriver {
                         break;
                     case 'scroll':
                         // selector serves as direction (default: 'down'), text as amount (default: '500')
+                    case 'scroll': {
+                        // selector serves as direction, text as amount
                         const direction = selector || 'down';
                         const amount = text || '500';
                         actionResult = await window.electronAPI.agent.performAction('scroll', direction, amount);
@@ -129,6 +132,13 @@ export class BrowserAgentDriver {
                         const duration = text || '1000';
                         actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
                         break;
+                    }
+                    case 'wait': {
+                        // text serves as duration
+                        const duration = text || '1000';
+                        actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
+                        break;
+                    }
                     default:
                         logs.push(`[Driver] Warning: Unsupported action ${plan.action}`);
                 }
