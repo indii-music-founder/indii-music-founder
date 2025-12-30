@@ -1,115 +1,18 @@
 // Verified clean build content - Force Sync
-// Verified clean build content
-import { db } from '@/services/firebase';
-import {
-    collection,
-    query,
-    where,
-    getDocs,
-    Timestamp,
-    addDoc,
-    orderBy
-} from 'firebase/firestore';
-import { Timestamp, collection, query, where, getDocs, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, orderBy, limit, doc, setDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
 export interface RevenueEntry {
     id: string;
     productId: string;
-    amount: number;
-    source: 'direct' | 'social_drop';
-    customerId: string;
-    timestamp: Timestamp;
-    userId: string; // The artist who owns the product
-}
-
-export class RevenueService {
-    /**
-     * Get total revenue for a user
-     */
-    async getTotalRevenue(userId: string): Promise<number> {
-        const q = query(
-            collection(db, 'revenue'),
-            where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
-        let total = 0;
-        snapshot.forEach(doc => {
-            total += (doc.data() as RevenueEntry).amount;
-        });
-        return total;
-    }
-
-    /**
-     * Get revenue within a date range
-     */
-    async getRevenueByPeriod(userId: string, start: Date, end: Date): Promise<number> {
-        const q = query(
-            collection(db, 'revenue'),
-            where('userId', '==', userId),
-            where('timestamp', '>=', Timestamp.fromDate(start)),
-            where('timestamp', '<=', Timestamp.fromDate(end))
-        );
-        const snapshot = await getDocs(q);
-        let total = 0;
-        snapshot.forEach(doc => {
-            total += (doc.data() as RevenueEntry).amount;
-        });
-        return total;
-    }
-
-    /**
-     * Get revenue broken down by product ID
-     */
-    async getRevenueByProduct(userId: string): Promise<Map<string, number>> {
-        const q = query(
-            collection(db, 'revenue'),
-            where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
-        const map = new Map<string, number>();
-        snapshot.forEach(doc => {
-            const data = doc.data() as RevenueEntry;
-            const current = map.get(data.productId) || 0;
-            map.set(data.productId, current + data.amount);
-        });
-        return map;
-    }
-
-    /**
-     * Get revenue broken down by source (direct vs social_drop)
-     */
-    async getRevenueBySource(userId: string): Promise<{ direct: number; social: number }> {
-        const q = query(
-            collection(db, 'revenue'),
-            where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
-        let direct = 0;
-        let social = 0;
-        snapshot.forEach(doc => {
-            const data = doc.data() as RevenueEntry;
-            if (data.source === 'social_drop') {
-                social += data.amount;
-            } else {
-                direct += data.amount;
-            }
-        });
-        return { direct, social };
-    }
-
-    /**
-     * Record a new sale
-     */
-    async recordSale(entry: Omit<RevenueEntry, 'id'>): Promise<void> {
-        await addDoc(collection(db, 'revenue'), entry);
-    productName: string;
+    productName?: string;
     amount: number;
     currency: string;
     source: 'direct' | 'social_drop' | 'streaming' | 'merch';
     customerId: string;
     timestamp: Timestamp;
     status: 'pending' | 'completed' | 'refunded';
+    userId?: string; // Optional for compatibility
 }
 
 export interface RevenueSummary {
@@ -124,7 +27,7 @@ export interface RevenueSummary {
     recentTransactions: RevenueEntry[];
 }
 
-class RevenueService {
+export class RevenueService {
     private readonly COLLECTION = 'revenue';
 
     /**
@@ -133,28 +36,22 @@ class RevenueService {
     async recordSale(entry: Omit<RevenueEntry, 'id' | 'timestamp'>): Promise<string> {
         const id = `REV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const timestamp = Timestamp.now();
-
-        await setDoc(doc(db, this.COLLECTION, id), {
+        const entryWithDefaults = {
             ...entry,
             id,
-            timestamp,
-            status: 'completed' // Default to completed for simple mock
-        });
+            timestamp
+        };
+
+        // Use setDoc to specify ID
+        await setDoc(doc(db, this.COLLECTION, id), entryWithDefaults);
 
         return id;
     }
 
     /**
      * Get total revenue summary for a user/org
-     * Aggregates on the fly (naive implementation for MVP)
      */
     async getRevenueSummary(orgId: string): Promise<RevenueSummary> {
-        // In a real app, this would query a pre-aggregated 'stats' document
-        // Here we query recent transactions
-
-        // Mocking aggregation for now as we don't have all transactions in Firestore yet
-        // In production, use a dedicated 'analytics' collection updated via Cloud Functions
-
         const summary: RevenueSummary = {
             totalRevenue: 0,
             currency: 'USD',
@@ -175,8 +72,8 @@ class RevenueService {
             );
 
             const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                const data = doc.data() as RevenueEntry;
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data() as RevenueEntry;
                 summary.recentTransactions.push(data);
 
                 if (data.status === 'completed') {
@@ -195,7 +92,7 @@ class RevenueService {
     }
 
     /**
-     * Get revenue specific to a product (e.g., for Product Card stats)
+     * Get revenue specific to a product
      */
     async getProductRevenue(productId: string): Promise<number> {
         try {
@@ -207,8 +104,30 @@ class RevenueService {
 
             const snapshot = await getDocs(q);
             let total = 0;
-            snapshot.forEach(doc => {
-                total += doc.data().amount;
+            snapshot.forEach(docSnap => {
+                total += docSnap.data().amount || 0;
+            });
+            return total;
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get revenue by period (Legacy compatibility method)
+     */
+    async getRevenueByPeriod(userId: string, start: Date, end: Date): Promise<number> {
+        try {
+            const q = query(
+                collection(db, this.COLLECTION),
+                where('userId', '==', userId), // Assuming userId is added to records
+                where('timestamp', '>=', Timestamp.fromDate(start)),
+                where('timestamp', '<=', Timestamp.fromDate(end))
+            );
+            const snapshot = await getDocs(q);
+            let total = 0;
+            snapshot.forEach(docSnap => {
+                total += (docSnap.data() as RevenueEntry).amount;
             });
             return total;
         } catch (e) {
