@@ -2,6 +2,7 @@ import {
     ExtendedGoldenMetadata,
     RoyaltySplit,
 } from '@/services/metadata/types';
+import { ReleaseAssets } from '@/services/distribution/types/distributor';
 import {
     ERNMessage,
     Release,
@@ -35,7 +36,8 @@ export class ERNMapper {
             recipient: DPID;
             createdDateTime: string;
             messageControlType?: 'LiveMessage' | 'TestMessage';
-        }
+        },
+        assets?: ReleaseAssets
     ): ERNMessage {
         const releaseReference = 'R1';
 
@@ -52,7 +54,7 @@ export class ERNMapper {
         const mainRelease = this.buildMainRelease(metadata, releaseReference);
 
         // 3. Build Resource List
-        const { resources, resourceReferences } = this.buildResources(metadata);
+        const { resources, resourceReferences } = this.buildResources(metadata, assets);
         // Link resources to main release
         mainRelease.releaseResourceReferenceList = resourceReferences;
 
@@ -134,7 +136,7 @@ export class ERNMapper {
         return release;
     }
 
-    private static buildResources(metadata: ExtendedGoldenMetadata): {
+    private static buildResources(metadata: ExtendedGoldenMetadata, assets?: ReleaseAssets): {
         resources: Resource[];
         resourceReferences: string[];
     } {
@@ -142,44 +144,90 @@ export class ERNMapper {
         const resourceReferences: string[] = [];
         let resourceCounter = 1;
 
+        // Determine tracks to process
+        // If it's a Single, metadata acts as the track if tracks array is empty.
+        // If it's an Album/EP, iterate metadata.tracks.
+        const tracksToProcess = (metadata.tracks && metadata.tracks.length > 0)
+            ? metadata.tracks
+            : [metadata]; // Treat root as the single track
+
+        // 1. Audio Resources
+        tracksToProcess.forEach((track, index) => {
+            const audioRef = `A${resourceCounter++}`;
+            resourceReferences.push(audioRef);
+
+            const audioResource: Resource = {
+                resourceReference: audioRef,
+                resourceType: 'SoundRecording',
+                resourceId: {
+                    isrc: track.isrc,
+                },
+                resourceTitle: {
+                    titleText: track.trackTitle,
+                    titleType: 'DisplayTitle',
+                },
+                displayArtistName: track.artistName,
+                contributors: this.mapContributors(track.splits, track.artistName),
+                duration: track.durationFormatted ? `PT${track.durationFormatted.replace(':', 'M')}S` : undefined,
+                parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',
+                soundRecordingDetails: {
+                    soundRecordingType: 'MusicalWorkSoundRecording',
+                    isInstrumental: track.isInstrumental || false,
+                    languageOfPerformance: track.language
+                }
+            };
         // 1. Audio Resource (Primary)
         const audioRef = `A${resourceCounter++}`;
         resourceReferences.push(audioRef);
 
-        const audioResource: Resource = {
-            resourceReference: audioRef,
-            resourceType: 'SoundRecording',
-            resourceId: {
-                isrc: metadata.isrc,
-            },
-            resourceTitle: {
-                titleText: metadata.trackTitle,
-                titleType: 'DisplayTitle',
-            },
-            displayArtistName: metadata.artistName,
-            contributors: this.mapContributors(metadata.splits, metadata.artistName),
-            duration: metadata.durationFormatted ? `PT${metadata.durationFormatted.replace(':', 'M')}S` : undefined, // Simple formatting, needs robust logic
-            parentalWarningType: metadata.explicit ? 'Explicit' : 'NotExplicit',
-            soundRecordingDetails: {
-                soundRecordingType: 'MusicalWorkSoundRecording',
-                isInstrumental: metadata.isInstrumental || false,
-                languageOfPerformance: metadata.language
+            // AI Info for Resource
+            if (track.aiGeneratedContent) {
+                audioResource.aiGenerationInfo = {
+                    isFullyAIGenerated: track.aiGeneratedContent.isFullyAIGenerated,
+                    isPartiallyAIGenerated: track.aiGeneratedContent.isPartiallyAIGenerated,
+                    aiToolsUsed: track.aiGeneratedContent.aiToolsUsed,
+                    humanContributionDescription: track.aiGeneratedContent.humanContribution
+                }
             }
-        };
 
-        // AI Info for Resource
-        if (metadata.aiGeneratedContent) {
-            audioResource.aiGenerationInfo = {
-                isFullyAIGenerated: metadata.aiGeneratedContent.isFullyAIGenerated,
-                isPartiallyAIGenerated: metadata.aiGeneratedContent.isPartiallyAIGenerated,
-                aiToolsUsed: metadata.aiGeneratedContent.aiToolsUsed,
-                humanContributionDescription: metadata.aiGeneratedContent.humanContribution
-            }
-        }
+             // Link TechnicalDetails from Assets
+             if (assets && assets.audioFiles && assets.audioFiles.length > index) {
+                // Try to match by explicit mapping if available (e.g. trackIndex) or fallback to order
+                const matchedAsset = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
 
-        resources.push(audioResource);
+                if (matchedAsset) {
+                    const ext = matchedAsset.format || 'wav';
+                    audioResource.technicalDetails = {
+                        file: {
+                            fileName: `${audioRef}.${ext}`
+                        }
+                    };
+                } else {
+                     // Fallback default
+                    audioResource.technicalDetails = {
+                        file: { fileName: `${audioRef}.wav` }
+                    };
+                }
+             } else if (assets && assets.audioFile && index === 0) {
+                 // Backward compatibility for singular audioFile (Single release only)
+                  const ext = assets.audioFile.format || 'wav';
+                  audioResource.technicalDetails = {
+                      file: {
+                          fileName: `${audioRef}.${ext}`
+                      }
+                  };
+             } else {
+                 // No matching asset found
+                 audioResource.technicalDetails = {
+                     file: { fileName: `${audioRef}.wav` }
+                 };
+             }
+
+             resources.push(audioResource);
+        });
 
         // 2. Image Resource (Cover Art)
+        // Typically one cover art for the release.
         const imageRef = `IMG${resourceCounter++}`;
         resourceReferences.push(imageRef);
 
@@ -202,8 +250,23 @@ export class ERNMapper {
                 // In a real scenario, we'd extract this from file metadata
             }
         }
-        resources.push(imageResource);
 
+        if (assets && assets.coverArt) {
+             const ext = assets.coverArt.url.split('.').pop() || 'jpg';
+             imageResource.technicalDetails = {
+                file: {
+                    fileName: `${imageRef}.${ext}`
+                }
+             };
+        } else {
+             imageResource.technicalDetails = {
+                file: {
+                    fileName: `${imageRef}.jpg`
+                }
+             };
+        }
+
+        resources.push(imageResource);
 
         return { resources, resourceReferences };
     }
@@ -225,6 +288,7 @@ export class ERNMapper {
         };
 
         // Helper to create and add a deal
+        const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannel?: 'Download' | 'Stream') => {
         const addDeal = (commercialModel: CommercialModelType, useType: UseType, distributionChannelType?: 'Download' | 'Stream' | 'MobileDevice') => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
@@ -274,6 +338,7 @@ export class ERNMapper {
         }
 
         // 2. Download Deals
+        // Maps 'download' channel to PayAsYouGo (Permanent Download)
         // Maps 'download' channel to Permanent Download (PayAsYouGo)
         if (distributionChannels.includes('download')) {
             // Permanent Download (iTunes, Amazon MP3, etc.)

@@ -39,7 +39,18 @@ export interface MultiDistributorReleaseRequest {
 
 // Release assets required for distribution
 export interface ReleaseAssets {
-  audioFile: {
+  // Support multiple audio files for multi-track releases
+  audioFiles: {
+    trackIndex?: number; // Optional: Explicit mapping to metadata track index
+    url: string;
+    mimeType: string;
+    sizeBytes: number;
+    format: 'wav' | 'flac' | 'mp3' | 'aac';
+    sampleRate: number;
+    bitDepth: number;
+  }[];
+  // Deprecated: Singular audioFile for backward compatibility (optional)
+  audioFile?: {
     url: string;
     mimeType: string;
     sizeBytes: number;
