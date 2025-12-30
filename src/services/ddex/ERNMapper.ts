@@ -19,6 +19,8 @@ import {
     ReleaseType,
     ContributorRole,
     ParentalWarningType,
+    CommercialModelType,
+    UseType,
 } from './types/common';
 
 /**
@@ -225,13 +227,13 @@ export class ERNMapper {
             startDate: metadata.releaseDate
         };
 
-        // Helper to create and add a deal
-        const addDeal = (commercialModel: CommercialModelType, useType: UseType) => {
+        // Helper to create and append a deal
+        const createAndAppendDeal = (model: CommercialModelType, use: UseType) => {
             const deal: Deal = {
                 dealReference: `D${dealCounter++}`,
                 dealTerms: {
-                    commercialModelType: commercialModel,
-                    usage: [{ useType }],
+                    commercialModelType: model,
+                    usage: [{ useType: use }],
                     territoryCode,
                     validityPeriod,
                     takeDown: false,
@@ -246,28 +248,26 @@ export class ERNMapper {
             deals.push(deal);
         };
 
-        const channels = metadata.distributionChannels || [];
+        const distributionChannels = metadata.distributionChannels || [];
 
         // 1. Streaming Deals
-        if (channels.includes('streaming')) {
-            // Subscription Streaming (Premium)
-            addDeal('SubscriptionModel', 'OnDemandStream');
-
-            // Ad-Supported Streaming (Free Tier)
-            addDeal('AdvertisementSupportedModel', 'OnDemandStream');
+        // Maps to Subscription (Premium) and Ad-Supported (Free) models with OnDemandStream usage.
+        if (distributionChannels.includes('streaming')) {
+            createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
+            createAndAppendDeal('AdvertisementSupportedModel', 'OnDemandStream');
         }
 
         // 2. Download Deals
-        if (channels.includes('download')) {
-            // Permanent Download (iTunes, Amazon MP3, etc.)
-            addDeal('PayAsYouGoModel', 'PermanentDownload');
+        // Maps to PayAsYouGo model with PermanentDownload usage.
+        if (distributionChannels.includes('download')) {
+            createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
         }
 
-        // Fallback: If no channels specified but we have a release, default to Streaming + Download
-        // This ensures backward compatibility if distributionChannels is missing
+        // Fallback: If no channels specified (or empty), default to Streaming + Download
+        // This ensures backward compatibility if distributionChannels is missing or not yet populated.
         if (deals.length === 0) {
-             addDeal('SubscriptionModel', 'OnDemandStream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload');
+             createAndAppendDeal('SubscriptionModel', 'OnDemandStream');
+             createAndAppendDeal('PayAsYouGoModel', 'PermanentDownload');
         }
 
         return deals;
