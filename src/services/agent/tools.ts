@@ -17,6 +17,7 @@ import { BrandTools } from './tools/BrandTools';
 import { MarketingTools } from './tools/MarketingTools';
 import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
+import { DevOpsTools } from './tools/DevOpsTools';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -36,6 +37,12 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...MarketingTools,
     ...RoadTools,
     ...SecurityTools
+    ...BrandTools,
+    ...MarketingTools,
+    ...RoadTools,
+    ...SecurityTools,
+    ...DevOpsTools,
+    ...PUBLICIST_TOOLS
 };
 
 export const BASE_TOOLS = `
