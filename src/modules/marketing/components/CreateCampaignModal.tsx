@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { X, Calendar, Target, Image as ImageIcon, Plus, Loader2 } from 'lucide-react';
 import { X, Calendar, Plus, Loader2 } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from '../types';
@@ -56,6 +57,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <Plus className="text-blue-500" />
                         New Campaign
                     </h2>
+                    <button onClick={onClose} aria-label="Close modal" className="text-gray-400 hover:text-white transition-colors">
                     <button
                         onClick={onClose}
                         className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none rounded-md p-1"
@@ -149,6 +151,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             disabled={isLoading}
                             className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
+                            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Launch Campaign'}
                             {isLoading ? (
                                 <>
                                     <Loader2 className="animate-spin" size={20} />
