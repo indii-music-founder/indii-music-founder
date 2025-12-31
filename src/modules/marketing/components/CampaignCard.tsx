@@ -50,7 +50,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick }) => {
                         </div>
                         <p className="text-sm text-gray-400 line-clamp-1">{campaign.description || "No description provided."}</p>
                     </div>
-                    <button className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5">
+                    <button
+                        className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
+                        aria-label="More options"
+                    >
                         <MoreHorizontalIcon size={18} />
                     </button>
                 </div>

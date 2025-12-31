@@ -13,6 +13,18 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
+vi.mock('@/modules/marketing/hooks/useMarketing', () => ({
+    useMarketing: vi.fn(() => ({
+        campaigns: [],
+        actions: {
+            createCampaign: vi.fn(),
+            refreshDashboard: vi.fn(),
+        },
+        isLoading: false,
+        error: null,
+    })),
+}));
+
 vi.mock('@/services/marketing/MarketingService', () => ({
     MarketingService: {
         getCampaignById: vi.fn(),
@@ -23,9 +35,12 @@ vi.mock('@/services/marketing/MarketingService', () => ({
 
 // Mock CampaignManager as it has its own complexities
 vi.mock('./CampaignManager', () => ({
-    default: ({ campaign }: any) => (
+    default: ({ selectedCampaign, onCreateNew }: any) => (
         <div data-testid="campaign-manager">
-            Managing: {campaign.title}
+            Managing: {selectedCampaign?.title || 'None'}
+            <button onClick={onCreateNew}>Create New Campaign</button>
+            <div>Select a campaign</div>
+            <div>Campaign Manager</div>
         </div>
     ),
 }));

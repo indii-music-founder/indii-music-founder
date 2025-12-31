@@ -109,7 +109,7 @@ export class DistributionPersistenceService {
 
     async getAllDeployments(filter?: DeploymentFilter): Promise<ReleaseDeployment[]> {
         try {
-            let constraints: any[] = [];
+            const constraints: any[] = [];
 
             if (filter) {
                 if (filter.distributorId) constraints.push(where('distributorId', '==', filter.distributorId));
