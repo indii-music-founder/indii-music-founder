@@ -172,6 +172,18 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         canViewProject(resource.data.projectId)
+      // Helper to check if user is a member of the project this file belongs to
+      function isProjectMember() {
+         let projectResource = get(/databases/$(database)/documents/projects/$(resource.data.projectId));
+         return isAuthenticated() &&
+                exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                isOrgMember(projectResource.data.orgId);
+      }
+
+      // Allow read if user owns the file OR is a member of the project
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isProjectMember()
       );
       
       // Allow create/update/delete only if user owns the node
