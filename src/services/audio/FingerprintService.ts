@@ -10,7 +10,7 @@ export class FingerprintService {
      * @param file The audio file to fingerprint
      * @param existingFeatures Optional pre-calculated features to optimize performance
      */
-    async generateFingerprint(file: File, existingFeatures?: AudioFeatures): Promise<string> {
+    async generateFingerprint(file: File, existingFeatures?: AudioFeatures): Promise<string | null> {
         try {
             // 1. Generate Data Hash (SHA-256)
             const arrayBuffer = await file.arrayBuffer();
@@ -27,7 +27,8 @@ export class FingerprintService {
                     features = await audioAnalysisService.analyze(file);
                 }
 
-                const duration = await this.getDuration(file);
+                // Optimization: Use pre-calculated duration if available
+                const duration = features?.duration || await this.getDuration(file);
                 // Format: BPM_KEY_DURATION
                 // We use Math.round for BPM/Duration to allow slight variations in "similar" files if we ever fuzzy match
                 featureTag = `${features.bpm}BPM_${features.key}${features.scale}_${Math.round(duration)}s`;
@@ -44,7 +45,7 @@ export class FingerprintService {
 
         } catch (error) {
             console.error('Fingerprint generation failed:', error);
-            return `ERR-${Date.now()}`;
+            return null;
         }
     }
 

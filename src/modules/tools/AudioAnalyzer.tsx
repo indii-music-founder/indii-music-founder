@@ -67,17 +67,25 @@ const AudioAnalyzer: React.FC = () => {
             const features = await audioAnalysisService.analyze(file);
 
             // 2. Generate Fingerprint (Composite ID)
-            const fingerprint = await fingerprintService.generateFingerprint(file, features);
+            let fingerprint: string | undefined;
+            try {
+                const result = await fingerprintService.generateFingerprint(file, features);
+                fingerprint = result || undefined; // Convert null to undefined
+            } catch (err) {
+                console.error("Fingerprint generation failed:", err);
+                fingerprint = 'GENERATION_FAILED';
+            }
 
             setMetadata({
-                fingerprint,
+                fingerprint: fingerprint || 'GENERATION_FAILED',
                 bpm: features.bpm,
-                key: features.key,
+                key: `${features.key} ${features.scale}`,
                 energy: features.energy,
                 duration: features.duration
             });
         } catch (error) {
             console.error("Analysis Failed:", error);
+            setMetadata(prev => ({ ...prev, fingerprint: 'ANALYSIS_FAILED' })); // Indicate overall analysis failure
         } finally {
             setIsAnalyzing(false);
         }
