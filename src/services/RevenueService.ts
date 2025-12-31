@@ -212,6 +212,62 @@ export class RevenueService {
             return { direct: 0, social: 0 };
         }
     }
+
+    /**
+     * Get all user revenue stats in a single query
+     * Optimization to prevent N+1 queries
+     */
+    async getUserRevenueStats(userId: string): Promise<{
+        totalRevenue: number;
+        revenueBySource: { direct: number; social: number };
+        revenueByProduct: Record<string, number>;
+    }> {
+        try {
+            const q = query(
+                collection(db, this.COLLECTION),
+                where('userId', '==', userId),
+                where('status', '==', 'completed')
+            );
+            const snapshot = await getDocs(q);
+
+            let totalRevenue = 0;
+            const revenueBySource = { direct: 0, social: 0 };
+            const revenueByProduct: Record<string, number> = {};
+
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data() as RevenueEntry;
+                const amount = data.amount || 0;
+
+                // Total
+                totalRevenue += amount;
+
+                // By Source
+                if (data.source === 'direct' || data.source === 'merch' || data.source === 'streaming') {
+                    revenueBySource.direct += amount;
+                } else if (data.source === 'social_drop') {
+                    revenueBySource.social += amount;
+                }
+
+                // By Product
+                if (data.productId) {
+                    revenueByProduct[data.productId] = (revenueByProduct[data.productId] || 0) + amount;
+                }
+            });
+
+            return {
+                totalRevenue,
+                revenueBySource,
+                revenueByProduct
+            };
+        } catch (e) {
+            console.error('[RevenueService] Failed to get user revenue stats', e);
+            return {
+                totalRevenue: 0,
+                revenueBySource: { direct: 0, social: 0 },
+                revenueByProduct: {}
+            };
+        }
+    }
 }
 
 export const revenueService = new RevenueService();

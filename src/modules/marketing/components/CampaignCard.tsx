@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 // Fix for React 19 type mismatch with Lucide
 const CalendarIcon = Calendar as any;
-const TrendingUpIcon = TrendingUp as any;
+// const TrendingUpIcon = TrendingUp as any; // Unused
 const MoreHorizontalIcon = MoreHorizontal as any;
 const ChevronRightIcon = ChevronRight as any;
 const ActivityIcon = Activity as any;
@@ -53,6 +53,11 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick }) => {
                     <button
                         className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
                         aria-label="More options"
+                        className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                        aria-label="More options"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                        }}
                     >
                         <MoreHorizontalIcon size={18} />
                     </button>
