@@ -13,6 +13,7 @@ import {
 import { SFTPTransporter } from '../transport/SFTPTransporter';
 import type { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
 import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
 
 /**
  * CD Baby Adapter
@@ -130,6 +131,13 @@ export class CDBabyAdapter implements IDistributorAdapter {
             // Simulate delay
             await new Promise(resolve => setTimeout(resolve, 1000));
 
+            // Persist
+            await distributionStore.createDeployment(releaseId, this.id, 'delivered', {
+                title: metadata.trackTitle,
+                artist: metadata.artistName,
+                coverArtUrl: _assets?.coverArt?.url
+            });
+
             return {
                 success: true,
                 status: 'delivered',
@@ -160,6 +168,12 @@ export class CDBabyAdapter implements IDistributorAdapter {
             throw new Error('Not connected to CD Baby');
         }
         console.log(`[CD Baby] Updating ${releaseId}`);
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         return {
             success: true,
             status: 'processing',

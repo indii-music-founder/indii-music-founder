@@ -151,6 +151,24 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "earnings",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "distributorId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "releaseId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "lastUpdated",
+                    "order": "DESCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

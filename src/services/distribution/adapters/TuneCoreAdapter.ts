@@ -11,6 +11,7 @@ import {
     type DistributorEarnings,
 } from '../types/distributor';
 import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
 
 /**
  * TuneCore Adapter
@@ -93,6 +94,13 @@ export class TuneCoreAdapter implements IDistributorAdapter {
             // Mock API call
             console.log('[TuneCore] API payload sent.');
 
+            // Persist
+            await distributionStore.createDeployment(releaseId, this.id, 'processing', {
+                title: metadata.trackTitle,
+                artist: metadata.artistName,
+                coverArtUrl: _assets?.coverArt?.url
+            });
+
             return {
                 success: true,
                 status: 'processing',
@@ -123,6 +131,12 @@ export class TuneCoreAdapter implements IDistributorAdapter {
             throw new Error('Not connected to TuneCore');
         }
         console.log(`[TuneCore] Updating release ${releaseId}`);
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         return {
             success: true,
             status: 'processing',

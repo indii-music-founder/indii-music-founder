@@ -17,6 +17,7 @@ import {
  */
 // import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
 import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -103,8 +104,17 @@ export class DistroKidAdapter implements IDistributorAdapter {
             console.log(`[DistroKid] Package created at: ${packagePath}`);
             console.log('[DistroKid] Ready for manual/bulk upload tool.');
 
-            // In a fully automated "Robot" scenario, we would now launch a browser to upload this.
-            // For now, we stop at "Package Ready" and mark as Delivered (to user's local disk).
+            // Persist deployment
+            await distributionStore.createDeployment(
+                releaseId,
+                this.id,
+                'delivered',
+                {
+                    title: metadata.trackTitle,
+                    artist: metadata.artistName,
+                    coverArtUrl: assets.coverArt.url
+                }
+            );
 
             return {
                 success: true,
@@ -137,6 +147,22 @@ export class DistroKidAdapter implements IDistributorAdapter {
         }
 
         console.log(`[DistroKid] Updating release ${releaseId} with updates:`, Object.keys(updates));
+
+        // Update status in persistence
+        // Note: In reality we would fetch the deployment ID associated with this releaseId first
+        // But for this adapter, releaseId IS the internal ID or close enough for the mock flow.
+        // Ideally we query getDeploymentsForRelease(releaseId) but here we might not have the deployment ID.
+        // For strict correctness, we'd look it up.
+        // Assuming releaseId passed here matches what we stored (it does in createRelease return).
+
+        // However, distributionStore keys by UUID. The releaseId returned by createRelease ('DK-...')
+        // is passed as internalReleaseId to createDeployment.
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         return {
             success: true,
             status: 'processing',

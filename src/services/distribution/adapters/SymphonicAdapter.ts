@@ -13,6 +13,7 @@ import {
 import { SFTPTransporter } from '../transport/SFTPTransporter';
 import type { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
 
 /**
  * Symphonic Adapter
@@ -122,6 +123,13 @@ export class SymphonicAdapter implements IDistributorAdapter {
             // Mock delay
             await new Promise(resolve => setTimeout(resolve, 1000));
 
+            // Persist
+            await distributionStore.createDeployment(releaseId, this.id, 'delivered', {
+                title: metadata.trackTitle,
+                artist: metadata.artistName,
+                coverArtUrl: assets.coverArt.url
+            });
+
             return {
                 success: true,
                 status: 'delivered',
@@ -153,6 +161,12 @@ export class SymphonicAdapter implements IDistributorAdapter {
         }
 
         console.log(`[Symphonic] Sending XML Update for ${releaseId} with changes:`, Object.keys(updates));
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         // In reality: Generate new ERN with MessageControlType=UpdateMessage
         return {
             success: true,
