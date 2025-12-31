@@ -24,37 +24,34 @@ export function useLicensing() {
         let unsubscribeLicenses: (() => void) | null = null;
         let unsubscribeRequests: (() => void) | null = null;
 
+        const handleError = (err: Error) => {
+            console.error('[useLicensing] Subscription Error:', err);
+            if (isMounted) {
+                // Ensure we stop loading on error so the spinner doesn't hang
+                setError(err.message);
+                setIsLoading(false);
+                toast.error(`Licensing Data Error: ${err.message}`);
+            }
+        };
+
         try {
             unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
                 if (isMounted) {
                     setLicenses(data);
+                    // Only clear loading if both might have fired, or aggressively clear it to show at least partial data
                     setIsLoading(false);
                 }
-            });
+            }, handleError);
 
             unsubscribeRequests = licensingService.subscribeToPendingRequests((data) => {
                 if (isMounted) {
                     setRequests(data);
-                    setIsLoading(false); // Ensure loading is cleared
+                    setIsLoading(false);
                 }
-            });
+            }, handleError);
         } catch (err) {
-            console.error('[useLicensing] Subscription Error:', err);
-            if (isMounted) {
-                const message = (err as Error).message;
-                // Move state updates to next tick if needed, but here we just ensure we don't
-                // update if unmounted. The lint error is about updating inside effect.
-                // We'll wrap in a timeout or just suppress if it's truly async. 
-                // Actually the lint is about synchronous execution in the catch block of effect.
-                // We'll use a small timeout to break the sync chain.
-                setTimeout(() => {
-                    if (isMounted) {
-                        setError(message);
-                        setIsLoading(false);
-                        toast.error(`Licensing Data Error: ${message}`);
-                    }
-                }, 0);
-            }
+            // Catch synchronous errors during subscription setup
+            handleError(err as Error);
         }
 
         return () => {

@@ -55,21 +55,35 @@ export class LicensingService {
     /**
      * Subscribe to real-time active licenses.
      */
-    subscribeToActiveLicenses(callback: (licenses: License[]) => void): Unsubscribe {
+    subscribeToActiveLicenses(callback: (licenses: License[]) => void, onError?: (error: Error) => void): Unsubscribe {
         return this.licensesStore.subscribe([
-            where('status', '==', 'active'),
-            orderBy('updatedAt', 'desc')
-        ], callback);
+            where('status', '==', 'active')
+        ], (data) => {
+            // Client-side sort to avoid index requirements
+            const sorted = data.sort((a, b) => {
+                const dateA = a.updatedAt?.toMillis() || 0;
+                const dateB = b.updatedAt?.toMillis() || 0;
+                return dateB - dateA;
+            });
+            callback(sorted);
+        }, onError);
     }
 
     /**
      * Subscribe to real-time pending requests.
      */
-    subscribeToPendingRequests(callback: (requests: LicenseRequest[]) => void): Unsubscribe {
+    subscribeToPendingRequests(callback: (requests: LicenseRequest[]) => void, onError?: (error: Error) => void): Unsubscribe {
         return this.requestsStore.subscribe([
-            where('status', 'in', ['checking', 'pending_approval', 'negotiating']),
-            orderBy('updatedAt', 'desc')
-        ], callback);
+            where('status', 'in', ['checking', 'pending_approval', 'negotiating'])
+        ], (data) => {
+            // Client-side sort to avoid index requirements
+            const sorted = data.sort((a, b) => {
+                const dateA = a.updatedAt?.toMillis() || 0;
+                const dateB = b.updatedAt?.toMillis() || 0;
+                return dateB - dateA;
+            });
+            callback(sorted);
+        }, onError);
     }
 }
 
