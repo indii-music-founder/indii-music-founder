@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Toast, ToastMessage, ToastType } from '../components/Toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -70,17 +70,23 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [addToast, removeToast]);
 
-    const contextValue: ToastContextType = {
+    // Helpers need to be stable too, though they are usually just wrappers around addToast
+    const success = useCallback((msg: string, dur?: number) => { addToast(msg, 'success', dur); }, [addToast]);
+    const error = useCallback((msg: string, dur?: number) => { addToast(msg, 'error', dur); }, [addToast]);
+    const info = useCallback((msg: string, dur?: number) => { addToast(msg, 'info', dur); }, [addToast]);
+    const warning = useCallback((msg: string, dur?: number) => { addToast(msg, 'warning', dur); }, [addToast]);
+
+    const contextValue: ToastContextType = useMemo(() => ({
         showToast: addToast,
-        success: (msg: string, dur?: number) => { addToast(msg, 'success', dur); },
-        error: (msg: string, dur?: number) => { addToast(msg, 'error', dur); },
-        info: (msg: string, dur?: number) => { addToast(msg, 'info', dur); },
-        warning: (msg: string, dur?: number) => { addToast(msg, 'warning', dur); },
+        success,
+        error,
+        info,
+        warning,
         loading: loadingToast,
         updateProgress,
         dismiss: removeToast,
         promise: promiseToast,
-    };
+    }), [addToast, success, error, info, warning, loadingToast, updateProgress, removeToast, promiseToast]);
 
     return (
         <ToastContext.Provider value={contextValue}>

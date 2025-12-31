@@ -109,7 +109,8 @@ export function useMarketing() {
                 if (unsubscribeCampaigns) unsubscribeCampaigns();
             };
         }
-    }, [userProfile?.id, toast]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userProfile?.id]);
 
     // Actions
     const createCampaign = useCallback(async (campaign: Omit<CampaignAsset, 'id'>) => {
