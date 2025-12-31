@@ -34,6 +34,17 @@ service cloud.firestore {
       return isAuthenticated() && isOrgMember(request.resource.data.orgId);
     }
 
+    // Check if user can access the project this resource belongs to
+    // Requires resource to have 'projectId' field
+    function canViewProject(projectId) {
+      let projectPath = /databases/$(database)/documents/projects/$(projectId);
+      let project = get(projectPath);
+      // Access if:
+      // 1. Project exists AND
+      // 2. User is member of the project's organization
+      return isAuthenticated() && exists(projectPath) && isOrgMember(project.data.orgId);
+    }
+
     // ========================================
     // USER DOCUMENTS
     // ========================================
@@ -143,10 +154,6 @@ service cloud.firestore {
     // SOCIAL POSTS (user-scoped)
     // ========================================
 
-    // ========================================
-    // SOCIAL POSTS (user-scoped)
-    // ========================================
-
     match /posts/{postId} {
       // Anyone authenticated can read posts (public feed)
       allow read: if isAuthenticated();
@@ -161,8 +168,23 @@ service cloud.firestore {
     // ========================================
 
     match /file_nodes/{nodeId} {
-      // Allow read for authenticated users (TODO: Scope to project members)
-      allow read: if isAuthenticated();
+      // Allow read if user owns the node OR has access to the project
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        canViewProject(resource.data.projectId)
+      // Helper to check if user is a member of the project this file belongs to
+      function isProjectMember() {
+         let projectResource = get(/databases/$(database)/documents/projects/$(resource.data.projectId));
+         return isAuthenticated() &&
+                exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+                isOrgMember(projectResource.data.orgId);
+      }
+
+      // Allow read if user owns the file OR is a member of the project
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isProjectMember()
+      );
       
       // Allow create/update/delete only if user owns the node
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
