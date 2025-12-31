@@ -27,8 +27,6 @@ export default function RevenueView() {
                 setTotalRevenue(total);
                 setRevenueBySource(bySource);
 
-                // Process top products
-                const sortedProducts = Array.from(byProduct.entries())
                 // Optimization: Fetch all stats in a single query
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
@@ -137,8 +135,6 @@ export default function RevenueView() {
                                         <div>
                                             {/* In a real app we'd fetch the product name here too */}
                                             <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
-                                            <p className="text-xs text-gray-500">Physical Good</p>
-                                            <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
                                             <p className="text-xs text-gray-500">Sales Item</p>
                                         </div>
                                     </div>
@@ -152,6 +148,7 @@ export default function RevenueView() {
                 {/* Replaced placeholder with actual Analytics component */}
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                     <SalesAnalytics />
+                </div>
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center items-center text-center">
                     <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
                         <TrendingUp size={24} className="text-gray-400" />
