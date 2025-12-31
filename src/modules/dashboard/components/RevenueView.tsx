@@ -27,7 +27,7 @@ export default function RevenueView() {
                 setRevenueBySource(bySource);
 
                 // Process top products
-                const sortedProducts = Array.from(byProduct.entries())
+                const sortedProducts = Object.entries(byProduct)
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);

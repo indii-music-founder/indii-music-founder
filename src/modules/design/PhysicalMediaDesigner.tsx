@@ -61,10 +61,8 @@ export const PhysicalMediaDesigner: React.FC = () => {
             const director = agentRegistry.get('director');
             // If director not found, simulate response for demo purposes
             if (!director) {
-                setTimeout(() => {
-                    setMessages(prev => [...prev, { role: 'agent', content: "That's a bold choice. The yellow really pops against the dark background. Maybe add some gold foil texture?" }]);
-                    setIsThinking(false);
-                }, 1500);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                setMessages(prev => [...prev, { role: 'agent', content: "That's a bold choice. The yellow really pops against the dark background. Maybe add some gold foil texture?" }]);
                 return;
             }
 

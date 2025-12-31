@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MerchLayout } from './components/Layout';
 import { BananaButton } from './components/BananaButton';
 import { MerchCard } from './components/MerchCard';
-import { Undo, Redo, Download, Layers, Type, Image as LucideImage, Sticker, Wand2 } from 'lucide-react';
+import { Undo, Redo, Download, Layers, Type, Sticker, Wand2 } from 'lucide-react';
 
 export default function MerchDesigner() {
     const [selectedTool, setSelectedTool] = useState('sticker');
@@ -55,13 +55,9 @@ export default function MerchDesigner() {
 
                     {/* Center Canvas */}
                     <div className="lg:col-span-2 relative flex items-center justify-center bg-neutral-900/20 rounded-2xl border border-white/5 overflow-hidden">
-
-                        {/* Canvas Grid Background */}
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]" />
 
-                        {/* T-Shirt Mockup */}
                         <div className="relative w-3/4 max-w-md aspect-[3/4] bg-black rounded-3xl shadow-2xl flex items-center justify-center border border-white/5 ring-1 ring-white/5">
-                            {/* Simple T-shirt Shape representation */}
                             <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent_70%)]" />
                             <div className="relative z-10 text-center">
                                 <h1 className="text-6xl font-black text-[#FFE135] drop-shadow-[0_0_15px_rgba(255,225,53,0.5)] tracking-tighter transform -rotate-6">

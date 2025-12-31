@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/utils/classNameUtils';
+import { cn } from '@/lib/utils';
 
 interface MerchCardProps extends React.HTMLAttributes<HTMLDivElement> {
     active?: boolean;

@@ -11,6 +11,14 @@ vi.mock('@/core/store', () => ({
         currentModule: 'licensing',
     }),
 }));
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        error: vi.fn(),
+        success: vi.fn(),
+        info: vi.fn(),
+        promise: vi.fn((p) => p),
+    }),
+}));
 
 const mockTimestamp = {
     toDate: () => new Date(),

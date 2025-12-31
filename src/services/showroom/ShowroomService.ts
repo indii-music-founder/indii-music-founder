@@ -26,18 +26,22 @@ export const ShowroomService = {
     },
 
     /**
-     * Simulates AI generation of mockups or animations.
+     * Simulates AI generation of photorealistic mockups.
      */
-    async generateDesign(prompt: string, type: string): Promise<{ success: boolean; previewUrl: string }> {
-        console.log(`Generating ${type} with prompt: ${prompt}`);
-
-        // Beta delay
+    async generateMockup(asset: string, type: string, scene: string): Promise<string> {
+        console.log(`Generating ${type} mockup with scene: ${scene}`);
         await new Promise(resolve => setTimeout(resolve, 3000));
+        // Return a mock result
+        return "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80";
+    },
 
-        // Return a mock success with a placeholder (in real scenario, this would be an GCS/S3 link)
-        return {
-            success: true,
-            previewUrl: "https://placeholder.com/mockup.png"
-        };
+    /**
+     * Simulates AI generation of product animations.
+     */
+    async generateVideo(mockupUrl: string, motion: string): Promise<string> {
+        console.log(`Animating mockup ${mockupUrl} with motion: ${motion}`);
+        await new Promise(resolve => setTimeout(resolve, 3500));
+        // Return a mock video link
+        return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ254Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxxXmD3v6Te/giphy.gif";
     }
 };

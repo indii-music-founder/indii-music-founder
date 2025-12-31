@@ -3,14 +3,19 @@ import { render, screen } from '@testing-library/react';
 import { MerchandiseDashboard } from './MerchandiseDashboard';
 import { describe, it, expect, vi } from 'vitest';
 
-// Mock Recharts since it uses ResizeObserver which can be flaky in JSDOM
-vi.mock('recharts', () => {
-    const OriginalModule = vi.importActual('recharts');
-    return {
-        ...OriginalModule,
-        ResponsiveContainer: ({ children }: any) => <div style={{ width: 800, height: 800 }}>{children}</div>,
-    };
-});
+// Mock Recharts to avoid layout/JSDOM issues
+vi.mock('recharts', () => ({
+    ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
+    AreaChart: ({ children }: any) => <div>{children}</div>,
+    Area: () => null,
+    XAxis: () => null,
+    YAxis: () => null,
+    CartesianGrid: () => null,
+    Tooltip: () => null,
+    BarChart: ({ children }: any) => <div>{children}</div>,
+    Bar: () => null,
+    Cell: () => null,
+}));
 
 // Mock MerchTable
 vi.mock('./MerchTable', () => ({

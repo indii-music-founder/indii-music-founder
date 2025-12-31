@@ -13,6 +13,7 @@ export interface BananaTheme {
     effects: {
         glass: string;
         glow: string;
+        shadow: string;
         borderRadius: string;
     };
 }
@@ -32,6 +33,7 @@ export const StandardTheme: BananaTheme = {
     effects: {
         glass: 'backdrop-blur-sm bg-opacity-90',
         glow: 'shadow-lg shadow-yellow-900/5',
+        shadow: 'shadow-md',
         borderRadius: 'rounded-3xl',
     },
 };
@@ -51,6 +53,7 @@ export const ProTheme: BananaTheme = {
     effects: {
         glass: 'backdrop-blur-xl bg-opacity-40',
         glow: 'shadow-[0_0_20px_rgba(255,200,0,0.1)]',
+        shadow: 'shadow-2xl shadow-black/40',
         borderRadius: 'rounded-xl',
     },
 };

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Shirt, Coffee, Smartphone, Frame, LucideIcon } from 'lucide-react';
+import { Upload, Shirt, Coffee, Smartphone, Frame, LucideIcon, Wand2 } from 'lucide-react';
 import { BananaTheme } from '../themes';
 
 export type ProductType = 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
@@ -72,13 +72,39 @@ const ProductSelector = React.memo(({ productType, onTypeChange }: ProductSelect
 });
 ProductSelector.displayName = 'ProductSelector';
 
-export default function AssetRack({ productAsset, productType, onAssetUpload, onTypeChange, theme }: AssetRackProps) {
+// ... (imports remain)
+
+interface AssetRackProps {
+    productAsset: string | null;
+    productType: ProductType;
+    onAssetUpload: (base64: string) => void;
+    onTypeChange: (type: ProductType) => void;
+    placement: 'Front' | 'Back' | 'Sleeve';
+    onPlacementChange: (val: 'Front' | 'Back' | 'Sleeve') => void;
+    scale: number;
+    onScaleChange: (val: number) => void;
+    theme?: BananaTheme;
+}
+
+// ... (ProductSelector remains same)
+
+export default function AssetRack({
+    productAsset,
+    productType,
+    onAssetUpload,
+    onTypeChange,
+    placement,
+    onPlacementChange,
+    scale,
+    onScaleChange,
+    theme
+}: AssetRackProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
-    const [placement, setPlacement] = useState('Front');
-    const [scale, setScale] = useState(100);
-    const [placement, setPlacement] = useState<'Front' | 'Back' | 'Sleeve'>('Front');
-    const [scale, setScale] = useState(100);
+
+    // Removed local state for placement/scale
+
+    const accentColorClass = theme?.colors.accent.replace('text', 'bg') || 'bg-blue-500';
 
     const containerClass = theme
         ? `${theme.colors.surface} ${theme.effects.glass} border-r ${theme.colors.border}`
@@ -208,15 +234,28 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
 
             {/* Placement Controls (NEW) */}
             <div className={`space-y-4 pt-4 border-t ${theme ? theme.colors.border : 'border-white/5'}`}>
-                <label className={`text-xs font-medium uppercase tracking-wider ml-1 mb-2 block ${subTextClass}`}>
-                    Placement & Scale
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                    <label className={`text-xs font-medium uppercase tracking-wider ml-1 ${subTextClass}`}>
+                        Placement & Scale
+                    </label>
+                    <button
+                        onClick={() => {
+                            onPlacementChange('Front');
+                            onScaleChange(85);
+                        }}
+                        className={`text-[10px] flex items-center gap-1 px-2 py-1 rounded-full border transition-all hover:bg-white/10 ${theme ? 'text-purple-400 border-purple-500/30' : 'text-blue-400 border-blue-500/30'}`}
+                        title="Auto-Optimize Layout"
+                    >
+                        <Wand2 className="w-3 h-3" />
+                        Smart Layout
+                    </button>
+                </div>
 
                 <div className="flex gap-2 mb-4">
                     {['Front', 'Back', 'Sleeve'].map((place) => (
                         <button
                             key={place}
-                            onClick={() => setPlacement(place as any)}
+                            onClick={() => onPlacementChange(place as any)}
                             className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors 
                                 ${placement === place
                                     ? 'bg-blue-500 text-white border-blue-400'
@@ -238,7 +277,7 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
                         min="10"
                         max="200"
                         value={scale}
-                        onChange={(e) => setScale(Number(e.target.value))}
+                        onChange={(e) => onScaleChange(Number(e.target.value))}
                         className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full"
                     />
                 </div>

@@ -1,17 +1,10 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
-
-export interface ShotItem {
-    id: string;
-    title: string;
-    description: string;
-    duration: number;
-    cameraMovement: string;
-}
 
 export interface VideoGenerationOptions {
     prompt: string;
@@ -28,6 +21,7 @@ export interface VideoGenerationOptions {
     fps?: number;
     cameraMovement?: string;
     motionStrength?: number;
+    shotList?: ShotItem[];
 }
 
 export class VideoGenerationService {
@@ -115,7 +109,6 @@ export class VideoGenerationService {
             fps: options.fps
         });
 
-        const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
 
         const { jobId } = await this.triggerVideoGeneration({

@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 // A CSS-only animated radar/map visualization
 export const ScoutMapVisualization: React.FC<{ status: string }> = ({ status }) => {

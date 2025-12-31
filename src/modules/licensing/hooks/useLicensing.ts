@@ -96,15 +96,18 @@ export function useLicensing() {
         }
 
         try {
-            // In a real scenario, this might trigger a cloud function or agent job
-            // For now, we update the status to indicate drafting is in progress
-            if (request.status === 'checking') {
-                // Logic to update status would go here... mock for now
-            }
+            // Trigger transition to negotiating status
+            await toast.promise(
+                licensingService.updateRequestStatus(request.id, 'negotiating'),
+                {
+                    loading: 'Initiating draft sequence...',
+                    success: 'Agreement draft generated. Status: Negotiating.',
+                    error: 'Failed to initiate drafting.'
+                }
+            );
         } catch (error) {
             console.error("Failed to initiate drafting:", error);
-            toast.error("Agent failed to start drafting sequence.");
-            // Sentry.captureException(error); // Uncomment when Sentry is fully configured
+            // toast.promise already handles error notifications
         }
     }, [toast]);
 

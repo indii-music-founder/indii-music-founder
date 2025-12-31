@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { Map, MapPin, Users, Mail, List, Globe, Search, Filter, Sparkles } from 'lucide-react';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
@@ -154,14 +155,14 @@ const AgentDashboard: React.FC = () => {
                                     `}
                                 >
                                     {isScanning ? (
-                                        <>
+                                        <React.Fragment>
                                             <span className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
                                             Deploying...
-                                        </>
+                                        </React.Fragment>
                                     ) : (
-                                        <>
+                                        <React.Fragment>
                                             <Sparkles size={16} /> Deploy Scout
-                                        </>
+                                        </React.Fragment>
                                     )}
                                 </button>
                             </div>
@@ -207,12 +208,19 @@ const AgentDashboard: React.FC = () => {
     );
 };
 
-const NavButton = ({ active, onClick, icon, label }: any) => (
+interface NavButtonProps {
+    active: boolean;
+    onClick: () => void;
+    icon: React.ReactNode;
+    label: string;
+}
+
+const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) => (
     <button
         onClick={onClick}
         className={`flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left transition-all duration-200 font-medium ${active
-                ? 'bg-emerald-500/10 text-emerald-400 shadow-sm border border-emerald-500/20'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+            ? 'bg-emerald-500/10 text-emerald-400 shadow-sm border border-emerald-500/20'
+            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             }`}
     >
         {icon}
@@ -220,7 +228,7 @@ const NavButton = ({ active, onClick, icon, label }: any) => (
     </button>
 );
 
-const CheckIcon = () => (
+const CheckIcon: React.FC = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="w-3 h-3 text-slate-950">
         <polyline points="20 6 9 17 4 12" />
     </svg>

@@ -134,6 +134,84 @@ export class RevenueService {
             return 0;
         }
     }
+
+    /**
+     * Get revenue aggregated by product for a user
+     */
+    async getRevenueByProduct(userId: string): Promise<Record<string, number>> {
+        try {
+            const q = query(
+                collection(db, this.COLLECTION),
+                where('userId', '==', userId),
+                where('status', '==', 'completed')
+            );
+
+            const snapshot = await getDocs(q);
+            const revenueMap: Record<string, number> = {};
+
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data() as RevenueEntry;
+                if (data.productId) {
+                    revenueMap[data.productId] = (revenueMap[data.productId] || 0) + (data.amount || 0);
+                }
+            });
+
+            return revenueMap;
+        } catch (e) {
+            console.error('[RevenueService] Failed to get revenue by product', e);
+            return {};
+        }
+    }
+
+    /**
+     * Get total revenue for a user/org
+     */
+    async getTotalRevenue(userId: string): Promise<number> {
+        try {
+            const q = query(
+                collection(db, this.COLLECTION),
+                where('userId', '==', userId),
+                where('status', '==', 'completed')
+            );
+            const snapshot = await getDocs(q);
+            let total = 0;
+            snapshot.forEach(docSnap => {
+                total += (docSnap.data() as RevenueEntry).amount || 0;
+            });
+            return total;
+        } catch (e) {
+            console.error('[RevenueService] Failed to get total revenue', e);
+            return 0;
+        }
+    }
+
+    /**
+     * Get revenue aggregated by source
+     */
+    async getRevenueBySource(userId: string): Promise<{ direct: number; social: number }> {
+        try {
+            const q = query(
+                collection(db, this.COLLECTION),
+                where('userId', '==', userId),
+                where('status', '==', 'completed')
+            );
+            const snapshot = await getDocs(q);
+            const summary = { direct: 0, social: 0 };
+
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data() as RevenueEntry;
+                if (data.source === 'direct' || data.source === 'merch' || data.source === 'streaming') {
+                    summary.direct += data.amount || 0;
+                } else if (data.source === 'social_drop') {
+                    summary.social += data.amount || 0;
+                }
+            });
+            return summary;
+        } catch (e) {
+            console.error('[RevenueService] Failed to get revenue by source', e);
+            return { direct: 0, social: 0 };
+        }
+    }
 }
 
 export const revenueService = new RevenueService();
