@@ -46,6 +46,18 @@ service cloud.firestore {
     }
 
     // ========================================
+    // LICENSING (authenticated access)
+    // ========================================
+
+    match /licenses/{licenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /license_requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ========================================
     // USER DOCUMENTS
     // ========================================
 
