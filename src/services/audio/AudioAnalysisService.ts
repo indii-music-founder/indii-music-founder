@@ -6,6 +6,7 @@ export interface AudioFeatures {
     key: string;
     scale: string;
     energy: number;
+    duration: number;
     danceability: number;
     loudness: number;
     valence?: number; // Happiness/Sadness
@@ -129,6 +130,7 @@ export class AudioAnalysisService {
             key: key,
             scale: scale,
             energy: energy, // Raw RMS value
+            duration: audioBuffer.duration,
             danceability: danceabilty,
             loudness: -1 // Placeholder if not calc
         };

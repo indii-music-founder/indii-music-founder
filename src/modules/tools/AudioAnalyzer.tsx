@@ -4,6 +4,8 @@ import { Play, Pause, Activity, Radio, Mic2, Upload, Volume2, Maximize2, FileAud
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { fingerprintService } from '@/services/audio/FingerprintService';
+import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 
 const AudioAnalyzer: React.FC = () => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -11,13 +13,23 @@ const AudioAnalyzer: React.FC = () => {
     const [fileName, setFileName] = useState<string | null>(null);
     const [volume, setVolume] = useState([75]);
 
+    // Analysis State
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [metadata, setMetadata] = useState<{
+        fingerprint?: string;
+        bpm?: number;
+        key?: string;
+        energy?: number;
+        duration?: number;
+    }>({});
+
     // Web Audio API Refs
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceRef = useRef<MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>();
+    const animationRef = useRef<number | undefined>(undefined);
 
     // Initialize Audio Context on user interaction
     const initAudioContext = () => {
@@ -28,7 +40,7 @@ const AudioAnalyzer: React.FC = () => {
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             if (isPlaying) stopAudio();
@@ -38,7 +50,36 @@ const AudioAnalyzer: React.FC = () => {
                 audioRef.current.src = url;
                 setFileName(file.name);
                 setSourceType('file');
+
+                // Reset metadata
+                setMetadata({});
+
+                // Trigger Analysis
+                await analyzeAudio(file);
             }
+        }
+    };
+
+    const analyzeAudio = async (file: File) => {
+        setIsAnalyzing(true);
+        try {
+            // 1. Analyze Audio Features (BPM, Key, Energy)
+            const features = await audioAnalysisService.analyze(file);
+
+            // 2. Generate Fingerprint (Composite ID)
+            const fingerprint = await fingerprintService.generateFingerprint(file, features);
+
+            setMetadata({
+                fingerprint,
+                bpm: features.bpm,
+                key: features.key,
+                energy: features.energy,
+                duration: features.duration
+            });
+        } catch (error) {
+            console.error("Analysis Failed:", error);
+        } finally {
+            setIsAnalyzing(false);
         }
     };
 
@@ -66,6 +107,7 @@ const AudioAnalyzer: React.FC = () => {
             setSourceType('mic');
             setIsPlaying(true);
             setFileName("Live Microphone Input");
+            setMetadata({}); // Clear metadata for mic input
         } catch (err) {
             console.error("Mic Error:", err);
         }
@@ -248,13 +290,33 @@ const AudioAnalyzer: React.FC = () => {
                 <div className="absolute inset-0 p-8 pointer-events-none flex flex-col justify-between">
                     <div className="flex justify-between font-mono text-xs text-white/40">
                         <div>
-                            <p>FREQ_RANGE: 20Hz - 20kHz</p>
+                            <p className="flex items-center gap-2">
+                                <span>FREQ_RANGE: 20Hz - 20kHz</span>
+                                {isAnalyzing && <span className="text-yellow-500 animate-pulse">ANALYZING...</span>}
+                            </p>
                             <p>SAMPLE_RATE: {audioContextRef.current?.sampleRate || 48000}Hz</p>
                             <p>FFT_SIZE: 2048</p>
+                            {metadata.fingerprint && (
+                                <>
+                                    <p className="mt-2 text-primary glow-text-blue">
+                                        ID: {metadata.fingerprint}
+                                    </p>
+                                    <p className="text-white/60">ISRC: PENDING_GENERATION</p>
+                                </>
+                            )}
                         </div>
                         <div className="text-right">
                             <p>SOURCE: {sourceType.toUpperCase()}</p>
-                            <p>STATUS: {isPlaying ? 'ANALYZING' : 'IDLE'}</p>
+                            <p>STATUS: {isPlaying ? 'PLAYING' : 'IDLE'}</p>
+                            {metadata.bpm && (
+                                <div className="mt-2 text-right">
+                                    <p className="text-accent glow-text-purple">BPM: {metadata.bpm}</p>
+                                    <p className="text-white/70">KEY: {metadata.key}</p>
+                                    <p className="text-white/50 text-[10px] mt-1">
+                                        {fileName?.split('-')[0].trim() || 'UNKNOWN ARTIST'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -303,6 +365,7 @@ const AudioAnalyzer: React.FC = () => {
                             disabled={sourceType === 'mic'}
                             className={cn("h-14 w-14 rounded-full border-primary/50 hover:bg-primary/20 hover:text-primary transition-all shadow-[0_0_15px_rgba(255,255,0,0.1)]", isPlaying && sourceType === 'file' && "bg-primary/20 shadow-[0_0_20px_rgba(255,255,0,0.4)]")}
                             onClick={togglePlay}
+                            aria-label="Play/Pause"
                         >
                             {isPlaying && sourceType === 'file' ? <Pause className="fill-current w-6 h-6" /> : <Play className="fill-current ml-1 w-6 h-6" />}
                         </Button>
