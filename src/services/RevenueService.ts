@@ -1,219 +1,135 @@
-// Verified clean build content - Force Sync
-import { Timestamp, collection, query, where, getDocs, orderBy, limit, doc, setDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { collection, addDoc, getDocs, query, where, Timestamp, orderBy } from 'firebase/firestore';
 
 export interface RevenueEntry {
-    id: string;
+    id?: string;
     productId: string;
-    productName?: string;
     amount: number;
-    currency: string;
-    source: 'direct' | 'social_drop' | 'streaming' | 'merch';
+    source: 'direct' | 'social_drop';
     customerId: string;
-    timestamp: Timestamp;
-    status: 'pending' | 'completed' | 'refunded';
-    userId?: string; // Optional for compatibility
+    userId: string; // The seller/merchant ID
+    timestamp: number;
 }
 
-export interface RevenueSummary {
-    totalRevenue: number;
-    currency: string;
-    bySource: {
-        direct: number;
-        social_drop: number;
-        streaming: number;
-        merch: number;
-    };
-    recentTransactions: RevenueEntry[];
-}
-
-export class RevenueService {
-    private readonly COLLECTION = 'revenue';
+class RevenueServiceImpl {
+    private collectionName = 'revenue';
 
     /**
-     * Record a new revenue transaction
+     * Get total revenue for a user by summing up all revenue entries.
+     * Uses real Firestore data.
      */
-    async recordSale(entry: Omit<RevenueEntry, 'id' | 'timestamp'>): Promise<string> {
-        const id = `REV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const timestamp = Timestamp.now();
-        const entryWithDefaults = {
-            ...entry,
-            id,
-            timestamp
-        };
-
-        // Use setDoc to specify ID
-        await setDoc(doc(db, this.COLLECTION, id), entryWithDefaults);
-
-        return id;
-    }
-
-    /**
-     * Get total revenue summary for a user/org
-     */
-    async getRevenueSummary(orgId: string): Promise<RevenueSummary> {
-        const summary: RevenueSummary = {
-            totalRevenue: 0,
-            currency: 'USD',
-            bySource: {
-                direct: 0,
-                social_drop: 0,
-                streaming: 0,
-                merch: 0
-            },
-            recentTransactions: []
-        };
-
+    async getTotalRevenue(userId: string): Promise<number> {
         try {
             const q = query(
-                collection(db, this.COLLECTION),
-                orderBy('timestamp', 'desc'),
-                limit(50)
+                collection(db, this.collectionName),
+                where('userId', '==', userId)
             );
 
             const snapshot = await getDocs(q);
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
-                summary.recentTransactions.push(data);
 
-                if (data.status === 'completed') {
-                    summary.totalRevenue += data.amount;
-                    if (summary.bySource[data.source] !== undefined) {
-                        summary.bySource[data.source] += data.amount;
-                    }
+            // Client-side aggregation (suitable for MVP/Alpha scale)
+            // For Production at scale, use Firestore Aggregation Queries:
+            // const snapshot = await getAggregateFromServer(q, { totalRevenue: sum('amount') });
+            // return snapshot.data().totalRevenue;
+
+            let total = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (typeof data.amount === 'number') {
+                    total += data.amount;
                 }
             });
 
+            return Number(total.toFixed(2));
         } catch (error) {
-            console.error('[RevenueService] Failed to fetch summary', error);
+            console.error('[RevenueService] Failed to get total revenue:', error);
+            throw error;
         }
-
-        return summary;
     }
 
     /**
-     * Get revenue specific to a product
+     * Get revenue breakdown by source (direct vs social_drop).
      */
-    async getProductRevenue(productId: string): Promise<number> {
+    async getRevenueBySource(userId: string): Promise<{ direct: number, social: number }> {
         try {
             const q = query(
-                collection(db, this.COLLECTION),
-                where('productId', '==', productId),
-                where('status', '==', 'completed')
+                collection(db, this.collectionName),
+                where('userId', '==', userId)
             );
 
             const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(docSnap => {
-                total += docSnap.data().amount || 0;
+
+            const result = { direct: 0, social: 0 };
+
+            snapshot.forEach(doc => {
+                const data = doc.data() as RevenueEntry;
+                if (data.source === 'social_drop') {
+                    result.social += data.amount || 0;
+                } else {
+                    result.direct += data.amount || 0;
+                }
             });
-            return total;
-        } catch (e) {
-            return 0;
+
+            return {
+                direct: Number(result.direct.toFixed(2)),
+                social: Number(result.social.toFixed(2))
+            };
+        } catch (error) {
+            console.error('[RevenueService] Failed to get revenue by source:', error);
+            return { direct: 0, social: 0 };
         }
     }
 
     /**
-     * Get revenue by period (Legacy compatibility method)
-     */
-    async getRevenueByPeriod(userId: string, start: Date, end: Date): Promise<number> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId), // Assuming userId is added to records
-                where('timestamp', '>=', Timestamp.fromDate(start)),
-                where('timestamp', '<=', Timestamp.fromDate(end))
-            );
-            const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(docSnap => {
-                total += (docSnap.data() as RevenueEntry).amount;
-            });
-            return total;
-        } catch (e) {
-            return 0;
-        }
-    }
-
-    /**
-     * Get revenue aggregated by product for a user
+     * Get revenue breakdown by product ID.
      */
     async getRevenueByProduct(userId: string): Promise<Record<string, number>> {
         try {
             const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                where('status', '==', 'completed')
+                collection(db, this.collectionName),
+                where('userId', '==', userId)
             );
 
             const snapshot = await getDocs(q);
-            const revenueMap: Record<string, number> = {};
+            const productRevenue: Record<string, number> = {};
 
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
+            snapshot.forEach(doc => {
+                const data = doc.data() as RevenueEntry;
                 if (data.productId) {
-                    revenueMap[data.productId] = (revenueMap[data.productId] || 0) + (data.amount || 0);
+                    productRevenue[data.productId] = (productRevenue[data.productId] || 0) + (data.amount || 0);
                 }
             });
 
-            return revenueMap;
-        } catch (e) {
-            console.error('[RevenueService] Failed to get revenue by product', e);
+            // Round all values
+            Object.keys(productRevenue).forEach(key => {
+                productRevenue[key] = Number(productRevenue[key].toFixed(2));
+            });
+
+            return productRevenue;
+        } catch (error) {
+            console.error('[RevenueService] Failed to get revenue by product:', error);
             return {};
         }
     }
 
     /**
-     * Get total revenue for a user/org
+     * Record a new sale in Firestore.
      */
-    async getTotalRevenue(userId: string): Promise<number> {
+    async recordSale(entry: RevenueEntry): Promise<void> {
         try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                where('status', '==', 'completed')
-            );
-            const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(docSnap => {
-                total += (docSnap.data() as RevenueEntry).amount || 0;
-            });
-            return total;
-        } catch (e) {
-            console.error('[RevenueService] Failed to get total revenue', e);
-            return 0;
-        }
-    }
+            // Ensure timestamp is valid
+            const safeEntry = {
+                ...entry,
+                timestamp: entry.timestamp || Date.now()
+            };
 
-    /**
-     * Get revenue aggregated by source
-     */
-    async getRevenueBySource(userId: string): Promise<{ direct: number; social: number }> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                where('status', '==', 'completed')
-            );
-            const snapshot = await getDocs(q);
-            const summary = { direct: 0, social: 0 };
-
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
-                if (data.source === 'direct' || data.source === 'merch' || data.source === 'streaming') {
-                    summary.direct += data.amount || 0;
-                } else if (data.source === 'social_drop') {
-                    summary.social += data.amount || 0;
-                }
-            });
-            return summary;
-        } catch (e) {
-            console.error('[RevenueService] Failed to get revenue by source', e);
-            return { direct: 0, social: 0 };
+            await addDoc(collection(db, this.collectionName), safeEntry);
+            console.log('[RevenueService] Sale recorded successfully:', safeEntry);
+        } catch (error) {
+            console.error('[RevenueService] Failed to record sale:', error);
+            throw error;
         }
     }
 }
 
-export const revenueService = new RevenueService();
-
-
+export const revenueService = new RevenueServiceImpl();
