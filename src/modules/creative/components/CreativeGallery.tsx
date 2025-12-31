@@ -257,13 +257,13 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                 )}
             </div>
 
-            {/* Gallery Section */}
-            <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
+            {/* Generation History - REMOVED per user request */}
+            {/* <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Generation History</h2>
                 <div className={gridClass}>
                     {filteredGenerated.map(item => renderGridItem(item, removeFromHistory))}
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }
