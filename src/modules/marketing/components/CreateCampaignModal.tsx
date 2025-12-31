@@ -56,7 +56,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <Plus className="text-blue-500" />
                         New Campaign
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                    <button onClick={onClose} aria-label="Close modal" className="text-gray-400 hover:text-white transition-colors">
                         <X size={20} />
                     </button>
                 </div>
