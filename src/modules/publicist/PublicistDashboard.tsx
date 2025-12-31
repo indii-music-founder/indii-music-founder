@@ -9,7 +9,8 @@ import {
     Megaphone,
     ArrowUpRight,
     LayoutGrid,
-    List
+    List,
+    Loader2
 } from 'lucide-react';
 import { usePublicist } from './hooks/usePublicist';
 import { CampaignCard } from './components/CampaignCard';
@@ -27,9 +28,21 @@ export default function PublicistDashboard() {
         filterType,
         setFilterType,
         activeTab,
-        setActiveTab
+        setActiveTab,
+        loading
     } = usePublicist();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-sonic-purple" />
+                    <p className="text-muted-foreground font-medium animate-pulse">Loading Publicist Data...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <ModuleErrorBoundary moduleName="Publicist Dashboard">

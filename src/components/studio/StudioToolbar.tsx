@@ -9,7 +9,7 @@ interface StudioToolbarProps {
 
 export function StudioToolbar({ children, className = "", left, right }: StudioToolbarProps) {
     return (
-        <div className={`h-12 border-b border-gray-800 bg-[#0d1117] flex items-center px-4 gap-4 flex-shrink-0 z-10 sticky top-0 ${className}`}>
+        <div className={`h-12 border-b border-[--border] bg-[--background]/80 backdrop-blur-md flex items-center px-4 gap-4 flex-shrink-0 z-10 sticky top-0 ${className}`}>
             {left && <div className="flex items-center gap-2 mr-auto">{left}</div>}
             <div className="flex items-center gap-2 flex-1 justify-center md:justify-start">
                 {children}

@@ -3,6 +3,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
+import { functions, db, auth } from '@/services/firebase';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
 
@@ -87,6 +88,11 @@ export class VideoGenerationService {
     }
 
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Enforce Authentication
+        if (!auth.currentUser) {
+            throw new Error("You must be signed in to generate video. Please log in.");
+        }
+
         // Enforce quota check
         const quota = await this.checkVideoQuota(1);
         if (!quota.canGenerate) {

@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PublicistDashboard from './PublicistDashboard';
+import { usePublicist } from './hooks/usePublicist';
 
 // Mock the usePublicist hook
 vi.mock('./hooks/usePublicist', () => ({
-    usePublicist: () => ({
+    usePublicist: vi.fn(() => ({
+
         campaigns: [
             {
                 id: '1',
@@ -36,8 +38,13 @@ vi.mock('./hooks/usePublicist', () => ({
             placementValue: '$10k'
         },
         activeTab: 'campaigns',
-        setActiveTab: vi.fn()
-    })
+        setActiveTab: vi.fn(),
+        loading: false,
+        searchQuery: '',
+        setSearchQuery: vi.fn(),
+        filterType: 'all',
+        setFilterType: vi.fn()
+    }))
 }));
 
 // Mock module error boundary
@@ -63,7 +70,27 @@ describe('PublicistDashboard', () => {
         render(<PublicistDashboard />);
         expect(screen.getByText('Test Campaign')).toBeDefined();
         expect(screen.getByText('Test Artist')).toBeDefined();
-        expect(screen.getByText('Live')).toBeDefined();
+        expect(screen.getAllByText('Live')[0]).toBeDefined();
+    });
+
+    it('renders loading state', () => {
+        // Mock loading true
+        vi.mocked(usePublicist).mockReturnValueOnce({
+            campaigns: [],
+            contacts: [],
+            stats: { globalReach: '0', avgOpenRate: '0%', placementValue: '$0' },
+            activeTab: 'campaigns',
+            setActiveTab: vi.fn(),
+            loading: true,
+            searchQuery: '',
+            setSearchQuery: vi.fn(),
+            filterType: 'all',
+            setFilterType: vi.fn()
+        });
+
+        render(<PublicistDashboard />);
+        // Verify text is NOT there to confirm loading state is active
+        expect(screen.queryByText('Test Campaign')).toBeNull();
     });
 
     it('renders contact list', () => {
@@ -72,3 +99,4 @@ describe('PublicistDashboard', () => {
         expect(screen.getByText('Test Outlet')).toBeDefined();
     });
 });
+

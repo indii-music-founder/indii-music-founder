@@ -271,7 +271,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-950 text-white">
+        <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
             {/* Header / Toolbar */}
             <StudioToolbar
                 className="bg-gray-900 border-gray-800"
@@ -300,7 +300,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar Tabs */}
-                <div className="w-16 bg-gray-900 flex flex-col items-center py-4 border-r border-gray-800 gap-4">
+                <div className="w-16 bg-[--card] flex flex-col items-center py-4 border-r border-[--border] gap-4">
                     <button
                         onClick={() => setActiveTab('project')}
                         className={`p-2 rounded-lg transition-colors ${activeTab === 'project' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
@@ -325,7 +325,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 </div>
 
                 {/* Sidebar Content */}
-                <div className="w-64 bg-gray-900 border-r border-gray-800 overflow-y-auto custom-scrollbar">
+                <div className="w-64 bg-[--card] border-r border-[--border] overflow-y-auto custom-scrollbar">
                     {activeTab === 'assets' && (
                         <EditorAssetLibrary onDragStart={handleLibraryDragStart} />
                     )}

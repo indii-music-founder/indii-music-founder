@@ -10,7 +10,28 @@ import ScreenplayRenderer from './ScreenplayRenderer';
 import CallSheetRenderer from './CallSheetRenderer';
 import ContractRenderer from './ContractRenderer';
 import { voiceService } from '@/services/ai/VoiceService';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, ChevronDown, ChevronRight, FileJson } from 'lucide-react';
+
+const CollapsibleJson = ({ data }: { data: any }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <div className="my-2 p-2 bg-black/30 rounded border border-gray-800">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-2 font-mono"
+            >
+                {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                <FileJson size={12} />
+                {isOpen ? 'Hide Data' : 'View Tool Output'}
+            </button>
+            {isOpen && (
+                <pre className="mt-2 text-[10px] text-gray-500 overflow-x-auto custom-scrollbar p-2 bg-black/50 rounded">
+                    {JSON.stringify(data, null, 2)}
+                </pre>
+            )}
+        </div>
+    );
+};
 
 // --- Components ---
 
@@ -105,6 +126,9 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                         return <CallSheetRenderer data={data} />;
                                     }
 
+                                    // Fallback for other JSON: Collapse it
+                                    return <CollapsibleJson data={data} />;
+
                                 } catch (e) {
                                     // Not valid JSON or unknown type
                                 }
@@ -178,28 +202,32 @@ export default function ChatOverlay() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="absolute bottom-full left-0 right-0 h-[60vh] bg-gradient-to-t from-[#0d1117] via-[#0d1117]/95 to-transparent p-4 pb-2 z-40"
+                // Restrict width to avoid covering the right sidebar (approx 300-350px)
+                // Use mr-[350px] or max-w with margin right
+                className="absolute bottom-full left-0 right-[350px] h-[60vh] bg-gradient-to-t from-[#0d1117] via-[#0d1117]/95 to-transparent p-4 pb-2 z-40 pointer-events-none"
             >
-                {/* Voice Toggle */}
-                <button
-                    onClick={() => setIsMuted(!isMuted)}
-                    className="absolute top-4 right-8 p-2 rounded-full bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white transition-colors z-50 backdrop-blur-sm border border-white/10"
-                    title={isMuted ? "Unmute Text-to-Speech" : "Mute Text-to-Speech"}
-                >
-                    {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                </button>
+                <div className="pointer-events-auto h-full flex flex-col">
+                    {/* Voice Toggle */}
+                    <button
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="absolute top-4 right-8 p-2 rounded-full bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white transition-colors z-50 backdrop-blur-sm border border-white/10"
+                        title={isMuted ? "Unmute Text-to-Speech" : "Mute Text-to-Speech"}
+                    >
+                        {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
 
-                {/* Virtualized Container */}
-                <div className="w-full h-full max-w-4xl mx-auto relative">
-                    <Virtuoso
-                        ref={virtuosoRef}
-                        style={{ height: '100%' }}
-                        data={agentHistory}
-                        itemContent={(index, msg) => <MessageItem msg={msg} avatarUrl={avatarUrl} />}
-                        followOutput="smooth"
-                        initialTopMostItemIndex={agentHistory.length > 0 ? agentHistory.length - 1 : 0}
-                        className="custom-scrollbar"
-                    />
+                    {/* Virtualized Container */}
+                    <div className="w-full h-full max-w-4xl mx-auto relative">
+                        <Virtuoso
+                            ref={virtuosoRef}
+                            style={{ height: '100%' }}
+                            data={agentHistory}
+                            itemContent={(index, msg) => <MessageItem msg={msg} avatarUrl={avatarUrl} />}
+                            followOutput="smooth"
+                            initialTopMostItemIndex={agentHistory.length > 0 ? agentHistory.length - 1 : 0}
+                            className="custom-scrollbar"
+                        />
+                    </div>
                 </div>
             </motion.div>
         </AnimatePresence>

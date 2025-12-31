@@ -78,9 +78,9 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
     }, [project.clips]);
 
     return (
-        <div className="h-72 border-t border-gray-800 bg-gray-900 flex flex-col">
+        <div className="h-72 border-t border-[--border] bg-[--card] flex flex-col">
             {/* Timeline Controls */}
-            <div className="h-12 border-b border-gray-800 flex items-center px-4 gap-4 bg-gray-900 z-10">
+            <div className="h-12 border-b border-[--border] flex items-center px-4 gap-4 bg-[--card] z-10">
                 <div className="flex items-center gap-2">
                     <button onClick={() => handleSeek(0)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white"><SkipBack size={16} /></button>
                     <button onClick={handlePlayPause} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white">
@@ -89,7 +89,7 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     <button onClick={() => handleSeek(project.durationInFrames)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white"><SkipForward size={16} /></button>
                 </div>
                 <div className="h-6 w-px bg-gray-700 mx-2"></div>
-                <span className="text-xs text-purple-400 font-mono font-bold">{formatTime(0)}</span>
+                <span className="text-xs text-[--primary] font-mono font-bold">{formatTime(0)}</span>
                 <div className="flex-1"></div>
                 <button onClick={handleAddTrack} className="flex items-center gap-1 text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300 transition-colors">
                     <Plus size={14} /> Add Track
@@ -97,7 +97,7 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
             </div>
 
             {/* Tracks Container */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-950 relative">
+            <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-[--background] relative">
                 {/* Time Ruler */}
                 <div
                     className="h-6 w-full border-b border-gray-800 mb-2 relative cursor-pointer hover:bg-gray-900"
@@ -142,7 +142,7 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 ))}
 
                 {/* Add Track Button (Bottom) */}
-                <div className="h-10 flex items-center justify-center border-2 border-dashed border-gray-800 rounded hover:border-gray-700 hover:bg-gray-900/50 cursor-pointer transition-all m-4" onClick={handleAddTrack} role="button">
+                <div className="h-10 flex items-center justify-center border-2 border-dashed border-[--border] rounded hover:border-[--primary]/50 hover:bg-[--muted]/50 cursor-pointer transition-all m-4" onClick={handleAddTrack} role="button">
                     <span className="text-xs text-gray-500 flex items-center gap-2"><Plus size={14} /> Add Track</span>
                 </div>
             </div>

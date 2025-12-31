@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Film, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Film, Layout, Maximize2, Minimize2, Settings, Sparkles } from 'lucide-react';
 import { useStore, HistoryItem } from '../../core/store';
 import { useToast } from '../../core/context/ToastContext';
-import IdeaStep from './components/IdeaStep';
-import ReviewStep from './components/ReviewStep';
-import FrameSelectionModal from './components/FrameSelectionModal';
-const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { ErrorBoundary } from '../../core/components/ErrorBoundary';
 import { VideoGenerationSidebar } from './components/VideoGenerationSidebar';
+import { DirectorPromptBar } from './components/DirectorPromptBar';
+import { DailiesStrip } from './components/DailiesStrip';
 
-type WorkflowStep = 'idea' | 'review' | 'generating' | 'result' | 'editor';
+// Lazy load the heavy Editor
+const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 
 export default function VideoWorkflow() {
     const {
@@ -26,7 +25,6 @@ export default function VideoWorkflow() {
         currentOrganizationId
     } = useStore();
 
-    // Use local store for job tracking
     const {
         jobId,
         status: jobStatus,
@@ -35,34 +33,42 @@ export default function VideoWorkflow() {
     } = useVideoEditorStore();
 
     const toast = useToast();
-    const [step, setStep] = useState<WorkflowStep>('idea');
+
+    // View State: 'director' (Generation) or 'editor' (Timeline)
+    const [viewMode, setViewMode] = useState<'director' | 'editor'>('director');
     const [localPrompt, setLocalPrompt] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalTarget, setModalTarget] = useState<'firstFrame' | 'lastFrame' | 'ingredient'>('firstFrame');
 
-    // Find the most recent video or the selected item if it's a video
-    const activeVideo = selectedItem?.type === 'video' ? selectedItem : generatedHistory.find(item => item.type === 'video');
+    // Director State
+    const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
 
+    // Sync pending prompt
     useEffect(() => {
         if (pendingPrompt) {
             setLocalPrompt(pendingPrompt);
-            setPrompt(pendingPrompt); // Sync to global prompt state
-            setStep('review'); // Skip to review if prompt is provided via command bar
+            setPrompt(pendingPrompt);
             setPendingPrompt(null);
         }
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
-    // Listen for job updates
+    // Set initial active video
+    useEffect(() => {
+        if (selectedItem?.type === 'video') {
+            setActiveVideo(selectedItem);
+        } else if (generatedHistory.length > 0 && !activeVideo) {
+            // Find most recent video
+            const recent = generatedHistory.find(h => h.type === 'video');
+            if (recent) setActiveVideo(recent);
+        }
+    }, [selectedItem, generatedHistory, activeVideo]);
+
+    // Job Listener (kept from original)
     useEffect(() => {
         if (!jobId) return;
 
-        // Import Firestore dynamically to avoid SSR issues if any (though this is client side)
         let unsubscribe: () => void;
-
         const setupListener = async () => {
             try {
                 const { doc, onSnapshot } = await import('firebase/firestore');
-                // Dynamically import db from our service to ensure app is initialized
                 const { db } = await import('@/services/firebase');
 
                 unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
@@ -81,47 +87,36 @@ export default function VideoWorkflow() {
                                     type: 'video' as const,
                                     timestamp: Date.now(),
                                     projectId: 'default',
-                                    orgId: currentOrganizationId // Add orgId to history item
+                                    orgId: currentOrganizationId
                                 };
                                 addToHistory(newAsset);
+                                setActiveVideo(newAsset); // Auto-play result
                                 toast.success('Scene generated!');
-                                setStep('result');
-                                setJobId(null); // Clear job
+                                setJobId(null);
                                 setJobStatus('idle');
                             } else if (newStatus === 'failed') {
                                 toast.error('Generation failed');
                                 setJobId(null);
                                 setJobStatus('failed');
-                                setStep('review');
                             }
                         }
                     }
-                }, (error) => {
-                    console.error("Job listener error:", error);
-                    toast.error("Lost connection to job status.");
                 });
             } catch (e) {
-                console.error("Failed to setup job listener:", e);
-                toast.error("Failed to track job status.");
+                console.error("Job listener error:", e);
             }
         };
-
         setupListener();
-
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
+        return () => { if (unsubscribe) unsubscribe(); };
     }, [jobId, addToHistory, toast, localPrompt, setJobId, setJobStatus, jobStatus, currentOrganizationId]);
 
     const handleGenerate = async () => {
-        setStep('generating');
         setJobStatus('queued');
         const isInterpolation = videoInputs.firstFrame && videoInputs.lastFrame;
-        toast.info(isInterpolation ? 'Queuing interpolation sequence...' : 'Queuing scene generation...');
+        toast.info(isInterpolation ? 'Queuing interpolation...' : 'Queuing scene generation...');
 
         try {
             const { VideoGeneration } = await import('@/services/image/VideoGenerationService');
-
             const { jobId: newJobId } = await VideoGeneration.triggerVideoGeneration({
                 prompt: localPrompt,
                 resolution: studioControls.resolution,
@@ -138,230 +133,137 @@ export default function VideoWorkflow() {
                 ingredients: videoInputs.ingredients?.map(i => i.url),
                 orgId: currentOrganizationId
             });
-
             setJobId(newJobId);
-
         } catch (error: any) {
-            console.error("Video generation trigger failed:", error);
+            console.error("Video generation failed:", error);
             toast.error(`Trigger failed: ${error.message}`);
-            setStep('review');
             setJobStatus('failed');
         }
     };
 
-    const handleDesignFrame = (type: 'start' | 'end') => {
-        setModalTarget(type === 'start' ? 'firstFrame' : 'lastFrame');
-        setIsModalOpen(true);
-    };
+    return (
+        <div className="flex-1 flex overflow-hidden h-full bg-[#0a0a0a] relative">
 
-    const handleAddIngredient = () => {
-        setModalTarget('ingredient');
-        setIsModalOpen(true);
-    };
+            {/* Main Stage (Director View) */}
+            <div className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}>
 
-    const handleRemoveIngredient = (index: number) => {
-        const newIngredients = [...(videoInputs.ingredients || [])];
-        newIngredients.splice(index, 1);
-        setVideoInput('ingredients', newIngredients);
-    };
+                {/* Director Prompt Bar (Top Overlay) */}
+                <DirectorPromptBar
+                    prompt={localPrompt}
+                    onPromptChange={setLocalPrompt}
+                    onGenerate={handleGenerate}
+                    isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
+                />
 
-    const handleClearFrame = (type: 'start' | 'end') => {
-        if (type === 'start') {
-            setVideoInput('firstFrame', null);
-        } else {
-            setVideoInput('lastFrame', null);
-        }
-    };
+                {/* Central Preview Stage */}
+                <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
+                    {/* Background Grid Ambience */}
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-    const renderStage = () => {
-        if (step === 'idea') {
-            return (
-                <div className="max-w-2xl mx-auto pt-20 relative">
-                    <IdeaStep
-                        initialPrompt={localPrompt}
-                        onPromptChange={setLocalPrompt}
-                        onNext={() => setStep('review')}
-                        isThinking={false}
-                    />
-                    <div className="absolute top-0 right-0 mt-4 mr-4">
-                        <button
-                            onClick={() => setStep('editor')}
-                            className="text-xs text-gray-500 hover:text-white flex items-center gap-1 transition-colors"
-                        >
-                            <Film size={14} />
-                            Open Editor
-                        </button>
+                    {/* Main Cinema View */}
+                    <div className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10 group">
+
+                        {jobStatus === 'processing' || jobStatus === 'queued' ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
+                                <div className="w-24 h-24 relative mb-4">
+                                    <div className="absolute inset-0 rounded-full border-t-2 border-purple-500 animate-spin"></div>
+                                    <div className="absolute inset-2 rounded-full border-r-2 border-indigo-500 animate-spin flex items-center justify-center">
+                                        <Sparkles size={24} className="text-purple-400 animate-pulse" />
+                                    </div>
+                                </div>
+                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
+                                    Imaginating Scene...
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-2">AI Director is rendering your vision</p>
+                            </div>
+                        ) : activeVideo ? (
+                            activeVideo.url.startsWith('data:image') || activeVideo.type === 'image' ? (
+                                <img src={activeVideo.url} alt="Preview" className="w-full h-full object-contain" />
+                            ) : (
+                                <video
+                                    src={activeVideo.url}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    className="w-full h-full object-contain"
+                                />
+                            )
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-gray-700">
+                                <Film size={64} className="mb-4 opacity-20" />
+                                <p className="text-lg font-medium opacity-50">Studio Ready</p>
+                                <p className="text-sm opacity-30">Enter a prompt to begin</p>
+                            </div>
+                        )}
+
+                        {/* Overlay Controls */}
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button className="bg-black/60 hover:bg-black/80 text-white p-2 rounded-lg backdrop-blur-md transition-colors">
+                                <Maximize2 size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
-            );
-        }
 
-        if (step === 'review') {
-            return (
-                <div className="max-w-4xl mx-auto pt-10">
-                    <ReviewStep
-                        finalPrompt={localPrompt}
-                        onBack={() => setStep('idea')}
-                        onGenerate={handleGenerate}
-                        isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
-                        startFrameData={videoInputs.firstFrame?.url || null}
-                        endFrameData={videoInputs.lastFrame?.url || null}
-                        onDesignFrame={handleDesignFrame}
-                        onClearFrame={handleClearFrame}
-                        ingredients={videoInputs.ingredients || []}
-                        onAddIngredient={handleAddIngredient}
-                        onRemoveIngredient={handleRemoveIngredient}
-                    />
-                </div>
-            );
-        }
+                {/* Dailies Strip (Bottom Overlay) */}
+                <DailiesStrip
+                    items={generatedHistory}
+                    selectedId={activeVideo?.id || null}
+                    onSelect={setActiveVideo}
+                    onDragStart={() => { }} // TODO: Drag to editor
+                />
+            </div>
 
-        if (step === 'generating') {
-            return (
-                <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-pulse">
-                    <div className="w-24 h-24 bg-neon-purple/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(176,38,255,0.3)]">
-                        <Film size={48} className="text-neon-purple animate-spin" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Generating Scene...</h2>
-                    <p className="text-gray-500 max-w-md">
-                        AI is rendering your vision. This may take a moment.
-                    </p>
-                </div>
-            );
-        }
-
-        if (step === 'result' && activeVideo) {
-            return (
-                <div className="flex flex-col items-center justify-center h-full p-8">
-                    <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800 relative group">
-                        {activeVideo.url.startsWith('data:image') ? (
-                            <div className="relative w-full h-full">
-                                <img src={activeVideo.url} alt={activeVideo.prompt} className="w-full h-full object-contain" />
-                                <div className="absolute top-4 left-4 bg-purple-600/90 text-white px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-lg">
-                                    Storyboard Preview
+            {/* Editor Container (Full Screen Overlay) */}
+            {viewMode === 'editor' && (
+                <div className="absolute inset-0 z-50 bg-[#0a0a0a]">
+                    <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
+                        <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
+                            <div className="h-full flex flex-col">
+                                {/* Editor Header (integrated or part of Editor component) */}
+                                <div className="h-10 bg-black border-b border-white/10 flex items-center px-4 justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setViewMode('director')}
+                                            className="text-gray-400 hover:text-white flex items-center gap-1 text-xs"
+                                        >
+                                            <Layout size={14} /> Back to Director
+                                        </button>
+                                    </div>
+                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">The Cutting Room</span>
+                                    <div className="w-20"></div>
+                                </div>
+                                <div className="flex-1 relative">
+                                    <VideoEditor initialVideo={activeVideo || undefined} />
                                 </div>
                             </div>
-                        ) : (
-                            <video
-                                src={activeVideo.url}
-                                controls
-                                autoPlay
-                                loop
-                                className="w-full h-full object-contain"
-                            />
-                        )}
-                    </div>
-                    <div className="mt-6 text-center flex gap-4 justify-center">
-                        <button
-                            onClick={() => setStep('idea')}
-                            className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                        >
-                            New Scene
-                        </button>
-                        <button
-                            onClick={() => setStep('review')}
-                            className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
-                        >
-                            Remix / Edit
-                        </button>
-                        <button
-                            onClick={() => setStep('editor')}
-                            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center gap-2"
-                        >
-                            <Film size={16} />
-                            Open in Studio
-                        </button>
-                    </div>
+                        </React.Suspense>
+                    </ErrorBoundary>
                 </div>
-            );
-        }
-
-        if (step === 'editor') {
-            return (
-                <ErrorBoundary fallback={<div className="p-10 text-red-500">Video Editor encountered an error.</div>}>
-                    <React.Suspense fallback={<div className="flex items-center justify-center h-full text-purple-500">Loading Studio Engine...</div>}>
-                        <VideoEditor initialVideo={activeVideo} />
-                    </React.Suspense>
-                </ErrorBoundary>
-            );
-        }
-
-        // Fallback for result state if no active video
-        return (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="w-24 h-24 bg-gray-800/50 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-purple-900/10">
-                    <Film size={48} className="text-gray-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Ready to Direct</h2>
-                <button
-                    onClick={() => setStep('idea')}
-                    className="mt-4 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold transition-all"
-                >
-                    Start New Project
-                </button>
-                <button
-                    onClick={() => setStep('editor')}
-                    className="mt-4 ml-4 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold transition-all"
-                >
-                    Open Studio Editor
-                </button>
-            </div>
-        );
-    };
-
-    return (
-        <div className="flex-1 flex overflow-hidden h-full">
-            {/* Stage Area */}
-            <div className="flex-1 relative bg-[#0f0f0f] overflow-y-auto custom-scrollbar flex flex-col">
-                <div className="flex-1">
-                    {renderStage()}
-                </div>
-            </div>
-
-            {/* Right Sidebar - Video Generation Controls */}
-            {step !== 'editor' && (
-                <VideoGenerationSidebar />
             )}
 
-            <FrameSelectionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSelect={async (image) => {
-                    let imageUrl = image.url;
+            {/* Switch Mode Button (Floating when in Director Mode) */}
+            {viewMode === 'director' && (
+                <div className="absolute bottom-8 right-8 z-30">
+                    <button
+                        onClick={() => setViewMode('editor')}
+                        className="group flex items-center gap-3 pl-4 pr-2 py-2 bg-gradient-to-r from-gray-900 to-black border border-white/10 rounded-full hover:border-yellow-500/50 shadow-2xl hover:shadow-[0_0_20px_rgba(234,179,8,0.2)] transition-all"
+                    >
+                        <span className="text-sm font-semibold text-gray-300 group-hover:text-yellow-400 transition-colors">
+                            Open Editor
+                        </span>
+                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-black transition-all">
+                            <Settings size={16} />
+                        </div>
+                    </button>
+                </div>
+            )}
 
-                    // If selecting a video, extract the relevant frame
-                    if (image.type === 'video') {
-                        try {
-                            const { extractVideoFrame } = await import('../../utils/video');
-                            // If target is firstFrame, we want the LAST frame of the video (Extension)
-                            // If target is lastFrame, we want the FIRST frame (Bridging) - though usually bridging uses images
-                            // If target is ingredient, we probably want a representative frame (e.g. first)
-
-                            const offset = modalTarget === 'firstFrame' ? -1 : 0; // -1 signals last frame in our util (implicitly)
-                            imageUrl = await extractVideoFrame(image.url, offset);
-
-                            toast.success("Extracted frame from video for extension");
-                        } catch (e) {
-                            console.error("Failed to extract frame", e);
-                            toast.error("Failed to use video as input");
-                            return;
-                        }
-                    }
-
-                    if (modalTarget === 'ingredient') {
-                        // For ingredients, we need to construct a HistoryItem-like object if we extracted a frame
-                        // But setVideoInput expects HistoryItem[] or HistoryItem
-                        // If we extracted a frame, imageUrl is a data URI. We need to wrap it.
-                        const ingredientItem = { ...image, url: imageUrl, type: 'image' as const };
-                        setVideoInput('ingredients', [...(videoInputs.ingredients || []), ingredientItem]);
-                    } else {
-                        // For frames, we also need to wrap it if it was a video
-                        const frameItem = { ...image, url: imageUrl, type: 'image' as const };
-                        setVideoInput(modalTarget, frameItem);
-                    }
-                }}
-                target={modalTarget}
-            />
+            {/* Right Sidebar - Video Gen Controls (Only in Director Mode) */}
+            {viewMode === 'director' && (
+                <VideoGenerationSidebar />
+            )}
         </div>
     );
 }
+

@@ -55,9 +55,9 @@ export const VideoTools = {
             return "Video generation failed (no URI returned).";
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Video generation failed: ${e.message}`;
+                throw new Error(`Video generation failed: ${e.message}`);
             }
-            return `Video generation failed: An unknown error occurred.`;
+            throw new Error(`Video generation failed: An unknown error occurred.`);
         }
     },
     generate_motion_brush: async (args: { image: string, mask: string, prompt?: string }) => {
@@ -91,9 +91,9 @@ export const VideoTools = {
             return "Motion Brush generation failed.";
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Motion Brush failed: ${e.message}`;
+                throw new Error(`Motion Brush failed: ${e.message}`);
             }
-            return `Motion Brush failed: An unknown error occurred.`;
+            throw new Error(`Motion Brush failed: An unknown error occurred.`);
         }
     },
     batch_edit_videos: async (args: { prompt: string, videoIndices?: number[] }) => {
@@ -156,9 +156,9 @@ export const VideoTools = {
 
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Batch video processing failed: ${e.message}`;
+                throw new Error(`Batch video processing failed: ${e.message}`);
             }
-            return `Batch video processing failed: An unknown error occurred.`;
+            throw new Error(`Batch video processing failed: An unknown error occurred.`);
         }
     },
     extend_video: async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
@@ -198,9 +198,9 @@ export const VideoTools = {
             return "Video extension failed (no URI returned).";
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Video extension failed: ${e.message}`;
+                throw new Error(`Video extension failed: ${e.message}`);
             }
-            return `Video extension failed: An unknown error occurred.`;
+            throw new Error(`Video extension failed: An unknown error occurred.`);
         }
     },
     update_keyframe: async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
@@ -234,9 +234,9 @@ export const VideoTools = {
             return `Keyframe updated for clip ${args.clipId} on property ${args.property} at frame ${args.frame} with value ${args.value}${args.easing ? ` and easing ${args.easing}` : ''}.`;
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Keyframe update failed: ${e.message}`;
+                throw new Error(`Keyframe update failed: ${e.message}`);
             }
-            return `Keyframe update failed: An unknown error occurred.`;
+            throw new Error(`Keyframe update failed: An unknown error occurred.`);
         }
     },
     generate_video_chain: async (args: { prompt: string, startImage: string, totalDuration: number }) => {
@@ -323,9 +323,9 @@ export const VideoTools = {
 
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Video chain generation failed: ${e.message}`;
+                throw new Error(`Video chain generation failed: ${e.message}`);
             }
-            return `Video chain generation failed: An unknown error occurred.`;
+            throw new Error(`Video chain generation failed: An unknown error occurred.`);
         }
     },
     interpolate_sequence: async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
@@ -359,9 +359,9 @@ export const VideoTools = {
 
         } catch (e: unknown) {
             if (e instanceof Error) {
-                return `Interpolation failed: ${e.message}`;
+                throw new Error(`Interpolation failed: ${e.message}`);
             }
-            return `Interpolation failed: An unknown error occurred.`;
+            throw new Error(`Interpolation failed: An unknown error occurred.`);
         }
     }
 };
