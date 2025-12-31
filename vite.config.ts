@@ -115,7 +115,7 @@ export default defineConfig({
           'vendor-wavesurfer': ['wavesurfer.js'],
           'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
           'vendor-fabric': ['fabric'],
-          'vendor-tone': ['tone'],
+
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
         },
       },
