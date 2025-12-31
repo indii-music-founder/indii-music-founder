@@ -25,6 +25,9 @@ const getInngestClient = () => {
 const corsHandler = corsLib({ origin: true });
 
 // ----------------------------------------------------------------------------
+// Shared Gemini Functions
+// ----------------------------------------------------------------------------
+
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
 
@@ -352,6 +355,45 @@ export const generateImageV3 = functions
         }
     });
 
+export const editImage = functions
+    .runWith({ secrets: [geminiApiKey] })
+    .https.onCall(async (data: any, context) => {
+        // Placeholder for Edit Image logic if needed
+        return { message: "Edit Image V3 Not fully implemented in this refactor." };
+    });
+
+const corsHandler = corsLib({ origin: true });
+
+export const ragProxy = functions
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 60
+    })
+    .https.onRequest((req, res) => {
+        corsHandler(req, res, async () => {
+            try {
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
+
+                const fetchOptions: RequestInit = {
+                    method: req.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: (req.method !== 'GET' && req.method !== 'HEAD') ?
+                        (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
+                        : undefined
+                };
+
+                const response = await fetch(targetUrl, fetchOptions);
+                const data = await response.text();
+                res.status(response.status);
+                try { res.send(JSON.parse(data)); } catch { res.send(data); }
+            } catch (error: any) {
+                res.status(500).send({ error: error.message });
+            }
+        });
 interface EditImageRequestData {
     image: string;
     mask?: string;
