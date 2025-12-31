@@ -322,6 +322,96 @@ export class GeminiRetrievalService {
     }
 
     /**
+     * Streams query responses using the Gemini API.
+     */
+    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string): AsyncGenerator<string> {
+        let tools: Array<{ fileSearch: { fileSearchStoreNames: string[] } }> | undefined;
+        const targetModel = model || AI_MODELS.TEXT.AGENT;
+
+        if (!fileContent) {
+            try {
+                const storeName = await this.ensureFileSearchStore();
+                if (fileUri) await this.importFileToStore(fileUri, storeName);
+                tools = [{ fileSearch: { fileSearchStoreNames: [storeName] } }];
+            } catch (e) {
+                console.error("[RAG] Stream Query Setup Failed:", e);
+            }
+        }
+
+        const body = {
+            contents: [{
+                role: 'user',
+                parts: [
+                    ...(fileContent ? [{ text: `CONTEXT:\n${fileContent}\n\n` }] : []),
+                    { text: userQuery }
+                ]
+            }],
+            generationConfig: { temperature: 0.0 },
+            ...(tools ? { tools } : {})
+        };
+
+        const response = await fetch(`${this.baseUrl}/models/${targetModel}:streamGenerateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Stream Error: ${response.status} - ${error}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("Could not get stream reader");
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // The Gemini stream returns a JSON array of objects [...]
+            // We need to parse each item in the array.
+            // For simplicity, we search for JSON objects within the stream.
+            let firstBracket = buffer.indexOf('{');
+            while (firstBracket !== -1) {
+                let depth = 0;
+                let lastBracket = -1;
+                for (let i = firstBracket; i < buffer.length; i++) {
+                    if (buffer[i] === '{') depth++;
+                    else if (buffer[i] === '}') {
+                        depth--;
+                        if (depth === 0) {
+                            lastBracket = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (lastBracket !== -1) {
+                    const potentialJson = buffer.substring(firstBracket, lastBracket + 1);
+                    try {
+                        const chunk = JSON.parse(potentialJson);
+                        const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) yield text;
+                        buffer = buffer.substring(lastBracket + 1);
+                        firstBracket = buffer.indexOf('{');
+                    } catch (e) {
+                        // Incomplete JSON or parse error, break and wait for more data
+                        break;
+                    }
+                } else {
+                    // No matching closing bracket yet
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
      * Lists files uploaded to the Gemini Files API.
      */
     async listFiles(): Promise<{ files: GeminiFile[] }> {

@@ -8,7 +8,7 @@ export interface Project {
     orgId: string;
 }
 
-export type ModuleId = 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom' | 'agent' | 'distribution' | 'files';
+export type ModuleId = 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom' | 'agent' | 'distribution' | 'files' | 'merchandise';
 
 export interface AppSlice {
     currentModule: ModuleId;

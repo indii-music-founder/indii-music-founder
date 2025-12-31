@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Shirt, Coffee, Smartphone, Frame, LucideIcon } from 'lucide-react';
+import { BananaTheme } from '../themes';
 
 export type ProductType = 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
 
@@ -9,6 +10,7 @@ interface AssetRackProps {
     productType: ProductType;
     onAssetUpload: (base64: string) => void;
     onTypeChange: (type: ProductType) => void;
+    theme?: BananaTheme;
 }
 
 const PRODUCT_ICONS: Record<ProductType, LucideIcon> = {
@@ -26,8 +28,6 @@ interface ProductSelectorProps {
 }
 
 // Optimization: Extract ProductSelector and use React.memo to prevent re-renders
-// of the list when parent state (like isDragging) changes.
-// This ensures that the grid of buttons only updates when productType changes.
 const ProductSelector = React.memo(({ productType, onTypeChange }: ProductSelectorProps) => {
     return (
         <div className="mb-8 space-y-3">
@@ -72,9 +72,20 @@ const ProductSelector = React.memo(({ productType, onTypeChange }: ProductSelect
 });
 ProductSelector.displayName = 'ProductSelector';
 
-export default function AssetRack({ productAsset, productType, onAssetUpload, onTypeChange }: AssetRackProps) {
+export default function AssetRack({ productAsset, productType, onAssetUpload, onTypeChange, theme }: AssetRackProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [placement, setPlacement] = useState('Front');
+    const [scale, setScale] = useState(100);
+    const [placement, setPlacement] = useState<'Front' | 'Back' | 'Sleeve'>('Front');
+    const [scale, setScale] = useState(100);
+
+    const containerClass = theme
+        ? `${theme.colors.surface} ${theme.effects.glass} border-r ${theme.colors.border}`
+        : "bg-[#0a0a0a] border-r border-white/5 backdrop-blur-2xl";
+
+    const textClass = theme ? theme.colors.text : "text-white";
+    const subTextClass = theme ? theme.colors.textSecondary : "text-gray-400";
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -109,18 +120,19 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0a] border-r border-white/5 p-6 backdrop-blur-2xl">
+        <div className={`flex flex-col h-full p-6 transition-colors duration-500 ${containerClass}`}>
+
             <div className="flex items-center gap-3 mb-8">
                 <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
-                <h2 className="text-xl font-bold text-white tracking-tight">The Asset</h2>
+                <h2 className={`text-xl font-bold tracking-tight ${textClass}`}>The Asset</h2>
             </div>
 
             {/* Product Selector */}
             <ProductSelector productType={productType} onTypeChange={onTypeChange} />
 
             {/* Asset Dropzone */}
-            <div className="flex-1 flex flex-col min-h-0">
-                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider ml-1 mb-3">
+            <div className="flex-1 flex flex-col min-h-0 mb-6">
+                <label className={`text-xs font-medium uppercase tracking-wider ml-1 mb-3 ${subTextClass}`}>
                     Source Graphic
                 </label>
                 <motion.div
@@ -130,7 +142,7 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
                             ? 'border-blue-500 bg-blue-500/10'
                             : productAsset
                                 ? 'border-white/10 bg-black/20'
-                                : 'border-white/10 hover:border-white/20 hover:bg-white/5'}
+                                : `${theme ? theme.colors.border : 'border-white/10'} hover:border-white/20 hover:bg-white/5`}
                     `}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -171,12 +183,12 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
                             >
                                 <div className={`
                                     w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors duration-300
-                                    ${isDragging ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-500'}
+                                    ${isDragging ? 'bg-blue-500/20 text-blue-400' : `${theme ? theme.colors.surfaceHighlight : 'bg-white/5'} ${theme ? theme.colors.textSecondary : 'text-gray-500'}`}
                                 `}>
                                     <Upload className="w-8 h-8" />
                                 </div>
-                                <p className="text-sm font-medium text-gray-300">Drop Design File</p>
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className={`text-sm font-medium ${theme ? theme.colors.text : 'text-gray-300'}`}>Drop Design File</p>
+                                <p className={`text-xs mt-2 ${subTextClass}`}>
                                     Supports PNG, JPG (Max 5MB)<br />
                                     Transparency Recommended
                                 </p>
@@ -192,6 +204,44 @@ export default function AssetRack({ productAsset, productType, onAssetUpload, on
                         onChange={handleFileChange}
                     />
                 </motion.div>
+            </div>
+
+            {/* Placement Controls (NEW) */}
+            <div className={`space-y-4 pt-4 border-t ${theme ? theme.colors.border : 'border-white/5'}`}>
+                <label className={`text-xs font-medium uppercase tracking-wider ml-1 mb-2 block ${subTextClass}`}>
+                    Placement & Scale
+                </label>
+
+                <div className="flex gap-2 mb-4">
+                    {['Front', 'Back', 'Sleeve'].map((place) => (
+                        <button
+                            key={place}
+                            onClick={() => setPlacement(place as any)}
+                            className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors 
+                                ${placement === place
+                                    ? 'bg-blue-500 text-white border-blue-400'
+                                    : `bg-transparent ${subTextClass} ${theme ? theme.colors.border : 'border-white/5'} hover:bg-white/10`
+                                }`}
+                        >
+                            {place}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="space-y-2">
+                    <div className={`flex justify-between text-xs ${subTextClass}`}>
+                        <span>Scale</span>
+                        <span>{scale}%</span>
+                    </div>
+                    <input
+                        type="range"
+                        min="10"
+                        max="200"
+                        value={scale}
+                        onChange={(e) => setScale(Number(e.target.value))}
+                        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full"
+                    />
+                </div>
             </div>
         </div>
     );

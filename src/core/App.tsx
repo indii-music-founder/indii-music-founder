@@ -35,7 +35,10 @@ const OnboardingPage = lazy(() => import('../modules/onboarding/pages/Onboarding
 const Showroom = lazy(() => import('../modules/showroom/Showroom'));
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
+
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
+const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
+const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -69,6 +72,8 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'agent': AgentDashboard,
     'files': FilePreview,
     'distribution': DistributionDashboard,
+    'merch': MerchStudio,
+    'audio-analyzer': AudioAnalyzer,
 };
 
 // ============================================================================
@@ -178,10 +183,17 @@ export default function App() {
     const { userProfile } = useStore();
     useEffect(() => {
         const theme = userProfile?.preferences?.theme || 'dark';
+
+        // Remove all theme classes first
+        document.documentElement.classList.remove('dark', 'banana', 'banana-pro');
+
+        // Apply current theme
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+        } else if (theme === 'banana') {
+            document.documentElement.classList.add('banana');
+        } else if (theme === 'banana-pro') {
+            document.documentElement.classList.add('banana-pro', 'dark'); // Banana Pro is dark-based
         }
     }, [userProfile?.preferences?.theme]);
 

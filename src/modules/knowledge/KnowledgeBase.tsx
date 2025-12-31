@@ -1,50 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, Trash2, Search, Filter, Loader2, Book, Clock } from 'lucide-react';
-import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
-import { processForKnowledgeBase } from '@/services/rag/ragService';
+import { Upload, Search, Filter, Loader2, Book, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { useStore } from '@/core/store';
-
-// Using a slightly more robust type for internal state
-interface KnowledgeDoc {
-    id: string; // The file URI or embedding ID
-    title: string;
-    type: string;
-    size: string;
-    date: string;
-    status: 'indexed' | 'processing' | 'error';
-    rawName: string; // The full files/URI
-}
+import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
+import { DocumentCard } from './components/DocumentCard';
+import { KnowledgeChat } from './components/KnowledgeChat';
 
 export default function KnowledgeBase() {
     const toast = useToast();
-    const { userProfile, setUserProfile } = useStore();
     const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+
+    // Chat State
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [activeChatDoc, setActiveChatDoc] = useState<KnowledgeDoc | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const loadDocuments = async () => {
         setIsLoading(true);
         try {
-            const { files } = await GeminiRetrieval.listFiles();
-
-            // Map Gemini files to our UI model
-            const docs: KnowledgeDoc[] = (files || []).map((f: any) => ({
-                id: f.name,
-                title: f.displayName || f.name.split('/').pop(), // Fallback if no specific display name
-                type: f.mimeType.includes('pdf') ? 'PDF' : 'TXT', // Simple mapping
-                size: f.sizeBytes ? `${(parseInt(f.sizeBytes) / 1024).toFixed(1)} KB` : 'Unknown',
-                date: new Date(f.createTime).toLocaleDateString(),
-                status: 'indexed',
-                rawName: f.name
-            }));
-
+            const docs = await knowledgeBaseService.getDocuments();
             setDocuments(docs);
         } catch (error) {
-            console.error("Failed to load docs:", error);
             toast.error("Failed to load Knowledge Base.");
         } finally {
             setIsLoading(false);
@@ -59,66 +39,51 @@ export default function KnowledgeBase() {
         if (!files || files.length === 0) return;
 
         setIsUploading(true);
-        toast.info(`Uploading ${files.length} file(s) to Gemini...`);
+        toast.info(`Uploading ${files.length} file(s)...`);
 
-        let successCount = 0;
-        const uploadPromises: Promise<void>[] = [];
+        try {
+            const count = await knowledgeBaseService.uploadFiles(files, (name) => {
+                // Optional: Toast for each file, but might be too noisy
+            });
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-
-            uploadPromises.push((async () => {
-                try {
-                    const result = await processForKnowledgeBase(file, file.name, {
-                        size: `${(file.size / 1024).toFixed(1)} KB`,
-                        type: file.type,
-                        originalDate: new Date(file.lastModified).toISOString()
-                    });
-
-                    if (result.embeddingId) {
-                        toast.success(`Indexed: ${file.name}`);
-                        successCount++;
-                    } else {
-                        throw new Error("Ingestion failed");
-                    }
-                } catch (err) {
-                    console.error(`Upload Fail for ${file.name}:`, err);
-                    toast.error(`Failed to upload ${file.name}`);
-                }
-            })());
+            if (count > 0) {
+                toast.success(`Successfully added ${count} document(s).`);
+                await loadDocuments();
+            } else {
+                toast.error("Upload failed.");
+            }
+        } catch (error) {
+            toast.error("Upload encountered an error.");
+        } finally {
+            setIsUploading(false);
         }
-
-        await Promise.all(uploadPromises);
-
-        if (successCount > 0) {
-            toast.success(`Successfully added ${successCount} document(s) to Knowledge Base.`);
-            await loadDocuments();
-        }
-        setIsUploading(false);
     };
 
     const handleDelete = async (doc: KnowledgeDoc) => {
-        if (!confirm(`Are you sure you want to delete "${doc.title}"?`)) return;
+        if (!confirm(`Delete "${doc.title}"?`)) return;
 
         try {
-            await GeminiRetrieval.deleteFile(doc.rawName);
+            await knowledgeBaseService.deleteDocument(doc.rawName);
             toast.success("Document deleted.");
             await loadDocuments();
         } catch (err) {
-            console.error("Delete failed:", err);
             toast.error("Failed to delete document.");
         }
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
+    const handleChat = (doc: KnowledgeDoc) => {
+        setActiveChatDoc(doc);
+        setIsChatOpen(true);
     };
 
-    const handleDragLeave = () => {
-        setIsDragging(false);
+    const toggleGlobalChat = () => {
+        setActiveChatDoc(null);
+        setIsChatOpen(!isChatOpen);
     };
 
+    // Drag & Drop Handlers
+    const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+    const handleDragLeave = () => { setIsDragging(false); };
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
@@ -130,119 +95,109 @@ export default function KnowledgeBase() {
     );
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <Book className="text-emerald-500" />
-                        Knowledge Base
-                    </h1>
-                    <p className="text-gray-400">Central repository. AI agents can access these documents.</p>
-                </div>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors flex items-center gap-2"
-                >
-                    {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
-                    {isUploading ? 'Uploading...' : 'Upload Document'}
-                </button>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e.target.files)}
-                    accept=".txt,.md,.json,.csv,.js,.ts,.tsx,.pdf" // Added .pdf
-                    multiple
-                />
-            </div>
-
-            {/* Search and Filter */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 relative">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input
-                        type="text"
-                        placeholder="Search documents..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#161b22] border border-gray-800 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-                    />
-                </div>
-                <button className="p-2 bg-[#161b22] border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-                    <Filter size={20} />
-                </button>
-            </div>
-
-            {/* Upload Zone */}
-            <div
+        <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden relative">
+            <div className="flex-1 overflow-y-auto p-8"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`mb-8 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer ${isDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-800 hover:border-gray-700 hover:bg-gray-800/30'
-                    }`}
-                onClick={() => fileInputRef.current?.click()}
             >
-                <Upload size={32} className={`mb-3 ${isDragging ? 'text-emerald-500' : 'text-gray-500'}`} />
-                <p className="text-gray-400 font-medium">Drag and drop files here to upload</p>
-                <p className="text-xs text-gray-600 mt-1">Supported formats: TXT, MD, JSON, CSV, Code</p>
-            </div>
-
-            {/* Document List */}
-            <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden min-h-[200px]">
-                <div className="grid grid-cols-12 gap-4 p-4 border-b border-gray-800 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    <div className="col-span-6">Name</div>
-                    <div className="col-span-2">Type</div>
-                    <div className="col-span-2">Size</div>
-                    <div className="col-span-2 text-right">Actions</div>
+                {/* Header Section */}
+                <div className="flex items-center justify-between mb-10">
+                    <div className="animate-in fade-in slide-in-from-left duration-700">
+                        <div className="flex items-center gap-3 mb-3">
+                            <h1 className="text-4xl font-black flex items-center gap-3">
+                                <Book className="text-[#FFE135]" size={36} />
+                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
+                                    Knowledge Base
+                                </span>
+                            </h1>
+                            <span className="text-[10px] font-black bg-[#FFE135] text-black px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-[0_0_15px_rgba(255,225,53,0.3)]">Beta</span>
+                        </div>
+                        <p className="text-gray-500 text-lg font-medium tracking-tight">Central Neural Repository & Document Intelligence</p>
+                    </div>
+                    <div className="flex gap-4 animate-in fade-in slide-in-from-right duration-700">
+                        <button
+                            onClick={toggleGlobalChat}
+                            className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all duration-500 transform active:scale-95 ${isChatOpen
+                                ? 'bg-[#FFE135] text-black shadow-[0_0_30px_rgba(255,225,53,0.4)] scale-105'
+                                : 'bg-[#161b22] text-gray-300 border border-gray-800 hover:border-[#FFE135]/40 hover:text-white'
+                                }`}
+                        >
+                            <Sparkles size={20} className={isChatOpen ? 'animate-spin-slow' : ''} />
+                            {isChatOpen ? 'Neural Connection Active' : 'Initialize Neural Chat'}
+                        </button>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="px-6 py-3 bg-[#FFE135]/10 border border-[#FFE135]/30 hover:bg-[#FFE135]/20 text-[#FFE135] disabled:opacity-50 disabled:cursor-not-allowed font-bold rounded-2xl transition-all transform active:scale-95 flex items-center gap-2"
+                        >
+                            {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+                            {isUploading ? 'Ingesting...' : 'Ingest Document'}
+                        </button>
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e.target.files)}
+                        accept=".txt,.md,.json,.csv,.js,.ts,.tsx,.pdf"
+                        multiple
+                    />
                 </div>
 
-                <div className="divide-y divide-gray-800">
-                    {isLoading ? (
-                        <div className="p-8 flex items-center justify-center text-gray-500 gap-2">
-                            <Loader2 className="animate-spin" size={16} /> Loading documents...
-                        </div>
-                    ) : filteredDocs.map(doc => (
-                        <div key={doc.id} className="grid grid-cols-12 gap-4 p-4 hover:bg-gray-800/50 transition-colors items-center group">
-                            <div className="col-span-6 flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${['PDF', 'DOCX'].includes(doc.type) ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'
-                                    }`}>
-                                    <FileText size={18} />
-                                </div>
-                                <div>
-                                    <div className="font-medium text-gray-200 group-hover:text-white transition-colors">{doc.title}</div>
-                                    <div className="text-xs text-gray-500 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                                        Indexed
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="col-span-2 text-sm text-gray-400 font-mono">{doc.type}</div>
-                            <div className="col-span-2 text-sm text-gray-400 font-mono">{doc.size}</div>
-                            <div className="col-span-2 text-right text-sm text-gray-400 flex items-center justify-end gap-2">
-                                <span className="flex items-center gap-1 mr-2 text-xs opacity-50">
-                                    <Clock size={12} /> {doc.date}
-                                </span>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(doc); }}
-                                    className="p-1 hover:bg-red-900/50 rounded text-gray-400 hover:text-red-400 transition-colors"
-                                    title="Delete Document"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-
-                    {!isLoading && filteredDocs.length === 0 && (
-                        <div className="p-8 text-center text-gray-500">
-                            {documents.length === 0
-                                ? "Knowledge Base is empty. Upload your first document!"
-                                : `No documents found matching "${searchQuery}"`}
+                {/* Search Bar */}
+                <div className="relative mb-12 max-w-3xl animate-in fade-in slide-in-from-bottom duration-1000">
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                        <Search className="text-gray-600 group-focus-within:text-[#FFE135] transition-colors" size={22} />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Scan neural index for vectors..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-[#161b22]/40 backdrop-blur-md border border-gray-800/80 focus:border-[#FFE135]/50 text-white rounded-2xl pl-14 pr-6 py-5 focus:ring-4 focus:ring-[#FFE135]/5 transition-all placeholder-gray-700 text-xl font-medium shadow-2xl"
+                    />
+                    {isDragging && (
+                        <div className="absolute inset-0 bg-[#FFE135]/10 border-2 border-[#FFE135] border-dashed rounded-2xl flex items-center justify-center backdrop-blur-md z-10 animate-pulse">
+                            <p className="text-[#FFE135] font-black text-2xl flex items-center gap-3 uppercase tracking-tighter">
+                                <Upload size={32} /> Release to Ingest
+                            </p>
                         </div>
                     )}
                 </div>
+
+                {/* Content Grid */}
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-500 gap-4">
+                        <Loader2 className="animate-spin text-[#FFE135]" size={48} />
+                        <p className="animate-pulse">Accessing Neural Archives...</p>
+                    </div>
+                ) : filteredDocs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-600 border-2 border-dashed border-gray-800 rounded-3xl">
+                        <Upload size={48} className="mb-4 opacity-50" />
+                        <p className="text-xl font-medium">No documents found</p>
+                        <p className="text-sm mt-2">Upload files or drag & drop to populate the Knowledge Base</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                        {filteredDocs.map(doc => (
+                            <DocumentCard
+                                key={doc.id}
+                                doc={doc}
+                                onDelete={handleDelete}
+                                onChat={handleChat}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
+
+            {/* Chat Sidebar Overlay */}
+            <KnowledgeChat
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                activeDoc={activeChatDoc}
+            />
         </div>
     );
 }

@@ -22,6 +22,7 @@ export interface ProfileSlice {
     updateBrandKit: (updates: Partial<BrandKit>) => void;
     initializeAuth: () => void; // Kept for interface compatibility but now just loads profile
     logout: () => Promise<void>;
+    setTheme: (theme: 'dark' | 'light' | 'banana' | 'banana-pro') => void;
 }
 
 // Default Superuser Profile
@@ -106,5 +107,17 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         // In a no-auth world, "logout" might just reset preferences or switch to a guest profile.
         // For now, we just reload the page to clear transient state
         window.location.reload();
-    }
+    },
+    setTheme: (theme) => set((state) => {
+        const preferences = typeof state.userProfile.preferences === 'string'
+            ? JSON.parse(state.userProfile.preferences || '{}')
+            : { ...state.userProfile.preferences };
+
+        const newProfile = {
+            ...state.userProfile,
+            preferences: { ...preferences, theme }
+        };
+        saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save theme update:", err));
+        return { userProfile: newProfile };
+    })
 });

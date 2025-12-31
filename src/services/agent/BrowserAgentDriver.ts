@@ -26,14 +26,15 @@ export class BrowserAgentDriver {
         const logs: string[] = [];
         logs.push(`[Driver] Starting drive. Goal: "${goal}"`);
 
+        const api = window.electronAPI;
+        if (!api?.agent) {
+            throw new Error('Electron Agent API not available');
+        }
+
         try {
             // 1. Navigate to initial URL
-            if (!window.electronAPI?.agent?.navigateAndExtract) {
-                throw new Error('Electron Agent API not available');
-            }
-
             logs.push(`[Driver] Navigating to ${url}...`);
-            let currentState = await window.electronAPI.agent.navigateAndExtract(url);
+            let currentState = await api.agent.navigateAndExtract(url);
 
             if (!currentState.success) {
                 throw new Error(`Navigation failed: ${currentState.error}`);
@@ -112,21 +113,21 @@ export class BrowserAgentDriver {
                 switch (plan.action) {
                     case 'click':
                         if (!selector) throw new Error('Missing selector for click');
-                        actionResult = await window.electronAPI.agent.performAction('click', selector);
+                        actionResult = await api.agent.performAction('click', selector);
                         break;
                     case 'type':
                         if (!selector || !text) throw new Error('Missing params for type');
-                        actionResult = await window.electronAPI.agent.performAction('type', selector, text);
+                        actionResult = await api.agent.performAction('type', selector, text);
                         break;
                     case 'scroll': {
                         const direction = selector || 'down';
                         const amount = text || '500';
-                        actionResult = await window.electronAPI.agent.performAction('scroll', direction, amount);
+                        actionResult = await api.agent.performAction('scroll', direction, amount);
                         break;
                     }
                     case 'wait': {
                         const duration = text || '1000';
-                        actionResult = await window.electronAPI.agent.performAction('wait', '', duration);
+                        actionResult = await api.agent.performAction('wait', '', duration);
                         break;
                     }
                     default:
@@ -138,7 +139,7 @@ export class BrowserAgentDriver {
                 }
 
                 // Get new state (snapshot)
-                currentState = await window.electronAPI.agent.captureState();
+                currentState = await api.agent.captureState();
             }
 
             throw new Error('Max steps exceeded');

@@ -36,19 +36,19 @@ const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     language: 'en'
 };
 
+const defaultOptions = {
+    messageId: 'MSG-1',
+    sender: { partyId: 'SENDER', partyName: 'Sender' },
+    recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
+    createdDateTime: '2025-01-01T00:00:00Z'
+};
+
+const getDeals = (metadata: ExtendedGoldenMetadata): Deal[] => {
+    const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+    return ern.dealList || [];
+};
+
 describe('ERNMapper', () => {
-    const defaultOptions = {
-        messageId: 'MSG-1',
-        sender: { partyId: 'SENDER', partyName: 'Sender' },
-        recipient: { partyId: 'RECIPIENT', partyName: 'Recipient' },
-        createdDateTime: '2025-01-01T00:00:00Z'
-    };
-
-    const getDeals = (metadata: ExtendedGoldenMetadata): Deal[] => {
-        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
-        return ern.dealList || [];
-    };
-
     it('should map basic metadata to ERN message', () => {
         const ern = ERNMapper.mapMetadataToERN(MOCK_METADATA_BASE, defaultOptions);
 

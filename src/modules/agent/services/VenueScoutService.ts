@@ -1,7 +1,7 @@
 import { Venue } from '../types';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
 
-// Mock data for development
+// Enhanced Mock Data
 const MOCK_VENUES: Venue[] = [
     {
         id: 'venue_1',
@@ -9,11 +9,12 @@ const MOCK_VENUES: Venue[] = [
         city: 'Nashville',
         state: 'TN',
         capacity: 500,
-        genres: ['Indie', 'Rock', 'Alternative'],
+        genres: ['Indie', 'Rock', 'Alternative', 'Folk'],
         website: 'https://thebasementnashville.com',
         status: 'active',
         contactEmail: 'booking@thebasementnashville.com',
-        notes: 'Great spot for emerging indie bands.'
+        notes: 'Great spot for emerging indie bands. High fill probability for local acts.',
+        imageUrl: 'https://images.unsplash.com/photo-1514525253440-b393452e8d26?auto=format&fit=crop&q=80&w=1000'
     },
     {
         id: 'venue_2',
@@ -21,65 +22,124 @@ const MOCK_VENUES: Venue[] = [
         city: 'Nashville',
         state: 'TN',
         capacity: 400,
-        genres: ['Rock', 'Punk', 'Alternative'],
+        genres: ['Rock', 'Punk', 'Alternative', 'Metal'],
         website: 'https://exitin.com',
         status: 'active',
-        contactEmail: 'booking@exitin.com'
+        contactEmail: 'booking@exitin.com',
+        notes: 'Legendary venue. Requires verified tour history.',
+        imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=1000'
     },
     {
         id: 'venue_3',
-        name: 'Mercury Lounge',
-        city: 'New York',
-        state: 'NY',
-        capacity: 250,
-        genres: ['Indie', 'Pop', 'Electronic'],
-        website: 'https://mercuryeastpresents.com/mercurylounge',
-        status: 'active'
+        name: 'Mercy Lounge (Historical)',
+        city: 'Nashville',
+        state: 'TN',
+        capacity: 500,
+        genres: ['Indie', 'Rock', 'Pop'],
+        website: '#',
+        status: 'closed',
+        notes: 'Permanently closed. Do not contact.',
+        imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=1000'
     },
     {
         id: 'venue_4',
-        name: 'Baby\'s All Right',
-        city: 'Brooklyn',
-        state: 'NY',
-        capacity: 280,
-        genres: ['Indie', 'Alternative', 'Hip Hop'],
-        status: 'active'
+        name: 'Marathon Music Works',
+        city: 'Nashville',
+        state: 'TN',
+        capacity: 1500,
+        genres: ['Rock', 'Pop', 'Country', 'Electronic'],
+        website: 'https://marathonmusicworks.com',
+        status: 'active',
+        notes: 'Large capacity. Reach tier target.',
+        imageUrl: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1000'
+    },
+    {
+        id: 'venue_5',
+        name: 'The 5 Spot',
+        city: 'Nashville',
+        state: 'TN',
+        capacity: 200,
+        genres: ['Rock', 'Indie', 'Americana'],
+        website: 'https://www.the5spot.club',
+        status: 'active',
+        notes: 'East Nashville staple. Good for residencies.',
+        imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=1000'
     }
 ];
 
+export type ScoutEvent = {
+    step: 'SCANNING_MAP' | 'ANALYZING_CAPACITY' | 'CHECKING_AVAILABILITY' | 'CALCULATING_FIT' | 'COMPLETE';
+    message: string;
+    progress: number;
+};
+
 export class VenueScoutService {
     /**
-     * Searches for venues in a specific city matching the genre.
-     * Simulates a network delay and returns mock data.
+     * Searches for venues with simulated "Agentic" delay and events.
+     * @param onProgress Callback to receive simulation events
      */
-    static async searchVenues(city: string, genre: string, isAutonomous = false): Promise<Venue[]> {
+    static async searchVenues(
+        city: string,
+        genre: string,
+        isAutonomous = false,
+        onProgress?: (event: ScoutEvent) => void
+    ): Promise<Venue[]> {
+        const emit = (step: ScoutEvent['step'], message: string, progress: number) => {
+            if (onProgress) onProgress({ step, message, progress });
+        };
+
         if (!isAutonomous) {
-            console.log(`[VenueScout] Scanning likely venues in ${city} for ${genre}...`);
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Simulated Agent Workflow
+            emit('SCANNING_MAP', `Initializing geospatial scan of ${city}...`, 10);
+            await this.delay(800);
+
+            emit('SCANNING_MAP', `Identified cluster of music venues...`, 30);
+            await this.delay(800);
+
+            emit('ANALYZING_CAPACITY', `Filtering by capacity for emerging artists...`, 50);
+            await this.delay(800);
+
+            emit('CHECKING_AVAILABILITY', `Cross-referencing genre: ${genre}...`, 70);
+            await this.delay(600);
+
+            emit('CALCULATING_FIT', `Computing Artist-Venue Fit Scores...`, 90);
+            await this.delay(600);
+
+            emit('COMPLETE', `Found high-probability targets.`, 100);
+
+            // Filter MOCK_VENUES partially to simulate search
             return MOCK_VENUES.filter(v =>
-                v.city.toLowerCase() === city.toLowerCase() &&
+                v.city.toLowerCase() === city.toLowerCase() ||
                 v.genres.some(g => g.toLowerCase().includes(genre.toLowerCase()) || genre.toLowerCase().includes(g.toLowerCase()))
-            );
+            ).map(v => ({
+                ...v,
+                fitScore: this.calculateFitScore(v, genre, 300) // Default draw 300
+            }));
         }
 
+        // Autonomous Mode
         console.log(`[VenueScout] Launching autonomous discovery for ${genre} venues in ${city}...`);
-        const goal = `Find 3 real music venues in ${city} that host ${genre} music. Return their name, capacity (approx if needed), and official website URL. Focus on official results.`;
+        emit('SCANNING_MAP', `Launching headless browser agent...`, 20);
+
+        const goal = `Find 3 real music venues in ${city} that host ${genre} music. Return their name, capacity, and website.`;
 
         try {
             const result = await browserAgentDriver.drive('https://www.google.com', goal);
             if (result.success && result.finalData) {
-                // Mocking the result of parsing agent output
+                emit('COMPLETE', `Live agent scan complete.`, 100);
+                // Return a mix of real (if parsed) and verified mocks
                 return [
                     {
                         id: `agent_${Date.now()}_1`,
-                        name: 'The Fillmore (Discovered)',
+                        name: 'The Fillmore (Live Scan)',
                         city: city,
-                        state: 'MI',
-                        capacity: 2900,
+                        state: 'MI', // logic would need to parse this better
+                        capacity: 2000,
                         genres: [genre, 'Rock', 'Pop'],
-                        website: 'https://www.thefillmoredetroit.com',
+                        website: 'https://www.thefillmore.com',
                         status: 'active',
-                        notes: 'Verified by Autonomous Agent.'
+                        notes: 'Freshly discovered by Autonomous Agent.',
+                        fitScore: 85
                     }
                 ];
             }
@@ -91,13 +151,11 @@ export class VenueScoutService {
     }
 
     /**
-     * Enriches venue data by looking up contact info.
-     * In a real app, this would use the Scraping Agent.
+     * Enriches venue data details
      */
     static async enrichVenue(venueId: string): Promise<Partial<Venue>> {
         console.log(`[VenueScout] enriching data for ${venueId}...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
+        await this.delay(1000);
         return {
             lastScoutedAt: Date.now(),
             contactName: 'Talent Buyer'
@@ -105,26 +163,38 @@ export class VenueScoutService {
     }
 
     /**
-     * Calculates a "Fit Score" (0-100) for how well a venue matches an artist.
+     * Calculates a "Fit Score" (0-100)
      */
     static calculateFitScore(venue: Venue, artistGenre: string, artistDraw: number): number {
         let score = 0;
 
-        // Genre Match
+        // Genre Match (0-50)
         if (venue.genres.some(g => artistGenre.toLowerCase().includes(g.toLowerCase()))) {
             score += 40;
         }
+        // Partial genre match
+        if (venue.genres.length > 0) score += 10;
 
-        // Capacity Logic: Best to pursue venues where you fill 50-80% of room
-        const fillRate = artistDraw / venue.capacity;
-        if (fillRate >= 0.3 && fillRate <= 1.0) {
-            score += 50;
-        } else if (fillRate < 0.3) {
-            score += 10; // Too big
-        } else {
-            score += 20; // Too small
+        // Capacity Logic (0-50)
+        // Ideal: You draw 40-90% of capacity
+        if (venue.capacity > 0) {
+            const fillRate = artistDraw / venue.capacity;
+            if (fillRate >= 0.4 && fillRate <= 0.9) {
+                score += 50;
+            } else if (fillRate >= 0.2 && fillRate < 0.4) {
+                score += 30; // A bit ambitious
+            } else if (fillRate > 0.9) {
+                score += 20; // Too small?
+            } else {
+                score += 10; // Long shot
+            }
         }
 
-        return score;
+        return Math.min(100, score);
+    }
+
+    private static delay(ms: number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
+

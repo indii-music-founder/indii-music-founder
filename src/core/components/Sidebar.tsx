@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import type { ModuleId } from '../store/slices/appSlice';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout } = useStore();
@@ -30,9 +30,8 @@ export default function Sidebar() {
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
-        { id: 'distribution', icon: Globe, label: 'Distribution' },
+        { id: 'showroom', label: 'Banana Studio', icon: Shirt },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
-        { id: 'showroom', icon: Layout, label: 'Product Showroom' },
     ];
 
     const toolItems: SidebarItem[] = [
@@ -114,7 +113,7 @@ export default function Sidebar() {
                 </div>
             </div>
             {/* User Profile Section */}
-            <div className="p-4 border-t border-white/5">
+            <div className="p-4 border-t border-white/5 mt-auto">
                 <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-bold text-white">
@@ -139,6 +138,34 @@ export default function Sidebar() {
                         <LogOut size={14} />
                     </button>
                 </div>
+
+                {/* Theme Selector */}
+                {isSidebarOpen && (
+                    <div className="mt-4 flex items-center justify-around bg-black/20 p-2 rounded-lg border border-white/5">
+                        <button
+                            onClick={() => (useStore.getState() as any).setTheme('dark')}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-indigo-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
+                            title="Dark Mode"
+                        >
+                            <Palette size={14} />
+                        </button>
+                        <button
+                            onClick={() => (useStore.getState() as any).setTheme('banana')}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana' ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-yellow-200'}`}
+                            title="Banana Mode"
+                        >
+                            <ShoppingBag size={14} />
+                        </button>
+                        <button
+                            onClick={() => (useStore.getState() as any).setTheme('banana-pro')}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana-pro' ? 'text-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-yellow-400'}`}
+                            title="Banana Pro"
+                        >
+                            <Scale size={14} />
+                        </button>
+                    </div>
+                )}
+
                 {isSidebarOpen && (
                     <p className="mt-4 text-[10px] text-gray-600 text-center italic">
                         made by Detroit, for the world.
@@ -147,4 +174,4 @@ export default function Sidebar() {
             </div>
         </div>
     );
-}
+};

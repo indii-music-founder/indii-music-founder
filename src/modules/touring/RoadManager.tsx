@@ -144,6 +144,19 @@ const RoadManager: React.FC = () => {
         }
     };
 
+    const handleUpdateStop = (updatedStop: any) => {
+        if (!itinerary) return;
+        const newStops = itinerary.stops.map(s => {
+            // Match by date or some ID. Assuming date is unique for now.
+            if (s.date === updatedStop.date) {
+                return updatedStop;
+            }
+            return s;
+        });
+        setItinerary({ ...itinerary, stops: newStops });
+        toast.success("Day sheet updated");
+    };
+
     return (
         <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
@@ -187,6 +200,7 @@ const RoadManager: React.FC = () => {
                     handleCheckLogistics={handleCheckLogistics}
                     isCheckingLogistics={isCheckingLogistics}
                     logisticsReport={logisticsReport}
+                    onUpdateStop={handleUpdateStop}
                 />
             ) : (
                 <OnTheRoadTab
@@ -200,6 +214,7 @@ const RoadManager: React.FC = () => {
                     handleCalculateFuel={handleCalculateFuel}
                     isCalculatingFuel={isCalculatingFuel}
                     fuelLogistics={fuelLogistics}
+                    itinerary={itinerary}
                 />
             )}
         </div>

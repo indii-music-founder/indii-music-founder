@@ -60,7 +60,7 @@ describe('RoadManager', () => {
 
     it('renders input fields', () => {
         render(<RoadManager />);
-        expect(screen.getByText('Tour Details')).toBeInTheDocument();
+        expect(screen.getByText('Routing')).toBeInTheDocument();
         expect(screen.getByPlaceholderText('Add a city...')).toBeInTheDocument();
     });
 
@@ -100,7 +100,7 @@ describe('RoadManager', () => {
 
         fireEvent.click(generateButton);
 
-        expect(screen.getByText('Planning Tour...')).toBeInTheDocument();
+        expect(screen.getByText('Calculating Route...')).toBeInTheDocument();
 
         await waitFor(() => {
             expect(screen.getByText('Test Tour')).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('RoadManager', () => {
         fireEvent.click(checkButton);
 
         await waitFor(() => {
-            expect(screen.getByText('Logistics Report')).toBeInTheDocument();
+            expect(screen.getByText('Logistics Analysis')).toBeInTheDocument();
             expect(screen.getByText('Looks good')).toBeInTheDocument();
         });
     });

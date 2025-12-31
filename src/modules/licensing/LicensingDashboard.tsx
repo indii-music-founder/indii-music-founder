@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
 
 import { useLicensing } from './hooks/useLicensing';
+import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
+import { EmptyActionState } from './components/EmptyActionState';
+
 
 export default function LicensingDashboard() {
     const { licenses, requests, isLoading, actions } = useLicensing();
@@ -63,6 +66,12 @@ export default function LicensingDashboard() {
                 </div>
             </header>
 
+            {/* Metrics & Analytics (Banana Pro) */}
+            <MetricsGrid
+                activeLicensesCount={licenses.length}
+                pendingRequestsCount={requests.length}
+            />
+
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                 {/* Pending Clearances Section */}
                 <section className="space-y-6">
@@ -76,14 +85,14 @@ export default function LicensingDashboard() {
                     <div className="space-y-4">
                         <AnimatePresence mode="popLayout">
                             {requests.length === 0 ? (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="bg-white/5 p-12 rounded-3xl border border-dashed border-white/10 text-center"
-                                >
-                                    <Clock className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                                    <p className="text-gray-500 font-medium italic">All quiet on the licensing front.</p>
-                                </motion.div>
+                                <EmptyActionState
+                                    icon={Clock}
+                                    title="No Pending Clearances"
+                                    description="Start a new licensing deal to track its progress here. All drafted agreements will appear in this timeline."
+                                    actionLabel="Draft New Deal"
+                                    onAction={() => console.log('Open draft modal')} // Placeholder for now
+                                    gradient="from-yellow-500/20 to-orange-500/20"
+                                />
                             ) : (
                                 requests.map((request, idx) => (
                                     <motion.div
@@ -136,14 +145,16 @@ export default function LicensingDashboard() {
                     <div className="grid gap-4">
                         <AnimatePresence mode="popLayout">
                             {licenses.length === 0 ? (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="bg-white/5 p-12 rounded-3xl border border-dashed border-white/10 text-center"
-                                >
-                                    <ShieldCheck className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                                    <p className="text-gray-500 font-medium italic">No finalized licenses in the portfolio yet.</p>
-                                </motion.div>
+                                <div className="space-y-6">
+                                    <EmptyActionState
+                                        icon={ShieldCheck}
+                                        title="Portfolio Empty"
+                                        description="Your secured licenses will be displayed here. finalize agreements to build your rights portfolio."
+                                        gradient="from-emerald-500/20 to-teal-500/20"
+                                    />
+                                    {/* Visual Filler: Deal Flow Chart when empty to keep screen 'full' */}
+                                    <DealFlowChart />
+                                </div>
                             ) : (
                                 licenses.map((license, idx) => (
                                     <motion.div

@@ -5,6 +5,31 @@ import { extractVideoFrame } from '@/utils/video';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
 
+export interface ShotItem {
+    id: string;
+    title: string;
+    description: string;
+    duration: number;
+    cameraMovement: string;
+}
+
+export interface VideoGenerationOptions {
+    prompt: string;
+    aspectRatio?: string;
+    resolution?: string;
+    seed?: number;
+    negativePrompt?: string;
+    model?: string;
+    firstFrame?: string;
+    lastFrame?: string;
+    timeOffset?: number;
+    ingredients?: string[];
+    duration?: number;
+    fps?: number;
+    cameraMovement?: string;
+    motionStrength?: number;
+}
+
 export class VideoGenerationService {
 
     private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
@@ -43,79 +68,67 @@ export class VideoGenerationService {
         }
     }
 
-    async generateVideo(options: {
-        prompt: string;
-        aspectRatio?: string;
-        resolution?: string;
-        seed?: number;
-        negativePrompt?: string;
-        model?: string;
-        firstFrame?: string; // Data URI
-        lastFrame?: string; // Data URI
-        timeOffset?: number;
-        ingredients?: string[]; // Data URIs (Ingredients to Video)
-    }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const model = options.model || AI_MODELS.VIDEO.GENERATION;
-        let fullPrompt = options.negativePrompt
-            ? `${options.prompt} --negative_prompt ${options.negativePrompt}`
-            : options.prompt;
+    private async checkVideoQuota(count: number = 1): Promise<{ canGenerate: boolean, reason?: string }> {
+        try {
+            const quota = await MembershipService.checkQuota('video', count);
+            return {
+                canGenerate: quota.allowed,
+                reason: quota.allowed ? undefined : MembershipService.getUpgradeMessage(await MembershipService.getCurrentTier(), 'video')
+            };
+        } catch (e) {
+            console.error("Quota check failed", e);
+            return { canGenerate: true }; // Fallback to avoid blocking
+        }
+    }
 
-        // AI Temporal Analysis
-        if (options.timeOffset && options.timeOffset !== 0) {
-            const referenceFrame = options.firstFrame || options.lastFrame;
-            if (referenceFrame && referenceFrame.startsWith('data:')) {
-                console.log(`Analyzing temporal context for ${options.timeOffset}s offset...`);
-                const temporalContext = await this.analyzeTemporalContext(referenceFrame, options.timeOffset, options.prompt);
-                if (temporalContext) {
-                    fullPrompt += `\n\nVisual Sequence: ${temporalContext}`;
-                }
+    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number }): string {
+        let prompt = basePrompt;
+        if (settings.camera && settings.camera !== 'Static') {
+            prompt += `, cinematic ${settings.camera.toLowerCase()} camera movement`;
+        }
+        if (settings.motion && settings.motion > 0.8) {
+            prompt += `, high dynamic motion`;
+        }
+        return prompt;
+    }
+
+    async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Enforce quota check
+        const quota = await this.checkVideoQuota(1);
+        if (!quota.canGenerate) {
+            throw new Error(`Quota exceeded: ${quota.reason}`);
+        }
+
+        // Temporal context analysis
+        let temporalContext = "";
+        if (options.firstFrame || options.lastFrame) {
+            const reference = options.firstFrame || options.lastFrame;
+            if (reference) {
+                temporalContext = await this.analyzeTemporalContext(reference, options.timeOffset || 4, options.prompt);
             }
         }
 
-        const timeContext = options.timeOffset
-            ? ` (Time Offset: ${options.timeOffset > 0 ? '+' : ''}${options.timeOffset}s)`
-            : '';
-
-        const ingredientsContext = options.ingredients && options.ingredients.length > 0
-            ? `\n\n[Reference Ingredients: The video should incorporate the style/characters from the provided ${options.ingredients.length} reference images.]`
-            : '';
-
-        const finalPrompt = fullPrompt + timeContext + ingredientsContext;
-
-        // Pre-flight quota check (Section 8 compliance)
-        const quotaCheck = await MembershipService.checkQuota('video', 1);
-        if (!quotaCheck.allowed) {
-            const tier = await MembershipService.getCurrentTier();
-            throw new QuotaExceededError(
-                'video',
-                tier,
-                MembershipService.getUpgradeMessage(tier, 'video'),
-                quotaCheck.currentUsage,
-                quotaCheck.maxAllowed
-            );
-        }
-
-        const videoUri = await AI.generateVideo({
-            model,
-            prompt: finalPrompt,
-            image: (options.firstFrame && options.firstFrame.startsWith('data:'))
-                ? { mimeType: options.firstFrame.split(';')[0].split(':')[1], imageBytes: options.firstFrame.split(',')[1] }
-                : undefined,
-            config: {
-                lastFrame: (options.lastFrame && options.lastFrame.startsWith('data:'))
-                    ? { mimeType: options.lastFrame.split(';')[0].split(':')[1], imageBytes: options.lastFrame.split(',')[1] }
-                    : undefined
-            }
+        // Map internal parameters to AI service expectations
+        const enrichedPrompt = this.enrichPrompt(options.prompt, {
+            camera: options.cameraMovement,
+            motion: options.motionStrength,
+            fps: options.fps
         });
 
-        if (!videoUri) {
-            throw new Error('Video generation returned no result');
-        }
+        const { useStore } = await import('@/core/store');
+        const orgId = useStore.getState().currentOrganizationId;
 
+        const { jobId } = await this.triggerVideoGeneration({
+            ...options,
+            prompt: enrichedPrompt,
+            orgId
+        });
+
+        // Return a mock entry that the UI can subscribe to via Firebase
         return [{
-            id: crypto.randomUUID(),
-            url: videoUri,
-            prompt: options.prompt
+            id: jobId,
+            url: '',
+            prompt: enrichedPrompt
         }];
     }
 
@@ -161,7 +174,6 @@ export class VideoGenerationService {
                     seed: options.seed ? options.seed + i : undefined,
                     negativePrompt: options.negativePrompt,
                     firstFrame: currentFirstFrame,
-                    // We don't set lastFrame here as we are generating *forward*
                 });
 
                 if (blockResults.length > 0) {
@@ -174,10 +186,10 @@ export class VideoGenerationService {
                         currentFirstFrame = lastFrameData;
                     } catch (err: unknown) {
                         console.warn(`Failed to extract frame from video ${video.id}, breaking chain.`, err);
-                        break; // Stop if we can't chain
+                        break;
                     }
                 } else {
-                    break; // Stop if generation failed
+                    break;
                 }
             }
         } catch (e: unknown) {
@@ -187,6 +199,7 @@ export class VideoGenerationService {
 
         return results;
     }
+
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
         try {
             const { functions } = await import('../firebase');
@@ -199,7 +212,6 @@ export class VideoGenerationService {
             await triggerVideoJob({
                 ...options,
                 jobId,
-                // userId is handled by context.auth in the backend
             });
 
             return { jobId };
@@ -208,21 +220,6 @@ export class VideoGenerationService {
             throw error;
         }
     }
-}
-
-export interface VideoGenerationOptions {
-    prompt: string;
-    aspectRatio?: string;
-    resolution?: string;
-    seed?: number;
-    negativePrompt?: string;
-    model?: string;
-    firstFrame?: string;
-    lastFrame?: string;
-    timeOffset?: number;
-    ingredients?: string[];
-    duration?: number;
-    fps?: number;
 }
 
 export const VideoGeneration = new VideoGenerationService();

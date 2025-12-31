@@ -1,86 +1,43 @@
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
-import { Editing } from '@/services/image/EditingService';
+/**
+ * ShowroomService.ts
+ * Logic for handling merchandise design generation and production submission in the Beta.
+ */
 
-// Types
-export interface ShowroomState {
-    productAsset: string | null; // Base64 or URL
-    productType: 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
-    scenePrompt: string;
-    motionPrompt: string;
-    generatedMockup: string | null; // Base64
-    generatedVideo: string | null; // URL
-    isGenerating: boolean;
+export interface ManufactureRequest {
+    productId: string;
+    variantId: string;
+    quantity: number;
 }
 
-export class ShowroomService {
+export const ShowroomService = {
+    /**
+     * Simulates submitting a design to the production line.
+     */
+    async submitToProduction(request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> {
+        console.log("Submitting to production:", request);
 
-    static async generateMockup(
-        productAsset: string,
-        productType: string,
-        scenePrompt: string
-    ): Promise<string> {
-        console.log('[ShowroomService] Generating mockup...', { productType, scenePrompt });
+        // Beta delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Extract mimeType and data from Data URL
-        const match = productAsset.match(/^data:(.+);base64,(.+)$/);
-        if (!match) throw new Error("Invalid asset data format. Expected Data URL.");
+        return {
+            success: true,
+            orderId: `BANA-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        };
+    },
 
-        const assetImage = { mimeType: match[1], data: match[2] };
+    /**
+     * Simulates AI generation of mockups or animations.
+     */
+    async generateDesign(prompt: string, type: string): Promise<{ success: boolean; previewUrl: string }> {
+        console.log(`Generating ${type} with prompt: ${prompt}`);
 
-        // Construct the Texture Mapping Prompt
-        const prompt = `
-        PRODUCT VISUALIZATION TASK:
-        Product Type: ${productType.toUpperCase()}
-        Scene Context: ${scenePrompt}
+        // Beta delay
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
-        CRITICAL INSTRUCTIONS:
-        1. You are a professional product visualizer.
-        2. Apply the provided graphic design (Reference Image 1) onto the ${productType} with photorealistic accuracy.
-        3. The graphic MUST conform perfectly to the surface geometry, fabric folds, and lighting of the ${productType}.
-        4. Preserve exact colors and details of the original graphic design.
-        5. Final image should be a high-end commercial product photograph.
-        `;
-
-        const result = await Editing.generateComposite({
-            images: [assetImage],
-            prompt: prompt,
-            projectContext: "Premium commercial product visualization with accurate texture mapping."
-        });
-
-        if (!result) {
-            throw new Error("Failed to generate mockup image.");
-        }
-
-        return result.url;
+        // Return a mock success with a placeholder (in real scenario, this would be an GCS/S3 link)
+        return {
+            success: true,
+            previewUrl: "https://placeholder.com/mockup.png"
+        };
     }
-
-    static async generateVideo(
-        mockupImage: string,
-        motionPrompt: string
-    ): Promise<string> {
-        console.log('[ShowroomService] Animate scene...', { motionPrompt });
-
-        const enhancedPrompt = `CINEMATIC PRODUCT VIDEO:
-        Motion: ${motionPrompt}
-        
-        REQUIREMENTS:
-        - Smooth, professional camera movement
-        - Maintain consistent lighting and product details
-        - High production value, commercial quality
-        - Natural motion physics
-        `;
-
-        const results = await VideoGeneration.generateVideo({
-            prompt: enhancedPrompt,
-            firstFrame: mockupImage,
-            resolution: '720p',
-            aspectRatio: '16:9'
-        });
-
-        if (!results || results.length === 0) {
-            throw new Error("Failed to animate scene.");
-        }
-
-        return results[0].url;
-    }
-}
+};
