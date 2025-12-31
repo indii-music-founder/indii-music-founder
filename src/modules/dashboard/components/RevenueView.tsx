@@ -17,17 +17,14 @@ export default function RevenueView() {
         const loadData = async () => {
             setLoading(true);
             try {
-                const [total, bySource, byProduct] = await Promise.all([
-                    revenueService.getTotalRevenue(userProfile.id),
-                    revenueService.getRevenueBySource(userProfile.id),
-                    revenueService.getRevenueByProduct(userProfile.id)
-                ]);
+                // Optimization: Fetch all stats in a single query
+                const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
-                setTotalRevenue(total);
-                setRevenueBySource(bySource);
+                setTotalRevenue(stats.totalRevenue);
+                setRevenueBySource(stats.revenueBySource);
 
                 // Process top products
-                const sortedProducts = Object.entries(byProduct)
+                const sortedProducts = Object.entries(stats.revenueByProduct)
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);
