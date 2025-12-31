@@ -135,7 +135,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     <ImageIcon size={14} className="text-white" />
                     Brand Assets
                 </h3>
-                <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+                <button onClick={onClose} aria-label="Close brand assets" className="text-gray-500 hover:text-white transition-colors">
                     <X size={14} />
                 </button>
             </div>
@@ -235,6 +235,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                                                 <button
                                                     className="p-1 bg-gray-700 rounded hover:bg-white hover:text-black text-white transition-colors"
                                                     title="Use as Reference"
+                                                    aria-label="Use as Reference"
                                                     onClick={() => {
                                                         setActiveReferenceImage({
                                                             id: crypto.randomUUID(),
