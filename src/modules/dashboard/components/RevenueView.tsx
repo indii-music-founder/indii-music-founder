@@ -18,15 +18,6 @@ export default function RevenueView() {
         const loadData = async () => {
             setLoading(true);
             try {
-                const [total, bySource, byProduct] = await Promise.all([
-                    revenueService.getTotalRevenue(userProfile.id),
-                    revenueService.getRevenueBySource(userProfile.id),
-                    revenueService.getRevenueByProduct(userProfile.id)
-                ]);
-
-                setTotalRevenue(total);
-                setRevenueBySource(bySource);
-
                 // Optimization: Fetch all stats in a single query
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
