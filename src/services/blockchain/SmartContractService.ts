@@ -1,4 +1,7 @@
 
+import { db } from '@/services/firebase';
+import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+
 /**
  * SmartContractService
  *
@@ -29,7 +32,8 @@ export interface LedgerEntry {
 }
 
 export class SmartContractService {
-    private ledger: LedgerEntry[] = [];
+    private readonly LEDGER_COLLECTION = 'ledger';
+    private readonly CONTRACTS_COLLECTION = 'smart_contracts';
 
     /**
      * Deploy a Smart Contract for Royalty Splits.
@@ -47,8 +51,16 @@ export class SmartContractService {
         // Simulate deployment latency
         const mockAddress = `0x${Math.random().toString(16).slice(2, 42)}`;
 
+        // Persist Contract Config
+        await addDoc(collection(db, this.CONTRACTS_COLLECTION), {
+            ...config,
+            contractAddress: mockAddress,
+            deployedAt: Timestamp.now(),
+            status: 'active'
+        });
+
         // Record in Immutable Chain of Custody
-        this.recordToLedger('SPLIT_EXECUTION', config.isrc, `Contract deployed at ${mockAddress}`);
+        await this.recordToLedger('SPLIT_EXECUTION', config.isrc, `Contract deployed at ${mockAddress}`);
 
         return mockAddress;
     }
@@ -63,7 +75,7 @@ export class SmartContractService {
         // Logic: Check recoupment, then distribute
         // (Simplified stub)
 
-        this.recordToLedger('SPLIT_EXECUTION', contractAddress, `Distributed ${amountUSDC} USDC`);
+        await this.recordToLedger('SPLIT_EXECUTION', contractAddress, `Distributed ${amountUSDC} USDC`);
         return true;
     }
 
@@ -75,7 +87,7 @@ export class SmartContractService {
         console.log(`[SmartContract] Minting ${totalShares} SongShares for ${isrc}...`);
 
         const tokenContract = `0xToken${Math.random().toString(16).slice(2, 10)}`;
-        this.recordToLedger('TOKEN_MINT', isrc, `Minted ${totalShares} shares at ${tokenContract}`);
+        await this.recordToLedger('TOKEN_MINT', isrc, `Minted ${totalShares} shares at ${tokenContract}`);
 
         return tokenContract;
     }
@@ -84,7 +96,7 @@ export class SmartContractService {
      * Record an action to the Immutable Ledger.
      * In 2026, this pushes to a public or permissioned blockchain.
      */
-    private recordToLedger(action: LedgerEntry['action'], entityId: string, details: string) {
+    private async recordToLedger(action: LedgerEntry['action'], entityId: string, details: string) {
         const entry: LedgerEntry = {
             hash: `hash_${Date.now()}_${Math.random()}`,
             timestamp: new Date().toISOString(),
@@ -92,8 +104,13 @@ export class SmartContractService {
             entityId,
             details
         };
-        this.ledger.push(entry);
-        console.log(`[Blockchain Ledger] New Block: ${entry.hash} | ${action} | ${entityId}`);
+
+        try {
+            await addDoc(collection(db, this.LEDGER_COLLECTION), entry);
+            console.log(`[Blockchain Ledger] New Block: ${entry.hash} | ${action} | ${entityId}`);
+        } catch (error) {
+            console.error('[Blockchain Ledger] Failed to persist entry:', error);
+        }
     }
 
     /**
@@ -101,7 +118,18 @@ export class SmartContractService {
      * Returns the full history for an asset.
      */
     async getChainOfCustody(entityId: string): Promise<LedgerEntry[]> {
-        return this.ledger.filter(e => e.entityId === entityId);
+        try {
+            const q = query(
+                collection(db, this.LEDGER_COLLECTION),
+                where('entityId', '==', entityId)
+            );
+
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => doc.data() as LedgerEntry);
+        } catch (error) {
+            console.error('[SmartContract] Failed to fetch chain of custody:', error);
+            return [];
+        }
     }
 }
 

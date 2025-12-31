@@ -12,6 +12,7 @@ import {
 } from '../types/distributor';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
 import type { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
+import { earningsService } from '../EarningsService';
 
 /**
  * Symphonic Adapter
@@ -186,23 +187,31 @@ export class SymphonicAdapter implements IDistributorAdapter {
             throw new Error('Not connected to Symphonic');
         }
 
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 5000,
-            downloads: 10,
-            grossRevenue: 45.00,
-            distributorFee: 6.75, // 15%
-            netRevenue: 38.25,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [],
-        };
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
+        }
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        if (!this.connected) {
+            throw new Error('Not connected to Symphonic');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

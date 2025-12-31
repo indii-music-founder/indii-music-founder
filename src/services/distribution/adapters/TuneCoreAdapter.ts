@@ -10,6 +10,7 @@ import {
     type ReleaseStatus,
     type DistributorEarnings,
 } from '../types/distributor';
+import { earningsService } from '../EarningsService';
 
 /**
  * TuneCore Adapter
@@ -152,23 +153,31 @@ export class TuneCoreAdapter implements IDistributorAdapter {
             throw new Error('Not connected to TuneCore');
         }
 
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 12500,
-            downloads: 30,
-            grossRevenue: 98.50,
-            distributorFee: 0,
-            netRevenue: 98.50,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [],
-        };
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
+        }
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        if (!this.connected) {
+            throw new Error('Not connected to TuneCore');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(_metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

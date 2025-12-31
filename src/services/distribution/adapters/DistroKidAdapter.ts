@@ -16,6 +16,7 @@ import {
  * Integration with DistroKid (Simulated Bulk Upload)
  */
 // import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
+import { earningsService } from '../EarningsService';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -171,28 +172,33 @@ export class DistroKidAdapter implements IDistributorAdapter {
             throw new Error('Not connected to DistroKid');
         }
 
-        // Mock earnings response
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 15420,
-            downloads: 45,
-            grossRevenue: 125.50,
-            distributorFee: 0, // 100% payout
-            netRevenue: 125.50,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [
-                { platform: 'Spotify', territoryCode: 'US', streams: 10000, downloads: 0, revenue: 40.00 },
-                { platform: 'Apple Music', territoryCode: 'US', streams: 5000, downloads: 0, revenue: 80.00 },
-                { platform: 'iTunes', territoryCode: 'US', streams: 0, downloads: 45, revenue: 5.50 },
-            ],
-        };
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            // Return zeroed structure if no data found (instead of mock data)
+            return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
+        }
+
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        if (!this.connected) {
+            throw new Error('Not connected to DistroKid');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
