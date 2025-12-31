@@ -15,6 +15,10 @@ import {
  * DistroKid Adapter
  * Integration with DistroKid (Simulated Bulk Upload)
  */
+// import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
+import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
+
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
     readonly name = 'DistroKid';
@@ -88,6 +92,74 @@ export class DistroKidAdapter implements IDistributorAdapter {
         // Simulate upload delay
         await new Promise(resolve => setTimeout(resolve, 1500));
 
+        try {
+            // 1. Build Package (Simulating Bulk Upload Preparation)
+            const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
+            const builder = new DistroKidPackageBuilder();
+            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+
+            console.log(`[DistroKid] Package created at: ${packagePath}`);
+            console.log('[DistroKid] Ready for manual/bulk upload tool.');
+
+            // Persist deployment
+            await distributionStore.createDeployment(
+                releaseId,
+                this.id,
+                'delivered',
+                {
+                    title: metadata.trackTitle,
+                    artist: metadata.artistName,
+                    coverArtUrl: assets.coverArt.url
+                }
+            );
+
+            return {
+                success: true,
+                status: 'delivered', // Using 'delivered' to indicate package is ready on disk
+                releaseId: releaseId,
+                distributorReleaseId: `INT-DK-${Date.now()}`,
+                metadata: {
+                    estimatedLiveDate: '2025-01-15',
+                    upcAssigned: metadata.upc || 'PENDING_BULK',
+                    isrcAssigned: metadata.isrc || 'PENDING_BULK',
+                },
+            };
+        } catch (error) {
+            console.error('[DistroKid] Build failed:', error);
+            return {
+                success: false,
+                status: 'failed',
+                errors: [{
+                    code: 'BUILD_FAILED',
+                    message: error instanceof Error ? error.message : 'Unknown Build Error'
+                }],
+                releaseId
+            };
+        }
+    }
+
+    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+        if (!this.connected) {
+            throw new Error('Not connected to DistroKid');
+        }
+
+        console.log(`[DistroKid] Updating release ${releaseId} with updates:`, Object.keys(updates));
+
+        // Update status in persistence
+        // Note: In reality we would fetch the deployment ID associated with this releaseId first
+        // But for this adapter, releaseId IS the internal ID or close enough for the mock flow.
+        // Ideally we query getDeploymentsForRelease(releaseId) but here we might not have the deployment ID.
+        // For strict correctness, we'd look it up.
+        // Assuming releaseId passed here matches what we stored (it does in createRelease return).
+
+        // However, distributionStore keys by UUID. The releaseId returned by createRelease ('DK-...')
+        // is passed as internalReleaseId to createDeployment.
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         return {
             success: true,
             status: 'processing', // Simulating successful handoff
@@ -134,10 +206,33 @@ export class DistroKidAdapter implements IDistributorAdapter {
             lastUpdated: new Date().toISOString(),
             breakdown: [],
         };
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            // Return zeroed structure if no data found (instead of mock data)
+            return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
+        }
+
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        if (!this.connected) {
+            throw new Error('Not connected to DistroKid');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

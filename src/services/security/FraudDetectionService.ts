@@ -5,6 +5,9 @@
  * - Copyright / Content Recognition (stub)
  */
 
+import { db } from '@/services/firebase';
+import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+
 export interface StreamingDataPoint {
     trackId: string;
     userId: string;
@@ -29,7 +32,7 @@ export class FraudDetectionService {
      * 1. Looping (Repeated plays of same track by same user < 35s or exact duration match)
      * 2. Spikes (Sudden volume from single IP)
      */
-    static detectArtificialStreaming(events: StreamingDataPoint[]): FraudAlert[] {
+    static async detectArtificialStreaming(events: StreamingDataPoint[]): Promise<FraudAlert[]> {
         const alerts: FraudAlert[] = [];
         const userPlays: Record<string, StreamingDataPoint[]> = {};
         const ipPlays: Record<string, number> = {};
@@ -60,12 +63,21 @@ export class FraudDetectionService {
 
                 // Threshold: 20 repeats of same song in a row is suspicious
                 if (consecutiveRepeats > 20) {
-                    alerts.push({
+                    const alert: FraudAlert = {
                         trackId: lastTrackId,
                         severity: 'HIGH',
                         reason: `User ${userId} looped track > 20 times consecutively`,
                         detectedAt: new Date().toISOString()
-                    });
+                    };
+                    alerts.push(alert);
+
+                    // Persist Alert
+                    try {
+                        await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
+                    } catch (e) {
+                         console.error('[FraudDetection] Failed to persist alert', e);
+                    }
+
                     break; // Flag once per user per batch
                 }
             }
@@ -77,12 +89,20 @@ export class FraudDetectionService {
             if (count > 1000) {
                 // Find associated tracks (just picking first one for the alert)
                 const samplePlay = events.find(e => e.ipAddress === ip);
-                alerts.push({
+                const alert: FraudAlert = {
                     trackId: samplePlay?.trackId || 'unknown',
                     severity: 'CRITICAL',
                     reason: `High volume (${count}) from single IP ${ip}`,
                     detectedAt: new Date().toISOString()
-                });
+                };
+                alerts.push(alert);
+
+                // Persist Alert
+                try {
+                    await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
+                } catch (e) {
+                    console.error('[FraudDetection] Failed to persist alert', e);
+                }
             }
         }
 
@@ -92,19 +112,33 @@ export class FraudDetectionService {
     /**
      * Interface for ACR (Automated Content Recognition).
      * Simulates checking a file against a copyright database (e.g. Audible Magic).
+     * Now backed by 'content_rules' collection for known infringements in the demo.
      */
     static async checkCopyright(audioFileUrl: string): Promise<{ safe: boolean; match?: string }> {
-        // Mock implementation
-        // In real life, this would call an external API
-
         console.log(`[FraudDetection] Scanning ${audioFileUrl} with ACR...`);
 
-        // Simulate finding a "copyrighted" file if URL contains 'copyright'
-        if (audioFileUrl.includes('copyright_infringement')) {
-            return {
-                safe: false,
-                match: 'Detected: "Shake It Off" by Taylor Swift'
-            };
+        try {
+            // Check against persisted rules instead of hardcoded strings
+            // Note: In a real system, this sends a fingerprint to an API.
+            // Here we look up if the URL matches a 'blacklisted_pattern' in our DB.
+
+            const q = query(
+                collection(db, 'content_rules'),
+                where('type', '==', 'copyright_infringement')
+            );
+            const snapshot = await getDocs(q);
+
+            for (const doc of snapshot.docs) {
+                const rule = doc.data();
+                if (rule.pattern && audioFileUrl.includes(rule.pattern)) {
+                     return {
+                        safe: false,
+                        match: rule.matchMessage || 'Copyright Violation Detected'
+                    };
+                }
+            }
+        } catch (e) {
+            console.error('[FraudDetection] Failed to query content rules', e);
         }
 
         return { safe: true };
@@ -121,21 +155,25 @@ export class FraudDetectionService {
     static async checkBroadSpectrum(audioFileUrl: string): Promise<{ safe: boolean; details?: string }> {
         console.log(`[FraudDetection] Running Broad Spectrum analysis on ${audioFileUrl}...`);
 
-        // Mock heuristics based on filename keywords for the purpose of this roadmap verification
-        const lowerUrl = audioFileUrl.toLowerCase();
+        try {
+             // We can also make this rule-based
+            const q = query(
+                collection(db, 'content_rules'),
+                where('type', '==', 'broad_spectrum')
+            );
+            const snapshot = await getDocs(q);
 
-        if (lowerUrl.includes('sped_up') || lowerUrl.includes('nightcore')) {
-             return {
-                 safe: false,
-                 details: 'Detected: Pitch/Tempo shift (+25%) matching known copyright.'
-             };
-        }
-
-        if (lowerUrl.includes('slowed') || lowerUrl.includes('chopped')) {
-            return {
-                safe: false,
-                details: 'Detected: Pitch/Tempo shift (-20%) matching known copyright.'
-            };
+            for (const doc of snapshot.docs) {
+                const rule = doc.data();
+                if (rule.pattern && audioFileUrl.includes(rule.pattern)) {
+                     return {
+                        safe: false,
+                        details: rule.details || 'Detected: Transformed Audio.'
+                    };
+                }
+            }
+        } catch (e) {
+             console.error('[FraudDetection] Failed to query broad spectrum rules', e);
         }
 
         return { safe: true };

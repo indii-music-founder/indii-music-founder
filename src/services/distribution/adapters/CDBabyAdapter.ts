@@ -12,6 +12,8 @@ import {
 } from '../types/distributor';
 import { SFTPTransporter } from '../transport/SFTPTransporter';
 import type { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
+import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
 
 /**
  * CD Baby Adapter
@@ -129,6 +131,13 @@ export class CDBabyAdapter implements IDistributorAdapter {
             // Simulate delay
             await new Promise(resolve => setTimeout(resolve, 1000));
 
+            // Persist
+            await distributionStore.createDeployment(releaseId, this.id, 'delivered', {
+                title: metadata.trackTitle,
+                artist: metadata.artistName,
+                coverArtUrl: _assets?.coverArt?.url
+            });
+
             return {
                 success: true,
                 status: 'delivered',
@@ -159,6 +168,12 @@ export class CDBabyAdapter implements IDistributorAdapter {
             throw new Error('Not connected to CD Baby');
         }
         console.log(`[CD Baby] Updating ${releaseId}`);
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         return {
             success: true,
             status: 'processing',
@@ -189,23 +204,31 @@ export class CDBabyAdapter implements IDistributorAdapter {
             throw new Error('Not connected to CD Baby');
         }
 
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 8500,
-            downloads: 120,
-            grossRevenue: 95.00,
-            distributorFee: 8.55, // 9%
-            netRevenue: 86.45,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [],
-        };
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+             return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
+        }
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        if (!this.connected) {
+            throw new Error('Not connected to CD Baby');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(_metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

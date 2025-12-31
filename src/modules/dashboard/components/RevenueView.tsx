@@ -17,17 +17,14 @@ export default function RevenueView() {
         const loadData = async () => {
             setLoading(true);
             try {
-                const [total, bySource, byProduct] = await Promise.all([
-                    revenueService.getTotalRevenue(userProfile.id),
-                    revenueService.getRevenueBySource(userProfile.id),
-                    revenueService.getRevenueByProduct(userProfile.id)
-                ]);
+                // Optimization: Fetch all stats in a single query
+                const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
-                setTotalRevenue(total);
-                setRevenueBySource(bySource);
+                setTotalRevenue(stats.totalRevenue);
+                setRevenueBySource(stats.revenueBySource);
 
                 // Process top products
-                const sortedProducts = Object.entries(byProduct)
+                const sortedProducts = Object.entries(stats.revenueByProduct)
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);
@@ -40,6 +37,9 @@ export default function RevenueView() {
             }
         };
 
+        // Poll for updates or just load once?
+        // User asked for "Real Data", so let's keep it simple with fetch-on-mount for now.
+        // If we wanted real-time, we'd use onSnapshot in the service.
         loadData();
     }, [userProfile?.id]);
 
@@ -123,9 +123,8 @@ export default function RevenueView() {
                                             {i + 1}
                                         </div>
                                         <div>
-                                            {/* In a real app we'd fetch the product name here too */}
                                             <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
-                                            <p className="text-xs text-gray-500">Physical Good</p>
+                                            <p className="text-xs text-gray-500">Sales Item</p>
                                         </div>
                                     </div>
                                     <span className="text-sm font-bold text-white">${p.amount.toFixed(2)}</span>

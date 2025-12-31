@@ -3,6 +3,7 @@ import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
+import { MarketingService } from '@/services/marketing/MarketingService';
 
 const CampaignDashboard: React.FC = () => {
     // Integrate with the Beta hook
@@ -24,9 +25,16 @@ const CampaignDashboard: React.FC = () => {
 
     const handleCreateSave = async (campaignId?: string) => {
         setIsCreateModalOpen(false);
-        // If we got a campaign ID back, find it and select it?
-        // Since it's async from Firestore, it might not be in 'campaigns' array yet.
-        // We'll just close the modal for now.
+        if (campaignId) {
+            try {
+                const newCampaign = await MarketingService.getCampaignById(campaignId);
+                if (newCampaign) {
+                    setSelectedCampaign(newCampaign);
+                }
+            } catch (error) {
+                console.error("Failed to load new campaign", error);
+            }
+        }
     };
 
     return (
