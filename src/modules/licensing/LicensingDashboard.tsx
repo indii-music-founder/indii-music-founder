@@ -4,6 +4,7 @@ import { licensingService } from '@/services/licensing/LicensingService';
 import { LicenseRequest } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
 
 import { useLicensing } from './hooks/useLicensing';
 import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
@@ -13,6 +14,7 @@ import { EmptyActionState } from './components/EmptyActionState';
 export default function LicensingDashboard() {
     const { licenses, requests, isLoading, actions } = useLicensing();
     const { currentModule } = useStore();
+    const toast = useToast();
 
     // Global exposed service for agent interaction (Development Only)
     useEffect(() => {
@@ -149,7 +151,11 @@ export default function LicensingDashboard() {
                                     <EmptyActionState
                                         icon={ShieldCheck}
                                         title="Portfolio Empty"
-                                        description="Your secured licenses will be displayed here. finalize agreements to build your rights portfolio."
+                                        description="You haven't registered any active licenses yet. Import existing agreements or scan your catalog for potential sync opportunities."
+                                        actionLabel="Import Agreement"
+                                        onAction={() => console.log('Import modal')}
+                                        secondaryLabel="Scan Catalog"
+                                        onSecondary={() => toast.info("Beta: Semantic Deal Scanner initiated.")}
                                         gradient="from-emerald-500/20 to-teal-500/20"
                                     />
                                     {/* Visual Filler: Deal Flow Chart when empty to keep screen 'full' */}

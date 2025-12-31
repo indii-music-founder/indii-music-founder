@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import CampaignManager from './CampaignManager';
 import { CampaignStatus } from '../types';
 
@@ -27,6 +27,34 @@ vi.mock('./EditableCopyModal', () => ({
             <button onClick={() => onSave(post.id, 'Updated Copy')}>Save Copy</button>
         </div>
     ),
+    __esModule: true,
+}));
+
+// Mock child components to simplify testing the container logic
+vi.mock('./CampaignList', () => ({
+    default: ({ campaigns, onSelectCampaign, onCreateNew }: any) => (
+        <div data-testid="campaign-list">
+            <button onClick={onCreateNew}>Create New</button>
+            {campaigns.map((c: any) => (
+                <div key={c.id} onClick={() => onSelectCampaign(c)}>
+                    {c.title}
+                </div>
+            ))}
+        </div>
+    ),
+    __esModule: true,
+}));
+
+vi.mock('./CampaignDetail', () => ({
+    default: ({ campaign, onBack, onExecute, onEditPost }: any) => (
+        <div data-testid="campaign-detail">
+            <h1>{campaign.title}</h1>
+            <button onClick={onBack}>Back</button>
+            <button onClick={onExecute}>Execute Campaign</button>
+            <button onClick={() => onEditPost(campaign.posts[0])}>Edit Post</button>
+        </div>
+    ),
+    __esModule: true,
 }));
 
 describe('CampaignManager', () => {
@@ -49,33 +77,60 @@ describe('CampaignManager', () => {
         ]
     };
 
-    const mockOnUpdate = vi.fn();
+    const mockOnSelectCampaign = vi.fn();
+    const mockOnUpdateCampaign = vi.fn();
+    const mockOnCreateNew = vi.fn();
 
-    it('renders campaign details', () => {
-        render(<CampaignManager campaign={mockCampaign} onUpdate={mockOnUpdate} />);
+    const defaultProps = {
+        campaigns: [mockCampaign],
+        selectedCampaign: null,
+        onSelectCampaign: mockOnSelectCampaign,
+        onUpdateCampaign: mockOnUpdateCampaign,
+        onCreateNew: mockOnCreateNew
+    };
+
+    it('renders campaign list when no campaign is selected', () => {
+        render(<CampaignManager {...defaultProps} />);
+        expect(screen.getByTestId('campaign-list')).toBeInTheDocument();
         expect(screen.getByText('Test Campaign')).toBeInTheDocument();
-        expect(screen.getByText(/7-day social media campaign/)).toBeInTheDocument();
     });
 
-    it('renders posts', () => {
-        render(<CampaignManager campaign={mockCampaign} onUpdate={mockOnUpdate} />);
-        expect(screen.getByText('Test Tweet')).toBeInTheDocument();
-        expect(screen.getByText('Day 1')).toBeInTheDocument();
+    it('renders campaign detail when a campaign is selected', () => {
+        render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
+        expect(screen.getByTestId('campaign-detail')).toBeInTheDocument();
+        expect(screen.getByText('Test Campaign')).toBeInTheDocument();
     });
 
-    it('opens edit modal when edit button is clicked', () => {
-        render(<CampaignManager campaign={mockCampaign} onUpdate={mockOnUpdate} />);
-        const editBtn = screen.getByText('Edit');
-        fireEvent.click(editBtn);
+    it('calls onSelectCampaign when a campaign is clicked in list', () => {
+        render(<CampaignManager {...defaultProps} />);
+        fireEvent.click(screen.getByText('Test Campaign'));
+        expect(mockOnSelectCampaign).toHaveBeenCalledWith(mockCampaign);
+    });
+
+    it('calls onCreateNew when create button is clicked', () => {
+        render(<CampaignManager {...defaultProps} />);
+        fireEvent.click(screen.getByText('Create New'));
+        expect(mockOnCreateNew).toHaveBeenCalled();
+    });
+
+    it('calls onSelectCampaign(null) when back button is clicked in detail', () => {
+        render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
+        fireEvent.click(screen.getByText('Back'));
+        expect(mockOnSelectCampaign).toHaveBeenCalledWith(null);
+    });
+
+    it('opens edit modal when edit post is triggered from detail', () => {
+        render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
+        fireEvent.click(screen.getByText('Edit Post'));
         expect(screen.getByTestId('editable-copy-modal')).toBeInTheDocument();
     });
 
-    it('calls onUpdate when copy is saved', () => {
-        render(<CampaignManager campaign={mockCampaign} onUpdate={mockOnUpdate} />);
-        fireEvent.click(screen.getByText('Edit'));
+    it('updates campaign when post copy is saved', () => {
+        render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
+        fireEvent.click(screen.getByText('Edit Post'));
         fireEvent.click(screen.getByText('Save Copy'));
 
-        expect(mockOnUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
             posts: expect.arrayContaining([
                 expect.objectContaining({
                     id: 'p1',
@@ -83,17 +138,5 @@ describe('CampaignManager', () => {
                 })
             ])
         }));
-    });
-
-    it('calls executeCampaign when execute button is clicked', async () => {
-        render(<CampaignManager campaign={mockCampaign} onUpdate={mockOnUpdate} />);
-        const executeBtn = screen.getByText('Execute Campaign');
-        fireEvent.click(executeBtn);
-
-        // Since we mocked httpsCallable to return a promise, we can wait for the toast or just check if the button state changed.
-        // But the mock resolves immediately.
-        // Let's verify httpsCallable was called.
-        const { httpsCallable } = await import('firebase/functions');
-        expect(httpsCallable).toHaveBeenCalled();
     });
 });

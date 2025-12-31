@@ -18,13 +18,13 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 </div>
 
                 <nav className="flex-1 px-4 py-6 space-y-1">
-                    <NavItem to="/merch" icon={<LayoutGrid size={18} />} exact>Dashboard</NavItem>
-                    <NavItem to="/merch/design" icon={<PenTool size={18} />}>Designer</NavItem>
-                    <NavItem to="/merch/catalog" icon={<Package size={18} />}>Catalog</NavItem>
+                    <NavItem to="/merchandise" icon={<LayoutGrid size={18} />} exact>Dashboard</NavItem>
+                    <NavItem to="/merchandise/design" icon={<PenTool size={18} />}>Designer</NavItem>
+                    <NavItem to="/merchandise/catalog" icon={<Package size={18} />}>Catalog</NavItem>
                     <div className="pt-6 pb-2">
                         <div className="h-px bg-white/5 mx-2" />
                     </div>
-                    <NavItem to="/merch/settings" icon={<Settings size={18} />}>Settings</NavItem>
+                    <NavItem to="/merchandise/settings" icon={<Settings size={18} />}>Settings</NavItem>
                 </nav>
 
                 <div className="p-4 border-t border-white/5">
@@ -41,7 +41,7 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#FFE135]/5 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#CCFF00]/5 rounded-full blur-[120px] pointer-events-none" />
 
-                <div className="flex-1 overflow-auto p-8 relative z-10 custom-scrollbar">
+                <div className="flex-1 overflow-auto p-8 relative z-10 custom-scrollbar text-white">
                     {children}
                 </div>
             </main>

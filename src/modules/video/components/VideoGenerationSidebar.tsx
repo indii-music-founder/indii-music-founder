@@ -6,8 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 export const VideoGenerationSidebar: React.FC = () => {
     const { studioControls, setStudioControls, prompt } = useStore();
 
-    const updateControl = (key: keyof typeof studioControls, value: any) => {
-        setStudioControls({ ...studioControls, [key]: value });
+    const updateControl = <K extends keyof typeof studioControls>(key: K, value: (typeof studioControls)[K]) => {
+        setStudioControls({ [key]: value });
     };
 
     const addShot = () => {

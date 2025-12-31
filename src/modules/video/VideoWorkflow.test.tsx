@@ -107,12 +107,17 @@ describe('VideoWorkflow', () => {
                 resolution: '1080p',
                 duration: 5,
                 fps: 24,
-                motionStrength: 5,
+                motionStrength: 0.7,
+                cameraMovement: 'Pan',
+                negativePrompt: 'blurry',
+                seed: '12345',
+                shotList: []
             },
             videoInputs: {
                 firstFrame: null,
                 lastFrame: null,
-                ingredients: []
+                ingredients: [],
+                timeOffset: 4
             },
             setVideoInput: mockSetVideoInput,
             currentOrganizationId: 'org-123'
@@ -144,7 +149,7 @@ describe('VideoWorkflow', () => {
         expect(await screen.findByRole('button', { name: /Generate Video/ })).toBeInTheDocument();
     });
 
-    it('triggers video generation job with orgId', async () => {
+    it('triggers video generation job with orgId and cinematic controls', async () => {
         render(<VideoWorkflow />);
 
         // Wait for ReviewStep
@@ -158,6 +163,11 @@ describe('VideoWorkflow', () => {
                 prompt: 'Test Prompt',
                 resolution: '1080p',
                 aspectRatio: '16:9',
+                negativePrompt: 'blurry',
+                seed: 12345,
+                cameraMovement: 'Pan',
+                motionStrength: 0.7,
+                fps: 24,
                 orgId: 'org-123'
             }));
             expect(mockSetJobId).toHaveBeenCalledWith('test-job-id');

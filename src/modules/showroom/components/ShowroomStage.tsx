@@ -57,11 +57,22 @@ export default function ShowroomStage({
                                 className="w-full h-full object-contain drop-shadow-2xl"
                             />
                         ) : (
-                            <div className="flex flex-col items-center text-gray-600 gap-4">
-                                <Monitor className="w-16 h-16 opacity-20" />
-                                <span className="font-mono text-xs uppercase tracking-[0.2em] opacity-40">
-                                    Signal Lost // Waiting for Input
-                                </span>
+                            <div className="relative w-64 h-64 perspective-1000">
+                                <div className="w-full h-full relative preserve-3d animate-spin-slow">
+                                    {/* Front */}
+                                    <div className="absolute inset-0 bg-yellow-400/20 border border-yellow-400/50 rounded-xl backdrop-blur-md flex items-center justify-center transform translate-z-32">
+                                        <div className="text-yellow-400 font-bold text-4xl">FRONT</div>
+                                    </div>
+                                    {/* Back */}
+                                    <div className="absolute inset-0 bg-yellow-400/20 border border-yellow-400/50 rounded-xl backdrop-blur-md flex items-center justify-center transform -translate-z-32 rotate-y-180">
+                                        <div className="text-yellow-400 font-bold text-4xl">BACK</div>
+                                    </div>
+                                    {/* Sides (Visuals only) */}
+                                    <div className="absolute inset-y-0 left-1/2 w-64 h-full bg-yellow-400/10 border-x border-yellow-400/30 transform -translate-x-1/2 rotate-y-90" />
+                                </div>
+                                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-center w-full">
+                                    <p className="text-sm font-mono text-yellow-500/80 animate-pulse">Awaiting Design Input</p>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -110,7 +121,7 @@ export default function ShowroomStage({
                     )}
                     <span className="relative z-10 flex items-center gap-3">
                         <Play className={`w-5 h-5 ${canAnimate ? 'text-white fill-current' : 'text-gray-600'}`} />
-                        <span className="tracking-wide">Animate Scene</span>
+                        <span className="tracking-wide">Walk Runway</span>
                         {canAnimate && <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />}
                     </span>
                 </motion.button>

@@ -6,7 +6,8 @@ export enum AppErrorCode {
     NETWORK_ERROR = 'NETWORK_ERROR',
     AUTH_ERROR = 'AUTH_ERROR',
     NOT_FOUND = 'NOT_FOUND',
-    RATE_LIMITED = 'RATE_LIMITED'
+    RATE_LIMITED = 'RATE_LIMITED',
+    TIMEOUT = 'TIMEOUT'
 }
 
 export interface ErrorDetails {

@@ -32,13 +32,14 @@ const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingD
 const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
 const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDashboard'));
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
-const Showroom = lazy(() => import('../modules/showroom/Showroom'));
+const Showroom = lazy(() => import('../modules/showroom/BananaStudio'));
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
 
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
+const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -74,6 +75,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
+    'banana-preview': BananaThemePreview,
 };
 
 // ============================================================================

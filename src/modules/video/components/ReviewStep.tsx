@@ -149,7 +149,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                 <button
                     onClick={onGenerate}
                     disabled={isGenerating}
-                    className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-bold transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isGenerating ? (
                         <>

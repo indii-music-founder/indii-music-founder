@@ -126,14 +126,16 @@ export default function VideoWorkflow() {
                 prompt: localPrompt,
                 resolution: studioControls.resolution,
                 aspectRatio: studioControls.aspectRatio,
-                // negativePrompt: studioControls.negativePrompt, // Backend support pending
-                // seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                negativePrompt: studioControls.negativePrompt,
+                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                cameraMovement: studioControls.cameraMovement,
+                motionStrength: studioControls.motionStrength,
+                fps: studioControls.fps,
+                shotList: studioControls.shotList,
                 firstFrame: videoInputs.firstFrame?.url,
                 lastFrame: videoInputs.lastFrame?.url,
                 timeOffset: videoInputs.timeOffset,
                 ingredients: videoInputs.ingredients?.map(i => i.url),
-                duration: 5, // Default for now
-                fps: 30, // Default for now
                 orgId: currentOrganizationId
             });
 

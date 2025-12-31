@@ -185,7 +185,7 @@ export const moduleColors: Record<AppSlice['currentModule'], ModuleColor> = {
         hoverText: 'hover:text-sky-200',
         hoverBg: 'hover:bg-sky-400/5',
     },
-    merchandise: {
+    merch: {
         text: 'text-yellow-400',
         bg: 'bg-yellow-400/10',
         border: 'border-yellow-400',
@@ -200,6 +200,22 @@ export const moduleColors: Record<AppSlice['currentModule'], ModuleColor> = {
         ring: 'focus-within:ring-slate-400/50',
         hoverText: 'hover:text-slate-200',
         hoverBg: 'hover:bg-slate-400/5',
+    },
+    'audio-analyzer': {
+        text: 'text-pink-400',
+        bg: 'bg-pink-400/10',
+        border: 'border-pink-400',
+        ring: 'focus-within:ring-pink-400/50',
+        hoverText: 'hover:text-pink-200',
+        hoverBg: 'hover:bg-pink-400/5',
+    },
+    'banana-preview': {
+        text: 'text-yellow-400',
+        bg: 'bg-yellow-400/10',
+        border: 'border-yellow-400',
+        ring: 'focus-within:ring-yellow-400/50',
+        hoverText: 'hover:text-yellow-200',
+        hoverBg: 'hover:bg-yellow-400/5',
     }
 };
 

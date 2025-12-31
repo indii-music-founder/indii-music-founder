@@ -11,6 +11,7 @@ import { nativeFileSystemService } from '@/services/NativeFileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { MetadataDrawer } from './components/MetadataDrawer';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
@@ -63,8 +64,8 @@ export default function MusicStudio() {
         // Create new instance - Banana Pro Aesthetic
         const ws = WaveSurfer.create({
             container: waveformRef.current,
-            waveColor: '#333', // Dark grey base
-            progressColor: '#FFD700', // Electric Yellow
+            waveColor: 'rgba(255, 255, 255, 0.1)', // Subtle glass-like base
+            progressColor: 'hsl(var(--primary))', // Banana Pro Primary (Yellow)
             cursorColor: '#FFFFFF',
             barWidth: 3,
             barGap: 2,
@@ -232,41 +233,44 @@ export default function MusicStudio() {
         <ModuleDashboard
             title="Music Analysis"
             description="Deep Sonic Analysis & Fingerprinting"
-            icon={<Activity className="text-yellow-400" />}
-        // Banana Pro Theme Overrides could go here if ModuleDashboard supports 'em, but we'll style children
+            icon={<Activity className="text-primary glow-text-yellow" />}
         >
             <ModuleErrorBoundary moduleName="Music Studio">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)] font-sans text-gray-200">
 
                     {/* Left Drawer: Library (3 cols) */}
-                    <div className="lg:col-span-3 bg-[#111] border border-gray-800 rounded-2xl p-4 flex flex-col h-full space-y-4 shadow-2xl">
+                    <motion.div
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        className="lg:col-span-3 bg-card glass-panel rounded-2xl p-4 flex flex-col h-full space-y-4 shadow-2xl"
+                    >
                         <div>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500">Source Library</h3>
-                                <div className={`w-2 h-2 rounded-full ${fsSupported ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500'}`} />
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Source Library</h3>
+                                <div className={`w-2 h-2 rounded-full ${fsSupported ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-destructive'}`} />
                             </div>
 
                             <div className="flex gap-2 mb-4">
                                 <button
                                     onClick={handlePickFile}
-                                    className="flex-1 py-3 bg-[#1A1A1A] hover:bg-[#252525] text-gray-300 text-xs font-medium rounded-xl transition-all border border-gray-800 flex flex-col items-center gap-2 group"
+                                    className="flex-1 py-3 bg-secondary/50 hover:bg-secondary text-foreground text-xs font-medium rounded-xl transition-all border border-border flex flex-col items-center gap-2 group"
                                 >
-                                    <FileAudio size={18} className="text-yellow-500/50 group-hover:text-yellow-400 transition-colors" />
+                                    <FileAudio size={18} className="text-primary/50 group-hover:text-primary transition-colors" />
                                     <span>Import File</span>
                                 </button>
                                 <button
                                     onClick={handlePickDirectory}
-                                    className="flex-1 py-3 bg-[#1A1A1A] hover:bg-[#252525] text-gray-300 text-xs font-medium rounded-xl transition-all border border-gray-800 flex flex-col items-center gap-2 group"
+                                    className="flex-1 py-3 bg-secondary/50 hover:bg-secondary text-foreground text-xs font-medium rounded-xl transition-all border border-border flex flex-col items-center gap-2 group"
                                 >
-                                    <Folder size={18} className="text-yellow-500/50 group-hover:text-yellow-400 transition-colors" />
+                                    <Folder size={18} className="text-primary/50 group-hover:text-primary transition-colors" />
                                     <span>Scan Folder</span>
                                 </button>
                             </div>
                         </div>
 
                         <div className="flex items-center justify-between px-1">
-                            <span className="text-[10px] uppercase text-gray-600 font-bold">Queue</span>
-                            <span className="text-[10px] text-yellow-500 font-mono">{loadedAudio.length} TRACKS</span>
+                            <span className="text-[10px] uppercase text-muted-foreground font-bold">Queue</span>
+                            <span className="text-[10px] text-primary font-mono">{loadedAudio.length} TRACKS</span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -277,83 +281,99 @@ export default function MusicStudio() {
                                 </div>
                             )}
                             {loadedAudio.map(track => (
-                                <div
+                                <motion.div
                                     key={track.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
                                     onClick={() => setCurrentTrackId(track.id)}
                                     className={`group p-3 rounded-xl border cursor-pointer transition-all relative overflow-hidden ${currentTrackId === track.id
-                                        ? 'bg-yellow-500/10 border-yellow-500/50'
-                                        : 'bg-[#161616] border-gray-800/50 hover:border-gray-600'
+                                        ? 'bg-primary/10 border-primary/50'
+                                        : 'bg-secondary/30 border-border/50 hover:border-border'
                                         }`}
                                 >
                                     {/* Active Indicator */}
                                     {currentTrackId === track.id && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-400 shadow-[0_0_10px_#eab308]" />
+                                        <motion.div
+                                            layoutId="active-track"
+                                            className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_10px_#eab308]"
+                                        />
                                     )}
 
                                     <div className="flex items-center justify-between mb-1 pl-2">
-                                        <span className={`text-sm font-semibold truncate max-w-[140px] ${currentTrackId === track.id ? 'text-white' : 'text-gray-400'}`}>
+                                        <span className={`text-sm font-semibold truncate max-w-[140px] ${currentTrackId === track.id ? 'text-foreground' : 'text-muted-foreground'}`}>
                                             {track.name}
                                         </span>
                                         {track.metadata.isGolden ? (
                                             <ShieldCheck size={14} className="text-green-400" />
                                         ) : (
-                                            <div className="w-2 h-2 rounded-full bg-red-500/50" />
+                                            <div className="w-2 h-2 rounded-full bg-destructive/50" />
                                         )}
                                     </div>
                                     <div className="flex items-center justify-between pl-2">
-                                        <span className="text-[10px] font-mono text-gray-600">
+                                        <span className="text-[10px] font-mono text-muted-foreground">
                                             {track.features ? `${track.features.bpm} BPM` : 'PENDING'}
                                         </span>
                                         <Trash2
                                             size={12}
-                                            className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={(e) => handleRemoveTrack(e, track.id)}
                                         />
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
-                    </div>
+                    </motion.div>
 
                     {/* Center: Dashboard Main (9 cols) */}
-                    <div className="lg:col-span-9 flex flex-col gap-6">
+                    <div className="lg:col-span-9 flex flex-col gap-6 font-sans">
 
                         {/* Top Cards Row */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Metadata Health */}
-                            <div className="bg-[#111] border border-gray-800 rounded-2xl p-5 relative overflow-hidden">
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                                className="bg-card glass-panel rounded-2xl p-5 relative overflow-hidden"
+                            >
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <ShieldCheck size={64} className="text-white" />
+                                    <ShieldCheck size={64} className="text-foreground" />
                                 </div>
-                                <h4 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Metadata Health</h4>
+                                <h4 className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-2">Metadata Health</h4>
                                 <div className="flex items-end gap-2">
-                                    <span className="text-4xl font-mono text-white font-light">{progress}%</span>
-                                    <span className="text-xs text-yellow-500 mb-2">GOLDEN</span>
+                                    <span className="text-4xl font-mono text-foreground font-light">{progress}%</span>
+                                    <span className="text-xs text-primary mb-2 glow-text-yellow">GOLDEN</span>
                                 </div>
-                                <div className="w-full h-1 bg-gray-800 rounded-full mt-4 overflow-hidden">
+                                <div className="w-full h-1 bg-secondary rounded-full mt-4 overflow-hidden">
                                     <div
-                                        className="h-full bg-yellow-400 shadow-[0_0_10px_#eab308] transition-all duration-500"
+                                        className="h-full bg-primary shadow-[0_0_10px_#eab308] transition-all duration-500"
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>
-                            </div>
+                            </motion.div>
 
                             {/* Audio Fingerprint Status */}
-                            <div className="bg-[#111] border border-gray-800 rounded-2xl p-5 relative overflow-hidden">
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="bg-card glass-panel rounded-2xl p-5 relative overflow-hidden"
+                            >
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <Fingerprint size={64} className="text-white" />
+                                    <Fingerprint size={64} className="text-foreground" />
                                 </div>
-                                <h4 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Acoustic Fingerprint</h4>
+                                <h4 className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-2">Acoustic Fingerprint</h4>
                                 {activeTrack?.features ? (
                                     <div className="mt-2">
                                         <div className="flex gap-4 mb-2">
                                             <div>
-                                                <div className="text-[10px] text-gray-600">KEY</div>
-                                                <div className="text-xl text-white font-mono">{activeTrack.features.key}</div>
+                                                <div className="text-[10px] text-muted-foreground">KEY</div>
+                                                <div className="text-xl text-foreground font-mono">{activeTrack.features.key}</div>
                                             </div>
                                             <div>
-                                                <div className="text-[10px] text-gray-600">SCALE</div>
-                                                <div className="text-xl text-white font-mono">{activeTrack.features.scale}</div>
+                                                <div className="text-[10px] text-muted-foreground">SCALE</div>
+                                                <div className="text-xl text-foreground font-mono">{activeTrack.features.scale}</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded inline-flex">
@@ -362,53 +382,62 @@ export default function MusicStudio() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="h-full flex items-center text-gray-600 text-xs">
+                                    <div className="h-full flex items-center text-muted-foreground text-xs">
                                         Select track to analyze
                                     </div>
                                 )}
-                            </div>
+                            </motion.div>
 
                             {/* Territory / Global Rights */}
-                            <div className="bg-[#111] border border-gray-800 rounded-2xl p-5 relative overflow-hidden">
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.3 }}
+                                className="bg-card glass-panel rounded-2xl p-5 relative overflow-hidden"
+                            >
                                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                                    <Globe size={64} className="text-white" />
+                                    <Globe size={64} className="text-foreground" />
                                 </div>
-                                <h4 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Global Rights</h4>
+                                <h4 className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-2">Global Rights</h4>
                                 <div className="mt-3 space-y-2">
                                     <div className="flex justify-between items-center text-xs">
-                                        <span className="text-gray-300">Territories</span>
-                                        <span className="text-yellow-400 font-mono">WW</span>
+                                        <span className="text-foreground/70">Territories</span>
+                                        <span className="text-primary font-mono glow-text-yellow">WW</span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs">
-                                        <span className="text-gray-300">Restrictions</span>
+                                        <span className="text-foreground/70">Restrictions</span>
                                         <span className="text-green-400 font-mono">NONE</span>
                                     </div>
-                                    <div className="w-full bg-gray-800 h-[1px] my-2" />
+                                    <div className="w-full bg-border h-[1px] my-2" />
                                     <div className="flex items-center gap-2 opacity-50">
                                         <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                        <span className="text-[10px] text-gray-500">Rights ID: {activeTrack ? 'US-X1...' : '--'}</span>
+                                        <span className="text-[10px] text-muted-foreground">Rights ID: {activeTrack ? 'US-X1...' : '--'}</span>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
 
                         {/* Main Analysis Visualizer */}
-                        <div className="flex-1 bg-[#090909] border border-gray-800 rounded-2xl p-1 relative overflow-hidden shadow-inner flex flex-col">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex-1 bg-background border border-border rounded-2xl p-1 relative overflow-hidden shadow-inner flex flex-col"
+                        >
                             {/* Toolbar */}
                             <div className="absolute top-4 right-4 z-20 flex gap-2">
                                 <button
                                     onClick={() => setIsMetadataDrawerOpen(true)}
-                                    className="p-2 bg-black/40 hover:bg-yellow-500 hover:text-black text-gray-400 backdrop-blur-md rounded-lg border border-gray-700 hover:border-yellow-400 transition-all"
+                                    className="p-2 bg-black/40 hover:bg-primary hover:text-primary-foreground text-muted-foreground backdrop-blur-md rounded-lg border border-border hover:border-primary transition-all"
                                 >
                                     <Menu size={16} />
                                 </button>
                             </div>
 
-                            <div className="flex-1 relative flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900/50 to-transparent">
+                            <div className="flex-1 relative flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-muted/20 to-transparent">
                                 {!activeTrack ? (
                                     <div className="text-center">
-                                        <Activity size={48} className="text-gray-800 mx-auto mb-4" />
-                                        <p className="text-gray-600 text-sm font-mono">WAITING FOR AUDIO STREAM...</p>
+                                        <Activity size={48} className="text-muted/20 mx-auto mb-4" />
+                                        <p className="text-muted-foreground text-sm font-mono tracking-tighter">WAITING FOR AUDIO STREAM...</p>
                                     </div>
                                 ) : (
                                     <>
@@ -420,15 +449,15 @@ export default function MusicStudio() {
                                             {activeTrack.features && (
                                                 <>
                                                     <div>
-                                                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Energy</div>
-                                                        <div className="h-1 w-16 bg-gray-800 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-white" style={{ width: `${activeTrack.features.energy * 100}%` }} />
+                                                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Energy</div>
+                                                        <div className="h-1 w-16 bg-secondary rounded-full overflow-hidden">
+                                                            <div className="h-full bg-foreground" style={{ width: `${activeTrack.features.energy * 100}%` }} />
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Dance</div>
-                                                        <div className="h-1 w-16 bg-gray-800 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-white" style={{ width: `${activeTrack.features.danceability * 100}%` }} />
+                                                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Dance</div>
+                                                        <div className="h-1 w-16 bg-secondary rounded-full overflow-hidden">
+                                                            <div className="h-full bg-foreground" style={{ width: `${activeTrack.features.danceability * 100}%` }} />
                                                         </div>
                                                     </div>
                                                 </>
@@ -439,39 +468,37 @@ export default function MusicStudio() {
                             </div>
 
                             {/* Player Bar */}
-                            <div className="h-16 bg-[#111] border-t border-gray-800 flex items-center px-6 gap-6 justify-between">
+                            <div className="h-16 bg-card border-t border-border flex items-center px-6 gap-6 justify-between">
                                 <div className="flex items-center gap-4">
-                                    <button onClick={togglePlayPause} className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_15px_rgba(250,204,21,0.3)]">
+                                    <button onClick={togglePlayPause} className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_15px_rgba(250,204,21,0.3)]">
                                         {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
                                     </button>
                                     <div className="text-xs">
-                                        <div className="text-white font-medium max-w-[200px] truncate">{activeTrack?.name || 'No Track'}</div>
-                                        <div className="text-gray-500 font-mono text-[10px]">{isAnalyzing ? 'ANALYZING...' : 'READY'}</div>
+                                        <div className="text-foreground font-medium max-w-[200px] truncate">{activeTrack?.name || 'No Track'}</div>
+                                        <div className="text-muted-foreground font-mono text-[10px]">{isAnalyzing ? 'ANALYZING...' : 'READY'}</div>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
-                                        <Zap size={14} className={isPlaying ? "text-yellow-400" : "text-gray-600"} />
-                                        <div className="h-8 w-[1px] bg-gray-800" />
-                                        <span className="font-mono text-xs text-gray-400">
+                                        <Zap size={14} className={isPlaying ? "text-primary shadow-sm" : "text-muted-foreground"} />
+                                        <div className="h-8 w-[1px] bg-border" />
+                                        <span className="font-mono text-xs text-muted-foreground tracking-tighter">
                                             {activeTrack?.features?.bpm ? `${activeTrack.features.bpm} BPM` : '--'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
+                        </motion.div>
                     </div>
-
-                    <MetadataDrawer
-                        isOpen={isMetadataDrawerOpen}
-                        onClose={() => setIsMetadataDrawerOpen(false)}
-                        metadata={activeTrack?.metadata || INITIAL_METADATA}
-                        onUpdate={handleMetadataUpdate}
-                    />
-
                 </div>
+
+                <MetadataDrawer
+                    isOpen={isMetadataDrawerOpen}
+                    onClose={() => setIsMetadataDrawerOpen(false)}
+                    metadata={activeTrack?.metadata || INITIAL_METADATA}
+                    onUpdate={handleMetadataUpdate}
+                />
             </ModuleErrorBoundary>
         </ModuleDashboard>
     );

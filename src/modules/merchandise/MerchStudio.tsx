@@ -1,22 +1,14 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Crown, Palette, TrendingUp, BarChart3, Zap, Package } from 'lucide-react';
-import { BananaMerch } from './components/BananaMerch';
-import { BananaProMerch } from './components/BananaProMerch';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import MerchDashboard from './MerchDashboard';
+import MerchDesigner from './MerchDesigner';
 
-function StatCard({ title, value, trend, icon }: { title: string, value: string, trend: string, icon: React.ReactNode }) {
-    const isPositive = trend.startsWith('+');
+export default function MerchStudio() {
     return (
-        <div className="bg-[#161b22] p-4 rounded-xl border border-gray-800">
-            <div className="flex justify-between items-start mb-2">
-                <span className="text-gray-400 text-xs uppercase font-medium tracking-wider">{title}</span>
-                {icon}
-            </div>
-            <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold text-white">{value}</span>
-                <span className={`text-xs font-medium mb-1 ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                    {trend}
-                </span>
-            </div>
-        </div>
+        <Routes>
+            <Route index element={<MerchDashboard />} />
+            <Route path="design" element={<MerchDesigner />} />
+            <Route path="*" element={<Navigate to="." />} />
+        </Routes>
     );
 }

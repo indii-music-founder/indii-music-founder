@@ -18,7 +18,7 @@ export default function MerchDashboard() {
                         <h2 className="text-3xl font-bold text-white mb-1">Morning, Chief 🍌</h2>
                         <p className="text-neutral-400">Your empire is ripening nicely.</p>
                     </div>
-                    <BananaButton onClick={() => navigate('/merch/design')} glow size="lg" className="rounded-full">
+                    <BananaButton onClick={() => navigate('/merchandise/design')} glow size="lg" className="rounded-full">
                         <Plus size={18} />
                         Peel New Design
                     </BananaButton>
@@ -59,7 +59,6 @@ export default function MerchDashboard() {
                             {[1, 2, 3, 4].map((i) => (
                                 <MerchCard key={i} className="group p-4 flex items-center gap-4 cursor-pointer">
                                     <div className="w-20 h-24 bg-neutral-800 rounded-lg flex items-center justify-center relative overflow-hidden">
-                                        {/* Placeholder for T-shirt Image */}
                                         <div className="absolute inset-0 bg-yellow-400/10 group-hover:bg-yellow-400/20 transition-all" />
                                         <span className="text-2xl">👕</span>
                                     </div>
