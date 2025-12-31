@@ -21,13 +21,13 @@ jobs:
           cache: 'npm'
 
       - name: Install root dependencies
-        run: npm ci --ignore-scripts
+        run: npm install --legacy-peer-deps --ignore-scripts
 
       - name: Build landing page
         run: |
           cd landing-page
           rm -rf dist .next
-          npm ci
+          npm install
           NODE_ENV=production npm run build
 
       - name: Build studio app
