@@ -83,7 +83,8 @@ export function useMarketing() {
             }, 0);
             return () => clearTimeout(timer);
         }
-    }, [userProfile?.id, toast]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userProfile?.id]);
 
     // Actions
     const createCampaign = useCallback(async (campaign: Omit<CampaignAsset, 'id'>) => {
