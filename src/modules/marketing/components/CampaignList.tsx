@@ -84,4 +84,5 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
     );
 };
 
-export default CampaignList;
+// Memoize the component to prevent re-renders when parent state changes but props remain the same
+export default React.memo(CampaignList);
