@@ -32,10 +32,14 @@ const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingD
 const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
 const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDashboard'));
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
-const Showroom = lazy(() => import('../modules/showroom/Showroom'));
+const Showroom = lazy(() => import('../modules/showroom/BananaStudio'));
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
+
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
+const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
+const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
+const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -69,6 +73,9 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'agent': AgentDashboard,
     'files': FilePreview,
     'distribution': DistributionDashboard,
+    'merch': MerchStudio,
+    'audio-analyzer': AudioAnalyzer,
+    'banana-preview': BananaThemePreview,
 };
 
 // ============================================================================
@@ -178,10 +185,17 @@ export default function App() {
     const { userProfile } = useStore();
     useEffect(() => {
         const theme = userProfile?.preferences?.theme || 'dark';
+
+        // Remove all theme classes first
+        document.documentElement.classList.remove('dark', 'banana', 'banana-pro');
+
+        // Apply current theme
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+        } else if (theme === 'banana') {
+            document.documentElement.classList.add('banana');
+        } else if (theme === 'banana-pro') {
+            document.documentElement.classList.add('banana-pro', 'dark'); // Banana Pro is dark-based
         }
     }, [userProfile?.preferences?.theme]);
 

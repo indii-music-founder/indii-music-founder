@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { type ModuleId } from '@/core/constants';
 
 export interface Project {
     id: string;
@@ -7,8 +8,6 @@ export interface Project {
     date: number;
     orgId: string;
 }
-
-export type ModuleId = 'creative' | 'legal' | 'music' | 'marketing' | 'video' | 'workflow' | 'dashboard' | 'select-org' | 'knowledge' | 'road' | 'brand' | 'publicist' | 'social' | 'campaign' | 'publishing' | 'finance' | 'licensing' | 'onboarding' | 'showroom' | 'agent' | 'distribution' | 'files';
 
 export interface AppSlice {
     currentModule: ModuleId;

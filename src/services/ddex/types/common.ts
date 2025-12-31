@@ -98,6 +98,7 @@ export interface TechnicalDetails {
   numberOfChannels?: number;  // 1=mono, 2=stereo
   duration?: string;      // ISO 8601 duration (PT3M45S)
   fileSizeInBytes?: number;
+  fileName?: string;
 }
 
 // Parental Warning / Explicit content

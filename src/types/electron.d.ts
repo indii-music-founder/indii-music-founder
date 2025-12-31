@@ -48,7 +48,7 @@ export interface ElectronAPI {
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
-        performAction: (action: 'click' | 'type', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
+        performAction: (action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
     };
 
@@ -57,6 +57,11 @@ export interface ElectronAPI {
         save: (id: string, creds: any) => Promise<void>;
         get: (id: string) => Promise<any | null>;
         delete: (id: string) => Promise<boolean>;
+    };
+
+    // Distribution (DDEX Packaging)
+    distribution: {
+        buildPackage: (adapterId: string, metadata: any, assets: any, releaseId: string) => Promise<{ success: boolean; packagePath?: string; error?: string }>;
     };
 }
 

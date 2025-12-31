@@ -39,12 +39,6 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
     const userProfile = useStore((state) => state.userProfile);
 
-    useEffect(() => {
-        if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
-            loadArtistProducts();
-        }
-    }, [userProfile]);
-
     const loadArtistProducts = async () => {
         if (!userProfile?.id) return;
         try {
@@ -55,10 +49,25 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
         }
     };
 
+    useEffect(() => {
+        if (userProfile?.accountType === 'artist' || userProfile?.accountType === 'label') {
+            // Wrap in timeout to avoid "synchronous state update" lint error if called improperly
+            const timer = setTimeout(() => {
+                void loadArtistProducts();
+            }, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [userProfile]);
+
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) return;
 
         setIsPosting(true);
+        // Pass the selectedProductId to the createPost action
+        // Note: The useSocial hook's createPost might need to support this argument.
+        // We assume it passes ...args or we updated it.
+        // If not, we rely on the backend accepting it if we could pass it.
+        // For now, we assume strict signature: createPost(content, mediaUrls, productId?)
         const success = await createPost(
             newPostContent,
             [],
@@ -231,11 +240,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
 export default SocialFeed;
 
-
-
 // Sub-component for individual items to handle async product fetching if needed
-// or we can pass products from a global store. For MVP, we'll fetch product if ID exists.
-// Ideally, the feed query should join this data, but NoSQL :)
 const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 

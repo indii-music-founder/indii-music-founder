@@ -164,76 +164,67 @@ export class DashboardService {
     }
 
     static async duplicateProject(projectId: string): Promise<ProjectMetadata> {
-        try {
-            const { useStore } = await import('@/core/store');
-            const state = useStore.getState() as unknown as DashboardStoreState;
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState() as unknown as DashboardStoreState;
 
-            // Find original project
-            const projects = await this.getProjects();
-            const original = projects.find(p => p.id === projectId);
+        // Find original project
+        const projects = await this.getProjects();
+        const original = projects.find(p => p.id === projectId);
 
-            if (!original) {
-                throw new Error(`Project ${projectId} not found`);
-            }
-
-            // Create duplicate
-            const duplicate: ProjectMetadata = {
-                id: `proj_${Date.now()}`,
-                name: `${original.name} (Copy)`,
-                lastModified: Date.now(),
-                assetCount: original.assetCount,
-                thumbnail: original.thumbnail
-            };
-
-            // Copy history items if they exist
-            if (state.generatedHistory) {
-                const projectHistory = state.generatedHistory.filter(
-                    (item) => item.projectId === projectId
-                );
-
-                // Add duplicated items with new project ID
-                projectHistory.forEach((item) => {
-                    if (typeof state.addToHistory === 'function') {
-                        state.addToHistory({
-                            ...item,
-                            id: `${item.id}_copy_${Date.now()}`,
-                            projectId: duplicate.id,
-                            timestamp: Date.now()
-                        });
-                    }
-                });
-            }
-
-            // Add to store
-            if (typeof state.addProject === 'function') {
-                state.addProject(duplicate);
-            }
-
-            return duplicate;
-        } catch (error) {
-            throw error;
+        if (!original) {
+            throw new Error(`Project ${projectId} not found`);
         }
+
+        // Create duplicate
+        const duplicate: ProjectMetadata = {
+            id: `proj_${Date.now()}`,
+            name: `${original.name} (Copy)`,
+            lastModified: Date.now(),
+            assetCount: original.assetCount,
+            thumbnail: original.thumbnail
+        };
+
+        // Copy history items if they exist
+        if (state.generatedHistory) {
+            const projectHistory = state.generatedHistory.filter(
+                (item) => item.projectId === projectId
+            );
+
+            // Add duplicated items with new project ID
+            projectHistory.forEach((item) => {
+                if (typeof state.addToHistory === 'function') {
+                    state.addToHistory({
+                        ...item,
+                        id: `${item.id}_copy_${Date.now()}`,
+                        projectId: duplicate.id,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        }
+
+        // Add to store
+        if (typeof state.addProject === 'function') {
+            state.addProject(duplicate);
+        }
+
+        return duplicate;
     }
 
     static async deleteProject(projectId: string): Promise<void> {
-        try {
-            const { useStore } = await import('@/core/store');
-            const state = useStore.getState() as unknown as DashboardStoreState;
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState() as unknown as DashboardStoreState;
 
-            if (typeof state.removeProject === 'function') {
-                state.removeProject(projectId);
-            }
+        if (typeof state.removeProject === 'function') {
+            state.removeProject(projectId);
+        }
 
-            // Remove associated history
-            if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
-                const toRemove = state.generatedHistory.filter(
-                    (item) => item.projectId === projectId
-                );
-                toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
-            }
-
-        } catch (error) {
-            throw error;
+        // Remove associated history
+        if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
+            const toRemove = state.generatedHistory.filter(
+                (item) => item.projectId === projectId
+            );
+            toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
         }
     }
 
@@ -324,34 +315,29 @@ export class DashboardService {
 
     static async exportBackup(): Promise<void> {
 
-        try {
-            const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
 
-            const backupData = {
-                version: '1.0',
-                exportedAt: new Date().toISOString(),
-                projects: state.projects || [],
-                generatedHistory: state.generatedHistory || [],
-                userProfile: state.userProfile || null,
-            };
+        const backupData = {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            projects: state.projects || [],
+            generatedHistory: state.generatedHistory || [],
+            userProfile: state.userProfile || null,
+        };
 
-            const blob = new Blob(
-                [JSON.stringify(backupData, null, 2)],
-                { type: 'application/json' }
-            );
+        const blob = new Blob(
+            [JSON.stringify(backupData, null, 2)],
+            { type: 'application/json' }
+        );
 
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `indiios-backup-${Date.now()}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-
-        } catch (error) {
-            throw error;
-        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `indiios-backup-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Truck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -144,64 +145,112 @@ const RoadManager: React.FC = () => {
         }
     };
 
+    const handleUpdateStop = (updatedStop: any) => {
+        if (!itinerary) return;
+        const newStops = itinerary.stops.map(s => {
+            // Match by date or some ID. Assuming date is unique for now.
+            if (s.date === updatedStop.date) {
+                return updatedStop;
+            }
+            return s;
+        });
+        setItinerary({ ...itinerary, stops: newStops });
+        toast.success("Day sheet updated");
+    };
+
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
-            <div className="flex items-center justify-between mb-8">
+        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto selection:bg-yellow-500/30">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between mb-10 pb-6 border-b border-gray-800/50"
+            >
                 <div>
-                    <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                        <Truck className="text-yellow-500" />
+                    <h1 className="text-4xl font-black mb-2 flex items-center gap-4 tracking-tighter uppercase font-mono italic">
+                        <Truck className="text-yellow-500" size={36} />
                         Road Manager
                     </h1>
-                    <p className="text-gray-400">Plan your tour logistics and manage life on the road.</p>
+                    <p className="text-gray-500 font-mono text-xs uppercase tracking-[0.3em] font-bold">
+                        Systems Overdrive <span className="text-yellow-500/50">::</span> Tour Logistics Shell V2.1
+                    </p>
                 </div>
-                <div className="flex bg-gray-800 rounded-lg p-1">
+                <div className="flex bg-black/40 backdrop-blur-xl rounded-xl p-1.5 border border-gray-800 shadow-2xl">
                     <button
                         onClick={() => setActiveTab('planning')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'planning' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                        className={`relative px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 z-10 ${activeTab === 'planning' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                            }`}
                     >
-                        Planning
+                        {activeTab === 'planning' && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="absolute inset-0 bg-gray-800 border border-gray-700 rounded-lg -z-10 shadow-lg"
+                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                            />
+                        )}
+                        Tour Planning
                     </button>
                     <button
                         onClick={() => setActiveTab('on-the-road')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'on-the-road' ? 'bg-gray-700 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                        className={`relative px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 z-10 ${activeTab === 'on-the-road' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                            }`}
                     >
-                        On the Road
+                        {activeTab === 'on-the-road' && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="absolute inset-0 bg-gray-800 border border-gray-700 rounded-lg -z-10 shadow-lg"
+                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                            />
+                        )}
+                        On The Road
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
-            {activeTab === 'planning' ? (
-                <PlanningTab
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                    locations={locations}
-                    newLocation={newLocation}
-                    setNewLocation={setNewLocation}
-                    handleAddLocation={handleAddLocation}
-                    handleRemoveLocation={handleRemoveLocation}
-                    handleGenerateItinerary={handleGenerateItinerary}
-                    isGenerating={isGenerating}
-                    itinerary={itinerary}
-                    handleCheckLogistics={handleCheckLogistics}
-                    isCheckingLogistics={isCheckingLogistics}
-                    logisticsReport={logisticsReport}
-                />
-            ) : (
-                <OnTheRoadTab
-                    currentLocation={currentLocation}
-                    setCurrentLocation={setCurrentLocation}
-                    handleFindGasStations={handleFindGasStations}
-                    isFindingPlaces={isFindingPlaces}
-                    nearbyPlaces={nearbyPlaces}
-                    fuelStats={fuelStats}
-                    setFuelStats={setFuelStats}
-                    handleCalculateFuel={handleCalculateFuel}
-                    isCalculatingFuel={isCalculatingFuel}
-                    fuelLogistics={fuelLogistics}
-                />
-            )}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, x: activeTab === 'planning' ? -20 : 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: activeTab === 'planning' ? 20 : -20 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="flex-1"
+                >
+                    {activeTab === 'planning' ? (
+                        <PlanningTab
+                            startDate={startDate}
+                            setStartDate={setStartDate}
+                            endDate={endDate}
+                            setEndDate={setEndDate}
+                            locations={locations}
+                            newLocation={newLocation}
+                            setNewLocation={setNewLocation}
+                            handleAddLocation={handleAddLocation}
+                            handleRemoveLocation={handleRemoveLocation}
+                            handleGenerateItinerary={handleGenerateItinerary}
+                            isGenerating={isGenerating}
+                            itinerary={itinerary}
+                            handleCheckLogistics={handleCheckLogistics}
+                            isCheckingLogistics={isCheckingLogistics}
+                            logisticsReport={logisticsReport}
+                            onUpdateStop={handleUpdateStop}
+                        />
+                    ) : (
+                        <OnTheRoadTab
+                            currentLocation={currentLocation}
+                            setCurrentLocation={setCurrentLocation}
+                            handleFindGasStations={handleFindGasStations}
+                            isFindingPlaces={isFindingPlaces}
+                            nearbyPlaces={nearbyPlaces}
+                            fuelStats={fuelStats}
+                            setFuelStats={setFuelStats}
+                            handleCalculateFuel={handleCalculateFuel}
+                            isCalculatingFuel={isCalculatingFuel}
+                            fuelLogistics={fuelLogistics}
+                            itinerary={itinerary}
+                        />
+                    )}
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
 };

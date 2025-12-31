@@ -1,158 +1,29 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
-// import { auth } from '@/services/firebase'; // Removed
-import { MonitorPlay, Sparkles, Loader2, ChevronDown, Image as ImageIcon, Video, Settings2 } from 'lucide-react';
+import { Sparkles, ChevronDown, Image as ImageIcon, Video, MonitorPlay } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
-import StudioNavControls from './StudioNavControls';
+// import StudioNavControls from './StudioNavControls'; // Removed
 import ImageSubMenu from './ImageSubMenu';
 import DaisyChainControls from './DaisyChainControls';
 import { StudioToolbar } from '@/components/studio/StudioToolbar';
-import { agentService } from '@/services/agent/AgentService';
 
 import { useToast } from '@/core/context/ToastContext';
-import { PromptInput, PromptInputTextarea } from '@/components/ui/prompt-input';
+// import { PromptInput, PromptInputTextarea } from '@/components/ui/prompt-input'; // Removed
 
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 import AI_Input_Search from '@/components/kokonutui/ai-input-search';
 
 export default function CreativeNavbar() {
-    const { currentProjectId, addToHistory, studioControls, generationMode, setGenerationMode, videoInputs, setVideoInput, prompt, setPrompt } = useStore();
+    const { setVideoInput, prompt, setPrompt, generationMode, setGenerationMode } = useStore();
     const toast = useToast();
     // const [prompt, setPrompt] = useState(''); // Removed local state
-    const [isGenerating, setIsGenerating] = useState(false);
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
-    const [showMobileControls, setShowMobileControls] = useState(false);
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
-
-    const handleGenerate = async () => {
-        if (!prompt.trim()) return;
-
-        // Agent Delegation Heuristic
-        const isChatPrompt = prompt.trim().includes(' ') && (
-            prompt.length > 25 ||
-            /^(I|want|can|how|please|tell|give|show|what|why|help|who|where|when)/i.test(prompt.trim())
-        );
-
-        if (isChatPrompt) {
-            if (!useStore.getState().isAgentOpen) {
-                useStore.getState().toggleAgentWindow();
-            }
-            setIsGenerating(true);
-            try {
-                await agentService.sendMessage(prompt);
-                setPrompt('');
-            } catch (e) {
-                console.error("Agent delegation failed:", e);
-                toast.error("Agent delegation failed.");
-            } finally {
-                setIsGenerating(false);
-            }
-            return;
-        }
-
-        setIsGenerating(true);
-        try {
-            let results;
-            if (generationMode === 'video') {
-                results = await VideoGeneration.generateVideo({
-                    prompt: prompt,
-                    resolution: studioControls.resolution,
-                    aspectRatio: studioControls.aspectRatio,
-                    negativePrompt: studioControls.negativePrompt,
-                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                    firstFrame: videoInputs.firstFrame?.url,
-                    lastFrame: videoInputs.lastFrame?.url,
-                    timeOffset: videoInputs.timeOffset
-                });
-            } else {
-                results = await ImageGeneration.generateImages({
-                    prompt: prompt,
-                    count: 1,
-                    resolution: studioControls.resolution,
-                    aspectRatio: studioControls.aspectRatio,
-                    negativePrompt: studioControls.negativePrompt,
-                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
-                });
-            }
-
-            if (results.length === 0) {
-                toast.error(`No ${generationMode}s were generated. The model might have failed silently.`);
-                console.warn("Generation returned 0 results.");
-            } else {
-                toast.success(`${generationMode === 'video' ? 'Video' : 'Image'} generated successfully!`);
-            }
-
-            results.forEach(res => {
-                addToHistory({
-                    id: res.id,
-                    url: res.url,
-                    prompt: res.prompt,
-                    type: generationMode,
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-            });
-
-            // Daisy Chain Logic
-            if (generationMode === 'video' && videoInputs.isDaisyChain && results.length > 0) {
-                const lastVideo = results[0];
-                try {
-                    // Check if it's a fallback image (Storyboard)
-                    if (lastVideo.url.startsWith('data:image')) {
-                        setVideoInput('firstFrame', {
-                            id: crypto.randomUUID(),
-                            url: lastVideo.url,
-                            prompt: lastVideo.prompt,
-                            type: 'image',
-                            timestamp: Date.now(),
-                            projectId: currentProjectId
-                        });
-                        toast.success("Daisy Chain: Next frame set (from Storyboard)!");
-                    } else {
-                        const { extractVideoFrame } = await import('@/utils/video');
-                        // Extract the very last frame
-                        const lastFrameData = await extractVideoFrame(lastVideo.url, -1);
-
-                        setVideoInput('firstFrame', {
-                            id: crypto.randomUUID(),
-                            url: lastFrameData,
-                            prompt: lastVideo.prompt,
-                            type: 'image',
-                            timestamp: Date.now(),
-                            projectId: currentProjectId
-                        });
-                    }
-                    setVideoInput('lastFrame', null); // Clear last frame for next segment
-                    if (!lastVideo.url.startsWith('data:image')) toast.success("Daisy Chain: Next frame set!");
-                } catch (e: unknown) {
-                    console.error("Daisy Chain Error:", e);
-                    if (e instanceof Error) {
-                        toast.error(`Failed to extract frame for Daisy Chain: ${e.message}`);
-                    } else {
-                        toast.error("Failed to extract frame for Daisy Chain: Unknown error");
-                    }
-                }
-            }
-
-            setPrompt('');
-        } catch (e: unknown) {
-            console.error("Generation Error:", e);
-            if (e instanceof Error) {
-                toast.error(`Generation failed: ${e.message}`);
-            } else {
-                toast.error(`Generation failed: Unknown error`);
-            }
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     return (
         <div className="flex flex-col z-20 relative">
@@ -235,47 +106,7 @@ export default function CreativeNavbar() {
                     </div>
                 }
             >
-                <div className="flex-1 w-full flex items-center gap-2 justify-center md:justify-end pr-4">
-                    {/* Prompt Input */}
-                    <div className="flex-1 max-w-2xl mx-4 relative hidden md:block">
-                        <PromptInput
-                            value={prompt}
-                            onValueChange={setPrompt}
-                            onSubmit={handleGenerate}
-                            isLoading={isGenerating}
-                            className="bg-[#0f0f0f] border-gray-700 text-gray-200 rounded-lg shadow-inner"
-                        >
-                            <PromptInputTextarea
-                                placeholder="Describe your creative task..."
-                                className="text-xs min-h-[40px] py-2"
-                            />
-                        </PromptInput>
-                    </div>
-
-                    {/* Studio Controls (Desktop) */}
-                    <div className="hidden md:block">
-                        <StudioNavControls />
-                    </div>
-
-                    {/* Studio Controls Toggle (Mobile) */}
-                    <div className="md:hidden">
-                        <button
-                            onClick={() => setShowMobileControls(!showMobileControls)}
-                            className={`p-2 rounded transition-colors ${showMobileControls ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            <Settings2 size={18} />
-                        </button>
-                    </div>
-
-                    <button
-                        onClick={handleGenerate}
-                        disabled={isGenerating || !prompt.trim()}
-                        className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-1.5 px-4 rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-purple-900/20 whitespace-nowrap"
-                    >
-                        {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                        {generationMode === 'video' ? 'Generate Video' : 'Generate Image'}
-                    </button>
-                </div>
+                {/* Center is now empty for minimalism */}
             </StudioToolbar>
 
             {/* Sub-Menu Bar */}
@@ -289,8 +120,6 @@ export default function CreativeNavbar() {
                     />
                 ) : (
                     <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
-                        <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Video</button>
-
                         <DaisyChainControls
                             onOpenFrameModal={(target) => {
                                 setFrameModalTarget(target);
@@ -298,8 +127,14 @@ export default function CreativeNavbar() {
                             }}
                         />
 
-                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Motion Brush</button>
-                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors">Director's Cut</button>
+                        <div className="h-4 w-px bg-gray-700 flex-shrink-0"></div>
+
+                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors flex items-center gap-1 hover:bg-gray-800 rounded">
+                            Motion Brush
+                        </button>
+                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors flex items-center gap-1 hover:bg-gray-800 rounded">
+                            Director's Cut
+                        </button>
 
                         {/* Brand Palette Section */}
                         <div className="h-4 w-px bg-gray-700 mx-2 flex-shrink-0"></div>
@@ -334,13 +169,6 @@ export default function CreativeNavbar() {
                     </div>
                 )}
             </div>
-
-            {/* Mobile Controls Drawer */}
-            {showMobileControls && (
-                <div className="md:hidden bg-[#1a1a1a] border-b border-gray-800 p-4 animate-in slide-in-from-top-2">
-                    <StudioNavControls className="flex-col items-stretch gap-4" />
-                </div>
-            )}
 
             {/* Prompt Builder Drawer */}
             {showPromptBuilder && (

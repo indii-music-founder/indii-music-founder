@@ -49,5 +49,27 @@ export const PUBLICIST_TOOLS = {
         } catch (e) {
             return "Error generating crisis response.";
         }
+    },
+
+    manage_media_list: async (args: { action: 'add' | 'remove' | 'list', contact?: any }) => {
+        // Mock implementation
+        if (args.action === 'list') {
+            return JSON.stringify([
+                { name: "Rolling Stone", contact: "editor@rollingstone.com", tags: ["Music", "Review"] },
+                { name: "Pitchfork", contact: "news@pitchfork.com", tags: ["Indie", "News"] },
+                { name: "Billboard", contact: "info@billboard.com", tags: ["Industry", "Charts"] }
+            ], null, 2);
+        }
+        return `Successfully performed '${args.action}' on media list (Mock).`;
+    },
+
+    pitch_story: async (args: { outlet: string, angle: string }) => {
+        // Mock implementation
+        return JSON.stringify({
+            outlet: args.outlet,
+            status: "drafted",
+            subjectLine: `Exclusive: Why [Artist] is the next big thing`,
+            emailBody: `Hi Team at ${args.outlet},\n\nI wanted to share a story about... [AI would generate full pitch based on ${args.angle}]`
+        }, null, 2);
     }
 };

@@ -4,8 +4,7 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
-
-// GoogleAuth removed as we switched to API Key for Gemini 3 Image models
+import { GoogleAuth } from "google-auth-library";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -16,7 +15,6 @@ const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 // Lazy Initialize Inngest Client
-// We use a function factory or lazy initialization inside the handler to ensure secrets are available
 const getInngestClient = () => {
     return new Inngest({
         id: "indii-os-functions",
@@ -24,12 +22,21 @@ const getInngestClient = () => {
     });
 };
 
+const corsHandler = corsLib({ origin: true });
+
+// ----------------------------------------------------------------------------
+// Shared Gemini Functions
+// ----------------------------------------------------------------------------
+
+// Video Generation (Veo)
+// ----------------------------------------------------------------------------
+
 /**
  * Trigger Video Generation Job
- * 
+ *
  * This callable function acts as the bridge between the Client App (Electron)
  * and the Asynchronous Worker Queue (Inngest).
- * 
+ *
  * Security: protected by Firebase Auth (onCall).
  */
 export const triggerVideoJob = functions
@@ -39,7 +46,6 @@ export const triggerVideoJob = functions
         memory: "256MB"
     })
     .https.onCall(async (data: any, context: functions.https.CallableContext) => {
-        // 1. Authentication Check
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -58,6 +64,19 @@ export const triggerVideoJob = functions
         }
 
         try {
+            // 1. Create Initial Job Record in Firestore
+            // We do this BEFORE sending the event to prevent race conditions where
+            // the UI subscribes to a doc that doesn't exist yet.
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                id: jobId,
+                userId: userId,
+                orgId: orgId || "personal",
+                prompt: prompt,
+                status: "queued",
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
             // 2. Publish Event to Inngest
             const inngest = getInngestClient();
 
@@ -66,9 +85,9 @@ export const triggerVideoJob = functions
                 data: {
                     jobId: jobId,
                     userId: userId,
-                    orgId: orgId || "personal", // Default to personal if missing
+                    orgId: orgId || "personal",
                     prompt: prompt,
-                    options: options, // Pass through other options (aspect ratio, etc.)
+                    options: options,
                     timestamp: Date.now(),
                 },
                 user: {
@@ -91,35 +110,187 @@ export const triggerVideoJob = functions
 
 /**
  * Inngest API Endpoint
- * 
+ *
  * This is the entry point for Inngest Cloud to call back into our functions
  * to execute steps.
  */
 export const inngestApi = functions
-    .runWith({ secrets: [inngestSigningKey, inngestEventKey] })
+    .runWith({
+        secrets: [inngestSigningKey, inngestEventKey],
+        timeoutSeconds: 540 // 9 minutes, Veo generation can be slow
+    })
     .https.onRequest((req, res) => {
-        // Initialize client INSIDE the handler to ensure secrets are available
         const inngestClient = getInngestClient();
 
-        // Placeholder for actual video generation functions
+        // Actual Video Generation Logic using Veo
         const generateVideoFn = inngestClient.createFunction(
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
             async ({ event, step }) => {
-                return { message: "Placeholder implementation restored." };
+                const { jobId, prompt, userId, options } = event.data;
+
+                try {
+                    // 1. Update status to processing
+                    // Step 1: Update status to processing
+                    await step.run("update-status-processing", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "processing",
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+
+                    // 2. Call Vertex AI (Veo)
+                    const videoUri = await step.run("generate-video-vertex", async () => {
+                    // Step 2: Generate Video via Vertex AI (Veo)
+                    const videoUri = await step.run("generate-veo-video", async () => {
+                        // Use GoogleAuth to get credentials for Vertex AI
+                        const auth = new GoogleAuth({
+                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                        });
+
+                        const client = await auth.getClient();
+                        const projectId = await auth.getProjectId();
+                        const accessToken = await client.getAccessToken();
+                        const location = 'us-central1';
+                        // Using the Veo 3.1 Preview model
+                        const modelId = 'veo-3.1-generate-preview';
+
+                        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+
+                        // Construct request body for Veo
+                        const requestBody = {
+                            instances: [
+                                {
+                                    prompt: prompt,
+                                }
+                            ],
+                            parameters: {
+                                sampleCount: 1,
+                                // Map options to Veo parameters
+                                videoLength: options?.duration || options?.durationSeconds || "5s",
+                                aspectRatio: options?.aspectRatio || "16:9"
+                            }
+                        };
+
+                        // Construct request body for Veo
+                        const requestBody = {
+                            instances: [{
+                                prompt: prompt
+                            }],
+                            parameters: {
+                                sampleCount: 1,
+                                videoLength: options?.duration || options?.durationSeconds || "5s",
+                                aspectRatio: options?.aspectRatio || "16:9"
+                            }
+                        };
+
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
+                        }
+
+                        const result = await response.json();
+                        const predictions = result.predictions;
+
+                        if (!predictions || predictions.length === 0) {
+                            throw new Error("No predictions returned from Veo API");
+                        }
+
+                        const prediction = predictions[0];
+
+                        // Handle different possible response formats
+
+                        // Case A: Base64 Encoded Video
+                        if (prediction.bytesBase64Encoded) {
+                            const bucket = admin.storage().bucket();
+                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                                metadata: { contentType: 'video/mp4' },
+                                public: true
+                            });
+                            // await file.makePublic(); // Optional depending on bucket config
+                            // Save to a public path or user-specific path
+                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                            const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
+
+                            await file.save(buffer, {
+                                metadata: { contentType: 'video/mp4' },
+                                public: true // Make public for easy access in prototype
+                            });
+
+                            return file.publicUrl();
+                        }
+
+                        // Case B: GCS URI
+                        if (prediction.gcsUri) {
+                             // Note: GCS URIs (gs://) are not directly accessible via HTTP.
+                             // Ideally we would sign this URL or copy it to our bucket.
+                             // For now, we return it as is, or we could copy it.
+                             return prediction.gcsUri;
+                        }
+
+                        // Case C: Video URI (Direct HTTP link if supported)
+                        if (prediction.videoUri) {
+                            return prediction.videoUri;
+                        }
+
+                        // If it returns a GCS URI in gcsUri
+                        if (prediction.gcsUri) {
+                             return prediction.gcsUri;
+                        }
+
+                        throw new Error("Unknown response format from Veo");
+                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
+                    });
+
+                    // Step 3: Update status to complete
+                    await step.run("update-status-complete", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "completed", // Aligning with 'completed' vs 'complete' inconsistency - defaulting to 'completed'
+                            videoUrl: videoUri,
+                            progress: 100,
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+
+                    return { success: true, videoUrl: videoUri };
+
+                } catch (error: any) {
+                    await step.run("update-status-failed", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "failed",
+                            error: error.message || "Unknown error during video generation",
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+                    // Re-throw to allow Inngest to handle retries if configured
+                    throw error;
+                }
             }
         );
 
-        // Create the serve handler dynamically
         const handler = serve({
             client: inngestClient,
             functions: [generateVideoFn],
             signingKey: inngestSigningKey.value(),
         });
 
-        // Execute the handler
         return handler(req, res);
     });
+
+// ----------------------------------------------------------------------------
+// Image Generation (Gemini)
+// Legacy / Shared Gemini Functions
+// ----------------------------------------------------------------------------
 
 interface GenerateImageRequestData {
     prompt: string;
@@ -130,15 +301,13 @@ interface GenerateImageRequestData {
 
 export const generateImageV3 = functions
     .runWith({ secrets: [geminiApiKey] })
-    .https.onCall(async (data: GenerateImageRequestData, context) => { // Updated logic for AI Studio
+    .https.onCall(async (data: GenerateImageRequestData, context) => {
         try {
             const { prompt, aspectRatio, count, images } = data;
             const modelId = "gemini-3-pro-image-preview";
-
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [{ text: prompt }];
-
             if (images) {
                 images.forEach(img => {
                     parts.push({
@@ -152,38 +321,23 @@ export const generateImageV3 = functions
 
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: parts
-                    }],
+                    contents: [{ role: "user", parts: parts }],
                     generationConfig: {
                         responseModalities: ["TEXT", "IMAGE"],
                         candidateCount: count || 1,
-                        // For Imagen 3 preview, we use these specialized config fields if present
-                        // aspect_ratio is often handled via prompt suffix or imageConfig
-                        ...(aspectRatio ? {
-                            imageConfig: {
-                                aspectRatio: aspectRatio // The API expects literal string like "16:9"
-                            }
-                        } : {})
+                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {})
                     }
                 }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Gemini API Error:", errorText);
                 throw new functions.https.HttpsError('internal', errorText);
             }
 
             const result = await response.json();
-
-            // Transform Google AI SDK response to match what the client expects
-            // Client expects { images: [{ bytesBase64Encoded: string }] }
             const candidates = result.candidates || [];
             const processedImages = candidates.flatMap((c: any) =>
                 (c.content?.parts || [])
@@ -195,29 +349,56 @@ export const generateImageV3 = functions
             );
 
             return { images: processedImages };
-
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error("Function Error:", error);
-            if (error instanceof Error) {
-                throw new functions.https.HttpsError('internal', error.message);
-            }
-            throw new functions.https.HttpsError('internal', "An unknown error occurred");
+            throw new functions.https.HttpsError('internal', error.message || "Unknown error");
         }
     });
 
+export const editImage = functions
+    .runWith({ secrets: [geminiApiKey] })
+    .https.onCall(async (data: any, context) => {
+        // Placeholder for Edit Image logic if needed
+        return { message: "Edit Image V3 Not fully implemented in this refactor." };
+    });
+
+const corsHandler = corsLib({ origin: true });
+
+export const ragProxy = functions
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 60
+    })
+    .https.onRequest((req, res) => {
+        corsHandler(req, res, async () => {
+            try {
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
+
+                const fetchOptions: RequestInit = {
+                    method: req.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: (req.method !== 'GET' && req.method !== 'HEAD') ?
+                        (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
+                        : undefined
+                };
+
+                const response = await fetch(targetUrl, fetchOptions);
+                const data = await response.text();
+                res.status(response.status);
+                try { res.send(JSON.parse(data)); } catch { res.send(data); }
+            } catch (error: any) {
+                res.status(500).send({ error: error.message });
+            }
+        });
 interface EditImageRequestData {
     image: string;
     mask?: string;
     prompt: string;
     referenceImage?: string;
-}
-
-interface Part {
-    inlineData?: {
-        mimeType: string;
-        data: string;
-    };
-    text?: string;
 }
 
 export const editImage = functions
@@ -229,7 +410,7 @@ export const editImage = functions
 
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
-            const parts: Part[] = [
+            const parts: any[] = [
                 {
                     inlineData: {
                         mimeType: "image/png",
@@ -278,7 +459,6 @@ export const editImage = functions
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Gemini API Error:", errorText);
                 throw new functions.https.HttpsError('internal', errorText);
             }
 
@@ -293,17 +473,16 @@ export const editImage = functions
             throw new functions.https.HttpsError('internal', "An unknown error occurred");
         }
     });
-/**
- * Generate Content Stream Proxy
- * Proxies streaming requests to Gemini API
- */
+
 export const generateContentStream = functions
     .runWith({
         secrets: [geminiApiKey],
         timeoutSeconds: 300
     })
     .https.onRequest((req, res) => {
+        const cors = corsLib({ origin: true });
         cors(req, res, async () => {
+        corsHandler(req, res, async () => {
             if (req.method !== 'POST') {
                 res.status(405).send('Method Not Allowed');
                 return;
@@ -313,7 +492,6 @@ export const generateContentStream = functions
                 const { model, contents, config } = req.body;
                 const modelId = model || "gemini-3-pro-preview";
 
-                // Use the streamGenerateContent endpoint with SSE
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
 
                 const response = await fetch(endpoint, {
@@ -331,8 +509,7 @@ export const generateContentStream = functions
                     return;
                 }
 
-                // Proxy the stream
-                res.setHeader('Content-Type', 'text/plain'); // AIService expects text chunks parsed as JSON
+                res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
@@ -356,11 +533,10 @@ export const generateContentStream = functions
                                 const data = JSON.parse(line.substring(6));
                                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                                 if (text) {
-                                    // Send as NDJSON line
                                     res.write(JSON.stringify({ text }) + '\n');
                                 }
                             } catch (e) {
-                                // Skip invalid JSON
+
                             }
                         }
                     }
@@ -378,37 +554,22 @@ export const generateContentStream = functions
         });
     });
 
-/**
- * RAG Proxy
- * Proxies requests to Google Generative Language API (Gemini) to hide API Key
- * and handle CORS/Referer restrictions server-side.
- */
-// geminiApiKey is now defined at the top
-const cors = corsLib({ origin: true });
-
 export const ragProxy = functions
     .runWith({
         secrets: [geminiApiKey],
         timeoutSeconds: 60
     })
     .https.onRequest((req, res) => {
-        cors(req, res, async () => {
-            // 1. Validate Authentication (Optional but recommended for production)
-            // For now, we allow authentic calls or public if strict auth not required yet
-
-            // 2. Proxy Logic
+        corsHandler(req, res, async () => {
             try {
                 const baseUrl = 'https://generativelanguage.googleapis.com';
-                const targetPath = req.path; // e.g., /v1beta/corpora
+                const targetPath = req.path;
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,
                     headers: {
                         'Content-Type': 'application/json',
-                        // Spoof Referer to satisfy API Key restrictions.
-                        // Since this is a proxy, we claim to be the allowed client.
-                        'Referer': 'http://localhost:3000/'
                     },
                     body: (req.method !== 'GET' && req.method !== 'HEAD') ?
                         (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
@@ -416,29 +577,11 @@ export const ragProxy = functions
                 };
 
                 const response = await fetch(targetUrl, fetchOptions);
-
-                // Read text explicitly to avoid stream issues in standard fetch inside functions environment if any
                 const data = await response.text();
-
-                if (!response.ok) {
-                    console.error("RAG Proxy Upstream Error:", {
-                        status: response.status,
-                        statusText: response.statusText,
-                        url: targetUrl,
-                        body: data
-                    });
-                }
-
                 res.status(response.status);
-                try {
-                    res.send(JSON.parse(data));
-                } catch {
-                    res.send(data);
-                }
+                try { res.send(JSON.parse(data)); } catch { res.send(data); }
             } catch (error: any) {
-                console.error("RAG Proxy Error:", error);
                 res.status(500).send({ error: error.message });
             }
         });
     });
-

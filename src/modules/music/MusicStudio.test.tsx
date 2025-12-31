@@ -1,36 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MusicStudio from './MusicStudio';
-import * as Tone from 'tone';
 
-// Mock Tone.js
-vi.mock('tone', () => ({
-    start: vi.fn().mockResolvedValue(undefined),
-    Synth: vi.fn().mockImplementation(function () {
-        return {
-            toDestination: vi.fn().mockReturnThis(),
-            triggerAttack: vi.fn(),
-            triggerRelease: vi.fn(),
-            dispose: vi.fn(),
-            volume: {
-                value: 0
-            }
-        };
-    }),
-    Player: vi.fn().mockImplementation(function () {
-        return {
-            toDestination: vi.fn().mockReturnThis(),
-            load: vi.fn().mockResolvedValue(undefined),
-            start: vi.fn(),
-            stop: vi.fn(),
-            dispose: vi.fn(),
-        };
-    }),
-    context: {
-        sampleRate: 44100,
-        lookAhead: 0.1
-    }
-}));
+// Mock Lucide icons
+vi.mock('lucide-react', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        // @ts-ignore
+        ...actual,
+        Activity: () => <div data-testid="icon-activity" />,
+        Music: () => <div data-testid="icon-music" />,
+        Zap: () => <div data-testid="icon-zap" />,
+        Fingerprint: () => <div data-testid="icon-fingerprint" />,
+    };
+});
 
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({
@@ -55,106 +38,60 @@ vi.mock('@/services/NativeFileSystemService', () => ({
     },
 }));
 
-describe('MusicStudio', () => {
+// Mock AudioAnalysisService
+vi.mock('@/services/audio/AudioAnalysisService', () => ({
+    audioAnalysisService: {
+        analyzeBuffer: vi.fn().mockResolvedValue({
+            duration: 120,
+            bpm: 128,
+            key: 'C Major',
+            energy: 0.8,
+            danceability: 0.9,
+            loudness: -5,
+            waveform: new Float32Array(100),
+        }),
+    },
+}));
+
+describe('MusicStudio Analysis Dashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders the three-column layout', () => {
+    it('renders the new Music Analysis header', () => {
         render(<MusicStudio />);
-        expect(screen.getByText('Local Music Library')).toBeInTheDocument();
-        expect(screen.getByText(/Loaded Tracks/)).toBeInTheDocument();
-        expect(screen.getByText('Audio Engine')).toBeInTheDocument();
+        expect(screen.getByText('Music Analysis')).toBeInTheDocument();
+        expect(screen.getByText('Metadata & Rights Management')).toBeInTheDocument();
     });
 
-    it('shows file/folder buttons when FS API is supported', () => {
+    it('renders the core metrics cards', () => {
         render(<MusicStudio />);
-        expect(screen.getByText('File')).toBeInTheDocument();
-        expect(screen.getByText('Folder')).toBeInTheDocument();
+        expect(screen.getByText('Metadata Health')).toBeInTheDocument();
+        expect(screen.getByText('Acoustic Fingerprint')).toBeInTheDocument();
+        expect(screen.getByText('Global Rights')).toBeInTheDocument();
     });
 
-    it('shows privacy notice', () => {
+    it('shows file integration options', () => {
         render(<MusicStudio />);
-        expect(screen.getByText(/Files stay on your device/)).toBeInTheDocument();
+        expect(screen.getByText('Import File')).toBeInTheDocument();
+        expect(screen.getByText('Scan Folder')).toBeInTheDocument();
     });
 
-    it('shows start engine button when not started', () => {
+    it('shows empty state initially', () => {
         render(<MusicStudio />);
-        expect(screen.getByText('Start Engine')).toBeInTheDocument();
+        expect(screen.getByText('Drop Audio Files Here')).toBeInTheDocument();
+        expect(screen.getByText('Drag and drop audio files to begin analysis')).toBeInTheDocument();
     });
 
-    it('starts the audio engine when button is clicked', async () => {
-        render(<MusicStudio />);
-
-        const startBtn = screen.getByText('Start Engine');
-        fireEvent.click(startBtn);
-
-        await waitFor(() => {
-            expect(Tone.start).toHaveBeenCalled();
-        });
-    });
-
-    it('shows running state after starting engine', async () => {
-        render(<MusicStudio />);
-
-        fireEvent.click(screen.getByText('Start Engine'));
-
-        await waitFor(() => {
-            expect(screen.getByText('State')).toBeInTheDocument();
-            expect(screen.getByText('Running')).toBeInTheDocument();
-        });
-    });
-
-    it('shows sample rate after starting engine', async () => {
-        render(<MusicStudio />);
-
-        fireEvent.click(screen.getByText('Start Engine'));
-
-        await waitFor(() => {
-            expect(screen.getByText('Sample Rate')).toBeInTheDocument();
-            expect(screen.getByText('44100 Hz')).toBeInTheDocument();
-        });
-    });
-
-    it('shows empty tracks message when no audio loaded', () => {
-        render(<MusicStudio />);
-        expect(screen.getByText('No audio loaded')).toBeInTheDocument();
-    });
-});
-
-describe('MusicStudio File System Integration', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('calls pickAudioFile when File button is clicked', async () => {
+    it('handles interaction with import buttons', async () => {
         const { nativeFileSystemService } = await import('@/services/NativeFileSystemService');
-
         render(<MusicStudio />);
-        fireEvent.click(screen.getByText('File'));
+
+        const importBtn = screen.getByText('Import File');
+        fireEvent.click(importBtn);
 
         await waitFor(() => {
             expect(nativeFileSystemService.pickAudioFile).toHaveBeenCalled();
         });
-    });
-
-    it('calls pickDirectory when Folder button is clicked', async () => {
-        const { nativeFileSystemService } = await import('@/services/NativeFileSystemService');
-
-        render(<MusicStudio />);
-        fireEvent.click(screen.getByText('Folder'));
-
-        await waitFor(() => {
-            expect(nativeFileSystemService.pickDirectory).toHaveBeenCalled();
-        });
-    });
-
-    it('shows unsupported message when FS API not available', async () => {
-        const { nativeFileSystemService } = await import('@/services/NativeFileSystemService');
-        vi.mocked(nativeFileSystemService.isSupported).mockReturnValue(false);
-
-        render(<MusicStudio />);
-
-        expect(screen.getByText(/File System Access API not supported/)).toBeInTheDocument();
     });
 });

@@ -218,7 +218,17 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
     }
 
     // Validate audio
-    const { audioFile } = assets;
+    const audioFile = (assets.audioFiles && assets.audioFiles.length > 0) ? assets.audioFiles[0] : assets.audioFile;
+    if (!audioFile) {
+      errors.push({
+        code: 'MISSING_AUDIO',
+        message: 'At least one audio file is required',
+        field: 'audioFiles',
+        severity: 'error',
+      });
+      return { isValid: false, errors, warnings };
+    }
+
     if (!reqs.audio.allowedFormats.includes(audioFile.format)) {
       errors.push({
         code: 'INVALID_AUDIO_FORMAT',

@@ -24,28 +24,34 @@ export function useLicensing() {
         let unsubscribeLicenses: (() => void) | null = null;
         let unsubscribeRequests: (() => void) | null = null;
 
+        const handleError = (err: Error) => {
+            console.error('[useLicensing] Subscription Error:', err);
+            if (isMounted) {
+                // Ensure we stop loading on error so the spinner doesn't hang
+                setError(err.message);
+                setIsLoading(false);
+                toast.error(`Licensing Data Error: ${err.message}`);
+            }
+        };
+
         try {
             unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
                 if (isMounted) {
                     setLicenses(data);
+                    // Only clear loading if both might have fired, or aggressively clear it to show at least partial data
                     setIsLoading(false);
                 }
-            });
+            }, handleError);
 
             unsubscribeRequests = licensingService.subscribeToPendingRequests((data) => {
                 if (isMounted) {
                     setRequests(data);
-                    setIsLoading(false); // Ensure loading is cleared
+                    setIsLoading(false);
                 }
-            });
+            }, handleError);
         } catch (err) {
-            console.error('[useLicensing] Subscription Error:', err);
-            if (isMounted) {
-                const message = (err as Error).message;
-                setError(message);
-                setIsLoading(false);
-                toast.error(`Licensing Data Error: ${message}`);
-            }
+            // Catch synchronous errors during subscription setup
+            handleError(err as Error);
         }
 
         return () => {
@@ -87,15 +93,18 @@ export function useLicensing() {
         }
 
         try {
-            // In a real scenario, this might trigger a cloud function or agent job
-            // For now, we update the status to indicate drafting is in progress
-            if (request.status === 'checking') {
-                // Logic to update status would go here... mock for now
-            }
+            // Trigger transition to negotiating status
+            await toast.promise(
+                licensingService.updateRequestStatus(request.id, 'negotiating'),
+                {
+                    loading: 'Initiating draft sequence...',
+                    success: 'Agreement draft generated. Status: Negotiating.',
+                    error: 'Failed to initiate drafting.'
+                }
+            );
         } catch (error) {
             console.error("Failed to initiate drafting:", error);
-            toast.error("Agent failed to start drafting sequence.");
-            // Sentry.captureException(error); // Uncomment when Sentry is fully configured
+            // toast.promise already handles error notifications
         }
     }, [toast]);
 

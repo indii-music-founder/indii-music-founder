@@ -36,7 +36,8 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "src/**/*.d.ts"
   ],
   "exclude": [
     "src/_archive_legacy"

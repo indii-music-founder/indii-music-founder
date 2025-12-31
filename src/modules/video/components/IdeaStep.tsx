@@ -27,7 +27,7 @@ const IdeaStep: React.FC<IdeaStepProps> = ({ initialPrompt, onPromptChange, onNe
                 <button
                     onClick={onNext}
                     disabled={!initialPrompt.trim() || isThinking}
-                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(234,179,8,0.2)]"
                 >
                     {isThinking ? (
                         <>

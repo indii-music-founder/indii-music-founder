@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import * as Tone from 'tone';
-import { Activity, File, FileAudio, Folder, HardDrive, Music, Pause, Play, SkipBack, SkipForward, Trash2, Upload, Volume2, ShieldCheck, Download } from 'lucide-react';
+import {
+    Activity, File, FileAudio, Folder, HardDrive, Music, Pause, Play,
+    SkipBack, SkipForward, Trash2, Upload, Volume2, ShieldCheck, Download,
+    Zap, Globe, Fingerprint, Search, Menu
+} from 'lucide-react';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { useToast } from '@/core/context/ToastContext';
 import { nativeFileSystemService } from '@/services/NativeFileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { MetadataDrawer } from './components/MetadataDrawer';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
@@ -30,9 +34,7 @@ export default function MusicStudio() {
     const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [engineState, setEngineState] = useState<'stopped' | 'running'>('stopped');
-    const [sampleRate, setSampleRate] = useState<number | null>(null);
-    const [lookAhead, setLookAhead] = useState<number | null>(null);
+    const [validMetatdataCount, setValidMetadataCount] = useState(0);
     const [isMetadataDrawerOpen, setIsMetadataDrawerOpen] = useState(false);
 
     // Refs
@@ -59,16 +61,17 @@ export default function MusicStudio() {
             wavesurferRef.current.destroy();
         }
 
-        // Create new instance
+        // Create new instance - Banana Pro Aesthetic
         const ws = WaveSurfer.create({
             container: waveformRef.current,
-            waveColor: '#4b5563',
-            progressColor: '#8b5cf6',
-            cursorColor: '#c4b5fd',
-            barWidth: 2,
-            barGap: 3,
-            height: 128,
+            waveColor: 'rgba(255, 255, 255, 0.1)', // Subtle glass-like base
+            progressColor: 'hsl(var(--primary))', // Banana Pro Primary (Yellow)
+            cursorColor: '#FFFFFF',
+            barWidth: 3,
+            barGap: 2,
+            height: 160,
             normalize: true,
+            backend: 'WebAudio',
         });
 
         ws.load(track.url);
@@ -93,22 +96,16 @@ export default function MusicStudio() {
         };
     }, [currentTrackId]);
 
+    // Recalculate stats when loadedAudio changes
+    useEffect(() => {
+        const valid = loadedAudio.filter(t => t.metadata.isGolden).length;
+        setValidMetadataCount(valid);
+    }, [loadedAudio]);
+
     const togglePlayPause = () => {
         if (wavesurferRef.current) {
             wavesurferRef.current.playPause();
             setIsPlaying(wavesurferRef.current.isPlaying());
-        }
-    };
-
-    const startEngine = async () => {
-        try {
-            await Tone.start();
-            setEngineState('running');
-            setSampleRate(Math.round(Tone.context.sampleRate));
-            setLookAhead((Tone.context.lookAhead ?? null) as number | null);
-        } catch (error) {
-            console.error('Failed to start engine', error);
-            toast.error('Unable to start audio engine');
         }
     };
 
@@ -184,8 +181,6 @@ export default function MusicStudio() {
         setCurrentTrackId(tracks[0].id);
 
         // Asynchronously fingerprint/analyze all loaded tracks
-        // We do this one by one to avoid UI freeze, or parallel if worker supported.
-        // For prototype, let's do simple loop with promises but don't block UI
         const batchToastId = toast.loading(`Analyzing ${tracks.length} tracks...`);
 
         (async () => {
@@ -232,242 +227,278 @@ export default function MusicStudio() {
     };
 
     const activeTrack = loadedAudio.find(t => t.id === currentTrackId);
+    const progress = loadedAudio.length > 0 ? Math.round((validMetatdataCount / loadedAudio.length) * 100) : 0;
 
     return (
         <ModuleDashboard
             title="Music Analysis"
-            description="Audio Analysis & Management"
-            icon={<Music className="text-purple-500" />}
+            description="Deep Sonic Analysis & Fingerprinting"
+            icon={<Activity className="text-primary glow-text-yellow" />}
         >
             <ModuleErrorBoundary moduleName="Music Studio">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)]">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-12rem)] font-sans text-gray-200">
 
                     {/* Left Drawer: Library (3 cols) */}
-                    <div className="lg:col-span-3 bg-[#161b22] border border-gray-800 rounded-xl p-4 flex flex-col h-full space-y-4">
+                    <motion.div
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        className="lg:col-span-3 bg-card glass-panel rounded-2xl p-4 flex flex-col h-full space-y-4 shadow-2xl"
+                    >
                         <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <HardDrive size={16} className="text-purple-400" />
-                                    <h3 className="text-sm font-semibold text-gray-200">Local Music Library</h3>
-                                </div>
-                                <span className="text-[10px] uppercase text-gray-500">{fsSupported ? 'Online' : 'Unavailable'}</span>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Source Library</h3>
+                                <div className={`w-2 h-2 rounded-full ${fsSupported ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-destructive'}`} />
                             </div>
-                            {fsSupported ? (
-                                <div className="flex gap-2 mb-2">
-                                    <button
-                                        onClick={handlePickFile}
-                                        className="flex-1 px-3 py-2 bg-[#21262d] hover:bg-[#30363d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
-                                    >
-                                        <File size={14} /> File
-                                    </button>
-                                    <button
-                                        onClick={handlePickDirectory}
-                                        className="flex-1 px-3 py-2 bg-[#21262d] hover:bg-[#30363d] text-gray-200 text-xs rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-700"
-                                    >
-                                        <Folder size={14} /> Folder
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/40 rounded-md p-3">
-                                    File System Access API not supported
-                                </div>
-                            )}
-                            <p className="text-[11px] text-gray-500">Files stay on your device. We never upload your stems.</p>
+
+                            <div className="flex gap-2 mb-4">
+                                <button
+                                    onClick={handlePickFile}
+                                    className="flex-1 py-3 bg-secondary/50 hover:bg-secondary text-foreground text-xs font-medium rounded-xl transition-all border border-border flex flex-col items-center gap-2 group"
+                                >
+                                    <FileAudio size={18} className="text-primary/50 group-hover:text-primary transition-colors" />
+                                    <span>Import File</span>
+                                </button>
+                                <button
+                                    onClick={handlePickDirectory}
+                                    className="flex-1 py-3 bg-secondary/50 hover:bg-secondary text-foreground text-xs font-medium rounded-xl transition-all border border-border flex flex-col items-center gap-2 group"
+                                >
+                                    <Folder size={18} className="text-primary/50 group-hover:text-primary transition-colors" />
+                                    <span>Scan Folder</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                                <Upload size={12} /> Loaded Tracks
-                            </h4>
-                            <span className="text-[11px] text-gray-500">{loadedAudio.length} loaded</span>
+                        <div className="flex items-center justify-between px-1">
+                            <span className="text-[10px] uppercase text-muted-foreground font-bold">Queue</span>
+                            <span className="text-[10px] text-primary font-mono">{loadedAudio.length} TRACKS</span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                             {loadedAudio.length === 0 && (
-                                <div className="text-center py-8 text-gray-500 text-xs italic">
-                                    No audio loaded
+                                <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50">
+                                    <Music size={32} strokeWidth={1} className="mb-2" />
+                                    <p className="text-xs">Library Empty</p>
                                 </div>
                             )}
                             {loadedAudio.map(track => (
-                                <div
+                                <motion.div
                                     key={track.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
                                     onClick={() => setCurrentTrackId(track.id)}
-                                    className={`group p-2 rounded-lg border cursor-pointer transition-all ${currentTrackId === track.id
-                                        ? 'bg-purple-900/30 border-purple-500/50'
-                                        : 'bg-[#0d1117] border-gray-800 hover:border-gray-600'
+                                    className={`group p-3 rounded-xl border cursor-pointer transition-all relative overflow-hidden ${currentTrackId === track.id
+                                        ? 'bg-primary/10 border-primary/50'
+                                        : 'bg-secondary/30 border-border/50 hover:border-border'
                                         }`}
                                 >
-                                    <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-2 overflow-hidden">
-                                            <FileAudio size={12} className="text-blue-400 flex-shrink-0" />
-                                            <span className={`text-xs font-medium truncate ${currentTrackId === track.id ? 'text-purple-200' : 'text-gray-300'}`}>
-                                                {track.name}
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={(e) => handleRemoveTrack(e, track.id)}
-                                            className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </div>
-                                    {track.features && (
-                                        <div className="flex gap-2 mt-1 px-1">
-                                            <span className="text-[10px] bg-gray-800/50 px-1 rounded text-gray-400">{track.features.bpm} BPM</span>
-                                            <span className="text-[10px] bg-gray-800/50 px-1 rounded text-gray-400">{track.features.key} {track.features.scale}</span>
-                                        </div>
+                                    {/* Active Indicator */}
+                                    {currentTrackId === track.id && (
+                                        <motion.div
+                                            layoutId="active-track"
+                                            className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_10px_#eab308]"
+                                        />
                                     )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    {/* Center: Visualizer & Analysis (9 cols) */}
-                    <div className="lg:col-span-9 flex flex-col gap-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-semibold text-gray-200 flex items-center gap-2"><Music size={14} /> Audio Engine</span>
-                                    <span className={`text-[11px] ${engineState === 'running' ? 'text-green-400' : 'text-gray-500'}`}>{engineState === 'running' ? 'Active' : 'Idle'}</span>
-                                </div>
-                                <p className="text-xs text-gray-500 mb-3">Start the embedded Tone.js engine to enable synthesis and playback.</p>
-                                <button
-                                    onClick={startEngine}
-                                    className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm"
-                                >
-                                    {engineState === 'running' ? 'Engine Running' : 'Start Engine'}
-                                </button>
-                                <div className="mt-3 text-xs text-gray-400 space-y-1">
-                                    <div className="flex justify-between"><span>State</span><span>{engineState === 'running' ? 'Running' : 'Stopped'}</span></div>
-                                    <div className="flex justify-between"><span>Sample Rate</span><span>{sampleRate ? `${sampleRate} Hz` : 'Not started'}</span></div>
-                                    <div className="flex justify-between"><span>Look Ahead</span><span>{lookAhead != null ? `${lookAhead}s` : 'Not started'}</span></div>
-                                </div>
-                            </div>
-                            <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-                                <span className="text-sm font-semibold text-gray-200 flex items-center gap-2"><Activity size={14} /> Track Insights</span>
-                                <p className="text-xs text-gray-500 mt-2">{loadedAudio.length ? 'Select a track to view metrics.' : 'No audio loaded yet.'}</p>
-                            </div>
-                            <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-4">
-                                <span className="text-sm font-semibold text-gray-200 flex items-center gap-2"><Volume2 size={14} /> Playback</span>
-                                <p className="text-xs text-gray-500 mt-2">Waveform playback uses WaveSurfer for visual monitoring.</p>
-                            </div>
-                        </div>
-
-                        {/* Visualizer Area */}
-                        <div className="flex-1 bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center relative overflow-hidden">
-                            {!activeTrack ? (
-                                <div className="text-center text-gray-600">
-                                    <Activity size={48} className="mx-auto mb-4 opacity-20" />
-                                    <p className="text-sm">Select a track to view waveform</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <MetadataDrawer
-                                        isOpen={isMetadataDrawerOpen}
-                                        onClose={() => setIsMetadataDrawerOpen(false)}
-                                        metadata={activeTrack.metadata}
-                                        onUpdate={handleMetadataUpdate}
-                                    />
-
-                                    {/* Top Bar: Title & Metadata Status */}
-                                    <div className="absolute top-4 left-6 right-6 flex justify-between items-center z-10">
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-3">
-                                                <h2 className="text-lg font-bold text-white truncate max-w-[500px]">{activeTrack.metadata.trackTitle || activeTrack.name}</h2>
-                                                <button
-                                                    onClick={() => setIsMetadataDrawerOpen(true)}
-                                                    className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTrack.metadata.isGolden
-                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30'
-                                                        : 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30'
-                                                        }`}
-                                                >
-                                                    <ShieldCheck size={12} />
-                                                    {activeTrack.metadata.isGolden ? 'Golden Master' : 'Metadata Incomplete'}
-                                                </button>
-                                            </div>
-                                            <span className="text-xs text-green-400 flex items-center gap-1 mt-1">
-                                                <Activity size={10} /> High-Fidelity Analysis Active
-                                            </span>
-                                        </div>
-                                        {isAnalyzing && (
-                                            <div className="flex items-center gap-2 text-xs text-purple-400 animate-pulse">
-                                                Analyizing Structure...
-                                            </div>
+                                    <div className="flex items-center justify-between mb-1 pl-2">
+                                        <span className={`text-sm font-semibold truncate max-w-[140px] ${currentTrackId === track.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                            {track.name}
+                                        </span>
+                                        {track.metadata.isGolden ? (
+                                            <ShieldCheck size={14} className="text-green-400" />
+                                        ) : (
+                                            <div className="w-2 h-2 rounded-full bg-destructive/50" />
                                         )}
                                     </div>
+                                    <div className="flex items-center justify-between pl-2">
+                                        <span className="text-[10px] font-mono text-muted-foreground">
+                                            {track.features ? `${track.features.bpm} BPM` : 'PENDING'}
+                                        </span>
+                                        <Trash2
+                                            size={12}
+                                            className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => handleRemoveTrack(e, track.id)}
+                                        />
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
 
-                                    <div id="waveform" ref={waveformRef} className="w-full my-auto" />
+                    {/* Center: Dashboard Main (9 cols) */}
+                    <div className="lg:col-span-9 flex flex-col gap-6 font-sans">
 
-                                    {/* Deep Metrics Overlay */}
-                                    {activeTrack.features && (
-                                        <div className="absolute bottom-4 left-6 flex gap-6">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-gray-500 uppercase tracking-widest">Energy</span>
-                                                <span className="text-2xl font-mono text-white">{(activeTrack.features.energy * 100).toFixed(0)}<span className="text-sm text-gray-600">%</span></span>
+                        {/* Top Cards Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Metadata Health */}
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                                className="bg-card glass-panel rounded-2xl p-5 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <ShieldCheck size={64} className="text-foreground" />
+                                </div>
+                                <h4 className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-2">Metadata Health</h4>
+                                <div className="flex items-end gap-2">
+                                    <span className="text-4xl font-mono text-foreground font-light">{progress}%</span>
+                                    <span className="text-xs text-primary mb-2 glow-text-yellow">GOLDEN</span>
+                                </div>
+                                <div className="w-full h-1 bg-secondary rounded-full mt-4 overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary shadow-[0_0_10px_#eab308] transition-all duration-500"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                            </motion.div>
+
+                            {/* Audio Fingerprint Status */}
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="bg-card glass-panel rounded-2xl p-5 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Fingerprint size={64} className="text-foreground" />
+                                </div>
+                                <h4 className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-2">Acoustic Fingerprint</h4>
+                                {activeTrack?.features ? (
+                                    <div className="mt-2">
+                                        <div className="flex gap-4 mb-2">
+                                            <div>
+                                                <div className="text-[10px] text-muted-foreground">KEY</div>
+                                                <div className="text-xl text-foreground font-mono">{activeTrack.features.key}</div>
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-gray-500 uppercase tracking-widest">BPM</span>
-                                                <span className="text-2xl font-mono text-white">{activeTrack.features.bpm}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-gray-500 uppercase tracking-widest">Key</span>
-                                                <span className="text-2xl font-mono text-white">{activeTrack.features.key} <span className="text-xs text-gray-400">{activeTrack.features.scale}</span></span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-gray-500 uppercase tracking-widest">Danceability</span>
-                                                <span className="text-2xl font-mono text-white">{activeTrack.features.danceability.toFixed(1)}</span>
+                                            <div>
+                                                <div className="text-[10px] text-muted-foreground">SCALE</div>
+                                                <div className="text-xl text-foreground font-mono">{activeTrack.features.scale}</div>
                                             </div>
                                         </div>
-                                    )}
-                                </>
-                            )}
+                                        <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded inline-flex">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                            Generated
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex items-center text-muted-foreground text-xs">
+                                        Select track to analyze
+                                    </div>
+                                )}
+                            </motion.div>
+
+                            {/* Territory / Global Rights */}
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.3 }}
+                                className="bg-card glass-panel rounded-2xl p-5 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <Globe size={64} className="text-foreground" />
+                                </div>
+                                <h4 className="text-muted-foreground text-xs font-bold uppercase tracking-wider mb-2">Global Rights</h4>
+                                <div className="mt-3 space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-foreground/70">Territories</span>
+                                        <span className="text-primary font-mono glow-text-yellow">WW</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-foreground/70">Restrictions</span>
+                                        <span className="text-green-400 font-mono">NONE</span>
+                                    </div>
+                                    <div className="w-full bg-border h-[1px] my-2" />
+                                    <div className="flex items-center gap-2 opacity-50">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                        <span className="text-[10px] text-muted-foreground">Rights ID: {activeTrack ? 'US-X1...' : '--'}</span>
+                                    </div>
+                                </div>
+                            </motion.div>
                         </div>
 
-                        {/* Transport Controls */}
-                        <div className="h-24 bg-[#0d1117] border border-gray-800 rounded-xl p-4 flex items-center justify-between px-8">
-                            <div className="flex items-center gap-4">
-                                <button className="text-gray-500 hover:text-white transition-colors" aria-label="Previous track">
-                                    <SkipBack size={20} />
-                                </button>
+                        {/* Main Analysis Visualizer */}
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="flex-1 bg-background border border-border rounded-2xl p-1 relative overflow-hidden shadow-inner flex flex-col"
+                        >
+                            {/* Toolbar */}
+                            <div className="absolute top-4 right-4 z-20 flex gap-2">
                                 <button
-                                    onClick={togglePlayPause}
-                                    disabled={!activeTrack}
-                                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${activeTrack
-                                        ? 'bg-white text-black hover:scale-105 active:scale-95'
-                                        : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                                        }`}
-                                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                                    onClick={() => setIsMetadataDrawerOpen(true)}
+                                    className="p-2 bg-black/40 hover:bg-primary hover:text-primary-foreground text-muted-foreground backdrop-blur-md rounded-lg border border-border hover:border-primary transition-all"
                                 >
-                                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
-                                </button>
-                                <button className="text-gray-500 hover:text-white transition-colors" aria-label="Next track">
-                                    <SkipForward size={20} />
+                                    <Menu size={16} />
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-2 w-32">
-                                <Volume2 size={16} className="text-gray-500" />
-                                <div className="h-1 bg-gray-800 rounded-full flex-1 overflow-hidden">
-                                    <div className="h-full bg-gray-500 w-2/3" />
+                            <div className="flex-1 relative flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-muted/20 to-transparent">
+                                {!activeTrack ? (
+                                    <div className="text-center">
+                                        <Activity size={48} className="text-muted/20 mx-auto mb-4" />
+                                        <p className="text-muted-foreground text-sm font-mono tracking-tighter">WAITING FOR AUDIO STREAM...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Waveform Container */}
+                                        <div id="waveform" ref={waveformRef} className="w-full px-8 relative z-10" />
+
+                                        {/* Overlay Stats */}
+                                        <div className="absolute bottom-6 left-8 flex gap-8 z-10">
+                                            {activeTrack.features && (
+                                                <>
+                                                    <div>
+                                                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Energy</div>
+                                                        <div className="h-1 w-16 bg-secondary rounded-full overflow-hidden">
+                                                            <div className="h-full bg-foreground" style={{ width: `${activeTrack.features.energy * 100}%` }} />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Dance</div>
+                                                        <div className="h-1 w-16 bg-secondary rounded-full overflow-hidden">
+                                                            <div className="h-full bg-foreground" style={{ width: `${activeTrack.features.danceability * 100}%` }} />
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Player Bar */}
+                            <div className="h-16 bg-card border-t border-border flex items-center px-6 gap-6 justify-between">
+                                <div className="flex items-center gap-4">
+                                    <button onClick={togglePlayPause} className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_15px_rgba(250,204,21,0.3)]">
+                                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                                    </button>
+                                    <div className="text-xs">
+                                        <div className="text-foreground font-medium max-w-[200px] truncate">{activeTrack?.name || 'No Track'}</div>
+                                        <div className="text-muted-foreground font-mono text-[10px]">{isAnalyzing ? 'ANALYZING...' : 'READY'}</div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Zap size={14} className={isPlaying ? "text-primary shadow-sm" : "text-muted-foreground"} />
+                                        <div className="h-8 w-[1px] bg-border" />
+                                        <span className="font-mono text-xs text-muted-foreground tracking-tighter">
+                                            {activeTrack?.features?.bpm ? `${activeTrack.features.bpm} BPM` : '--'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Export / Action Bar */}
-                    <div className="h-14 flex items-center justify-end gap-4">
-                        <button
-                            disabled={!activeTrack || !activeTrack.metadata.isGolden}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${activeTrack && activeTrack.metadata.isGolden
-                                ? 'bg-white text-black hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
-                                : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
-                                }`}
-                        >
-                            <Download size={18} />
-                            {activeTrack && activeTrack.metadata.isGolden ? 'Export Master' : 'Complete Metadata to Export'}
-                        </button>
+                        </motion.div>
                     </div>
                 </div>
+
+                <MetadataDrawer
+                    isOpen={isMetadataDrawerOpen}
+                    onClose={() => setIsMetadataDrawerOpen(false)}
+                    metadata={activeTrack?.metadata || INITIAL_METADATA}
+                    onUpdate={handleMetadataUpdate}
+                />
             </ModuleErrorBoundary>
         </ModuleDashboard>
     );

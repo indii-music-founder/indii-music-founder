@@ -29,6 +29,14 @@ export default function RevenueView() {
 
                 // Process top products
                 const sortedProducts = Array.from(byProduct.entries())
+                // Optimization: Fetch all stats in a single query
+                const stats = await revenueService.getUserRevenueStats(userProfile.id);
+
+                setTotalRevenue(stats.totalRevenue);
+                setRevenueBySource(stats.revenueBySource);
+
+                // Process top products
+                const sortedProducts = Object.entries(stats.revenueByProduct)
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);
@@ -41,6 +49,9 @@ export default function RevenueView() {
             }
         };
 
+        // Poll for updates or just load once?
+        // User asked for "Real Data", so let's keep it simple with fetch-on-mount for now.
+        // If we wanted real-time, we'd use onSnapshot in the service.
         loadData();
     }, [userProfile?.id]);
 
@@ -127,6 +138,8 @@ export default function RevenueView() {
                                             {/* In a real app we'd fetch the product name here too */}
                                             <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
                                             <p className="text-xs text-gray-500">Physical Good</p>
+                                            <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
+                                            <p className="text-xs text-gray-500">Sales Item</p>
                                         </div>
                                     </div>
                                     <span className="text-sm font-bold text-white">${p.amount.toFixed(2)}</span>
@@ -139,6 +152,17 @@ export default function RevenueView() {
                 {/* Replaced placeholder with actual Analytics component */}
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                     <SalesAnalytics />
+                <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center items-center text-center">
+                    <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
+                        <TrendingUp size={24} className="text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">Growth Analytics</h3>
+                    <p className="text-sm text-gray-400 max-w-xs mb-6">
+                        Unlock advanced analytics to see customer demographics, retention rates, and lifetime value.
+                    </p>
+                    <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-purple-500/20 transition-all">
+                        Upgrade to Pro
+                    </button>
                 </div>
             </div>
         </div>

@@ -33,6 +33,14 @@ export interface SavedPrompt {
     date: number;
 }
 
+export interface ShotItem {
+    id: string;
+    title: string;
+    description: string;
+    duration: number;
+    cameraMovement?: string;
+}
+
 export interface CreativeSlice {
     // History
     generatedHistory: HistoryItem[];
@@ -61,6 +69,10 @@ export interface CreativeSlice {
         resolution: string;
         negativePrompt: string;
         seed: string;
+        cameraMovement: string;
+        motionStrength: number;
+        fps: number;
+        shotList: ShotItem[];
         isCoverArtMode: boolean; // When true, enforces distributor cover art specs
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
@@ -103,7 +115,7 @@ export interface CreativeSlice {
 
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     generatedHistory: [],
-    addToHistory: (item) => {
+    addToHistory: (item: HistoryItem) => {
         // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
             const { currentOrganizationId } = useStore.getState();
@@ -134,32 +146,36 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                 });
         });
     },
-    updateHistoryItem: (id, updates) => set((state) => ({
+    updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
         generatedHistory: state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item)
     })),
-    removeFromHistory: (id) => set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) })),
+    removeFromHistory: (id: string) => set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) })),
 
     canvasImages: [],
     selectedCanvasImageId: null,
-    addCanvasImage: (img) => set((state) => ({ canvasImages: [...state.canvasImages, img] })),
-    updateCanvasImage: (id, updates) => set((state) => ({
+    addCanvasImage: (img: CanvasImage) => set((state) => ({ canvasImages: [...state.canvasImages, img] })),
+    updateCanvasImage: (id: string, updates: Partial<CanvasImage>) => set((state) => ({
         canvasImages: state.canvasImages.map(img => img.id === id ? { ...img, ...updates } : img)
     })),
-    removeCanvasImage: (id) => set((state) => ({ canvasImages: state.canvasImages.filter(i => i.id !== id) })),
-    selectCanvasImage: (id) => set({ selectedCanvasImageId: id }),
+    removeCanvasImage: (id: string) => set((state) => ({ canvasImages: state.canvasImages.filter(i => i.id !== id) })),
+    selectCanvasImage: (id: string | null) => set({ selectedCanvasImageId: id }),
 
     uploadedImages: [],
-    addUploadedImage: (img) => set((state) => ({ uploadedImages: [img, ...state.uploadedImages] })),
-    updateUploadedImage: (id, updates) => set((state) => ({
+    addUploadedImage: (img: HistoryItem) => set((state) => ({ uploadedImages: [img, ...state.uploadedImages] })),
+    updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
         uploadedImages: state.uploadedImages.map(img => img.id === id ? { ...img, ...updates } : img)
     })),
-    removeUploadedImage: (id) => set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) })),
+    removeUploadedImage: (id: string) => set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) })),
 
     studioControls: {
         aspectRatio: '16:9',
         resolution: '4K',
         negativePrompt: '',
         seed: '',
+        cameraMovement: 'Static',
+        motionStrength: 0.7,
+        fps: 24,
+        shotList: [],
         isCoverArtMode: false
     },
     setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sparkles, Film, Music, Megaphone, Book, GitBranch } from 'lucide-react';
 import { useStore } from '@/core/store';
-import type { ModuleId } from '@/core/store/slices/appSlice';
+import type { ModuleId } from '@/core/constants';
 
 interface ModuleAction {
     id: ModuleId;

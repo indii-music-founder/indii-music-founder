@@ -11,12 +11,15 @@ export function useReleases(orgId: string | undefined) {
 
     useEffect(() => {
         if (!orgId) {
-            setReleases([]);
-            setLoading(false);
-            return;
+            const timer = setTimeout(() => {
+                setReleases([]);
+                setLoading(false);
+            }, 0);
+            return () => clearTimeout(timer);
         }
 
-        setLoading(true);
+        const loadingTimer = setTimeout(() => setLoading(true), 0);
+
         const q = query(
             collection(db, 'ddexReleases'),
             where('orgId', '==', orgId),
@@ -40,7 +43,10 @@ export function useReleases(orgId: string | undefined) {
             }
         );
 
-        return () => unsubscribe();
+        return () => {
+            clearTimeout(loadingTimer);
+            unsubscribe();
+        };
     }, [orgId]);
 
     const deleteRelease = useCallback(async (releaseId: string) => {

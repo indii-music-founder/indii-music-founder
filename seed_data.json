@@ -1,0 +1,88 @@
+[
+  {
+    "distributorId": "distrokid",
+    "releaseId": "DK-DEMO-001",
+    "period": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31"
+    },
+    "streams": 15420,
+    "downloads": 45,
+    "grossRevenue": 125.5,
+    "distributorFee": 0,
+    "netRevenue": 125.5,
+    "currencyCode": "USD",
+    "lastUpdated": "2025-12-31T03:02:50.709Z",
+    "breakdown": [
+      {
+        "platform": "Spotify",
+        "territoryCode": "US",
+        "streams": 10000,
+        "downloads": 0,
+        "revenue": 40
+      },
+      {
+        "platform": "Apple Music",
+        "territoryCode": "US",
+        "streams": 5000,
+        "downloads": 0,
+        "revenue": 80
+      },
+      {
+        "platform": "iTunes",
+        "territoryCode": "US",
+        "streams": 0,
+        "downloads": 45,
+        "revenue": 5.5
+      }
+    ]
+  },
+  {
+    "distributorId": "cdbaby",
+    "releaseId": "CDB-DEMO-001",
+    "period": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31"
+    },
+    "streams": 8500,
+    "downloads": 120,
+    "grossRevenue": 95,
+    "distributorFee": 8.55,
+    "netRevenue": 86.45,
+    "currencyCode": "USD",
+    "lastUpdated": "2025-12-31T03:02:50.709Z",
+    "breakdown": []
+  },
+  {
+    "distributorId": "tunecore",
+    "releaseId": "TC-DEMO-001",
+    "period": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31"
+    },
+    "streams": 12500,
+    "downloads": 30,
+    "grossRevenue": 98.5,
+    "distributorFee": 0,
+    "netRevenue": 98.5,
+    "currencyCode": "USD",
+    "lastUpdated": "2025-12-31T03:02:50.709Z",
+    "breakdown": []
+  },
+  {
+    "distributorId": "symphonic",
+    "releaseId": "SYM-DEMO-001",
+    "period": {
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31"
+    },
+    "streams": 5000,
+    "downloads": 10,
+    "grossRevenue": 45,
+    "distributorFee": 6.75,
+    "netRevenue": 38.25,
+    "currencyCode": "USD",
+    "lastUpdated": "2025-12-31T03:02:50.709Z",
+    "breakdown": []
+  }
+]

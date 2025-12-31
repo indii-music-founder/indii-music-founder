@@ -2,6 +2,7 @@ import { DDEXParser } from './DDEXParser';
 import { ERNMapper } from './ERNMapper';
 import type { ERNMessage } from './types/ern';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 
 /**
@@ -15,14 +16,16 @@ export class ERNService {
     async generateERN(
         metadata: ExtendedGoldenMetadata,
         senderPartyId: string = DDEX_CONFIG.PARTY_ID,
-        distributorKey: string = 'generic'
+        distributorKey: string = 'generic',
+        assets?: ReleaseAssets,
+        options?: { isTestMode?: boolean } // Added options for Test Mode
     ): Promise<{ success: boolean; xml?: string; error?: string }> {
         try {
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
             const distributor = DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.generic;
             const recipientPartyId = distributor.ddexPartyId;
             const timestamp = new Date().toISOString();
-            const releaseId = metadata.upc || `R-${Date.now()}`;
+            // Removed unused variable releaseId which was causing lint warning
 
             // Use the Mapper to generate a complete ERN object
             const ern = ERNMapper.mapMetadataToERN(metadata, {
@@ -36,7 +39,8 @@ export class ERNService {
                     partyName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
-            });
+                messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage' // Set Test Flag
+            }, assets);
 
             // Generate XML using the parser
             const xml = DDEXParser.buildERN(ern);

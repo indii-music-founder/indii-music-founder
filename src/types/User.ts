@@ -3,7 +3,7 @@ import { BrandKit, KnowledgeDocument, SavedWorkflow } from '@/modules/workflow/t
 import { SocialStats } from '@/services/social/types';
 
 export interface UserPreferences {
-    theme: 'dark' | 'light';
+    theme: 'dark' | 'light' | 'banana' | 'banana-pro';
     notifications: boolean;
 }
 

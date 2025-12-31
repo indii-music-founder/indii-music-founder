@@ -1,4 +1,5 @@
-import { ToolDefinition } from '../types';
+import { AI } from '../../ai/AIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
  * MOCKED Security Tools
@@ -7,8 +8,6 @@ import { ToolDefinition } from '../types';
  * - Apigee Management API (for API status/lifecycle)
  * - Model Armor / Sensitive Data Protection API (for content scanning)
  * - Cloud KMS / Secrets Manager (for credential rotation)
- * 
- * For this demo, we simulate these operations.
  */
 
 // Mock data stores
@@ -21,7 +20,7 @@ const MOCK_APIS: Record<string, 'ACTIVE' | 'DISABLED' | 'DEPRECATED'> = {
 
 const SENSITIVE_TERMS = ['password', 'secret', 'key', 'ssn', 'credit_card'];
 
-// --- Tool Implementations ---
+// --- Helper/Standalone Implementations ---
 
 export const check_api_status = async (args: { api_name: string }): Promise<string> => {
     const { api_name } = args;
@@ -52,8 +51,6 @@ export const scan_content = async (args: { text: string }): Promise<string> => {
 
 export const rotate_credentials = async (args: { service_name: string }): Promise<string> => {
     const { service_name } = args;
-
-    // Simulate delay for rotation
     await new Promise(resolve => setTimeout(resolve, 500));
 
     return JSON.stringify({
@@ -67,23 +64,21 @@ export const rotate_credentials = async (args: { service_name: string }): Promis
 
 export const verify_zero_touch_prod = async (args: { service_name: string }): Promise<string> => {
     const { service_name } = args;
-    // Mock logic: Assume services starting with 'prod-' have ZTP enabled
     const isCompliant = service_name.toLowerCase().startsWith('prod-') || service_name === 'foundational-auth';
 
     return JSON.stringify({
         service: service_name,
         check: 'zero_touch_prod',
         compliant: isCompliant,
-        automation_level: isCompliant ? 'FULL_NOPE' : 'PARTIAL', // NoPe = No Persons
+        automation_level: isCompliant ? 'FULL_NOPE' : 'PARTIAL',
         last_audit: new Date().toISOString()
     });
 };
 
 export const check_core_dump_policy = async (args: { service_name: string }): Promise<string> => {
     const { service_name } = args;
-    // Mock logic: Foundational services MUST have core dumps disabled
     const isFoundational = service_name.includes('auth') || service_name.includes('key');
-    const coreDumpsDisabled = isFoundational; // In this mock, we assume we are compliant if it's foundational
+    const coreDumpsDisabled = isFoundational;
 
     return JSON.stringify({
         service: service_name,
@@ -94,10 +89,9 @@ export const check_core_dump_policy = async (args: { service_name: string }): Pr
     });
 };
 
-export const audit_workload_isolation = async (args: { service_name: string, workload_type: 'FOUNDATIONAL' | 'SENSITIVE' | 'LOWER_PRIORITY' }): Promise<string> => {
+export const audit_workload_isolation = async (args: { service_name: string, workload_type: string }): Promise<string> => {
     const { service_name, workload_type } = args;
 
-    // Mock logic for security rings
     let ring = 'GENERAL';
     if (workload_type === 'FOUNDATIONAL') ring = 'RING_0_CORE';
     if (workload_type === 'SENSITIVE') ring = 'RING_1_SENSITIVE';
@@ -109,6 +103,65 @@ export const audit_workload_isolation = async (args: { service_name: string, wor
         workload_type: workload_type,
         assigned_ring: ring,
         isolation_status: 'ENFORCED',
-        neighbors: workload_type === 'FOUNDATIONAL' ? [] : ['other-batch-jobs'] // Foundational should have no neighbors
+        neighbors: workload_type === 'FOUNDATIONAL' ? [] : ['other-batch-jobs']
     });
+};
+
+export const audit_permissions = async (args: { project_id?: string }): Promise<string> => {
+    const prompt = `
+    You are a Security Officer. Perform a Permission Audit ${args.project_id ? `for project ${args.project_id}` : 'for the organization'}.
+    Review standard roles: Admin, Editor, Viewer.
+    Identify potential risks (e.g., too many Admins, external guests).
+    `;
+    try {
+        const res = await AI.generateContent({
+            model: AI_MODELS.TEXT.AGENT,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        return res.text() || "Failed to audit permissions.";
+    } catch (e) {
+        return "Error auditing permissions.";
+    }
+};
+
+export const scan_for_vulnerabilities = async (args: { scope: string }): Promise<string> => {
+    const prompt = `
+    You are a Security Analyst. Perform a Vulnerability Scan on: ${args.scope}.
+    Check for: Exposed API Keys, Weak Passwords, Unencrypted Data, Outdated Dependencies.
+    `;
+    try {
+        const res = await AI.generateContent({
+            model: AI_MODELS.TEXT.AGENT,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        return res.text() || "Failed to scan for vulnerabilities.";
+    } catch (e) {
+        return "Error scanning for vulnerabilities.";
+    }
+};
+
+export const generate_security_report = async (): Promise<string> => {
+    return JSON.stringify({
+        reportDate: new Date().toISOString(),
+        overallScore: "A-",
+        sections: {
+            auth: "Strong",
+            infrastructure: "Secure",
+            data: "Encrypted"
+        }
+    });
+};
+
+// --- Unified Tool Object ---
+
+export const SecurityTools = {
+    check_api_status,
+    scan_content,
+    rotate_credentials,
+    verify_zero_touch_prod,
+    check_core_dump_policy,
+    audit_workload_isolation,
+    audit_permissions,
+    scan_for_vulnerabilities,
+    generate_security_report
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Calendar, Target, Image as ImageIcon, Plus } from 'lucide-react';
+import { X, Calendar, Target, Image as ImageIcon, Plus, Loader2 } from 'lucide-react';
+import { X, Calendar, Plus, Loader2 } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from '../types';
 import { useToast } from '@/core/context/ToastContext';
@@ -56,7 +57,12 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <Plus className="text-blue-500" />
                         New Campaign
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                    <button onClick={onClose} aria-label="Close modal" className="text-gray-400 hover:text-white transition-colors">
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none rounded-md p-1"
+                        aria-label="Close modal"
+                    >
                         <X size={20} />
                     </button>
                 </div>
@@ -93,11 +99,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
                                 <input
                                     id="campaign-start-date"
-                            <label htmlFor="start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
-                                <input
-                                    id="start-date"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
@@ -112,11 +113,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
                                 <input
                                     id="campaign-end-date"
-                            <label htmlFor="end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
-                                <input
-                                    id="end-date"
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
@@ -130,9 +126,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <label htmlFor="campaign-platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
                         <select
                             id="campaign-platform"
-                        <label htmlFor="platform" className="block text-sm font-medium text-gray-400 mb-1">Platform</label>
-                        <select
-                            id="platform"
                             value={platform}
                             onChange={(e) => setPlatform(e.target.value)}
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
@@ -156,9 +149,17 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLoading ? 'Creating...' : 'Launch Campaign'}
+                            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Launch Campaign'}
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    <span>Creating...</span>
+                                </>
+                            ) : (
+                                'Launch Campaign'
+                            )}
                         </button>
                     </div>
                 </form>

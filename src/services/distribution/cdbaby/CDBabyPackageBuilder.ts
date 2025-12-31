@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+// import * as fs from 'fs';
+// import * as path from 'path';
 import { ernService } from '@/services/ddex/ERNService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
@@ -13,13 +13,8 @@ export class CDBabyPackageBuilder {
     private stagingBaseDir: string;
 
     constructor(stagingDir?: string) {
-        // Default to a 'staging' folder in the project root if not specified
-        this.stagingBaseDir = stagingDir || path.resolve(process.cwd(), 'ddex_staging', 'cdbaby');
-
-        // Ensure base directory exists
-        if (!fs.existsSync(this.stagingBaseDir)) {
-            fs.mkdirSync(this.stagingBaseDir, { recursive: true });
-        }
+        // Delay directory resolution to buildPackage to avoid eager fs/path usage
+        this.stagingBaseDir = stagingDir || '';
     }
 
     /**
@@ -31,6 +26,17 @@ export class CDBabyPackageBuilder {
         assets: ReleaseAssets,
         releaseId: string
     ): Promise<{ packagePath: string; files: string[] }> {
+        const fs = await import('fs');
+        const path = await import('path');
+
+        // Initialize staging dir if not set in constructor
+        if (!this.stagingBaseDir) {
+            this.stagingBaseDir = path.resolve(process.cwd(), 'ddex_staging', 'cdbaby');
+        }
+        if (!fs.existsSync(this.stagingBaseDir)) {
+            fs.mkdirSync(this.stagingBaseDir, { recursive: true });
+        }
+
         // 1. Create Release Folder (UPC is standard convention)
         const folderName = metadata.upc || metadata.catalogNumber || `REL-${releaseId}`;
         const packagePath = path.join(this.stagingBaseDir, folderName);
@@ -90,6 +96,7 @@ export class CDBabyPackageBuilder {
      * Helper to copy assets from source URL (file://) to destination
      */
     private async copyAsset(sourceUrl: string, destPath: string): Promise<void> {
+        const fs = await import('fs');
         // Strip file:// prefix if present
         const sourcePath = sourceUrl.replace('file://', '');
 

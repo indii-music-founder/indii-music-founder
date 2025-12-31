@@ -8,6 +8,7 @@ import FrameSelectionModal from './components/FrameSelectionModal';
 const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { ErrorBoundary } from '../../core/components/ErrorBoundary';
+import { VideoGenerationSidebar } from './components/VideoGenerationSidebar';
 
 type WorkflowStep = 'idea' | 'review' | 'generating' | 'result' | 'editor';
 
@@ -125,14 +126,16 @@ export default function VideoWorkflow() {
                 prompt: localPrompt,
                 resolution: studioControls.resolution,
                 aspectRatio: studioControls.aspectRatio,
-                // negativePrompt: studioControls.negativePrompt, // Backend support pending
-                // seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                negativePrompt: studioControls.negativePrompt,
+                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                cameraMovement: studioControls.cameraMovement,
+                motionStrength: studioControls.motionStrength,
+                fps: studioControls.fps,
+                shotList: studioControls.shotList,
                 firstFrame: videoInputs.firstFrame?.url,
                 lastFrame: videoInputs.lastFrame?.url,
                 timeOffset: videoInputs.timeOffset,
                 ingredients: videoInputs.ingredients?.map(i => i.url),
-                duration: 5, // Default for now
-                fps: 30, // Default for now
                 orgId: currentOrganizationId
             });
 
@@ -314,6 +317,11 @@ export default function VideoWorkflow() {
                     {renderStage()}
                 </div>
             </div>
+
+            {/* Right Sidebar - Video Generation Controls */}
+            {step !== 'editor' && (
+                <VideoGenerationSidebar />
+            )}
 
             <FrameSelectionModal
                 isOpen={isModalOpen}

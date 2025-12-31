@@ -47,14 +47,14 @@ async function verifySymphonicIntegration() {
     fs.writeFileSync(dummyCoverPath, 'mock image content');
 
     const mockAssets: ReleaseAssets = {
-        audioFile: {
+        audioFiles: [{
             url: `file://${dummyAudioPath}`,
             mimeType: 'audio/wav',
             sizeBytes: 1024,
             format: 'wav',
             sampleRate: 44100,
             bitDepth: 16,
-        },
+        }],
         coverArt: {
             url: `file://${dummyCoverPath}`,
             mimeType: 'image/jpeg',
