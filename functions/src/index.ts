@@ -24,6 +24,10 @@ const getInngestClient = () => {
 
 const corsHandler = corsLib({ origin: true });
 
+// ----------------------------------------------------------------------------
+// Video Generation (Veo)
+// ----------------------------------------------------------------------------
+
 /**
  * Trigger Video Generation Job
  *
@@ -123,6 +127,7 @@ export const inngestApi = functions
                 const { jobId, prompt, userId, options } = event.data;
 
                 try {
+                    // 1. Update status to processing
                     // Step 1: Update status to processing
                     await step.run("update-status-processing", async () => {
                         await admin.firestore().collection("videoJobs").doc(jobId).set({
@@ -131,6 +136,8 @@ export const inngestApi = functions
                         }, { merge: true });
                     });
 
+                    // 2. Call Vertex AI (Veo)
+                    const videoUri = await step.run("generate-video-vertex", async () => {
                     // Step 2: Generate Video via Vertex AI (Veo)
                     const videoUri = await step.run("generate-veo-video", async () => {
                         // Use GoogleAuth to get credentials for Vertex AI
@@ -157,6 +164,18 @@ export const inngestApi = functions
                             parameters: {
                                 sampleCount: 1,
                                 // Map options to Veo parameters
+                                videoLength: options?.duration || options?.durationSeconds || "5s",
+                                aspectRatio: options?.aspectRatio || "16:9"
+                            }
+                        };
+
+                        // Construct request body for Veo
+                        const requestBody = {
+                            instances: [{
+                                prompt: prompt
+                            }],
+                            parameters: {
+                                sampleCount: 1,
                                 videoLength: options?.duration || options?.durationSeconds || "5s",
                                 aspectRatio: options?.aspectRatio || "16:9"
                             }
@@ -190,6 +209,12 @@ export const inngestApi = functions
                         // Case A: Base64 Encoded Video
                         if (prediction.bytesBase64Encoded) {
                             const bucket = admin.storage().bucket();
+                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                                metadata: { contentType: 'video/mp4' },
+                                public: true
+                            });
+                            // await file.makePublic(); // Optional depending on bucket config
                             // Save to a public path or user-specific path
                             const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                             const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
@@ -215,6 +240,12 @@ export const inngestApi = functions
                             return prediction.videoUri;
                         }
 
+                        // If it returns a GCS URI in gcsUri
+                        if (prediction.gcsUri) {
+                             return prediction.gcsUri;
+                        }
+
+                        throw new Error("Unknown response format from Veo");
                         throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                     });
 
@@ -254,6 +285,7 @@ export const inngestApi = functions
     });
 
 // ----------------------------------------------------------------------------
+// Image Generation (Gemini)
 // Legacy / Shared Gemini Functions
 // ----------------------------------------------------------------------------
 
@@ -406,6 +438,8 @@ export const generateContentStream = functions
         timeoutSeconds: 300
     })
     .https.onRequest((req, res) => {
+        const cors = corsLib({ origin: true });
+        cors(req, res, async () => {
         corsHandler(req, res, async () => {
             if (req.method !== 'POST') {
                 res.status(405).send('Method Not Allowed');
