@@ -75,7 +75,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                     <motion.div key={campaign.id} variants={itemVars}>
                         <CampaignCard
                             campaign={campaign}
-                            onClick={() => onSelectCampaign(campaign)}
+                            onSelect={onSelectCampaign}
                         />
                     </motion.div>
                 ))}
