@@ -37,6 +37,9 @@ export default function RevenueView() {
             }
         };
 
+        // Poll for updates or just load once?
+        // User asked for "Real Data", so let's keep it simple with fetch-on-mount for now.
+        // If we wanted real-time, we'd use onSnapshot in the service.
         loadData();
     }, [userProfile?.id]);
 
@@ -120,9 +123,8 @@ export default function RevenueView() {
                                             {i + 1}
                                         </div>
                                         <div>
-                                            {/* In a real app we'd fetch the product name here too */}
                                             <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
-                                            <p className="text-xs text-gray-500">Physical Good</p>
+                                            <p className="text-xs text-gray-500">Sales Item</p>
                                         </div>
                                     </div>
                                     <span className="text-sm font-bold text-white">${p.amount.toFixed(2)}</span>
