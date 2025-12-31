@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Disc, Calendar, BarChart2, Radio, Send } from 'lucide-react';
-import { Campaign } from '../hooks/usePublicist';
+import { Campaign } from '../types';
 
 interface CampaignCardProps {
     campaign: Campaign;

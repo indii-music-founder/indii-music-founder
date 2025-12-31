@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Contact } from '../hooks/usePublicist';
+import { Contact } from '../types';
 import { User, Star, TrendingUp, Radio } from 'lucide-react';
 
 interface ContactListProps {
