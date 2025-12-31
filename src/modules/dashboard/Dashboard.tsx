@@ -4,6 +4,7 @@ import QuickActions from './components/QuickActions';
 import ProjectHub from './components/ProjectHub';
 import DataStorageManager from './components/DataStorageManager';
 import AnalyticsView from './components/AnalyticsView';
+import RevenueView from './components/RevenueView';
 import GlobalSettings from './components/GlobalSettings';
 import ReferenceImageManager from './components/ReferenceImageManager';
 
@@ -45,6 +46,7 @@ export default function Dashboard() {
                             <DataStorageManager />
                             <ReferenceImageManager />
                             <AnalyticsView />
+                            <RevenueView />
                             <GlobalSettings />
                         </div>
                     ) : (

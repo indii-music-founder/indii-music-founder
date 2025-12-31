@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../../../core/store';
-import { X, Save, Sparkles, Loader2 } from 'lucide-react';
-import { AI } from '../../../services/ai/AIService';
+import { useStore } from '@/core/store';
+import { AI } from '@/services/ai/AIService';
 import { isTextPart } from '@/shared/types/ai.dto';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { X, Save, Sparkles, Loader2 } from 'lucide-react';
 
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore();
