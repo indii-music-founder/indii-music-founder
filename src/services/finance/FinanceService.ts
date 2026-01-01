@@ -1,4 +1,4 @@
-import { revenueService as RevenueService } from '../RevenueService';
+import { revenueService } from '@/services/RevenueService';
 import { db } from '@/services/firebase';
 import * as Sentry from '@sentry/react';
 import {
@@ -8,12 +8,9 @@ import {
     query,
     where,
     orderBy,
-    serverTimestamp,
     Timestamp
 } from 'firebase/firestore';
-import { EarningsSummary } from '@/services/ddex/types/dsr';
-import { revenueService } from '@/services/RevenueService';
-import { collection, addDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { EarningsSummary as DSREarningsSummary } from '@/services/ddex/types/dsr';
 
 export interface EarningsSummary {
   totalEarnings: number;
@@ -47,7 +44,7 @@ export class FinanceService {
   async getEarningsSummary(userId: string): Promise<EarningsSummary> {
     try {
       // Use the RevenueService to get aggregated stats
-      const stats = await RevenueService.getUserRevenueStats(userId);
+      const stats = await revenueService.getUserRevenueStats(userId);
 
       return {
         totalEarnings: stats.totalRevenue,
@@ -76,7 +73,7 @@ export class FinanceService {
      * @param userId The user ID to fetch earnings for.
      * @param period Optional date range filter.
      */
-    static async fetchEarnings(userId: string, period?: { startDate: string; endDate: string }): Promise<EarningsSummary> {
+    static async fetchEarnings(userId: string, period?: { startDate: string; endDate: string }): Promise<DSREarningsSummary> {
         try {
             const revenueStats = await revenueService.getUserRevenueStats(userId);
 
@@ -91,6 +88,10 @@ export class FinanceService {
             // empty as RevenueService aggregates at a higher level (Direct vs Social).
             // Future updates should ingest full DSR data to populate these fields.
 
+            // TODO: revenueStats currently does not return revenueByProduct.
+            // We need to update RevenueService to aggregate by product or fetch it separately.
+            // For now, returning empty array to fix build.
+            /*
             const byRelease = Object.entries(revenueStats.revenueByProduct).map(([productId, amount]) => ({
                 releaseId: productId,
                 releaseName: `Product ${productId}`, // Placeholder name until we look up product details
@@ -98,6 +99,8 @@ export class FinanceService {
                 streams: 0,
                 downloads: 0
             }));
+            */
+            const byRelease: any[] = [];
 
             return {
                 period: effectivePeriod,
@@ -114,6 +117,8 @@ export class FinanceService {
              Sentry.captureException(error);
              throw error;
         }
+    }
+
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<string> {
       try {
         const docRef = await addDoc(collection(db, 'expenses'), {
