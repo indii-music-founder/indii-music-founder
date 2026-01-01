@@ -47,13 +47,19 @@ export default function Sidebar() {
         return (
             <button
                 onClick={() => setModule(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${isActive
-                    ? `${colors.text} ${colors.bg} border-r-2 ${colors.border}`
-                    : `text-gray-400 ${colors.hoverText} ${colors.hoverBg}`
-                    } ${!isSidebarOpen ? 'justify-center px-2' : ''}`}
+                style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
+                className={`
+                    w-full flex items-center gap-3 px-4 py-2 text-sm
+                    bolt-interactive relative
+                    ${isActive
+                        ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
+                        : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
+                    }
+                    ${!isSidebarOpen ? 'justify-center px-2' : ''}
+                `}
                 title={!isSidebarOpen ? item.label : ''}
             >
-                <item.icon size={16} />
+                <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
                 {isSidebarOpen && <span className="truncate">{item.label}</span>}
             </button>
         );
