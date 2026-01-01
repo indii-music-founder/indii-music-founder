@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
@@ -101,7 +102,7 @@ export default function VideoWorkflow() {
                             const newAsset = {
                                 id: jobId,
                                 url: data.videoUrl,
-                                prompt: data.prompt || localPrompt, // Use stored prompt or initial local prompt
+                                prompt: data.prompt || localPrompt,
                                 type: 'video' as const,
                                 timestamp: Date.now(),
                                 projectId: 'default',
@@ -127,6 +128,7 @@ export default function VideoWorkflow() {
         return () => { if (unsubscribe) unsubscribe(); };
         // Removed jobStatus and localPrompt from dependencies to prevent re-subscriptions and use stable/initial values
     }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
+
     const handleGenerate = async () => {
         setJobStatus('queued');
         const isInterpolation = videoInputs.firstFrame && videoInputs.lastFrame;
@@ -183,10 +185,6 @@ export default function VideoWorkflow() {
             setJobStatus('failed');
         }
     };
-
-    // NOTE: Job listener logic was removed for brevity but ideally should remain if async jobs are used.
-    // Assuming VideoGenerationService might return a job ID and we track it via Firestore. 
-    // Re-adding a simplified listener for robustness if needed.
 
     return (
         <div className={`flex-1 flex overflow-hidden h-full bg-[#0a0a0a] relative`}>

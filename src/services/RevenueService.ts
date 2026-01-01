@@ -1,3 +1,4 @@
+
 import { db, auth } from '@/services/firebase';
 import { collection, query, where, getDocs, Timestamp, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -79,7 +80,7 @@ export class RevenueService {
 
         // Agreggate Sources
         const source = data.source || 'other';
-        if (['streaming', 'royalties'].includes(source)) {
+        if (['streaming', 'royalties', 'direct'].includes(source)) {
           sources.streaming += amount;
         } else if (source === 'merch') {
           sources.merch += amount;
@@ -127,11 +128,36 @@ export class RevenueService {
     return this.getUserRevenueStats(userId, period);
   }
 
+  // Methods from main branch to prevent breakage
+  async getTotalRevenue(userId: string): Promise<number> {
+    const stats = await this.getUserRevenueStats(userId);
+    return stats.totalRevenue;
+  }
+
+  async getRevenueBySource(userId: string): Promise<{ direct: number, social: number }> {
+    const stats = await this.getUserRevenueStats(userId);
+    return {
+      direct: stats.sources.streaming + stats.sources.merch + stats.sources.licensing,
+      social: stats.sources.social
+    };
+  }
+
+  async getRevenueByProduct(userId: string): Promise<Record<string, number>> {
+    const stats = await this.getUserRevenueStats(userId);
+    return stats.revenueByProduct;
+  }
+
   async recordSale(entry: RevenueEntry) {
-    await addDoc(collection(db, this.COLLECTION), {
-      ...entry,
-      createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp() // Use server timestamp if no timestamp provided
-    });
+    try {
+      await addDoc(collection(db, this.COLLECTION), {
+        ...entry,
+        createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp()
+      });
+      console.log('[RevenueService] Sale recorded successfully');
+    } catch (error) {
+      console.error('[RevenueService] Failed to record sale:', error);
+      throw error;
+    }
   }
 
   /**
@@ -194,7 +220,10 @@ export class RevenueService {
       revenueByProduct: {
         'prod_1': 1200.00,
         'prod_2': 850.50,
-        'prod_3': 450.00
+        'prod_3': 450.00,
+        'prod_123': 1500.00,
+        'prod_456': 800.00,
+        'prod_789': 200.00
       },
       history: Array.from({ length: 10 }, (_, i) => ({
         date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

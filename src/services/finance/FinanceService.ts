@@ -1,3 +1,4 @@
+
 import { revenueService } from '@/services/RevenueService';
 import { db, auth } from '@/services/firebase';
 import * as Sentry from '@sentry/react';
@@ -83,14 +84,14 @@ export class FinanceService {
    * Fetch persistent earnings reports (DSR style).
    * Uses Firestore with a self-seeding strategy for Alpha.
    */
-  static async fetchEarnings(userId: string): Promise<DSREarningsSummary> {
+  async fetchEarnings(userId: string): Promise<DSREarningsSummary> {
     try {
       if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'superuser')) {
         throw new Error('Unauthorized');
       }
       // 1. Check if report exists for user
       const q = query(
-        collection(db, this.EARNINGS_COLLECTION),
+        collection(db, FinanceService.EARNINGS_COLLECTION),
         where('userId', '==', userId),
         // In a real app we might query by month/year, here we just get the latest or default
       );
@@ -134,7 +135,7 @@ export class FinanceService {
         ]
       };
 
-      await addDoc(collection(db, this.EARNINGS_COLLECTION), initialData);
+      await addDoc(collection(db, FinanceService.EARNINGS_COLLECTION), initialData);
       return initialData;
 
     } catch (error) {

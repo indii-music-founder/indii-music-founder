@@ -1,13 +1,22 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import { useStore } from '@/core/store';
 import { License, LicenseRequest } from '@/services/licensing/types';
 import { useToast } from '@/core/context/ToastContext';
 
-export const useLicensing = () => {
+/**
+ * useLicensing Hook
+ *
+ * Provides reactive data for the Licensing module.
+ * Subscribes to active licenses and pending requests in real-time.
+ *
+ * @status BETA_READY
+ */
+export function useLicensing() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [requests, setRequests] = useState<LicenseRequest[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { userProfile } = useStore();
@@ -33,7 +42,7 @@ export const useLicensing = () => {
         unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
           if (isMounted) {
             setLicenses(data);
-            setLoading(false);
+            setIsLoading(false);
           }
         }, userProfile.id, (err) => {
           console.error('[useLicensing] License Subscription Error:', err);
@@ -43,7 +52,7 @@ export const useLicensing = () => {
         unsubscribeRequests = licensingService.subscribeToPendingRequests((data) => {
           if (isMounted) {
             setRequests(data);
-            setLoading(false);
+            setIsLoading(false);
           }
         }, userProfile.id, (err) => {
           console.error('[useLicensing] Request Subscription Error:', err);
@@ -55,13 +64,13 @@ export const useLicensing = () => {
         if (isMounted) {
           const message = (err as Error).message;
           setError(message);
-          setLoading(false);
+          setIsLoading(false);
           toast.error(`Licensing Data Error: ${message}`);
         }
       }
     };
 
-    setLoading(true);
+    setIsLoading(true);
     setupSubscriptions();
 
     return () => {
@@ -69,9 +78,15 @@ export const useLicensing = () => {
       if (unsubscribeLicenses) unsubscribeLicenses();
       if (unsubscribeRequests) unsubscribeRequests();
     };
-  }, [userProfile?.id]);
+  }, [userProfile?.id, toast]);
 
   const initiateDrafting = useCallback(async (request: LicenseRequest) => {
+    // Validate state before proceeding (Beta Reliability)
+    if (request.id && !['checking', 'pending_approval', 'negotiating'].includes(request.status)) {
+      toast.error(`Cannot draft agreement for request in '${request.status}' status.`);
+      return;
+    }
+
     try {
       // Trigger transition to negotiating status
       await toast.promise(
@@ -85,27 +100,27 @@ export const useLicensing = () => {
     } catch (error) {
       console.error("Failed to initiate drafting:", error);
     }
-  }, []);
+  }, [toast]);
 
   const createLicense = async (licenseData: Omit<License, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const id = await licensingService.createLicense(licenseData);
       return id;
     } catch (err: any) {
       setError(err.message);
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return {
     licenses,
     requests,
-    loading,
+    loading: isLoading,
     error,
     initiateDrafting,
     createLicense
   };
-};
+}

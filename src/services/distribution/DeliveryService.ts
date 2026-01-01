@@ -56,14 +56,6 @@ export class DeliveryService {
                      throw new Error('Security Error: Invalid output directory path.');
                 }
 
-
-
-
-
-
-
- main
- main
                 // Ensure output directory exists
                 if (!fs.existsSync(resolvedPath)) {
                     await fs.promises.mkdir(resolvedPath, { recursive: true });
@@ -91,14 +83,6 @@ export class DeliveryService {
                              return;
                          }
 
-
-
-
-
-
-
- main
- main
                          if (fs.existsSync(sourceUrl)) {
                              await fs.promises.copyFile(sourceUrl, destPath);
                          } else {
@@ -134,14 +118,6 @@ export class DeliveryService {
                         const audioDest = path.join(resourcesDir, `A1.${audioExt}`);
                         await safeCopy(assets.audioFile.url, audioDest);
 
-
-
-
-
-
-
- main
- main
                         if (fs.existsSync(audioDest)) {
                             // Transcoding Stub
                             await transcodingService.transcode({
@@ -162,14 +138,6 @@ export class DeliveryService {
                         const imageRef = `IMG${trackCount + 1}`;
                         const imageDest = path.join(resourcesDir, `${imageRef}.${imageExt}`);
 
-
-
-
-
-
-
- main
- main
                         await safeCopy(baseUrl, imageDest);
                     }
                 }

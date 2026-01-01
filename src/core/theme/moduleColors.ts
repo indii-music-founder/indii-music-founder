@@ -40,11 +40,13 @@ export interface ModuleColor {
 export const departmentCssVars = {
     // Base Department Colors
     royalties: '--color-dept-royalties',
+    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
     distribution: '--color-dept-distribution',
     marketing: '--color-dept-marketing',
     legal: '--color-dept-legal',
     creative: '--color-dept-creative',
     touring: '--color-dept-touring',
+    road: '--color-dept-touring',          // Road Manager = Touring
     publishing: '--color-dept-publishing',
     social: '--color-dept-social',
     licensing: '--color-dept-licensing',
@@ -53,9 +55,7 @@ export const departmentCssVars = {
     default: '--color-dept-default',
 
     // Module Mappings (Aliases)
-    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
     publicist: '--color-dept-marketing',   // Publicist shares Marketing
-    road: '--color-dept-touring',          // Road Manager = Touring
     video: '--color-dept-creative',        // Video shares Creative
     agent: '--color-dept-creative',        // Agent shares Creative
     'audio-analyzer': '--color-dept-creative', // Audio Analyzer shares Creative
@@ -78,6 +78,8 @@ export const departmentCssVars = {
 export const getDepartmentCssVar = (dept: string): string => {
     const key = dept.toLowerCase() as keyof typeof departmentCssVars;
     return `var(${departmentCssVars[key] || departmentCssVars.default})`;
+    const cssVar = departmentCssVars[key];
+    return `var(${cssVar ?? departmentCssVars.default})`;
 };
 
 export const moduleColors: Record<ModuleId, ModuleColor> = {

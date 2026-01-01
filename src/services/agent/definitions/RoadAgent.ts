@@ -2,7 +2,7 @@ import { AgentConfig } from "../types";
 import systemPrompt from '@agents/road/prompt.md?raw';
 
 export const RoadAgent: AgentConfig = {
-    id: 'road',
+    id: 'road-manager',
     name: 'Road Manager',
     description: 'Manages logistics and tour planning.',
     color: 'bg-yellow-500',
