@@ -208,7 +208,6 @@ exports.inngestApi = functions
                 // Case A: Base64 Encoded Video
                 if (prediction.bytesBase64Encoded) {
                     const bucket = admin.storage().bucket();
-<<<<<<< HEAD
                     const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                     await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
                         metadata: { contentType: 'video/mp4' },
@@ -216,8 +215,8 @@ exports.inngestApi = functions
                     });
                     // await file.makePublic(); // Optional depending on bucket config
                     // Save to a public path or user-specific path
-=======
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+ main
                     const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                     await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
                         metadata: { contentType: 'video/mp4' },
