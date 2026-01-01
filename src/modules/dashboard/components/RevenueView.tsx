@@ -22,10 +22,10 @@ export default function RevenueView() {
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
                 setTotalRevenue(stats.totalRevenue);
-                setRevenueBySource(stats.revenueBySource);
+                setRevenueBySource(stats.sources);
 
                 // Process top products
-                const sortedProducts = Object.entries(stats.revenueByProduct)
+                const sortedProducts = Object.entries(stats.revenueByProduct || {})
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);
