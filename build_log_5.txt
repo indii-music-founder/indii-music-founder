@@ -1,0 +1,35 @@
+
+> indii-os@0.1.0-beta.2 build:studio
+> vite build
+
+vite v6.4.1 building for production...
+transforming...
+
+/grid.svg referenced in /grid.svg didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 2927 modules transformed.
+✗ Build failed in 2.03s
+error during build:
+[vite-plugin-pwa:build] [plugin vite-plugin-pwa:build] src/services/dashboard/DashboardService.ts (283:10): There was an error during the build:
+  Transform failed with 1 error:
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/dashboard/DashboardService.ts:283:10: ERROR: Unexpected "catch"
+Additionally, handling the error in the 'buildEnd' hook caused the following error:
+  Transform failed with 1 error:
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/dashboard/DashboardService.ts:283:10: ERROR: Unexpected "catch"
+file: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/dashboard/DashboardService.ts:283:10
+
+Unexpected "catch"
+281|              }
+282|  
+283|          } catch (error) {
+   |            ^
+284|              console.error("Error deleting project:", error);
+285|              throw error;
+
+    at getRollupError (file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/rollup/dist/es/shared/node-entry.js:23418:39
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async catchUnfinishedHookActions (file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/rollup/dist/es/shared/node-entry.js:22876:16)
+    at async rollupInternal (file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/rollup/dist/es/shared/node-entry.js:23401:5)
+    at async buildEnvironment (file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46235:14)
+    at async Object.defaultBuildApp [as buildApp] (file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:46713:5)
+    at async CAC.<anonymous> (file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/vite/dist/node/cli.js:863:7)

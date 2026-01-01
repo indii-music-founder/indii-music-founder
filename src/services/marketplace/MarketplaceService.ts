@@ -40,19 +40,21 @@ export class MarketplaceService {
                 sellerId: userId,
                 title: 'Debut Album - Digital Download',
                 price: 9.99,
+                currency: 'USD',
                 description: 'Full high-quality MP3/FLAC download.',
-                category: 'music',
+                type: 'album',
                 inventory: 9999,
-                imageUrl: 'https://placehold.co/400x400/purple/white?text=Album'
+                images: ['https://placehold.co/400x400/purple/white?text=Album']
             },
             {
                 sellerId: userId,
                 title: 'Band T-Shirt',
                 price: 24.99,
+                currency: 'USD',
                 description: '100% Cotton, Black.',
-                category: 'merch',
+                type: 'merch',
                 inventory: 50,
-                imageUrl: 'https://placehold.co/400x400/black/white?text=T-Shirt'
+                images: ['https://placehold.co/400x400/black/white?text=T-Shirt']
             }
         ];
 
@@ -141,44 +143,5 @@ export class MarketplaceService {
         return purchaseRef.id;
     }
 
-    /**
-     * Seed initial products for a new artist/user.
-     */
-    static async seedDatabase(userId: string) {
-        console.log(`[MarketplaceService] Seeding database for ${userId}...`);
 
-        const initialProducts = [
-            {
-                name: 'Neon Genesis (Digital Vinyl)',
-                description: 'Limited edition high-fidelity digital vinyl with exclusive artwork.',
-                price: 25.00,
-                sellerId: userId,
-                type: 'digital_music',
-                isActive: true,
-                createdAt: serverTimestamp()
-            },
-            {
-                name: 'Cyberpunk Aesthetic (Vocal Pack)',
-                description: '100+ high-quality vocal samples for electronic music production.',
-                price: 15.00,
-                sellerId: userId,
-                type: 'sample_pack',
-                isActive: true,
-                createdAt: serverTimestamp()
-            },
-            {
-                name: 'IndiiOS Alpha (Exclusive Pass)',
-                description: 'VIP access to all future alpha features and custom community badges.',
-                price: 49.99,
-                sellerId: userId,
-                type: 'membership',
-                isActive: true,
-                createdAt: serverTimestamp()
-            }
-        ];
-
-        for (const p of initialProducts) {
-            await addDoc(collection(db, this.PRODUCTS_COLLECTION), p);
-        }
-    }
 }

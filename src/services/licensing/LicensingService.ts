@@ -73,9 +73,6 @@ export class LicensingService {
         } as any);
     }
 
-    async createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        return this.licensesStore.add({ ...license } as any);
-    }
 
     /**
      * Update an existing request.
