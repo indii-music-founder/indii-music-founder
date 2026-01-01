@@ -15,6 +15,29 @@ const VideoJobSchema = z.object({
 
 export async function generateVideoLogic({ event, step }: { event: any, step: any }) {
     const { jobId, prompt, userId, options } = VideoJobSchema.parse(event.data);
+interface VideoOptions {
+    duration?: string;
+    durationSeconds?: number;
+    aspectRatio?: string;
+}
+
+interface VideoGenerateEvent {
+    data: {
+        jobId: string;
+        prompt: string;
+        userId: string;
+        orgId: string;
+        options: VideoOptions;
+        timestamp: number;
+    }
+}
+
+interface Step {
+    run: <T>(name: string, callback: () => Promise<T>) => Promise<T>;
+}
+
+export async function generateVideoLogic({ event, step }: { event: VideoGenerateEvent, step: Step }) {
+    const { jobId, prompt, userId, options } = event.data;
 
     try {
         // Step 1: Update status to processing
@@ -41,11 +64,19 @@ export async function generateVideoLogic({ event, step }: { event: any, step: an
 
             const endpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${LOCATION}/publishers/google/models/${modelId}:predict`;
 
+            // Handle duration logic
+            let videoLength = "5s"; // default
+            if (options?.duration) {
+                videoLength = options.duration;
+            } else if (options?.durationSeconds) {
+                videoLength = `${options.durationSeconds}s`;
+            }
+
             const requestBody = {
                 instances: [{ prompt: prompt }],
                 parameters: {
                     sampleCount: 1,
-                    videoLength: options?.duration || options?.durationSeconds || "5s",
+                    videoLength: videoLength,
                     aspectRatio: options?.aspectRatio || "16:9"
                 }
             };
@@ -82,7 +113,7 @@ export async function generateVideoLogic({ event, step }: { event: any, step: an
 
                 const [url] = await file.getSignedUrl({
                     action: 'read',
-                    expires: Date.now() + 1000 * 60 * 60 * 24 * 7
+                    expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
                 });
                 return url;
             }
@@ -113,6 +144,7 @@ export async function generateVideoLogic({ event, step }: { event: any, step: an
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         });
+        // Re-throw to allow Inngest to handle retries if configured
         throw error;
     }
 }

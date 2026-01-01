@@ -5,7 +5,6 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { generateVideoLogic } from "./lib/video";
-import { GoogleAuth } from "google-auth-library";
 
 // Initialize Firebase Admin
 admin.initializeApp();

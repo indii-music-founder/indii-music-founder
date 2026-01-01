@@ -100,7 +100,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron/fuses": "^1.8.0",
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^9.39.2",
     "@firebase/rules-unit-testing": "^5.0.0",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@playwright/test": "^1.57.0",
