@@ -42,6 +42,7 @@ test_results*.txt
 
 # Build artifacts
 out/
+functions/lib/
 build_log.txt
 debug_log.txt
 lint_errors.txt

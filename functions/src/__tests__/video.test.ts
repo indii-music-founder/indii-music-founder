@@ -29,6 +29,29 @@ const { mockSet, mockDoc, mockCollection, mockFirestore, mockFieldValue, mockAut
         mockStorageBucket, mockFile, mockSave, mockGetSignedUrl, mockPublicUrl
     };
 });
+const mocks = vi.hoisted(() => ({
+    firestore: {
+        collection: vi.fn(),
+        doc: vi.fn(),
+        set: vi.fn(),
+        get: vi.fn(),
+        FieldValue: {
+            serverTimestamp: vi.fn(() => 'TIMESTAMP')
+        }
+    },
+    storage: {
+        bucket: vi.fn(),
+        file: vi.fn(),
+        save: vi.fn(),
+        getSignedUrl: vi.fn(() => Promise.resolve(['https://mock-storage-url.com/video.mp4'])),
+        publicUrl: vi.fn(() => 'https://mock-storage-url.com/video.mp4')
+    },
+    auth: {
+        getClient: vi.fn(),
+        getProjectId: vi.fn()
+    }
+}));
+
 
 // Mock Firebase Admin
 vi.mock('firebase-admin', () => ({
@@ -140,6 +163,8 @@ describe('Video Backend', () => {
                 jobId: 'test-job-id',
                 prompt: 'test prompt',
                 userId: 'test-user',
+                orgId: 'test-org',
+                timestamp: 123456789,
                 options: {}
             }
         };
