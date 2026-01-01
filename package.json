@@ -127,6 +127,7 @@
     "globals": "^16.5.0",
     "javascript-obfuscator": "^4.2.2",
     "jsdom": "^27.2.0",
+    "lightningcss": "^1.30.2",
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "sourcemap-codec": "^1.4.8",
