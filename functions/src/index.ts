@@ -149,11 +149,11 @@ export const inngestApi = functions
                         const client = await auth.getClient();
                         const projectId = await auth.getProjectId();
                         const accessToken = await client.getAccessToken();
-                        const location = 'us-central1';
+                        const LOCATION = 'us-central1';
                         // Using the Veo 3.1 Preview model
                         const modelId = 'veo-3.1-generate-preview';
 
-                        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+                        const endpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${LOCATION}/publishers/google/models/${modelId}:predict`;
 
                         // Construct request body for Veo
                         const requestBody = {
@@ -199,21 +199,19 @@ export const inngestApi = functions
                         if (prediction.bytesBase64Encoded) {
                             const bucket = admin.storage().bucket();
                             const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
-                                metadata: { contentType: 'video/mp4' },
-                                public: true
-                            });
-                            // await file.makePublic(); // Optional depending on bucket config
-                            // Save to a public path or user-specific path
-                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                             const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
 
                             await file.save(buffer, {
-                                metadata: { contentType: 'video/mp4' },
-                                public: true // Make public for easy access in prototype
+                                metadata: { contentType: 'video/mp4' }
                             });
 
-                            return file.publicUrl();
+                            // Generate a Signed URL valid for 7 days
+                            const [url] = await file.getSignedUrl({
+                                action: 'read',
+                                expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
+                            });
+
+                            return url;
                         }
 
                         // Case B: GCS URI
@@ -227,11 +225,6 @@ export const inngestApi = functions
                         // Case C: Video URI (Direct HTTP link if supported)
                         if (prediction.videoUri) {
                             return prediction.videoUri;
-                        }
-
-                        // If it returns a GCS URI in gcsUri
-                        if (prediction.gcsUri) {
-                             return prediction.gcsUri;
                         }
 
                         throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
