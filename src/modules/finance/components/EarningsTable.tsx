@@ -13,7 +13,7 @@ interface EarningsTableProps {
     data: ReleaseEarnings[];
 }
 
-export const EarningsTable: React.FC<EarningsTableProps> = ({ data }) => {
+const EarningsTableComponent: React.FC<EarningsTableProps> = ({ data }) => {
     return (
         <div className="rounded-md border">
             <Table>
@@ -41,3 +41,7 @@ export const EarningsTable: React.FC<EarningsTableProps> = ({ data }) => {
         </div>
     );
 };
+
+// Optimization: Memoize to prevent unnecessary re-renders when parent state updates
+// but data remains unchanged (e.g., switching tabs in dashboard).
+export const EarningsTable = React.memo(EarningsTableComponent);
