@@ -26,39 +26,6 @@ const mocks = vi.hoisted(() => ({
     }
 }));
 
-// 1. Define the mock implementations *inside* a factory or handle hoisting.
-// However, since we want to access the spies in tests, we can use `vi.hoisted`
-// or define them in a way that Vitest handles.
-
-const { mockSet, mockDoc, mockCollection, mockFirestore, mockFieldValue, mockAuthGetClient, mockAuthGetProjectId } = vi.hoisted(() => {
-    const mockSet = vi.fn();
-    const mockDoc = vi.fn(() => ({ set: mockSet }));
-    const mockCollection = vi.fn(() => ({ doc: mockDoc }));
-    const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
-    const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
-
-    const mockAuthGetClient = vi.fn();
-    const mockAuthGetProjectId = vi.fn();
-
-    return { mockSet, mockDoc, mockCollection, mockFirestore, mockFieldValue, mockAuthGetClient, mockAuthGetProjectId };
-});
-
-// 1. Define the mock implementations *inside* a factory or handle hoisting.
-// However, since we want to access the spies in tests, we can use `vi.hoisted`
-// or define them in a way that Vitest handles.
-
-const { mockSet, mockDoc, mockCollection, mockFirestore, mockFieldValue, mockAuthGetClient, mockAuthGetProjectId } = vi.hoisted(() => {
-    const mockSet = vi.fn();
-    const mockDoc = vi.fn(() => ({ set: mockSet }));
-    const mockCollection = vi.fn(() => ({ doc: mockDoc }));
-    const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
-    const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
-
-    const mockAuthGetClient = vi.fn();
-    const mockAuthGetProjectId = vi.fn();
-
-    return { mockSet, mockDoc, mockCollection, mockFirestore, mockFieldValue, mockAuthGetClient, mockAuthGetProjectId };
-});
 
 // Mock Firebase Admin
 vi.mock('firebase-admin', () => ({
