@@ -34,6 +34,7 @@ export const useTouring = () => {
                     console.error("Failed to seed vehicle stats:", err);
                     // Fallback local state if seeding/fetch fails
                     setVehicleStats({
+                        userId: userProfile.id,
                         milesDriven: 0,
                         fuelLevelPercent: 100,
                         tankSizeGallons: 150,

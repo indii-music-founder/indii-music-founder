@@ -48,14 +48,6 @@ vi.mock('@/modules/marketing/hooks/useMarketing', () => ({
 
 // Mock CampaignManager as it has its own complexities
 vi.mock('./CampaignManager', () => ({
-    default: ({ selectedCampaign, onCreateNew }: any) => (
-        <div data-testid="campaign-manager">
-            Managing: {selectedCampaign?.title || 'None'}
-            <button onClick={onCreateNew}>Create New Campaign</button>
-            <div>Select a campaign</div>
-            <div>Campaign Manager</div>
-        </div>
-    ),
     default: ({ selectedCampaign, onCreateNew }: any) => {
         // If selectedCampaign is present, show "Managing: Title"
         // Otherwise show list/empty state which includes "Create New Campaign" button

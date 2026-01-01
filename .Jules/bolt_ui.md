@@ -161,4 +161,68 @@ Users can now instantly identify which department they're in by the colored left
 
 ---
 
-*Next session: Apply department theming to Manager cards and dashboard headers.*
+## 2026-01-01 - Dashboard Cards & Module Headers
+
+### What Was Unified
+
+1. **QuickActions cards** - Dashboard module cards now use department color system
+2. **ModuleDashboard layout** - Added department-tinted header bar and icon glow
+3. **DeptLoader component** - New loading states with `indii-auto-update` animation
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `QuickActions.tsx` | Refactored to use `getColorForModule()` + `dept-border-top` |
+| `ModuleDashboard.tsx` | Added 4px header bar in department color, icon glow |
+| `DeptLoader.tsx` | **NEW** - Department-themed loader, skeleton, card skeleton |
+| `index.css` | Added shimmer keyframes for skeleton animation |
+
+### Visual Anti-Patterns Eliminated
+
+| Before | After |
+|--------|-------|
+| Creative = `text-blue-400` | Creative = Purple `#9C27B0` |
+| Marketing = `text-orange-400` | Marketing = Magenta `#E91E63` |
+| Publishing = `text-pink-400` | Publishing = Lime `#8BC34A` |
+| Hardcoded hover borders | `hover:border-[--dept-color]/50` |
+
+### New Components
+
+```tsx
+// Department-themed loading states
+import { DeptLoader, DeptSkeleton, DeptCardSkeleton } from '@/components/ui/DeptLoader';
+
+// Full page loading overlay
+<DeptLoader message="Processing..." fullPage />
+
+// Skeleton placeholder
+<DeptSkeleton width="w-3/4" height="h-4" />
+
+// Card skeleton with dept border
+<DeptCardSkeleton moduleId="finance" />
+```
+
+### ModuleDashboard Enhancement
+
+Every module using `<ModuleDashboard>` now automatically gets:
+- 4px header bar in department color
+- Icon with department-colored glow
+- Tabs with department-tinted active state
+
+```tsx
+<ModuleDashboard
+  title="Marketing Department"
+  icon={<Megaphone />}  // Auto-tinted magenta
+>
+  {/* Content */}
+</ModuleDashboard>
+```
+
+### The Vibe Check
+
+Dashboard cards now visually pop with their department identity. The colored top border immediately signals "this card leads to Marketing (magenta)" vs "this leads to Finance (gold)". Loading states pulse with department color, maintaining brand continuity even during async operations.
+
+---
+
+*System unified: Sidebar, Dashboard cards, Module headers, Loading states.*

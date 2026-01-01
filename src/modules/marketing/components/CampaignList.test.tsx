@@ -29,7 +29,7 @@ describe('CampaignList', () => {
         {
             id: '1',
             title: 'Campaign 1',
-            status: CampaignStatus.ACTIVE,
+            status: CampaignStatus.EXECUTING,
             posts: [],
             startDate: '2024-01-01',
             durationDays: 30
@@ -37,7 +37,7 @@ describe('CampaignList', () => {
         {
             id: '2',
             title: 'Campaign 2',
-            status: CampaignStatus.DRAFT,
+            status: CampaignStatus.PENDING,
             posts: [],
             startDate: '2024-02-01',
             durationDays: 15

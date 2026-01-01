@@ -20,6 +20,7 @@ const RoadManager: React.FC = () => {
     const toast = useToast();
     const {
         currentItinerary: itinerary,
+        setCurrentItinerary,
         saveItinerary,
         updateItineraryStop,
         vehicleStats,
@@ -169,7 +170,7 @@ const RoadManager: React.FC = () => {
         const updatePromise = Promise.resolve(); // Replace with actual API call
 
         updatePromise.then(() => {
-             setItinerary({ ...itinerary, stops: newStops });
+             setCurrentItinerary({ ...itinerary, stops: newStops });
              toast.success("Day sheet updated");
         }).catch(err => {
              console.error("Failed to update stop", err);

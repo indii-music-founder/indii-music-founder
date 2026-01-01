@@ -69,15 +69,15 @@ export const RoadTools = {
             const text = res.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
-            return TourRouteSchema.parse(parsed);
+            return JSON.stringify(TourRouteSchema.parse(parsed));
         } catch (e) {
             console.error('RoadTools.plan_tour_route error:', e);
-            return {
+            return JSON.stringify({
                 route: stopsList,
                 totalDistance: "Unknown",
                 estimatedDuration: "Unknown",
                 legs: []
-            };
+            });
         }
     },
 
@@ -98,19 +98,19 @@ export const RoadTools = {
 
         try {
             const res = await AI.generateContent({
-                model: AI_MODELS.TEXT_AGENT.model,
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             const text = res.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
-            return TourBudgetSchema.parse(parsed);
+            return JSON.stringify(TourBudgetSchema.parse(parsed));
         } catch (e) {
             console.error('RoadTools.calculate_tour_budget error:', e);
-            return {
+            return JSON.stringify({
                 totalBudget: 0,
                 breakdown: { lodging: "0", food: "0", transport: "0", contingency: "0" }
-            };
+            });
         }
     },
 
@@ -134,24 +134,24 @@ export const RoadTools = {
             const text = res.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
-            return ItinerarySchema.parse(parsed);
+            return JSON.stringify(ItinerarySchema.parse(parsed));
         } catch (e) {
             console.error('RoadTools.generate_itinerary error:', e);
-            return {
+            return JSON.stringify({
                 tourName: "Tour",
                 schedule: []
-            };
+            });
         }
     },
 
     book_logistics: async ({ item, date }: { item: string, date: string }) => {
-        return {
+        return JSON.stringify({
             status: "confirmed",
             item,
             date,
             confirmationCode: `BK-${Math.floor(Math.random() * 10000)}`,
             vendor: "Global Logistics Co."
-        };
+        });
     },
 
     ...MapsTools

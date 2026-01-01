@@ -67,6 +67,7 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.3",
     "react-dropzone": "^14.3.8",
+    "react-is": "^19.2.3",
     "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.11.0",
@@ -144,8 +145,8 @@
     "@esbuild/linux-x64": "0.25.12",
     "@rollup/rollup-linux-x64-gnu": "^4.53.3",
     "@tailwindcss/oxide-linux-x64-gnu": "^4.1.18",
-    "lightningcss-linux-x64-gnu": "^1.30.2",
-    "cpu-features": "0.0.10"
+    "cpu-features": "0.0.10",
+    "lightningcss-linux-x64-gnu": "^1.30.2"
   },
   "build": {
     "npmRebuild": false,

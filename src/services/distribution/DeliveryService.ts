@@ -1,4 +1,3 @@
-import path from 'path';
 import { credentialService } from '@/services/security/CredentialService';
 import { SFTPTransporter } from './transport/SFTPTransporter';
 import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from './types/distributor';
@@ -42,6 +41,7 @@ export class DeliveryService {
             try {
                 // Dynamic import to avoid bundling issues in browser
                 const fs = await import('fs');
+                const path = await import('path');
 
                 if (!fs || !fs.promises || typeof fs.existsSync !== 'function') {
                     throw new Error('FileSystem not available');
@@ -53,7 +53,7 @@ export class DeliveryService {
                 // Here we verify it doesn't contain '..' segments to break out of intended paths.
                 const resolvedPath = path.resolve(outputDir);
                 if (resolvedPath.includes('..') && !path.isAbsolute(outputDir)) {
-                     throw new Error('Security Error: Invalid output directory path.');
+                    throw new Error('Security Error: Invalid output directory path.');
                 }
 
                 // Ensure output directory exists
@@ -74,20 +74,20 @@ export class DeliveryService {
 
                     // Helper to validate and copy file
                     const safeCopy = async (sourceUrl: string, destPath: string) => {
-                         // SECURITY: Prevent reading arbitrary system files if sourceUrl is manipulated
-                         // In a strict environment, we should verify sourceUrl is within approved directories (like temp or upload folders)
-                         // For now, we assume local file paths must be absolute or valid URLs.
-                         // We reject paths attempting traversal.
-                         if (sourceUrl.includes('..')) {
-                             console.warn(`[DeliveryService] Security Warning: Skipped potentially unsafe asset path: ${sourceUrl}`);
-                             return;
-                         }
+                        // SECURITY: Prevent reading arbitrary system files if sourceUrl is manipulated
+                        // In a strict environment, we should verify sourceUrl is within approved directories (like temp or upload folders)
+                        // For now, we assume local file paths must be absolute or valid URLs.
+                        // We reject paths attempting traversal.
+                        if (sourceUrl.includes('..')) {
+                            console.warn(`[DeliveryService] Security Warning: Skipped potentially unsafe asset path: ${sourceUrl}`);
+                            return;
+                        }
 
-                         if (fs.existsSync(sourceUrl)) {
-                             await fs.promises.copyFile(sourceUrl, destPath);
-                         } else {
-                             console.warn(`[DeliveryService] Asset file not found: ${sourceUrl}`);
-                         }
+                        if (fs.existsSync(sourceUrl)) {
+                            await fs.promises.copyFile(sourceUrl, destPath);
+                        } else {
+                            console.warn(`[DeliveryService] Asset file not found: ${sourceUrl}`);
+                        }
                     };
 
                     // Copy Audio Files
@@ -201,10 +201,10 @@ export class DeliveryService {
         // Count provided assets (Audio + Cover Art)
         let assetCount = 0;
         if (assets) {
-             if (assets.audioFiles) assetCount += assets.audioFiles.length;
-             else if (assets.audioFile) assetCount += 1;
+            if (assets.audioFiles) assetCount += assets.audioFiles.length;
+            else if (assets.audioFile) assetCount += 1;
 
-             if (assets.coverArt) assetCount += 1;
+            if (assets.coverArt) assetCount += 1;
         }
 
         // Note: ERN resources include Image + SoundRecordings.
@@ -212,14 +212,14 @@ export class DeliveryService {
         // (Allowing for some flexibility if XML includes things we don't upload like text files,
         // but for this 'Gold Standard' strict check, we expect 1:1 for Audio/Image)
         if (xmlResourceCount !== assetCount) {
-             // We relax this check slightly because ERN might list multiple technical instantiations
-             // or text resources. But for our simple mapper, it should match.
-             // Actually, ERNMapper generates 1 resource per track + 1 image.
-             // If assets match that, we are good.
-             // Let's rely on specific mismatch error if it's wildly different.
-             if (Math.abs(xmlResourceCount - assetCount) > 0) {
-                 errors.push(`Manifest Mismatch: XML lists ${xmlResourceCount} resources, but ${assetCount} assets were provided.`);
-             }
+            // We relax this check slightly because ERN might list multiple technical instantiations
+            // or text resources. But for our simple mapper, it should match.
+            // Actually, ERNMapper generates 1 resource per track + 1 image.
+            // If assets match that, we are good.
+            // Let's rely on specific mismatch error if it's wildly different.
+            if (Math.abs(xmlResourceCount - assetCount) > 0) {
+                errors.push(`Manifest Mismatch: XML lists ${xmlResourceCount} resources, but ${assetCount} assets were provided.`);
+            }
         }
 
         // 3. Corruption & Technical Spec Check
@@ -239,7 +239,7 @@ export class DeliveryService {
                         // In 2026, we might require specific flags in metadata if Spatial Audio is provided.
                         // For now, just logging or ensuring it's valid ADM is implied.
                         if (!a.url.endsWith('.wav')) {
-                             errors.push(`Spatial Audio Error: ${a.url} must be .wav (ADM BWF).`);
+                            errors.push(`Spatial Audio Error: ${a.url} must be .wav (ADM BWF).`);
                         }
                     }
                 });
@@ -266,7 +266,7 @@ export class DeliveryService {
                 // Format Check (Simple extension check)
                 const ext = url.split('.').pop()?.toLowerCase();
                 if (ext !== 'jpg' && ext !== 'jpeg' && ext !== 'png') {
-                     errors.push(`Invalid Artwork: Format must be JPG or PNG. Found .${ext}`);
+                    errors.push(`Invalid Artwork: Format must be JPG or PNG. Found .${ext}`);
                 }
             }
         }
