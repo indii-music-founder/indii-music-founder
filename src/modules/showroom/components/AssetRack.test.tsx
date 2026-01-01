@@ -21,6 +21,10 @@ describe('AssetRack', () => {
         productType: 'T-Shirt' as ProductType,
         onAssetUpload: mockOnAssetUpload,
         onTypeChange: mockOnTypeChange,
+        placement: 'Front' as const,
+        onPlacementChange: vi.fn(),
+        scale: 100,
+        onScaleChange: vi.fn(),
     };
 
     it('renders correctly', () => {

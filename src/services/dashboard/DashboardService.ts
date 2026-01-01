@@ -141,90 +141,142 @@ export class DashboardService {
     }
 
     static async createProject(name: string): Promise<ProjectMetadata> {
-        const newProject = {
-            id: `proj_${Date.now()}`,
-            name,
-            lastModified: Date.now(),
-            assetCount: 0
-        };
-
         try {
             const { useStore } = await import('@/core/store');
+            const { ProjectService } = await import('@/services/ProjectService');
+            const { OrganizationService } = await import('@/services/OrganizationService');
+
             const state = useStore.getState() as unknown as DashboardStoreState;
+            const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
-            // Add to store if addProject exists
+            // Create in Firestore
+            // Defaulting to 'creative' type for generic dashboard creation, or logic might need to be smarter
+            const newProject = await ProjectService.createProject(name, 'creative', orgId);
+
+            // Update local store
             if (typeof state.addProject === 'function') {
-                state.addProject(newProject);
+                const metadata: ProjectMetadata = {
+                    id: newProject.id,
+                    name: newProject.name,
+                    lastModified: newProject.date,
+                    assetCount: 0,
+                    thumbnail: undefined
+                };
+                state.addProject(metadata);
+                return metadata;
             }
-        } catch (error) {
-            // Failed to add to store, but we return the object anyway
-        }
 
-        return newProject;
+            return {
+                id: newProject.id,
+                name: newProject.name,
+                lastModified: newProject.date,
+                assetCount: 0
+            };
+
+        } catch (error) {
+            console.error("Error creating project:", error);
+            throw error;
+        }
     }
 
     static async duplicateProject(projectId: string): Promise<ProjectMetadata> {
-        const { useStore } = await import('@/core/store');
-        const state = useStore.getState() as unknown as DashboardStoreState;
+        try {
+            const { useStore } = await import('@/core/store');
+            const { ProjectService } = await import('@/services/ProjectService');
+            const { StorageService } = await import('@/services/StorageService');
+            const { OrganizationService } = await import('@/services/OrganizationService');
 
-        // Find original project
-        const projects = await this.getProjects();
-        const original = projects.find(p => p.id === projectId);
+            const state = useStore.getState() as unknown as DashboardStoreState;
+            const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
-        if (!original) {
-            throw new Error(`Project ${projectId} not found`);
-        }
+            // 1. Get original project
+            const originalProject = await ProjectService.get(projectId);
+            if (!originalProject) throw new Error(`Project ${projectId} not found`);
 
-        // Create duplicate
-        const duplicate: ProjectMetadata = {
-            id: `proj_${Date.now()}`,
-            name: `${original.name} (Copy)`,
-            lastModified: Date.now(),
-            assetCount: original.assetCount,
-            thumbnail: original.thumbnail
-        };
-
-        // Copy history items if they exist
-        if (state.generatedHistory) {
-            const projectHistory = state.generatedHistory.filter(
-                (item) => item.projectId === projectId
+            // 2. Create new project container
+            const newProject = await ProjectService.createProject(
+                `${originalProject.name} (Copy)`,
+                originalProject.type,
+                orgId
             );
 
-            // Add duplicated items with new project ID
-            projectHistory.forEach((item) => {
-                if (typeof state.addToHistory === 'function') {
-                    state.addToHistory({
-                        ...item,
-                        id: `${item.id}_copy_${Date.now()}`,
-                        projectId: duplicate.id,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-        }
+            // 3. Duplicate History Items
+            // We need to fetch history for this project. 
+            // StorageService.loadHistory gets everything for the org, we might need a specific query
+            // But for now, let's use the store's history if available as a cache, or query DB
 
-        // Add to store
-        if (typeof state.addProject === 'function') {
-            state.addProject(duplicate);
-        }
+            // Query DB for reliability
+            // We need to access the base query method of StorageService or add a new method
+            // Since StorageService extends FirestoreService, we can use 'list'
+            const { where } = await import('firebase/firestore');
+            const historyItems = await StorageService.list([
+                where('projectId', '==', projectId)
+            ]);
 
-        return duplicate;
+            // Duplicate items
+            await Promise.all(historyItems.map(async (item) => {
+                const { id, ...data } = item;
+                await StorageService.saveItem({
+                    ...data,
+                    id: `copy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ID is usually ignored by saveItem but required by type
+                    projectId: newProject.id,
+                    timestamp: Date.now()
+                });
+            }));
+
+            // 4. Update local store
+            const metadata: ProjectMetadata = {
+                id: newProject.id,
+                name: newProject.name,
+                lastModified: newProject.date,
+                assetCount: historyItems.length,
+                thumbnail: undefined // Logic to copy thumbnail if needed
+            };
+
+            if (typeof state.addProject === 'function') {
+                state.addProject(metadata);
+            }
+
+            // Also need to refresh history in store if we want to see the new items immediately
+            // But typically we only load history when entering the project
+
+            return metadata;
+
+        } catch (error) {
+            console.error("Error duplicating project:", error);
+            throw error;
+        }
     }
 
     static async deleteProject(projectId: string): Promise<void> {
-        const { useStore } = await import('@/core/store');
-        const state = useStore.getState() as unknown as DashboardStoreState;
+        try {
+            const { useStore } = await import('@/core/store');
+            const { ProjectService } = await import('@/services/ProjectService');
+            // const { StorageService } = await import('@/services/StorageService');
 
-        if (typeof state.removeProject === 'function') {
-            state.removeProject(projectId);
-        }
+            await ProjectService.delete(projectId);
 
-        // Remove associated history
-        if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
-            const toRemove = state.generatedHistory.filter(
-                (item) => item.projectId === projectId
-            );
-            toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
+            // Ideally delete associated history items too
+            // const { where } = await import('firebase/firestore');
+            // const historyItems = await StorageService.list([where('projectId', '==', projectId)]);
+            // await Promise.all(historyItems.map(item => StorageService.delete(item.id)));
+
+            const state = useStore.getState() as unknown as DashboardStoreState;
+            if (typeof state.removeProject === 'function') {
+                state.removeProject(projectId);
+            }
+
+            // Remove associated history from local store
+            if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
+                const toRemove = state.generatedHistory.filter(
+                    (item) => item.projectId === projectId
+                );
+                toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
+            }
+
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            throw error;
         }
     }
 

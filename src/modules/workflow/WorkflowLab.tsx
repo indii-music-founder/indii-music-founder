@@ -14,17 +14,13 @@ import { getUserWorkflows } from './services/workflowPersistence';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 export default function WorkflowLab() {
-    const { nodes, edges, setNodes, setEdges } = useStore();
+    const { nodes, edges, setNodes, setEdges, user } = useStore();
     const [isRunning, setIsRunning] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
-    // Mock user for Ground Zero rebuild
-    const [currentUser, setCurrentUser] = useState<any>({ uid: 'superuser-id', email: 'superuser@indii.os' });
 
-    useEffect(() => {
-        // No-op auth listener replacement
-        console.log("WorkflowLab: Superuser active");
-    }, []);
+    // Alias user for compatibility
+    const currentUser = user;
 
     const handleRunWorkflow = async () => {
         if (nodes.length === 0) return;

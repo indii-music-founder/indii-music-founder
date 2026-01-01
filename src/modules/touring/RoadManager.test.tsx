@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RoadManager from './RoadManager';
+import { useTouring } from './hooks/useTouring';
 
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({
@@ -15,6 +16,32 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('@/services/firebase', () => ({
     functions: {},
 }));
+
+// Mock useTouring hook
+vi.mock('./hooks/useTouring', () => ({
+    useTouring: vi.fn(),
+}));
+
+// Helper to setup the mock with default or custom values
+const setupTouringMock = (overrides = {}) => {
+    const defaultValues = {
+        itineraries: [],
+        currentItinerary: null,
+        setCurrentItinerary: vi.fn(),
+        saveItinerary: vi.fn().mockResolvedValue(undefined),
+        updateItineraryStop: vi.fn(),
+        vehicleStats: {
+            milesDriven: 100,
+            fuelLevelPercent: 75,
+            tankSizeGallons: 20,
+            mpg: 15,
+            gasPricePerGallon: 4.00
+        },
+        saveVehicleStats: vi.fn().mockResolvedValue(undefined),
+        loading: false,
+    };
+    vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides });
+};
 
 vi.mock('firebase/functions', () => ({
     httpsCallable: (functionsInstance: any, name: string) => {
@@ -56,15 +83,16 @@ vi.mock('firebase/functions', () => ({
 describe('RoadManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        setupTouringMock();
     });
 
     it('renders input fields', () => {
         render(<RoadManager />);
-        expect(screen.getByText('Routing')).toBeInTheDocument();
+        expect(screen.getByText('Tour Details')).toBeInTheDocument();
         expect(screen.getByPlaceholderText('Add a city...')).toBeInTheDocument();
     });
 
-    it('allows adding and removing locations', () => {
+    it('allows adding and removing locations', async () => {
         render(<RoadManager />);
         const input = screen.getByPlaceholderText('Add a city...');
         const addButton = screen.getByLabelText('Add location');
@@ -75,14 +103,23 @@ describe('RoadManager', () => {
         expect(screen.getByText('New York')).toBeInTheDocument();
 
         // Remove location
+        // Remove location
         const removeButton = screen.getByLabelText('Remove New York');
         fireEvent.click(removeButton);
 
-        expect(screen.queryByText('New York')).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText('New York')).not.toBeInTheDocument();
+        });
     });
+
+
 
     it('generates itinerary when inputs are valid', async () => {
         render(<RoadManager />);
+
+        // Setup mock return
+        const saveItineraryMock = vi.fn().mockResolvedValue(undefined);
+        setupTouringMock({ saveItinerary: saveItineraryMock });
 
         const startDateInput = screen.getByLabelText('Start Date');
         const endDateInput = screen.getByLabelText('End Date');
@@ -95,44 +132,54 @@ describe('RoadManager', () => {
         fireEvent.change(locationInput, { target: { value: 'New York' } });
         fireEvent.keyDown(locationInput, { key: 'Enter', code: 'Enter' });
 
-        const generateButton = screen.getByText('Generate Itinerary');
+        // Wait for location to appear
+        await waitFor(() => {
+            expect(screen.getByText('New York')).toBeInTheDocument();
+        });
+
+        const generateButton = screen.getByText('Launch Route Generator');
         expect(generateButton).not.toBeDisabled();
 
         fireEvent.click(generateButton);
 
-        expect(screen.getByText('Calculating Route...')).toBeInTheDocument();
+        // Check for loading state
+        expect(screen.getByText('Synchronizing...')).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(screen.getByText('Test Tour')).toBeInTheDocument();
-            expect(screen.getByText('MSG')).toBeInTheDocument();
-        });
+            expect(saveItineraryMock).toHaveBeenCalled();
+        }, { timeout: 3000 });
     });
 
     it('checks logistics after generating itinerary', async () => {
+        // Pre-load an itinerary into the hook mock to simulate state where logistics can be checked
+        setupTouringMock({
+            currentItinerary: {
+                id: '123',
+                tourName: 'Test Tour',
+                stops: [],
+                totalDistance: '1000 km',
+                estimatedBudget: '$50'
+            }
+        });
+
         render(<RoadManager />);
 
-        const startDateInput = screen.getByLabelText('Start Date');
-        const endDateInput = screen.getByLabelText('End Date');
+        // We don't need to interact to generate, just check logistics directly if button is enabled/visible
+        // But the check button calls handleCheckLogistics which guards on !itinerary
 
-        fireEvent.change(startDateInput, { target: { value: '2023-10-01' } });
-        fireEvent.change(endDateInput, { target: { value: '2023-10-10' } });
+        // Use the Planning tab default view
 
-        const locationInput = screen.getByPlaceholderText('Add a city...');
-        fireEvent.change(locationInput, { target: { value: 'New York' } });
-        fireEvent.keyDown(locationInput, { key: 'Enter', code: 'Enter' });
+        // If itinerary is present, PlanningTab might show the itinerary details directly?
+        // Let's assume the UI shows the "Check Logistics" button when itinerary exists or we can just trigger it.
+        // Actually, PlanningTab shows "Active Itinerary" if `itinerary` prop is set.
 
-        const generateButton = screen.getByText('Generate Itinerary');
-        fireEvent.click(generateButton);
-
-        await waitFor(() => {
-            expect(screen.getByText('Test Tour')).toBeInTheDocument();
-        });
+        expect(screen.getByText('Test Tour')).toBeInTheDocument();
 
         const checkButton = screen.getByText('Check Logistics');
         fireEvent.click(checkButton);
 
         await waitFor(() => {
-            expect(screen.getByText('Logistics Analysis')).toBeInTheDocument();
+            expect(screen.getByText('Feasibility Report')).toBeInTheDocument();
             expect(screen.getByText('Looks good')).toBeInTheDocument();
         });
     });

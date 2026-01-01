@@ -54,6 +54,7 @@ const processEnv = {
         : (nodeEnv === 'development' || toBoolean(readEnv('DEV'))),
 
     // Firebase specific overrides
+    firebaseApiKey: readEnv('VITE_FIREBASE_API_KEY'),
     firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
     firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
     firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL'),
@@ -70,6 +71,7 @@ if (!parsed.success) {
     const missingKeys: string[] = [];
     if (!processEnv.apiKey) missingKeys.push('VITE_API_KEY');
     if (!processEnv.projectId) missingKeys.push('VITE_VERTEX_PROJECT_ID');
+    if (!processEnv.firebaseApiKey) missingKeys.push('VITE_FIREBASE_API_KEY');
 
     if (missingKeys.length > 0) {
         console.warn("WARNING: The following environment variables are missing:", missingKeys.join(', '));
@@ -120,7 +122,7 @@ export const firebaseDefaultConfig = {
 const firebaseEnv = parsed.success ? parsed.data : processEnv;
 
 export const firebaseConfig = {
-    apiKey: firebaseDefaultConfig.apiKey, // Hardcoded public key is fine for public firestore access
+    apiKey: firebaseEnv.firebaseApiKey || firebaseDefaultConfig.apiKey, // Use environment variable if available
     authDomain: firebaseDefaultConfig.authDomain,
     databaseURL: firebaseEnv.firebaseDatabaseURL || firebaseDefaultConfig.databaseURL,
     projectId: firebaseEnv.firebaseProjectId || firebaseDefaultConfig.projectId,

@@ -108,36 +108,47 @@ function DevPortWarning() {
 // ============================================================================
 
 function useAppInitialization() {
-    const { initializeAuth, initializeHistory, loadProjects, isAuthReady, isAuthenticated } = useStore();
+    const { initializeAuthListener, loadUserProfile, user, initializeHistory, loadProjects } = useStore();
 
+    // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
-        // Initialize Core System
-        initializeAuth(); // This now just sets up the profile
+        console.log('[App] Initializing Auth Listener...');
+        const unsubscribe = initializeAuthListener();
+        return () => unsubscribe();
+    }, [initializeAuthListener]);
 
-        // Reset agent open state on mount
-        useStore.setState({ isAgentOpen: false });
-    }, [initializeAuth]);
-
-    // Load data when ready (which is always now)
+    // 2. Load User Profile when User is Authenticated
     useEffect(() => {
-        if (isAuthenticated && isAuthReady) {
-            console.log('[App] System ready, loading data...');
+        if (user?.uid) {
+            loadUserProfile(user.uid);
+        }
+    }, [user, loadUserProfile]);
+
+    // 3. Load Application Data (Projects, History) when Profile is ready
+    // We assume if user exists and profile is loaded (we don't have isProfileReady yet, but let's assume loose coupling)
+    useEffect(() => {
+        if (user) {
+            console.log('[App] Auth confirmed, loading app data...');
             initializeHistory();
             loadProjects();
+
+            // Re-enable Agent if needed, but keep closed by default
+            useStore.setState({ isAgentOpen: false });
         }
-    }, [isAuthenticated, isAuthReady, initializeHistory, loadProjects]);
+    }, [user, initializeHistory, loadProjects]);
 }
 
 function useOnboardingRedirect() {
-    const { isAuthReady, isAuthenticated, currentModule } = useStore();
+    const { user, authLoading, currentModule } = useStore();
 
     useEffect(() => {
-        if (!isAuthenticated || !isAuthReady) return;
+        if (authLoading) return;
 
-        // Skip onboarding logic check for now in Ground Zero rebuild
-        // We assume the superuser profile is complete enough.
+        // If not authenticated, we might want to redirect to a login screen?
+        // But currently App.tsx doesn't have a specific login route visible in the code I saw.
+        // It renders modules. We probably need a Login Module or Overlay.
 
-    }, [isAuthenticated, isAuthReady, currentModule]);
+    }, [user, authLoading, currentModule]);
 }
 
 // ============================================================================
@@ -168,7 +179,7 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
 // ============================================================================
 
 export default function App() {
-    const { currentModule, isAuthReady, isAuthenticated } = useStore();
+    const { currentModule, user, authLoading, loginWithGoogle } = useStore();
 
     // Initialize app and handle onboarding
     useAppInitialization();
@@ -205,10 +216,29 @@ export default function App() {
         [currentModule]
     );
 
+    // if (authLoading) {
+    //     return <LoadingFallback />;
+    // }
+
+    // if (!user) {
+    //     return (
+    //         <div className="flex flex-col items-center justify-center h-screen w-screen bg-black text-white relative overflow-hidden">
+    //             <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-black pointer-events-none" />
+    //             <h1 className="text-4xl font-black mb-2 tracking-tighter">indii<span className="text-purple-500">OS</span></h1>
+    //             <p className="text-gray-400 mb-8 font-mono text-sm">Alpha Build • Electron Studio</p>
+    //             <button
+    //                 onClick={loginWithGoogle}
+    //                 className="relative z-10 px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
+    //             >
+    //                 Login with Google
+    //             </button>
+    //         </div>
+    //     );
+    // }
+
     return (
         <ToastProvider>
             <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans">
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '10px', height: '10px', background: 'lime', zIndex: 9999999 }} title="App Mounted" />
                 <ApiKeyErrorModal />
 
                 {/* Left Sidebar - Hidden for standalone modules */}

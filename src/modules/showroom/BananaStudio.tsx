@@ -137,6 +137,7 @@ export default function BananaStudio() {
                 <BananaCanvas
                     theme={theme}
                     selectedAsset={state.selectedAsset}
+                    productType={state.productType}
                     mockupImage={state.mockupImage}
                     setMockupImage={handleMockupChange}
                     videoUrl={videoUrl}

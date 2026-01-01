@@ -7,7 +7,7 @@ import { CreativeSlice, createCreativeSlice } from './slices/creativeSlice';
 export type { HistoryItem } from './slices/creativeSlice';
 import { WorkflowSlice, createWorkflowSlice } from './slices/workflowSlice';
 // import { DashboardSlice, createDashboardSlice } from './slices/dashboardSlice';
-// import { AuthSlice, createAuthSlice } from './slices/authSlice';
+import { AuthSlice, createAuthSlice } from './slices/authSlice';
 // import { OnboardingSlice, createOnboardingSlice } from './slices/onboardingSlice';
 // import { MusicSlice, createMusicSlice } from './slices/musicSlice';
 import { FinanceSlice, createFinanceSlice } from './slices/financeSlice';
@@ -27,7 +27,7 @@ export interface StoreState extends
     CreativeSlice,
     WorkflowSlice,
     // DashboardSlice,
-    // AuthSlice,
+    AuthSlice,
     // OnboardingSlice,
     // MusicSlice,
     FinanceSlice,
@@ -43,7 +43,7 @@ export const useStore = create<StoreState>()((...a) => ({
     ...createCreativeSlice(...a),
     ...createWorkflowSlice(...a),
     // ...createDashboardSlice(...a),
-    // ...createAuthSlice(...a),
+    ...createAuthSlice(...a),
     // ...createOnboardingSlice(...a),
     // ...createMusicSlice(...a),
     ...createFinanceSlice(...a),

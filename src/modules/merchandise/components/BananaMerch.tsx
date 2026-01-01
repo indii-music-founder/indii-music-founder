@@ -1,24 +1,12 @@
 import React from 'react';
 import { Tag, Star, ShoppingCart } from 'lucide-react';
+import { useMerchandise } from '../hooks/useMerchandise';
 
-const MOCK_PRODUCTS = [
-    {
-        id: 1,
-        title: "Banana Standard Tee",
-        price: "$24.99",
-        image: "file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/34958d54-a9d0-4ced-a8bb-687671d31774/banana_standard_tshirt_mockup_1767126973658.png",
-        tags: ["Streetwear", "Cotton", "Unisex"]
-    },
-    {
-        id: 2,
-        title: "Banana Pop Hoodie",
-        price: "$49.99",
-        image: "file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/34958d54-a9d0-4ced-a8bb-687671d31774/banana_standard_tshirt_mockup_1767126973658.png", // Reusing image as placeholder for now since hoodie failed
-        tags: ["Fleece", "Oversized", "Vibrant"]
-    }
-];
+
 
 export const BananaMerch: React.FC = () => {
+    const { standardProducts: products } = useMerchandise();
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
 
@@ -71,7 +59,7 @@ export const BananaMerch: React.FC = () => {
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {MOCK_PRODUCTS.map(product => (
+                    {products.map(product => (
                         <div key={product.id} className="bg-card/40 backdrop-blur-sm rounded-2xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all duration-300 group hover:-translate-y-2">
                             <div className="aspect-[4/5] bg-secondary/30 relative overflow-hidden">
                                 <img src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -99,7 +87,7 @@ export const BananaMerch: React.FC = () => {
                                     <span className="text-primary font-black text-lg">{product.price}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
-                                    {product.tags.map(tag => (
+                                    {product.tags?.map(tag => (
                                         <span key={tag} className="text-[10px] font-bold text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded border border-border/50">
                                             {tag}
                                         </span>

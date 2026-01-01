@@ -106,6 +106,10 @@ interface VideoEditorState {
     // Timeline Zoom (P1)
     timelineZoom: number;
     setTimelineZoom: (zoom: number) => void;
+
+    // View Mode (Director vs Editor)
+    viewMode: 'director' | 'editor';
+    setViewMode: (mode: 'director' | 'editor') => void;
 }
 
 const INITIAL_PROJECT: VideoProject = {
@@ -145,6 +149,9 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     referenceImages: [],
     generateAudio: true,
     timelineZoom: 1,
+
+    viewMode: 'director',
+    setViewMode: (mode) => set({ viewMode: mode }),
 
     setJobId: (id) => set({ jobId: id }),
     setStatus: (status) => set({ status }),
