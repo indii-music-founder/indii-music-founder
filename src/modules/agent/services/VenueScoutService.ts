@@ -146,17 +146,14 @@ export class VenueScoutService {
                     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                     .join(' ');
 
-                const newVenue: Omit<Venue, 'id'> = {
-                    name: 'The Fillmore (Live Scan)',
-                    city: formattedCity,
-                    state: 'MI', // logic would need to parse this better
                 // Construct result based on what we might get (mocking part of the agent flow for now as `finalData` structure is dynamic)
                 // For this refactor, we simulate the agent returning valid data and saving it.
 
                 const agentId = `agent_${Date.now()}`;
+
                 const newVenue: Omit<Venue, 'id'> = {
                     name: 'The Fillmore (Live Scan)',
-                    city: city,
+                    city: formattedCity,
                     state: 'MI', // Placeholder, would parse from agent
                     capacity: 2000,
                     genres: [genre, 'Rock', 'Pop'],
@@ -169,8 +166,7 @@ export class VenueScoutService {
                 };
 
                 // Save to Firestore so it's there next time
-                const docRef = await addDoc(collection(db, 'venues'), {
-                await addDoc(collection(db, this.COLLECTION_NAME), {
+                const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
                     ...newVenue,
                     createdAt: serverTimestamp()
                 });
@@ -182,7 +178,6 @@ export class VenueScoutService {
                         ...newVenue
                     } as Venue
                 ];
-                return [{ id: agentId, ...newVenue } as Venue];
             }
         } catch (e) {
             console.error("Autonomous search failed", e);

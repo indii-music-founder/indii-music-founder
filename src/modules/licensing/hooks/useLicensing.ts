@@ -32,19 +32,14 @@ export function useLicensing() {
 
     const setupSubscriptions = async () => {
       try {
+        setIsLoading(true);
         // Trigger seeding if needed by fetching once
-        if (userProfile?.id) {
-          await licensingService.getActiveLicenses(userProfile.id).catch(err =>
-            console.error('[useLicensing] Seeding Error:', err)
-          );
-        }
+        await licensingService.getActiveLicenses(userProfile.id).catch(err =>
+          console.error('[useLicensing] Seeding Error:', err)
+        );
 
-        return () => {
-            isMounted = false;
-            if (unsubscribeLicenses) unsubscribeLicenses();
-            if (unsubscribeRequests) unsubscribeRequests();
-        };
-    }, [toast, userProfile?.id]);
+        if (!isMounted) return;
+
         unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
           if (isMounted) {
             setLicenses(data);
@@ -76,7 +71,6 @@ export function useLicensing() {
       }
     };
 
-    setIsLoading(true);
     setupSubscriptions();
 
     return () => {

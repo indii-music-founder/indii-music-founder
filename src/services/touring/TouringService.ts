@@ -1,3 +1,4 @@
+
 import { db } from '@/services/firebase';
 import {
     collection,
@@ -9,23 +10,24 @@ import {
     doc,
     updateDoc,
     serverTimestamp,
-    onSnapshot
+    onSnapshot,
+    Timestamp
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary, ItineraryStop } from '@/modules/touring/types';
 
-export class TouringService {
-    private static VEHICLES_COLLECTION = 'tour_vehicles';
-    private static ITINERARIES_COLLECTION = 'tour_itineraries';
+const VEHICLES_COLLECTION = 'tour_vehicles';
+const ITINERARIES_COLLECTION = 'tour_itineraries';
 
+export const TouringService = {
     /**
      * Get vehicle stats for a user.
+     * Returns null if not found, allowing the consumer to decide when to seed.
      */
-    static async getVehicleStats(userId: string): Promise<VehicleStats | null> {
+    getVehicleStats: async (userId: string): Promise<VehicleStats | null> => {
         try {
             const q = query(
-                collection(db, this.VEHICLES_COLLECTION),
-                where('userId', '==', userId),
-                orderBy('createdAt', 'desc')
+                collection(db, VEHICLES_COLLECTION),
+                where('userId', '==', userId)
             );
 
             const snapshot = await getDocs(q);
@@ -41,12 +43,12 @@ export class TouringService {
             console.error('Error fetching vehicle stats:', error);
             throw error;
         }
-    }
+    },
 
     /**
      * Seed initial vehicle stats.
      */
-    static async seedDatabase(userId: string): Promise<VehicleStats> {
+    seedDatabase: async (userId: string): Promise<VehicleStats> => {
         const initialStats = {
             userId,
             milesDriven: 0,
@@ -57,69 +59,22 @@ export class TouringService {
             createdAt: serverTimestamp()
         };
 
-        const docRef = await addDoc(collection(db, this.VEHICLES_COLLECTION), initialStats);
+        const docRef = await addDoc(collection(db, VEHICLES_COLLECTION), initialStats);
         return {
             id: docRef.id,
             ...initialStats,
-            createdAt: new Date().toISOString() // Approximate for return
+            createdAt: new Date().toISOString() // Approximate for immediate UI return
         } as unknown as VehicleStats;
-    }
+    },
 
-    /**
-     * Subscribe to itineraries.
-     */
-    static subscribeToItineraries(userId: string, callback: (itineraries: Itinerary[]) => void): () => void {
-        const q = query(
-            collection(db, this.ITINERARIES_COLLECTION),
-            where('userId', '==', userId),
-            orderBy('createdAt', 'desc')
-        );
-
-        return onSnapshot(q, (snapshot) => {
-            const itineraries = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as Itinerary));
-            callback(itineraries);
-        });
-    }
-
-    /**
-     * Update an itinerary stop.
-     */
-    static async updateItineraryStop(itineraryId: string, stopIndex: number, updatedStop: ItineraryStop): Promise<void> {
-        const docRef = doc(db, this.ITINERARIES_COLLECTION, itineraryId);
-        // Note: Updating a specific array element in Firestore is tricky without reading the whole array.
-        // For MVP, we might assume the caller passes the FULL updated itinerary or we handle it carefully.
-        // Here we assume we just update the specific field if we had a map, but since 'stops' is an array,
-        // we likely need to read-modify-write or use arrayRemove/arrayUnion if unique.
-        // But the PR context suggests a simple update.
-        // Let's assume the component handles the full array update via `updateItinerary`.
-        throw new Error("Use updateItinerary for full updates");
-    }
-
-    static async updateItinerary(itineraryId: string, updates: Partial<Itinerary>): Promise<void> {
-        const docRef = doc(db, this.ITINERARIES_COLLECTION, itineraryId);
-        await updateDoc(docRef, {
-            ...updates,
-            updatedAt: serverTimestamp()
-        });
-    }
-}
-import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import { Itinerary, VehicleStats } from '@/modules/touring/types';
-
-const COLLECTION_NAME = 'tour_itineraries';
-
-export const TouringService = {
     /**
      * Subscribe to user's itineraries
      */
     subscribeToItineraries: (userId: string, callback: (itineraries: Itinerary[]) => void) => {
         const q = query(
-            collection(db, COLLECTION_NAME),
-            where('userId', '==', userId)
+            collection(db, ITINERARIES_COLLECTION),
+            where('userId', '==', userId),
+            orderBy('createdAt', 'desc')
         );
 
         return onSnapshot(q, (snapshot) => {
@@ -135,7 +90,7 @@ export const TouringService = {
      * Save/Create an itinerary
      */
     saveItinerary: async (itinerary: Omit<Itinerary, 'id'>) => {
-        await addDoc(collection(db, COLLECTION_NAME), {
+        await addDoc(collection(db, ITINERARIES_COLLECTION), {
             ...itinerary,
             createdAt: serverTimestamp()
         });
@@ -145,41 +100,11 @@ export const TouringService = {
      * Update an itinerary
      */
     updateItinerary: async (id: string, updates: Partial<Itinerary>) => {
-        await updateDoc(doc(db, COLLECTION_NAME, id), updates);
-    },
-
-    /**
-     * Get Vehicle Stats
-     */
-    /**
-     * Get Vehicle Stats
-     */
-    getVehicleStats: async (userId: string): Promise<VehicleStats> => {
-        const q = query(
-            collection(db, 'tour_vehicles'),
-            where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-            return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as VehicleStats;
-        }
-
-        // Auto-seed if missing
-        console.log("Seeding Touring Database...");
-        const initialStats: Omit<VehicleStats, 'id'> = {
-            userId,
-            milesDriven: 12500,
-            fuelLevelPercent: 85,
-            tankSizeGallons: 15, // Standard tank
-            mpg: 28, // Good economy
-            gasPricePerGallon: 3.85,
+        const docRef = doc(db, ITINERARIES_COLLECTION, id);
+        await updateDoc(docRef, {
+            ...updates,
             updatedAt: serverTimestamp()
-        };
-        await addDoc(collection(db, 'tour_vehicles'), initialStats);
-        return {
-            id: 'generated_seed',
-            ...initialStats
-        } as VehicleStats;
+        });
     },
 
     /**
@@ -187,7 +112,7 @@ export const TouringService = {
      */
     saveVehicleStats: async (userId: string, stats: Partial<VehicleStats>) => {
         const q = query(
-            collection(db, 'tour_vehicles'),
+            collection(db, VEHICLES_COLLECTION),
             where('userId', '==', userId)
         );
         const snapshot = await getDocs(q);
@@ -196,9 +121,11 @@ export const TouringService = {
             const docRef = snapshot.docs[0].ref;
             await updateDoc(docRef, { ...stats, updatedAt: serverTimestamp() });
         } else {
-            await addDoc(collection(db, 'tour_vehicles'), {
+            // If doesn't exist, create it
+            await addDoc(collection(db, VEHICLES_COLLECTION), {
                 ...stats,
                 userId,
+                createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
         }

@@ -67,11 +67,7 @@ export class CanvasOperationsService {
     /**
      * Export canvas to JSON string
      */
-    async toJSON(): Promise<string | null> {
-        if (!this.canvas) return null;
-        const json = await this.canvas.toJSON();
-        return JSON.stringify(json);
-    }
+
 
     /**
      * Load canvas from JSON string

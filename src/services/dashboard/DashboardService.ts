@@ -252,58 +252,40 @@ export class DashboardService {
         try {
             const { useStore } = await import('@/core/store');
             const { ProjectService } = await import('@/services/ProjectService');
-            // const { StorageService } = await import('@/services/StorageService');
 
+            // 1. Delete from Service/DB
             await ProjectService.delete(projectId);
 
-        // Remove associated history from Store
-        if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
-            const toRemove = state.generatedHistory.filter(
-                (item) => item.projectId === projectId
-            );
-            toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
-            // Ideally delete associated history items too
-            // const { where } = await import('firebase/firestore');
-            // const historyItems = await StorageService.list([where('projectId', '==', projectId)]);
-            // await Promise.all(historyItems.map(item => StorageService.delete(item.id)));
-
+            // 2. Local State Cleanup
             const state = useStore.getState() as unknown as DashboardStoreState;
+
+            // Remove from history locally
+            if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
+                const toRemove = state.generatedHistory.filter(item => item.projectId === projectId);
+                toRemove.forEach(item => state.removeFromHistory!(item.id));
+            }
+
+            // Remove project locally
             if (typeof state.removeProject === 'function') {
                 state.removeProject(projectId);
             }
 
-            // Remove associated history from local store
-            if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
-                const toRemove = state.generatedHistory.filter(
-                    (item) => item.projectId === projectId
-                );
-                toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
+            // 3. Firestore Cleanup (Delete orphaned history items)
+            try {
+                const { getDocs, query, collection, where, deleteDoc } = await import('firebase/firestore');
+                const { db } = await import('@/services/firebase');
+
+                const historyRef = collection(db, 'history');
+                const q = query(historyRef, where('projectId', '==', projectId));
+                const snapshot = await getDocs(q);
+                await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
+            } catch (cleanupError) {
+                console.warn("Cleanup warning:", cleanupError);
             }
 
         } catch (error) {
             console.error("Error deleting project:", error);
             throw error;
-        }
-
-        // Cleanup from Firestore (Persistence)
-        try {
-            const { getDocs, query, collection, where, deleteDoc, doc } = await import('firebase/firestore');
-            const { db } = await import('@/services/firebase');
-
-            // Delete project doc if it exists in a collection (assuming 'projects')
-            // await deleteDoc(doc(db, 'projects', projectId));
-
-            // Delete history items
-            // Note: This matches the "orphaned history items" fix request
-            const historyRef = collection(db, 'history');
-            const q = query(historyRef, where('projectId', '==', projectId));
-            const snapshot = await getDocs(q);
-
-            const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
-            await Promise.all(deletePromises);
-
-        } catch (error) {
-            console.error("Failed to cleanup project artifacts from persistence:", error);
         }
     }
 

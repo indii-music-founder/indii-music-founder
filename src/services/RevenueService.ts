@@ -1,6 +1,6 @@
 
 import { db, auth } from '@/services/firebase';
-import { collection, query, where, getDocs, Timestamp, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface RevenueStats {
   totalRevenue: number;
@@ -18,52 +18,6 @@ export interface RevenueStats {
   history: {
     date: string;
     amount: number;
-    source: 'direct' | 'social_drop' | 'merch' | 'streaming';
-    customerId: string;
-    userId: string; // The seller/merchant ID
-    timestamp: number | Timestamp;
-    createdAt?: Timestamp; // Support serverTimestamp
-}
-
-class RevenueServiceImpl {
-    private collectionName = 'revenue';
-
-    /**
-     * Get total revenue for a user by summing up all revenue entries.
-     * Uses real Firestore data.
-     */
-    async getTotalRevenue(userId: string): Promise<number> {
-        try {
-            const q = query(
-                collection(db, this.collectionName),
-                where('userId', '==', userId)
-            );
-
-            const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (typeof data.amount === 'number') {
-                    total += data.amount;
-                }
-            });
-
-            return Number(total.toFixed(2));
-        } catch (error) {
-            console.error('[RevenueService] Failed to get total revenue:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get revenue breakdown by source (direct vs social_drop).
-     */
-    async getRevenueBySource(userId: string): Promise<{ direct: number, social: number }> {
-        try {
-            const q = query(
-                collection(db, this.collectionName),
-                where('userId', '==', userId)
-            );
   }[];
 }
 
@@ -99,13 +53,6 @@ export class RevenueService {
         throw new Error('Unauthorized: Access denied to revenue data.');
       }
 
-            return {
-                direct: Number(result.direct.toFixed(2)),
-                social: Number(result.social.toFixed(2))
-            };
-        } catch (error) {
-            console.error('[RevenueService] Failed to get revenue by source:', error);
-            return { direct: 0, social: 0 };
       const revenueRef = collection(db, this.COLLECTION);
       const q = query(revenueRef, where('userId', '==', userId));
       const snapshot = await getDocs(q);
@@ -176,39 +123,12 @@ export class RevenueService {
     }
   }
 
-    /**
-     * Get all user revenue stats in a single query
-     * Optimization to prevent N+1 queries
-     */
-    async getUserRevenueStats(userId: string): Promise<{
-        totalRevenue: number;
-        revenueBySource: { direct: number; social: number };
-        revenueByProduct: Record<string, number>;
-    }> {
-        try {
-            const q = query(
-                collection(db, this.collectionName),
-                where('userId', '==', userId)
-            );
-            const snapshot = await getDocs(q);
-
-            let totalRevenue = 0;
-            const revenueBySource = { direct: 0, social: 0 };
-            const revenueByProduct: Record<string, number> = {};
-
-            // Aggregate Sources
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
-                const amount = data.amount || 0;
-
-                // Total
-                totalRevenue += amount;
   // Alias for backward compatibility if needed, or just redirect
   async getRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
     return this.getUserRevenueStats(userId, period);
   }
 
-  // Methods from main branch to prevent breakage
+  // Helper methods
   async getTotalRevenue(userId: string): Promise<number> {
     const stats = await this.getUserRevenueStats(userId);
     return stats.totalRevenue;
@@ -222,23 +142,6 @@ export class RevenueService {
     };
   }
 
-            // Handle date conversion safely if needed in future stats
-            // const date = data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date();
-
-            return {
-                totalRevenue,
-                revenueBySource,
-                revenueByProduct
-            };
-        } catch (e) {
-            console.error('[RevenueService] Failed to get user revenue stats', e);
-            return {
-                totalRevenue: 0,
-                revenueBySource: { direct: 0, social: 0 },
-                revenueByProduct: {}
-            };
-        }
-    }
   async getRevenueByProduct(userId: string): Promise<Record<string, number>> {
     const stats = await this.getUserRevenueStats(userId);
     return stats.revenueByProduct;
@@ -301,14 +204,23 @@ export class RevenueService {
     }
   }
 
-    /**
-     * Seed initial revenue data for a user (called if empty).
-     * Prevents infinite recursion by checking existence first.
-     */
-    async seedDatabase(userId: string): Promise<void> {
-        // Implement seeding logic if needed, or keeping it empty to rely on real transactions.
-        // For now, we assume seeding is handled externally or by a dedicated method to avoid recursion loops.
-    }
+  private getMockRevenueStats(period: string): RevenueStats {
+    return {
+      totalRevenue: 50000,
+      revenueChange: 15,
+      pendingPayouts: 5000,
+      lastPayoutAmount: 12000,
+      lastPayoutDate: new Date(),
+      sources: {
+        streaming: 20000,
+        merch: 15000,
+        licensing: 10000,
+        social: 5000
+      },
+      revenueByProduct: {},
+      history: []
+    };
+  }
 }
 
 export const revenueService = new RevenueService();

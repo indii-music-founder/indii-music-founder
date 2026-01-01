@@ -89,43 +89,12 @@ export class FinanceService {
       if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'superuser')) {
         throw new Error('Unauthorized');
       }
-      // 1. Check if report exists for user
+
       const q = query(
         collection(db, FinanceService.EARNINGS_COLLECTION),
         where('userId', '==', userId),
-        // In a real app we might query by month/year, here we just get the latest or default
       );
 
-    /**
-     * Get all expenses for a user.
-     */
-    static async getExpenses(userId: string): Promise<Expense[]> {
-        // Validate userId matches authenticated user (superuser check for now)
-        const currentUser = (await import('@/core/store')).useStore.getState().userProfile;
-        if (currentUser?.id !== userId && currentUser?.id !== 'superuser') {
-            throw new Error('Unauthorized access to expenses');
-        }
-
-        try {
-            const q = query(
-                collection(db, this.EXPENSES_COLLECTION),
-                where('userId', '==', userId),
-                orderBy('createdAt', 'desc')
-            );
-
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    createdAt: (data.createdAt as Timestamp)?.toDate().toISOString()
-                } as Expense;
-            });
-        } catch (error) {
-            Sentry.captureException(error);
-            throw error;
-        }
       const snapshot = await getDocs(q);
 
       if (!snapshot.empty) {
@@ -134,10 +103,9 @@ export class FinanceService {
         return docData as DSREarningsSummary;
       }
 
-      // 2. If no data, seed with simulated persistent data
+      // If no data, seed with simulated persistent data
       console.log("No persistent earnings report found, seeding initial report for user:", userId);
 
-      // Note: This matches the DSREarningsSummary interface structure
       const initialData: DSREarningsSummary & { userId: string, createdAt: any } = {
         userId,
         createdAt: serverTimestamp(),
@@ -175,55 +143,6 @@ export class FinanceService {
     }
   }
 
-    /**
-     * Fetch earnings summary.
-     * @param userId The user ID to fetch earnings for.
-     * @param period Optional date range filter.
-     */
-    static async fetchEarnings(userId: string, period?: { startDate: string; endDate: string }): Promise<EarningsSummary> {
-        // Validate userId matches authenticated user
-        const currentUser = (await import('@/core/store')).useStore.getState().userProfile;
-        if (currentUser?.id !== userId && currentUser?.id !== 'superuser') {
-            throw new Error('Unauthorized access to earnings');
-        }
-
-        try {
-            const revenueStats = await revenueService.getUserRevenueStats(userId);
-
-            // Default period to current month if not provided
-            const effectivePeriod = period || {
-                startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
-                endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString()
-            };
-
-            // Map the revenue stats to EarningsSummary
-            // Note: Granular data like byTerritory and byPlatform are currently
-            // empty as RevenueService aggregates at a higher level (Direct vs Social).
-            // Future updates should ingest full DSR data to populate these fields.
-
-            const byRelease = Object.entries(revenueStats.revenueByProduct).map(([productId, amount]) => ({
-                releaseId: productId,
-                releaseName: `Product ${productId}`, // Placeholder name until we look up product details
-                revenue: amount,
-                streams: 0,
-                downloads: 0
-            }));
-
-            return {
-                period: effectivePeriod,
-                totalGrossRevenue: revenueStats.totalRevenue,
-                totalNetRevenue: revenueStats.totalRevenue, // Assuming net = gross for now or handled elsewhere
-                totalStreams: 0,
-                totalDownloads: 0,
-                currencyCode: 'USD',
-                byPlatform: [], // No platform breakdown yet
-                byTerritory: [], // No territory breakdown yet
-                byRelease: byRelease
-            };
-        } catch (error) {
-             Sentry.captureException(error);
-             throw error;
-        }
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<string> {
     try {
       if (!auth.currentUser || auth.currentUser.uid !== expense.userId) throw new Error('Unauthorized');
