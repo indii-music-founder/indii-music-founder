@@ -55,6 +55,8 @@ describe('Video Backend', () => {
         // Dynamic import to trigger execution
         await import('../index');
         expect(admin.initializeApp).toHaveBeenCalled();
+    });
+});
 
 // Mocks
 const mockSet = vi.fn();
@@ -134,7 +136,7 @@ describe('Video Backend Logic', () => {
         const { GoogleAuth } = await import('google-auth-library');
         const auth = new GoogleAuth();
         const client = await auth.getClient();
-        // @ts-ignore
+        // @ts-expect-error - accessToken property access on mocked client
         const accessToken = await client.getAccessToken();
 
         const response = await fetch('https://mock-endpoint', {

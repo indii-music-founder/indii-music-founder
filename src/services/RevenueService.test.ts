@@ -42,7 +42,7 @@ describe('RevenueService (Production Logic)', () => {
     it('getTotalRevenue should query Firestore with correct filter', async () => {
         // Setup mock response
         mocks.getDocs.mockResolvedValue({
-            forEach: (callback: Function) => {
+            forEach: (callback: (doc: any) => void) => {
                 callback({ data: () => ({ amount: 100 }) });
                 callback({ data: () => ({ amount: 50.50 }) });
             }
@@ -57,7 +57,7 @@ describe('RevenueService (Production Logic)', () => {
 
     it('getRevenueBySource should aggregate correctly', async () => {
         mocks.getDocs.mockResolvedValue({
-            forEach: (callback: Function) => {
+            forEach: (callback: (doc: any) => void) => {
                 callback({ data: () => ({ amount: 100, source: 'direct' }) });
                 callback({ data: () => ({ amount: 50, source: 'social_drop' }) });
                 callback({ data: () => ({ amount: 25, source: 'direct' }) });
