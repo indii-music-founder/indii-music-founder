@@ -54,7 +54,7 @@ export function useFinance() {
         }
     }, [loadExpenses, toast]);
 
-    // Initial load for demo purposes (Current Month)
+    // Initial load (Current Month)
     useEffect(() => {
         if (userProfile?.id) {
             if (!earningsSummary && !earningsLoading) {

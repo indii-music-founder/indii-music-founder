@@ -69,6 +69,11 @@ const getInngestClient = () => {
     });
 };
 const corsHandler = (0, cors_1.default)({ origin: true });
+// ----------------------------------------------------------------------------
+// Shared Gemini Functions
+// ----------------------------------------------------------------------------
+// Video Generation (Veo)
+// ----------------------------------------------------------------------------
 /**
  * Trigger Video Generation Job
  *
@@ -146,6 +151,7 @@ exports.inngestApi = functions
     const generateVideoFn = inngestClient.createFunction({ id: "generate-video-logic" }, { event: "video/generate.requested" }, async ({ event, step }) => {
         const { jobId, prompt, userId, options } = event.data;
         try {
+            // 1. Update status to processing
             // Step 1: Update status to processing
             await step.run("update-status-processing", async () => {
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
@@ -202,12 +208,20 @@ exports.inngestApi = functions
                 // Case A: Base64 Encoded Video
                 if (prediction.bytesBase64Encoded) {
                     const bucket = admin.storage().bucket();
-                    // Save to a public path or user-specific path
+<<<<<<< HEAD
                     const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                    const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
-                    await file.save(buffer, {
+                    await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
                         metadata: { contentType: 'video/mp4' },
-                        public: true // Make public for easy access in prototype
+                        public: true
+                    });
+                    // await file.makePublic(); // Optional depending on bucket config
+                    // Save to a public path or user-specific path
+=======
+>>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+                    const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                    await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                        metadata: { contentType: 'video/mp4' },
+                        public: true
                     });
                     return file.publicUrl();
                 }
@@ -221,6 +235,10 @@ exports.inngestApi = functions
                 // Case C: Video URI (Direct HTTP link if supported)
                 if (prediction.videoUri) {
                     return prediction.videoUri;
+                }
+                // If it returns a GCS URI in gcsUri
+                if (prediction.gcsUri) {
+                    return prediction.gcsUri;
                 }
                 throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
             });
@@ -254,6 +272,7 @@ exports.inngestApi = functions
     });
     return handler(req, res);
 });
+const corsHandler = (0, cors_1.default)({ origin: true });
 exports.generateImageV3 = functions
     .runWith({ secrets: [geminiApiKey] })
     .https.onCall(async (data, context) => {
@@ -378,6 +397,20 @@ exports.generateContentStream = functions
             res.status(405).send('Method Not Allowed');
             return;
         }
+        // Verify Authentication
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).send('Unauthorized');
+            return;
+        }
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+            await admin.auth().verifyIdToken(idToken);
+        }
+        catch (error) {
+            res.status(403).send('Forbidden: Invalid Token');
+            return;
+        }
         try {
             const { model, contents, config } = req.body;
             const modelId = model || "gemini-3-pro-preview";
@@ -419,7 +452,8 @@ exports.generateContentStream = functions
                                 res.write(JSON.stringify({ text }) + '\n');
                             }
                         }
-                        catch (e) {
+                        catch (_g) {
+                            // Ignore parse errors for partial chunks
                         }
                     }
                 }
@@ -444,6 +478,20 @@ exports.ragProxy = functions
 })
     .https.onRequest((req, res) => {
     corsHandler(req, res, async () => {
+        // Verify Authentication
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).send('Unauthorized');
+            return;
+        }
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+            await admin.auth().verifyIdToken(idToken);
+        }
+        catch (error) {
+            res.status(403).send('Forbidden: Invalid Token');
+            return;
+        }
         try {
             const baseUrl = 'https://generativelanguage.googleapis.com';
             const targetPath = req.path;

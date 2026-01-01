@@ -21,7 +21,7 @@ vi.mock('./transport/SFTPTransporter', () => ({
 vi.mock('@/services/ddex/ERNService', () => ({
   ernService: {
     generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<xml>mock</xml>' }),
-    parseERN: vi.fn().mockReturnValue({ success: true, data: {} }),
+    parseERN: vi.fn().mockReturnValue({ success: true, data: { resourceList: [] } }),
     validateERNContent: vi.fn().mockReturnValue({ valid: true, errors: [] })
   }
 }));

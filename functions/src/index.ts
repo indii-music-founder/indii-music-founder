@@ -149,11 +149,11 @@ export const inngestApi = functions
                         const client = await auth.getClient();
                         const projectId = await auth.getProjectId();
                         const accessToken = await client.getAccessToken();
-                        const location = 'us-central1';
+                        const LOCATION = 'us-central1';
                         // Using the Veo 3.1 Preview model
                         const modelId = 'veo-3.1-generate-preview';
 
-                        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+                        const endpoint = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${LOCATION}/publishers/google/models/${modelId}:predict`;
 
                         // Construct request body for Veo
                         const requestBody = {
@@ -199,21 +199,26 @@ export const inngestApi = functions
                         if (prediction.bytesBase64Encoded) {
                             const bucket = admin.storage().bucket();
                             const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                            const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
+
+                            await file.save(buffer, {
+                                metadata: { contentType: 'video/mp4' }
+                            });
+
+                            // Generate a Signed URL valid for 7 days
+                            const [url] = await file.getSignedUrl({
+                                action: 'read',
+                                expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
                             await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
                                 metadata: { contentType: 'video/mp4' },
                                 public: true
                             });
-                            // await file.makePublic(); // Optional depending on bucket config
-                            // Save to a public path or user-specific path
-                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                            const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
 
-                            await file.save(buffer, {
-                                metadata: { contentType: 'video/mp4' },
-                                public: true // Make public for easy access in prototype
-                            });
-
+<<<<<<< HEAD
                             return file.publicUrl();
+=======
+                            return url;
+>>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
                         }
 
                         // Case B: GCS URI
@@ -227,11 +232,6 @@ export const inngestApi = functions
                         // Case C: Video URI (Direct HTTP link if supported)
                         if (prediction.videoUri) {
                             return prediction.videoUri;
-                        }
-
-                        // If it returns a GCS URI in gcsUri
-                        if (prediction.gcsUri) {
-                             return prediction.gcsUri;
                         }
 
                         throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
@@ -271,8 +271,6 @@ export const inngestApi = functions
 
         return handler(req, res);
     });
-
-const corsHandler = corsLib({ origin: true });
 
 // ----------------------------------------------------------------------------
 // Image Generation (Gemini)
@@ -434,6 +432,20 @@ export const generateContentStream = functions
                 return;
             }
 
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
             try {
                 const { model, contents, config } = req.body;
                 const modelId = model || "gemini-3-pro-preview";
@@ -507,6 +519,20 @@ export const ragProxy = functions
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
             try {
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
