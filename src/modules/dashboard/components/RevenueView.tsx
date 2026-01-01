@@ -27,6 +27,7 @@ export default function RevenueView() {
                     direct: stats.sources.merch + stats.sources.licensing, // Combining merch/licensing as 'Storefront'
                     social: stats.sources.social
                 });
+                setRevenueBySource(stats.sources);
 
                 // Process top products
                 const sortedProducts = Object.entries(stats.revenueByProduct || {})

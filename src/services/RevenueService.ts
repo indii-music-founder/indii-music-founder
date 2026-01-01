@@ -55,6 +55,7 @@ export class RevenueService {
         licensing: 0,
         social: 0
       };
+      const revenueByProduct: Record<string, number> = {};
 
       const revenueByProduct: Record<string, number> = {};
       const historyMap = new Map<string, number>();
@@ -152,6 +153,9 @@ export class RevenueService {
           'prod_1': 1200.00,
           'prod_2': 850.50,
           'prod_3': 450.00
+        'prod_123': 1500.00,
+        'prod_456': 800.00,
+        'prod_789': 200.00
       },
       history: Array.from({ length: 10 }, (_, i) => ({
         date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

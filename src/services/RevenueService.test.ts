@@ -57,6 +57,7 @@ describe('RevenueService (Production Logic)', () => {
         expect(stats.totalRevenue).toBe(175.50);
         expect(stats.sources.streaming).toBe(125);
         expect(stats.sources.merch).toBe(50.50);
+        expect(stats.revenueByProduct).toBeDefined();
     });
 
     it('recordSale should add document to "revenue" collection', async () => {
@@ -71,13 +72,15 @@ describe('RevenueService (Production Logic)', () => {
 
         await revenueService.recordSale(entry);
 
-        expect(mocks.addDoc).toHaveBeenCalledWith(
-            expect.anything(), // collection result (mocked)
-            expect.objectContaining({
-                productId: 'prod-1',
-                amount: 10.00,
-                userId: 'seller-1'
-            })
-        );
+        // Verify addDoc is called
+        expect(mocks.addDoc).toHaveBeenCalled();
+        const callArgs = mocks.addDoc.mock.calls[0];
+        // The first arg is the collection ref (which is undefined in our mock setup because collection() returns undefined by default)
+        // The second arg is the data
+        expect(callArgs[1]).toEqual(expect.objectContaining({
+            productId: 'prod-1',
+            amount: 10.00,
+            userId: 'seller-1'
+        }));
     });
 });

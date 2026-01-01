@@ -88,19 +88,13 @@ export class FinanceService {
             // empty as RevenueService aggregates at a higher level (Direct vs Social).
             // Future updates should ingest full DSR data to populate these fields.
 
-            // TODO: revenueStats currently does not return revenueByProduct.
-            // We need to update RevenueService to aggregate by product or fetch it separately.
-            // For now, returning empty array to fix build.
-            /*
-            const byRelease = Object.entries(revenueStats.revenueByProduct).map(([productId, amount]) => ({
+            const byRelease = Object.entries(revenueStats.revenueByProduct || {}).map(([productId, amount]) => ({
                 releaseId: productId,
                 releaseName: `Product ${productId}`, // Placeholder name until we look up product details
                 revenue: amount,
                 streams: 0,
                 downloads: 0
             }));
-            */
-            const byRelease: any[] = [];
 
             return {
                 period: effectivePeriod,
