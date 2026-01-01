@@ -28,6 +28,9 @@ export function useSocial(userId?: string) {
         if (!userProfile?.id) return;
 
         try {
+            // Seed if empty
+            await SocialService.seedDatabase(userProfile.id);
+
             const [fetchedStats, fetchedScheduled] = await Promise.all([
                 SocialService.getDashboardStats(),
                 SocialService.getScheduledPosts(userProfile.id)

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { licensingService } from '@/services/licensing/LicensingService';
+import { useStore } from '@/core/store';
 import { License, LicenseRequest } from '@/services/licensing/types';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -21,10 +22,18 @@ export function useLicensing() {
     // Subscribe to data
     useEffect(() => {
         let isMounted = true;
-        let unsubscribeLicenses: (() => void) | null = null;
-        let unsubscribeRequests: (() => void) | null = null;
+        let unsubscribeLicenses: (() => void) | undefined;
+        let unsubscribeRequests: (() => void) | undefined;
 
         try {
+            // Trigger seeding if needed by fetching once
+            const userId = useStore.getState().userProfile?.id;
+            if (userId) {
+                licensingService.getActiveLicenses(userId).catch(err =>
+                    console.error('[useLicensing] Seeding Error:', err)
+                );
+            }
+
             unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
                 if (isMounted) {
                     setLicenses(data);
@@ -42,11 +51,6 @@ export function useLicensing() {
             console.error('[useLicensing] Subscription Error:', err);
             if (isMounted) {
                 const message = (err as Error).message;
-                // Move state updates to next tick if needed, but here we just ensure we don't
-                // update if unmounted. The lint error is about updating inside effect.
-                // We'll wrap in a timeout or just suppress if it's truly async. 
-                // Actually the lint is about synchronous execution in the catch block of effect.
-                // We'll use a small timeout to break the sync chain.
                 setTimeout(() => {
                     if (isMounted) {
                         setError(message);
@@ -107,7 +111,6 @@ export function useLicensing() {
             );
         } catch (error) {
             console.error("Failed to initiate drafting:", error);
-            // toast.promise already handles error notifications
         }
     }, [toast]);
 

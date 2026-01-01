@@ -65,6 +65,28 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Export canvas to JSON string
+     */
+    async toJSON(): Promise<string | null> {
+        if (!this.canvas) return null;
+        const json = await this.canvas.toJSON();
+        return JSON.stringify(json);
+    }
+
+    /**
+     * Load canvas from JSON string
+     */
+    async loadFromJSON(json: string): Promise<void> {
+        if (!this.canvas) return;
+        try {
+            await this.canvas.loadFromJSON(JSON.parse(json));
+            this.canvas.renderAll();
+        } catch (e) {
+            console.error("Failed to load canvas from JSON", e);
+        }
+    }
+
+    /**
      * Check if canvas is initialized
      */
     isInitialized(): boolean {
@@ -133,6 +155,28 @@ export class CanvasOperationsService {
         document.body.removeChild(link);
 
         return dataUrl;
+    }
+
+    /**
+     * Get canvas as Blob for uploading
+     */
+    async getBlob(): Promise<Blob | null> {
+        if (!this.canvas) return null;
+
+        // simple dataURL to blob conversion
+        const dataUrl = this.canvas.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 2
+        });
+
+        try {
+            const res = await fetch(dataUrl);
+            return await res.blob();
+        } catch (e) {
+            console.error("Failed to create blob from canvas", e);
+            return null;
+        }
     }
 
     /**

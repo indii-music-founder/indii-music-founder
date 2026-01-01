@@ -1,24 +1,12 @@
 import React from 'react';
 import { Crown, Zap, ShieldCheck } from 'lucide-react';
+import { useMerchandise } from '../hooks/useMerchandise';
 
-const PRO_PRODUCTS = [
-    {
-        id: 1,
-        title: "PRO // TEE.001",
-        price: "$45.00",
-        image: "file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/34958d54-a9d0-4ced-a8bb-687671d31774/banana_pro_tshirt_mockup_1767126990008.png",
-        features: ["Moisture Wicking", "Embedded NFC"]
-    },
-    {
-        id: 2,
-        title: "PRO // HOODIE.BLK",
-        price: "$85.00",
-        image: "file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/34958d54-a9d0-4ced-a8bb-687671d31774/banana_pro_tshirt_mockup_1767126990008.png", // Reuse placeholder
-        features: ["Heavyweight", "Water Resistant"]
-    }
-];
+
 
 export const BananaProMerch: React.FC = () => {
+    const { proProducts: products } = useMerchandise();
+
     return (
         <div className="space-y-16 animate-in fade-in slide-in-from-right-8 duration-700 pb-20 max-w-7xl mx-auto">
 
@@ -81,7 +69,7 @@ export const BananaProMerch: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
-                    {PRO_PRODUCTS.map((product, i) => (
+                    {products.map((product, i) => (
                         <div key={product.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-24' : ''}`}>
                             <div className="aspect-[3/4] bg-secondary/20 relative overflow-hidden mb-8 border border-border/10 group-hover:border-primary/30 transition-all duration-700">
                                 <img src={product.image} alt={product.title} className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-[1500ms]" />
@@ -105,7 +93,7 @@ export const BananaProMerch: React.FC = () => {
                                     <div>
                                         <h3 className="text-2xl text-foreground font-black tracking-tighter mb-2 italic">{product.title}</h3>
                                         <div className="flex gap-6 overflow-hidden">
-                                            {product.features.map(f => (
+                                            {product.features?.map(f => (
                                                 <div key={f} className="flex items-center gap-2">
                                                     <div className="w-1 h-1 bg-primary rounded-full" />
                                                     <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{f}</span>

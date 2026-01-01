@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
 import { CanvasHeader } from './CanvasHeader';
@@ -49,9 +50,20 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
 
     // Initialize/dispose canvas
     useEffect(() => {
+        if (!item) return;
+
         if (isEditing && canvasEl.current && !canvasOps.isInitialized()) {
-            const imageUrl = item?.url && item.type === 'image' ? item.url : undefined;
-            canvasOps.initialize(canvasEl.current, imageUrl);
+            const imageUrl = item.url && item.type === 'image' ? item.url : undefined;
+
+            // Initialize with image, then try to load saved state
+            canvasOps.initialize(canvasEl.current, imageUrl, async () => {
+                if (!item) return;
+                const savedState = await getCanvasStateFromStorage(item.id);
+                if (savedState) {
+                    console.log(`[CreativeCanvas] Loading saved state for ${item.id}`);
+                    await canvasOps.loadFromJSON(savedState);
+                }
+            });
         }
 
         return () => {
@@ -139,9 +151,32 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
         toast.success(`Daisy Chain Linked: Applied Option ${index + 1}`);
     };
 
-    const saveCanvas = () => {
+    const saveCanvas = async () => {
+        // 1. Download Locally (Existing behavior)
         canvasOps.saveCanvas(`edited-${item.id}.png`);
-        toast.success('Canvas saved!');
+
+        // 2. Save to Project (Cloud/Persistence)
+        try {
+            // Save the visual result
+            const blob = await canvasOps.getBlob();
+            if (blob) {
+                const assetId = await saveAssetToStorage(blob);
+                console.log(`[CreativeCanvas] Saved asset ${assetId} to project`);
+            }
+
+            // Save the editable project state
+            const json = await canvasOps.toJSON();
+            if (json) {
+                await saveCanvasStateToStorage(item.id, json);
+                console.log(`[CreativeCanvas] Saved project state for ${item.id}`);
+            }
+
+            toast.success('Canvas & Project State stored!');
+        } catch (error) {
+            console.error('Failed to save asset or project state to storage', error);
+            // Don't block the user, just warn
+            toast.warning('Saved to disk, but cloud sync failed.');
+        }
     };
 
     return (

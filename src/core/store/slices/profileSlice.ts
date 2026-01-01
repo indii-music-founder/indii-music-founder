@@ -14,13 +14,12 @@ export interface ProfileSlice {
     organizations: Organization[];
     userProfile: UserProfile;
     // user: User | null; // REMOVED: No more Firebase User object. Identity is derived from profile.
-    isAuthenticated: boolean;
-    isAuthReady: boolean;
+    // Auth state moved to AuthSlice
     setOrganization: (id: string) => void;
     addOrganization: (org: Organization) => void;
     setUserProfile: (profile: UserProfile) => void;
     updateBrandKit: (updates: Partial<BrandKit>) => void;
-    initializeAuth: () => void; // Kept for interface compatibility but now just loads profile
+    loadUserProfile: (uid: string) => Promise<void>;
     logout: () => Promise<void>;
     setTheme: (theme: 'dark' | 'light' | 'banana' | 'banana-pro') => void;
 }
@@ -61,8 +60,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         { id: 'org-default', name: 'HQ', plan: 'enterprise', members: ['superuser'] }
     ],
     userProfile: DEFAULT_USER_PROFILE,
-    isAuthenticated: true, // ALWAYS AUTHENTICATED
-    isAuthReady: true, // ALWAYS READY
+    // Auth state delegated to AuthSlice
     setOrganization: (id) => {
         localStorage.setItem('currentOrgId', id);
         set({ currentOrganizationId: id });
@@ -81,26 +79,29 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save profile update:", err));
         return { userProfile: newProfile };
     }),
-    initializeAuth: () => {
-        console.log('[System] Initializing Core Profile...');
+    loadUserProfile: async (uid: string) => {
+        console.log('[Profile] Loading user profile for:', uid);
         const storedOrgId = localStorage.getItem('currentOrgId');
         if (storedOrgId) {
             set({ currentOrganizationId: storedOrgId });
         }
 
-        // Load profile from storage
-        getProfileFromStorage('superuser').then((profile) => {
+        try {
+            // Try to get from Firestore first (via Service/Repo) 
+            const profile = await getProfileFromStorage(uid);
             if (profile) {
-                console.log('[System] Loaded profile from storage');
+                console.log('[Profile] Loaded profile');
                 set({ userProfile: profile });
             } else {
-                console.log('[System] No profile found in storage, using default');
-                // Persist default profile so we have it for next time
-                saveProfileToStorage(DEFAULT_USER_PROFILE).catch(err => console.error("Failed to save default profile:", err));
+                console.log('[Profile] No profile found, creating default for', uid);
+                // Create a new profile for this user
+                const newProfile = { ...DEFAULT_USER_PROFILE, id: uid };
+                set({ userProfile: newProfile });
+                await saveProfileToStorage(newProfile);
             }
-        }).catch(err => {
-            console.error('[System] Failed to load profile from storage:', err);
-        });
+        } catch (err) {
+            console.error('[Profile] Failed to load profile:', err);
+        }
     },
     logout: async () => {
         console.log('[System] Logout requested - resetting session state...');

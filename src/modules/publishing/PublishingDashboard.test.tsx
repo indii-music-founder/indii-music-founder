@@ -49,7 +49,6 @@ vi.mock('framer-motion', () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-// Import the mocked hooks
 import { useReleases } from './hooks/useReleases';
 import { useStore } from '@/core/store';
 
@@ -245,7 +244,6 @@ describe('PublishingDashboard', () => {
 
         expect(global.confirm).toHaveBeenCalled();
         expect(mockToastPromise).toHaveBeenCalled();
-        expect(mockDeleteRelease).toHaveBeenCalledWith('1');
         expect(mockDeleteRelease).toHaveBeenCalledWith('1');
     });
 

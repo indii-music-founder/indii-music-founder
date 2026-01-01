@@ -84,6 +84,12 @@ export class RevenueService {
                 }
             });
 
+            // Auto-seed if truly empty and for a valid user
+            if (summary.recentTransactions.length === 0 && orgId) {
+                await this.seedDatabase(orgId);
+                return this.getRevenueSummary(orgId);
+            }
+
         } catch (error) {
             console.error('[RevenueService] Failed to fetch summary', error);
         }
@@ -210,6 +216,50 @@ export class RevenueService {
         } catch (e) {
             console.error('[RevenueService] Failed to get revenue by source', e);
             return { direct: 0, social: 0 };
+        }
+    }
+
+    /**
+     * Seed initial transactions for a new user/org
+     */
+    private async seedDatabase(userId: string) {
+        console.log(`[RevenueService] Seeding database for ${userId}...`);
+
+        const initialSales: Omit<RevenueEntry, 'id' | 'timestamp'>[] = [
+            {
+                productId: 'prod-1',
+                productName: 'Neon Genesis (Digital Vinyl)',
+                amount: 25.00,
+                currency: 'USD',
+                source: 'direct',
+                customerId: 'cust-mock-1',
+                status: 'completed',
+                userId: userId
+            },
+            {
+                productId: 'prod-2',
+                productName: 'Lofi Link (Sample Pack)',
+                amount: 15.00,
+                currency: 'USD',
+                source: 'social_drop',
+                customerId: 'cust-mock-2',
+                status: 'completed',
+                userId: userId
+            },
+            {
+                productId: 'prod-3',
+                productName: 'Streaming Royalty (Spotify)',
+                amount: 124.50,
+                currency: 'USD',
+                source: 'streaming',
+                customerId: 'spotify-aggregator',
+                status: 'completed',
+                userId: userId
+            }
+        ];
+
+        for (const sale of initialSales) {
+            await this.recordSale(sale);
         }
     }
 }

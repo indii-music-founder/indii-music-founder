@@ -6,6 +6,7 @@ export const CommonEnvSchema = z.object({
     location: z.string().default('us-central1'),
     useVertex: z.boolean().default(false),
     googleMapsApiKey: z.string().optional(),
+    firebaseApiKey: z.string().optional(),
 });
 
 export type CommonEnv = z.infer<typeof CommonEnvSchema>;

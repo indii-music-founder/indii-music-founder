@@ -11,6 +11,7 @@ import { nativeFileSystemService } from '@/services/NativeFileSystemService';
 import { audioAnalysisService, AudioFeatures } from '@/services/audio/AudioAnalysisService';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { MetadataDrawer } from './components/MetadataDrawer';
+import { MusicLibraryService } from './services/MusicLibraryService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -133,20 +134,33 @@ export default function MusicStudio() {
 
             setIsAnalyzing(true);
             try {
-                // 1. Analyze Features
-                const features = await audioAnalysisService.analyze(result.file);
+                // 1. Check Library First
+                const existingAnalysis = await MusicLibraryService.getTrackAnalysis(result.file);
 
-                // 2. Generate Fingerprint (using features)
-                const fingerprint = await fingerprintService.generateFingerprint(result.file, features);
+                let features, fingerprint;
+
+                if (existingAnalysis) {
+                    console.log(`[MusicStudio] Cache Hit for ${result.file.name}`);
+                    features = existingAnalysis.features;
+                    fingerprint = existingAnalysis.fingerprint;
+                    toast.success('Analysis loaded from library');
+                } else {
+                    // 2. Analyze Features if missing
+                    features = await audioAnalysisService.analyze(result.file);
+                    // 3. Generate Fingerprint
+                    fingerprint = await fingerprintService.generateFingerprint(result.file, features);
+                    // 4. Persist
+                    await MusicLibraryService.saveTrackAnalysis(result.file, features, fingerprint || undefined);
+                    toast.success('Sonic Analysis Complete');
+                }
 
                 setLoadedAudio(prev => prev.map(t =>
                     t.id === newTrack.id ? {
                         ...t,
                         features,
-                        metadata: { ...t.metadata, masterFingerprint: fingerprint }
+                        metadata: { ...t.metadata, masterFingerprint: fingerprint || undefined }
                     } : t
                 ));
-                toast.success('Sonic Analysis Complete');
             } catch (err) {
                 console.error('Analysis failed:', err);
                 toast.error('Deep analysis failed, basic playback only.');
@@ -187,14 +201,27 @@ export default function MusicStudio() {
             for (const track of tracks) {
                 if (!track.file) continue;
                 try {
-                    const features = await audioAnalysisService.analyze(track.file);
-                    const fingerprint = await fingerprintService.generateFingerprint(track.file, features);
+                    // 1. Check Library First
+                    const existingAnalysis = await MusicLibraryService.getTrackAnalysis(track.file);
+
+                    let features, fingerprint;
+
+                    if (existingAnalysis) {
+                        features = existingAnalysis.features;
+                        fingerprint = existingAnalysis.fingerprint;
+                    } else {
+                        // 2. Analyze if missing
+                        features = await audioAnalysisService.analyze(track.file);
+                        fingerprint = await fingerprintService.generateFingerprint(track.file, features);
+                        // 3. Persist
+                        await MusicLibraryService.saveTrackAnalysis(track.file, features, fingerprint || undefined);
+                    }
 
                     setLoadedAudio(prev => prev.map(t =>
                         t.id === track.id ? {
                             ...t,
                             features,
-                            metadata: { ...t.metadata, masterFingerprint: fingerprint }
+                            metadata: { ...t.metadata, masterFingerprint: fingerprint || undefined }
                         } : t
                     ));
                 } catch (e) {
