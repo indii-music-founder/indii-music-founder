@@ -11,6 +11,7 @@ import {
     Timestamp
 } from 'firebase/firestore';
 import { EarningsSummary } from '@/services/ddex/types/dsr';
+import { revenueService } from '@/services/RevenueService';
 
 export interface Expense {
     id: string;
@@ -72,35 +73,47 @@ export class FinanceService {
     }
 
     /**
-     * Fetch earnings summary (Simulated for Alpha).
+     * Fetch earnings summary.
+     * @param userId The user ID to fetch earnings for.
+     * @param period Optional date range filter.
      */
-    static async fetchEarnings(userId: string): Promise<EarningsSummary> {
-        // In a real app, this would query a DSR (Digital Sales Report) ingestion service.
-        // For Alpha, we return simulated data to demonstrate the dashboard.
+    static async fetchEarnings(userId: string, period?: { startDate: string; endDate: string }): Promise<EarningsSummary> {
+        try {
+            const revenueStats = await revenueService.getUserRevenueStats(userId);
 
-        return {
-            period: { startDate: '2024-01-01', endDate: '2024-01-31' },
-            totalGrossRevenue: 12500.50,
-            totalNetRevenue: 8750.35,
-            totalStreams: 1245000,
-            totalDownloads: 1540,
-            currencyCode: 'USD',
-            byPlatform: [
-                { platformName: 'Spotify', revenue: 4500.20, streams: 650000, downloads: 0 },
-                { platformName: 'Apple Music', revenue: 2800.15, streams: 320000, downloads: 450 },
-                { platformName: 'YouTube Music', revenue: 1450.00, streams: 275000, downloads: 0 }
-            ],
-            byTerritory: [
-                { territoryCode: 'US', territoryName: 'United States', revenue: 5200.00, streams: 850000, downloads: 900 },
-                { territoryCode: 'GB', territoryName: 'United Kingdom', revenue: 1200.00, streams: 150000, downloads: 200 },
-                { territoryCode: 'JP', territoryName: 'Japan', revenue: 850.00, streams: 95000, downloads: 150 },
-                { territoryCode: 'DE', territoryName: 'Germany', revenue: 600.00, streams: 75000, downloads: 120 },
-                { territoryCode: 'FR', territoryName: 'France', revenue: 900.35, streams: 75000, downloads: 170 }
-            ],
-            byRelease: [
-                { releaseId: 'rel_1', releaseName: 'Midnight Echoes', revenue: 6500.00, streams: 950000, downloads: 1200 },
-                { releaseId: 'rel_2', releaseName: 'Neon Dreams', revenue: 2250.35, streams: 295000, downloads: 340 }
-            ]
-        };
+            // Default period to current month if not provided
+            const effectivePeriod = period || {
+                startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+                endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString()
+            };
+
+            // Map the revenue stats to EarningsSummary
+            // Note: Granular data like byTerritory and byPlatform are currently
+            // empty as RevenueService aggregates at a higher level (Direct vs Social).
+            // Future updates should ingest full DSR data to populate these fields.
+
+            const byRelease = Object.entries(revenueStats.revenueByProduct).map(([productId, amount]) => ({
+                releaseId: productId,
+                releaseName: `Product ${productId}`, // Placeholder name until we look up product details
+                revenue: amount,
+                streams: 0,
+                downloads: 0
+            }));
+
+            return {
+                period: effectivePeriod,
+                totalGrossRevenue: revenueStats.totalRevenue,
+                totalNetRevenue: revenueStats.totalRevenue, // Assuming net = gross for now or handled elsewhere
+                totalStreams: 0,
+                totalDownloads: 0,
+                currencyCode: 'USD',
+                byPlatform: [], // No platform breakdown yet
+                byTerritory: [], // No territory breakdown yet
+                byRelease: byRelease
+            };
+        } catch (error) {
+             Sentry.captureException(error);
+             throw error;
+        }
     }
 }

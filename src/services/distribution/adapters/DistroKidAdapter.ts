@@ -138,7 +138,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
         }
     }
 
-    async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to DistroKid');
         }
@@ -157,7 +157,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
             distributorReleaseId: `INT-DK-${Date.now()}`,
             metadata: {
                 estimatedLiveDate: '2025-02-01',
-                upcAssigned: metadata.upc || 'PENDING_DK_BULK'
+                upcAssigned: updates.upc || 'PENDING_DK_BULK'
             },
         };
     }
@@ -175,21 +175,6 @@ export class DistroKidAdapter implements IDistributorAdapter {
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
         if (!this.connected) throw new Error('Not connected');
 
-        // PRODUCTION READY: Return 0 unless real API data is available.
-        // Data should be fetched from RevenueService in the UI layer.
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 0,
-            downloads: 0,
-            grossRevenue: 0,
-            distributorFee: 0,
-            netRevenue: 0,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [],
-        };
         const earnings = await earningsService.getEarnings(this.id, releaseId, period);
 
         if (!earnings) {
