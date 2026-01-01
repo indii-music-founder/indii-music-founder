@@ -29,6 +29,35 @@ export interface ToolDefinition {
 }
 
 // ============================================================================
+// Agent Identification
+// ============================================================================
+
+export const VALID_AGENT_IDS = [
+    'legal',
+    'marketing',
+    'brand',
+    'road-manager',
+    'music',
+    // Legacy support for existing agents
+    'finance',
+    'producer',
+    'director',
+    'screenwriter',
+    'video',
+    'social',
+    'publicist',
+    'publishing',
+    'licensing',
+    'devops',
+    'security',
+    'generalist'
+] as const;
+
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
+
+export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
+
+// ============================================================================
 // Agent Context Types
 // ============================================================================
 
@@ -141,6 +170,7 @@ export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 export type AgentCategory = 'manager' | 'department' | 'specialist';
 
 export interface AgentConfig {
+    // ValidAgentId provides strict typing while allowing legacy agents via the union
     id: ValidAgentId;
     name: string;
     description: string;

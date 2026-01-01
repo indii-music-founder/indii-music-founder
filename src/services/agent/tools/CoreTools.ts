@@ -8,6 +8,9 @@ import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
 // Note: switch_module moved to NavigationTools
 
 interface DelegateTaskArgs extends ToolFunctionArgs {
+    agent_id: ValidAgentId;
+    // Helper to support targetAgentId alias used in some prompts
+    targetAgentId?: string;
     agent_id: ValidAgentId;  // Keep for backwards compatibility with existing tool calls
     targetAgentId?: ValidAgentId;  // New preferred parameter name
     task: string;
@@ -35,6 +38,11 @@ export const CoreTools = {
     delegate_task: async (args: DelegateTaskArgs): Promise<string> => {
         try {
             // Support both parameter names for backwards compatibility
+            // Cast to ValidAgentId because we validate it below
+            const agentId = (args.targetAgentId || args.agent_id) as ValidAgentId;
+
+            // Runtime validation: reject invalid agent IDs to prevent hallucination issues
+            if (!VALID_AGENT_IDS.includes(agentId)) {
             const agentId = args.targetAgentId || args.agent_id;
 
             // Runtime validation: reject invalid agent IDs to prevent hallucination issues
