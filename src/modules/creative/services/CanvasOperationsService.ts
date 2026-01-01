@@ -318,6 +318,16 @@ export class CanvasOperationsService {
 
         this.canvas.renderAll();
     }
+
+    /**
+     * Convert canvas to JSON
+     */
+    async toJSON(): Promise<string | null> {
+        if (!this.canvas) return null;
+        // In Fabric v6, toJSON is synchronous
+        const json = this.canvas.toJSON();
+        return JSON.stringify(json);
+    }
 }
 
 export const canvasOps = new CanvasOperationsService();

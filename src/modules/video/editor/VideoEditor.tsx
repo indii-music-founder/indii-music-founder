@@ -201,7 +201,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             const data = result.data as { renderId?: string; success?: boolean; url?: string; error?: string };
 
             if (data.renderId || data.success) {
-                toast.success('Cloud render started! (Check console for ID)');
+                toast.success('Cloud render started successfully!');
                 if (data.renderId) {
                     // Log logged on server side
                 }

@@ -64,10 +64,17 @@ export class LicensingService {
      * Create a new license request.
      */
     async createRequest(request: Omit<LicenseRequest, 'id' | 'requestedAt' | 'updatedAt'>): Promise<string> {
+        // We cast to any to satisfy the store's simplified generic constraints
+        // while maintaining internal type safety from the method signature.
+        // Fixing the strict type chain for Omit<T, K> -> Partial<T> is out of scope for this hotfix.
         return this.requestsStore.add({
             ...request,
             status: request.status || 'checking'
         } as any);
+    }
+
+    async createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+        return this.licensesStore.add({ ...license } as any);
     }
 
     /**

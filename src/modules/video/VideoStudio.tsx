@@ -8,6 +8,9 @@ export default function VideoStudio() {
     const { toggleRightPanel, isRightPanelOpen, setModule } = useStore();
 
     useEffect(() => {
+        setGenerationMode('video');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setGenerationMode]);
         // Ensure right panel is open for studio controls
         if (!isRightPanelOpen) {
             toggleRightPanel();
