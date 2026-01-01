@@ -47,8 +47,8 @@ export class RevenueService {
       const snapshot = await getDocs(q);
 
       let totalRevenue = 0;
-      let pendingPayouts = 0; // In a real app, this would be calculated from a separate 'payouts' collection or status
-      let sources = {
+      const pendingPayouts = 0; // In a real app, this would be calculated from a separate 'payouts' collection or status
+      const sources = {
         streaming: 0,
         merch: 0,
         licensing: 0,
