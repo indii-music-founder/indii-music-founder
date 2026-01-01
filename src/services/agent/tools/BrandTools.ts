@@ -1,10 +1,35 @@
 
 import { AI } from '@/services/ai/AIService';
-
-// Note: These tools use the AI service to simulate "analysis" and "generation"
-// In a real implementation, they might call specialized vision APIs or database lookups.
-
 import { AI_MODELS } from '@/core/config/ai-models';
+import { z } from 'zod';
+
+// --- Validation Schemas ---
+
+const VerifyOutputSchema = z.object({
+    approved: z.boolean(),
+    critique: z.string(),
+    score: z.number().min(1).max(10)
+});
+
+const BrandConsistencySchema = z.object({
+    consistent: z.boolean(),
+    issues: z.array(z.string()),
+    recommendations: z.array(z.string())
+});
+
+const BrandGuidelinesSchema = z.object({
+    voice: z.string(),
+    visuals: z.string(),
+    dos_and_donts: z.array(z.string())
+});
+
+const AuditAssetsSchema = z.object({
+    compliant: z.boolean(),
+    flagged_assets: z.array(z.string()),
+    report: z.string()
+});
+
+// --- Tools Implementation ---
 
 export const BrandTools = {
     verify_output: async ({ goal, content }: { goal: string; content: string }) => {
@@ -13,13 +38,25 @@ export const BrandTools = {
         Goal: ${goal}
         Content: ${content}
 
-        Output a JSON object: { "approved": boolean, "critique": string, "score": number (1-10) }
+        Output a strict JSON object (no markdown) matching this schema:
+        { "approved": boolean, "critique": string, "score": number (1-10) }
         `;
-        const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return AI.parseJSON(result.text());
+
+        try {
+            const result = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            const text = result.text();
+            // Handle potential markdown code blocks
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return VerifyOutputSchema.parse(parsed);
+        } catch (error) {
+            console.error('BrandTools.verify_output error:', error);
+            // Fallback safe response
+            return { approved: false, critique: "AI Generation Failed", score: 0 };
+        }
     },
 
     analyze_brand_consistency: async ({ content, type }: { content: string; type: string }) => {
@@ -28,13 +65,23 @@ export const BrandTools = {
         Content: ${content}
 
         Check for tone, core values alignment, and visual language (if described).
-        Output a JSON object: { "consistent": boolean, "issues": string[], "recommendations": string[] }
+        Output a strict JSON object (no markdown) matching this schema:
+        { "consistent": boolean, "issues": string[], "recommendations": string[] }
         `;
-        const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return AI.parseJSON(result.text());
+
+        try {
+            const result = await AI.generateContent({
+                model: AI_MODELS.TEXT_AGENT.model,
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            const text = result.text();
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return BrandConsistencySchema.parse(parsed);
+        } catch (error) {
+            console.error('BrandTools.analyze_brand_consistency error:', error);
+            return { consistent: false, issues: ["AI Analysis Failed"], recommendations: [] };
+        }
     },
 
     generate_brand_guidelines: async ({ name, values }: { name: string; values: string[] }) => {
@@ -42,13 +89,23 @@ export const BrandTools = {
          Create a structured Brand Guidelines document for a brand named "${name}".
          Core Values: ${values.join(', ')}.
 
-         Output a JSON object with sections: { "voice": string, "visuals": string, "dos_and_donts": string[] }
+         Output a strict JSON object (no markdown) matching this schema:
+         { "voice": string, "visuals": string, "dos_and_donts": string[] }
          `;
-         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return AI.parseJSON(result.text());
+
+        try {
+             const result = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            const text = result.text();
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return BrandGuidelinesSchema.parse(parsed);
+        } catch (error) {
+            console.error('BrandTools.generate_brand_guidelines error:', error);
+            return { voice: "Error", visuals: "Error", dos_and_donts: [] };
+        }
     },
 
     audit_visual_assets: async ({ assets }: { assets: string[] }) => {
@@ -56,12 +113,22 @@ export const BrandTools = {
         Audit the following list of visual assets for brand compliance (simulated):
         Assets: ${assets.join(', ')}
 
-        Output a JSON object: { "compliant": boolean, "flagged_assets": string[], "report": string }
+        Output a strict JSON object (no markdown) matching this schema:
+        { "compliant": boolean, "flagged_assets": string[], "report": string }
         `;
-        const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return AI.parseJSON(result.text());
+
+        try {
+            const result = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            const text = result.text();
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return AuditAssetsSchema.parse(parsed);
+        } catch (error) {
+            console.error('BrandTools.audit_visual_assets error:', error);
+            return { compliant: false, flagged_assets: [], report: "AI Audit Failed" };
+        }
     }
 };
