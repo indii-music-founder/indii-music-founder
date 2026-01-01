@@ -22,7 +22,11 @@ export default function RevenueView() {
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
                 setTotalRevenue(stats.totalRevenue);
-                setRevenueBySource(stats.sources);
+                // Map API sources to component state (merch + licensing = direct storefront)
+                setRevenueBySource({
+                    social: stats.sources.social || 0,
+                    direct: (stats.sources.merch || 0) + (stats.sources.licensing || 0)
+                });
 
                 // Process top products
                 const sortedProducts = Object.entries(stats.revenueByProduct || {})
