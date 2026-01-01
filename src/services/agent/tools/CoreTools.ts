@@ -9,6 +9,10 @@ import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
 
 interface DelegateTaskArgs extends ToolFunctionArgs {
     agent_id: ValidAgentId;
+    // Helper to support targetAgentId alias used in some prompts
+    targetAgentId?: string;
+    agent_id: ValidAgentId;  // Keep for backwards compatibility with existing tool calls
+    targetAgentId?: ValidAgentId;  // New preferred parameter name
     task: string;
     context?: AgentContext;
 }
@@ -36,6 +40,13 @@ export const CoreTools = {
             // Support both parameter names for backwards compatibility (though type now enforces agent_id)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const agentId = args.agent_id || (args as any).targetAgentId;
+            // Support both parameter names for backwards compatibility
+            // Cast to ValidAgentId because we validate it below
+            const agentId = (args.targetAgentId || args.agent_id) as ValidAgentId;
+
+            // Runtime validation: reject invalid agent IDs to prevent hallucination issues
+            if (!VALID_AGENT_IDS.includes(agentId)) {
+            const agentId = args.targetAgentId || args.agent_id;
 
             // Runtime validation: reject invalid agent IDs to prevent hallucination issues
             if (!VALID_AGENT_IDS.includes(agentId as ValidAgentId)) {

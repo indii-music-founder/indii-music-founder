@@ -85,6 +85,40 @@ class RevenueServiceImpl {
         } catch (error) {
             console.error('[RevenueService] Failed to get revenue by source:', error);
             return { direct: 0, social: 0 };
+    try {
+      const revenueRef = collection(db, 'revenue');
+      // Get all revenue records for the user
+      // Ideally we would filter by date range, but for MVP we get all
+      const q = query(revenueRef, where('userId', '==', userId));
+      const snapshot = await getDocs(q);
+
+      let totalRevenue = 0;
+      const pendingPayouts = 0; // In a real app, this would be calculated from a separate 'payouts' collection or status
+      const sources = {
+        streaming: 0,
+        merch: 0,
+        licensing: 0,
+        social: 0
+      };
+      const revenueByProduct: Record<string, number> = {};
+      const historyMap = new Map<string, number>();
+
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const amount = data.amount || 0;
+
+        totalRevenue += amount;
+
+        // Aggregate by source
+        const source = data.source || 'other';
+        if (source === 'streaming' || source === 'royalties') {
+            sources.streaming += amount;
+        } else if (source === 'merch') {
+            sources.merch += amount;
+        } else if (source === 'licensing') {
+            sources.licensing += amount;
+        } else if (source === 'social_drop') {
+            sources.social += amount;
         }
     }
 
@@ -193,6 +227,42 @@ class RevenueServiceImpl {
             };
         }
     }
+  }
+
+  async recordSale(entry: RevenueEntry) {
+    await addDoc(collection(db, 'revenue'), {
+        ...entry,
+        createdAt: Timestamp.fromMillis(entry.timestamp)
+    });
+  }
+
+  private getMockRevenueStats(period: string): RevenueStats {
+    return {
+      totalRevenue: 12500.50,
+      revenueChange: 12.5,
+      pendingPayouts: 1250.00,
+      lastPayoutAmount: 5000.00,
+      lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+      sources: {
+        streaming: 8500.50,
+        merch: 2500.00,
+        licensing: 1500.00,
+        social: 0
+      },
+      revenueByProduct: {
+        'prod_1': 1200.00,
+        'prod_2': 850.50,
+        'prod_3': 450.00,
+        'prod_123': 1500.00,
+        'prod_456': 800.00,
+        'prod_789': 200.00
+      },
+      history: Array.from({ length: 10 }, (_, i) => ({
+        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        amount: Math.random() * 500 + 100
+      })).reverse()
+    };
+  }
 }
 
 export const revenueService = new RevenueServiceImpl();

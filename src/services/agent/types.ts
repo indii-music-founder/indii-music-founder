@@ -29,6 +29,35 @@ export interface ToolDefinition {
 }
 
 // ============================================================================
+// Agent Identification
+// ============================================================================
+
+export const VALID_AGENT_IDS = [
+    'legal',
+    'marketing',
+    'brand',
+    'road-manager',
+    'music',
+    // Legacy support for existing agents
+    'finance',
+    'producer',
+    'director',
+    'screenwriter',
+    'video',
+    'social',
+    'publicist',
+    'publishing',
+    'licensing',
+    'devops',
+    'security',
+    'generalist'
+] as const;
+
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
+
+export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
+
+// ============================================================================
 // Agent Context Types
 // ============================================================================
 
@@ -103,6 +132,41 @@ export type AnyToolFunction = (args: any, context?: AgentContext) => Promise<Too
 // Agent Configuration Types
 // ============================================================================
 
+/**
+ * All valid agent IDs that can be used with delegate_task.
+ * This is the single source of truth for agent ID validation.
+ *
+ * IMPORTANT: Keep this in sync when adding new agents.
+ * Used to prevent AI hallucination of non-existent agent IDs.
+ */
+export const VALID_AGENT_IDS = [
+    'marketing',
+    'legal',
+    'finance',
+    'producer',
+    'music',
+    'director',
+    'screenwriter',
+    'video',
+    'social',
+    'publicist',
+    'road',
+    'publishing',
+    'licensing',
+    'brand',
+    'devops',
+    'security',
+    'generalist'  // Agent Zero
+] as const;
+
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
+
+/**
+ * Comma-separated list of valid agent IDs for use in tool descriptions.
+ * Prevents AI from hallucinating non-existent agent names.
+ */
+export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
+
 export type AgentCategory = 'manager' | 'department' | 'specialist';
 
 // Valid Agent IDs
@@ -132,6 +196,7 @@ export type ValidAgentId = typeof VALID_AGENT_IDS[number];
 export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 
 export interface AgentConfig {
+    // ValidAgentId provides strict typing while allowing legacy agents via the union
     id: ValidAgentId;
     name: string;
     description: string;

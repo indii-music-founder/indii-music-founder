@@ -39,6 +39,7 @@ export type InternalDepartmentType = DepartmentType | 'default';
 export interface DepartmentTheme {
     /** Unique department identifier */
     id: InternalDepartmentType;
+    id: DepartmentType;
     /** CSS variable reference for the department color */
     color: string;
     /** CSS variable reference for the muted variant */
@@ -163,6 +164,7 @@ export const departmentRegistry: Record<DepartmentType, DepartmentTheme> = {
  */
 const defaultTheme: DepartmentTheme = {
     id: 'default',
+    id: 'marketing', // Note: Uses 'marketing' as closest valid type; CSS vars are --color-dept-default
     color: 'var(--color-dept-default)',
     colorMuted: 'var(--color-dept-default-muted)',
     colorGlow: 'var(--color-dept-default)',

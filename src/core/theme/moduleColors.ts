@@ -40,6 +40,8 @@ export interface ModuleColor {
 export const departmentCssVars = {
     royalties: '--color-dept-royalties',
     finance: '--color-dept-royalties',     // Finance shares Royalties' gold
+    // Base Department Colors
+    royalties: '--color-dept-royalties',
     distribution: '--color-dept-distribution',
     marketing: '--color-dept-marketing',
     legal: '--color-dept-legal',
@@ -52,6 +54,24 @@ export const departmentCssVars = {
     brand: '--color-dept-brand',
     campaign: '--color-dept-campaign',
     default: '--color-dept-default',
+
+    // Module Mappings (Aliases)
+    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
+    publicist: '--color-dept-marketing',   // Publicist shares Marketing
+    road: '--color-dept-touring',          // Road Manager = Touring
+    video: '--color-dept-creative',        // Video shares Creative
+    agent: '--color-dept-creative',        // Agent shares Creative
+    'audio-analyzer': '--color-dept-creative', // Audio Analyzer shares Creative
+    onboarding: '--color-dept-creative',   // Onboarding shares Creative
+    music: '--color-dept-publishing',      // Music shares Publishing
+    workflow: '--color-dept-social',       // Workflow shares Social
+    showroom: '--color-dept-brand',        // Showroom shares Brand
+    merch: '--color-dept-brand',           // Merch shares Brand
+    knowledge: '--color-dept-distribution', // Knowledge shares Distribution
+    files: '--color-dept-default',
+    dashboard: '--color-dept-default',
+    'select-org': '--color-dept-default',
+    'banana-preview': '--color-dept-royalties', // Banana uses Royalties/Gold
 } as const;
 
 /**
@@ -61,6 +81,8 @@ export const departmentCssVars = {
 export const getDepartmentCssVar = (dept: string): string => {
     const key = dept.toLowerCase() as keyof typeof departmentCssVars;
     return `var(${departmentCssVars[key] || departmentCssVars.default})`;
+    const cssVar = departmentCssVars[key];
+    return `var(${cssVar ?? departmentCssVars.default})`;
 };
 
 export const moduleColors: Record<ModuleId, ModuleColor> = {
