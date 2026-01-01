@@ -28,10 +28,11 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
-            className="group relative overflow-hidden rounded-2xl bg-gray-900/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:bg-gray-900/60"
+            // Bolt UI Unification: Using dept-marketing for visual hierarchy and removing hardcoded hexes
+            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60"
         >
             {/* Background Gradient Mesh */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-dept-marketing/5 via-transparent to-dept-campaign/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div className="p-6 relative z-10 space-y-4">
                 {/* Header */}
@@ -48,7 +49,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                                 {campaign.title}
                             </h3>
                         </div>
-                        <p className="text-sm text-gray-400 line-clamp-1">{campaign.description || "No description provided."}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{campaign.description || "No description provided."}</p>
                     </div>
                     <button
                         className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
@@ -64,15 +65,15 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 py-2">
                     <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                            <ActivityIcon size={12} className="text-purple-400" />
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                            <ActivityIcon size={12} className="text-dept-marketing" />
                             <span>Posts</span>
                         </div>
                         <span className="text-lg font-semibold text-gray-200">{campaign.posts.length}</span>
                     </div>
                     <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                            <CalendarIcon size={12} className="text-pink-400" />
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                            <CalendarIcon size={12} className="text-dept-campaign" />
                             <span>Duration</span>
                         </div>
                         <span className="text-lg font-semibold text-gray-200">{campaign.durationDays}d</span>
@@ -81,7 +82,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
 
                 {/* Progress Bar */}
                 <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-gray-400">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Progress</span>
                         <span className="text-white font-medium">{progress}%</span>
                     </div>
@@ -91,7 +92,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
                             className={`h-full rounded-full ${isDone ? 'bg-green-500' :
-                                isActive ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                                isActive ? 'bg-gradient-to-r from-dept-marketing to-dept-campaign' :
                                     'bg-gray-600'
                                 }`}
                         />
@@ -100,7 +101,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
 
                 {/* Footer */}
                 <div className="pt-2 flex justify-between items-center border-t border-white/5">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span className={`px-2 py-0.5 rounded-full border ${isActive ? 'bg-green-500/10 border-green-500/20 text-green-400' :
                             isDone ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
                                 'bg-gray-800 border-gray-700'
@@ -109,7 +110,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                         </span>
                         <span>{campaign.startDate}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-medium text-purple-400 group-hover:translate-x-1 transition-transform">
+                    <div className="flex items-center gap-1 text-xs font-medium text-dept-marketing group-hover:translate-x-1 transition-transform">
                         Manage <ChevronRightIcon size={14} />
                     </div>
                 </div>
