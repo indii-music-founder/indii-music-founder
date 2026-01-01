@@ -217,6 +217,8 @@ exports.inngestApi = functions
                     // await file.makePublic(); // Optional depending on bucket config
                     // Save to a public path or user-specific path
 
+
+ main
  main
                     const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                     await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {

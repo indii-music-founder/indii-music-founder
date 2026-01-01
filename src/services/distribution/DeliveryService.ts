@@ -59,6 +59,10 @@ export class DeliveryService {
 
 
 
+
+
+
+ main
  main
                 // Ensure output directory exists
                 if (!fs.existsSync(resolvedPath)) {
@@ -90,6 +94,10 @@ export class DeliveryService {
 
 
 
+
+
+
+ main
  main
                          if (fs.existsSync(sourceUrl)) {
                              await fs.promises.copyFile(sourceUrl, destPath);
@@ -129,6 +137,10 @@ export class DeliveryService {
 
 
 
+
+
+
+ main
  main
                         if (fs.existsSync(audioDest)) {
                             // Transcoding Stub
@@ -153,6 +165,10 @@ export class DeliveryService {
 
 
 
+
+
+
+ main
  main
                         await safeCopy(baseUrl, imageDest);
                     }

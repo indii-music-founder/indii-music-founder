@@ -116,6 +116,15 @@ describe('FinanceService', () => {
         });
     });
 
+    describe('fetchEarnings', () => {
+        it('should call revenueService and return mapped earnings data', async () => {
+            const mockRevenueStats = {
+                totalRevenue: 1000.50,
+                revenueBySource: { direct: 800.00, social: 200.50 },
+                revenueByProduct: {
+                    'prod_1': 500.25,
+                    'prod_2': 500.25
+                }
     describe('getEarningsSummary', () => {
         it('should call revenueService and return mapped earnings data', async () => {
             const mockRevenueStats = {
@@ -128,6 +137,23 @@ describe('FinanceService', () => {
 
             mockGetUserRevenueStats.mockResolvedValueOnce(mockRevenueStats);
 
+            const result = await FinanceService.fetchEarnings('user-123');
+
+            expect(mockGetUserRevenueStats).toHaveBeenCalledWith('user-123');
+            expect(result).toBeDefined();
+            expect(result.totalGrossRevenue).toBe(1000.50);
+            expect(result.totalNetRevenue).toBe(1000.50);
+            expect(result.byRelease).toHaveLength(2);
+            expect(result.byRelease[0].revenue).toBe(500.25);
+            expect(result.byPlatform).toEqual([]); // Expect empty until mapped
+        });
+
+        it('should handle errors by logging to Sentry', async () => {
+            const error = new Error('Test Error');
+            mockGetUserRevenueStats.mockRejectedValueOnce(error);
+
+            await expect(FinanceService.fetchEarnings('user-123')).rejects.toThrow('Test Error');
+            expect(mockCaptureException).toHaveBeenCalledWith(error);
             const result = await financeService.getEarningsSummary('user-123');
 
             expect(mockGetUserRevenueStats).toHaveBeenCalledWith('user-123');
