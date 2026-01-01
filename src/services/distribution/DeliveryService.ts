@@ -55,11 +55,15 @@ export class DeliveryService {
                 if (resolvedPath.includes('..') && !path.isAbsolute(outputDir)) {
                      throw new Error('Security Error: Invalid output directory path.');
                 }
-<<<<<<< HEAD
 
-=======
 
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+
+
+
+
+ main
+ main
                 // Ensure output directory exists
                 if (!fs.existsSync(resolvedPath)) {
                     await fs.promises.mkdir(resolvedPath, { recursive: true });
@@ -86,11 +90,15 @@ export class DeliveryService {
                              console.warn(`[DeliveryService] Security Warning: Skipped potentially unsafe asset path: ${sourceUrl}`);
                              return;
                          }
-<<<<<<< HEAD
 
-=======
 
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+
+
+
+
+ main
+ main
                          if (fs.existsSync(sourceUrl)) {
                              await fs.promises.copyFile(sourceUrl, destPath);
                          } else {
@@ -125,11 +133,15 @@ export class DeliveryService {
                         const audioExt = assets.audioFile.format || 'wav';
                         const audioDest = path.join(resourcesDir, `A1.${audioExt}`);
                         await safeCopy(assets.audioFile.url, audioDest);
-<<<<<<< HEAD
 
-=======
 
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+
+
+
+
+ main
+ main
                         if (fs.existsSync(audioDest)) {
                             // Transcoding Stub
                             await transcodingService.transcode({
@@ -149,11 +161,15 @@ export class DeliveryService {
                         const trackCount = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks.length : 1;
                         const imageRef = `IMG${trackCount + 1}`;
                         const imageDest = path.join(resourcesDir, `${imageRef}.${imageExt}`);
-<<<<<<< HEAD
 
-=======
 
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+
+
+
+
+ main
+ main
                         await safeCopy(baseUrl, imageDest);
                     }
                 }

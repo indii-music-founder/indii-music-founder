@@ -54,7 +54,7 @@ const inngest_1 = require("inngest");
 const params_1 = require("firebase-functions/params");
 const express_1 = require("inngest/express");
 const cors_1 = __importDefault(require("cors"));
-const google_auth_library_1 = require("google-auth-library");
+const video_1 = require("./lib/video");
 // Initialize Firebase Admin
 admin.initializeApp();
 // Define Secrets
@@ -148,6 +148,7 @@ exports.inngestApi = functions
     .https.onRequest((req, res) => {
     const inngestClient = getInngestClient();
     // Actual Video Generation Logic using Veo
+    const generateVideoFn = inngestClient.createFunction({ id: "generate-video-logic" }, { event: "video/generate.requested" }, video_1.generateVideoLogic);
     const generateVideoFn = inngestClient.createFunction({ id: "generate-video-logic" }, { event: "video/generate.requested" }, async ({ event, step }) => {
         const { jobId, prompt, userId, options } = event.data;
         try {
@@ -208,7 +209,6 @@ exports.inngestApi = functions
                 // Case A: Base64 Encoded Video
                 if (prediction.bytesBase64Encoded) {
                     const bucket = admin.storage().bucket();
-<<<<<<< HEAD
                     const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                     await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
                         metadata: { contentType: 'video/mp4' },
@@ -216,8 +216,10 @@ exports.inngestApi = functions
                     });
                     // await file.makePublic(); // Optional depending on bucket config
                     // Save to a public path or user-specific path
-=======
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+
+ main
+ main
                     const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                     await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
                         metadata: { contentType: 'video/mp4' },

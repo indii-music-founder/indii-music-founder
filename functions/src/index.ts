@@ -4,6 +4,7 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
+import { generateVideoLogic } from "./lib/video";
 import { GoogleAuth } from "google-auth-library";
 
 // Initialize Firebase Admin
@@ -214,11 +215,13 @@ export const inngestApi = functions
                                 public: true
                             });
 
-<<<<<<< HEAD
                             return file.publicUrl();
-=======
                             return url;
->>>>>>> 2aca51341af939a6d1ee0c64d32fb9042f727593
+
+                            });
+
+                            return url;
+ main
                         }
 
                         // Case B: GCS URI
