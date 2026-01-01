@@ -12,7 +12,7 @@ import { EmptyActionState } from './components/EmptyActionState';
 
 
 export default function LicensingDashboard() {
-    const { licenses, requests, isLoading, actions } = useLicensing();
+    const { licenses, requests, loading: isLoading, initiateDrafting } = useLicensing();
     const { currentModule } = useStore();
     const toast = useToast();
 
@@ -24,7 +24,7 @@ export default function LicensingDashboard() {
     }, []);
 
     const handleDraftAction = async (request: LicenseRequest) => {
-        await actions.draftAgreement(request);
+        await initiateDrafting(request);
     };
 
     if (isLoading) {

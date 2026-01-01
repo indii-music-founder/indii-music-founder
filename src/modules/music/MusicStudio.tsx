@@ -158,7 +158,7 @@ export default function MusicStudio() {
                     t.id === newTrack.id ? {
                         ...t,
                         features,
-                        metadata: { ...t.metadata, masterFingerprint: fingerprint || undefined }
+                        metadata: { ...t.metadata, masterFingerprint: fingerprint ?? undefined }
                     } : t
                 ));
             } catch (err) {
@@ -221,7 +221,7 @@ export default function MusicStudio() {
                         t.id === track.id ? {
                             ...t,
                             features,
-                            metadata: { ...t.metadata, masterFingerprint: fingerprint || undefined }
+                            metadata: { ...t.metadata, masterFingerprint: fingerprint ?? undefined }
                         } : t
                     ));
                 } catch (e) {

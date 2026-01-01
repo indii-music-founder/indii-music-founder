@@ -31,6 +31,7 @@ const setupTouringMock = (overrides = {}) => {
         saveItinerary: vi.fn().mockResolvedValue(undefined),
         updateItineraryStop: vi.fn(),
         vehicleStats: {
+            userId: 'test-user',
             milesDriven: 100,
             fuelLevelPercent: 75,
             tankSizeGallons: 20,

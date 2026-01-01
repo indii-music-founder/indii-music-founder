@@ -170,7 +170,7 @@ export const SecurityTools = {
         `;
         try {
             const res = await AI.generateContent({
-                model: AI_MODELS.TEXT_AGENT.model,
+                model: AI_MODELS.TEXT.AGENT,
                 contents: { role: 'user', parts: [{ text: prompt }] }
             });
             const text = res.text();
