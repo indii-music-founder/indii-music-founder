@@ -34,3 +34,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     DevOpsAgent,
     SecurityAgent
 ];
+
+// Re-export from types.ts for convenience
+// The canonical VALID_AGENT_IDS is defined in types.ts to avoid circular dependencies
+export { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST, type ValidAgentId } from './types';

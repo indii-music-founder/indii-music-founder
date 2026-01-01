@@ -11,6 +11,8 @@ interface DelegateTaskArgs extends ToolFunctionArgs {
     agent_id: ValidAgentId;
     // Helper to support targetAgentId alias used in some prompts
     targetAgentId?: string;
+    agent_id: ValidAgentId;  // Keep for backwards compatibility with existing tool calls
+    targetAgentId?: ValidAgentId;  // New preferred parameter name
     task: string;
     context?: AgentContext;
 }
@@ -41,6 +43,10 @@ export const CoreTools = {
 
             // Runtime validation: reject invalid agent IDs to prevent hallucination issues
             if (!VALID_AGENT_IDS.includes(agentId)) {
+            const agentId = args.targetAgentId || args.agent_id;
+
+            // Runtime validation: reject invalid agent IDs to prevent hallucination issues
+            if (!VALID_AGENT_IDS.includes(agentId as ValidAgentId)) {
                 return `Error: Invalid agent ID "${agentId}". Valid agent IDs are: ${VALID_AGENT_IDS_LIST}`;
             }
 
