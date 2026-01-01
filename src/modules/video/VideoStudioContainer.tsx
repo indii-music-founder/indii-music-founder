@@ -8,13 +8,18 @@ import { useStore } from '@/core/store';
 export default function VideoStudio() {
     const { toggleRightPanel, isRightPanelOpen, setModule } = useStore();
 
-    useEffect(() => {
+    // Defined outside useEffect to simplify parser logic
+    const initializeStudio = () => {
         // Ensure right panel is open for studio controls
         if (!isRightPanelOpen) {
             toggleRightPanel();
         }
         // Ensure global module state is 'video' so RightPanel renders correctly
         setModule('video');
+    };
+
+    useEffect(() => {
+        initializeStudio();
     }, []);
 
     return (

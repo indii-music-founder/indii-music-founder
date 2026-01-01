@@ -19,7 +19,7 @@ const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
 const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
-const VideoStudio = lazy(() => import('../modules/video/VideoStudio'));
+const VideoStudio = lazy(() => import('../modules/video/VideoStudioContainer'));
 const WorkflowLab = lazy(() => import('../modules/workflow/WorkflowLab'));
 const Dashboard = lazy(() => import('../modules/dashboard/Dashboard'));
 const KnowledgeBase = lazy(() => import('../modules/knowledge/KnowledgeBase'));
