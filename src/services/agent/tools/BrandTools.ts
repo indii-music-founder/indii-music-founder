@@ -68,7 +68,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         const json = AI.parseJSON(result.text());
@@ -105,7 +105,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         const json = AI.parseJSON(result.text());
@@ -139,7 +139,7 @@ export const BrandTools = {
          ${JSON.stringify(schema, null, 2)}
          `;
          const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         const json = AI.parseJSON(result.text());
@@ -173,7 +173,7 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         const json = AI.parseJSON(result.text());

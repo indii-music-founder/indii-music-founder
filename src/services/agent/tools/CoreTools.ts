@@ -8,8 +8,8 @@ import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
 // Note: switch_module moved to NavigationTools
 
 interface DelegateTaskArgs extends ToolFunctionArgs {
-    agent_id: string;  // Keep for backwards compatibility with existing tool calls
-    targetAgentId?: string;  // New preferred parameter name
+    agent_id: ValidAgentId;  // Keep for backwards compatibility with existing tool calls
+    targetAgentId?: ValidAgentId;  // New preferred parameter name
     task: string;
     context?: AgentContext;
 }

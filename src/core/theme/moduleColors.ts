@@ -77,7 +77,8 @@ export const departmentCssVars = {
  */
 export const getDepartmentCssVar = (dept: string): string => {
     const key = dept.toLowerCase() as keyof typeof departmentCssVars;
-    return `var(${departmentCssVars[key] || departmentCssVars.default})`;
+    const cssVar = departmentCssVars[key];
+    return `var(${cssVar ?? departmentCssVars.default})`;
 };
 
 export const moduleColors: Record<ModuleId, ModuleColor> = {
