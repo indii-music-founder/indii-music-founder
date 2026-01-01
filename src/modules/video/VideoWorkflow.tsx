@@ -37,6 +37,10 @@ export default function VideoWorkflow() {
     // View State: 'director' (Generation) or 'editor' (Timeline)
     const [viewMode, setViewMode] = useState<'director' | 'editor'>('director');
     const [localPrompt, setLocalPrompt] = useState('');
+    const localPromptRef = useRef(localPrompt);
+
+    // Keep ref in sync
+    useEffect(() => { localPromptRef.current = localPrompt; }, [localPrompt]);
 
     // Director State
     const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
@@ -83,7 +87,7 @@ export default function VideoWorkflow() {
                                 const newAsset = {
                                     id: jobId,
                                     url: data.videoUrl,
-                                    prompt: data.prompt || localPrompt,
+                                    prompt: data.prompt || localPromptRef.current,
                                     type: 'video' as const,
                                     timestamp: Date.now(),
                                     projectId: 'default',

@@ -161,6 +161,9 @@ export class BrowserAgentService {
                 if (text === undefined) throw new Error('Text is required for type action');
                 await this.page.waitForSelector(selector, { timeout: 10000 });
                 await this.page.type(selector, text, { delay: 50 });
+            } else if (action === 'press') {
+                const key = selector.toLowerCase(); // Electron expects lowercase keys
+                await this.page.keyboard.press(key);
             } else if (action === 'scroll') {
                 // selector serves as direction, text as amount
                 const direction = selector || 'down';

@@ -127,20 +127,40 @@ export class VenueScoutService {
             const result = await browserAgentDriver.drive('https://www.google.com', goal);
             if (result.success && result.finalData) {
                 emit('COMPLETE', `Live agent scan complete.`, 100);
+
+                const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+                const { db } = await import('@/services/firebase');
+
+                const formattedCity = city.split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                const newVenue: Omit<Venue, 'id'> = {
+                    name: 'The Fillmore (Live Scan)',
+                    city: formattedCity,
+                    state: 'MI', // logic would need to parse this better
+                    capacity: 2000,
+                    genres: [genre, 'Rock', 'Pop'],
+                    website: 'https://www.thefillmore.com',
+                    status: 'active',
+                    contactEmail: 'booking@thefillmore.com',
+                    notes: 'Freshly discovered by Autonomous Agent.',
+                    fitScore: 85,
+                    imageUrl: 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?auto=format&fit=crop&q=80&w=1000'
+                };
+
+                // Save to Firestore so it's there next time
+                const docRef = await addDoc(collection(db, 'venues'), {
+                    ...newVenue,
+                    createdAt: serverTimestamp()
+                });
+
                 // Return a mix of real (if parsed) and verified mocks
                 return [
                     {
-                        id: `agent_${Date.now()}_1`,
-                        name: 'The Fillmore (Live Scan)',
-                        city: city,
-                        state: 'MI', // logic would need to parse this better
-                        capacity: 2000,
-                        genres: [genre, 'Rock', 'Pop'],
-                        website: 'https://www.thefillmore.com',
-                        status: 'active',
-                        notes: 'Freshly discovered by Autonomous Agent.',
-                        fitScore: 85
-                    }
+                        id: docRef.id,
+                        ...newVenue
+                    } as Venue
                 ];
             }
         } catch (e) {

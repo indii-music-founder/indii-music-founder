@@ -6,7 +6,7 @@ import { UserProfile } from '@/modules/workflow/types';
 
 // Mock repository
 vi.mock('@/services/storage/repository', () => ({
-    saveProfileToStorage: vi.fn(),
+    saveProfileToStorage: vi.fn().mockResolvedValue(undefined),
     getProfileFromStorage: vi.fn()
 }));
 

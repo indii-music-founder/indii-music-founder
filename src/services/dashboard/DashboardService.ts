@@ -219,12 +219,33 @@ export class DashboardService {
             state.removeProject(projectId);
         }
 
-        // Remove associated history
+        // Remove associated history from Store
         if (state.generatedHistory && typeof state.removeFromHistory === 'function') {
             const toRemove = state.generatedHistory.filter(
                 (item) => item.projectId === projectId
             );
             toRemove.forEach((item) => state.removeFromHistory && state.removeFromHistory(item.id));
+        }
+
+        // Cleanup from Firestore (Persistence)
+        try {
+            const { getDocs, query, collection, where, deleteDoc, doc } = await import('firebase/firestore');
+            const { db } = await import('@/services/firebase');
+
+            // Delete project doc if it exists in a collection (assuming 'projects')
+            // await deleteDoc(doc(db, 'projects', projectId));
+
+            // Delete history items
+            // Note: This matches the "orphaned history items" fix request
+            const historyRef = collection(db, 'history');
+            const q = query(historyRef, where('projectId', '==', projectId));
+            const snapshot = await getDocs(q);
+
+            const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+            await Promise.all(deletePromises);
+
+        } catch (error) {
+            console.error("Failed to cleanup project artifacts from persistence:", error);
         }
     }
 

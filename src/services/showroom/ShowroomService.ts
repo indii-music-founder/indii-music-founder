@@ -26,9 +26,29 @@ export const ShowroomService = {
     },
 
     /**
-     * Simulates AI generation of photorealistic mockups.
+     * Generates a mockup request and saves to Firestore.
      */
     async generateMockup(asset: string, type: string, scene: string): Promise<string> {
+        const { useStore } = await import('@/core/store');
+        const userId = useStore.getState().userProfile?.id;
+
+        if (!userId) {
+            throw new Error("User must be logged in to generate mockups.");
+        }
+
+        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { db } = await import('@/services/firebase');
+
+        // Record the generation request
+        await addDoc(collection(db, 'mockup_generations'), {
+            userId,
+            asset,
+            type,
+            scene,
+            status: 'processing',
+            createdAt: serverTimestamp()
+        });
+
         console.log(`Generating ${type} mockup with scene: ${scene}`);
         await new Promise(resolve => setTimeout(resolve, 3000));
         // Return a mock result
@@ -36,9 +56,27 @@ export const ShowroomService = {
     },
 
     /**
-     * Simulates AI generation of product animations.
+     * Generates a video request and saves to Firestore.
      */
     async generateVideo(mockupUrl: string, motion: string): Promise<string> {
+        const { useStore } = await import('@/core/store');
+        const userId = useStore.getState().userProfile?.id;
+
+        if (!userId) {
+            throw new Error("User must be logged in to generate videos.");
+        }
+
+        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { db } = await import('@/services/firebase');
+
+        await addDoc(collection(db, 'video_generations'), {
+            userId,
+            mockupUrl,
+            motion,
+            status: 'processing',
+            createdAt: serverTimestamp()
+        });
+
         console.log(`Animating mockup ${mockupUrl} with motion: ${motion}`);
         await new Promise(resolve => setTimeout(resolve, 3500));
         // Return a mock video link

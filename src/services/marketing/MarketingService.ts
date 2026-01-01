@@ -59,9 +59,10 @@ export class MarketingService {
         return snapshot.docs.map(doc => {
             const data = doc.data();
             // validate data structure if needed, or cast with caution
+            const { id: _, ...cleanData } = data;
             return {
                 id: doc.id,
-                ...data,
+                ...cleanData,
             } as unknown as CampaignAsset;
         });
     }

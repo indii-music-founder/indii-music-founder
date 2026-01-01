@@ -8,7 +8,8 @@ export default function VideoStudio() {
 
     useEffect(() => {
         setGenerationMode('video');
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setGenerationMode]);
 
     return (
         <ModuleErrorBoundary moduleName="Video Studio">

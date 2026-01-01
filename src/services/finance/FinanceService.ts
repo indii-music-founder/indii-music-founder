@@ -50,6 +50,12 @@ export class FinanceService {
      * Get all expenses for a user.
      */
     static async getExpenses(userId: string): Promise<Expense[]> {
+        // Validate userId matches authenticated user (superuser check for now)
+        const currentUser = (await import('@/core/store')).useStore.getState().userProfile;
+        if (currentUser?.id !== userId && currentUser?.id !== 'superuser') {
+            throw new Error('Unauthorized access to expenses');
+        }
+
         try {
             const q = query(
                 collection(db, this.EXPENSES_COLLECTION),
@@ -78,6 +84,12 @@ export class FinanceService {
      * @param period Optional date range filter.
      */
     static async fetchEarnings(userId: string, period?: { startDate: string; endDate: string }): Promise<EarningsSummary> {
+        // Validate userId matches authenticated user
+        const currentUser = (await import('@/core/store')).useStore.getState().userProfile;
+        if (currentUser?.id !== userId && currentUser?.id !== 'superuser') {
+            throw new Error('Unauthorized access to earnings');
+        }
+
         try {
             const revenueStats = await revenueService.getUserRevenueStats(userId);
 

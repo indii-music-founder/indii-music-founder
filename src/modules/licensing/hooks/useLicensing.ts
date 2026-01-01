@@ -59,7 +59,7 @@ export function useLicensing() {
             if (unsubscribeLicenses) unsubscribeLicenses();
             if (unsubscribeRequests) unsubscribeRequests();
         };
-    }, [toast]);
+    }, [toast, userProfile?.id]);
 
     // Action: Update Request Status
     const updateRequestStatus = useCallback(async (id: string, status: LicenseRequest['status']) => {
