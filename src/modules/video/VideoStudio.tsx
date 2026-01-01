@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import VideoWorkflow from './VideoWorkflow';
@@ -14,7 +15,6 @@ export default function VideoStudio() {
         }
         // Ensure global module state is 'video' so RightPanel renders correctly
         setModule('video');
-        // Force sync
     }, []);
 
     return (
