@@ -197,6 +197,7 @@ service cloud.firestore {
 
     match /file_nodes/{nodeId} {
       // Allow read if user owns the node OR has access to the project
+      // Note: canViewProject checks for isAuthenticated, existence, and organization membership
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         canViewProject(resource.data.projectId)
