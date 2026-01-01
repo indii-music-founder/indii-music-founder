@@ -209,6 +209,9 @@ export const inngestApi = functions
                             const [url] = await file.getSignedUrl({
                                 action: 'read',
                                 expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
+                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                                metadata: { contentType: 'video/mp4' },
+                                public: true
                             });
 
                             return url;
@@ -264,8 +267,6 @@ export const inngestApi = functions
 
         return handler(req, res);
     });
-
-const corsHandler = corsLib({ origin: true });
 
 // ----------------------------------------------------------------------------
 // Image Generation (Gemini)
@@ -427,6 +428,20 @@ export const generateContentStream = functions
                 return;
             }
 
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
             try {
                 const { model, contents, config } = req.body;
                 const modelId = model || "gemini-3-pro-preview";
@@ -500,6 +515,20 @@ export const ragProxy = functions
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
             try {
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;

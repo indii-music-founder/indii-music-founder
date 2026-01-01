@@ -50,13 +50,20 @@ service cloud.firestore {
     // ========================================
 
     match /licenses/{licenseId} {
-      // TODO: SECURITY RISK - Scope to userId once data model supports it
-      allow read, write: if isAuthenticated();
+      // Allow read if user is authenticated (public catalog)
+      allow read: if isAuthenticated();
+      // Only allow write if the user owns the license (assuming userId field exists)
+      // If userId doesn't exist yet, we default to deny for safety until schema is updated.
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     match /license_requests/{requestId} {
-      // TODO: SECURITY RISK - Scope to userId once data model supports it
-      allow read, write: if isAuthenticated();
+      // Allow read if user owns the request
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow create if user owns the new request
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // ========================================
@@ -174,7 +181,7 @@ service cloud.firestore {
     // ========================================
 
     match /campaigns/{campaignId} {
-      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
