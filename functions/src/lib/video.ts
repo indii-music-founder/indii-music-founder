@@ -1,8 +1,20 @@
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
+import { z } from "zod";
+
+const VideoJobSchema = z.object({
+    jobId: z.string(),
+    prompt: z.string(),
+    userId: z.string(),
+    options: z.object({
+        duration: z.coerce.string().optional(),
+        durationSeconds: z.coerce.string().optional(),
+        aspectRatio: z.string().optional(),
+    }).optional(),
+});
 
 export async function generateVideoLogic({ event, step }: { event: any, step: any }) {
-    const { jobId, prompt, userId, options } = event.data;
+    const { jobId, prompt, userId, options } = VideoJobSchema.parse(event.data);
 
     try {
         // Step 1: Update status to processing
@@ -15,6 +27,8 @@ export async function generateVideoLogic({ event, step }: { event: any, step: an
 
         // Step 2: Generate Video via Vertex AI (Veo)
         const videoUri = await step.run("generate-veo-video", async () => {
+            console.log(`[VideoJob] Starting generation for ${jobId} with model veo-3.1-generate-preview`);
+
             const auth = new GoogleAuth({
                 scopes: ['https://www.googleapis.com/auth/cloud-platform']
             });
