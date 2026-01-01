@@ -39,35 +39,24 @@ describe('RevenueService (Production Logic)', () => {
         vi.clearAllMocks();
     });
 
-    it('getTotalRevenue should query Firestore with correct filter', async () => {
+    it('getUserRevenueStats should query Firestore and aggregate correctly', async () => {
         // Setup mock response
         mocks.getDocs.mockResolvedValue({
-            forEach: (callback: (doc: any) => void) => {
-                callback({ data: () => ({ amount: 100 }) });
-                callback({ data: () => ({ amount: 50.50 }) });
-            }
+            docs: [
+                { data: () => ({ amount: 100, source: 'streaming', createdAt: { toDate: () => new Date('2024-01-01') } }) },
+                { data: () => ({ amount: 50.50, source: 'merch', createdAt: { toDate: () => new Date('2024-01-02') } }) },
+                { data: () => ({ amount: 25, source: 'streaming', createdAt: { toDate: () => new Date('2024-01-01') } }) }
+            ]
         });
 
-        const total = await revenueService.getTotalRevenue('user-123');
+        const stats = await revenueService.getUserRevenueStats('user-123');
 
         expect(mocks.collection).toHaveBeenCalledWith(expect.anything(), 'revenue');
         expect(mocks.where).toHaveBeenCalledWith('userId', '==', 'user-123');
-        expect(total).toBe(150.50);
-    });
 
-    it('getRevenueBySource should aggregate correctly', async () => {
-        mocks.getDocs.mockResolvedValue({
-            forEach: (callback: (doc: any) => void) => {
-                callback({ data: () => ({ amount: 100, source: 'direct' }) });
-                callback({ data: () => ({ amount: 50, source: 'social_drop' }) });
-                callback({ data: () => ({ amount: 25, source: 'direct' }) });
-            }
-        });
-
-        const breakdown = await revenueService.getRevenueBySource('user-123');
-
-        expect(breakdown.direct).toBe(125);
-        expect(breakdown.social).toBe(50);
+        expect(stats.totalRevenue).toBe(175.50);
+        expect(stats.sources.streaming).toBe(125);
+        expect(stats.sources.merch).toBe(50.50);
     });
 
     it('recordSale should add document to "revenue" collection', async () => {
@@ -83,7 +72,7 @@ describe('RevenueService (Production Logic)', () => {
         await revenueService.recordSale(entry);
 
         expect(mocks.addDoc).toHaveBeenCalledWith(
-            undefined, // collection result (mocked)
+            expect.anything(), // collection result (mocked)
             expect.objectContaining({
                 productId: 'prod-1',
                 amount: 10.00,
