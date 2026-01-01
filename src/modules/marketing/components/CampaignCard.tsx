@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 
 // Fix for React 19 type mismatch with Lucide
 const CalendarIcon = Calendar as any;
-const TrendingUpIcon = TrendingUp as any;
+// const TrendingUpIcon = TrendingUp as any; // Unused
 const MoreHorizontalIcon = MoreHorizontal as any;
 const ChevronRightIcon = ChevronRight as any;
 const ActivityIcon = Activity as any;
 
 interface CampaignCardProps {
     campaign: CampaignAsset;
-    onClick: () => void;
+    onSelect: (campaign: CampaignAsset) => void;
 }
 
-const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick }) => {
+const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
     const isActive = campaign.status === CampaignStatus.EXECUTING;
     const isDone = campaign.status === CampaignStatus.DONE;
 
@@ -27,7 +27,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick }) => {
         <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onClick}
+            onClick={() => onSelect(campaign)}
             className="group relative overflow-hidden rounded-2xl bg-gray-900/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:bg-gray-900/60"
         >
             {/* Background Gradient Mesh */}
@@ -50,7 +50,13 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick }) => {
                         </div>
                         <p className="text-sm text-gray-400 line-clamp-1">{campaign.description || "No description provided."}</p>
                     </div>
-                    <button className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5">
+                    <button
+                        className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
+                        aria-label="More options"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                        }}
+                    >
                         <MoreHorizontalIcon size={18} />
                     </button>
                 </div>
@@ -112,4 +118,4 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onClick }) => {
     );
 };
 
-export default CampaignCard;
+export default React.memo(CampaignCard);

@@ -16,12 +16,13 @@ import {
  * Integration with DistroKid (Simulated Bulk Upload)
  */
 // import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
+import { earningsService } from '../EarningsService';
+import { distributionStore } from '../DistributionPersistenceService';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
     readonly name = 'DistroKid';
 
-    // Specific requirements for DistroKid
     readonly requirements: DistributorRequirements = {
         distributorId: 'distrokid',
         coverArt: {
@@ -31,7 +32,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
             maxHeight: 6000,
             aspectRatio: '1:1',
             allowedFormats: ['jpg', 'png'],
-            maxSizeBytes: 25 * 1024 * 1024, // 25MB
+            maxSizeBytes: 25 * 1024 * 1024,
             colorMode: 'RGB',
         },
         audio: {
@@ -45,8 +46,8 @@ export class DistroKidAdapter implements IDistributorAdapter {
             requiredFields: ['trackTitle', 'artistName', 'genre'],
             maxTitleLength: 255,
             maxArtistNameLength: 255,
-            isrcRequired: false, // DistroKid assigns if missing
-            upcRequired: false, // DistroKid assigns if missing
+            isrcRequired: false,
+            upcRequired: false,
             genreRequired: true,
             languageRequired: true,
         },
@@ -72,10 +73,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
         if (!credentials.apiKey) {
             throw new Error('DistroKid requires an API key');
         }
-
-        // Simulate API connection verification
         await new Promise((resolve) => setTimeout(resolve, 500));
-
         this.apiKey = credentials.apiKey;
         this.connected = true;
     }
@@ -86,12 +84,13 @@ export class DistroKidAdapter implements IDistributorAdapter {
     }
 
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to DistroKid');
-        }
+        if (!this.connected) throw new Error('Not connected');
 
         console.log('[DistroKid] Initiating release build:', metadata.trackTitle);
         const releaseId = `DK-${Date.now()}`;
+
+        // Simulate upload delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         try {
             // 1. Build Package (Simulating Bulk Upload Preparation)
@@ -102,8 +101,17 @@ export class DistroKidAdapter implements IDistributorAdapter {
             console.log(`[DistroKid] Package created at: ${packagePath}`);
             console.log('[DistroKid] Ready for manual/bulk upload tool.');
 
-            // In a fully automated "Robot" scenario, we would now launch a browser to upload this.
-            // For now, we stop at "Package Ready" and mark as Delivered (to user's local disk).
+            // Persist deployment
+            await distributionStore.createDeployment(
+                releaseId,
+                this.id,
+                'delivered',
+                {
+                    title: metadata.trackTitle,
+                    artist: metadata.artistName,
+                    coverArtUrl: assets.coverArt.url
+                }
+            );
 
             return {
                 success: true,
@@ -135,109 +143,75 @@ export class DistroKidAdapter implements IDistributorAdapter {
             throw new Error('Not connected to DistroKid');
         }
 
-        console.log(`[DistroKid] Updating release ${releaseId} with updates:`, Object.keys(updates));
+        console.log(`[DistroKid] Updating release ${releaseId}`);
+
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        if (deployments.length > 0) {
+            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
+        }
+
         return {
             success: true,
             status: 'processing',
-            distributorReleaseId: releaseId,
+            releaseId: releaseId,
+            distributorReleaseId: `INT-DK-${Date.now()}`,
+            metadata: {
+                estimatedLiveDate: '2025-02-01',
+                upcAssigned: updates.upc || 'PENDING_DK_BULK'
+            },
         };
     }
 
     async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
-        if (!this.connected) {
-            throw new Error('Not connected to DistroKid');
-        }
-
-        // Mock status check
-        // Mock status check
+        if (!this.connected) throw new Error('Not connected');
         return 'processing';
     }
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to DistroKid');
-        }
-
-        console.log(`[DistroKid] Requesting takedown for ${releaseId}`);
-        return {
-            success: true,
-            status: 'takedown_requested',
-            distributorReleaseId: releaseId,
-        };
+        if (!this.connected) throw new Error('Not connected');
+        return { success: true, status: 'takedown_requested', distributorReleaseId: releaseId };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        if (!this.connected) {
-            throw new Error('Not connected to DistroKid');
+        if (!this.connected) throw new Error('Not connected');
+
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            // Return zeroed structure if no data found (instead of mock data)
+            return {
+                distributorId: this.id,
+                releaseId,
+                period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0,
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString(),
+                breakdown: [],
+            };
         }
 
-        // Mock earnings response
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 15420,
-            downloads: 45,
-            grossRevenue: 125.50,
-            distributorFee: 0, // 100% payout
-            netRevenue: 125.50,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [
-                { platform: 'Spotify', territoryCode: 'US', streams: 10000, downloads: 0, revenue: 40.00 },
-                { platform: 'Apple Music', territoryCode: 'US', streams: 5000, downloads: 0, revenue: 80.00 },
-                { platform: 'iTunes', territoryCode: 'US', streams: 0, downloads: 45, revenue: 5.50 },
-            ],
-        };
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-id', period)];
+        if (!this.connected) {
+            throw new Error('Not connected to DistroKid');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         const errors: ValidationResult['errors'] = [];
-        const warnings: ValidationResult['warnings'] = [];
-
-        // Basic validation based on DistroKid requirements
-        if (!metadata.trackTitle) {
-            errors.push({ code: 'MISSING_TITLE', message: 'Release title (trackTitle) is required', field: 'trackTitle', severity: 'error' });
-        }
-
-        if (!metadata.artistName) {
-            errors.push({ code: 'MISSING_ARTIST', message: 'Primary artist is required', field: 'artistName', severity: 'error' });
-        }
-
-        return {
-            isValid: errors.length === 0,
-            errors,
-            warnings,
-        };
+        if (!metadata.trackTitle) errors.push({ code: 'MISSING_TITLE', message: 'Title required', field: 'trackTitle', severity: 'error' });
+        return { isValid: errors.length === 0, errors, warnings: [] };
     }
 
     async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
-        const errors: ValidationResult['errors'] = [];
-        const warnings: ValidationResult['warnings'] = [];
-
-        // Check Audio
-        const audioFile = (assets.audioFiles && assets.audioFiles.length > 0) ? assets.audioFiles[0] : assets.audioFile;
-        if (audioFile && audioFile.sizeBytes > 500 * 1024 * 1024) { // 500MB limit for example
-            errors.push({ code: 'FILE_TOO_LARGE', message: 'Audio file exceeds maximum size', field: 'audioFile', severity: 'error' });
-        }
-
-        // Check Cover Art
-        if (assets.coverArt.width < this.requirements.coverArt.minWidth || assets.coverArt.height < this.requirements.coverArt.minHeight) {
-            errors.push({ code: 'IMAGE_TOO_SMALL', message: `Cover art must be at least ${this.requirements.coverArt.minWidth}x${this.requirements.coverArt.minHeight}`, field: 'coverArt', severity: 'error' });
-        }
-
-        if (assets.coverArt.width !== assets.coverArt.height) {
-            errors.push({ code: 'INVALID_ASPECT_RATIO', message: 'Cover art must be perfectly square (1:1)', field: 'coverArt', severity: 'error' });
-        }
-
-        return {
-            isValid: errors.length === 0,
-            errors,
-            warnings,
-        };
+        const valid = !!assets.audioFile || (assets.audioFiles && assets.audioFiles.length > 0);
+        return { isValid: valid, errors: valid ? [] : [{ code: 'NO_AUDIO', message: 'Audio missing', field: 'audio', severity: 'error' }], warnings: [] };
     }
 }

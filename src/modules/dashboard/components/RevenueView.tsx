@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { revenueService } from '@/services/RevenueService';
 import { DollarSign, TrendingUp, ShoppingBag, ExternalLink, Download } from 'lucide-react';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
+import SalesAnalytics from './SalesAnalytics';
 
 export default function RevenueView() {
     const userProfile = useStore(state => state.userProfile);
@@ -17,17 +18,24 @@ export default function RevenueView() {
         const loadData = async () => {
             setLoading(true);
             try {
-                const [total, bySource, byProduct] = await Promise.all([
-                    revenueService.getTotalRevenue(userProfile.id),
-                    revenueService.getRevenueBySource(userProfile.id),
-                    revenueService.getRevenueByProduct(userProfile.id)
-                ]);
+                // Optimization: Fetch all stats in a single query
+                const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
-                setTotalRevenue(total);
-                setRevenueBySource(bySource);
+                setTotalRevenue(stats.totalRevenue);
+                // Map API sources to component state (merch + licensing = direct storefront)
+                setRevenueBySource({
+                    social: stats.sources.social || 0,
+                    direct: (stats.sources.merch || 0) + (stats.sources.licensing || 0)
+                });
+                // Map API sources to local state structure
+                setRevenueBySource({
+                    direct: stats.sources.merch + stats.sources.licensing, // Combining merch/licensing as 'Storefront'
+                    social: stats.sources.social
+                });
+                setRevenueBySource(stats.sources);
 
                 // Process top products
-                const sortedProducts = Object.entries(byProduct)
+                const sortedProducts = Object.entries(stats.revenueByProduct || {})
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);
@@ -40,6 +48,9 @@ export default function RevenueView() {
             }
         };
 
+        // Poll for updates or just load once?
+        // User asked for "Real Data", so let's keep it simple with fetch-on-mount for now.
+        // If we wanted real-time, we'd use onSnapshot in the service.
         loadData();
     }, [userProfile?.id]);
 
@@ -125,7 +136,7 @@ export default function RevenueView() {
                                         <div>
                                             {/* In a real app we'd fetch the product name here too */}
                                             <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">Product {p.id.substring(0, 8)}...</p>
-                                            <p className="text-xs text-gray-500">Physical Good</p>
+                                            <p className="text-xs text-gray-500">Sales Item</p>
                                         </div>
                                     </div>
                                     <span className="text-sm font-bold text-white">${p.amount.toFixed(2)}</span>
@@ -135,6 +146,10 @@ export default function RevenueView() {
                     )}
                 </div>
 
+                {/* Replaced placeholder with actual Analytics component */}
+                <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
+                    <SalesAnalytics />
+                </div>
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex flex-col justify-center items-center text-center">
                     <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
                         <TrendingUp size={24} className="text-gray-400" />

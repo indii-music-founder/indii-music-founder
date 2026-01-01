@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
+import { MarketingService } from '@/services/marketing/MarketingService';
 
 const CampaignDashboard: React.FC = () => {
     // Integrate with the Beta hook
@@ -12,7 +13,8 @@ const CampaignDashboard: React.FC = () => {
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    const handleUpdateCampaign = (updatedCampaign: CampaignAsset) => {
+    // Memoize handler to prevent re-renders in child components
+    const handleUpdateCampaign = useCallback((updatedCampaign: CampaignAsset) => {
         // Optimistically update local state for immediate feedback
         setSelectedCampaign(updatedCampaign);
 
@@ -20,14 +22,27 @@ const CampaignDashboard: React.FC = () => {
         // For now, we'll assume the hook's subscription will eventually update the list.
         // If actions.updateCampaign exists, call it.
         // For V4 compliance, we should probably have an update method in useMarketing.
-    };
+    }, []);
 
-    const handleCreateSave = async (campaignId?: string) => {
+    // Memoize handler to prevent re-renders in child components
+    const handleCreateSave = useCallback(async (campaignId?: string) => {
         setIsCreateModalOpen(false);
-        // If we got a campaign ID back, find it and select it?
-        // Since it's async from Firestore, it might not be in 'campaigns' array yet.
-        // We'll just close the modal for now.
-    };
+        if (campaignId) {
+            try {
+                const newCampaign = await MarketingService.getCampaignById(campaignId);
+                if (newCampaign) {
+                    setSelectedCampaign(newCampaign);
+                }
+            } catch (error) {
+                console.error("Failed to load new campaign", error);
+            }
+        }
+    }, []);
+
+    // Memoize handler to prevent re-renders in child components
+    const handleCreateNew = useCallback(() => {
+        setIsCreateModalOpen(true);
+    }, []);
 
     return (
         <div className="p-6 h-full flex flex-col">
@@ -36,7 +51,7 @@ const CampaignDashboard: React.FC = () => {
                 selectedCampaign={selectedCampaign}
                 onSelectCampaign={setSelectedCampaign}
                 onUpdateCampaign={handleUpdateCampaign}
-                onCreateNew={() => setIsCreateModalOpen(true)}
+                onCreateNew={handleCreateNew}
             />
 
             {isCreateModalOpen && (

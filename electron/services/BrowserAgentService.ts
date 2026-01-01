@@ -120,10 +120,12 @@ export class BrowserAgentService {
         // We set the value and dispatch events because 'insertText' can be flaky with some virtual DOMs
         const script = `
             (() => {
-                const el = document.querySelector('${selector}');
-                if (!el) throw new Error('Element not found: ${selector}');
+                const selector = ${JSON.stringify(selector)};
+                const text = ${JSON.stringify(text)};
+                const el = document.querySelector(selector);
+                if (!el) throw new Error('Element not found: ' + selector);
                 el.focus();
-                el.value = '${text.replace(/'/g, "\\'")}';
+                el.value = text;
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             })()
@@ -141,8 +143,9 @@ export class BrowserAgentService {
 
         const script = `
             (() => {
-                const el = document.querySelector('${selector}');
-                if (!el) throw new Error('Element not found: ${selector}');
+                const selector = ${JSON.stringify(selector)};
+                const el = document.querySelector(selector);
+                if (!el) throw new Error('Element not found: ' + selector);
                 el.click();
             })()
         `;
@@ -166,13 +169,14 @@ export class BrowserAgentService {
 
         const script = `
             new Promise((resolve, reject) => {
+                const selector = ${JSON.stringify(selector)};
                 const timeoutId = setTimeout(() => {
                     clearInterval(intervalId);
-                    reject('Timeout waiting for ${selector}');
+                    reject('Timeout waiting for ' + selector);
                 }, ${timeout});
 
                 const intervalId = setInterval(() => {
-                    if (document.querySelector('${selector}')) {
+                    if (document.querySelector(selector)) {
                         clearInterval(intervalId);
                         clearTimeout(timeoutId);
                         resolve(true);

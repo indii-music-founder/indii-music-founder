@@ -9,9 +9,12 @@ export default function InfiniteCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { canvasImages, addCanvasImage, updateCanvasImage, removeCanvasImage, selectedCanvasImageId, selectCanvasImage, currentProjectId } = useStore();
 
-    // Camera State
-    const [scale, setScale] = useState(1);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    // Camera State (Refs for performance)
+    // ⚡ Bolt Optimization: Using refs instead of state for high-frequency updates (pan/zoom)
+    // prevents React re-renders on every frame, significantly improving performance.
+    const scaleRef = useRef(1);
+    const offsetRef = useRef({ x: 0, y: 0 });
+
     const [tool, setTool] = useState<'pan' | 'select' | 'generate'>('pan');
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -21,6 +24,7 @@ export default function InfiniteCanvas() {
     const dragImageId = useRef<string | null>(null);
     const selectionStart = useRef<{ x: number, y: number } | null>(null);
     const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+    const rafId = useRef<number | null>(null);
 
     // Initialize / Resize
     useEffect(() => {
@@ -28,7 +32,7 @@ export default function InfiniteCanvas() {
             if (canvasRef.current) {
                 canvasRef.current.width = window.innerWidth;
                 canvasRef.current.height = window.innerHeight;
-                draw();
+                requestDraw();
             }
         };
         window.addEventListener('resize', resize);
@@ -36,16 +40,24 @@ export default function InfiniteCanvas() {
         return () => window.removeEventListener('resize', resize);
     }, []);
 
-    // Draw Loop
+    // Draw Loop - only for Store/Tool changes
     useEffect(() => {
-        draw();
-    }, [canvasImages, scale, offset, selectedCanvasImageId, tool]);
+        requestDraw();
+    }, [canvasImages, selectedCanvasImageId, tool]);
+
+    const requestDraw = () => {
+        if (rafId.current) cancelAnimationFrame(rafId.current);
+        rafId.current = requestAnimationFrame(draw);
+    };
 
     const draw = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
+        const scale = scaleRef.current;
+        const offset = offsetRef.current;
 
         // Clear
         ctx.fillStyle = '#151515';
@@ -56,25 +68,28 @@ export default function InfiniteCanvas() {
         ctx.scale(scale, scale);
 
         // Grid
-        drawGrid(ctx, canvas.width, canvas.height);
+        drawGrid(ctx, canvas.width, canvas.height, scale, offset);
 
         // Images
         canvasImages.forEach(img => {
-            let image = imageCache.current.get(img.id);
+        let image = imageCache.current.get(img.id);
             if (!image) {
                 image = new window.Image();
                 image.src = img.base64;
-                image.onload = () => draw();
+                image.onload = () => requestDraw();
                 imageCache.current.set(img.id, image);
             }
 
             if (image.complete && image.naturalWidth > 0) {
-                ctx.drawImage(image, img.x, img.y, img.width, img.height);
+                // Ensure width/height are numbers
+                const w = img.width ?? 0;
+                const h = img.height ?? 0;
+                ctx.drawImage(image, img.x, img.y, w, h);
 
                 if (img.id === selectedCanvasImageId) {
                     ctx.strokeStyle = '#3b82f6';
                     ctx.lineWidth = 4 / scale;
-                    ctx.strokeRect(img.x, img.y, img.width, img.height);
+                    ctx.strokeRect(img.x, img.y, w, h);
                 }
             }
         });
@@ -96,7 +111,7 @@ export default function InfiniteCanvas() {
         }
     };
 
-    const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number, scale: number, offset: { x: number, y: number }) => {
         const gridSize = 100;
         const startX = (-offset.x / scale) - 100;
         const startY = (-offset.y / scale) - 100;
@@ -123,6 +138,8 @@ export default function InfiniteCanvas() {
         const rect = canvasRef.current!.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
+        const scale = scaleRef.current;
+        const offset = offsetRef.current;
 
         lastPos.current = { x: cx, y: cy };
         isDragging.current = true;
@@ -139,7 +156,10 @@ export default function InfiniteCanvas() {
         // Check top-most image first
         for (let i = canvasImages.length - 1; i >= 0; i--) {
             const img = canvasImages[i];
-            if (wx >= img.x && wx <= img.x + img.width && wy >= img.y && wy <= img.y + img.height) {
+            // Ensure width/height are numbers (fallback to 0)
+            const w = img.width ?? 0;
+            const h = img.height ?? 0;
+            if (wx >= img.x && wx <= img.x + w && wy >= img.y && wy <= img.y + h) {
                 if (tool === 'select') {
                     selectCanvasImage(img.id);
                     dragImageId.current = img.id;
@@ -160,21 +180,28 @@ export default function InfiniteCanvas() {
         const cy = e.clientY - rect.top;
         const dx = cx - lastPos.current.x;
         const dy = cy - lastPos.current.y;
+        const scale = scaleRef.current;
 
         lastPos.current = { x: cx, y: cy };
 
         if (tool === 'generate') {
-            draw(); // Redraw selection box
+            requestDraw(); // Redraw selection box
             return;
         }
 
         if (dragImageId.current && tool === 'select') {
+            // Updating store will trigger re-render, which calls effect -> requestDraw
             updateCanvasImage(dragImageId.current, {
                 x: canvasImages.find(i => i.id === dragImageId.current)!.x + (dx / scale),
                 y: canvasImages.find(i => i.id === dragImageId.current)!.y + (dy / scale)
             });
         } else {
-            setOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+            // Pan logic: direct ref update + draw call (no react render)
+            offsetRef.current = {
+                x: offsetRef.current.x + dx,
+                y: offsetRef.current.y + dy
+            };
+            requestDraw();
         }
     };
 
@@ -198,12 +225,15 @@ export default function InfiniteCanvas() {
                 }
             }
             selectionStart.current = null;
-            draw();
+            requestDraw();
         }
     };
 
     const handleWheel = (e: React.WheelEvent) => {
         e.preventDefault();
+        const scale = scaleRef.current;
+        const offset = offsetRef.current;
+
         const z = Math.exp(e.deltaY * -0.001);
         const newScale = Math.min(Math.max(scale * z, 0.1), 5);
 
@@ -211,15 +241,21 @@ export default function InfiniteCanvas() {
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
 
-        setOffset({
+        // Update refs directly
+        offsetRef.current = {
             x: mx - (mx - offset.x) * (newScale / scale),
             y: my - (my - offset.y) * (newScale / scale)
-        });
-        setScale(newScale);
+        };
+        scaleRef.current = newScale;
+
+        requestDraw();
     };
 
     const handleGeneration = async (sx: number, sy: number, w: number, h: number, prompt: string) => {
         setIsGenerating(true);
+        const scale = scaleRef.current;
+        const offset = offsetRef.current;
+
         try {
             // World Coords for new image
             const wx = (sx - offset.x) / scale;
@@ -301,6 +337,10 @@ export default function InfiniteCanvas() {
             const rect = canvasRef.current!.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
+
+            const scale = scaleRef.current;
+            const offset = offsetRef.current;
+
             const wx = (mx - offset.x) / scale;
             const wy = (my - offset.y) / scale;
 

@@ -76,6 +76,57 @@ export default function VideoWorkflow() {
         }
     }, [selectedItem, generatedHistory, activeVideo]);
 
+    // Job Listener (kept from original)
+    useEffect(() => {
+        if (!jobId) return;
+
+        let unsubscribe: () => void;
+        const setupListener = async () => {
+            try {
+                const { doc, onSnapshot } = await import('firebase/firestore');
+                const { db } = await import('@/services/firebase');
+
+                unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+                        const newStatus = data?.status;
+
+                        // Check current status to avoid unnecessary updates
+                        const currentStatus = useVideoEditorStore.getState().status;
+                        if (newStatus && newStatus !== currentStatus) {
+                            setJobStatus(newStatus);
+                        }
+
+                        if (newStatus === 'completed' && data.videoUrl) {
+                            const newAsset = {
+                                id: jobId,
+                                url: data.videoUrl,
+                                prompt: data.prompt || localPrompt, // Use stored prompt or initial local prompt
+                                type: 'video' as const,
+                                timestamp: Date.now(),
+                                projectId: 'default',
+                                orgId: currentOrganizationId
+                            };
+                            addToHistory(newAsset);
+                            setActiveVideo(newAsset); // Auto-play result
+                            toast.success('Scene generated!');
+                            setJobId(null);
+                            setJobStatus('idle');
+                        } else if (newStatus === 'failed') {
+                            toast.error('Generation failed');
+                            setJobId(null);
+                            setJobStatus('failed');
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Job listener error:", e);
+            }
+        };
+        setupListener();
+        return () => { if (unsubscribe) unsubscribe(); };
+        // Removed jobStatus and localPrompt from dependencies to prevent re-subscriptions and use stable/initial values
+    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
     const handleGenerate = async () => {
         setJobStatus('queued');
         const isInterpolation = videoInputs.firstFrame && videoInputs.lastFrame;

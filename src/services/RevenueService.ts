@@ -1,269 +1,207 @@
-// Verified clean build content - Force Sync
-import { Timestamp, collection, query, where, getDocs, orderBy, limit, doc, setDoc, addDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
+import { collection, query, where, getDocs, Timestamp, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 
-export interface RevenueEntry {
-    id: string;
-    productId: string;
-    productName?: string;
+export interface RevenueStats {
+  totalRevenue: number;
+  revenueChange: number; // percentage
+  pendingPayouts: number;
+  lastPayoutAmount: number;
+  lastPayoutDate?: Date;
+  sources: {
+    streaming: number;
+    merch: number;
+    licensing: number;
+    social: number;
+  };
+  revenueByProduct: Record<string, number>;
+  history: {
+    date: string;
     amount: number;
-    currency: string;
-    source: 'direct' | 'social_drop' | 'streaming' | 'merch';
-    customerId: string;
-    timestamp: Timestamp;
-    status: 'pending' | 'completed' | 'refunded';
-    userId?: string; // Optional for compatibility
+  }[];
 }
 
-export interface RevenueSummary {
-    totalRevenue: number;
-    currency: string;
-    bySource: {
-        direct: number;
-        social_drop: number;
-        streaming: number;
-        merch: number;
-    };
-    recentTransactions: RevenueEntry[];
+export interface RevenueEntry {
+  id?: string;
+  productId?: string;
+  productName?: string;
+  amount: number;
+  currency?: string;
+  source: string; // 'streaming', 'merch', 'licensing', 'social', 'social_drop', etc.
+  customerId?: string;
+  userId: string;
+  status?: 'completed' | 'pending' | 'failed';
+  timestamp?: number;
+  createdAt?: any;
 }
 
 export class RevenueService {
-    private readonly COLLECTION = 'revenue';
+  private readonly COLLECTION = 'revenue';
 
-    /**
-     * Record a new revenue transaction
-     */
-    async recordSale(entry: Omit<RevenueEntry, 'id' | 'timestamp'>): Promise<string> {
-        const id = `REV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const timestamp = Timestamp.now();
-        const entryWithDefaults = {
-            ...entry,
-            id,
-            timestamp
-        };
+  /**
+   * Fetches aggregated revenue statistics for a user.
+   */
+  async getUserRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
+    try {
+      // Mock for superuser
+      if (userId === 'superuser') {
+        return this.getMockRevenueStats(period);
+      }
 
-        // Use setDoc to specify ID
-        await setDoc(doc(db, this.COLLECTION, id), entryWithDefaults);
+      const currentUser = auth.currentUser;
+      if (!currentUser || currentUser.uid !== userId) {
+        throw new Error('Unauthorized: Access denied to revenue data.');
+      }
 
-        return id;
-    }
+      const revenueRef = collection(db, this.COLLECTION);
+      const q = query(revenueRef, where('userId', '==', userId));
+      const snapshot = await getDocs(q);
 
-    /**
-     * Get total revenue summary for a user/org
-     */
-    async getRevenueSummary(orgId: string): Promise<RevenueSummary> {
-        const summary: RevenueSummary = {
-            totalRevenue: 0,
-            currency: 'USD',
-            bySource: {
-                direct: 0,
-                social_drop: 0,
-                streaming: 0,
-                merch: 0
-            },
-            recentTransactions: []
-        };
+      // Seeding check: if no data, seed and retry
+      if (snapshot.empty && userId) {
+        await this.seedDatabase(userId);
+        return this.getUserRevenueStats(userId, period);
+      }
 
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                orderBy('timestamp', 'desc'),
-                limit(50)
-            );
+      let totalRevenue = 0;
+      const sources = {
+        streaming: 0,
+        merch: 0,
+        licensing: 0,
+        social: 0
+      };
+      const revenueByProduct: Record<string, number> = {};
+      const historyMap = new Map<string, number>();
 
-            const snapshot = await getDocs(q);
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
-                summary.recentTransactions.push(data);
+      snapshot.docs.forEach(doc => {
+        const data = doc.data() as RevenueEntry;
+        const amount = data.amount || 0;
+        totalRevenue += amount;
 
-                if (data.status === 'completed') {
-                    summary.totalRevenue += data.amount;
-                    if (summary.bySource[data.source] !== undefined) {
-                        summary.bySource[data.source] += data.amount;
-                    }
-                }
-            });
-
-            // Auto-seed if truly empty and for a valid user
-            if (summary.recentTransactions.length === 0 && orgId) {
-                await this.seedDatabase(orgId);
-                return this.getRevenueSummary(orgId);
-            }
-
-        } catch (error) {
-            console.error('[RevenueService] Failed to fetch summary', error);
+        // Agreggate Sources
+        const source = data.source || 'other';
+        if (['streaming', 'royalties'].includes(source)) {
+          sources.streaming += amount;
+        } else if (source === 'merch') {
+          sources.merch += amount;
+        } else if (source === 'licensing') {
+          sources.licensing += amount;
+        } else if (['social', 'social_drop'].includes(source)) {
+          sources.social += amount;
         }
 
-        return summary;
-    }
-
-    /**
-     * Get revenue specific to a product
-     */
-    async getProductRevenue(productId: string): Promise<number> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('productId', '==', productId),
-                where('status', '==', 'completed')
-            );
-
-            const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(docSnap => {
-                total += docSnap.data().amount || 0;
-            });
-            return total;
-        } catch (e) {
-            return 0;
+        // Aggregate Product
+        if (data.productId) {
+          revenueByProduct[data.productId] = (revenueByProduct[data.productId] || 0) + amount;
         }
+
+        // Aggregate History
+        const date = data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date();
+        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        historyMap.set(dateKey, (historyMap.get(dateKey) || 0) + amount);
+      });
+
+      // Convert history map to array and sort
+      const history = Array.from(historyMap.entries())
+        .map(([date, amount]) => ({ date, amount }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      return {
+        totalRevenue,
+        revenueChange: 12.5, // Mock change for now
+        pendingPayouts: totalRevenue * 0.1, // Mock pending 10%
+        lastPayoutAmount: 5000,
+        lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+        sources,
+        revenueByProduct,
+        history
+      };
+
+    } catch (error) {
+      console.error('Error fetching revenue stats:', error);
+      throw error;
     }
+  }
 
-    /**
-     * Get revenue by period (Legacy compatibility method)
-     */
-    async getRevenueByPeriod(userId: string, start: Date, end: Date): Promise<number> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId), // Assuming userId is added to records
-                where('timestamp', '>=', Timestamp.fromDate(start)),
-                where('timestamp', '<=', Timestamp.fromDate(end))
-            );
-            const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(docSnap => {
-                total += (docSnap.data() as RevenueEntry).amount;
-            });
-            return total;
-        } catch (e) {
-            return 0;
-        }
+  // Alias for backward compatibility if needed, or just redirect
+  async getRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
+    return this.getUserRevenueStats(userId, period);
+  }
+
+  async recordSale(entry: RevenueEntry) {
+    await addDoc(collection(db, this.COLLECTION), {
+      ...entry,
+      createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp() // Use server timestamp if no timestamp provided
+    });
+  }
+
+  /**
+   * Seed initial transactions for a new user/org
+   */
+  private async seedDatabase(userId: string) {
+    console.log(`[RevenueService] Seeding database for ${userId}...`);
+
+    const initialSales: RevenueEntry[] = [
+      {
+        productId: 'prod-1',
+        productName: 'Neon Genesis (Digital Vinyl)',
+        amount: 25.00,
+        currency: 'USD',
+        source: 'merch',
+        customerId: 'cust-mock-1',
+        status: 'completed',
+        userId: userId
+      },
+      {
+        productId: 'prod-2',
+        productName: 'Lofi Link (Sample Pack)',
+        amount: 15.00,
+        currency: 'USD',
+        source: 'social_drop',
+        customerId: 'cust-mock-2',
+        status: 'completed',
+        userId: userId
+      },
+      {
+        productId: 'prod-3',
+        productName: 'Streaming Royalty (Spotify)',
+        amount: 124.50,
+        currency: 'USD',
+        source: 'streaming',
+        customerId: 'spotify-aggregator',
+        status: 'completed',
+        userId: userId
+      }
+    ];
+
+    for (const sale of initialSales) {
+      await this.recordSale(sale);
     }
+  }
 
-    /**
-     * Get revenue aggregated by product for a user
-     */
-    async getRevenueByProduct(userId: string): Promise<Record<string, number>> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                where('status', '==', 'completed')
-            );
-
-            const snapshot = await getDocs(q);
-            const revenueMap: Record<string, number> = {};
-
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
-                if (data.productId) {
-                    revenueMap[data.productId] = (revenueMap[data.productId] || 0) + (data.amount || 0);
-                }
-            });
-
-            return revenueMap;
-        } catch (e) {
-            console.error('[RevenueService] Failed to get revenue by product', e);
-            return {};
-        }
-    }
-
-    /**
-     * Get total revenue for a user/org
-     */
-    async getTotalRevenue(userId: string): Promise<number> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                where('status', '==', 'completed')
-            );
-            const snapshot = await getDocs(q);
-            let total = 0;
-            snapshot.forEach(docSnap => {
-                total += (docSnap.data() as RevenueEntry).amount || 0;
-            });
-            return total;
-        } catch (e) {
-            console.error('[RevenueService] Failed to get total revenue', e);
-            return 0;
-        }
-    }
-
-    /**
-     * Get revenue aggregated by source
-     */
-    async getRevenueBySource(userId: string): Promise<{ direct: number; social: number }> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                where('status', '==', 'completed')
-            );
-            const snapshot = await getDocs(q);
-            const summary = { direct: 0, social: 0 };
-
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data() as RevenueEntry;
-                if (data.source === 'direct' || data.source === 'merch' || data.source === 'streaming') {
-                    summary.direct += data.amount || 0;
-                } else if (data.source === 'social_drop') {
-                    summary.social += data.amount || 0;
-                }
-            });
-            return summary;
-        } catch (e) {
-            console.error('[RevenueService] Failed to get revenue by source', e);
-            return { direct: 0, social: 0 };
-        }
-    }
-
-    /**
-     * Seed initial transactions for a new user/org
-     */
-    private async seedDatabase(userId: string) {
-        console.log(`[RevenueService] Seeding database for ${userId}...`);
-
-        const initialSales: Omit<RevenueEntry, 'id' | 'timestamp'>[] = [
-            {
-                productId: 'prod-1',
-                productName: 'Neon Genesis (Digital Vinyl)',
-                amount: 25.00,
-                currency: 'USD',
-                source: 'direct',
-                customerId: 'cust-mock-1',
-                status: 'completed',
-                userId: userId
-            },
-            {
-                productId: 'prod-2',
-                productName: 'Lofi Link (Sample Pack)',
-                amount: 15.00,
-                currency: 'USD',
-                source: 'social_drop',
-                customerId: 'cust-mock-2',
-                status: 'completed',
-                userId: userId
-            },
-            {
-                productId: 'prod-3',
-                productName: 'Streaming Royalty (Spotify)',
-                amount: 124.50,
-                currency: 'USD',
-                source: 'streaming',
-                customerId: 'spotify-aggregator',
-                status: 'completed',
-                userId: userId
-            }
-        ];
-
-        for (const sale of initialSales) {
-            await this.recordSale(sale);
-        }
-    }
+  private getMockRevenueStats(period: string): RevenueStats {
+    return {
+      totalRevenue: 12500.50,
+      revenueChange: 12.5,
+      pendingPayouts: 1250.00,
+      lastPayoutAmount: 5000.00,
+      lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+      sources: {
+        streaming: 8500.50,
+        merch: 2500.00,
+        licensing: 1500.00,
+        social: 0
+      },
+      revenueByProduct: {
+        'prod_1': 1200.00,
+        'prod_2': 850.50,
+        'prod_3': 450.00
+      },
+      history: Array.from({ length: 10 }, (_, i) => ({
+        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        amount: Math.random() * 500 + 100
+      })).reverse()
+    };
+  }
 }
 
 export const revenueService = new RevenueService();
-
-

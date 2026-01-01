@@ -343,7 +343,7 @@ export class SocialService {
       drops: 1
     };
 
-    await updateDoc(userRef, { socialStats: initialStats });
+    await setDoc(userRef, { socialStats: initialStats }, { merge: true });
 
     // 2. Initial Posts
     const posts = [

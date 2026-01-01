@@ -319,8 +319,17 @@ Style: Premium brand commercial, 4K cinematic quality.`;
 
                     {/* Dropzone */}
                     <div
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Upload design asset"
                         onClick={() => fileInputRef.current?.click()}
-                        className={`aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-8 relative group overflow-hidden ${productAsset ? 'border-purple-500 bg-purple-900/10' : 'border-gray-700 hover:border-gray-500 hover:bg-gray-800'}`}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                fileInputRef.current?.click();
+                            }
+                        }}
+                        className={`aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-8 relative group overflow-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none ${productAsset ? 'border-purple-500 bg-purple-900/10' : 'border-gray-700 hover:border-gray-500 hover:bg-gray-800'}`}
                     >
                         <input
                             type="file"

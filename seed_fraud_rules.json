@@ -1,0 +1,32 @@
+[
+  {
+    "type": "copyright_infringement",
+    "pattern": "copyright_infringement",
+    "matchMessage": "Detected: \"Shake It Off\" by Taylor Swift",
+    "createdAt": 1767150186643
+  },
+  {
+    "type": "broad_spectrum",
+    "pattern": "sped_up",
+    "details": "Detected: Pitch/Tempo shift (+25%) matching known copyright.",
+    "createdAt": 1767150186643
+  },
+  {
+    "type": "broad_spectrum",
+    "pattern": "nightcore",
+    "details": "Detected: Pitch/Tempo shift (+25%) matching known copyright.",
+    "createdAt": 1767150186643
+  },
+  {
+    "type": "broad_spectrum",
+    "pattern": "slowed",
+    "details": "Detected: Pitch/Tempo shift (-20%) matching known copyright.",
+    "createdAt": 1767150186643
+  },
+  {
+    "type": "broad_spectrum",
+    "pattern": "chopped",
+    "details": "Detected: Pitch/Tempo shift (-20%) matching known copyright.",
+    "createdAt": 1767150186643
+  }
+]

@@ -1,6 +1,6 @@
 import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { Itinerary } from '@/modules/touring/types';
+import { Itinerary, VehicleStats } from '@/modules/touring/types';
 
 const COLLECTION_NAME = 'tour_itineraries';
 
@@ -46,39 +46,38 @@ export const TouringService = {
     /**
      * Get Vehicle Stats
      */
-    getVehicleStats: async (userId: string) => {
+    getVehicleStats: async (userId: string): Promise<VehicleStats> => {
         const q = query(
             collection(db, 'tour_vehicles'),
             where('userId', '==', userId)
         );
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
-            return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as any;
+            return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as VehicleStats;
         }
 
         // Auto-seed if missing
         console.log("Seeding Touring Database...");
-        const initialStats = {
+        const initialStats: Omit<VehicleStats, 'id'> = {
             userId,
-            condition: 95,
-            fuel: 85,
-            mileage: 12500,
-            maintenanceDue: false,
-            nextService: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
+            milesDriven: 12500,
+            fuelLevelPercent: 85,
+            tankSizeGallons: 15, // Standard tank
+            mpg: 28, // Good economy
+            gasPricePerGallon: 3.85,
             updatedAt: serverTimestamp()
         };
         await addDoc(collection(db, 'tour_vehicles'), initialStats);
         return {
             id: 'generated_seed',
-            ...initialStats,
-            nextService: { toMillis: () => Date.now() + 1000 * 60 * 60 * 24 * 30 } // Mock timestamp behavior for immediate return
-        } as any;
+            ...initialStats
+        } as VehicleStats;
     },
 
     /**
      * Save/Update Vehicle Stats
      */
-    saveVehicleStats: async (userId: string, stats: any) => {
+    saveVehicleStats: async (userId: string, stats: Partial<VehicleStats>) => {
         const q = query(
             collection(db, 'tour_vehicles'),
             where('userId', '==', userId)

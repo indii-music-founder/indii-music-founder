@@ -21,8 +21,8 @@ interface DaySheetModalProps {
 }
 
 export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onClose, onSave }) => {
-    if (!isOpen) return null;
-    const [schedule, setSchedule] = useState<ScheduleItem[]>(stop.schedule || [
+    // Hooks must be unconditional
+    const [schedule, setSchedule] = useState<ScheduleItem[]>(stop?.schedule || [
         { time: '14:00', event: 'Load In' },
         { time: '16:00', event: 'Sound Check' },
         { time: '18:00', event: 'Dinner' },
@@ -32,7 +32,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
         { time: '23:00', event: 'Curfew' },
     ]);
 
-    const [contacts, setContacts] = useState<Contact[]>(stop.contacts || [
+    const [contacts, setContacts] = useState<Contact[]>(stop?.contacts || [
         { role: 'Promoter', name: '', phone: '' },
         { role: 'Venue Rep', name: '', phone: '' },
         { role: 'Sound Guy', name: '', phone: '' },
@@ -58,6 +58,8 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
         });
         onClose();
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

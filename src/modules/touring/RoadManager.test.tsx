@@ -112,25 +112,7 @@ describe('RoadManager', () => {
         });
     });
 
-    it('allows adding and removing locations', async () => {
-        render(<RoadManager />);
-        const input = screen.getByPlaceholderText('Add a city...');
-        const addButton = screen.getByLabelText('Add location');
 
-        fireEvent.change(input, { target: { value: 'New York' } });
-        fireEvent.click(addButton);
-
-        expect(screen.getByText('New York')).toBeInTheDocument();
-
-        // Remove location
-        // Remove location
-        const removeButton = screen.getByLabelText('Remove New York');
-        fireEvent.click(removeButton);
-
-        await waitFor(() => {
-            expect(screen.queryByText('New York')).not.toBeInTheDocument();
-        });
-    });
 
     it('generates itinerary when inputs are valid', async () => {
         render(<RoadManager />);

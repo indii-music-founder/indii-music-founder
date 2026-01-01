@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Move, MousePointer2, ImagePlus, Eraser } from 'lucide-react';
 
 interface InfiniteCanvasHUDProps {
@@ -8,7 +8,9 @@ interface InfiniteCanvasHUDProps {
     removeCanvasImage: (id: string) => void;
 }
 
-export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = ({
+// Optimized with React.memo to prevent re-renders when parent's local state (e.g., offset/drag) changes
+// during high-frequency events like panning or dragging.
+export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     tool,
     setTool,
     selectedCanvasImageId,
@@ -55,4 +57,6 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = ({
             </button>
         </div>
     );
-};
+});
+
+InfiniteCanvasHUD.displayName = 'InfiniteCanvasHUD';

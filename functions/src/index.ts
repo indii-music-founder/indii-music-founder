@@ -4,7 +4,7 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
-import { GoogleAuth } from "google-auth-library";
+import { generateVideoLogic } from "./lib/video";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -21,6 +21,15 @@ const getInngestClient = () => {
         eventKey: inngestEventKey.value()
     });
 };
+
+const corsHandler = corsLib({ origin: true });
+
+// ----------------------------------------------------------------------------
+// Shared Gemini Functions
+// ----------------------------------------------------------------------------
+
+// Video Generation (Veo)
+// ----------------------------------------------------------------------------
 
 /**
  * Trigger Video Generation Job
@@ -55,17 +64,20 @@ export const triggerVideoJob = functions
         }
 
         try {
-            // 2. Create Initial Job Record
+            // 1. Create Initial Job Record in Firestore
+            // We do this BEFORE sending the event to prevent race conditions where
+            // the UI subscribes to a doc that doesn't exist yet.
             await admin.firestore().collection("videoJobs").doc(jobId).set({
-                status: "queued",
-                prompt: prompt,
+                id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
+                prompt: prompt,
+                status: "queued",
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            // 3. Publish Event to Inngest
+            // 2. Publish Event to Inngest
             const inngest = getInngestClient();
 
             await inngest.send({
@@ -84,16 +96,6 @@ export const triggerVideoJob = functions
             });
 
             console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
-            // Also create the initial job record in Firestore
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                id: jobId,
-                userId,
-                orgId: orgId || "personal",
-                prompt,
-                status: "queued",
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
 
             return { success: true, message: "Video generation job queued." };
 
@@ -124,103 +126,7 @@ export const inngestApi = functions
         const generateVideoFn = inngestClient.createFunction(
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
-            async ({ event, step }) => {
-                const { jobId, prompt, userId, options } = event.data;
-
-                // Step 1: Update status to processing
-                await step.run("update-status-processing", async () => {
-                    await admin.firestore().collection("videoJobs").doc(jobId).update({
-                        status: "processing",
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    });
-                });
-
-                // Step 2: Generate Video via Vertex AI (Veo)
-                const videoUri = await step.run("generate-veo-video", async () => {
-                    // Use GoogleAuth to get credentials for Vertex AI
-                    const auth = new GoogleAuth({
-                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                    });
-
-                    const client = await auth.getClient();
-                    const projectId = await auth.getProjectId();
-                    const location = 'us-central1';
-                    const modelId = 'veo-3.1-generate-preview';
-
-                    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
-
-                    // Construct request body
-                    // Note: Veo API shape may vary, assuming standard Vertex AI format for Generative Video
-                    // Based on public preview docs structure
-                    const requestBody = {
-                        instances: [
-                            {
-                                prompt: prompt,
-                                // Add other parameters if supported by the specific model version
-                            }
-                        ],
-                        parameters: {
-                            sampleCount: 1,
-                            // durationSeconds: options.duration || 5, // Optional depending on model support
-                            // aspectRatio: options.aspectRatio || "16:9" // Optional
-                        }
-                    };
-
-                    const response = await client.request({
-                        url,
-                        method: 'POST',
-                        data: requestBody
-                    });
-
-                    const responseData = response.data as any;
-
-                    // Vertex AI Video output usually returns a GCS URI or Base64
-                    // For Veo, it typically returns a GCS URI or a signed URL in the predictions
-                    const predictions = responseData.predictions;
-                    if (!predictions || predictions.length === 0) {
-                        throw new Error("No predictions returned from Veo API");
-                    }
-
-                    const prediction = predictions[0];
-
-                    // Handle different possible response formats
-                    // Format A: { bytesBase64Encoded: "..." }
-                    // Format B: { gcsUri: "gs://..." }
-                    // Format C: { videoUri: "..." }
-
-                    if (prediction.bytesBase64Encoded) {
-                        // Upload to Firebase Storage
-                        const bucket = admin.storage().bucket();
-                        const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                        const buffer = Buffer.from(prediction.bytesBase64Encoded, 'base64');
-
-                        await file.save(buffer, {
-                            metadata: { contentType: 'video/mp4' },
-                            public: true // Or generate signed URL
-                        });
-
-                        return file.publicUrl();
-                    } else if (prediction.gcsUri) {
-                        return prediction.gcsUri; // Should probably copy to our bucket or sign it
-                    } else if (prediction.videoUri) {
-                        return prediction.videoUri;
-                    }
-
-                    // Fallback for demo if API shape is different in preview
-                    throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
-                });
-
-                // Step 3: Update status to complete
-                await step.run("update-status-complete", async () => {
-                    await admin.firestore().collection("videoJobs").doc(jobId).update({
-                        status: "complete",
-                        videoUrl: videoUri,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    });
-                });
-
-                return { success: true, videoUrl: videoUri };
-            }
+            generateVideoLogic
         );
 
         const handler = serve({
@@ -231,6 +137,11 @@ export const inngestApi = functions
 
         return handler(req, res);
     });
+
+// ----------------------------------------------------------------------------
+// Image Generation (Gemini)
+// Legacy / Shared Gemini Functions
+// ----------------------------------------------------------------------------
 
 interface GenerateImageRequestData {
     prompt: string;
@@ -245,11 +156,9 @@ export const generateImageV3 = functions
         try {
             const { prompt, aspectRatio, count, images } = data;
             const modelId = "gemini-3-pro-image-preview";
-
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [{ text: prompt }];
-
             if (images) {
                 images.forEach(img => {
                     parts.push({
@@ -263,34 +172,23 @@ export const generateImageV3 = functions
 
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: parts
-                    }],
+                    contents: [{ role: "user", parts: parts }],
                     generationConfig: {
                         responseModalities: ["TEXT", "IMAGE"],
                         candidateCount: count || 1,
-                        ...(aspectRatio ? {
-                            imageConfig: {
-                                aspectRatio: aspectRatio
-                            }
-                        } : {})
+                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {})
                     }
                 }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Gemini API Error:", errorText);
                 throw new functions.https.HttpsError('internal', errorText);
             }
 
             const result = await response.json();
-
             const candidates = result.candidates || [];
             const processedImages = candidates.flatMap((c: any) =>
                 (c.content?.parts || [])
@@ -302,13 +200,9 @@ export const generateImageV3 = functions
             );
 
             return { images: processedImages };
-
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error("Function Error:", error);
-            if (error instanceof Error) {
-                throw new functions.https.HttpsError('internal', error.message);
-            }
-            throw new functions.https.HttpsError('internal', "An unknown error occurred");
+            throw new functions.https.HttpsError('internal', error.message || "Unknown error");
         }
     });
 
@@ -317,14 +211,6 @@ interface EditImageRequestData {
     mask?: string;
     prompt: string;
     referenceImage?: string;
-}
-
-interface Part {
-    inlineData?: {
-        mimeType: string;
-        data: string;
-    };
-    text?: string;
 }
 
 export const editImage = functions
@@ -336,7 +222,7 @@ export const editImage = functions
 
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
-            const parts: Part[] = [
+            const parts: any[] = [
                 {
                     inlineData: {
                         mimeType: "image/png",
@@ -385,7 +271,6 @@ export const editImage = functions
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Gemini API Error:", errorText);
                 throw new functions.https.HttpsError('internal', errorText);
             }
 
@@ -401,8 +286,6 @@ export const editImage = functions
         }
     });
 
-const corsHandler = corsLib({ origin: true });
-
 export const generateContentStream = functions
     .runWith({
         secrets: [geminiApiKey],
@@ -412,6 +295,20 @@ export const generateContentStream = functions
         corsHandler(req, res, async () => {
             if (req.method !== 'POST') {
                 res.status(405).send('Method Not Allowed');
+                return;
+            }
+
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
                 return;
             }
 
@@ -462,8 +359,8 @@ export const generateContentStream = functions
                                 if (text) {
                                     res.write(JSON.stringify({ text }) + '\n');
                                 }
-                            } catch (e) {
-
+                            } catch {
+                                // Ignore parse errors for partial chunks
                             }
                         }
                     }
@@ -488,6 +385,20 @@ export const ragProxy = functions
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.split('Bearer ')[1];
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
             try {
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
@@ -497,7 +408,6 @@ export const ragProxy = functions
                     method: req.method,
                     headers: {
                         'Content-Type': 'application/json',
-                        'Referer': 'http://localhost:3000/'
                     },
                     body: (req.method !== 'GET' && req.method !== 'HEAD') ?
                         (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
@@ -506,24 +416,9 @@ export const ragProxy = functions
 
                 const response = await fetch(targetUrl, fetchOptions);
                 const data = await response.text();
-
-                if (!response.ok) {
-                    console.error("RAG Proxy Upstream Error:", {
-                        status: response.status,
-                        statusText: response.statusText,
-                        url: targetUrl,
-                        body: data
-                    });
-                }
-
                 res.status(response.status);
-                try {
-                    res.send(JSON.parse(data));
-                } catch {
-                    res.send(data);
-                }
+                try { res.send(JSON.parse(data)); } catch { res.send(data); }
             } catch (error: any) {
-                console.error("RAG Proxy Error:", error);
                 res.status(500).send({ error: error.message });
             }
         });

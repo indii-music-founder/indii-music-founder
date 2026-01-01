@@ -34,6 +34,38 @@ service cloud.firestore {
       return isAuthenticated() && isOrgMember(request.resource.data.orgId);
     }
 
+    // Check if user can access the project this resource belongs to
+    // Requires resource to have 'projectId' field
+    function canViewProject(projectId) {
+      let projectPath = /databases/$(database)/documents/projects/$(projectId);
+      let project = get(projectPath);
+      // Access if:
+      // 1. Project exists AND
+      // 2. User is member of the project's organization
+      return isAuthenticated() && exists(projectPath) && isOrgMember(project.data.orgId);
+    }
+
+    // ========================================
+    // LICENSING (authenticated access)
+    // ========================================
+
+    match /licenses/{licenseId} {
+      // Allow read if user is authenticated (public catalog)
+      allow read: if isAuthenticated();
+      // Only allow write if the user owns the license (assuming userId field exists)
+      // If userId doesn't exist yet, we default to deny for safety until schema is updated.
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /license_requests/{requestId} {
+      // Allow read if user owns the request
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow create if user owns the new request
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // ========================================
     // USER DOCUMENTS
     // ========================================
@@ -61,6 +93,11 @@ service cloud.firestore {
       match /followers/{followerId} {
         allow read: if isOwner(userId);
         allow create, delete: if isOwner(followerId);
+      }
+
+      // User Stats subcollection
+      match /stats/{statId} {
+        allow read, write: if isOwner(userId);
       }
     }
 
@@ -140,8 +177,13 @@ service cloud.firestore {
     }
 
     // ========================================
-    // SOCIAL POSTS (user-scoped)
+    // CAMPAIGNS (user-scoped)
     // ========================================
+
+    match /campaigns/{campaignId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
 
     // ========================================
     // SOCIAL POSTS (user-scoped)
@@ -157,13 +199,36 @@ service cloud.firestore {
     }
 
     // ========================================
+    // FINANCE (user-scoped)
+    // ========================================
+
+    match /revenue/{revenueId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /earnings_reports/{reportId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /expenses/{expenseId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
     // FILE NODES (Project Resources)
     // ========================================
 
     match /file_nodes/{nodeId} {
-      // Allow read for authenticated users (TODO: Scope to project members)
-      allow read: if isAuthenticated();
-      
+      // Allow read if user owns the node OR has access to the project
+      // Note: canViewProject checks for isAuthenticated, existence, and organization membership
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        canViewProject(resource.data.projectId)
+      );
+
       // Allow create/update/delete only if user owns the node
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;

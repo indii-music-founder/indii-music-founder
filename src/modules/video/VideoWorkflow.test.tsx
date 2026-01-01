@@ -1,273 +1,160 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
-import { useStore } from '@/core/store';
-import { extractVideoFrame } from '../../utils/video';
+import { useStore } from '../../core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { useToast } from '../../core/context/ToastContext';
 
-// Mock Store
-vi.mock('@/core/store', () => ({
-    useStore: vi.fn(),
+// Mocks
+vi.mock('../../core/store', () => ({
+  useStore: vi.fn(),
 }));
 
-// Mock VideoEditorStore
-vi.mock('./store/videoEditorStore', () => ({
-    useVideoEditorStore: vi.fn(),
+vi.mock('./store/videoEditorStore', () => {
+  const fn = vi.fn();
+  (fn as any).getState = vi.fn(() => ({ status: 'idle' }));
+  return { useVideoEditorStore: fn };
+});
+
+vi.mock('../../core/context/ToastContext', () => ({
+  useToast: vi.fn(),
 }));
 
-// Mock Toast
-vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({
-        success: vi.fn(),
-        error: vi.fn(),
-        info: vi.fn(),
-    }),
+vi.mock('../../core/components/ErrorBoundary', () => ({
+  ErrorBoundary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-// Mock extractVideoFrame
-vi.mock('../../utils/video', () => ({
-    extractVideoFrame: vi.fn()
+vi.mock('./components/VideoGenerationSidebar', () => ({
+  VideoGenerationSidebar: () => <div>Sidebar</div>,
 }));
 
-// Mock FrameSelectionModal to easily trigger selection
-vi.mock('./components/FrameSelectionModal', () => ({
-    default: ({ isOpen, onSelect, target }: any) => isOpen ? (
-        <div data-testid="frame-modal">
-            <button onClick={() => onSelect({ id: 'vid1', type: 'video', url: 'http://video.mp4' })}>
-                Select Video
-            </button>
-            <button onClick={() => onSelect({ id: 'img1', type: 'image', url: 'http://image.png' })}>
-                Select Image
-            </button>
-            <div data-testid="modal-target">{target}</div>
-        </div>
-    ) : null
+vi.mock('./components/DirectorPromptBar', () => ({
+  DirectorPromptBar: ({ onGenerate }: { onGenerate: () => void }) => (
+    <button onClick={onGenerate} data-testid="generate-btn">Generate</button>
+  ),
+}));
+
+vi.mock('./components/DailiesStrip', () => ({
+  DailiesStrip: () => <div>Dailies</div>,
+}));
+
+// Mock Firebase
+const mockOnSnapshot = vi.fn();
+const mockDoc = vi.fn();
+const mockDb = {};
+
+vi.mock('firebase/firestore', () => ({
+  doc: (...args: any[]) => mockDoc(...args),
+  onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
+}));
+
+vi.mock('@/services/firebase', () => ({
+  db: {},
 }));
 
 // Mock VideoGenerationService
+const mockGenerateVideo = vi.fn();
 vi.mock('@/services/image/VideoGenerationService', () => ({
-    VideoGeneration: {
-        triggerVideoGeneration: vi.fn()
-    }
-}));
-
-// Mock Firestore
-const mockOnSnapshot = vi.fn();
-vi.mock('firebase/firestore', () => ({
-    getFirestore: vi.fn(() => ({})),
-    initializeFirestore: vi.fn(() => ({})),
-    persistentLocalCache: vi.fn(),
-    persistentMultipleTabManager: vi.fn(),
-    doc: vi.fn(),
-    onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
-    collection: vi.fn(),
-    addDoc: vi.fn(),
-    setDoc: vi.fn(),
-    updateDoc: vi.fn()
-}));
-
-// Mock Firebase Functions
-vi.mock('@/services/firebase', () => ({
-    functions: {},
-    db: {} // Mock db object
-}));
-
-vi.mock('firebase/functions', () => ({
-    getFunctions: vi.fn(() => ({})),
-    httpsCallable: vi.fn(() => Promise.resolve({ data: { success: true } })),
-}));
-
-// Mock CreativeGallery component since we are testing VideoWorkflow logic
-vi.mock('../creative/components/CreativeGallery', () => ({
-    default: () => <div data-testid="creative-gallery">Gallery</div>
+  VideoGeneration: {
+    generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+  },
 }));
 
 describe('VideoWorkflow', () => {
-    const mockSetPendingPrompt = vi.fn();
-    const mockAddToHistory = vi.fn();
-    const mockSetVideoInput = vi.fn();
-    const mockSetJobId = vi.fn();
-    const mockSetStatus = vi.fn();
+  const mockSetJobId = vi.fn();
+  const mockSetJobStatus = vi.fn();
+  const mockAddToHistory = vi.fn();
+  const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        (extractVideoFrame as any).mockResolvedValue('data:image/jpeg;base64,extracted-frame');
+  beforeEach(() => {
+    vi.resetAllMocks();
 
-        (useStore as any).mockReturnValue({
-            generatedHistory: [],
-            selectedItem: null,
-            uploadedImages: [],
-            pendingPrompt: 'Test Prompt', // Set pending prompt to show ReviewStep
-            setPendingPrompt: mockSetPendingPrompt,
-            addToHistory: mockAddToHistory,
-            setPrompt: vi.fn(),
-            studioControls: {
-                aspectRatio: '16:9',
-                resolution: '1080p',
-                duration: 5,
-                fps: 24,
-                motionStrength: 0.7,
-                cameraMovement: 'Pan',
-                negativePrompt: 'blurry',
-                seed: '12345',
-                shotList: []
-            },
-            videoInputs: {
-                firstFrame: null,
-                lastFrame: null,
-                ingredients: [],
-                timeOffset: 4
-            },
-            setVideoInput: mockSetVideoInput,
-            currentOrganizationId: 'org-123'
-        });
-
-        (useVideoEditorStore as any).mockReturnValue({
-            jobId: null,
-            status: 'idle',
-            setJobId: mockSetJobId,
-            setStatus: mockSetStatus,
-        });
-
-        (VideoGeneration.triggerVideoGeneration as any).mockResolvedValue({ jobId: 'test-job-id' });
-        mockOnSnapshot.mockReturnValue(() => { }); // Unsubscribe function
+    (useStore as any).mockReturnValue({
+      generatedHistory: [],
+      selectedItem: null,
+      pendingPrompt: null,
+      setPendingPrompt: vi.fn(),
+      addToHistory: mockAddToHistory,
+      setPrompt: vi.fn(),
+      studioControls: { resolution: '1080p' },
+      videoInputs: {},
+      setVideoInput: vi.fn(),
+      currentOrganizationId: 'org-123',
     });
 
-    it('renders the empty state initially', () => {
-        (useStore as any).mockReturnValue({
-            ...useStore(),
-            pendingPrompt: null,
-            currentOrganizationId: 'org-123'
-        });
-        render(<VideoWorkflow />);
-        expect(screen.getByText('Describe your video idea')).toBeInTheDocument();
+    // Mock functional update capability for setJobStatus
+    mockSetJobStatus.mockImplementation((arg) => {
+      if (typeof arg === 'function') {
+        return arg('idle'); // Simulate current status is idle
+      }
     });
 
-    it('switches to review when pendingPrompt is set', async () => {
-        render(<VideoWorkflow />);
-        expect(await screen.findByRole('button', { name: /Generate Video/ })).toBeInTheDocument();
+    (useVideoEditorStore as any).mockReturnValue({
+      jobId: null,
+      status: 'idle',
+      setJobId: mockSetJobId,
+      setStatus: mockSetJobStatus,
     });
 
-    it('triggers video generation job with orgId and cinematic controls', async () => {
-        render(<VideoWorkflow />);
+    (useToast as any).mockReturnValue(mockToast);
+  });
 
-        // Wait for ReviewStep
-        await waitFor(() => screen.getByText('Final Production Brief'));
+  it('triggers video generation and sets jobId', async () => {
+    mockGenerateVideo.mockResolvedValue([{ id: 'job-123', url: '', prompt: 'test' }]);
 
-        const generateBtn = screen.getByRole('button', { name: /Generate Video/ });
-        fireEvent.click(generateBtn);
+    render(<VideoWorkflow />);
 
-        await waitFor(() => {
-            expect(VideoGeneration.triggerVideoGeneration).toHaveBeenCalledWith(expect.objectContaining({
-                prompt: 'Test Prompt',
-                resolution: '1080p',
-                aspectRatio: '16:9',
-                negativePrompt: 'blurry',
-                seed: 12345,
-                cameraMovement: 'Pan',
-                motionStrength: 0.7,
-                fps: 24,
-                orgId: 'org-123'
-            }));
-            expect(mockSetJobId).toHaveBeenCalledWith('test-job-id');
-        });
+    const generateBtn = screen.getByTestId('generate-btn');
+    fireEvent.click(generateBtn);
+
+    await waitFor(() => {
+      expect(mockGenerateVideo).toHaveBeenCalled();
+      // Expect 'queued' first, then 'completed' (but handled in same tick in mock so maybe just one or both)
+      // Since generateVideo is awaited in handleGenerate, 'queued' happens before.
+      expect(mockSetJobStatus).toHaveBeenCalledWith('queued');
+    });
+  });
+
+  it('listens to Firestore updates when jobId is present', async () => {
+    // Setup store with a jobId to trigger the effect
+    const setJobStatusMock = vi.fn();
+
+    (useVideoEditorStore as any).mockReturnValue({
+      jobId: 'job-123',
+      status: 'queued',
+      setJobId: mockSetJobId,
+      setStatus: setJobStatusMock,
     });
 
-    it('listens for job completion and updates history with orgId', async () => {
-        // Simulate active job
-        (useVideoEditorStore as any).mockReturnValue({
-            jobId: 'test-job-id',
-            status: 'queued',
-            setJobId: mockSetJobId,
-            setStatus: mockSetStatus,
-        });
+    // Mock getState to return 'queued' to satisfy the check
+    (useVideoEditorStore as any).getState.mockReturnValue({ status: 'queued' });
 
-        render(<VideoWorkflow />);
-
-        // Simulate Firestore update
-        const mockSnapshot = {
-            exists: () => true,
-            data: () => ({
-                status: 'completed',
-                videoUrl: 'http://new-video.mp4',
-                prompt: 'Test Prompt'
-            })
-        };
-
-        // Get the callback passed to onSnapshot and call it
-        await waitFor(() => {
-            expect(mockOnSnapshot).toHaveBeenCalled();
-        });
-
-        const onSnapshotCallback = mockOnSnapshot.mock.calls[0][1];
-
-        act(() => {
-            onSnapshotCallback(mockSnapshot);
-        });
-
-        await waitFor(() => {
-            expect(mockSetStatus).toHaveBeenCalledWith('completed');
-            expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
-                url: 'http://new-video.mp4',
-                type: 'video',
-                orgId: 'org-123'
-            }));
-            expect(mockSetJobId).toHaveBeenCalledWith(null);
-        });
+    // Mock onSnapshot to call the callback immediately
+    mockOnSnapshot.mockImplementation((ref, callback) => {
+      // Simulate a 'completed' update
+      callback({
+        exists: () => true,
+        data: () => ({ status: 'completed', videoUrl: 'http://video.url', prompt: 'test prompt' })
+      });
+      return () => { }; // unsubscribe mock
     });
 
-    it('extracts frame when video is selected for firstFrame', async () => {
-        render(<VideoWorkflow />);
+    render(<VideoWorkflow />);
 
-        // Wait for ReviewStep to render
-        await waitFor(() => screen.getByText('Final Production Brief'));
-
-        // Click on "Add Start Frame" placeholder/button
-        const startFrameBtn = screen.getByText('Add Start Frame').closest('button');
-        fireEvent.click(startFrameBtn!);
-
-        // Modal should be open
-        expect(screen.getByTestId('frame-modal')).toBeInTheDocument();
-        expect(screen.getByTestId('modal-target')).toHaveTextContent('firstFrame');
-
-        // Select Video
-        fireEvent.click(screen.getByText('Select Video'));
-
-        // Check if extractVideoFrame was called and setVideoInput was called
-        await waitFor(() => {
-            expect(extractVideoFrame).toHaveBeenCalledWith('http://video.mp4', -1);
-
-            expect(mockSetVideoInput).toHaveBeenCalledWith('firstFrame', expect.objectContaining({
-                url: 'data:image/jpeg;base64,extracted-frame',
-                type: 'image'
-            }));
-        });
+    // Wait for dynamic imports and effect
+    await waitFor(() => {
+      expect(mockOnSnapshot).toHaveBeenCalled();
     });
 
-    // Skipped: Requires component refactor to support auto-navigation to 'result' step
-    it.skip('displays active video when selected', () => {
-        const mockVideo = {
-            id: '1',
-            type: 'video' as const,
-            url: 'https://example.com/test.mp4',
-            prompt: 'Test Video'
-        };
+    // Verify history update
+    expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'job-123',
+      url: 'http://video.url',
+      type: 'video'
+    }));
 
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            generatedHistory: [mockVideo],
-            selectedItem: mockVideo,
-            uploadedImages: [],
-            pendingPrompt: null,
-            setPendingPrompt: mockSetPendingPrompt,
-            addToHistory: mockAddToHistory,
-            setPrompt: vi.fn(),
-            studioControls: { aspectRatio: '16:9' },
-            videoInputs: { firstFrame: null, lastFrame: null },
-            setVideoInput: vi.fn(),
-        });
-
-        render(<VideoWorkflow />);
-        expect(screen.getByText('"Test Video"')).toBeInTheDocument();
-    });
+    // Verify success toast
+    expect(mockToast.success).toHaveBeenCalledWith('Scene generated!');
+  });
 });
