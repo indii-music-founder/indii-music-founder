@@ -64,7 +64,7 @@ AVAILABLE TOOLS:
 19. recall_memories(query: string) - Search long-term memory.
 20. verify_output(goal: string, content: string) - Critique generated content.
 21. request_approval(content: string) - Pause and ask user for approval.
-22. write_press_release(headline: string, company_name: string, key_points: string, contact_info: string) - Write a press release.
+22. write_press_release(headline: string, company_name: string, key_points: string[], contact_info: string) - Write a press release.
 23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate crisis response.
 24. extend_video(videoUrl: string, direction: string, frame: number) - Extend video (direction: 'forwards' or 'backwards').
 25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing: string) - Add or update a keyframe.
@@ -77,6 +77,22 @@ AVAILABLE TOOLS:
 32. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
 33. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.
 34. get_distance_matrix(origins: string[], destinations: string[]) - Calculate travel time and distance between locations.
+35. analyze_brand_consistency(content: string, type: string) - Analyze brand consistency.
+36. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
+37. audit_visual_assets(assets: string[]) - Audit visual assets.
+38. create_campaign_brief(product: string, goal: string) - Create marketing campaign brief.
+39. analyze_audience(platform: string) - Analyze target audience.
+40. schedule_content(posts: any[]) - Create content schedule.
+41. plan_tour_route(locations?: string[], start_location?: string, end_location?: string, stops?: string[], timeframe?: string) - Plan tour route.
+42. calculate_tour_budget(days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string) - Calculate tour budget.
+43. generate_itinerary(route?: any, city?: string, date?: string, venue?: string, show_time?: string) - Generate daily itinerary.
+44. audit_permissions(project_id?: string) - Audit security permissions.
+45. scan_for_vulnerabilities(scope: string) - Scan for vulnerabilities.
+46. track_performance(campaignId: string) - Track campaign performance.
+47. check_api_status(api_name: string) - Check API status.
+48. scan_content(text: string) - Scan content for sensitive data.
+49. rotate_credentials(service_name: string) - Rotate credentials.
+50. verify_zero_touch_prod(service_name: string) - Verify zero-touch prod.
 35. analyze_brand_consistency(content: string, brand_guidelines?: string) - Analyze brand consistency.
 36. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
 37. audit_visual_assets(assets: string[]) - Audit visual assets.

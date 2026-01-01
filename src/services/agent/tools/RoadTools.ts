@@ -1,138 +1,163 @@
+
 import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { MapsTools } from './MapsTools';
+import { z } from 'zod';
 
 /**
  * Road Manager Tools
  * Logistics, routing, and budgeting for tours.
  */
 
-// --- Standalone Implementations ---
+// --- Validation Schemas ---
 
-export const plan_tour_route_ai = async (args: { start_location: string, end_location: string, stops: string[], timeframe: string }) => {
-    const prompt = `
-    You are a Tour Manager. Plan a logistical route for a tour.
-    Start: ${args.start_location}
-    End: ${args.end_location}
-    Stops/Cities: ${args.stops.join(', ')}
-    Timeframe: ${args.timeframe}
-    Optimize for logical travel flow.
-    `;
-    try {
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Failed to plan tour route.";
-    } catch (e) {
-        return "Error planning tour route.";
-    }
-};
+const TourRouteSchema = z.object({
+    route: z.array(z.string()),
+    totalDistance: z.string(),
+    estimatedDuration: z.string(),
+    legs: z.array(z.object({
+        from: z.string(),
+        to: z.string(),
+        distance: z.string(),
+        driveTime: z.string()
+    }))
+});
 
-export const calculate_tour_budget_ai = async (args: { crew_size: number, duration_days: number, accommodation_level: string }) => {
-    const prompt = `
-    You are a Tour Accountant. Estimate a tour budget.
-    Crew Size: ${args.crew_size}
-    Duration: ${args.duration_days} days
-    Accommodation Level: ${args.accommodation_level}
-    `;
-    try {
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Failed to calculate tour budget.";
-    } catch (e) {
-        return "Error calculating tour budget.";
-    }
-};
+const TourBudgetSchema = z.object({
+    totalBudget: z.number(),
+    breakdown: z.object({
+        lodging: z.string(),
+        food: z.string(),
+        transport: z.string(),
+        contingency: z.string()
+    })
+});
 
-export const generate_itinerary_ai = async (args: { city: string, date: string, venue: string, show_time: string }) => {
-    const prompt = `
-    You are a Road Manager. Create a Day Sheet (Itinerary).
-    City: ${args.city}
-    Date: ${args.date}
-    Venue: ${args.venue}
-    Show Time: ${args.show_time}
-    `;
-    try {
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Failed to generate itinerary.";
-    } catch (e) {
-        return "Error generating itinerary.";
-    }
-};
+const ItinerarySchema = z.object({
+    tourName: z.string(),
+    schedule: z.array(z.object({
+        day: z.number(),
+        city: z.string(),
+        venue: z.string(),
+        activity: z.string()
+    }))
+});
 
-export const plan_tour_route = async ({ locations }: { locations: string[] }) => {
-    return JSON.stringify({
-        route: locations,
-        totalDistance: "1200 miles",
-        estimatedDuration: "18 days",
-        legs: locations.map((loc, i) => {
-            if (i === locations.length - 1) return null;
-            return {
-                from: loc,
-                to: locations[i + 1],
-                distance: "300 miles",
-                driveTime: "5 hours"
-            };
-        }).filter(Boolean)
-    }, null, 2);
-};
-
-export const calculate_tour_budget = async ({ days, crew }: { days: number, crew: number }) => {
-    const perDiem = 50;
-    const hotelAvg = 150;
-    const travelAvg = 200;
-
-    const lodging = days * crew * hotelAvg;
-    const food = days * crew * perDiem;
-    const transport = days * travelAvg;
-    const contingency = (lodging + food + transport) * 0.1;
-
-    return JSON.stringify({
-        totalBudget: lodging + food + transport + contingency,
-        breakdown: {
-            lodging: `$${lodging}`,
-            food: `$${food}`,
-            transport: `$${transport}`,
-            contingency: `$${contingency}`
-        }
-    }, null, 2);
-};
-
-export const book_logistics = async ({ item, date }: { item: string, date: string }) => {
-    return JSON.stringify({
-        status: "confirmed",
-        item,
-        date,
-        confirmationCode: `BK-${Math.floor(Math.random() * 10000)}`,
-        vendor: "Global Logistics Co."
-    }, null, 2);
-};
-
-export const generate_itinerary = async ({ route }: { route: any }) => {
-    return JSON.stringify({
-        tourName: "Summer 2026 Tour",
-        schedule: [
-            { day: 1, city: "Chicago", venue: "The Riv", activity: "Load in 2PM" },
-            { day: 2, city: "Detroit", venue: "Majestic", activity: "Travel day" }
-        ]
-    }, null, 2);
-};
-
-// --- Unified Object ---
+// --- Tools Implementation ---
 
 export const RoadTools = {
-    plan_tour_route_ai,
-    calculate_tour_budget_ai,
-    generate_itinerary_ai,
-    plan_tour_route,
-    calculate_tour_budget,
-    book_logistics,
-    generate_itinerary,
+    plan_tour_route: async ({ locations, start_location, end_location, stops, timeframe }: { locations?: string[], start_location?: string, end_location?: string, stops?: string[], timeframe?: string }) => {
+        // Adapt input to support both simple list and detailed object
+        const stopsList = locations || (stops && start_location && end_location ? [start_location, ...stops, end_location] : []);
+        const context = timeframe ? `Timeframe: ${timeframe}` : '';
+
+        const prompt = `
+        You are a Tour Manager. Plan a logistical route for a tour.
+        Stops/Cities: ${stopsList.join(', ')}.
+        ${context}
+        Optimize for logical travel flow.
+
+        Output a strict JSON object (no markdown) matching this schema:
+        { "route": string[], "totalDistance": string, "estimatedDuration": string, "legs": [{ "from": string, "to": string, "distance": string, "driveTime": string }] }
+        `;
+
+        try {
+            const res = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            const text = res.text();
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return TourRouteSchema.parse(parsed);
+        } catch (e) {
+            console.error('RoadTools.plan_tour_route error:', e);
+            return {
+                route: stopsList,
+                totalDistance: "Unknown",
+                estimatedDuration: "Unknown",
+                legs: []
+            };
+        }
+    },
+
+    calculate_tour_budget: async ({ days, crew, crew_size, duration_days, accommodation_level }: { days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string }) => {
+        const d = days || duration_days || 1;
+        const c = crew || crew_size || 1;
+        const level = accommodation_level || 'standard';
+
+        const prompt = `
+        You are a Tour Accountant. Estimate a tour budget.
+        Crew Size: ${c}
+        Duration: ${d} days
+        Accommodation Level: ${level}
+
+        Output a strict JSON object (no markdown) matching this schema:
+        { "totalBudget": number, "breakdown": { "lodging": string, "food": string, "transport": string, "contingency": string } }
+        `;
+
+        try {
+            const res = await AI.generateContent({
+                model: AI_MODELS.TEXT_AGENT.model,
+                contents: { role: 'user', parts: [{ text: prompt }] }
+            });
+            const text = res.text();
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return TourBudgetSchema.parse(parsed);
+        } catch (e) {
+            console.error('RoadTools.calculate_tour_budget error:', e);
+            return {
+                totalBudget: 0,
+                breakdown: { lodging: "0", food: "0", transport: "0", contingency: "0" }
+            };
+        }
+    },
+
+    generate_itinerary: async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
+        const prompt = city ?
+            `Create a Day Sheet for ${city} on ${date} at ${venue}, show time ${show_time}.` :
+            `Create a tour itinerary based on this route info: ${JSON.stringify(route)}`;
+
+        const fullPrompt = `
+        You are a Road Manager. ${prompt}
+
+        Output a strict JSON object (no markdown) matching this schema:
+        { "tourName": string, "schedule": [{ "day": number, "city": string, "venue": string, "activity": string }] }
+        `;
+
+        try {
+            const res = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT,
+                contents: { role: 'user', parts: [{ text: fullPrompt }] }
+            });
+            const text = res.text();
+            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
+            const parsed = JSON.parse(jsonText);
+            return ItinerarySchema.parse(parsed);
+        } catch (e) {
+            console.error('RoadTools.generate_itinerary error:', e);
+            return {
+                tourName: "Tour",
+                schedule: []
+            };
+        }
+    },
+
+    book_logistics: async ({ item, date }: { item: string, date: string }) => {
+        return {
+            status: "confirmed",
+            item,
+            date,
+            confirmationCode: `BK-${Math.floor(Math.random() * 10000)}`,
+            vendor: "Global Logistics Co."
+        };
+    },
+
     ...MapsTools
 };
+
+// Aliases for backwards compatibility or specific agent signatures
+export const plan_tour_route = RoadTools.plan_tour_route;
+export const calculate_tour_budget = RoadTools.calculate_tour_budget;
+export const generate_itinerary = RoadTools.generate_itinerary;
