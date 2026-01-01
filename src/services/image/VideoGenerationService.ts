@@ -23,6 +23,7 @@ export interface VideoGenerationOptions {
     cameraMovement?: string;
     motionStrength?: number;
     shotList?: ShotItem[];
+    orgId?: string;
 }
 
 export class VideoGenerationService {

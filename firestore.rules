@@ -199,6 +199,25 @@ service cloud.firestore {
     }
 
     // ========================================
+    // FINANCE (user-scoped)
+    // ========================================
+
+    match /revenue/{revenueId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /earnings_reports/{reportId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /expenses/{expenseId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
     // FILE NODES (Project Resources)
     // ========================================
 

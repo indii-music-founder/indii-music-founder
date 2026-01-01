@@ -89,7 +89,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'gallery' && <CreativeGallery />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'showroom' && <Showroom />}
-                        {viewMode === 'video_production' && <VideoWorkflow />}
                     </div>
                 </div>
 

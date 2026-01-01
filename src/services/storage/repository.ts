@@ -1,6 +1,5 @@
 import { openDB } from 'idb';
-import { db, storage } from '../firebase';
-const CURRENT_USER_ID = 'superuser-id';
+import { auth, db, storage } from '../firebase';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { UserProfile } from '@/modules/workflow/types';
@@ -39,7 +38,7 @@ function queueAssetForSync(id: string, blob: Blob): void {
  * Process the sync queue - call this when online connectivity is restored
  */
 export async function processSyncQueue(): Promise<void> {
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (!user || syncQueue.size === 0) return;
 
     console.log(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
@@ -99,7 +98,7 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
     await dbLocal.put(STORE_NAME, blob, id);
 
     // 2. Sync to Cloud if logged in
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (user) {
         try {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
@@ -125,7 +124,10 @@ export async function getAssetFromStorage(id: string): Promise<string> {
 
     // 2. Try Cloud if missing locally
     try {
-        const storageRef = ref(storage, `users/${CURRENT_USER_ID}/assets/${id}`);
+        const user = auth.currentUser;
+        if (!user) throw new Error("User not authenticated for cloud fetch");
+
+        const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
         const cloudBlob = await getBlob(storageRef);
 
         // Save to local cache
@@ -144,19 +146,29 @@ interface Workflow {
     [key: string]: any; // Allow other properties
 }
 
+interface CanvasState {
+    id: string;
+    json: string;
+    updatedAt: any;
+}
+
 // --- User Profile ---
 
 export async function saveProfileToStorage(profile: UserProfile): Promise<void> {
     const dbLocal = await initDB();
-    // We assume single user profile for now, or key by profile.id
-    // profile.id is 'superuser' in current context
 
     // 1. Save locally
     await dbLocal.put(PROFILE_STORE, profile);
 
     // 2. Sync to Cloud
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (user) {
+        // Validation: Ensure we are only saving the profile for the current user
+        if (profile.id !== user.uid) {
+            console.warn(`[Repository] Profile ID mismatch ignoring cloud sync. Profile: ${profile.id}, Auth: ${user.uid}`);
+            return;
+        }
+
         try {
             const docRef = doc(db, 'users', user.uid);
             await setDoc(docRef, profile, { merge: true });
@@ -166,16 +178,21 @@ export async function saveProfileToStorage(profile: UserProfile): Promise<void> 
     }
 }
 
-export async function getProfileFromStorage(profileId: string = 'superuser'): Promise<UserProfile | undefined> {
+export async function getProfileFromStorage(profileId?: string): Promise<UserProfile | undefined> {
     const dbLocal = await initDB();
+    const user = auth.currentUser;
+
+    // Determine target ID: passed ID > auth ID > 'guest'
+    const targetId = profileId || user?.uid;
+
+    if (!targetId) return undefined;
 
     // 1. Try Local
-    let profile = await dbLocal.get(PROFILE_STORE, profileId);
+    let profile = await dbLocal.get(PROFILE_STORE, targetId);
     if (profile) return profile;
 
-    // 2. Try Cloud if missing locally
-    const user = { uid: CURRENT_USER_ID };
-    if (user) {
+    // 2. Try Cloud if missing locally and we are authorized
+    if (user && user.uid === targetId) {
         try {
             const docRef = doc(db, 'users', user.uid);
             const snap = await getDoc(docRef);
@@ -203,7 +220,7 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
     await dbLocal.put(WORKFLOWS_STORE, workflowWithId);
 
     // 2. Sync to Cloud
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (user) {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', workflowId);
@@ -217,19 +234,11 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
 export async function getWorkflowFromStorage(id: string): Promise<Workflow | undefined> {
     const dbLocal = await initDB();
 
-    // 1. Try Cloud first for Workflows (to get latest version across devices)
-    // Only if online and logged in. Otherwise fallback to local.
-    // Actually, for speed, Strategy: Read Local, Check Cloud in background?
-    // Let's go with: Try Local. If not found, Try Cloud.
-    // User requested "Sync". So we probably want the latest. 
-    // Let's standard: Try Local, but maybe we should have a 'sync' method.
-    // For now, simple fallback.
-
     let workflow = await dbLocal.get(WORKFLOWS_STORE, id);
 
     if (workflow) return workflow;
 
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (user) {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', id);
@@ -248,6 +257,42 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
     return undefined;
 }
 
+// --- Canvas States (Fabric JSON) ---
+
+export async function saveCanvasStateToStorage(id: string, json: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
+        await setDoc(docRef, {
+            id,
+            json,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+        console.log(`[Repository] Saved canvas state for ${id}`);
+    } catch (error) {
+        console.warn(`Failed to sync canvas state ${id} to cloud:`, error);
+    }
+}
+
+export async function getCanvasStateFromStorage(id: string): Promise<string | undefined> {
+    const user = auth.currentUser;
+    if (!user) return undefined;
+
+    try {
+        const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            return (snap.data() as CanvasState).json;
+        }
+    } catch (error) {
+        console.warn("Failed to fetch canvas state from cloud", error);
+    }
+
+    return undefined;
+}
+
 export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
     const dbLocal = await initDB();
 
@@ -255,7 +300,7 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
     const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
 
     // 2. Merge with Cloud if logged in
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (user) {
         try {
             const collectionRef = collection(db, 'users', user.uid, 'workflows');
@@ -264,7 +309,6 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
             const cloudWorkflows = snap.docs.map(d => d.data());
 
             // Simple merge: Cloud wins if exists, else keep local (if local has ones not in cloud)
-            // Or just update local with cloud items
             for (const cw of cloudWorkflows) {
                 await dbLocal.put(WORKFLOWS_STORE, cw);
             }
@@ -279,22 +323,17 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
 }
 
 export async function syncWorkflows(): Promise<void> {
-    const user = { uid: CURRENT_USER_ID };
+    const user = auth.currentUser;
     if (!user) return;
 
     const dbLocal = await initDB();
     const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
-
-    // Naive Sync: Push all local workflows that aren't marked as 'synced' (or just all of them, relying on merge)
-    // For efficiency, we should track a 'synced' flag locally.
-    // For now, let's just push everything to ensure cloud has latest.
 
     console.log(`Syncing ${localWorkflows.length} workflows to cloud...`);
 
     const batchPromises = localWorkflows.map(async (wf) => {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', wf.id);
-            // We use setDoc with merge to update cloud 
             await setDoc(docRef, { ...wf, synced: true }, { merge: true });
         } catch (e) {
             console.warn(`Failed to sync workflow ${wf.id}`, e);

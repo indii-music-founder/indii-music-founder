@@ -8,11 +8,8 @@ import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
 // Note: switch_module moved to NavigationTools
 
 interface DelegateTaskArgs extends ToolFunctionArgs {
-    agent_id: ValidAgentId;
-    // Helper to support targetAgentId alias used in some prompts
-    targetAgentId?: string;
-    agent_id: ValidAgentId;  // Keep for backwards compatibility with existing tool calls
-    targetAgentId?: ValidAgentId;  // New preferred parameter name
+    agent_id?: ValidAgentId;
+    targetAgentId?: ValidAgentId;
     task: string;
     context?: AgentContext;
 }
@@ -37,19 +34,18 @@ interface UpdatePromptArgs extends ToolFunctionArgs {
 export const CoreTools = {
     delegate_task: async (args: DelegateTaskArgs): Promise<string> => {
         try {
-            // Support both parameter names for backwards compatibility (though type now enforces agent_id)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const agentId = args.agent_id || (args as any).targetAgentId;
             // Support both parameter names for backwards compatibility
             // Cast to ValidAgentId because we validate it below
-            const agentId = (args.targetAgentId || args.agent_id) as ValidAgentId;
+            const rawAgentId = args.targetAgentId || args.agent_id;
+
+            if (!rawAgentId) {
+                return `Error: Missing agent_id or targetAgentId parameter.`;
+            }
+
+            const agentId = rawAgentId as ValidAgentId;
 
             // Runtime validation: reject invalid agent IDs to prevent hallucination issues
             if (!VALID_AGENT_IDS.includes(agentId)) {
-            const agentId = args.targetAgentId || args.agent_id;
-
-            // Runtime validation: reject invalid agent IDs to prevent hallucination issues
-            if (!VALID_AGENT_IDS.includes(agentId as ValidAgentId)) {
                 return `Error: Invalid agent ID "${agentId}". Valid agent IDs are: ${VALID_AGENT_IDS_LIST}`;
             }
 

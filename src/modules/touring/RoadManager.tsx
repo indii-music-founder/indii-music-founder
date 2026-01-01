@@ -7,20 +7,8 @@ import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 
-interface ItineraryStop {
-    date: string;
-    city: string;
-    venue: string;
-    activity: string;
-    notes: string;
-}
-
-interface Itinerary {
-    tourName: string;
-    stops: ItineraryStop[];
-    totalDistance: string;
-    estimatedBudget: string;
-}
+import { useTouring } from './hooks/useTouring';
+import { Itinerary, ItineraryStop } from './types';
 
 interface LogisticsReport {
     isFeasible: boolean;
@@ -30,12 +18,21 @@ interface LogisticsReport {
 
 const RoadManager: React.FC = () => {
     const toast = useToast();
+    const {
+        currentItinerary: itinerary,
+        saveItinerary,
+        updateItineraryStop,
+        vehicleStats,
+        saveVehicleStats,
+        loading: touringLoading
+    } = useTouring();
+
     const [locations, setLocations] = useState<string[]>([]);
     const [newLocation, setNewLocation] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [itinerary, setItinerary] = useState<Itinerary | null>(null);
+
     const [isCheckingLogistics, setIsCheckingLogistics] = useState(false);
     const [logisticsReport, setLogisticsReport] = useState<LogisticsReport | null>(null);
 
@@ -46,13 +43,9 @@ const RoadManager: React.FC = () => {
     const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
     const [isFindingPlaces, setIsFindingPlaces] = useState(false);
 
-    const [fuelStats, setFuelStats] = useState({
-        milesDriven: 0,
-        fuelLevelPercent: 50,
-        tankSizeGallons: 15,
-        mpg: 12, // Junkie truck MPG
-        gasPricePerGallon: 3.50
-    });
+    // Fuel Stats managed by Firestore now
+    // const [fuelStats, setFuelStats] = useState(...) -> replaced by vehicleStats
+
     const [fuelLogistics, setFuelLogistics] = useState<any>(null);
     const [isCalculatingFuel, setIsCalculatingFuel] = useState(false);
 
@@ -74,15 +67,20 @@ const RoadManager: React.FC = () => {
         }
 
         setIsGenerating(true);
-        setItinerary(null);
+        // setItinerary(null); // Managed by hook now
         setLogisticsReport(null);
 
         try {
             const generateItinerary = httpsCallable(functions, 'generateItinerary');
             const response = await generateItinerary({ locations, dates: { start: startDate, end: endDate } });
             const result = response.data as Itinerary;
-            setItinerary(result);
-            toast.success("Itinerary generated");
+
+            await saveItinerary({
+                ...result,
+                tourName: `Tour ${startDate} - ${locations[0]}`
+            });
+
+            toast.success("Itinerary generated and saved");
         } catch (error) {
             console.error("Itinerary Generation Failed:", error);
             toast.error("Failed to generate itinerary");
@@ -133,7 +131,7 @@ const RoadManager: React.FC = () => {
         setIsCalculatingFuel(true);
         try {
             const calculateFuelLogistics = httpsCallable(functions, 'calculateFuelLogistics');
-            const response = await calculateFuelLogistics(fuelStats);
+            const response = await calculateFuelLogistics(vehicleStats);
             const result = response.data as any;
             setFuelLogistics(result);
             toast.success("Fuel logistics calculated");
@@ -177,6 +175,16 @@ const RoadManager: React.FC = () => {
              console.error("Failed to update stop", err);
              toast.error("Failed to update stop");
         });
+
+        // Find index of stop
+        const index = itinerary.stops.findIndex(s => s.date === updatedStop.date);
+        if (index !== -1) {
+            updateItineraryStop(index, updatedStop).catch(err => {
+                console.error("Failed to update stop", err);
+                toast.error("Failed to update stop");
+            });
+            toast.success("Day sheet updated");
+        }
     };
 
     return (
@@ -262,8 +270,14 @@ const RoadManager: React.FC = () => {
                             handleFindGasStations={handleFindGasStations}
                             isFindingPlaces={isFindingPlaces}
                             nearbyPlaces={nearbyPlaces}
-                            fuelStats={fuelStats}
-                            setFuelStats={setFuelStats}
+                            fuelStats={vehicleStats || { // Fallback to avoid crash if loading or null
+                                milesDriven: 0,
+                                fuelLevelPercent: 50,
+                                tankSizeGallons: 15,
+                                mpg: 8,
+                                gasPricePerGallon: 3.50
+                            }}
+                            setFuelStats={saveVehicleStats}
                             handleCalculateFuel={handleCalculateFuel}
                             isCalculatingFuel={isCalculatingFuel}
                             fuelLogistics={fuelLogistics}

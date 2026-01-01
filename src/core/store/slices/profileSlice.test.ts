@@ -7,6 +7,7 @@ import { UserProfile } from '@/modules/workflow/types';
 // Mock repository
 vi.mock('@/services/storage/repository', () => ({
     saveProfileToStorage: vi.fn().mockResolvedValue(undefined),
+    saveProfileToStorage: vi.fn().mockResolvedValue(true),
     getProfileFromStorage: vi.fn()
 }));
 
@@ -76,26 +77,29 @@ describe('ProfileSlice Persistence', () => {
         expect(saveProfileToStorage).toHaveBeenCalledWith(expectedProfile);
     });
 
-    it('initializeAuth should load profile from storage', async () => {
+    it('loadUserProfile should load profile from storage', async () => {
         vi.mocked(getProfileFromStorage).mockResolvedValue(mockProfile);
-        const { initializeAuth } = useStore.getState();
+        const { loadUserProfile } = useStore.getState();
 
-        await initializeAuth();
+        await loadUserProfile('test-uid');
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        expect(getProfileFromStorage).toHaveBeenCalledWith('superuser');
+        expect(getProfileFromStorage).toHaveBeenCalledWith('test-uid');
         expect(useStore.getState().userProfile).toEqual(mockProfile);
     });
 
-    it('initializeAuth should use default profile if storage is empty', async () => {
+    it('loadUserProfile should use default profile if storage is empty', async () => {
         vi.mocked(getProfileFromStorage).mockResolvedValue(undefined);
-        const { initializeAuth, userProfile: initialDefault } = useStore.getState();
+        const { loadUserProfile, userProfile: initialDefault } = useStore.getState();
 
-        await initializeAuth();
+        // Ensure we expect the ID to be updated to the new UID
+        const expectedDefault = { ...initialDefault, id: 'test-uid' };
+
+        await loadUserProfile('test-uid');
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        expect(getProfileFromStorage).toHaveBeenCalledWith('superuser');
-        expect(useStore.getState().userProfile).toEqual(initialDefault);
-        expect(saveProfileToStorage).toHaveBeenCalledWith(initialDefault);
+        expect(getProfileFromStorage).toHaveBeenCalledWith('test-uid');
+        expect(useStore.getState().userProfile).toEqual(expectedDefault);
+        expect(saveProfileToStorage).toHaveBeenCalledWith(expectedDefault);
     });
 });

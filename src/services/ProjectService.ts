@@ -12,19 +12,35 @@ class ProjectServiceImpl extends FirestoreService<Project> {
         const constraints = [where('orgId', '==', orgId)];
 
         // If it's the personal workspace, we MUST filter by userId to satisfy security rules
+        let userId: string | undefined;
         if (orgId === 'org-default' || orgId === 'personal') {
             const { auth } = await import('./firebase');
             if (auth.currentUser) {
-                constraints.push(where('userId', '==', auth.currentUser.uid));
+                userId = auth.currentUser.uid;
+                constraints.push(where('userId', '==', userId));
             } else {
                 return []; // No user, no personal projects
             }
         }
 
-        return this.query(
+        const results = await this.query(
             constraints,
             (a, b) => b.date - a.date
         );
+
+        // Auto-seed Demo Project if empty and valid user
+        if (results.length === 0 && userId && (orgId === 'org-default' || orgId === 'personal')) {
+            console.log("No projects found, seeding Demo Project...");
+            try {
+                const demoProject = await this.createProject('Demo Project', 'creative', orgId);
+                return [demoProject];
+            } catch (e) {
+                console.error("Failed to seed demo project", e);
+                return [];
+            }
+        }
+
+        return results;
     }
 
     async createProject(name: string, type: Project['type'], orgId: string): Promise<Project> {

@@ -203,7 +203,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             if (data.renderId || data.success) {
                 toast.success('Cloud render started successfully!');
                 if (data.renderId) {
-                    console.log('Render ID:', data.renderId);
+                    // Log logged on server side
                 }
             } else {
                 throw new Error(data.error || 'Export failed');

@@ -38,36 +38,9 @@ export default function CreativeNavbar() {
                             {'Superuser'}
                         </span>
 
-                        {/* Mode Dropdown */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowModeDropdown(!showModeDropdown)}
-                                className="flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 text-xs rounded px-3 py-1.5 text-gray-300 hover:border-gray-500 transition-colors whitespace-nowrap"
-                            >
-                                {generationMode === 'image' ? (
-                                    <><ImageIcon size={12} /> Image</>
-                                ) : (
-                                    <><Video size={12} /> Video</>
-                                )}
-                                <ChevronDown size={12} />
-                            </button>
-
-                            {showModeDropdown && (
-                                <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                                    <button
-                                        onClick={() => { setGenerationMode('image'); setShowModeDropdown(false); }}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                                    >
-                                        <ImageIcon size={12} /> Image Mode
-                                    </button>
-                                    <button
-                                        onClick={() => { setGenerationMode('video'); setShowModeDropdown(false); }}
-                                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                                    >
-                                        <Video size={12} /> Video Mode
-                                    </button>
-                                </div>
-                            )}
+                        {/* Static Label instead of Dropdown */}
+                        <div className="flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 text-xs rounded px-3 py-1.5 text-gray-300">
+                            <ImageIcon size={12} /> <span>Creative Studio</span>
                         </div>
 
                         {/* Mobile: Agent Toggle in top row */}

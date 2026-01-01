@@ -56,11 +56,12 @@ describe('Sidebar Navigation Integration', () => {
         setModule: mockSetModule,
         isSidebarOpen: true,
         toggleSidebar: mockToggleSidebar,
-        initializeAuth: mockInitializeAuth,
+        initializeAuthListener: vi.fn().mockReturnValue(() => { }),
+        loadUserProfile: vi.fn(),
+        user: { uid: 'test-uid', email: 'test@example.com' },
+        authLoading: false,
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
-        isAuthReady: true,
-        isAuthenticated: true,
         ...overrides,
     });
 

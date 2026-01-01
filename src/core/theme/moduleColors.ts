@@ -38,10 +38,9 @@ export interface ModuleColor {
  * Use this when you need the raw CSS variable name
  */
 export const departmentCssVars = {
-    royalties: '--color-dept-royalties',
-    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
     // Base Department Colors
     royalties: '--color-dept-royalties',
+    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
     distribution: '--color-dept-distribution',
     marketing: '--color-dept-marketing',
     legal: '--color-dept-legal',
@@ -56,9 +55,7 @@ export const departmentCssVars = {
     default: '--color-dept-default',
 
     // Module Mappings (Aliases)
-    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
     publicist: '--color-dept-marketing',   // Publicist shares Marketing
-    road: '--color-dept-touring',          // Road Manager = Touring
     video: '--color-dept-creative',        // Video shares Creative
     agent: '--color-dept-creative',        // Agent shares Creative
     'audio-analyzer': '--color-dept-creative', // Audio Analyzer shares Creative

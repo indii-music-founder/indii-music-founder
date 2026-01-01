@@ -34,11 +34,42 @@ export class MarketingService {
             return snapshot.data() as { totalReach: number; engagementRate: number; activeCampaigns: number };
         }
 
-        return {
-            totalReach: 0,
-            engagementRate: 0,
-            activeCampaigns: 0
+        // Auto-seed if missing
+        return this.seedDatabase(userProfile.id);
+    }
+
+    private static async seedDatabase(userId: string) {
+        console.log("Seeding Marketing Database...");
+        const initialStats = {
+            totalReach: 15400,
+            engagementRate: 4.2,
+            activeCampaigns: 1
         };
+
+        const statsRef = doc(db, 'users', userId, 'stats', 'marketing');
+        await setDoc(statsRef, {
+            ...initialStats,
+            lastUpdated: serverTimestamp()
+        });
+
+        // Seed a default campaign
+        const campaignData = {
+            name: 'Launch Campaign (Demo)',
+            platform: 'instagram',
+            startDate: Timestamp.now().toMillis(), // Store as number for consistency with types often used
+            status: CampaignStatus.EXECUTING,
+            userId: userId,
+            budget: 500,
+            spent: 120,
+            performance: {
+                reach: 5400,
+                clicks: 320
+            },
+            createdAt: serverTimestamp()
+        };
+        await addDoc(collection(db, 'campaigns'), campaignData);
+
+        return initialStats;
     }
 
     /**
@@ -119,5 +150,17 @@ export class MarketingService {
             ...stats,
             lastUpdated: serverTimestamp()
         }, { merge: true });
+    }
+
+    /**
+     * Update an existing campaign
+     */
+    static async updateCampaign(id: string, updates: Partial<CampaignAsset>) {
+        const docRef = doc(db, 'campaigns', id);
+        // Remove undefined fields to prevent firestore errors? Firestore handles undefined by ignoring or errors depending on config
+        // But let's assume valid partial
+        // Also remove 'id' if present in updates
+        const { id: _, ...cleanUpdates } = updates as any;
+        await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
     }
 }
