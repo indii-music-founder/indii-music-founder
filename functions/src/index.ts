@@ -214,7 +214,11 @@ export const inngestApi = functions
                                 public: true
                             });
 
+                            return file.publicUrl();
                             return url;
+
+                            return url;
+ main
                         }
 
                         // Case B: GCS URI

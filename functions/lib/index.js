@@ -213,6 +213,15 @@ exports.inngestApi = functions
                         metadata: { contentType: 'video/mp4' },
                         public: true
                     });
+                    // await file.makePublic(); // Optional depending on bucket config
+                    // Save to a public path or user-specific path
+
+ main
+                    const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                    await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                        metadata: { contentType: 'video/mp4' },
+                        public: true
+                    });
                     return file.publicUrl();
                 }
                 // Case B: GCS URI
@@ -262,6 +271,7 @@ exports.inngestApi = functions
     });
     return handler(req, res);
 });
+const corsHandler = (0, cors_1.default)({ origin: true });
 exports.generateImageV3 = functions
     .runWith({ secrets: [geminiApiKey] })
     .https.onCall(async (data, context) => {
