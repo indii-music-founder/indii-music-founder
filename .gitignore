@@ -42,7 +42,6 @@ test_results*.txt
 
 # Build artifacts
 out/
-functions/lib/
 build_log.txt
 debug_log.txt
 lint_errors.txt
@@ -59,4 +58,4 @@ credentials/
 *_staging/
 distribution-store.json
 scripts/verify-dpid-config.ts
-tsconfig.verify.json
+tsconfig.verify.jsonfunctions/lib/
