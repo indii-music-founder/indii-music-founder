@@ -2,7 +2,6 @@ import React from 'react';
 import { useStore } from '../store';
 import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder } from 'lucide-react';
 import CreativePanel from './right-panel/CreativePanel';
-import VideoPanel from './right-panel/VideoPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,8 +13,6 @@ export default function RightPanel() {
         switch (currentModule) {
             case 'creative':
                 return <CreativePanel toggleRightPanel={toggleRightPanel} />;
-            case 'video':
-                return <VideoPanel toggleRightPanel={toggleRightPanel} />;
             case 'files':
                 return (
                     <div className="h-full flex flex-col bg-[#0d1117] relative">
@@ -86,15 +83,6 @@ export default function RightPanel() {
                             >
                                 <Palette size={20} />
                                 {currentModule === 'creative' && <div className="absolute inset-0 rounded-xl bg-purple-500/10 blur-sm" />}
-                            </button>
-
-                            <button
-                                onClick={() => handleToolClick('video')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'video' ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                                title="Video Studio"
-                            >
-                                <Film size={20} />
-                                {currentModule === 'video' && <div className="absolute inset-0 rounded-xl bg-blue-500/10 blur-sm" />}
                             </button>
 
                             <button

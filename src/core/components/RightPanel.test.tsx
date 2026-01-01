@@ -18,15 +18,6 @@ vi.mock('./right-panel/CreativePanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/VideoPanel', () => ({
-    default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
-        <div data-testid="video-panel">
-            Video Panel Content
-            <button onClick={toggleRightPanel} data-testid="close-video">Close</button>
-        </div>
-    ),
-}));
-
 describe('RightPanel', () => {
     const mockSetModule = vi.fn();
     const mockToggleRightPanel = vi.fn();
@@ -50,11 +41,9 @@ describe('RightPanel', () => {
 
         // Should show module shortcuts
         expect(screen.getByTitle('Image Studio')).toBeInTheDocument();
-        expect(screen.getByTitle('Video Studio')).toBeInTheDocument();
 
         // Should NOT show panels
         expect(screen.queryByTestId('creative-panel')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('video-panel')).not.toBeInTheDocument();
     });
 
     it('toggles panel when expand button is clicked', () => {
@@ -71,13 +60,6 @@ describe('RightPanel', () => {
         expect(mockSetModule).toHaveBeenCalledWith('creative');
     });
 
-    it('switches to Video module when Video Studio icon is clicked', () => {
-        render(<RightPanel />);
-
-        fireEvent.click(screen.getByTitle('Video Studio'));
-        expect(mockSetModule).toHaveBeenCalledWith('video');
-    });
-
     it('renders CreativePanel when open and module is creative', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             currentModule: 'creative',
@@ -90,19 +72,6 @@ describe('RightPanel', () => {
 
         expect(screen.getByTestId('creative-panel')).toBeInTheDocument();
         expect(screen.queryByTitle('Expand Panel')).not.toBeInTheDocument();
-    });
-
-    it('renders VideoPanel when open and module is video', () => {
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'video',
-            setModule: mockSetModule,
-            isRightPanelOpen: true,
-            toggleRightPanel: mockToggleRightPanel,
-        });
-
-        render(<RightPanel />);
-
-        expect(screen.getByTestId('video-panel')).toBeInTheDocument();
     });
 
     it('renders placeholder when open but no tool selected', () => {

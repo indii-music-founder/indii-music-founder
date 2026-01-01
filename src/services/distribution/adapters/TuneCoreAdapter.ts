@@ -167,19 +167,6 @@ export class TuneCoreAdapter implements IDistributorAdapter {
             throw new Error('Not connected to TuneCore');
         }
 
-        return {
-            distributorId: this.id,
-            releaseId,
-            period,
-            streams: 0, // Migrated from hardcoded 12500 to 0 (pending DB fetch)
-            downloads: 0,
-            grossRevenue: 0,
-            distributorFee: 0,
-            netRevenue: 0,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString(),
-            breakdown: [],
-        };
         const earnings = await earningsService.getEarnings(this.id, releaseId, period);
 
         if (!earnings) {
