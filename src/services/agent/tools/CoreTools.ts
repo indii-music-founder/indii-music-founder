@@ -1,4 +1,5 @@
-import type { ToolFunctionArgs, AgentContext } from '../types';
+import type { ToolFunctionArgs, AgentContext, ValidAgentId } from '../types';
+import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
 
 // ============================================================================
 // Types for CoreTools
@@ -7,7 +8,9 @@ import type { ToolFunctionArgs, AgentContext } from '../types';
 // Note: switch_module moved to NavigationTools
 
 interface DelegateTaskArgs extends ToolFunctionArgs {
-    agent_id: string;
+    agent_id: ValidAgentId;
+    // Helper to support targetAgentId alias used in some prompts
+    targetAgentId?: string;
     task: string;
     context?: AgentContext;
 }
@@ -32,11 +35,20 @@ interface UpdatePromptArgs extends ToolFunctionArgs {
 export const CoreTools = {
     delegate_task: async (args: DelegateTaskArgs): Promise<string> => {
         try {
+            // Support both parameter names for backwards compatibility
+            // Cast to ValidAgentId because we validate it below
+            const agentId = (args.targetAgentId || args.agent_id) as ValidAgentId;
+
+            // Runtime validation: reject invalid agent IDs to prevent hallucination issues
+            if (!VALID_AGENT_IDS.includes(agentId)) {
+                return `Error: Invalid agent ID "${agentId}". Valid agent IDs are: ${VALID_AGENT_IDS_LIST}`;
+            }
+
             const { agentRegistry } = await import('../registry');
-            const agent = agentRegistry.get(args.agent_id);
+            const agent = agentRegistry.get(agentId);
 
             if (!agent) {
-                return `Error: Agent '${args.agent_id}' not found. Available: ${agentRegistry.listCapabilities()}`;
+                return `Error: Agent '${agentId}' not found. Available: ${agentRegistry.listCapabilities()}`;
             }
 
             const response = await agent.execute(args.task, args.context);

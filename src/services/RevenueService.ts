@@ -56,8 +56,6 @@ export class RevenueService {
         social: 0
       };
       const revenueByProduct: Record<string, number> = {};
-
-      const revenueByProduct: Record<string, number> = {};
       const historyMap = new Map<string, number>();
 
       snapshot.docs.forEach(doc => {
@@ -150,9 +148,9 @@ export class RevenueService {
         social: 0
       },
       revenueByProduct: {
-          'prod_1': 1200.00,
-          'prod_2': 850.50,
-          'prod_3': 450.00
+        'prod_1': 1200.00,
+        'prod_2': 850.50,
+        'prod_3': 450.00,
         'prod_123': 1500.00,
         'prod_456': 800.00,
         'prod_789': 200.00
