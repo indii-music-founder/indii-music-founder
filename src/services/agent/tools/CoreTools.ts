@@ -37,6 +37,9 @@ interface UpdatePromptArgs extends ToolFunctionArgs {
 export const CoreTools = {
     delegate_task: async (args: DelegateTaskArgs): Promise<string> => {
         try {
+            // Support both parameter names for backwards compatibility (though type now enforces agent_id)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const agentId = args.agent_id || (args as any).targetAgentId;
             // Support both parameter names for backwards compatibility
             // Cast to ValidAgentId because we validate it below
             const agentId = (args.targetAgentId || args.agent_id) as ValidAgentId;

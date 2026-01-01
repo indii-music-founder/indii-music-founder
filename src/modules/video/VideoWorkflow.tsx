@@ -76,33 +76,29 @@ export default function VideoWorkflow() {
                         const data = docSnapshot.data();
                         const newStatus = data?.status;
 
-                        // Use functional update to avoid dependency on jobStatus
-                        setJobStatus((currentStatus) => {
-                            if (newStatus && newStatus !== currentStatus) {
-                                return newStatus;
-                            }
-                            return currentStatus;
-                        });
+                        if (newStatus && newStatus !== jobStatus) {
+                            setJobStatus(newStatus);
 
-                        if (newStatus === 'completed' && data.videoUrl) {
-                            const newAsset = {
-                                id: jobId,
-                                url: data.videoUrl,
-                                prompt: data.prompt || localPrompt, // Use stored prompt or initial local prompt
-                                type: 'video' as const,
-                                timestamp: Date.now(),
-                                projectId: 'default',
-                                orgId: currentOrganizationId
-                            };
-                            addToHistory(newAsset);
-                            setActiveVideo(newAsset); // Auto-play result
-                            toast.success('Scene generated!');
-                            setJobId(null);
-                            setJobStatus('idle');
-                        } else if (newStatus === 'failed') {
-                            toast.error('Generation failed');
-                            setJobId(null);
-                            setJobStatus('failed');
+                            if (newStatus === 'completed' && data.videoUrl) {
+                                const newAsset = {
+                                    id: jobId,
+                                    url: data.videoUrl,
+                                    prompt: data.prompt || localPrompt,
+                                    type: 'video' as const,
+                                    timestamp: Date.now(),
+                                    projectId: 'default',
+                                    orgId: currentOrganizationId
+                                };
+                                addToHistory(newAsset);
+                                setActiveVideo(newAsset); // Auto-play result
+                                toast.success('Scene generated!');
+                                setJobId(null);
+                                setJobStatus('idle');
+                            } else if (newStatus === 'failed') {
+                                toast.error('Generation failed');
+                                setJobId(null);
+                                setJobStatus('failed');
+                            }
                         }
                     }
                 });
@@ -112,8 +108,7 @@ export default function VideoWorkflow() {
         };
         setupListener();
         return () => { if (unsubscribe) unsubscribe(); };
-        // Removed jobStatus and localPrompt from dependencies to prevent re-subscriptions and use stable/initial values
-    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
+    }, [jobId, addToHistory, toast, localPrompt, setJobId, setJobStatus, jobStatus, currentOrganizationId]);
 
     const handleGenerate = async () => {
         setJobStatus('queued');

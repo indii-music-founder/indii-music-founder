@@ -7,12 +7,12 @@ This document serves as the single source of truth for the remaining implementat
 ## 1. Video Infrastructure
 
 ### 1.1 Video Backend (Cloud Functions)
-- [x] **Implement `generateVideoFn` in `functions/src/index.ts`**
+- [ ] **Implement `generateVideoFn` in `functions/src/index.ts`**
     - Replace placeholder with Vertex AI Veo-3.1 API integration.
     - Handle parameters: prompt, aspect ratio, duration.
     - Implement signed URL generation for output storage.
     - Add error handling and retry logic.
-- [x] **Job Status Management**
+- [ ] **Job Status Management**
     - Implement status updates to Firestore (`videoJobs` collection).
     - Track states: `queued`, `processing`, `complete`, `failed`.
 

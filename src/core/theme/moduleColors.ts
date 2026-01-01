@@ -38,6 +38,8 @@ export interface ModuleColor {
  * Use this when you need the raw CSS variable name
  */
 export const departmentCssVars = {
+    royalties: '--color-dept-royalties',
+    finance: '--color-dept-royalties',     // Finance shares Royalties' gold
     // Base Department Colors
     royalties: '--color-dept-royalties',
     distribution: '--color-dept-distribution',
@@ -45,6 +47,7 @@ export const departmentCssVars = {
     legal: '--color-dept-legal',
     creative: '--color-dept-creative',
     touring: '--color-dept-touring',
+    road: '--color-dept-touring',          // Road Manager = Touring
     publishing: '--color-dept-publishing',
     social: '--color-dept-social',
     licensing: '--color-dept-licensing',
@@ -77,6 +80,7 @@ export const departmentCssVars = {
  */
 export const getDepartmentCssVar = (dept: string): string => {
     const key = dept.toLowerCase() as keyof typeof departmentCssVars;
+    return `var(${departmentCssVars[key] || departmentCssVars.default})`;
     const cssVar = departmentCssVars[key];
     return `var(${cssVar ?? departmentCssVars.default})`;
 };

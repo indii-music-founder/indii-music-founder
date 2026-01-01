@@ -169,6 +169,32 @@ export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 
 export type AgentCategory = 'manager' | 'department' | 'specialist';
 
+// Valid Agent IDs
+export const VALID_AGENT_IDS = [
+    'marketing',
+    'legal',
+    'finance',
+    'producer',
+    'music',
+    'director',
+    'screenwriter',
+    'video',
+    'social',
+    'publicist',
+    'road',
+    'publishing',
+    'licensing',
+    'brand',
+    'devops',
+    'security',
+    'generalist' // Agent Zero
+] as const;
+
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
+
+// Helper for tool descriptions
+export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
+
 export interface AgentConfig {
     // ValidAgentId provides strict typing while allowing legacy agents via the union
     id: ValidAgentId;

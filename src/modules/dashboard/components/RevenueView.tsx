@@ -22,20 +22,10 @@ export default function RevenueView() {
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
                 setTotalRevenue(stats.totalRevenue);
-                // Map API sources to component state (merch + licensing = direct storefront)
-                setRevenueBySource({
-                    social: stats.sources.social || 0,
-                    direct: (stats.sources.merch || 0) + (stats.sources.licensing || 0)
-                });
-                // Map API sources to local state structure
-                setRevenueBySource({
-                    direct: stats.sources.merch + stats.sources.licensing, // Combining merch/licensing as 'Storefront'
-                    social: stats.sources.social
-                });
-                setRevenueBySource(stats.sources);
+                setRevenueBySource(stats.revenueBySource);
 
                 // Process top products
-                const sortedProducts = Object.entries(stats.revenueByProduct || {})
+                const sortedProducts = Object.entries(stats.revenueByProduct)
                     .map(([id, amount]) => ({ id, amount }))
                     .sort((a, b) => b.amount - a.amount)
                     .slice(0, 5);
