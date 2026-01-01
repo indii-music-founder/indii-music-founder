@@ -13,6 +13,7 @@ export interface RevenueStats {
     licensing: number;
     social: number;
   };
+  revenueByProduct: Record<string, number>;
   history: {
     date: string;
     amount: number;
@@ -55,6 +56,7 @@ export class RevenueService {
         social: 0
       };
 
+      const revenueByProduct: Record<string, number> = {};
       const historyMap = new Map<string, number>();
 
       snapshot.docs.forEach(doc => {
@@ -73,6 +75,11 @@ export class RevenueService {
             sources.licensing += amount;
         } else if (source === 'social_drop') {
             sources.social += amount;
+        }
+
+        // Aggregate by product
+        if (data.productId) {
+            revenueByProduct[data.productId] = (revenueByProduct[data.productId] || 0) + amount;
         }
 
         // Aggregate history (by date)
@@ -94,6 +101,7 @@ export class RevenueService {
         lastPayoutAmount: 5000, // Mock last payout
         lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
         sources,
+        revenueByProduct,
         history
       };
 
@@ -139,6 +147,11 @@ export class RevenueService {
         merch: 2500.00,
         licensing: 1500.00,
         social: 0
+      },
+      revenueByProduct: {
+          'prod_1': 1200.00,
+          'prod_2': 850.50,
+          'prod_3': 450.00
       },
       history: Array.from({ length: 10 }, (_, i) => ({
         date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
