@@ -139,8 +139,6 @@ export const inngestApi = functions
                         }, { merge: true });
                     });
 
-                    // 2. Call Vertex AI (Veo)
-                    const videoUri = await step.run("generate-video-vertex", async () => {
                     // Step 2: Generate Video via Vertex AI (Veo)
                     const videoUri = await step.run("generate-veo-video", async () => {
                         // Use GoogleAuth to get credentials for Vertex AI
@@ -167,18 +165,6 @@ export const inngestApi = functions
                             parameters: {
                                 sampleCount: 1,
                                 // Map options to Veo parameters
-                                videoLength: options?.duration || options?.durationSeconds || "5s",
-                                aspectRatio: options?.aspectRatio || "16:9"
-                            }
-                        };
-
-                        // Construct request body for Veo
-                        const requestBody = {
-                            instances: [{
-                                prompt: prompt
-                            }],
-                            parameters: {
-                                sampleCount: 1,
                                 videoLength: options?.duration || options?.durationSeconds || "5s",
                                 aspectRatio: options?.aspectRatio || "16:9"
                             }
@@ -248,7 +234,6 @@ export const inngestApi = functions
                              return prediction.gcsUri;
                         }
 
-                        throw new Error("Unknown response format from Veo");
                         throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                     });
 
@@ -496,8 +481,8 @@ export const generateContentStream = functions
                                 if (text) {
                                     res.write(JSON.stringify({ text }) + '\n');
                                 }
-                            } catch (e) {
-
+                            } catch {
+                                // Ignore parse errors for partial chunks
                             }
                         }
                     }

@@ -138,22 +138,12 @@ export class DistroKidAdapter implements IDistributorAdapter {
         }
     }
 
-    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+    async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to DistroKid');
         }
 
-        console.log(`[DistroKid] Updating release ${releaseId} with updates:`, Object.keys(updates));
-
-        // Update status in persistence
-        // Note: In reality we would fetch the deployment ID associated with this releaseId first
-        // But for this adapter, releaseId IS the internal ID or close enough for the mock flow.
-        // Ideally we query getDeploymentsForRelease(releaseId) but here we might not have the deployment ID.
-        // For strict correctness, we'd look it up.
-        // Assuming releaseId passed here matches what we stored (it does in createRelease return).
-
-        // However, distributionStore keys by UUID. The releaseId returned by createRelease ('DK-...')
-        // is passed as internalReleaseId to createDeployment.
+        console.log(`[DistroKid] Updating release ${releaseId}`);
 
         const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
         if (deployments.length > 0) {
@@ -162,7 +152,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
 
         return {
             success: true,
-            status: 'processing', // Simulating successful handoff
+            status: 'processing',
             releaseId: releaseId,
             distributorReleaseId: `INT-DK-${Date.now()}`,
             metadata: {
@@ -170,12 +160,6 @@ export class DistroKidAdapter implements IDistributorAdapter {
                 upcAssigned: metadata.upc || 'PENDING_DK_BULK'
             },
         };
-    }
-
-    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
-        if (!this.connected) throw new Error('Not connected');
-        console.log(`[DistroKid] Updating ${releaseId}`);
-        return { success: true, status: 'processing', distributorReleaseId: releaseId };
     }
 
     async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {

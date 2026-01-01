@@ -72,7 +72,7 @@ export default function InfiniteCanvas() {
 
         // Images
         canvasImages.forEach(img => {
-            let image = imageCache.current.get(img.id);
+        let image = imageCache.current.get(img.id);
             if (!image) {
                 image = new window.Image();
                 image.src = img.base64;
@@ -81,12 +81,15 @@ export default function InfiniteCanvas() {
             }
 
             if (image.complete && image.naturalWidth > 0) {
-                ctx.drawImage(image, img.x, img.y, img.width, img.height);
+                // Ensure width/height are numbers
+                const w = img.width ?? 0;
+                const h = img.height ?? 0;
+                ctx.drawImage(image, img.x, img.y, w, h);
 
                 if (img.id === selectedCanvasImageId) {
                     ctx.strokeStyle = '#3b82f6';
                     ctx.lineWidth = 4 / scale;
-                    ctx.strokeRect(img.x, img.y, img.width, img.height);
+                    ctx.strokeRect(img.x, img.y, w, h);
                 }
             }
         });
@@ -153,7 +156,10 @@ export default function InfiniteCanvas() {
         // Check top-most image first
         for (let i = canvasImages.length - 1; i >= 0; i--) {
             const img = canvasImages[i];
-            if (wx >= img.x && wx <= img.x + img.width && wy >= img.y && wy <= img.y + img.height) {
+            // Ensure width/height are numbers (fallback to 0)
+            const w = img.width ?? 0;
+            const h = img.height ?? 0;
+            if (wx >= img.x && wx <= img.x + w && wy >= img.y && wy <= img.y + h) {
                 if (tool === 'select') {
                     selectCanvasImage(img.id);
                     dragImageId.current = img.id;

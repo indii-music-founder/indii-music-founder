@@ -107,7 +107,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
             // Package building via IPC (Hybrid Safety)
             if (typeof window !== 'undefined' && window.electronAPI?.distribution) {
                 console.log('[CD Baby] Building package via Main Process...');
-                // @ts-ignore - assets might be unused or passed
+                // @ts-expect-error - assets might be unused or passed
                 const buildResult = await window.electronAPI.distribution.buildPackage('cdbaby', metadata, _assets, folderReleaseId);
 
                 if (!buildResult.success || !buildResult.packagePath) {
