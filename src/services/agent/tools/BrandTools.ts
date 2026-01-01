@@ -16,7 +16,7 @@ export const BrandTools = {
         Output a JSON object: { "approved": boolean, "critique": string, "score": number (1-10) }
         `;
         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         return AI.parseJSON(result.text());
@@ -31,7 +31,7 @@ export const BrandTools = {
         Output a JSON object: { "consistent": boolean, "issues": string[], "recommendations": string[] }
         `;
         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         return AI.parseJSON(result.text());
@@ -45,7 +45,7 @@ export const BrandTools = {
          Output a JSON object with sections: { "voice": string, "visuals": string, "dos_and_donts": string[] }
          `;
          const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         return AI.parseJSON(result.text());
@@ -59,7 +59,7 @@ export const BrandTools = {
         Output a JSON object: { "compliant": boolean, "flagged_assets": string[], "report": string }
         `;
         const result = await AI.generateContent({
-            model: AI_MODELS.TEXT_AGENT.model,
+            model: AI_MODELS.TEXT.AGENT,
             contents: { role: 'user', parts: [{ text: prompt }] }
         });
         return AI.parseJSON(result.text());

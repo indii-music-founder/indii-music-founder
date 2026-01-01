@@ -157,7 +157,7 @@ export const departmentRegistry: Record<DepartmentType, DepartmentTheme> = {
  * Default theme used when department is unknown or missing
  */
 const defaultTheme: DepartmentTheme = {
-    id: 'marketing',
+    id: 'marketing', // Note: Uses 'marketing' as closest valid type; CSS vars are --color-dept-default
     color: 'var(--color-dept-default)',
     colorMuted: 'var(--color-dept-default-muted)',
     colorGlow: 'var(--color-dept-default)',
