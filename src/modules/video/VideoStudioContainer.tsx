@@ -6,7 +6,7 @@ import VideoNavbar from './components/VideoNavbar';
 import { useStore } from '@/core/store';
 
 export default function VideoStudio() {
-    const { toggleRightPanel, isRightPanelOpen, setModule } = useStore();
+    const { toggleRightPanel, isRightPanelOpen, setModule, setGenerationMode } = useStore();
 
     // Defined outside useEffect to simplify parser logic
     const initializeStudio = () => {
@@ -16,6 +16,7 @@ export default function VideoStudio() {
         }
         // Ensure global module state is 'video' so RightPanel renders correctly
         setModule('video');
+        setGenerationMode('video');
     };
 
     useEffect(() => {

@@ -13,7 +13,12 @@ interface EarningsTableProps {
     data: ReleaseEarnings[];
 }
 
-export const EarningsTable: React.FC<EarningsTableProps> = ({ data }) => {
+/**
+ * ⚡ Bolt Optimization:
+ * Wrapped in React.memo to prevent unnecessary re-renders when parent
+ * EarningsDashboard updates (e.g. active tab changes) but data remains stable.
+ */
+export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
     return (
         <div className="rounded-md border">
             <Table>
@@ -40,4 +45,6 @@ export const EarningsTable: React.FC<EarningsTableProps> = ({ data }) => {
             </Table>
         </div>
     );
-};
+});
+
+EarningsTable.displayName = 'EarningsTable';

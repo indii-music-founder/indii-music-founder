@@ -40,6 +40,17 @@ export default function VideoWorkflow() {
         setStatus: setJobStatus
     } = useVideoEditorStore();
 
+    const toast = useToast();
+
+    // View State: 'director' (Generation) or 'editor' (Timeline)
+    const [viewMode, setViewMode] = useState<'director' | 'editor'>('director');
+    const [localPrompt, setLocalPrompt] = useState('');
+    const localPromptRef = useRef(localPrompt);
+
+    // Keep ref in sync
+    useEffect(() => { localPromptRef.current = localPrompt; }, [localPrompt]);
+
+    // Director State
     const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
     const [localPrompt, setLocalPrompt] = useState('');
     const toast = useToast();
@@ -98,6 +109,26 @@ export default function VideoWorkflow() {
                             setJobStatus(newStatus);
                         }
 
+                            if (newStatus === 'completed' && data.videoUrl) {
+                                const newAsset = {
+                                    id: jobId,
+                                    url: data.videoUrl,
+                                    prompt: data.prompt || localPromptRef.current,
+                                    type: 'video' as const,
+                                    timestamp: Date.now(),
+                                    projectId: 'default',
+                                    orgId: currentOrganizationId
+                                };
+                                addToHistory(newAsset);
+                                setActiveVideo(newAsset); // Auto-play result
+                                toast.success('Scene generated!');
+                                setJobId(null);
+                                setJobStatus('idle');
+                            } else if (newStatus === 'failed') {
+                                toast.error('Generation failed');
+                                setJobId(null);
+                                setJobStatus('failed');
+                            }
                         if (newStatus === 'completed' && data.videoUrl) {
                             const newAsset = {
                                 id: jobId,

@@ -39,6 +39,12 @@ export function useLicensing() {
           );
         }
 
+        return () => {
+            isMounted = false;
+            if (unsubscribeLicenses) unsubscribeLicenses();
+            if (unsubscribeRequests) unsubscribeRequests();
+        };
+    }, [toast, userProfile?.id]);
         unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
           if (isMounted) {
             setLicenses(data);
