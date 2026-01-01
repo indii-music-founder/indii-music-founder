@@ -1,7 +1,7 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback } from './registry';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { TOOL_REGISTRY } from './tools';
-import { AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext } from './types';
+import { AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId } from './types';
 
 // Export types for use in definitions
 export type { AgentConfig };
@@ -78,11 +78,11 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
     },
     {
         name: 'delegate_task',
-        description: 'Delegate a sub-task to another specialized agent.',
+        description: `Delegate a sub-task to another specialized agent. ONLY use valid agent IDs from this list: ${VALID_AGENT_IDS_LIST}. Using any other ID will fail.`,
         parameters: {
             type: 'OBJECT',
             properties: {
-                targetAgentId: { type: 'STRING', description: 'The ID of the agent to delegate to (e.g., "video", "legal").' },
+                targetAgentId: { type: 'STRING', description: `The ID of the agent to delegate to. MUST be one of: ${VALID_AGENT_IDS_LIST}` },
                 task: { type: 'STRING', description: 'The specific task for the agent to perform.' }
             },
             required: ['targetAgentId', 'task']
@@ -120,6 +120,12 @@ export class BaseAgent implements SpecializedAgent {
                 const { agentService } = await import('./AgentService');
                 if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
                     return { error: 'Invalid delegation parameters' };
+                }
+                // Runtime validation: reject invalid agent IDs to prevent hallucination issues
+                if (!VALID_AGENT_IDS.includes(targetAgentId as ValidAgentId)) {
+                    return {
+                        error: `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`
+                    };
                 }
                 return await agentService.runAgent(targetAgentId, task, context);
             },

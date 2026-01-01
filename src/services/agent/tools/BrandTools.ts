@@ -4,6 +4,9 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 
 // --- Validation Schemas ---
+import { zodToJsonSchema } from 'zod-to-json-schema';
+
+// --- Zod Schemas ---
 
 const VerifyOutputSchema = z.object({
     approved: z.boolean(),
@@ -12,18 +15,21 @@ const VerifyOutputSchema = z.object({
 });
 
 const BrandConsistencySchema = z.object({
+const AnalyzeBrandConsistencySchema = z.object({
     consistent: z.boolean(),
     issues: z.array(z.string()),
     recommendations: z.array(z.string())
 });
 
 const BrandGuidelinesSchema = z.object({
+const GenerateBrandGuidelinesSchema = z.object({
     voice: z.string(),
     visuals: z.string(),
     dos_and_donts: z.array(z.string())
 });
 
 const AuditAssetsSchema = z.object({
+const AuditVisualAssetsSchema = z.object({
     compliant: z.boolean(),
     flagged_assets: z.array(z.string()),
     report: z.string()
@@ -33,6 +39,7 @@ const AuditAssetsSchema = z.object({
 
 export const BrandTools = {
     verify_output: async ({ goal, content }: { goal: string; content: string }) => {
+        const schema = zodToJsonSchema(VerifyOutputSchema);
         const prompt = `
         You are a strict Brand Manager. Verify if the following content meets the goal.
         Goal: ${goal}
@@ -57,12 +64,23 @@ export const BrandTools = {
             // Fallback safe response
             return { approved: false, critique: "AI Generation Failed", score: 0 };
         }
+        Output a JSON object exactly matching this schema:
+        ${JSON.stringify(schema, null, 2)}
+        `;
+        const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        const json = AI.parseJSON(result.text());
+        return VerifyOutputSchema.parse(json);
     },
 
-    analyze_brand_consistency: async ({ content, type }: { content: string; type: string }) => {
+    analyze_brand_consistency: async ({ content, brand_guidelines }: { content: string; brand_guidelines?: string }) => {
+        const schema = zodToJsonSchema(AnalyzeBrandConsistencySchema);
         const prompt = `
-        You are a Brand Specialist. Analyze the consistency of the following ${type}.
+        You are a Brand Specialist. Analyze the consistency of the following content.
         Content: ${content}
+        ${brand_guidelines ? `Brand Guidelines: ${brand_guidelines}` : ''}
 
         Check for tone, core values alignment, and visual language (if described).
         Output a strict JSON object (no markdown) matching this schema:
@@ -82,9 +100,20 @@ export const BrandTools = {
             console.error('BrandTools.analyze_brand_consistency error:', error);
             return { consistent: false, issues: ["AI Analysis Failed"], recommendations: [] };
         }
+        Check for tone, core values alignment, and visual language.
+        Output a JSON object exactly matching this schema:
+        ${JSON.stringify(schema, null, 2)}
+        `;
+        const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        const json = AI.parseJSON(result.text());
+        return AnalyzeBrandConsistencySchema.parse(json);
     },
 
     generate_brand_guidelines: async ({ name, values }: { name: string; values: string[] }) => {
+         const schema = zodToJsonSchema(GenerateBrandGuidelinesSchema);
          const prompt = `
          Create a structured Brand Guidelines document for a brand named "${name}".
          Core Values: ${values.join(', ')}.
@@ -106,9 +135,19 @@ export const BrandTools = {
             console.error('BrandTools.generate_brand_guidelines error:', error);
             return { voice: "Error", visuals: "Error", dos_and_donts: [] };
         }
+         Output a JSON object exactly matching this schema:
+         ${JSON.stringify(schema, null, 2)}
+         `;
+         const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        const json = AI.parseJSON(result.text());
+        return GenerateBrandGuidelinesSchema.parse(json);
     },
 
     audit_visual_assets: async ({ assets }: { assets: string[] }) => {
+        const schema = zodToJsonSchema(AuditVisualAssetsSchema);
         const prompt = `
         Audit the following list of visual assets for brand compliance (simulated):
         Assets: ${assets.join(', ')}
@@ -130,5 +169,14 @@ export const BrandTools = {
             console.error('BrandTools.audit_visual_assets error:', error);
             return { compliant: false, flagged_assets: [], report: "AI Audit Failed" };
         }
+        Output a JSON object exactly matching this schema:
+        ${JSON.stringify(schema, null, 2)}
+        `;
+        const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        const json = AI.parseJSON(result.text());
+        return AuditVisualAssetsSchema.parse(json);
     }
 };
