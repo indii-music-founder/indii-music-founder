@@ -148,6 +148,8 @@ describe('Video Backend', () => {
                 jobId: 'test-job-id',
                 prompt: 'test prompt',
                 userId: 'test-user',
+                orgId: 'test-org',
+                timestamp: 123456789,
                 options: {}
             }
         };
