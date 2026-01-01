@@ -5,6 +5,7 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { GoogleAuth } from "google-auth-library";
+import { z } from "zod";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -31,6 +32,29 @@ const corsHandler = corsLib({ origin: true });
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
 
+// Validation Schemas
+const VideoJobSchema = z.object({
+    jobId: z.string().uuid().or(z.string().min(1)), // UUID preferred but string allowed for backward compat
+    prompt: z.string().min(1).max(5000),
+    orgId: z.string().optional().default("personal"),
+    aspectRatio: z.string().optional().default("16:9"),
+    duration: z.string().optional(),
+    durationSeconds: z.number().optional(),
+    resolution: z.string().optional(),
+    fps: z.number().optional(),
+    cameraMovement: z.string().optional(),
+    motionStrength: z.number().optional(),
+    // Advanced Options
+    seed: z.number().optional(),
+    negativePrompt: z.string().optional(),
+    model: z.string().optional(),
+    firstFrame: z.string().optional(),
+    lastFrame: z.string().optional(),
+    timeOffset: z.number().optional(),
+    ingredients: z.array(z.string()).optional(),
+    shotList: z.array(z.any()).optional() // Allow shotList as any array for now
+});
+
 /**
  * Trigger Video Generation Job
  *
@@ -45,7 +69,7 @@ export const triggerVideoJob = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -54,14 +78,17 @@ export const triggerVideoJob = functions
         }
 
         const userId = context.auth.uid;
-        const { prompt, jobId, orgId, ...options } = data;
 
-        if (!prompt || !jobId) {
-            throw new functions.https.HttpsError(
+        // Zod Validation
+        const validation = VideoJobSchema.safeParse(data);
+        if (!validation.success) {
+             throw new functions.https.HttpsError(
                 "invalid-argument",
-                "Missing required fields: prompt or jobId."
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
+
+        const { jobId, prompt, orgId, ...options } = validation.data;
 
         try {
             // 1. Create Initial Job Record in Firestore
@@ -70,7 +97,7 @@ export const triggerVideoJob = functions
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 id: jobId,
                 userId: userId,
-                orgId: orgId || "personal",
+                orgId: orgId,
                 prompt: prompt,
                 status: "queued",
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -85,7 +112,7 @@ export const triggerVideoJob = functions
                 data: {
                     jobId: jobId,
                     userId: userId,
-                    orgId: orgId || "personal",
+                    orgId: orgId,
                     prompt: prompt,
                     options: options,
                     timestamp: Date.now(),
@@ -127,7 +154,14 @@ export const inngestApi = functions
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
             async ({ event, step }) => {
-                const { jobId, prompt, userId, options } = event.data;
+                // Ensure typed access or validation here as well
+                const eventData = event.data;
+                // Double check critical fields
+                if (!eventData.jobId || !eventData.prompt || !eventData.userId) {
+                    throw new Error("Missing critical event data (jobId, prompt, userId)");
+                }
+
+                const { jobId, prompt, userId, options } = eventData;
 
                 try {
                     // 1. Update status to processing
