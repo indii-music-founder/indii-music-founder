@@ -22,6 +22,11 @@ export default function RevenueView() {
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
                 setTotalRevenue(stats.totalRevenue);
+                // Map API sources to local state structure
+                setRevenueBySource({
+                    direct: stats.sources.merch + stats.sources.licensing, // Combining merch/licensing as 'Storefront'
+                    social: stats.sources.social
+                });
                 setRevenueBySource(stats.sources);
 
                 // Process top products
