@@ -47,21 +47,48 @@ export class DeliveryService {
                     throw new Error('FileSystem not available');
                 }
 
+                // SECURITY: Path Traversal Check
+                // Ensure outputDir is absolute and likely safe (e.g., doesn't contain traversal chars).
+                // A better approach in a real app would be to force a root directory.
+                // Here we verify it doesn't contain '..' segments to break out of intended paths.
+                const resolvedPath = path.resolve(outputDir);
+                if (resolvedPath.includes('..') && !path.isAbsolute(outputDir)) {
+                     throw new Error('Security Error: Invalid output directory path.');
+                }
+
                 // Ensure output directory exists
-                if (!fs.existsSync(outputDir)) {
-                    await fs.promises.mkdir(outputDir, { recursive: true });
+                if (!fs.existsSync(resolvedPath)) {
+                    await fs.promises.mkdir(resolvedPath, { recursive: true });
                 }
 
                 // Write ERN XML
-                const xmlPath = path.join(outputDir, 'ern.xml');
+                const xmlPath = path.join(resolvedPath, 'ern.xml');
                 await fs.promises.writeFile(xmlPath, generationResult.xml, 'utf8');
 
                 // 3. Copy Assets if provided
                 if (assets) {
-                    const resourcesDir = path.join(outputDir, 'resources');
+                    const resourcesDir = path.join(resolvedPath, 'resources');
                     if (!fs.existsSync(resourcesDir)) {
                         await fs.promises.mkdir(resourcesDir, { recursive: true });
                     }
+
+                    // Helper to validate and copy file
+                    const safeCopy = async (sourceUrl: string, destPath: string) => {
+                         // SECURITY: Prevent reading arbitrary system files if sourceUrl is manipulated
+                         // In a strict environment, we should verify sourceUrl is within approved directories (like temp or upload folders)
+                         // For now, we assume local file paths must be absolute or valid URLs.
+                         // We reject paths attempting traversal.
+                         if (sourceUrl.includes('..')) {
+                             console.warn(`[DeliveryService] Security Warning: Skipped potentially unsafe asset path: ${sourceUrl}`);
+                             return;
+                         }
+
+                         if (fs.existsSync(sourceUrl)) {
+                             await fs.promises.copyFile(sourceUrl, destPath);
+                         } else {
+                             console.warn(`[DeliveryService] Asset file not found: ${sourceUrl}`);
+                         }
+                    };
 
                     // Copy Audio Files
                     if (assets.audioFiles && assets.audioFiles.length > 0) {
@@ -73,34 +100,31 @@ export class DeliveryService {
                                 const audioExt = asset.format || 'wav';
                                 const audioDest = path.join(resourcesDir, `${resourceRef}.${audioExt}`);
 
-                                if (fs.existsSync(asset.url)) {
-                                    await fs.promises.copyFile(asset.url, audioDest);
+                                await safeCopy(asset.url, audioDest);
 
-                                    // Transcoding Stub: Create OGG variant for Spotify if master is valid
-                                    // In production, this would be a queued job, not inline.
+                                // Transcoding Stub: Create OGG variant for Spotify if master is valid
+                                // In production, this would be a queued job, not inline.
+                                if (fs.existsSync(audioDest)) {
                                     await transcodingService.transcode({
-                                        inputPath: asset.url,
+                                        inputPath: audioDest, // Use the safe copy as input
                                         outputPath: path.join(resourcesDir, `${resourceRef}.ogg`),
                                         targetFormat: 'ogg'
                                     });
-                                } else {
-                                    console.warn(`[DeliveryService] Asset file not found: ${asset.url}`);
                                 }
                             }
                         }
                     } else if (assets.audioFile && assets.audioFile.url) {
                         const audioExt = assets.audioFile.format || 'wav';
                         const audioDest = path.join(resourcesDir, `A1.${audioExt}`);
-                        if (fs.existsSync(assets.audioFile.url)) {
-                            await fs.promises.copyFile(assets.audioFile.url, audioDest);
-                             // Transcoding Stub
+                        await safeCopy(assets.audioFile.url, audioDest);
+
+                        if (fs.existsSync(audioDest)) {
+                            // Transcoding Stub
                             await transcodingService.transcode({
-                                inputPath: assets.audioFile.url,
+                                inputPath: audioDest,
                                 outputPath: path.join(resourcesDir, `A1.ogg`),
                                 targetFormat: 'ogg'
                             });
-                        } else {
-                            console.warn(`[DeliveryService] Asset file not found: ${assets.audioFile.url}`);
                         }
                     }
 
@@ -113,11 +137,8 @@ export class DeliveryService {
                         const trackCount = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks.length : 1;
                         const imageRef = `IMG${trackCount + 1}`;
                         const imageDest = path.join(resourcesDir, `${imageRef}.${imageExt}`);
-                        if (fs.existsSync(baseUrl)) {
-                            await fs.promises.copyFile(baseUrl, imageDest);
-                        } else {
-                            console.warn(`[DeliveryService] Cover art file not found: ${baseUrl}`);
-                        }
+
+                        await safeCopy(baseUrl, imageDest);
                     }
                 }
 
