@@ -1,0 +1,6 @@
+## 2025-05-23 - Firestore Rules Syntax Error & High Risk Defaults
+**Vulnerability:** The `firestore.rules` file contained a syntax error in the `file_nodes` match block (truncated `allow read` statement and redundant, misplaced function definition). Additionally, `licenses` and `license_requests` allowed any authenticated user to read/write any document.
+**Learning:** Syntax errors in security rules can silent-fail deployments or lead to default-deny behavior that breaks the app. Incomplete data models (missing `userId` on sensitive records) force developers into insecure "allow all authenticated" patterns.
+**Prevention:**
+1. Use VS Code extensions for Firestore Rules or the Firebase Emulator to validate syntax.
+2. Ensure data models always include ownership metadata (`userId`, `orgId`) from day one to enable row-level security.
