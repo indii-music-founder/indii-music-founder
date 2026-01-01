@@ -1,23 +1,56 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as admin from 'firebase-admin';
+import { generateVideoLogic } from '../lib/video';
+
+// Hoist mocks to avoid ReferenceError
+const mocks = vi.hoisted(() => ({
+    firestore: {
+        collection: vi.fn(),
+        doc: vi.fn(),
+        set: vi.fn(),
+        get: vi.fn(),
+        FieldValue: {
+            serverTimestamp: vi.fn(() => 'TIMESTAMP')
+        }
+    },
+    storage: {
+        bucket: vi.fn(),
+        file: vi.fn(),
+        save: vi.fn(),
+        getSignedUrl: vi.fn(() => Promise.resolve(['https://mock-storage-url.com/video.mp4'])),
+        publicUrl: vi.fn(() => 'https://mock-storage-url.com/video.mp4')
+    },
+    auth: {
+        getClient: vi.fn(),
+        getProjectId: vi.fn()
+    }
+}));
 
 // Mock Firebase Admin
 vi.mock('firebase-admin', () => ({
     initializeApp: vi.fn(),
-    firestore: vi.fn(() => ({
-        collection: vi.fn(() => ({
-            doc: vi.fn(() => ({
-                set: vi.fn(),
-                get: vi.fn()
-            }))
+    firestore: Object.assign(
+        vi.fn(() => ({
+            collection: mocks.firestore.collection
         })),
-        FieldValue: {
-            serverTimestamp: vi.fn()
-        }
+        { FieldValue: mocks.firestore.FieldValue }
+    ),
+    storage: vi.fn(() => ({
+        bucket: mocks.storage.bucket
     })),
-    storage: vi.fn(),
     auth: vi.fn()
 }));
+
+// Connect mocks
+mocks.firestore.collection.mockReturnValue({ doc: mocks.firestore.doc });
+mocks.firestore.doc.mockReturnValue({ set: mocks.firestore.set, get: mocks.firestore.get });
+mocks.storage.bucket.mockReturnValue({ file: mocks.storage.file });
+mocks.storage.file.mockReturnValue({
+    save: mocks.storage.save,
+    getSignedUrl: mocks.storage.getSignedUrl,
+    publicUrl: mocks.storage.publicUrl
+});
+
 
 // Mock Inngest
 vi.mock('inngest', () => {
@@ -46,7 +79,30 @@ vi.mock('@google-cloud/vertexai', () => ({
     VertexAI: vi.fn()
 }));
 
-describe('Video Backend', () => {
+// Mock GoogleAuth class
+vi.mock('google-auth-library', () => {
+    return {
+        GoogleAuth: class MockGoogleAuth {
+            getClient() { return mocks.auth.getClient(); }
+            getProjectId() { return mocks.auth.getProjectId(); }
+        }
+    };
+});
+
+describe('Video Backend Logic', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Reset default returns
+        mocks.firestore.collection.mockReturnValue({ doc: mocks.firestore.doc });
+        mocks.firestore.doc.mockReturnValue({ set: mocks.firestore.set, get: mocks.firestore.get });
+        mocks.storage.bucket.mockReturnValue({ file: mocks.storage.file });
+        mocks.storage.file.mockReturnValue({
+            save: mocks.storage.save,
+            getSignedUrl: mocks.storage.getSignedUrl,
+            publicUrl: mocks.storage.publicUrl
+        });
+    });
+
     it('should be testable', () => {
         expect(true).toBe(true);
     });
@@ -56,56 +112,13 @@ describe('Video Backend', () => {
         await import('../index');
         expect(admin.initializeApp).toHaveBeenCalled();
     });
-});
-
-// Mocks
-const mockSet = vi.fn();
-const mockDoc = vi.fn(() => ({ set: mockSet }));
-const mockCollection = vi.fn(() => ({ doc: mockDoc }));
-const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
-const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
-
-const mockAuthGetClient = vi.fn();
-const mockAuthGetProjectId = vi.fn();
-
-// Mock Modules
-vi.mock('firebase-admin', () => ({
-    initializeApp: vi.fn(),
-    firestore: Object.assign(mockFirestore, { FieldValue: mockFieldValue }),
-    storage: vi.fn(() => ({
-        bucket: () => ({
-            file: () => ({
-                save: vi.fn(),
-                makePublic: vi.fn(),
-                publicUrl: () => 'https://mock-storage-url.com/video.mp4'
-            })
-        })
-    }))
-}));
-
-// Mock GoogleAuth class using a class-like structure for the mock
-class MockGoogleAuth {
-    getClient() { return mockAuthGetClient(); }
-    getProjectId() { return mockAuthGetProjectId(); }
-}
-
-vi.mock('google-auth-library', () => {
-    return {
-        GoogleAuth: MockGoogleAuth
-    };
-});
-
-describe('Video Backend Logic', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
 
     it('should successfully generate video and update firestore', async () => {
         // Setup Mocks
-        mockAuthGetClient.mockResolvedValue({
+        mocks.auth.getClient.mockResolvedValue({
             getAccessToken: async () => ({ token: 'mock-token' })
         });
-        mockAuthGetProjectId.mockResolvedValue('mock-project');
+        mocks.auth.getProjectId.mockResolvedValue('mock-project');
 
         // Mock global fetch
         global.fetch = vi.fn().mockResolvedValue({
@@ -117,48 +130,52 @@ describe('Video Backend Logic', () => {
             })
         });
 
-        const jobId = 'test-job-id';
+        // Mock step.run to execute the callback immediately
+        const mockStep = {
+            run: vi.fn(async (name, callback) => {
+                return await callback();
+            })
+        };
 
-        // 1. Simulate "update-status-processing"
-        await mockFirestore().collection('videoJobs').doc(jobId).set({
+        const event = {
+            data: {
+                jobId: 'test-job-id',
+                prompt: 'test prompt',
+                userId: 'test-user',
+                options: {}
+            }
+        };
+
+        // Invoke the logic directly
+        const result = await generateVideoLogic({ event, step: mockStep });
+
+        // Assertions
+
+        // 1. Check if video generation succeeded
+        expect(result).toEqual({ success: true, videoUrl: 'https://mock-storage-url.com/video.mp4' });
+
+        // 2. Check if Firestore was updated correctly
+        expect(mocks.firestore.collection).toHaveBeenCalledWith('videoJobs');
+        expect(mocks.firestore.doc).toHaveBeenCalledWith('test-job-id');
+
+        // Verify status updates
+        // Processing
+        expect(mocks.firestore.set).toHaveBeenCalledWith({
             status: 'processing',
             updatedAt: 'TIMESTAMP'
         }, { merge: true });
 
-        expect(mockCollection).toHaveBeenCalledWith('videoJobs');
-        expect(mockDoc).toHaveBeenCalledWith(jobId);
-        expect(mockSet).toHaveBeenCalledWith({
-            status: 'processing',
+        // Completed
+        expect(mocks.firestore.set).toHaveBeenCalledWith({
+            status: 'completed',
+            videoUrl: 'https://mock-storage-url.com/video.mp4',
+            progress: 100,
             updatedAt: 'TIMESTAMP'
         }, { merge: true });
 
-        // 2. Simulate "generate-video-vertex" logic
+        // 3. Check Google Auth and Fetch calls
         const { GoogleAuth } = await import('google-auth-library');
-        const auth = new GoogleAuth();
-        const client = await auth.getClient();
-        // @ts-expect-error - accessToken property access on mocked client
-        const accessToken = await client.getAccessToken();
-
-        const response = await fetch('https://mock-endpoint', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${accessToken.token}` }
-        });
-        const result = await response.json();
-
+        expect(mocks.auth.getClient).toHaveBeenCalled();
         expect(global.fetch).toHaveBeenCalled();
-        expect(accessToken.token).toBe('mock-token');
-
-        // 3. Simulate "update-status-completed"
-        await mockFirestore().collection('videoJobs').doc(jobId).set({
-            status: 'completed',
-            videoUrl: 'https://mock-storage-url.com/video.mp4',
-            updatedAt: 'TIMESTAMP'
-        }, { merge: true });
-
-        expect(mockSet).toHaveBeenLastCalledWith({
-            status: 'completed',
-            videoUrl: 'https://mock-storage-url.com/video.mp4',
-            updatedAt: 'TIMESTAMP'
-        }, { merge: true });
     });
 });
