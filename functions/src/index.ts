@@ -210,9 +210,18 @@ export const inngestApi = functions
                             const [url] = await file.getSignedUrl({
                                 action: 'read',
                                 expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
+                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                                metadata: { contentType: 'video/mp4' },
+                                public: true
+                            });
+
+                            return file.publicUrl();
+                            return url;
+
                             });
 
                             return url;
+ main
                         }
 
                         // Case B: GCS URI
