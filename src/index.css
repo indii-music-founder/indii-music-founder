@@ -7,6 +7,118 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * INDIIOS DESIGN SYSTEM - Single Source of Truth
+   * Last Updated: 2025-12 | Bolt UI Architect
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * TYPOGRAPHY - Global Brand Fonts
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-display: 'Geist', var(--font-main);
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SPACING & BORDERS - Consistent rhythm
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --radius-standard: 12px;
+  --radius-sharp: 4px;
+  --radius-pill: 9999px;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * MOTION - Unified timing for "snappy" feel
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --transition-speed: 0.25s;
+  --transition-speed-fast: 0.15s;
+  --transition-speed-slow: 0.4s;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * STATUS & ACTION COLORS - Universal feedback
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --color-success: #4CAF50;
+  --color-success-muted: #4CAF5033;
+  --color-error: #F44336;
+  --color-error-muted: #F4433633;
+  --color-warning: #FF9800;
+  --color-warning-muted: #FF980033;
+  --color-info: #2196F3;
+  --color-info-muted: #2196F333;
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+   * SURFACE COLORS - Professional dark palette
+   * ───────────────────────────────────────────────────────────────────────────── */
+  --color-bg-dark: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-elevated: #334155;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * DEPARTMENT COLOR SYSTEM
+   * These colors represent the "vibe" of each department in indiiOS.
+   * Update ONLY here when rebranding. All components derive from these tokens.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Finance & Royalties - Gold/Amber: Wealth, precision, "Gold Standard" */
+  --color-dept-royalties: #FFC107;
+  --color-dept-royalties-muted: #FFC10733;
+  --color-dept-royalties-glow: #FFC10780;
+
+  /* Distribution - Electric Blue: Data flow, logistics, global reach */
+  --color-dept-distribution: #2196F3;
+  --color-dept-distribution-muted: #2196F333;
+  --color-dept-distribution-glow: #2196F380;
+
+  /* Marketing & PR - Vibrant Magenta: Energy, attention-grabbing, loud */
+  --color-dept-marketing: #E91E63;
+  --color-dept-marketing-muted: #E91E6333;
+  --color-dept-marketing-glow: #E91E6380;
+
+  /* Legal & Contracts - Slate: Stability, "ink on paper", serious protection */
+  --color-dept-legal: #455A64;
+  --color-dept-legal-muted: #455A6433;
+  --color-dept-legal-glow: #455A6480;
+
+  /* A&R / Creative - Purple: Magic, passion + stability intersection */
+  --color-dept-creative: #9C27B0;
+  --color-dept-creative-muted: #9C27B033;
+  --color-dept-creative-glow: #9C27B080;
+
+  /* Touring & Live (Road Manager) - Deep Orange: Road heat, stage lights */
+  --color-dept-touring: #FF5722;
+  --color-dept-touring-muted: #FF572233;
+  --color-dept-touring-glow: #FF572280;
+
+  /* Publishing - Lime: Growth, fresh output, catalog expansion */
+  --color-dept-publishing: #8BC34A;
+  --color-dept-publishing-muted: #8BC34A33;
+  --color-dept-publishing-glow: #8BC34A80;
+
+  /* Social Media - Cyan: Digital presence, viral connectivity */
+  --color-dept-social: #00BCD4;
+  --color-dept-social-muted: #00BCD433;
+  --color-dept-social-glow: #00BCD480;
+
+  /* Licensing - Teal: Sync deals, secondary revenue streams */
+  --color-dept-licensing: #009688;
+  --color-dept-licensing-muted: #00968833;
+  --color-dept-licensing-glow: #00968880;
+
+  /* Brand - Amber: Identity, consistency, golden standard */
+  --color-dept-brand: #FFB300;
+  --color-dept-brand-muted: #FFB30033;
+  --color-dept-brand-glow: #FFB30080;
+
+  /* Campaign - Coral: Active promotions, urgency, call-to-action */
+  --color-dept-campaign: #FF7043;
+  --color-dept-campaign-muted: #FF704333;
+  --color-dept-campaign-glow: #FF704380;
+
+  /* Neutral Fallback - indiiOS Grey */
+  --color-dept-default: #78909C;
+  --color-dept-default-muted: #78909C33;
+
   /* Sonic OS Identity */
   --sonic-purple: 270 100% 60%;
   --sonic-blue: 190 100% 50%;
@@ -131,6 +243,24 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 2px);
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * DEPARTMENT COLORS - Tailwind Utilities
+   * Usage: text-dept-royalties, bg-dept-marketing, border-dept-legal, etc.
+   * These mirror the :root variables for Tailwind utility generation
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-dept-royalties: #FFC107;
+  --color-dept-distribution: #2196F3;
+  --color-dept-marketing: #E91E63;
+  --color-dept-legal: #455A64;
+  --color-dept-creative: #9C27B0;
+  --color-dept-touring: #FF5722;
+  --color-dept-publishing: #8BC34A;
+  --color-dept-social: #00BCD4;
+  --color-dept-licensing: #009688;
+  --color-dept-brand: #FFB300;
+  --color-dept-campaign: #FF7043;
+  --color-dept-default: #78909C;
+
   /* Sonic OS Palette */
   --color-sonic-purple: var(--sonic-purple);
   --color-sonic-blue: var(--sonic-blue);
@@ -245,4 +375,62 @@
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * BOLT UI ANIMATIONS - Unified dynamics for AI-driven updates
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Standard animation for AI/automation updates - applies department color */
+.indii-auto-update {
+  animation: bolt-pulse 1.5s var(--transition-timing);
+  border: 1px solid transparent;
+}
+
+@keyframes bolt-pulse {
+  0% {
+    border-color: transparent;
+    background-color: rgba(255, 255, 255, 0);
+  }
+  50% {
+    border-color: var(--dept-color, var(--color-dept-default));
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  100% {
+    border-color: transparent;
+    background-color: rgba(255, 255, 255, 0);
+  }
+}
+
+/* Subtle glow effect for department-tinted elements */
+.dept-glow {
+  box-shadow: 0 0 20px var(--dept-color, var(--color-dept-default));
+  transition: box-shadow var(--transition-speed) var(--transition-timing);
+}
+
+/* Department-aware border accent (top border only for cards) */
+.dept-border-top {
+  border-top: 2px solid var(--dept-color, var(--color-dept-default));
+}
+
+/* Snappy hover transition for interactive elements */
+.bolt-interactive {
+  transition: all var(--transition-speed-fast) var(--transition-timing);
+}
+
+.bolt-interactive:hover {
+  transform: translateY(-1px);
+}
+
+/* Typography utilities */
+.font-main {
+  font-family: var(--font-main);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
