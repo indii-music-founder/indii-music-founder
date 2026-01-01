@@ -17,6 +17,7 @@ import { MarketingTools } from './tools/MarketingTools';
 import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
+import { VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
@@ -53,7 +54,7 @@ AVAILABLE TOOLS:
 9. list_projects() - List all projects.
 10. search_knowledge(query: string) - Search the knowledge base.
 11. open_project(projectId: string) - Open a specific project.
-12. delegate_task(agent_id: string, task: string, context?: any) - Delegate to specialized agent.
+12. delegate_task(targetAgentId: string, task: string) - Delegate to specialized agent. VALID AGENT IDs: ${VALID_AGENT_IDS_LIST}. Using any other ID will fail.
 13. generate_video(prompt: string, image?: string, duration?: number) - Generate video.
 14. generate_motion_brush(image: string, mask: string, prompt?: string) - Motion brush animation.
 15. analyze_audio(audio: string) - Analyze audio file.
