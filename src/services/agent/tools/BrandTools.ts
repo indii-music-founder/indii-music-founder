@@ -1,77 +1,67 @@
-import { AI } from '../../ai/AIService';
+
+import { AI } from '@/services/ai/AIService';
+
+// Note: These tools use the AI service to simulate "analysis" and "generation"
+// In a real implementation, they might call specialized vision APIs or database lookups.
+
 import { AI_MODELS } from '@/core/config/ai-models';
 
-/**
- * Brand Tools
- * Brand consistency analysis, guideline generation, and asset auditing.
- */
-
-// --- Standalone Implementations ---
-
-export const analyze_brand_consistency_ai = async (args: { content: string, type: string }) => {
-    const prompt = `
-    You are a Brand Manager. Analyze the consistency of this ${args.type}:
-    Content: ${args.content}
-    Check for: Tone of voice, Core values, Visual consistency (if applicable).
-    `;
-    try {
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Failed to analyze brand consistency.";
-    } catch (e) {
-        return "Error analyzing brand consistency.";
-    }
-};
-
-export const generate_brand_guidelines_ai = async (args: { name: string, values: string[] }) => {
-    const prompt = `
-    You are a Creative Director. Generate brand guidelines for: ${args.name}.
-    Core Values: ${args.values.join(', ')}.
-    `;
-    try {
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Failed to generate brand guidelines.";
-    } catch (e) {
-        return "Error generating brand guidelines.";
-    }
-};
-
-export const analyze_brand_consistency = async ({ content, type }: { content: string, type: string }) => {
-    return JSON.stringify({
-        consistencyScore: 0.85,
-        toneMatch: true,
-        recommendations: ["Use more energetic language in the intro", "Ensure logo is 20px from edge"]
-    }, null, 2);
-};
-
-export const generate_brand_guidelines = async ({ name, values }: { name: string, values: string[] }) => {
-    return JSON.stringify({
-        brandName: name,
-        colorPalette: ["#1D1D1D", "#FFFFFF", "#FF3300"],
-        typography: "Outfit for headers, Inter for body",
-        voice: "Bold, Authentic, Premium"
-    }, null, 2);
-};
-
-export const audit_visual_assets = async ({ assets }: { assets: string[] }) => {
-    return JSON.stringify({
-        auditedCount: assets.length,
-        status: "compliant",
-        findings: []
-    }, null, 2);
-};
-
-// --- Unified Object ---
-
 export const BrandTools = {
-    analyze_brand_consistency_ai,
-    generate_brand_guidelines_ai,
-    analyze_brand_consistency,
-    generate_brand_guidelines,
-    audit_visual_assets
+    verify_output: async ({ goal, content }: { goal: string; content: string }) => {
+        const prompt = `
+        You are a strict Brand Manager. Verify if the following content meets the goal.
+        Goal: ${goal}
+        Content: ${content}
+
+        Output a JSON object: { "approved": boolean, "critique": string, "score": number (1-10) }
+        `;
+        const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        return AI.parseJSON(result.text());
+    },
+
+    analyze_brand_consistency: async ({ content, type }: { content: string; type: string }) => {
+        const prompt = `
+        You are a Brand Specialist. Analyze the consistency of the following ${type}.
+        Content: ${content}
+
+        Check for tone, core values alignment, and visual language (if described).
+        Output a JSON object: { "consistent": boolean, "issues": string[], "recommendations": string[] }
+        `;
+        const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        return AI.parseJSON(result.text());
+    },
+
+    generate_brand_guidelines: async ({ name, values }: { name: string; values: string[] }) => {
+         const prompt = `
+         Create a structured Brand Guidelines document for a brand named "${name}".
+         Core Values: ${values.join(', ')}.
+
+         Output a JSON object with sections: { "voice": string, "visuals": string, "dos_and_donts": string[] }
+         `;
+         const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        return AI.parseJSON(result.text());
+    },
+
+    audit_visual_assets: async ({ assets }: { assets: string[] }) => {
+        const prompt = `
+        Audit the following list of visual assets for brand compliance (simulated):
+        Assets: ${assets.join(', ')}
+
+        Output a JSON object: { "compliant": boolean, "flagged_assets": string[], "report": string }
+        `;
+        const result = await AI.generateContent({
+            model: AI_MODELS.TEXT_AGENT.model,
+            contents: { role: 'user', parts: [{ text: prompt }] }
+        });
+        return AI.parseJSON(result.text());
+    }
 };
