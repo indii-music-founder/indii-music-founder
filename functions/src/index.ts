@@ -200,11 +200,15 @@ export const inngestApi = functions
                             const bucket = admin.storage().bucket();
                             const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
                             await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
-                                metadata: { contentType: 'video/mp4' },
-                                public: true
+                                metadata: { contentType: 'video/mp4' }
                             });
 
-                            return file.publicUrl();
+                            const [url] = await file.getSignedUrl({
+                                action: 'read',
+                                expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
+                            });
+
+                            return url;
                         }
 
                         // Case B: GCS URI

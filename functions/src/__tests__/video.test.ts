@@ -1,21 +1,50 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as admin from 'firebase-admin';
 
+// Hoist mocks to ensure they are available before vi.mock calls
+const {
+    mockSet,
+    mockDoc,
+    mockCollection,
+    mockFirestore,
+    mockFieldValue,
+    mockAuthGetClient,
+    mockAuthGetProjectId
+} = vi.hoisted(() => {
+    const mockSet = vi.fn();
+    const mockDoc = vi.fn(() => ({ set: mockSet }));
+    const mockCollection = vi.fn(() => ({ doc: mockDoc }));
+    const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
+    const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
+
+    const mockAuthGetClient = vi.fn();
+    const mockAuthGetProjectId = vi.fn();
+
+    return {
+        mockSet,
+        mockDoc,
+        mockCollection,
+        mockFirestore,
+        mockFieldValue,
+        mockAuthGetClient,
+        mockAuthGetProjectId
+    };
+});
+
 // Mock Firebase Admin
 vi.mock('firebase-admin', () => ({
     initializeApp: vi.fn(),
-    firestore: vi.fn(() => ({
-        collection: vi.fn(() => ({
-            doc: vi.fn(() => ({
-                set: vi.fn(),
-                get: vi.fn()
-            }))
-        })),
-        FieldValue: {
-            serverTimestamp: vi.fn()
-        }
+    firestore: Object.assign(mockFirestore, { FieldValue: mockFieldValue }),
+    storage: vi.fn(() => ({
+        bucket: () => ({
+            file: () => ({
+                save: vi.fn(),
+                makePublic: vi.fn(),
+                publicUrl: () => 'https://mock-storage-url.com/video.mp4',
+                getSignedUrl: vi.fn(() => Promise.resolve(['https://mock-signed-url.com/video.mp4']))
+            })
+        })
     })),
-    storage: vi.fn(),
     auth: vi.fn()
 }));
 
@@ -46,43 +75,6 @@ vi.mock('@google-cloud/vertexai', () => ({
     VertexAI: vi.fn()
 }));
 
-describe('Video Backend', () => {
-    it('should be testable', () => {
-        expect(true).toBe(true);
-    });
-
-    it('should initialize firebase admin when module loads', async () => {
-        // Dynamic import to trigger execution
-        await import('../index');
-        expect(admin.initializeApp).toHaveBeenCalled();
-    });
-});
-
-// Mocks
-const mockSet = vi.fn();
-const mockDoc = vi.fn(() => ({ set: mockSet }));
-const mockCollection = vi.fn(() => ({ doc: mockDoc }));
-const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
-const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
-
-const mockAuthGetClient = vi.fn();
-const mockAuthGetProjectId = vi.fn();
-
-// Mock Modules
-vi.mock('firebase-admin', () => ({
-    initializeApp: vi.fn(),
-    firestore: Object.assign(mockFirestore, { FieldValue: mockFieldValue }),
-    storage: vi.fn(() => ({
-        bucket: () => ({
-            file: () => ({
-                save: vi.fn(),
-                makePublic: vi.fn(),
-                publicUrl: () => 'https://mock-storage-url.com/video.mp4'
-            })
-        })
-    }))
-}));
-
 // Mock GoogleAuth class using a class-like structure for the mock
 class MockGoogleAuth {
     getClient() { return mockAuthGetClient(); }
@@ -93,6 +85,18 @@ vi.mock('google-auth-library', () => {
     return {
         GoogleAuth: MockGoogleAuth
     };
+});
+
+describe('Video Backend', () => {
+    it('should be testable', () => {
+        expect(true).toBe(true);
+    });
+
+    it('should initialize firebase admin when module loads', async () => {
+        // Dynamic import to trigger execution
+        await import('../index');
+        expect(admin.initializeApp).toHaveBeenCalled();
+    });
 });
 
 describe('Video Backend Logic', () => {
@@ -151,13 +155,13 @@ describe('Video Backend Logic', () => {
         // 3. Simulate "update-status-completed"
         await mockFirestore().collection('videoJobs').doc(jobId).set({
             status: 'completed',
-            videoUrl: 'https://mock-storage-url.com/video.mp4',
+            videoUrl: 'https://mock-signed-url.com/video.mp4',
             updatedAt: 'TIMESTAMP'
         }, { merge: true });
 
         expect(mockSet).toHaveBeenLastCalledWith({
             status: 'completed',
-            videoUrl: 'https://mock-storage-url.com/video.mp4',
+            videoUrl: 'https://mock-signed-url.com/video.mp4',
             updatedAt: 'TIMESTAMP'
         }, { merge: true });
     });
