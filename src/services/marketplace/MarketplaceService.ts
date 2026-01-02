@@ -47,6 +47,12 @@ export class MarketplaceService {
             createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString()
         } as Product));
 
+        // Auto-seed if empty
+        if (results.length === 0) {
+            await this.seedDatabase(artistId);
+            return this.getProductsByArtist(artistId); // Recursive call after seeding
+        }
+
         return results;
     }
 

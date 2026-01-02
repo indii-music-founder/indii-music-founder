@@ -1,11 +1,14 @@
 
-import { AI } from '@/services/ai/AIService';
+import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
+import { delay } from '@/utils/async';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 /**
  * Security Tools
- * 
+ *
  * In a real environment, these would connect to:
  * - Apigee Management API (for API status/lifecycle)
  * - Model Armor / Sensitive Data Protection API (for content scanning)
@@ -45,8 +48,8 @@ const SecurityReportSchema = z.object({
     })
 });
 
-// Mock data stores
-const MOCK_APIS: Record<string, 'ACTIVE' | 'DISABLED' | 'DEPRECATED'> = {
+// Fallback API inventory when Firestore is unavailable
+const FALLBACK_APIS: Record<string, 'ACTIVE' | 'DISABLED' | 'DEPRECATED'> = {
     'payment-api': 'ACTIVE',
     'users-api': 'ACTIVE',
     'legacy-auth-api': 'DEPRECATED',
@@ -59,7 +62,28 @@ const SENSITIVE_TERMS = ['password', 'secret', 'key', 'ssn', 'credit_card'];
 
 export const SecurityTools = {
     check_api_status: async ({ api_name }: { api_name: string }) => {
-        const status = MOCK_APIS[api_name.toLowerCase()] || 'UNKNOWN';
+        const apiKey = api_name.toLowerCase();
+
+        // Try to get status from Firestore first
+        try {
+            const docRef = doc(db, 'api_inventory', apiKey);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                return JSON.stringify({
+                    api: api_name,
+                    status: data.status || 'UNKNOWN',
+                    environment: data.environment || 'production',
+                    last_check: new Date().toISOString()
+                });
+            }
+        } catch (error) {
+            console.warn('[SecurityTools] Firestore unavailable, using fallback:', error);
+        }
+
+        // Fallback to static data
+        const status = FALLBACK_APIS[apiKey] || 'UNKNOWN';
         return JSON.stringify({
             api: api_name,
             status: status,
@@ -82,7 +106,7 @@ export const SecurityTools = {
     },
 
     rotate_credentials: async ({ service_name }: { service_name: string }) => {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await delay(500);
         return JSON.stringify({
             service: service_name,
             action: 'rotate_credentials',
@@ -204,7 +228,8 @@ export const SecurityTools = {
             SecurityReportSchema.parse(report);
             return JSON.stringify(report, null, 2);
         } catch (e) {
-             return JSON.stringify(report, null, 2);
+            console.warn('SecurityReportSchema validation failed:', e);
+            return JSON.stringify(report, null, 2);
         }
     }
 };

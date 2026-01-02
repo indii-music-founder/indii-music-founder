@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Layout, Video, Sparkles, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
@@ -37,7 +37,9 @@ export default function VideoWorkflow() {
         jobId,
         setJobId,
         status: jobStatus,
-        setStatus: setJobStatus
+        setStatus: setJobStatus,
+        progress: jobProgress,
+        setProgress: setJobProgress
     } = useVideoEditorStore();
 
     const toast = useToast();
@@ -90,22 +92,19 @@ export default function VideoWorkflow() {
     useEffect(() => {
         if (!jobId) return;
 
-        let unsubscribe: () => void;
-        const setupListener = async () => {
-            try {
-                const { doc, onSnapshot } = await import('firebase/firestore');
-                const { db } = await import('@/services/firebase');
+        const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
+            if (data) {
+                const newStatus = data.status;
 
-                unsubscribe = onSnapshot(doc(db, 'videoJobs', jobId), (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        const data = docSnapshot.data();
-                        const newStatus = data?.status;
+                // Check current status to avoid unnecessary updates
+                const currentStatus = useVideoEditorStore.getState().status;
+                if (newStatus && newStatus !== currentStatus) {
+                    setJobStatus(newStatus as any);
+                }
 
-                        // Check current status to avoid unnecessary updates
-                        const currentStatus = useVideoEditorStore.getState().status;
-                        if (newStatus && newStatus !== currentStatus) {
-                            setJobStatus(newStatus);
-                        }
+                if (data.progress !== undefined) {
+                    setJobProgress(data.progress);
+                }
 
                         if (newStatus === 'completed' && data.videoUrl) {
                             const newAsset = {
@@ -131,9 +130,30 @@ export default function VideoWorkflow() {
                 });
             } catch (e) {
                 console.error("Job listener error:", e);
+                if (newStatus === 'completed' && data.videoUrl) {
+                    const newAsset = {
+                        id: jobId,
+                        url: data.videoUrl,
+                        prompt: data.prompt || localPromptRef.current,
+                        type: 'video' as const,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'default',
+                        projectId: 'default',
+                        orgId: currentOrganizationId
+                    };
+                    addToHistory(newAsset);
+                    setActiveVideo(newAsset); // Auto-play result
+                    toast.success('Scene generated!');
+                    setJobId(null);
+                    setJobStatus('idle');
+                } else if (newStatus === 'failed') {
+                    toast.error('Generation failed');
+                    setJobId(null);
+                    setJobStatus('failed');
+                }
             }
-        };
-        setupListener();
+        });
+
         return () => { if (unsubscribe) unsubscribe(); };
     }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
 
@@ -217,7 +237,7 @@ export default function VideoWorkflow() {
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
                     <div className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10 group">
-                        {jobStatus === 'processing' || jobStatus === 'queued' ? (
+                        {jobStatus === 'processing' || jobStatus === 'queued' || jobStatus === 'stitching' ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
                                 <div className="w-24 h-24 relative mb-4">
                                     <div className="absolute inset-0 rounded-full border-t-2 border-purple-500 animate-spin"></div>
@@ -225,10 +245,21 @@ export default function VideoWorkflow() {
                                         <Sparkles size={24} className="text-purple-400 animate-pulse" />
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
-                                    Imaginating Scene...
+                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
+                                    {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
                                 </h3>
-                                <p className="text-gray-500 text-sm mt-2">AI Director is rendering your vision</p>
+                                <p className="text-gray-500 text-sm mt-2">
+                                    {jobStatus === 'stitching' ? 'Finalizing your unified video' : `AI Director is rendering your vision (${jobProgress}%)`}
+                                </p>
+                                {/* Progress Bar */}
+                                <div className="w-64 h-1.5 bg-white/5 rounded-full mt-6 overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${jobProgress}%` }}
+                                        transition={{ duration: 0.5 }}
+                                    />
+                                </div>
                             </div>
                         ) : activeVideo ? (
                             <div className="relative w-full h-full flex items-center justify-center">

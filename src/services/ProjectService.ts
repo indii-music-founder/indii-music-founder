@@ -28,6 +28,18 @@ class ProjectServiceImpl extends FirestoreService<Project> {
             (a, b) => b.date - a.date
         );
 
+        // Auto-seed Demo Project if empty and valid user
+        if (results.length === 0 && userId && (orgId === 'org-default' || orgId === 'personal')) {
+            console.log("No projects found, seeding Demo Project...");
+            try {
+                const demoProject = await this.createProject('Demo Project', 'creative', orgId);
+                return [demoProject];
+            } catch (e) {
+                console.error("Failed to seed demo project", e);
+                return [];
+            }
+        }
+
         return results;
     }
 

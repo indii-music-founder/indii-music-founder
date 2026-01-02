@@ -3,6 +3,18 @@ import { db } from '@/services/firebase';
 import { MerchProduct } from '@/modules/merchandise/types';
 
 const COLLECTION_NAME = 'merchandise';
+const CATALOG_COLLECTION = 'merchandise_catalog';
+
+export interface CatalogProduct {
+    id: string;
+    title: string;
+    basePrice: number;
+    image: string;
+    tags?: string[];
+    features?: string[];
+    category: 'standard' | 'pro';
+    description?: string;
+}
 
 export const MerchandiseService = {
     /**
@@ -24,72 +36,60 @@ export const MerchandiseService = {
     },
 
     /**
-     * Seed initial data if empty
+     * Get available product templates from the catalog
+     * These are admin-managed templates users can customize
      */
-    seedDatabase: async (userId: string) => {
-        const q = query(
-            collection(db, COLLECTION_NAME),
-            where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
+    getCatalog: async (): Promise<CatalogProduct[]> => {
+        try {
+            const snapshot = await getDocs(collection(db, CATALOG_COLLECTION));
+            return snapshot.docs.map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data()
+            } as CatalogProduct));
+        } catch (error) {
+            console.error('[MerchandiseService] Failed to load catalog:', error);
+            return [];
+        }
+    },
 
-        if (!snapshot.empty) return;
+    /**
+     * Create a product from a catalog template
+     */
+    createFromCatalog: async (catalogId: string, userId: string, customizations?: {
+        title?: string;
+        price?: string;
+        image?: string;
+    }) => {
+        const catalog = await MerchandiseService.getCatalog();
+        const template = catalog.find(p => p.id === catalogId);
 
-        const MOCK_STANDARD: Omit<MerchProduct, 'id'>[] = [
-            {
-                title: "Banana Standard Tee",
-                price: "$24.99",
-                image: "/assets/merch/banana_standard_tee.png",
-                tags: ["Streetwear", "Cotton", "Unisex"],
-                category: 'standard',
-                userId,
-                createdAt: serverTimestamp()
-            },
-            {
-                title: "Banana Pop Hoodie",
-                price: "$49.99",
-                image: "/assets/merch/banana_hoodie.png",
-                tags: ["Fleece", "Oversized", "Vibrant"],
-                category: 'standard',
-                userId,
-                createdAt: serverTimestamp()
-            }
-        ];
+        if (!template) {
+            throw new Error(`Catalog product ${catalogId} not found`);
+        }
 
-        const MOCK_PRO: Omit<MerchProduct, 'id'>[] = [
-            {
-                title: "PRO // TEE.001",
-                price: "$45.00",
-                image: "/assets/merch/banana_pro_tee.png",
-                features: ["Moisture Wicking", "Embedded NFC"],
-                category: 'pro',
-                userId,
-                createdAt: serverTimestamp()
-            },
-            {
-                title: "PRO // HOODIE.BLK",
-                price: "$85.00",
-                image: "/assets/merch/banana_pro_hoodie.png",
-                features: ["Heavyweight", "Water Resistant"],
-                category: 'pro',
-                userId,
-                createdAt: serverTimestamp()
-            }
-        ];
+        const product: Omit<MerchProduct, 'id'> = {
+            title: customizations?.title || template.title,
+            price: customizations?.price || `$${template.basePrice.toFixed(2)}`,
+            image: customizations?.image || template.image,
+            tags: template.tags,
+            features: template.features,
+            category: template.category,
+            userId,
+            createdAt: serverTimestamp()
+        };
 
-        const allProducts = [...MOCK_STANDARD, ...MOCK_PRO];
-
-        await Promise.all(allProducts.map(p => addDoc(collection(db, COLLECTION_NAME), p)));
+        return await MerchandiseService.addProduct(product);
     },
 
     /**
      * Add a new product
      */
     addProduct: async (product: Omit<MerchProduct, 'id'>) => {
-        await addDoc(collection(db, COLLECTION_NAME), {
+        const docRef = await addDoc(collection(db, COLLECTION_NAME), {
             ...product,
             createdAt: serverTimestamp()
         });
+        return docRef.id;
     },
 
     /**

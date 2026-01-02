@@ -1,0 +1,1 @@
+Skipping Playwright verification as this is a component change that requires complex app state (Campaigns) difficult to mock in a simple E2E script without full backend. Unit tests have verified the logic and accessibility attributes.

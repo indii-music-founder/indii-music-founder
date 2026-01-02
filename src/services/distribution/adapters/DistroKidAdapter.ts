@@ -18,6 +18,7 @@ import {
 // import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
+import { delay } from '@/utils/async';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -73,7 +74,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
         if (!credentials.apiKey) {
             throw new Error('DistroKid requires an API key');
         }
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await delay(500);
         this.apiKey = credentials.apiKey;
         this.connected = true;
     }
@@ -90,7 +91,7 @@ export class DistroKidAdapter implements IDistributorAdapter {
         const releaseId = `DK-${Date.now()}`;
 
         // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await delay(1500);
 
         try {
             // 1. Build Package (Simulating Bulk Upload Preparation)
