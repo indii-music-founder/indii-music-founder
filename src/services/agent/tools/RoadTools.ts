@@ -27,10 +27,11 @@ const TourRouteSchema = z.object({
 const TourBudgetSchema = z.object({
     totalBudget: z.number(),
     breakdown: z.object({
-        lodging: z.string(),
-        food: z.string(),
-        transport: z.string(),
-        contingency: z.string()
+        lodging: z.number(),
+        food: z.number(),
+        transport: z.number(),
+        contingency: z.number(),
+        crew_costs: z.number()
     })
 });
 
@@ -53,11 +54,19 @@ export const RoadTools = {
         const context = timeframe ? `Timeframe: ${timeframe}` : '';
         const schema = zodToJsonSchema(TourRouteSchema);
 
+        // Enhanced prompt to simulate real routing engine behavior
         const prompt = `
-        You are a Tour Manager. Plan a logistical route for a tour.
+        You are a Logistics Engine. Calculate the driving route for the following tour stops.
         Stops/Cities: ${stopsList.join(', ')}.
         ${context}
-        Optimize for logical travel flow.
+
+        CRITICAL INSTRUCTIONS:
+        1. Optimize the route order for the shortest total drive time.
+        2. Provide specific "legs" with realistic driving distances (miles/km) and times (hours/mins).
+        3. Do NOT just list the cities; calculate the connections.
+
+        Output a strict JSON object matching this schema:
+        ${JSON.stringify(schema, null, 2)}
         `;
 
         try {
@@ -74,29 +83,49 @@ export const RoadTools = {
         }
     },
 
+    /**
+     * Calculates tour budget using deterministic math rather than AI hallucination.
+     */
     calculate_tour_budget: async ({ days, crew, crew_size, duration_days, accommodation_level }: { days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string }) => {
         const d = days || duration_days || 1;
         const c = crew || crew_size || 1;
-        const level = accommodation_level || 'standard';
-        const schema = zodToJsonSchema(TourBudgetSchema);
+        const level = (accommodation_level || 'standard').toLowerCase();
 
-        const prompt = `
-        You are a Tour Accountant. Estimate a tour budget.
-        Crew Size: ${c}
-        Duration: ${d} days
-        Accommodation Level: ${level}
-        `;
+        // Deterministic Rates (USD)
+        const rates = {
+            budget: { hotel: 100, per_diem: 40, transport: 50 },
+            standard: { hotel: 200, per_diem: 60, transport: 100 },
+            luxury: { hotel: 500, per_diem: 100, transport: 300 }
+        };
 
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(TourBudgetSchema.parse(data));
-        } catch (e) {
-            console.error('RoadTools.calculate_tour_budget error:', e);
-            return JSON.stringify({
-                totalBudget: 0,
-                breakdown: { lodging: "0", food: "0", transport: "0", contingency: "0" }
-            });
-        }
+        const rate = rates[level as keyof typeof rates] || rates.standard;
+
+        // Math Calculations
+        const lodgingCost = rate.hotel * c * d;
+        const foodCost = rate.per_diem * c * d;
+        // Transport: assume 1 vehicle for every 5 people
+        const vehicles = Math.ceil(c / 5);
+        const transportCost = rate.transport * vehicles * d;
+
+        // Crew Wages (Simulated Base Rate of $250/day/person)
+        const crewWages = 250 * c * d;
+
+        const subtotal = lodgingCost + foodCost + transportCost + crewWages;
+        const contingency = Math.round(subtotal * 0.10); // 10% contingency
+        const total = subtotal + contingency;
+
+        const result = {
+            totalBudget: total,
+            breakdown: {
+                lodging: lodgingCost,
+                food: foodCost,
+                transport: transportCost,
+                crew_costs: crewWages,
+                contingency: contingency
+            }
+        };
+
+        return JSON.stringify(result);
     },
 
     generate_itinerary: async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
