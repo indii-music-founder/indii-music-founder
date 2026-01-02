@@ -4,6 +4,8 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
+import { GoogleAuth } from "google-auth-library";
+import { generateVideoLogic } from "./lib/video";
 import { generateVideoWithVeo, VideoJobSchema } from "./lib/video";
 
 // Initialize Firebase Admin
@@ -130,6 +132,7 @@ export const inngestApi = functions
         const generateVideoFn = inngestClient.createFunction(
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
+            generateVideoLogic
             async ({ event, step }) => {
                 const { jobId, userId } = event.data;
 
