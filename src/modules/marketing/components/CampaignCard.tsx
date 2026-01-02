@@ -45,6 +45,15 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
 
     return (
         <motion.div
+            role="button"
+            tabIndex={0}
+            aria-label={`Select campaign: ${campaign.title}`}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(campaign);
+                }
+            }}
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
@@ -53,6 +62,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
             tabIndex={0}
             aria-label={`Select campaign: ${campaign.title}`}
             // Bolt UI Unification: Using dept-marketing for visual hierarchy and removing hardcoded hexes
+            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
             // Added focus-visible styles for accessibility
             className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
         >
@@ -112,12 +122,12 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="space-y-2">
+                <div className="space-y-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Campaign Progress">
                     <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Progress</span>
+                        <span id={`progress-label-${campaign.id}`}>Progress</span>
                         <span className="text-foreground font-medium">{progress}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden" aria-hidden="true">
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
