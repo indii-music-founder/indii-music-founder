@@ -29,9 +29,9 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [
         set((state) => ({ finance: { ...state.finance, loading: true } }));
 
         try {
-            const { FinanceService } = await import('@/services/finance/FinanceService');
+            const { financeService } = await import('@/services/finance/FinanceService');
             // Fix: Use userId (from userProfile) instead of user.uid
-            const summary = await FinanceService.fetchEarnings(userId);
+            const summary = await financeService.fetchEarnings(userId);
 
             set((state) => ({
                 finance: {

@@ -86,7 +86,7 @@ export default function VideoWorkflow() {
         }
     }, [selectedItem, generatedHistory, activeVideo]);
 
-    // Job Listener (kept from original)
+    // Job Listener
     useEffect(() => {
         if (!jobId) return;
 
@@ -127,26 +127,6 @@ export default function VideoWorkflow() {
                             setJobId(null);
                             setJobStatus('failed');
                         }
-                        if (newStatus === 'completed' && data.videoUrl) {
-                            const newAsset = {
-                                id: jobId,
-                                url: data.videoUrl,
-                                prompt: data.prompt || localPrompt,
-                                type: 'video' as const,
-                                timestamp: Date.now(),
-                                projectId: 'default',
-                                orgId: currentOrganizationId
-                            };
-                            addToHistory(newAsset);
-                            setActiveVideo(newAsset); // Auto-play result
-                            toast.success('Scene generated!');
-                            setJobId(null);
-                            setJobStatus('idle');
-                        } else if (newStatus === 'failed') {
-                            toast.error('Generation failed');
-                            setJobId(null);
-                            setJobStatus('failed');
-                        }
                     }
                 });
             } catch (e) {
@@ -155,12 +135,11 @@ export default function VideoWorkflow() {
         };
         setupListener();
         return () => { if (unsubscribe) unsubscribe(); };
-        // Removed jobStatus and localPrompt from dependencies to prevent re-subscriptions and use stable/initial values
     }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
 
     const handleGenerate = async () => {
         setJobStatus('queued');
-        const isInterpolation = videoInputs.firstFrame && videoInputs.lastFrame;
+        const isInterpolation = !!(videoInputs.firstFrame && videoInputs.lastFrame);
         toast.info(isInterpolation ? 'Queuing interpolation...' : 'Queuing scene generation...');
 
         try {
@@ -184,29 +163,30 @@ export default function VideoWorkflow() {
                 orgId: currentOrganizationId
             });
 
-            // Simulate immediate feedback for prototype if no backend job ID
             if (results && results.length > 0) {
-                results.forEach(res => {
-                    addToHistory({
-                        id: res.id,
-                        url: res.url,
-                        prompt: res.prompt,
-                        type: 'video',
-                        timestamp: Date.now(),
-                        projectId: currentProjectId
+                const firstResult = results[0];
+
+                // If the URL is provided immediately, complete it. Otherwise, set jobId to listen for updates.
+                if (firstResult.url) {
+                    results.forEach(res => {
+                        const newAsset = {
+                            id: res.id,
+                            url: res.url,
+                            prompt: res.prompt,
+                            type: 'video' as const,
+                            timestamp: Date.now(),
+                            projectId: currentProjectId
+                        };
+                        addToHistory(newAsset);
+                        setActiveVideo(newAsset);
                     });
-                    // Auto-select latest
-                    setActiveVideo({
-                        id: res.id,
-                        url: res.url,
-                        prompt: res.prompt,
-                        type: 'video',
-                        timestamp: Date.now(),
-                        projectId: currentProjectId
-                    });
-                });
-                setJobStatus('completed');
-                toast.success('Scene generated!');
+                    setJobStatus('completed');
+                    toast.success('Scene generated!');
+                } else {
+                    // Start listening for the background job
+                    setJobId(firstResult.id);
+                    setJobStatus('processing');
+                }
             }
         } catch (error: any) {
             console.error("Video generation failed:", error);

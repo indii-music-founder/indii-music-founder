@@ -61,17 +61,17 @@ export const MarketingTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return CreateCampaignBriefSchema.parse(data);
+            return JSON.stringify(CreateCampaignBriefSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.create_campaign_brief error:', error);
             // Fallback safe response
-            return {
+            return JSON.stringify({
                 campaignName: `${product} Campaign`,
                 targetAudience: "General Audience",
                 budget: "TBD",
                 channels: [],
                 kpis: []
-            };
+            });
         }
     },
 
@@ -91,15 +91,15 @@ export const MarketingTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return AnalyzeAudienceSchema.parse(data);
+            return JSON.stringify(AnalyzeAudienceSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.analyze_audience error:', error);
-            return {
+            return JSON.stringify({
                 platform: "General",
                 demographics: { age: "Unknown", locations: [] },
                 interests: [],
                 reach: "Unknown"
-            };
+            });
         }
     },
 
@@ -120,16 +120,15 @@ export const MarketingTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return ScheduleContentSchema.parse(data);
+            return JSON.stringify(ScheduleContentSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.schedule_content error:', error);
             // Fallback
-            return {
+            return JSON.stringify({
                 status: "scheduled",
                 count: 0,
                 nextPost: "Unknown"
-            } as any; // Type assertion force fit if fallback doesn't match literal "scheduled" strictness perfectly? 
-            // Check schema: status: z.literal("scheduled"). So fallback must be "scheduled".
+            });
         }
     },
 
@@ -148,14 +147,14 @@ export const MarketingTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return TrackPerformanceSchema.parse(data);
+            return JSON.stringify(TrackPerformanceSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.track_performance error:', error);
-            return {
+            return JSON.stringify({
                 campaignId,
                 metrics: { impressions: 0, clicks: 0, conversions: 0 },
                 roi: "0%"
-            };
+            });
         }
     }
 };

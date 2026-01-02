@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
-import { FinanceService, Expense } from '@/services/finance/FinanceService';
+import { financeService, Expense } from '@/services/finance/FinanceService';
 
 export function useFinance() {
     const { finance, fetchEarnings, userProfile } = useStore();
@@ -29,7 +29,7 @@ export function useFinance() {
         if (!userProfile?.id) return;
         setExpensesLoading(true);
         try {
-            const data = await FinanceService.getExpenses(userProfile.id);
+            const data = await financeService.getExpenses(userProfile.id);
             setExpenses(data);
         } catch (e) {
             console.error(e);
@@ -42,7 +42,7 @@ export function useFinance() {
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
         try {
-            await FinanceService.addExpense(expenseData);
+            await financeService.addExpense(expenseData);
             // Optimistic update or refresh
             loadExpenses();
             return true;

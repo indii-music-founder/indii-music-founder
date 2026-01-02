@@ -200,8 +200,7 @@ export class ERNMapper {
 
             // Link TechnicalDetails from Assets
             if (assets && assets.audioFiles && assets.audioFiles.length > index) {
-                // @ts-expect-error -assets might have trackIndex
-                const matchedAsset = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
+                const matchedAsset = assets.audioFiles.find((a: any) => a.trackIndex === index) || assets.audioFiles[index];
 
                 if (matchedAsset) {
                     const ext = matchedAsset.format || 'wav';

@@ -8,7 +8,7 @@ import SalesAnalytics from './SalesAnalytics';
 export default function RevenueView() {
     const userProfile = useStore(state => state.userProfile);
     const [totalRevenue, setTotalRevenue] = useState(0);
-    const [revenueBySource, setRevenueBySource] = useState<{ direct: number, social: number }>({ direct: 0, social: 0 });
+    const [revenueBySource, setRevenueBySource] = useState<{ streaming: number; merch: number; licensing: number; social: number }>({ streaming: 0, merch: 0, licensing: 0, social: 0 });
     const [topProducts, setTopProducts] = useState<{ id: string, amount: number }[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -22,6 +22,7 @@ export default function RevenueView() {
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
                 setTotalRevenue(stats.totalRevenue);
+                setRevenueBySource(stats.sources);
                 setRevenueBySource(stats.revenueBySource || { direct: 0, social: 0 });
 
                 // Process top products
@@ -103,7 +104,7 @@ export default function RevenueView() {
                     <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold text-purple-500">$</span>
                         <span className="text-4xl font-black text-white">
-                            <AnimatedNumber value={revenueBySource.direct} precision={2} />
+                            <AnimatedNumber value={revenueBySource.merch} precision={2} />
                         </span>
                     </div>
                 </div>

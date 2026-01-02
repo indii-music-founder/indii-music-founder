@@ -51,10 +51,10 @@ export const BrandTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return VerifyOutputSchema.parse(data);
+            return JSON.stringify(VerifyOutputSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.verify_output error:', error);
-            return { approved: false, critique: "AI Generation Failed", score: 0 };
+            return JSON.stringify({ approved: false, critique: "AI Generation Failed", score: 0 });
         }
     },
 
@@ -77,10 +77,10 @@ export const BrandTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return AnalyzeBrandConsistencySchema.parse(data);
+            return JSON.stringify(AnalyzeBrandConsistencySchema.parse(data));
         } catch (error) {
             console.error('BrandTools.analyze_brand_consistency error:', error);
-            return { consistent: false, issues: ["AI Analysis Failed"], recommendations: [] };
+            return JSON.stringify({ consistent: false, issues: ["AI Analysis Failed"], recommendations: [] });
         }
     },
 
@@ -101,10 +101,10 @@ export const BrandTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return GenerateBrandGuidelinesSchema.parse(data);
+            return JSON.stringify(GenerateBrandGuidelinesSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.generate_brand_guidelines error:', error);
-            return { voice: "Error", visuals: "Error", dos_and_donts: [] };
+            return JSON.stringify({ voice: "Error", visuals: "Error", dos_and_donts: [] });
         }
     },
 
@@ -125,10 +125,10 @@ export const BrandTools = {
             });
             const text = result.text();
             const data = AI.parseJSON(text);
-            return AuditVisualAssetsSchema.parse(data);
+            return JSON.stringify(AuditVisualAssetsSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.audit_visual_assets error:', error);
-            return { compliant: false, flagged_assets: [], report: "AI Audit Failed" };
+            return JSON.stringify({ compliant: false, flagged_assets: [], report: "AI Audit Failed" });
         }
     }
 };

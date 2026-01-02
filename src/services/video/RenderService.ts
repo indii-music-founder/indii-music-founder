@@ -2,7 +2,6 @@
 // This service handles the composition and rendering of video assets in the browser/electron.
 
 import { renderMedia, RenderMediaOptions } from '@remotion/renderer';
-import { CompositionProps } from 'remotion';
 
 export interface RenderConfig {
     compositionId: string;
@@ -32,7 +31,7 @@ export class RenderService {
             await renderMedia({
                 composition: {
                     id: config.compositionId,
-                    props: config.inputProps as unknown as CompositionProps<any>,
+                    props: config.inputProps as any,
                     width: 1920,
                     height: 1080,
                     fps: 30,
