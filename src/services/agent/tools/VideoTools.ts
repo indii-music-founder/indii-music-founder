@@ -1,5 +1,6 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { delay } from '@/utils/async';
@@ -259,6 +260,13 @@ export const VideoTools = {
             });
 
             // Use the refactored background-driven service
+            const results = await VideoGeneration.generateLongFormVideo({
+                prompt: args.prompt,
+                totalDuration: args.totalDuration,
+                firstFrame: args.startImage, // Map startImage to firstFrame
+            });
+
+            const jobId = results[0]?.id;
             const jobId = await VideoGeneration.generateLongFormVideo({
                 prompt: args.prompt,
                 totalDuration: args.totalDuration,

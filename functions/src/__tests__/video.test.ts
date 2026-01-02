@@ -183,6 +183,15 @@ const {
         mockAuthGetProjectId
     };
 });
+// Mocks
+const mockSet = vi.fn();
+const mockDoc = vi.fn(() => ({ set: mockSet }));
+const mockCollection = vi.fn(() => ({ doc: mockDoc }));
+const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
+const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
+
+const mockAuthGetClient = vi.fn();
+const mockAuthGetProjectId = vi.fn();
 
 // Mock Modules
 vi.mock('firebase-admin', () => ({
@@ -212,6 +221,9 @@ vi.mock('google-auth-library', () => {
         GoogleAuth: MockGoogleAuth
     };
 });
+
+    }))
+}));
 
 // Mock GoogleAuth class using a class-like structure for the mock
 class MockGoogleAuth {

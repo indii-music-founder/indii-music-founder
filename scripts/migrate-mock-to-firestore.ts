@@ -136,6 +136,16 @@ const API_INVENTORY = [
 async function migrateMerchandiseCatalog() {
     console.log('\n📦 Migrating Merchandise Catalog...');
     const batch = db.batch();
+    let skipped = 0;
+
+    for (const product of MERCHANDISE_CATALOG) {
+        const ref = db.collection('merchandise_catalog').doc(product.id);
+        const existing = await ref.get();
+        if (existing.exists) {
+            console.log(`   ⏭️  Skipping ${product.id} (already exists)`);
+            skipped++;
+            continue;
+        }
 
     for (const product of MERCHANDISE_CATALOG) {
         const ref = db.collection('merchandise_catalog').doc(product.id);
@@ -146,6 +156,10 @@ async function migrateMerchandiseCatalog() {
         });
     }
 
+    if (MERCHANDISE_CATALOG.length - skipped > 0) {
+        await batch.commit();
+    }
+    console.log(`   ✅ Migrated ${MERCHANDISE_CATALOG.length - skipped} products (${skipped} skipped)`);
     await batch.commit();
     console.log(`   ✅ Migrated ${MERCHANDISE_CATALOG.length} products`);
 }
@@ -153,6 +167,16 @@ async function migrateMerchandiseCatalog() {
 async function migrateSamplePlatforms() {
     console.log('\n🎵 Migrating Sample Platforms...');
     const batch = db.batch();
+    let skipped = 0;
+
+    for (const platform of SAMPLE_PLATFORMS) {
+        const ref = db.collection('sample_platforms').doc(platform.id);
+        const existing = await ref.get();
+        if (existing.exists) {
+            console.log(`   ⏭️  Skipping ${platform.id} (already exists)`);
+            skipped++;
+            continue;
+        }
 
     for (const platform of SAMPLE_PLATFORMS) {
         const ref = db.collection('sample_platforms').doc(platform.id);
@@ -163,6 +187,10 @@ async function migrateSamplePlatforms() {
         });
     }
 
+    if (SAMPLE_PLATFORMS.length - skipped > 0) {
+        await batch.commit();
+    }
+    console.log(`   ✅ Migrated ${SAMPLE_PLATFORMS.length - skipped} platforms (${skipped} skipped)`);
     await batch.commit();
     console.log(`   ✅ Migrated ${SAMPLE_PLATFORMS.length} platforms`);
 }
@@ -170,6 +198,16 @@ async function migrateSamplePlatforms() {
 async function migrateApiInventory() {
     console.log('\n🔧 Migrating API Inventory...');
     const batch = db.batch();
+    let skipped = 0;
+
+    for (const api of API_INVENTORY) {
+        const ref = db.collection('api_inventory').doc(api.id);
+        const existing = await ref.get();
+        if (existing.exists) {
+            console.log(`   ⏭️  Skipping ${api.id} (already exists)`);
+            skipped++;
+            continue;
+        }
 
     for (const api of API_INVENTORY) {
         const ref = db.collection('api_inventory').doc(api.id);
@@ -180,6 +218,10 @@ async function migrateApiInventory() {
         });
     }
 
+    if (API_INVENTORY.length - skipped > 0) {
+        await batch.commit();
+    }
+    console.log(`   ✅ Migrated ${API_INVENTORY.length - skipped} APIs (${skipped} skipped)`);
     await batch.commit();
     console.log(`   ✅ Migrated ${API_INVENTORY.length} APIs`);
 }

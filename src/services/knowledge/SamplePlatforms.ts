@@ -66,6 +66,7 @@ const FALLBACK_PLATFORMS: SamplePlatform[] = [
 // Cache for loaded platforms
 let platformsCache: SamplePlatform[] | null = null;
 
+const isValidSamplePlatform = (data: unknown): data is SamplePlatform => {
 const isValidSamplePlatform = (data: unknown): data is Omit<SamplePlatform, 'id'> => {
     if (typeof data !== 'object' || data === null) return false;
     const d = data as Record<string, unknown>;
@@ -163,6 +164,8 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
                     id: doc.id,
                     ...doc.data()
                 } as SamplePlatform));
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(isValidSamplePlatform);
 
             if (validPlatforms.length > 0) {
                 platformsCache = validPlatforms;

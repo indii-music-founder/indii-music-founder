@@ -516,6 +516,9 @@ export const inngestApi = functions
                                 body: JSON.stringify(requestBody)
                             });
 
+                            if (!response.ok) throw new Error(`Veo Segment ${i} failed`);
+
+                            const result = await response.json();
                             if (!response.ok) {
                                 const errorText = await response.text();
                                 throw new Error(`Veo Segment ${i} failed: ${response.status} ${errorText}`);
@@ -1102,6 +1105,8 @@ export const ragProxy = functions
             }
 
             try {
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
                 const allowedPrefixes = [
                     '/v1beta/files',
                     '/v1beta/models',
