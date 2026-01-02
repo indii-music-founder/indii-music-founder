@@ -1,3 +1,4 @@
+// indiiOS Cloud Functions - V1.1
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
@@ -5,6 +6,7 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { GoogleAuth } from "google-auth-library";
+import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -303,7 +305,7 @@ export const inngestApi = functions
             async ({ event, step }) => {
                 const { jobId, prompts, userId, startImage, options } = event.data;
                 const segmentUrls: string[] = [];
-                let currentStartImage = startImage;
+                const currentStartImage = startImage;
 
                 try {
                     // Update main job status
@@ -386,14 +388,15 @@ export const inngestApi = functions
                         // Integration with separate frame extraction service would go here.
                     }
 
-                    await step.run("finalize-long-video", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "completed",
-                            videoUrl: segmentUrls[0],
-                            allSegments: segmentUrls,
-                            progress: 100,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
+                    await step.run("trigger-stitch", async () => {
+                        await inngestClient.send({
+                            name: "video/stitch.requested",
+                            data: {
+                                jobId,
+                                userId,
+                                segmentUrls
+                            }
+                        });
                     });
 
                 } catch (error: any) {
@@ -409,9 +412,80 @@ export const inngestApi = functions
             }
         );
 
+        const stitchVideoFn = inngestClient.createFunction(
+            { id: "stitch-video-segments" },
+            { event: "video/stitch.requested" },
+            async ({ event, step }) => {
+                const { jobId, userId, segmentUrls } = event.data;
+                const transcoder = new TranscoderServiceClient();
+
+                try {
+                    const projectId = await admin.app().options.projectId;
+                    const location = 'us-central1';
+                    const bucket = admin.storage().bucket();
+                    const outputUri = `gs://${bucket.name}/videos/${userId}/${jobId}_final.mp4`;
+
+                    await step.run("create-transcoder-job", async () => {
+                        const [job] = await transcoder.createJob({
+                            parent: transcoder.locationPath(projectId!, location),
+                            job: {
+                                outputUri,
+                                config: {
+                                    inputs: segmentUrls.map((url: string, index: number) => ({
+                                        key: `input${index}`,
+                                        uri: url.replace('https://storage.googleapis.com/', 'gs://').replace(/\?.+$/, '')
+                                    })),
+                                    editList: [
+                                        {
+                                            key: "atom0",
+                                            inputs: segmentUrls.map((_: any, index: number) => `input${index}`)
+                                        }
+                                    ],
+                                    elementaryStreams: [
+                                        {
+                                            key: "video_stream0",
+                                            videoStream: {
+                                                h264: {
+                                                    heightPixels: 720,
+                                                    widthPixels: 1280,
+                                                    bitrateBps: 5000000,
+                                                    frameRate: 30,
+                                                },
+                                            },
+                                        }
+                                    ],
+                                    muxStreams: [
+                                        {
+                                            key: "final_output",
+                                            container: "mp4",
+                                            elementaryStreams: ["video_stream0"],
+                                        }
+                                    ]
+                                }
+                            }
+                        });
+
+                        // Update job with temporary stitching status
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "stitching",
+                            transcoderJobName: job.name,
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+
+                } catch (error: any) {
+                    console.error("Stitching failed:", error);
+                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        stitchError: error.message,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+            }
+        );
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideoFn, generateLongFormVideoFn],
+            functions: [generateVideoFn, generateLongFormVideoFn, stitchVideoFn],
             signingKey: inngestSigningKey.value(),
         });
 
