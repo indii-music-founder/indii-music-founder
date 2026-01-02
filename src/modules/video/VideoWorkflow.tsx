@@ -139,7 +139,7 @@ export default function VideoWorkflow() {
         });
 
         return () => { if (unsubscribe) unsubscribe(); };
-    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
+    }, [jobId, addToHistory, toast, setJobId, setJobStatus, setJobProgress, currentProjectId, currentOrganizationId, setActiveVideo]);
 
     const handleGenerate = async () => {
         setJobStatus('queued');

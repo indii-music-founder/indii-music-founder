@@ -7,24 +7,35 @@ export const useMerchandise = () => {
     const { userProfile } = useStore();
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [productsLoading, setProductsLoading] = useState(true);
+    const [catalogLoading, setCatalogLoading] = useState(true);
+    const loading = productsLoading || catalogLoading;
 
     useEffect(() => {
         if (!userProfile?.id) return;
 
-        setLoading(true);
+        setProductsLoading(true);
+        setCatalogLoading(true);
 
         // Subscribe to user's products
         const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
             setProducts(data);
-            setLoading(false);
+            setProductsLoading(false);
         }, (error) => {
             console.error("Failed to load products:", error);
-            setLoading(false);
+            setProductsLoading(false);
         });
 
         // Load product catalog templates
-        MerchandiseService.getCatalog().then(setCatalog).catch(console.error);
+        MerchandiseService.getCatalog()
+            .then(data => {
+                setCatalog(data);
+                setCatalogLoading(false);
+            })
+            .catch(error => {
+                console.error("Failed to load catalog:", error);
+                setCatalogLoading(false);
+            });
 
         return () => unsubscribe?.();
     }, [userProfile?.id]);

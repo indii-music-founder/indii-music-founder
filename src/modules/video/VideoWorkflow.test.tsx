@@ -55,15 +55,6 @@ vi.mock('@/services/image/VideoGenerationService', () => ({
     },
 }));
 
-// Mock Firestore
-const mockOnSnapshot = vi.fn();
-vi.mock('firebase/firestore', () => ({
-    getFirestore: vi.fn(() => ({})),
-    doc: vi.fn(),
-    onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
-    collection: vi.fn(),
-}));
-
 vi.mock('@/services/firebase', () => ({
     db: {}
 }));

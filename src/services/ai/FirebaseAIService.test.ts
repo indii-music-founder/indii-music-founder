@@ -1,53 +1,46 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from './FirebaseAIService';
 
-// HOISTED MOCKS to avoid ReferenceError
+// HOISTED MOCKS
 const {
-    mockGetAI,
-    mockGetGenerativeModel,
     mockGenerateContent,
-    mockVertexAIBackend
+    mockGenerateContentStream
 } = vi.hoisted(() => {
-    const mockGenerateContent = vi.fn();
-    const mockGetGenerativeModel = vi.fn(() => ({
-        generateContent: mockGenerateContent,
-        generateContentStream: vi.fn().mockResolvedValue({
-            stream: (async function* () { yield { text: () => 'Stream Chunk' }; })()
-        })
-    }));
-    const mockGetAI = vi.fn(() => ({}));
-    const mockVertexAIBackend = vi.fn();
-
     return {
-        mockGetAI,
-        mockGetGenerativeModel,
-        mockGenerateContent,
-        mockVertexAIBackend
+        mockGenerateContent: vi.fn(),
+        mockGenerateContentStream: vi.fn()
     };
 });
 
 // Mock Firebase Modules
 vi.mock('firebase/remote-config', () => ({
-    getRemoteConfig: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn((rc, key) => ({
         asString: () => key === 'model_name' ? 'mock-model-v1' : 'us-central1'
     }))
 }));
 
+const mockGenerativeModel = {
+    model: 'mock-model-v1',
+    generateContent: mockGenerateContent,
+    generateContentStream: mockGenerateContentStream,
+    startChat: vi.fn(() => ({
+        sendMessage: mockGenerateContent
+    }))
+};
+
 vi.mock('firebase/ai', () => ({
-    getAI: mockGetAI,
-    VertexAIBackend: mockVertexAIBackend,
-    getGenerativeModel: mockGetGenerativeModel,
-    GenerativeModel: vi.fn(), // Mock class/types if used as values
-    GenerateContentResult: vi.fn(),
-    Content: vi.fn(),
-    GenerateContentStreamResult: vi.fn()
+    getGenerativeModel: vi.fn(() => mockGenerativeModel),
+    getLiveGenerativeModel: vi.fn(),
+    VertexAIBackend: vi.fn(),
+    getAI: vi.fn()
 }));
 
+// Mock the core firebase service
 vi.mock('@/services/firebase', () => ({
     app: {},
-    remoteConfig: {}
+    remoteConfig: {},
+    ai: {}
 }));
 
 describe('FirebaseAIService', () => {
@@ -57,43 +50,28 @@ describe('FirebaseAIService', () => {
         service = new FirebaseAIService();
         vi.clearAllMocks();
 
-        // Ensure mocks return valid objects
-        mockGetAI.mockReturnValue({ id: 'mock-ai-instance' });
-        mockGetGenerativeModel.mockReturnValue({
-            generateContent: mockGenerateContent,
-            generateContentStream: vi.fn()
-        });
-
-        // Default success
         mockGenerateContent.mockResolvedValue({
             response: { text: () => 'Mock AI Response' }
+        });
+
+        mockGenerateContentStream.mockResolvedValue({
+            stream: (async function* () { yield { text: () => 'Stream' }; })()
         });
     });
 
     it('should bootstrap by fetching remote config and initializing model', async () => {
-        const { fetchAndActivate, getValue } = await import('firebase/remote-config');
-        const { getAI, getGenerativeModel, VertexAIBackend } = await import('firebase/ai');
+        const { fetchAndActivate } = await import('firebase/remote-config');
+        const { getGenerativeModel } = await import('firebase/ai');
 
         await service.bootstrap();
 
         expect(fetchAndActivate).toHaveBeenCalled();
-        expect(getValue).toHaveBeenCalledWith(expect.anything(), 'model_name');
-
-        // Verify Check List Requirement: Limited Use Tokens
-        expect(getAI).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            useLimitedUseAppCheckTokens: true,
-            backend: expect.any(VertexAIBackend)
+        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            model: 'mock-model-v1'
         }));
-
-        expect(getGenerativeModel).toHaveBeenCalledWith(
-            expect.objectContaining({ id: 'mock-ai-instance' }),
-            expect.objectContaining({
-                model: 'mock-model-v1'
-            })
-        );
     });
 
-    it('should auto-initialize on first generate call', async () => {
+    it('should auto-initialize on first generateContent call', async () => {
         const bootSpy = vi.spyOn(service, 'bootstrap');
         const result = await service.generateContent('Test Prompt');
 
@@ -101,10 +79,36 @@ describe('FirebaseAIService', () => {
         expect(result).toBe('Mock AI Response');
     });
 
+    it('should handle generateText with system instructions', async () => {
+        const result = await service.generateText('Prompt', 1024, 'Be a cat');
+        expect(result).toBe('Mock AI Response');
+
+        const { getGenerativeModel } = await import('firebase/ai');
+        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            systemInstruction: 'Be a cat',
+            generationConfig: expect.objectContaining({
+                thinkingConfig: { thinkingBudget: 1024 }
+            })
+        }));
+    });
+
+    it('should handle chat sessions', async () => {
+        const result = await service.chat([], 'Hello');
+        expect(result).toBe('Mock AI Response');
+        expect(mockGenerativeModel.startChat).toHaveBeenCalled();
+    });
+
     it('should handle App Check failures gracefully', async () => {
-        // Override for this specific test
+        await service.bootstrap();
         mockGenerateContent.mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
         await expect(service.generateContent('fail')).rejects.toThrow('AI Verification Failed (App Check)');
+    });
+
+    it('should handle content streams', async () => {
+        const stream = await service.generateContentStream('Stream me');
+        const reader = stream.getReader();
+        const { value } = await reader.read();
+        expect(value).toBe('Stream');
     });
 });

@@ -1,120 +1,66 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AI } from './AIService';
-import { AppErrorCode } from '@/shared/types/errors';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { firebaseAI } from './FirebaseAIService';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
 
-// Mock EndpointService to return a predictable URL
-vi.mock('@/core/config/EndpointService', () => ({
-    endpointService: {
-        getFunctionUrl: (name: string) => `https://mock-functions.net/${name}`
+// Mock FirebaseAIService
+vi.mock('./FirebaseAIService', () => ({
+    firebaseAI: {
+        generateContent: vi.fn(),
+        generateContentStream: vi.fn()
     }
 }));
 
-// Mock Env
-vi.mock('@/config/env', () => ({
-    env: {
-        projectId: 'test-project',
-        location: 'test-location',
-        useVertex: false
-    },
-    firebaseConfig: {
-        apiKey: "test-api-key",
-        authDomain: "test-project.firebaseapp.com",
-        projectId: "test-project"
-    }
+// Mock others
+vi.mock('@/services/firebase', () => ({
+    functions: {}
 }));
 
-describe('AIService Error Handling', () => {
-    // Save original fetch
-    const originalFetch = global.fetch;
+describe('AIService Integration (Client SDK)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        global.fetch = vi.fn();
     });
 
-    afterEach(() => {
-        global.fetch = originalFetch;
-    });
+    it('should delegate generateContent to firebaseAI and return wrapped response', async () => {
+        (firebaseAI.generateContent as any).mockResolvedValue('Hello World');
 
-    it('should forward generic errors from proxy', async () => {
-        // Mock fetch to return 500
-        (global.fetch as any).mockResolvedValue({
-            ok: false,
-            status: 500,
-            text: async () => 'Generic proxy failure'
+        const result = await AI.generateContent({
+            model: 'gemini-pro',
+            contents: [{ role: 'user', parts: [{ text: 'Hi' }] }]
         });
+
+        expect(result.text()).toBe('Hello World');
+        expect(firebaseAI.generateContent).toHaveBeenCalledWith([{ role: 'user', parts: [{ text: 'Hi' }] }]);
+    });
+
+    it('should map exceptions from firebaseAI to legacy error handling', async () => {
+        (firebaseAI.generateContent as any).mockRejectedValue(
+            new AppException(AppErrorCode.UNAUTHORIZED, 'Verification Failed')
+        );
 
         await expect(AI.generateContent({
-            model: AI_MODELS.TEXT.FAST,
-            contents: { role: 'user', parts: [] }
-        })).rejects.toThrow('Proxy Error 500: Generic proxy failure');
+            model: 'gemini-pro',
+            contents: []
+        })).rejects.toThrow('Verification Failed');
     });
 
-    it('should retry on transient QUOTA_EXCEEDED error and succeed', async () => {
-        // Mock fetch to fail twice with 429, then succeed
-        const mockFetch = global.fetch as any;
+    it('should delegate generateContentStream to firebaseAI', async () => {
+        const mockStream = new ReadableStream({
+            start(controller) {
+                controller.enqueue('Chunk 1');
+                controller.close();
+            }
+        });
+        (firebaseAI.generateContentStream as any).mockResolvedValue(mockStream);
 
-        mockFetch
-            .mockResolvedValueOnce({
-                ok: false,
-                status: 429,
-                text: async () => 'QUOTA_EXCEEDED'
-            })
-            .mockResolvedValueOnce({ // Retry 1
-                ok: false,
-                status: 503,
-                text: async () => 'Service Unavailable'
-            })
-            .mockResolvedValueOnce({ // Retry 2 - Success
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            role: 'model',
-                            parts: [{ text: 'Success' }]
-                        }
-                    }]
-                })
-            });
-
-        const result = await AI.generateContent({
-            model: AI_MODELS.TEXT.FAST,
-            contents: { role: 'user', parts: [] }
+        const stream = await AI.generateContentStream({
+            model: 'gemini-pro',
+            contents: []
         });
 
-        expect(result.text()).toBe('Success');
-        expect(mockFetch).toHaveBeenCalledTimes(3);
-    }, 10000);
-
-    it('should forward standardized SAFETY_VIOLATION error', async () => {
-        // Verify that the service correctly parses logic-level errors if the proxy returns them
-        // Note: Our current implementation throws "Proxy Error STATUS: TEXT" if !ok.
-        // If the proxy returns 200 but the *body* contains a safety error (standard Gemini behavior), we need to handle it.
-        // But the previous test was testing 'AppErrorCode.SAFETY_VIOLATION'. 
-        // Our current implementation wraps the response.
-
-        // Let's test that it handles a successful response that was blocked by safety.
-        (global.fetch as any).mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                promptFeedback: {
-                    blockReason: 'SAFETY',
-                    safetyRatings: []
-                },
-                candidates: []
-            })
-        });
-
-        // The current implementation returns the wrapped response even if blocked, 
-        // allowing the UI to decide how to handle it (unlike the mock SDK which might throw).
-        // Let's verify we get the response back with the safety data.
-
-        const result = await AI.generateContent({
-            model: AI_MODELS.TEXT.FAST,
-            contents: { role: 'user', parts: [] }
-        });
-
-        expect(result.response.promptFeedback?.blockReason).toBe('SAFETY');
+        const reader = stream.getReader();
+        const { value } = await reader.read();
+        expect(value?.text()).toBe('Chunk 1');
     });
 });

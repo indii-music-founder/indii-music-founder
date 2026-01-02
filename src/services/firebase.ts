@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
-import { getAI } from 'firebase/ai';
+import { getAI, VertexAIBackend } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
@@ -12,8 +12,11 @@ import { getRemoteConfig } from 'firebase/remote-config';
 
 export const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase AI
-export const ai = getAI(app);
+// Initialize Firebase AI with Production Security (App Check + Vertex AI Backend)
+export const ai = getAI(app, {
+    backend: new VertexAIBackend(),
+    useLimitedUseAppCheckTokens: true
+});
 
 /**
  * Firestore with offline persistence enabled (modern API).

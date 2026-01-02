@@ -15,14 +15,14 @@ import { z } from 'zod';
 
 // Define Zod schemas for runtime validation
 const CampaignSchema = z.object({
-    userId: z.string(),
+    userId: z.string().optional(),
     artist: z.string(),
     title: z.string(),
     status: z.enum(['Draft', 'Live', 'Scheduled', 'Ended']),
 }).passthrough();
 
 const ContactSchema = z.object({
-    userId: z.string(),
+    userId: z.string().optional(),
     name: z.string(),
     outlet: z.string(),
     role: z.enum(['Journalist', 'Curator', 'Influencer', 'Editor']),

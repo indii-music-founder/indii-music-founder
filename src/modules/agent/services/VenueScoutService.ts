@@ -75,6 +75,8 @@ export type ScoutEvent = {
     progress: number;
 };
 
+import { delay } from '@/utils/async';
+
 export class VenueScoutService {
     private static COLLECTION_NAME = 'venues';
 
@@ -192,7 +194,7 @@ export class VenueScoutService {
         const venueRef = doc(db, this.COLLECTION_NAME, venueId);
 
         // Simulate "Work" being done
-        await this.delay(1000);
+        await delay(1000);
 
         const updates = {
             lastScoutedAt: Date.now(),
@@ -262,9 +264,4 @@ export class VenueScoutService {
             console.error("Error seeding venues:", e);
         }
     }
-
-    private static delay(ms: number) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
 }
-

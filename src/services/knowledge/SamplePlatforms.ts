@@ -28,7 +28,7 @@ const SamplePlatformSchema = z.object({
 }).passthrough();
 
 // Fallback data when Firestore is unavailable
-const FALLBACK_PLATFORMS: SamplePlatform[] = [
+export const FALLBACK_PLATFORMS: SamplePlatform[] = [
     {
         id: 'splice',
         name: 'Splice',
@@ -112,8 +112,7 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
     }
 
     // Use fallback if Firestore unavailable or empty
-    platformsCache = FALLBACK_PLATFORMS;
-    return platformsCache;
+    return FALLBACK_PLATFORMS;
 };
 
 /**

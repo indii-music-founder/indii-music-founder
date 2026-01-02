@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { MerchProduct } from '@/modules/merchandise/types';
 
@@ -60,12 +60,13 @@ export const MerchandiseService = {
         price?: string;
         image?: string;
     }) => {
-        const catalog = await MerchandiseService.getCatalog();
-        const template = catalog.find(p => p.id === catalogId);
+        const docSnap = await getDoc(doc(db, CATALOG_COLLECTION, catalogId));
 
-        if (!template) {
+        if (!docSnap.exists()) {
             throw new Error(`Catalog product ${catalogId} not found`);
         }
+
+        const template = { id: docSnap.id, ...docSnap.data() } as CatalogProduct;
 
         const product: Omit<MerchProduct, 'id'> = {
             title: customizations?.title || template.title,
