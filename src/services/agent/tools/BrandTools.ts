@@ -45,12 +45,7 @@ export const BrandTools = {
         `;
 
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(VerifyOutputSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.verify_output error:', error);
@@ -71,12 +66,7 @@ export const BrandTools = {
         `;
 
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(AnalyzeBrandConsistencySchema.parse(data));
         } catch (error) {
             console.error('BrandTools.analyze_brand_consistency error:', error);
@@ -95,12 +85,7 @@ export const BrandTools = {
         `;
 
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(GenerateBrandGuidelinesSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.generate_brand_guidelines error:', error);
@@ -119,12 +104,7 @@ export const BrandTools = {
         `;
 
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(AuditVisualAssetsSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.audit_visual_assets error:', error);

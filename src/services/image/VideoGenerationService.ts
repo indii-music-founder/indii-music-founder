@@ -1,3 +1,4 @@
+import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';
@@ -46,21 +47,7 @@ export class VideoGenerationService {
 
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: image.split(';')[0].split(':')[1], data: image.split(',')[1] } },
-                        { text: analysisPrompt }
-                    ]
-                },
-                config: {
-                    ...AI_CONFIG.THINKING.HIGH
-                }
-            });
-
-            return response.text() || "";
+            return await firebaseAI.analyzeImage(analysisPrompt, image);
         } catch (e) {
             console.warn("Temporal Analysis Failed:", e);
             return "";

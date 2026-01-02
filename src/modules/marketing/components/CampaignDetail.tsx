@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { CampaignAsset, CampaignStatus, ScheduledPost } from '../types';
-import { ArrowLeft, Calendar, LayoutGrid, List, Play, CheckCircle, AlertCircle, Clock, MoreVertical, Edit3, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, LayoutGrid, List, Play, CheckCircle, AlertCircle, Clock, MoreVertical, Edit3, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import AIPredictionPanel from './AIPredictionPanel';
 
 // Fix for React 19 type mismatch
 const ArrowLeftIcon = ArrowLeft as any;
@@ -16,6 +17,7 @@ const ClockIcon = Clock as any;
 const MoreVerticalIcon = MoreVertical as any;
 const Edit3Icon = Edit3 as any;
 const ImageIconComponent = ImageIcon as any;
+const SparklesIcon = Sparkles as any;
 
 interface CampaignDetailProps {
     campaign: CampaignAsset;
@@ -23,10 +25,12 @@ interface CampaignDetailProps {
     onExecute: () => void;
     isExecuting: boolean;
     onEditPost: (post: ScheduledPost) => void;
+    onGenerateImages?: () => void;
 }
 
-const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExecute, isExecuting, onEditPost }) => {
+const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExecute, isExecuting, onEditPost, onGenerateImages }) => {
     const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
+    const postsWithoutImages = campaign.posts.filter(p => !p.imageAsset.imageUrl).length;
 
     return (
         <div className="space-y-6 h-full flex flex-col">
@@ -68,6 +72,17 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                             </button>
                         </div>
 
+                        {/* AI Generate Images Button */}
+                        {onGenerateImages && postsWithoutImages > 0 && (
+                            <button
+                                onClick={onGenerateImages}
+                                className="flex items-center gap-2 px-4 py-2.5 font-semibold rounded-xl transition-all bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white"
+                            >
+                                <SparklesIcon size={16} />
+                                <span className="hidden sm:inline">Generate</span> {postsWithoutImages} Images
+                            </button>
+                        )}
+
                         <button
                             onClick={onExecute}
                             disabled={isExecuting || campaign.status === CampaignStatus.DONE}
@@ -95,14 +110,21 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
             </div>
 
             {/* Content View */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-                <AnimatePresence mode='wait'>
-                    {viewMode === 'timeline' ? (
-                        <TimelineView posts={campaign.posts} onEdit={onEditPost} key="timeline" />
-                    ) : (
-                        <GridView posts={campaign.posts} onEdit={onEditPost} key="grid" />
-                    )}
-                </AnimatePresence>
+            <div className="flex-1 min-h-0 overflow-hidden flex gap-6">
+                <div className="flex-1 overflow-hidden">
+                    <AnimatePresence mode='wait'>
+                        {viewMode === 'timeline' ? (
+                            <TimelineView posts={campaign.posts} onEdit={onEditPost} key="timeline" />
+                        ) : (
+                            <GridView posts={campaign.posts} onEdit={onEditPost} key="grid" />
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* AI Prediction Panel - Sidebar */}
+                <div className="w-80 flex-shrink-0 overflow-y-auto hidden xl:block">
+                    <AIPredictionPanel campaign={campaign} />
+                </div>
             </div>
         </div>
     );

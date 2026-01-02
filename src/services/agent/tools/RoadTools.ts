@@ -3,6 +3,7 @@ import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { MapsTools } from './MapsTools';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Road Manager Tools
@@ -50,26 +51,18 @@ export const RoadTools = {
         // Adapt input to support both simple list and detailed object
         const stopsList = locations || (stops && start_location && end_location ? [start_location, ...stops, end_location] : []);
         const context = timeframe ? `Timeframe: ${timeframe}` : '';
+        const schema = zodToJsonSchema(TourRouteSchema);
 
         const prompt = `
         You are a Tour Manager. Plan a logistical route for a tour.
         Stops/Cities: ${stopsList.join(', ')}.
         ${context}
         Optimize for logical travel flow.
-
-        Output a strict JSON object (no markdown) matching this schema:
-        { "route": string[], "totalDistance": string, "estimatedDuration": string, "legs": [{ "from": string, "to": string, "distance": string, "driveTime": string }] }
         `;
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = res.text();
-            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
-            const parsed = JSON.parse(jsonText);
-            return JSON.stringify(TourRouteSchema.parse(parsed));
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
+            return JSON.stringify(TourRouteSchema.parse(data));
         } catch (e) {
             console.error('RoadTools.plan_tour_route error:', e);
             return JSON.stringify({
@@ -85,26 +78,18 @@ export const RoadTools = {
         const d = days || duration_days || 1;
         const c = crew || crew_size || 1;
         const level = accommodation_level || 'standard';
+        const schema = zodToJsonSchema(TourBudgetSchema);
 
         const prompt = `
         You are a Tour Accountant. Estimate a tour budget.
         Crew Size: ${c}
         Duration: ${d} days
         Accommodation Level: ${level}
-
-        Output a strict JSON object (no markdown) matching this schema:
-        { "totalBudget": number, "breakdown": { "lodging": string, "food": string, "transport": string, "contingency": string } }
         `;
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = res.text();
-            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
-            const parsed = JSON.parse(jsonText);
-            return JSON.stringify(TourBudgetSchema.parse(parsed));
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
+            return JSON.stringify(TourBudgetSchema.parse(data));
         } catch (e) {
             console.error('RoadTools.calculate_tour_budget error:', e);
             return JSON.stringify({
@@ -115,26 +100,16 @@ export const RoadTools = {
     },
 
     generate_itinerary: async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
-        const prompt = city ?
+        const promptInfo = city ?
             `Create a Day Sheet for ${city} on ${date} at ${venue}, show time ${show_time}.` :
             `Create a tour itinerary based on this route info: ${JSON.stringify(route)}`;
 
-        const fullPrompt = `
-        You are a Road Manager. ${prompt}
-
-        Output a strict JSON object (no markdown) matching this schema:
-        { "tourName": string, "schedule": [{ "day": number, "city": string, "venue": string, "activity": string }] }
-        `;
+        const fullPrompt = `You are a Road Manager. ${promptInfo}`;
+        const schema = zodToJsonSchema(ItinerarySchema);
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: fullPrompt }] }
-            });
-            const text = res.text();
-            const jsonText = text.replace(/```json\n|\n```/g, '').trim();
-            const parsed = JSON.parse(jsonText);
-            return JSON.stringify(ItinerarySchema.parse(parsed));
+            const data = await AI.generateStructuredData<any>(fullPrompt, schema as any);
+            return JSON.stringify(ItinerarySchema.parse(data));
         } catch (e) {
             console.error('RoadTools.generate_itinerary error:', e);
             return JSON.stringify({

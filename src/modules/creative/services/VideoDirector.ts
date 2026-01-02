@@ -1,3 +1,4 @@
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI } from '@/services/ai/AIService';
 import { useStore, HistoryItem } from '@/core/store';
 import { functions } from '@/services/firebase';
@@ -30,19 +31,26 @@ export class VideoDirector {
                 }
 
                 // 3. Critique
-                const critique = await AI.generateContent({
-                    model: AI_MODELS.TEXT.AGENT,
-                    contents: {
-                        role: 'user',
-                        parts: [
-                            { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
-                            { text: `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it. Return JSON: {score, refined_prompt}` }
-                        ]
+                const critiquePrompt = `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it.`;
+                const schema = {
+                    type: 'object',
+                    properties: {
+                        score: { type: 'number' },
+                        refined_prompt: { type: 'string' }
                     },
-                    config: { responseMimeType: 'application/json' }
-                });
+                    required: ['score', 'refined_prompt']
+                };
 
-                const feedback = AI.parseJSON(critique.text()) as { score?: number; refined_prompt?: string };
+                const feedback = await firebaseAI.generateStructuredData<any>(
+                    [
+                        { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
+                        { text: critiquePrompt }
+                    ],
+                    schema as any,
+                    undefined,
+                    `You are a master cinematographer. Analyze the provided image.`
+                );
+
                 console.log("🎬 Director Feedback:", feedback);
 
                 if (typeof feedback.score === 'number' && feedback.score < 8) {

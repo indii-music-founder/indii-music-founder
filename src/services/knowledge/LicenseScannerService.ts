@@ -54,18 +54,19 @@ export class LicenseScannerService {
                 }
             `;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST, // Use Flash for speed
-                contents: {
-                    role: 'user',
-                    parts: [{ text: prompt }]
+            const schema = {
+                type: 'object',
+                properties: {
+                    licenseType: { type: 'string', enum: ['Royalty-Free', 'Rights-Managed', 'Public Domain', 'Unknown'] },
+                    requiresAttribution: { type: 'boolean' },
+                    canMonetize: { type: 'boolean' },
+                    termsSummary: { type: 'string' },
+                    platformName: { type: 'string' }
                 },
-                config: {
-                    responseMimeType: 'application/json'
-                }
-            });
+                required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
+            };
 
-            const analysis = AI.parseJSON(response.text()) as LicenseAnalysis;
+            const analysis = await AI.generateStructuredData<LicenseAnalysis>(prompt, schema as any);
             return analysis;
 
         } catch (error) {

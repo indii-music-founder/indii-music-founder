@@ -1,4 +1,3 @@
-import { env } from '@/config/env';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import {
@@ -95,7 +94,10 @@ interface GenerateStreamOptions {
     model: string;
     contents: Content[];
     config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: ToolConfig[];
 }
+
 
 interface GenerateVideoOptions {
     model: string;
@@ -135,17 +137,9 @@ interface RetryableError extends Error {
 // ============================================================================
 
 export class AIService {
-    // Note: apiKey is no longer stored here for security. 
-    // All requests are routed through backend functions (ragProxy, generateContentStream).
-    private readonly projectId?: string;
-    private readonly location?: string;
-    private readonly useVertex: boolean;
-
-    constructor() {
-        this.projectId = env.projectId;
-        this.location = env.location;
-        this.useVertex = env.useVertex;
-    }
+    // Note: AIService delegates generation to FirebaseAIService (Client SDK),
+    // which handles Auth and App Check.
+    constructor() { }
 
     /**
      * HIGH LEVEL: Generate text using client-side SDK
@@ -157,7 +151,7 @@ export class AIService {
     /**
      * HIGH LEVEL: Generate structured data using client-side SDK
      */
-    async generateStructuredData<T>(prompt: string, schema: any, thinkingBudget?: number, systemInstruction?: string): Promise<T> {
+    async generateStructuredData<T>(prompt: string | any[], schema: any, thinkingBudget?: number, systemInstruction?: string): Promise<T> {
         return this.withRetry(() => firebaseAI.generateStructuredData<T>(prompt, schema, thinkingBudget, systemInstruction));
     }
 
@@ -168,14 +162,32 @@ export class AIService {
         return this.withRetry(async () => {
             try {
                 const contents = Array.isArray(options.contents) ? options.contents : [options.contents];
-                const text = await firebaseAI.generateContent(contents);
+                const result = await firebaseAI.generateContent(
+                    contents,
+                    options.model,
+                    options.config,
+                    options.systemInstruction,
+                    options.tools
+                );
+
+                // Map firebase/ai candidate to legacy Candidate
+                const mappedCandidates: Candidate[] = (result.response.candidates || []).map(c => ({
+                    content: {
+                        role: 'model',
+                        parts: (c.content?.parts || []).map(p => {
+                            if ('text' in p) return { text: p.text || '' } as TextPart;
+                            if ('functionCall' in p) return { functionCall: p.functionCall } as FunctionCallPart;
+                            return { text: '' } as TextPart;
+                        })
+                    },
+                    finishReason: (c.finishReason as any) || 'STOP',
+                    index: c.index || 0
+                }));
+
                 return wrapResponse({
-                    candidates: [{
-                        content: { role: 'model', parts: [{ text }] },
-                        finishReason: 'STOP',
-                        index: 0
-                    }]
+                    candidates: mappedCandidates
                 });
+
             } catch (error) {
                 const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
                 console.error('[AIService] Generate Content Failed:', err.message);
@@ -183,6 +195,7 @@ export class AIService {
             }
         });
     }
+
 
     /**
      * Retry logic with exponential backoff for transient errors
@@ -219,7 +232,14 @@ export class AIService {
      */
     async generateContentStream(options: GenerateStreamOptions): Promise<ReadableStream<StreamChunk>> {
         try {
-            const stream = await firebaseAI.generateContentStream(options.contents);
+            const stream = await firebaseAI.generateContentStream(
+                options.contents,
+                options.model,
+                options.config,
+                options.systemInstruction,
+                options.tools
+            );
+
             const reader = stream.getReader();
 
             return new ReadableStream<StreamChunk>({
@@ -310,28 +330,11 @@ export class AIService {
      */
     async generateImage(options: GenerateImageOptions): Promise<string> {
         try {
-            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(
-                functions,
-                'generateImageV3'
-            );
-
-            const response = await this.withRetry(() => generateImageFn({
-                model: options.model,
-                prompt: options.prompt,
-                config: options.config
-                // ApiKey removed, handled by backend secret
-            }));
-
-            const images = response.data.images;
-            if (!images || images.length === 0) {
-                throw new AppException(
-                    AppErrorCode.INTERNAL_ERROR,
-                    'No images returned from backend'
-                );
-            }
-
-            return images[0].bytesBase64Encoded;
-
+            return await this.withRetry(() => firebaseAI.generateImage(
+                options.prompt,
+                options.model,
+                options.config
+            ));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
             console.error('[AIService] Image Gen Error:', err.message);
@@ -344,20 +347,10 @@ export class AIService {
      */
     async embedContent(options: EmbedContentOptions): Promise<{ values: number[] }> {
         try {
-            // Note: embedContent function signature in backend might still expect apiKey if not updated
-            // But we should try calling it without first.
-            const embedContentFn = httpsCallable<
-                { model: string; content: Content },
-                { embedding: { values: number[] } }
-            >(functions, 'embedContent');
-
-            const response = await this.withRetry(() => embedContentFn({
+            return await this.withRetry(() => firebaseAI.embedContent({
                 model: options.model,
                 content: options.content
             }));
-
-            return response.data.embedding;
-
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
             throw new AppException(

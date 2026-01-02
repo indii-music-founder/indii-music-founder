@@ -71,39 +71,25 @@ const BrandManager: React.FC = () => {
         setAnalysisResult(null);
 
         try {
-            const prompt = `
-            Analyze the following marketing content for brand consistency:
-            Brand Guidelines: ${guidelines}
-            Content to Analyze: ${contentToCheck}
+            const schema = {
+                type: 'object',
+                properties: {
+                    score: { type: 'number' },
+                    isConsistent: { type: 'boolean' },
+                    issues: { type: 'array', items: { type: 'string' } },
+                    suggestions: { type: 'array', items: { type: 'string' } }
+                },
+                required: ['score', 'isConsistent', 'issues', 'suggestions']
+            };
 
-            Please provide:
-            1. A consistency score (0-100).
-            2. A boolean "isConsistent" flag (true if score >= 80).
-            3. A list of specific issues (e.g., tone mismatch, color misuse).
-            4. Suggestions for improvement.
-
-            Format the output ONLY as JSON:
-            {
-              "score": number,
-              "isConsistent": boolean,
-              "issues": string[],
-              "suggestions": string[]
-            }
-            `;
-
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                config: { responseMimeType: 'application/json' }
-            });
-
-            let result: AnalysisResult;
-            try {
-                result = JSON.parse(res.text() || '{}') as AnalysisResult;
-            } catch (e) {
-                console.error("Failed to parse analysis result", e);
-                throw new Error("Failed to parse analysis result");
-            }
+            const result = await AI.generateStructuredData<AnalysisResult>(
+                `Analyze the following marketing content for brand consistency:
+                Brand Guidelines: ${guidelines}
+                Content to Analyze: ${contentToCheck}`,
+                schema as any,
+                undefined,
+                `You are a brand consistency expert. Analyze marketing content based on guidelines and return structured feedback.`
+            );
 
             setAnalysisResult(result);
             toast.success("Analysis complete");

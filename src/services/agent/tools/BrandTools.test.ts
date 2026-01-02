@@ -5,6 +5,7 @@ import { AI } from '@/services/ai/AIService';
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
+        generateStructuredData: vi.fn(),
         generateContent: vi.fn(),
         parseJSON: vi.fn((text) => JSON.parse(text))
     }
@@ -21,13 +22,11 @@ describe('BrandTools', () => {
             critique: "Looks good",
             score: 9
         };
-        (AI.generateContent as any).mockResolvedValue({
-            text: () => JSON.stringify(mockResponse)
-        });
+        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.verify_output({ goal: 'Be bold', content: 'BOLD CONTENT' });
-        expect(result).toEqual(mockResponse);
-        expect(AI.generateContent).toHaveBeenCalled();
+        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(AI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('analyze_brand_consistency returns valid schema', async () => {
@@ -36,12 +35,11 @@ describe('BrandTools', () => {
             issues: [],
             recommendations: ["Keep it up"]
         };
-        (AI.generateContent as any).mockResolvedValue({
-            text: () => JSON.stringify(mockResponse)
-        });
+        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.analyze_brand_consistency({ content: 'test content' });
-        expect(result).toEqual(mockResponse);
+        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(AI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('generate_brand_guidelines returns valid schema', async () => {
@@ -50,12 +48,11 @@ describe('BrandTools', () => {
             visuals: "Blue and White",
             dos_and_donts: ["Do this", "Don't do that"]
         };
-        (AI.generateContent as any).mockResolvedValue({
-            text: () => JSON.stringify(mockResponse)
-        });
+        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.generate_brand_guidelines({ name: 'TestBrand', values: ['Trust'] });
-        expect(result).toEqual(mockResponse);
+        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(AI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('audit_visual_assets returns valid schema', async () => {
@@ -64,11 +61,10 @@ describe('BrandTools', () => {
             flagged_assets: ["image1.jpg"],
             report: "Image 1 has wrong colors"
         };
-        (AI.generateContent as any).mockResolvedValue({
-            text: () => JSON.stringify(mockResponse)
-        });
+        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.audit_visual_assets({ assets: ['image1.jpg'] });
-        expect(result).toEqual(mockResponse);
+        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(AI.generateStructuredData).toHaveBeenCalled();
     });
 });

@@ -64,6 +64,17 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ---
 
+## Recently Completed (Jan 2026)
+
+### AI Service Refactoring
+
+- [x] **Client-Side SDK**: Migrated from server-proxy to `firebase/ai` SDK (`FirebaseAIService`).
+- [x] **Security**: Enabled App Check `useLimitedUseAppCheckTokens` and Vertex AI Backend.
+- [x] **Model Policy**: Enforced Gemini 3 models; deprecated legacy models.
+- [x] **Agent Tests**: Updated `BrandTools`, `VideoTools`, and Specialist tests to pass with new service layer.
+
+---
+
 ## Recently Completed (Dec 2025)
 
 ### Dashboard Enhancements
