@@ -67,6 +67,7 @@ const FALLBACK_PLATFORMS: SamplePlatform[] = [
 let platformsCache: SamplePlatform[] | null = null;
 
 const isValidSamplePlatform = (data: unknown): data is SamplePlatform => {
+const isValidSamplePlatform = (data: unknown): data is Omit<SamplePlatform, 'id'> => {
     if (typeof data !== 'object' || data === null) return false;
     const d = data as Record<string, unknown>;
     return (
@@ -78,6 +79,73 @@ const isValidSamplePlatform = (data: unknown): data is SamplePlatform => {
 
 const findPlatformByKeyword = (platforms: SamplePlatform[], input: string): SamplePlatform | null => {
     const normalized = input.toLowerCase();
+/**
+ * Load sample platforms from Firestore with fallback to static data
+ */
+export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
+    if (platformsCache) return platformsCache;
+
+    try {
+        const snapshot = await getDocs(collection(db, 'sample_platforms'));
+        if (!snapshot.empty) {
+            const validPlatforms = snapshot.docs
+                .filter(doc => isValidSamplePlatform(doc.data()))
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as SamplePlatform));
+            if (validPlatforms.length > 0) {
+                platformsCache = validPlatforms;
+                return platformsCache;
+            }
+            platformsCache = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as SamplePlatform));
+            return platformsCache;
+        }
+    } catch (error) {
+        console.warn('[SamplePlatforms] Failed to load from Firestore, using fallback:', error);
+    }
+
+    // Use fallback if Firestore unavailable or empty
+    platformsCache = FALLBACK_PLATFORMS;
+    return platformsCache;
+};
+
+/**
+ * Get cached platforms (sync) - returns fallback if not yet loaded
+ */
+export const getSamplePlatforms = (): SamplePlatform[] => {
+    return platformsCache || FALLBACK_PLATFORMS;
+};
+
+const findPlatformByKeyword = (platforms: SamplePlatform[], input: string): SamplePlatform | null => {
+    const normalized = input.toLowerCase();
+    return platforms.find(p => p.keywords.some(k => normalized.includes(k))) || null;
+};
+
+/**
+ * Identify a platform from input text (sync version)
+ */
+export const identifyPlatform = (input: string): SamplePlatform | null => {
+    return findPlatformByKeyword(getSamplePlatforms(), input);
+};
+
+/**
+ * Identify a platform from input text (async version that ensures platforms are loaded)
+ */
+export const identifyPlatformAsync = async (input: string): Promise<SamplePlatform | null> => {
+    const platforms = await loadSamplePlatforms();
+    return findPlatformByKeyword(platforms, input);
+};
+
+/**
+ * Identify a platform from input text (sync version)
+ */
+export const identifyPlatform = (input: string): SamplePlatform | null => {
+    const normalized = input.toLowerCase();
+    const platforms = getSamplePlatforms();
     return platforms.find(p => p.keywords.some(k => normalized.includes(k))) || null;
 };
 
@@ -128,6 +196,8 @@ export const identifyPlatform = (input: string): SamplePlatform | null => {
 export const identifyPlatformAsync = async (input: string): Promise<SamplePlatform | null> => {
     const platforms = await loadSamplePlatforms();
     return findPlatformByKeyword(platforms, input);
+    const normalized = input.toLowerCase();
+    return platforms.find(p => p.keywords.some(k => normalized.includes(k))) || null;
 };
 
 // Legacy export for backwards compatibility

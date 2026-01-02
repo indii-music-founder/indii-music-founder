@@ -1,6 +1,9 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { delay } from '@/utils/async';
 
 // ============================================================================
 // Types for VideoTools
@@ -264,6 +267,13 @@ export const VideoTools = {
             });
 
             const jobId = results[0]?.id;
+            const jobId = await VideoGeneration.generateLongFormVideo({
+                prompt: args.prompt,
+                totalDuration: args.totalDuration,
+                startImage: args.startImage,
+                orgId: useStore.getState().currentOrganizationId
+            } as any); // Cast as any if typing mismatch in options (generateLongFormVideo returns results[] now but I updated it to return a placeholder list)
+
             return `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`;
 
         } catch (e: unknown) {
@@ -290,6 +300,7 @@ export const VideoTools = {
             if (results.length > 0) {
                 const videoJob = results[0];
                 let finalUrl = videoJob.url;
+
                 if (!finalUrl) {
                     const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                     finalUrl = completedJob.videoUrl;

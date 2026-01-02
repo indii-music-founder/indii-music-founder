@@ -146,6 +146,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     selectedClipId: null,
     jobId: null,
     status: 'idle',
+    progress: 0,
     membershipTier: 'free',
     extendedProject: null,
     referenceImages: [],

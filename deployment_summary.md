@@ -50,6 +50,35 @@ We recommend tracking the following metrics in Google Cloud Monitoring / BigQuer
 *   **Segment Generation Success Rate:** Monitor Veo API error rates.
 *   **Stitching Success Rate:** Monitor Transcoder API failures.
 *   **Cost Tracking:** Monitor Vertex AI and Transcoder API usage per user/organization.
+### 3. Architecture: Error Handling & Resilience
+
+To ensure production reliability, we have implemented the following strategies:
+
+- **Inngest Retries**: Inngest automatically retries failed steps (e.g., Veo API timeouts) with exponential backoff.
+- **State Recovery**: Each segment generation step updates Firestore, allowing the UI to resume progress tracking even if a transient error occurs.
+- **Failure Status**: If the stitching process or generation loop fails permanently, the job status is explicitly set to `failed` with an error message, triggering UI error states.
+- **Transcoder API**: We handle Transcoder job creation errors; future improvements will include polling for Transcoder job failures (currently fire-and-forget).
+
+### 4. Observability & Monitoring Strategy
+
+We are adopting a backend-first monitoring approach:
+
+- **Key Metrics**:
+  - **Generation Latency**: Time per 5s segment (tracked via Inngest logs).
+  - **Stitch Latency**: Time from generation end to final video URL.
+  - **Failure Rate**: Percentage of jobs ending in `failed` status.
+  - **Quota Usage**: Tracking Vertex AI and Transcoder API quota hits.
+- **Logging**: All Cloud Functions use structured logging with `jobId` and `userId` context.
+- **BigQuery Integration**: Future work will export `videoJobs` Firestore data to BigQuery for cost analysis and usage patterns (aligned with our "Move expensive AI to backend" learning).
+
+### 5. Deployment
+
+- **Functions**: Successfully deployed to `<PROJECT_ID>` (`<REGION>`).
+- **PR**: Updates pushed to "Video Generation Updates" PR.
+### 3. Deployment
+
+- **Functions**: Successfully deployed to `indiios-v-1-1` (us-central1).
+- **PR**: Updates pushed to PR #304 (`conflict-resolution...`).
 
 ## Verification
 
@@ -60,3 +89,5 @@ We recommend tracking the following metrics in Google Cloud Monitoring / BigQuer
 ## Future Improvements
 
 - **Frame Extraction**: Implement "daisychaining" logic using a dedicated frame extraction service (e.g., Cloud Run with ffmpeg) to improve segment transition smoothness.
+- **Error Handling**: Enhance auto-retry policies for the Transcoder API interactions and implement webhook/polling for Transcoder job completion.
+- **Error Handling**: Enhance auto-retry policies for the Transcoder API interactions.
