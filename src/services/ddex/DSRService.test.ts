@@ -26,13 +26,12 @@ describe('DSRService', () => {
             senderId: 'PADPIDA',
             recipientId: 'PADPIDB',
             reportingPeriod: { startDate: '2025-01-01', endDate: '2025-01-31' },
-            currency: 'USD',
+            reportCreatedDateTime: '2025-02-01T12:00:00Z',
             currencyCode: 'USD',
-            startDate: '2025-01-01',
-            endDate: '2025-01-31',
             summary: {
                 totalUsageCount: 2,
-                totalRevenue: 200
+                totalRevenue: 200,
+                currencyCode: 'USD'
             },
             transactions: [
                 {
@@ -41,10 +40,8 @@ describe('DSRService', () => {
                     usageType: 'Download',
                     usageCount: 1,
                     revenueAmount: 100,
-                    currency: 'USD',
-                    territoryCode: 'US',
-                    periodStart: '2025-01-01',
-                    periodEnd: '2025-01-31'
+                    currencyCode: 'USD',
+                    territoryCode: 'US'
                 },
                 {
                     transactionId: 'TX-2',
@@ -52,10 +49,8 @@ describe('DSRService', () => {
                     usageType: 'Download',
                     usageCount: 1,
                     revenueAmount: 100,
-                    currency: 'USD',
-                    territoryCode: 'US',
-                    periodStart: '2025-01-01',
-                    periodEnd: '2025-01-31'
+                    currencyCode: 'USD',
+                    territoryCode: 'US'
                 }
             ]
         };
