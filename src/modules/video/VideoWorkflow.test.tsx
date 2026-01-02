@@ -5,7 +5,7 @@ import VideoWorkflow from './VideoWorkflow';
 import { useStore } from '@/core/store';
 import { extractVideoFrame } from '../../utils/video';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 
 // Mock Store
@@ -49,6 +49,7 @@ vi.mock('./components/FrameSelectionModal', () => ({
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
+vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),

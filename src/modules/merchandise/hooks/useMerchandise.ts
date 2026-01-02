@@ -8,7 +8,11 @@ export const useMerchandise = () => {
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isProductsLoading, setIsProductsLoading] = useState(true);
+    const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
+    // Load catalog on mount
     useEffect(() => {
         if (!userProfile?.id) return;
 
@@ -22,8 +26,46 @@ export const useMerchandise = () => {
 
         // Load product catalog templates
         MerchandiseService.getCatalog().then(setCatalog).catch(console.error);
+        let mounted = true;
+        setIsCatalogLoading(true);
 
-        return () => unsubscribe?.();
+        MerchandiseService.getCatalog()
+            .then((data) => {
+                if (mounted) {
+                    setCatalog(data);
+                    setIsCatalogLoading(false);
+                }
+            })
+            .catch((err) => {
+                if (mounted) {
+                    console.error("Failed to load catalog:", err);
+                    setError(err instanceof Error ? err.message : 'Failed to load catalog');
+                    setIsCatalogLoading(false);
+                }
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    // Subscribe to user's products
+    useEffect(() => {
+        if (!userProfile?.id) {
+            setProducts([]);
+            setIsProductsLoading(false);
+            return;
+        }
+
+        setIsProductsLoading(true);
+        setError(null);
+
+        const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
+            setProducts(data);
+            setIsProductsLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [userProfile?.id]);
 
     const standardProducts = useMemo(() => products.filter(p => p.category === 'standard'), [products]);
@@ -38,12 +80,15 @@ export const useMerchandise = () => {
         return MerchandiseService.createFromCatalog(catalogId, userProfile.id, customizations);
     }, [userProfile?.id]);
 
+    const loading = isProductsLoading || isCatalogLoading;
+
     return {
         products,
         standardProducts,
         proProducts,
         catalog,
         loading,
+        error,
         addProduct: MerchandiseService.addProduct,
         deleteProduct: MerchandiseService.deleteProduct,
         createFromCatalog
