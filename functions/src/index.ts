@@ -6,6 +6,7 @@ import { serve } from "inngest/express";
 import corsLib from "cors";
 import { GoogleAuth } from "google-auth-library";
 import { generateVideoLogic } from "./lib/video";
+import { generateVideoWithVeo, VideoJobSchema } from "./lib/video";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -55,24 +56,35 @@ export const triggerVideoJob = functions
         }
 
         const userId = context.auth.uid;
-        const { prompt, jobId, orgId, ...options } = data;
 
-        if (!prompt || !jobId) {
-            throw new functions.https.HttpsError(
+        // Use Zod for validation
+        const result = VideoJobSchema.safeParse({
+            jobId: data.jobId,
+            userId: userId,
+            orgId: data.orgId,
+            prompt: data.prompt,
+            options: data.options || {
+                duration: data.duration, // Backward compatibility
+                aspectRatio: data.aspectRatio
+            }
+        });
+
+        if (!result.success) {
+             throw new functions.https.HttpsError(
                 "invalid-argument",
-                "Missing required fields: prompt or jobId."
+                `Invalid input: ${result.error.message}`
             );
         }
 
+        const jobData = result.data;
+
         try {
             // 1. Create Initial Job Record in Firestore
-            // We do this BEFORE sending the event to prevent race conditions where
-            // the UI subscribes to a doc that doesn't exist yet.
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                id: jobId,
-                userId: userId,
-                orgId: orgId || "personal",
-                prompt: prompt,
+            await admin.firestore().collection("videoJobs").doc(jobData.jobId).set({
+                id: jobData.jobId,
+                userId: jobData.userId,
+                orgId: jobData.orgId,
+                prompt: jobData.prompt,
                 status: "queued",
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -83,20 +95,13 @@ export const triggerVideoJob = functions
 
             await inngest.send({
                 name: "video/generate.requested",
-                data: {
-                    jobId: jobId,
-                    userId: userId,
-                    orgId: orgId || "personal",
-                    prompt: prompt,
-                    options: options,
-                    timestamp: Date.now(),
-                },
+                data: jobData,
                 user: {
-                    id: userId,
+                    id: jobData.userId,
                 }
             });
 
-            console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+            console.log(`[VideoJob] Triggered for JobID: ${jobData.jobId}, User: ${jobData.userId}`);
 
             return { success: true, message: "Video generation job queued." };
 
@@ -128,6 +133,37 @@ export const inngestApi = functions
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
             generateVideoLogic
+            async ({ event, step }) => {
+                const { jobId, userId } = event.data;
+
+                try {
+                     const videoUrl = await step.run("generate-veo-video", async () => {
+                        return await generateVideoWithVeo(
+                            event.data,
+                            async (status: string, data: any = {}) => {
+                                await admin.firestore().collection("videoJobs").doc(jobId).set({
+                                    status: status,
+                                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                                    ...data
+                                }, { merge: true });
+                            }
+                        );
+                     });
+
+                    return { success: true, videoUrl };
+
+                } catch (error: any) {
+                    await step.run("update-status-failed", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "failed",
+                            error: error.message || "Unknown error during video generation",
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+                    // Re-throw to allow Inngest to handle retries if configured
+                    throw error;
+                }
+            }
         );
 
         const handler = serve({

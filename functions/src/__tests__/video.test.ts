@@ -1,5 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as admin from 'firebase-admin';
+
+// Hoist mocks using vi.hoisted to ensure they are available for vi.mock
+const mocks = vi.hoisted(() => {
+    const mockSet = vi.fn();
+    const mockDoc = vi.fn(() => ({ set: mockSet }));
+    const mockCollection = vi.fn(() => ({ doc: mockDoc }));
+    const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
+    const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
+    const mockAuthGetClient = vi.fn();
+    const mockAuthGetProjectId = vi.fn();
+
+    // Define MockGoogleAuth inside the factory to avoid hoisting issues
+    class MockGoogleAuth {
+        getClient() { return mockAuthGetClient(); }
+        getProjectId() { return mockAuthGetProjectId(); }
+    }
+
+    return {
+        mockSet,
+        mockDoc,
+        mockCollection,
+        mockFirestore,
+        mockFieldValue,
+        mockAuthGetClient,
+        mockAuthGetProjectId,
+        MockGoogleAuth
+    };
+});
 
 // Hoist mocks to avoid reference errors
 const mocks = vi.hoisted(() => {
@@ -36,6 +63,16 @@ vi.mock('firebase-admin', () => ({
     initializeApp: vi.fn(),
     firestore: Object.assign(mocks.mockFirestore, { FieldValue: mocks.mockFieldValue }),
     storage: mocks.mockStorage,
+    storage: vi.fn(() => ({
+        bucket: () => ({
+            file: () => ({
+                save: vi.fn(),
+                makePublic: vi.fn(),
+                publicUrl: () => 'https://mock-storage-url.com/video.mp4',
+                getSignedUrl: vi.fn().mockResolvedValue(['https://signed-url.com/video.mp4'])
+            })
+        })
+    })),
     auth: vi.fn()
 }));
 
@@ -89,6 +126,14 @@ describe('Video Backend', () => {
         expect(admin.initializeApp).toHaveBeenCalled();
     });
 });
+vi.mock('google-auth-library', () => {
+    return {
+        GoogleAuth: mocks.MockGoogleAuth
+    };
+});
+
+// Import after mocks are set up
+import * as videoLib from '../lib/video';
 
 describe('Video Backend Logic', () => {
     beforeEach(() => {
@@ -99,6 +144,7 @@ describe('Video Backend Logic', () => {
         // Import logic
         const { generateVideoLogic } = await import('../lib/video');
 
+    it('should successfully generate video and update firestore (Unit Test for Lib)', async () => {
         // Setup Mocks
         mocks.mockAuthGetClient.mockResolvedValue({
             getAccessToken: async () => ({ token: 'mock-token' })
@@ -163,5 +209,24 @@ describe('Video Backend Logic', () => {
             progress: 100,
             updatedAt: 'TIMESTAMP'
         }, { merge: true });
+        const input = {
+            jobId: 'test-job-id',
+            userId: 'user-123',
+            prompt: 'test prompt',
+            orgId: 'org-123',
+            options: {
+                duration: '5s' as const,
+                aspectRatio: '16:9' as const
+            }
+        };
+
+        const updateStatusMock = vi.fn();
+
+        const videoUrl = await videoLib.generateVideoWithVeo(input, updateStatusMock);
+
+        expect(updateStatusMock).toHaveBeenCalledWith('processing');
+        expect(global.fetch).toHaveBeenCalled();
+        expect(videoUrl).toBe('https://signed-url.com/video.mp4');
+        expect(updateStatusMock).toHaveBeenLastCalledWith('completed', { videoUrl: 'https://signed-url.com/video.mp4', progress: 100 });
     });
 });
