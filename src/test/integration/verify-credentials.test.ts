@@ -1,6 +1,6 @@
 
-import { credentialService } from './CredentialService.ts';
-import { DistributorId } from '../distribution/types/distributor.ts';
+import { credentialService } from '@/services/security/CredentialService';
+import { DistributorId } from '@/services/distribution/types/distributor';
 
 async function verifyCredentials() {
     console.log('🔐 Verifying Credential Service (Keytar)...');

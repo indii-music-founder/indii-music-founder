@@ -57,12 +57,6 @@ export class RevenueService {
       const q = query(revenueRef, where('userId', '==', userId));
       const snapshot = await getDocs(q);
 
-      // Seeding check: if no data, seed and retry
-      if (snapshot.empty && userId) {
-        await this.seedDatabase(userId);
-        return this.getUserRevenueStats(userId, period);
-      }
-
       let totalRevenue = 0;
       const sources = {
         streaming: 0,
@@ -108,10 +102,10 @@ export class RevenueService {
 
       return {
         totalRevenue,
-        revenueChange: 12.5, // Mock change for now
-        pendingPayouts: totalRevenue * 0.1, // Mock pending 10%
-        lastPayoutAmount: 5000,
-        lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+        revenueChange: 0,
+        pendingPayouts: 0,
+        lastPayoutAmount: 0,
+        lastPayoutDate: undefined,
         sources,
         revenueByProduct,
         history
@@ -157,50 +151,6 @@ export class RevenueService {
     } catch (error) {
       console.error('[RevenueService] Failed to record sale:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Seed initial transactions for a new user/org
-   */
-  private async seedDatabase(userId: string) {
-    console.log(`[RevenueService] Seeding database for ${userId}...`);
-
-    const initialSales: RevenueEntry[] = [
-      {
-        productId: 'prod-1',
-        productName: 'Neon Genesis (Digital Vinyl)',
-        amount: 25.00,
-        currency: 'USD',
-        source: 'merch',
-        customerId: 'cust-mock-1',
-        status: 'completed',
-        userId: userId
-      },
-      {
-        productId: 'prod-2',
-        productName: 'Lofi Link (Sample Pack)',
-        amount: 15.00,
-        currency: 'USD',
-        source: 'social_drop',
-        customerId: 'cust-mock-2',
-        status: 'completed',
-        userId: userId
-      },
-      {
-        productId: 'prod-3',
-        productName: 'Streaming Royalty (Spotify)',
-        amount: 124.50,
-        currency: 'USD',
-        source: 'streaming',
-        customerId: 'spotify-aggregator',
-        status: 'completed',
-        userId: userId
-      }
-    ];
-
-    for (const sale of initialSales) {
-      await this.recordSale(sale);
     }
   }
 

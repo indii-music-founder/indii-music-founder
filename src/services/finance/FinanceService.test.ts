@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FinanceService, Expense } from './FinanceService';
+import { financeService, Expense } from './FinanceService';
 
 // --- Mocks ---
 
@@ -76,7 +76,7 @@ describe('FinanceService', () => {
 
             mockAddDoc.mockResolvedValueOnce({ id: 'new-expense-id' });
 
-            const result = await FinanceService.addExpense(expense);
+            const result = await financeService.addExpense(expense);
 
             expect(mockCollection).toHaveBeenCalled();
             expect(mockAddDoc).toHaveBeenCalledWith(
@@ -106,7 +106,7 @@ describe('FinanceService', () => {
 
             mockGetDocs.mockResolvedValueOnce({ docs: mockDocs });
 
-            const expenses = await FinanceService.getExpenses('user-123');
+            const expenses = await financeService.getExpenses('user-123');
 
             expect(mockQuery).toHaveBeenCalled();
             expect(mockWhere).toHaveBeenCalledWith('userId', '==', 'user-123');
@@ -130,7 +130,7 @@ describe('FinanceService', () => {
 
             mockGetUserRevenueStats.mockResolvedValueOnce(mockRevenueStats);
 
-            const result = await FinanceService.fetchEarnings('user-123');
+            const result = await financeService.fetchEarnings('user-123');
 
             expect(mockGetUserRevenueStats).toHaveBeenCalledWith('user-123');
             expect(result).toBeDefined();
@@ -145,7 +145,7 @@ describe('FinanceService', () => {
             const error = new Error('Test Error');
             mockGetUserRevenueStats.mockRejectedValueOnce(error);
 
-            await expect(FinanceService.fetchEarnings('user-123')).rejects.toThrow('Test Error');
+            await expect(financeService.fetchEarnings('user-123')).rejects.toThrow('Test Error');
             expect(mockCaptureException).toHaveBeenCalledWith(error);
         });
     });

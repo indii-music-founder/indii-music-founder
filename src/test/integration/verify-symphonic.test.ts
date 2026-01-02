@@ -1,7 +1,6 @@
 
-import { SymphonicAdapter } from './adapters/SymphonicAdapter';
-import type { ExtendedGoldenMetadata } from '../metadata/types';
-import type { ReleaseAssets } from './types/distributor';
+import { SymphonicAdapter } from '@/services/distribution/adapters/SymphonicAdapter';
+import type { ExtendedGoldenMetadata, ReleaseAssets } from '@/services/metadata/types';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -14,26 +14,16 @@ export const usePublicist = () => {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Initial Data Fetch & Seeding
+    // Initial Data Fetch
     useEffect(() => {
         if (!userProfile?.id) return;
 
-        const init = async () => {
-            setLoading(true);
-            try {
-                // Seed mock data if empty
-                await PublicistService.seedDatabase(userProfile.id);
-            } catch (e) {
-                console.error("Failed to seed database:", e);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        init();
-
+        setLoading(true);
         // Subscribe to live data
-        const unsubCampaigns = PublicistService.subscribeToCampaigns(userProfile.id, setCampaigns);
+        const unsubCampaigns = PublicistService.subscribeToCampaigns(userProfile.id, (data) => {
+            setCampaigns(data);
+            setLoading(false);
+        });
         const unsubContacts = PublicistService.subscribeToContacts(userProfile.id, setContacts);
 
         return () => {

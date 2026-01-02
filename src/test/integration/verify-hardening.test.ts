@@ -1,10 +1,9 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { IDistributorAdapter } from './types/distributor.ts';
-import { DistributorService } from './DistributorService.ts';
-import { DistributionPersistenceService } from './DistributionPersistenceService.ts';
-import type { ExtendedGoldenMetadata } from '../metadata/types.ts';
-import type { ReleaseAssets } from './types/distributor.ts';
+import { IDistributorAdapter, ReleaseAssets } from '@/services/distribution/types/distributor';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import { DistributionPersistenceService } from '@/services/distribution/DistributionPersistenceService';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 async function verifyHardening() {
     console.log('🚀 Starting Distribution Hardening Verification...\n');
@@ -13,10 +12,10 @@ async function verifyHardening() {
     const releaseId = uuidv4();
     console.log(`🆔 Test Internal Release ID: ${releaseId}`);
 
-    // Initialize store with local CWD to avoid Electron path errors
-    const localStore = new DistributionPersistenceService({ cwd: process.cwd() });
-    localStore.clearAll();
-    console.log('🧹 Store Cleared (Local CWD)');
+    // Initialize store
+    const localStore = new DistributionPersistenceService();
+    // localStore.clearAll(); // Not available in Firestore impl
+    console.log('🧹 Store initialized (Firestore)');
 
     // Inject local store into DistributorService
     DistributorService.setPersistenceService(localStore);
@@ -175,7 +174,7 @@ async function verifyHardening() {
 
     // 4. Verify Immediate Persistence
     console.log('\n💾 Verifying Persistence...');
-    let deployments = localStore.getDeploymentsForRelease(releaseId);
+    let deployments = await localStore.getDeploymentsForRelease(releaseId);
     if (deployments.length === 1) {
         console.log(`✅ Persistence Found: [${deployments[0].status}] ${deployments[0].distributorId}`);
     } else {
@@ -191,7 +190,7 @@ async function verifyHardening() {
     console.log('Status Report:', statuses);
 
     // Verify store was updated (simulating that the getStatus call refreshed it)
-    deployments = localStore.getDeploymentsForRelease(releaseId);
+    deployments = await localStore.getDeploymentsForRelease(releaseId);
     console.log(`Current Store Status: ${deployments[0].status}`);
 
     console.log('\n✨ Hardening Verification Complete!');

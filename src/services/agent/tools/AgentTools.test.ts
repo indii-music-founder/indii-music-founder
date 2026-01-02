@@ -30,7 +30,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const resultString = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const result = JSON.parse(resultString);
             expect(result.approved).toBe(true);
             expect(result.score).toBe(9);
         });
@@ -44,7 +45,9 @@ describe('Agent Tools Validation', () => {
             // Mock console.error to avoid noise
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-            const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const resultString = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const result = JSON.parse(resultString);
+
             expect(result.approved).toBe(false);
             expect(result.critique).toBe("AI Generation Failed");
 
@@ -65,7 +68,9 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
+            const resultString = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
+            const result = JSON.parse(resultString);
+
             expect(result.campaignName).toBe("Test Campaign");
             expect(result.targetAudience).toBe("Gen Z");
         });
