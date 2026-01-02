@@ -118,16 +118,10 @@ describe('VideoWorkflow', () => {
 
         render(<VideoWorkflow />);
 
-        // Assuming there is a generate button or similar trigger
-        // Note: The actual trigger in UI might be inside DirectorPromptBar which is child.
-        // If DirectorPromptBar needs 'onGenerate', VideoWorkflow passes handleGenerate.
-        // We'll simulate finding the Generate button if it exists or trigger the form.
+        // Set prompt first
+        const input = screen.getByPlaceholderText(/describe your scene/i);
+        fireEvent.change(input, { target: { value: 'Cyberpunk city' } });
 
-        // Since DirectorPromptBar uses an input and enter or button, lets try to find the button.
-        // Assuming DirectorPromptBar has a button with text "Generate" or similar icon.
-
-        // If explicit button not found, we might need to adjust test or mock DirectorPromptBar.
-        // But let's assume standard button.
         const generateBtn = screen.getByRole('button', { name: /generate/i });
         fireEvent.click(generateBtn);
 
