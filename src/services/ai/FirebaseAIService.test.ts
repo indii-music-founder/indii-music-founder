@@ -1,7 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from './FirebaseAIService';
 
-// Mock Firebase Modules INLINE to avoid hoisting issues
+// HOISTED MOCKS to avoid ReferenceError
+const {
+    mockGetAI,
+    mockGetGenerativeModel,
+    mockGenerateContent,
+    mockVertexAIBackend
+} = vi.hoisted(() => {
+    const mockGenerateContent = vi.fn();
+    const mockGetGenerativeModel = vi.fn(() => ({
+        generateContent: mockGenerateContent,
+        generateContentStream: vi.fn().mockResolvedValue({
+            stream: (async function* () { yield { text: () => 'Stream Chunk' }; })()
+        })
+    }));
+    const mockGetAI = vi.fn(() => ({}));
+    const mockVertexAIBackend = vi.fn();
+
+    return {
+        mockGetAI,
+        mockGetGenerativeModel,
+        mockGenerateContent,
+        mockVertexAIBackend
+    };
+});
+
+// Mock Firebase Modules
 vi.mock('firebase/remote-config', () => ({
     getRemoteConfig: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
@@ -10,22 +35,14 @@ vi.mock('firebase/remote-config', () => ({
     }))
 }));
 
-const mockGenerateContent = vi.fn();
-const mockGetGenerativeModel = vi.fn(() => ({
-    generateContent: mockGenerateContent.mockResolvedValue({
-        response: { text: () => 'Mock AI Response' }
-    }),
-    generateContentStream: vi.fn().mockResolvedValue({
-        stream: (async function* () { yield { text: () => 'Stream Chunk' }; })()
-    })
-}));
-const mockGetAI = vi.fn();
-const mockVertexAIBackend = vi.fn();
-
 vi.mock('firebase/ai', () => ({
     getAI: mockGetAI,
     VertexAIBackend: mockVertexAIBackend,
-    getGenerativeModel: mockGetGenerativeModel
+    getGenerativeModel: mockGetGenerativeModel,
+    GenerativeModel: vi.fn(), // Mock class/types if used as values
+    GenerateContentResult: vi.fn(),
+    Content: vi.fn(),
+    GenerateContentStreamResult: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -39,8 +56,18 @@ describe('FirebaseAIService', () => {
     beforeEach(() => {
         service = new FirebaseAIService();
         vi.clearAllMocks();
-        // Reset default implementation if needed
-        mockGenerateContent.mockResolvedValue({ response: { text: () => 'Mock AI Response' } });
+
+        // Ensure mocks return valid objects
+        mockGetAI.mockReturnValue({ id: 'mock-ai-instance' });
+        mockGetGenerativeModel.mockReturnValue({
+            generateContent: mockGenerateContent,
+            generateContentStream: vi.fn()
+        });
+
+        // Default success
+        mockGenerateContent.mockResolvedValue({
+            response: { text: () => 'Mock AI Response' }
+        });
     });
 
     it('should bootstrap by fetching remote config and initializing model', async () => {
@@ -58,9 +85,12 @@ describe('FirebaseAIService', () => {
             backend: expect.any(VertexAIBackend)
         }));
 
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: 'mock-model-v1'
-        }));
+        expect(getGenerativeModel).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'mock-ai-instance' }),
+            expect.objectContaining({
+                model: 'mock-model-v1'
+            })
+        );
     });
 
     it('should auto-initialize on first generate call', async () => {
@@ -72,7 +102,7 @@ describe('FirebaseAIService', () => {
     });
 
     it('should handle App Check failures gracefully', async () => {
-        // We need to override the mock for THIS test specifically
+        // Override for this specific test
         mockGenerateContent.mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
         await expect(service.generateContent('fail')).rejects.toThrow('AI Verification Failed (App Check)');

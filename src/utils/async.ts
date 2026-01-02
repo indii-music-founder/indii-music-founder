@@ -16,13 +16,21 @@ export const delay = (ms: number): Promise<void> => {
 export const retry = async <T>(
     fn: () => Promise<T>,
     retries: number = 3,
-    interval: number = 1000
+    interval: number = 1000,
+    maxInterval: number = 30000
 ): Promise<T> => {
     try {
         return await fn();
     } catch (error) {
-        if (retries <= 0) throw error;
+        if (retries <= 0) {
+            console.warn('[retry] Max retries exhausted', { error });
+            throw error;
+        }
+
+        const nextInterval = Math.min(interval * 2, maxInterval);
+        console.debug(`[retry] Retrying in ${interval}ms... (${retries} left)`, { error });
+
         await delay(interval);
-        return retry(fn, retries - 1, interval * 2);
+        return retry(fn, retries - 1, nextInterval, maxInterval);
     }
 };

@@ -273,7 +273,10 @@ export const inngestApi = functions
                                 body: JSON.stringify(requestBody)
                             });
 
-                            if (!response.ok) throw new Error(`Veo Segment ${i} failed`);
+                            if (!response.ok) {
+                                const errorBody = await response.text();
+                                throw new Error(`Veo Segment ${i} failed (Status: ${response.status}): ${errorBody}`);
+                            }
 
                             const result = await response.json();
                             const prediction = result.predictions[0];

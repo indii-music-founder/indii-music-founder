@@ -24,6 +24,12 @@ interface VideoGenerationOptions {
 // VideoTools Implementation
 // ============================================================================
 
+async function resolveVideoUrl(videoJob: { id: string; url?: string }): Promise<string> {
+    if (videoJob.url) return videoJob.url;
+    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+    return completedJob.videoUrl;
+}
+
 export const VideoTools = {
     generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
         try {
@@ -34,13 +40,7 @@ export const VideoTools = {
 
             if (results.length > 0) {
                 const videoJob = results[0];
-
-                // WAIT for job if URL is missing
-                let finalUrl = videoJob.url;
-                if (!finalUrl) {
-                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                    finalUrl = completedJob.videoUrl;
-                }
+                const finalUrl = await resolveVideoUrl(videoJob);
 
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
@@ -185,13 +185,7 @@ export const VideoTools = {
 
             if (results.length > 0) {
                 const videoJob = results[0];
-
-                // WAIT for job if URL is missing
-                let finalUrl = videoJob.url;
-                if (!finalUrl) {
-                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                    finalUrl = completedJob.videoUrl;
-                }
+                const finalUrl = await resolveVideoUrl(videoJob);
 
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
@@ -258,12 +252,13 @@ export const VideoTools = {
             });
 
             // Use the refactored background-driven service
-            const jobId = await VideoGeneration.generateLongFormVideo({
+            const results = await VideoGeneration.generateLongFormVideo({
                 prompt: args.prompt,
                 totalDuration: args.totalDuration,
-                startImage: args.startImage,
-                orgId: useStore.getState().currentOrganizationId
-            } as any); // Cast as any if typing mismatch in options (generateLongFormVideo returns results[] now but I updated it to return a placeholder list)
+                firstFrame: args.startImage
+            });
+
+            const jobId = results[0].id;
 
             return `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`;
 
@@ -289,7 +284,9 @@ export const VideoTools = {
             });
 
             if (results.length > 0) {
-                const uri = results[0].url;
+                const videoJob = results[0];
+                const uri = await resolveVideoUrl(videoJob);
+
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
                     id: crypto.randomUUID(),

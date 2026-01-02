@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FinanceService, Expense, financeService } from './FinanceService';
+import { Expense, financeService } from './FinanceService';
 
 // --- Mocks ---
 
@@ -87,7 +87,7 @@ describe('FinanceService', () => {
                 'MOCK_COLLECTION_REF',
                 expect.objectContaining({
                     ...expense,
-                    createdAt: expect.any(Object) // Matches the Timestamp object
+                    createdAt: expect.objectContaining({ toDate: expect.any(Function) }) // Matches the Timestamp object
                 })
             );
             expect(result).toBe('new-expense-id');

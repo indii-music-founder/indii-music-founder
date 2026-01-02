@@ -1,204 +1,136 @@
 import {
+    getAI,
     getGenerativeModel,
-    getLiveGenerativeModel,
-    Schema,
-    FunctionDeclarationsTool,
-    Part,
-    GenerationConfig,
-    ThinkingConfig,
-    InferenceMode,
-    Tool,
+    VertexAIBackend,
+    GenerativeModel,
     GenerateContentResult,
-    ChatSession,
-    LiveGenerativeModel,
-    RequestOptions
+    Content,
+    GenerateContentStreamResult,
+    GenerateContentRequest
 } from 'firebase/ai';
-import { ai } from '../firebase';
-
-// Default models
-const DEFAULT_MODEL = 'gemini-1.5-flash';
-
-export interface Message {
-    role: 'user' | 'model';
-    parts: Part[];
-}
+import { app, remoteConfig } from '@/services/firebase';
+import { fetchAndActivate, getValue } from 'firebase/remote-config';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
 
 export class FirebaseAIService {
+    private model: GenerativeModel | null = null;
+    private isInitialized = false;
+
+    constructor() { }
 
     /**
-     * Generate text from a prompt.
+     * Boostrap the AI service:
+     * 1. Fetch Remote Config to get the latest model name.
+     * 2. Initialize the Vertex AI SDK with App Check Limited Use Tokens.
      */
-    async generateText(
-        prompt: string,
-        modelName: string = DEFAULT_MODEL,
-        thinkingBudget?: number,
-        systemInstruction?: string
-    ): Promise<string> {
-        const generationConfig: GenerationConfig = {};
-        if (thinkingBudget) {
-            generationConfig.thinkingConfig = { thinkingBudget };
-        }
+    async bootstrap(): Promise<void> {
+        if (this.isInitialized) return;
 
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            generationConfig,
-            systemInstruction
-        });
-
-        const result = await modelCallback.generateContent(prompt);
-        return result.response.text();
-    }
-
-    /**
-     * Generate structured data from a prompt and schema.
-     */
-    async generateStructuredData<T>(
-        prompt: string,
-        schema: Schema,
-        modelName: string = DEFAULT_MODEL,
-        thinkingBudget?: number,
-        systemInstruction?: string
-    ): Promise<T> {
-        const generationConfig: GenerationConfig = {
-            responseMimeType: 'application/json',
-            responseSchema: schema
-        };
-        if (thinkingBudget) {
-            generationConfig.thinkingConfig = { thinkingBudget };
-        }
-
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            generationConfig,
-            systemInstruction
-        });
-
-        const result = await modelCallback.generateContent(prompt);
-        const text = result.response.text();
         try {
-            return JSON.parse(text) as T;
-        } catch (e) {
-            console.error('Failed to parse (or empty) JSON response:', text, e);
-            throw e;
+            // 1. Fetch Remote Config (cache for 1 hour in prod, mostly instant in dev/with listener)
+            // Note: We use fetchAndActivate to ensure we have value, but in a real app might rely on cached
+            await fetchAndActivate(remoteConfig);
+
+            // 2. Get Model Name
+            const modelName = getValue(remoteConfig, 'model_name').asString() || 'gemini-1.5-flash';
+            const location = getValue(remoteConfig, 'vertex_location').asString() || 'us-central1';
+
+            console.log(`[FirebaseAIService] Initializing with model: ${modelName} in ${location}`);
+
+            // 3. Initialize SDK
+            // "useLimitedUseAppCheckTokens: true" is a PRODUCTION CHECKLIST REQUIREMENT
+            // It protects against replay attacks by consuming tokens on use.
+            const ai = getAI(app, {
+                backend: new VertexAIBackend(location),
+                useLimitedUseAppCheckTokens: true
+            });
+
+            this.model = getGenerativeModel(ai, {
+                model: modelName,
+                // Default safety settings can be added here
+            });
+
+            this.isInitialized = true;
+
+        } catch (error) {
+            console.error('[FirebaseAIService] Bootstrap failed:', error);
+            // We don't throw here to allow app to load, but generation will fail later
         }
     }
 
     /**
-     * Start a chat session or send a message to an existing one.
-     * Note: This helper creates a new session for simplicity in this method.
-     * For persistent chat, you'd typically keep the `ChatSession` instance.
+     * Generate content (single response)
      */
-    async chat(
-        history: Message[],
-        newMessage: string,
-        modelName: string = DEFAULT_MODEL,
-        thinkingBudget?: number,
-        systemInstruction?: string
-    ): Promise<string> {
-        const generationConfig: GenerationConfig = {};
-        if (thinkingBudget) {
-            generationConfig.thinkingConfig = { thinkingBudget };
+    async generateContent(prompt: string | Content[]): Promise<string> {
+        await this.ensureInitialized();
+        if (!this.model) throw new Error('AI Model not available');
+
+        try {
+            const request: string | GenerateContentRequest = typeof prompt === 'string'
+                ? prompt
+                : { contents: prompt };
+
+            const result: GenerateContentResult = await this.model.generateContent(request);
+            return result.response.text();
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Generate content stream
+     */
+    async generateContentStream(prompt: string | Content[]): Promise<ReadableStream<string>> {
+        await this.ensureInitialized();
+        if (!this.model) throw new Error('AI Model not available');
+
+        try {
+            const request: string | GenerateContentRequest = typeof prompt === 'string'
+                ? prompt
+                : { contents: prompt };
+
+            const result: GenerateContentStreamResult = await this.model.generateContentStream(request);
+
+            return new ReadableStream({
+                async start(controller) {
+                    for await (const chunk of result.stream) {
+                        const text = chunk.text();
+                        if (text) {
+                            controller.enqueue(text);
+                        }
+                    }
+                    controller.close();
+                }
+            });
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    private async ensureInitialized() {
+        if (!this.isInitialized) {
+            await this.bootstrap();
+        }
+    }
+
+    private handleError(error: unknown): AppException {
+        console.error('[FirebaseAIService] Generation Error:', error);
+
+        // Map common Firebase AI errors
+        const msg = error instanceof Error ? error.message : String(error);
+
+        if (msg.includes('permission-denied') || msg.includes('app-check-token')) {
+            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check)');
+        }
+        if (msg.includes('Recaptcha')) {
+            return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
+        }
+        if (msg.includes('429') || msg.includes('quota')) {
+            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Quota Exceeded');
         }
 
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            generationConfig,
-            systemInstruction
-        });
-
-        const chatSession = modelCallback.startChat({
-            history: history
-        });
-
-        const result = await chatSession.sendMessage(newMessage);
-        return result.response.text();
+        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
     }
-
-    /**
-     * Analyze an image (base64).
-     */
-    async analyzeImage(
-        prompt: string,
-        imageBase64: string,
-        modelName: string = DEFAULT_MODEL
-    ): Promise<string> {
-        const modelCallback = getGenerativeModel(ai, { model: modelName });
-
-        // Remove data URL prefix if present
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-
-        const imagePart: Part = {
-            inlineData: {
-                data: base64Data,
-                mimeType: 'image/jpeg' // Adjust or detect if needed, keeping simple for now
-            }
-        };
-
-        const result = await modelCallback.generateContent([prompt, imagePart]);
-        return result.response.text();
-    }
-
-    /**
-     * Analyze a generic file (Video, Audio, PDF) that has been converted to a GenerativePart.
-     */
-    async analyzeMultimodal(
-        prompt: string,
-        parts: Part[],
-        modelName: string = DEFAULT_MODEL
-    ): Promise<string> {
-        const modelCallback = getGenerativeModel(ai, { model: modelName });
-        const result = await modelCallback.generateContent([prompt, ...parts]);
-        return result.response.text();
-    }
-
-    /**
-     * Generate text with Google Search grounding.
-     */
-    async generateGroundedText(
-        prompt: string,
-        modelName: string = DEFAULT_MODEL
-    ): Promise<GenerateContentResult> {
-        // Correct usage of Tool for web:
-        // tools: [{ googleSearch: {} }] as per docs
-        const tools: Tool[] = [{ googleSearch: {} }];
-
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            tools: tools
-        });
-
-        return await modelCallback.generateContent(prompt);
-    }
-
-    /**
-     * Call function with defined tools.
-     */
-    async callFunction(
-        prompt: string,
-        tools: FunctionDeclarationsTool[],
-        modelName: string = DEFAULT_MODEL
-    ): Promise<GenerateContentResult> {
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            tools: tools
-        });
-
-        return await modelCallback.generateContent(prompt);
-    }
-
-    /**
-     * Get a LiveGenerativeModel for streaming.
-     */
-    getLiveModel(
-        modelName: string = 'gemini-2.0-flash-exp',
-        systemInstruction?: string
-    ): LiveGenerativeModel {
-        return getLiveGenerativeModel(ai, {
-            model: modelName,
-            systemInstruction
-        });
-    }
-
 }
 
-export const firebaseAIService = new FirebaseAIService();
+export const firebaseAI = new FirebaseAIService();

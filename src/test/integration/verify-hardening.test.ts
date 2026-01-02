@@ -20,6 +20,32 @@ vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
     }))
 }));
 
+// Mock Firestore (Standard mock for integration tests)
+vi.mock('firebase/firestore', () => ({
+    getFirestore: vi.fn(),
+    collection: vi.fn(),
+    addDoc: vi.fn(),
+    getDocs: vi.fn(),
+    query: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+    serverTimestamp: () => 'MOCK_TIMESTAMP',
+    Timestamp: {
+        now: () => ({ toDate: () => new Date() }),
+        fromDate: (d: Date) => ({ toDate: () => d }),
+    },
+    doc: vi.fn(),
+    setDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+    writeBatch: vi.fn(() => ({
+        set: vi.fn(),
+        commit: vi.fn(),
+    })),
+    // QuerySnapshot/DocumentSnapshot mocks are usually handled by the return values of getDocs
+}));
+
 // Create a mock adapter
 function createMockAdapter(): IDistributorAdapter {
     return {

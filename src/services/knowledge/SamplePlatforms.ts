@@ -1,5 +1,6 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { z } from 'zod';
 
 export interface SamplePlatform {
     id: string;
@@ -13,6 +14,18 @@ export interface SamplePlatform {
         reportingRequired: boolean;
     };
 }
+
+const SamplePlatformSchema = z.object({
+    name: z.string(),
+    keywords: z.array(z.string()),
+    defaultLicenseType: z.enum(['Royalty-Free', 'Clearance-Required', 'Subscription-Based']),
+    termsSummary: z.string(),
+    color: z.string(),
+    requirements: z.object({
+        creditRequired: z.boolean(),
+        reportingRequired: z.boolean(),
+    }).optional(),
+}).passthrough();
 
 // Fallback data when Firestore is unavailable
 const FALLBACK_PLATFORMS: SamplePlatform[] = [
@@ -75,11 +88,24 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
     try {
         const snapshot = await getDocs(collection(db, 'sample_platforms'));
         if (!snapshot.empty) {
-            platformsCache = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as SamplePlatform));
-            return platformsCache;
+            const platforms: SamplePlatform[] = [];
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const result = SamplePlatformSchema.safeParse(data);
+                if (result.success) {
+                    platforms.push({
+                        id: doc.id,
+                        ...data
+                    } as SamplePlatform);
+                } else {
+                    console.warn(`[SamplePlatforms] Invalid platform data in Firestore for ${doc.id}:`, result.error);
+                }
+            });
+
+            if (platforms.length > 0) {
+                platformsCache = platforms;
+                return platformsCache;
+            }
         }
     } catch (error) {
         console.warn('[SamplePlatforms] Failed to load from Firestore, using fallback:', error);

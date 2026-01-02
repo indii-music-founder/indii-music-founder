@@ -19,6 +19,7 @@ import {
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { delay as asyncDelay } from '@/utils/async';
+import { firebaseAI } from './FirebaseAIService';
 
 // ============================================================================
 // Helper Functions
@@ -151,79 +152,25 @@ export class AIService {
      * Generate content using RAG Proxy (Server-side API Key)
      */
     async generateContent(options: GenerateContentOptions): Promise<WrappedResponse> {
-        return this.withRetry(async () => {
-            try {
-                // Construct the full URL using the helper
-                // This ensures we always target the correct model endpoint via the proxy
-                const endpointPath = `/v1beta/models/${options.model}:generateContent`;
-                const proxyUrl = endpointService.getFunctionUrl('ragProxy');
+        try {
+            const text = await firebaseAI.generateContent(options.contents as any);
 
-                // Ensure no double slashes if proxyUrl ends with /
-                const baseUrl = proxyUrl.endsWith('/') ? proxyUrl.slice(0, -1) : proxyUrl;
-                const url = `${baseUrl}${endpointPath}`;
+            const mappedResponse: GenerateContentResponse = {
+                candidates: [{
+                    content: {
+                        role: 'model',
+                        parts: [{ text }]
+                    }
+                }]
+            };
 
-                const contents = Array.isArray(options.contents)
-                    ? options.contents
-                    : [options.contents];
+            return wrapResponse(mappedResponse);
 
-                const requestBody = {
-                    contents: contents,
-                    generationConfig: options.config,
-                    systemInstruction: options.systemInstruction ? { parts: [{ text: options.systemInstruction }] } : undefined,
-                    tools: options.tools
-                };
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
-                }
-
-                const result = await response.json();
-
-                // Basic validation of the response structure
-                if (!result.candidates && !result.promptFeedback) {
-                    throw new Error("Invalid response format from Gemini API");
-                }
-
-                const mappedResponse: GenerateContentResponse = {
-                    candidates: result.candidates?.map((c: any): Candidate => ({
-                        content: {
-                            role: c.content?.role ?? 'model',
-                            parts: (c.content?.parts ?? []).map((p: any): ContentPart => {
-                                if (p.text) return { text: p.text };
-                                if (p.functionCall) return {
-                                    functionCall: {
-                                        name: p.functionCall.name,
-                                        args: p.functionCall.args
-                                    }
-                                };
-                                return { text: '' };
-                            })
-                        },
-                        finishReason: c.finishReason,
-                        citationMetadata: c.citationMetadata,
-                        safetyRatings: c.safetyRatings,
-                        index: c.index
-                    })) || [],
-                    promptFeedback: result.promptFeedback
-                };
-
-                return wrapResponse(mappedResponse);
-
-            } catch (error) {
-                const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-                console.error('[AIService] Generate Content Failed:', err.message);
-                throw err;
-            }
-        });
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+            console.error('[AIService] Generate Content Failed:', err.message);
+            throw err;
+        }
     }
 
     /**
@@ -260,71 +207,22 @@ export class AIService {
      * Generate content with streaming response
      */
     async generateContentStream(options: GenerateStreamOptions): Promise<ReadableStream<StreamChunk>> {
-        // Points to our secure backend function which holds the API key
-        const functionUrl = endpointService.getFunctionUrl('generateContentStream');
+        try {
+            const stream = await firebaseAI.generateContentStream(options.contents as any);
 
-        const response = await this.withRetry(() => fetch(functionUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: options.model,
-                contents: options.contents,
-                config: options.config
-            })
-        }));
-
-        if (!response.ok) {
-            console.error(`[AIService] Stream Response Error: ${response.status} ${response.statusText}`);
-            const errorText = await response.text();
-            throw new AppException(
-                AppErrorCode.NETWORK_ERROR,
-                `Generate Content Stream Failed: ${errorText}`
-            );
-        }
-
-        if (!response.body) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'No response body');
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        return new ReadableStream<StreamChunk>({
-            async start(controller) {
-                try {
-                    let buffer = '';
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) {
-                            break;
-                        }
-
-
-                        const chunk = decoder.decode(value, { stream: true });
-                        buffer += chunk;
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() ?? '';
-
-                        for (const line of lines) {
-                            if (line.trim() === '') continue;
-                            try {
-                                const parsed = JSON.parse(line) as { text?: string };
-                                if (parsed.text) {
-                                    const text = parsed.text;
-                                    controller.enqueue({ text: () => text });
-                                }
-                            } catch {
-                                // console.warn('[AIService] Failed to parse stream chunk:', line);
-                                // SIlently fail on non-json chunks (like keep-alive newlines)
-                            }
-                        }
-                    }
-                    controller.close();
-                } catch (err) {
-                    controller.error(err);
+            const transformer = new TransformStream<string, StreamChunk>({
+                transform(chunk, controller) {
+                    controller.enqueue({ text: () => chunk });
                 }
-            }
-        });
+            });
+
+            return stream.pipeThrough(transformer);
+
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
+            console.error('[AIService] Generate Content Stream Failed:', err.message);
+            throw err;
+        }
     }
 
     /**

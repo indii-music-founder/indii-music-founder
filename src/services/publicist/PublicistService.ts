@@ -4,6 +4,7 @@ import {
     where,
     onSnapshot,
     addDoc,
+    serverTimestamp,
     QuerySnapshot,
     DocumentData
 } from 'firebase/firestore';
@@ -15,14 +16,16 @@ import { z } from 'zod';
 // Define Zod schemas for runtime validation
 const CampaignSchema = z.object({
     userId: z.string(),
-    name: z.string(),
-    // Add other fields based on Campaign interface if needed, keeping it loose for now to match interface
-    // For strictness we'd define the full schema, but pass-through is safer for refactoring
+    artist: z.string(),
+    title: z.string(),
+    status: z.enum(['Draft', 'Live', 'Scheduled', 'Ended']),
 }).passthrough();
 
 const ContactSchema = z.object({
     userId: z.string(),
     name: z.string(),
+    outlet: z.string(),
+    role: z.enum(['Journalist', 'Curator', 'Influencer', 'Editor']),
 }).passthrough();
 
 export class PublicistService {
@@ -96,19 +99,41 @@ export class PublicistService {
         });
     }
 
+    private static validateCampaign(campaign: Omit<Campaign, 'id'>): void {
+        const result = CampaignSchema.safeParse(campaign);
+        if (!result.success) {
+            const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+            throw new Error(`Invalid campaign data: ${errorMessages}`);
+        }
+        if (!campaign.title?.trim()) throw new Error('Campaign title is required');
+        if (!campaign.artist?.trim()) throw new Error('Artist name is required');
+        if (!campaign.status) throw new Error('Campaign status is required');
+    }
+
+    private static validateContact(contact: Omit<Contact, 'id'>): void {
+        const result = ContactSchema.safeParse(contact);
+        if (!result.success) {
+            const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+            throw new Error(`Invalid contact data: ${errorMessages}`);
+        }
+        if (!contact.name?.trim()) throw new Error('Contact name is required');
+    }
+
     static async addCampaign(userId: string, campaign: Omit<Campaign, 'id'>) {
+        this.validateCampaign(campaign);
         return addDoc(collection(db, COLLECTIONS.PUBLICIST.CAMPAIGNS), {
             ...campaign,
             userId,
-            createdAt: new Date()
+            createdAt: serverTimestamp()
         });
     }
 
     static async addContact(userId: string, contact: Omit<Contact, 'id'>) {
+        this.validateContact(contact);
         return addDoc(collection(db, COLLECTIONS.PUBLICIST.CONTACTS), {
             ...contact,
             userId,
-            createdAt: new Date()
+            createdAt: serverTimestamp()
         });
     }
 }

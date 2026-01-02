@@ -11,6 +11,11 @@ import { initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize Firebase Admin
 const serviceAccountPath = path.resolve(__dirname, '../firebase-service-account.json');
@@ -71,53 +76,7 @@ const MERCHANDISE_CATALOG = [
 // ============================================
 // SAMPLE PLATFORMS KNOWLEDGE BASE
 // ============================================
-const SAMPLE_PLATFORMS = [
-    {
-        id: 'splice',
-        name: 'Splice',
-        keywords: ['splice', 'splice sounds'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free for commercial use. No per-use payment required.",
-        color: 'text-blue-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    },
-    {
-        id: 'loopcloud',
-        name: 'Loopcloud',
-        keywords: ['loopcloud', 'loopmasters'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free for commercial use (Points spent purchased license).",
-        color: 'text-indigo-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    },
-    {
-        id: 'tracklib',
-        name: 'Tracklib',
-        keywords: ['tracklib'],
-        defaultLicenseType: 'Clearance-Required',
-        termsSummary: "Requires License Purchase + Revenue Share. NOT Royalty-Free by default.",
-        color: 'text-orange-500',
-        requirements: { creditRequired: true, reportingRequired: true }
-    },
-    {
-        id: 'logic-stock',
-        name: 'Logic Pro / GarageBand Stock',
-        keywords: ['logic', 'garageband', 'apple loops', 'logic pro'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free commercial use (standalone loops). Cannot resell as loops.",
-        color: 'text-gray-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    },
-    {
-        id: 'ableton-stock',
-        name: 'Ableton Stock',
-        keywords: ['ableton', 'ableton live', 'ableton pack'],
-        defaultLicenseType: 'Royalty-Free',
-        termsSummary: "Royalty-Free commercial use. Cannot resell as loops.",
-        color: 'text-gray-400',
-        requirements: { creditRequired: false, reportingRequired: false }
-    }
-];
+import { FALLBACK_PLATFORMS as SAMPLE_PLATFORMS } from '../src/services/knowledge/SamplePlatforms';
 
 // ============================================
 // API INVENTORY
@@ -141,9 +100,8 @@ async function migrateMerchandiseCatalog() {
         const ref = db.collection('merchandise_catalog').doc(product.id);
         batch.set(ref, {
             ...product,
-            createdAt: new Date(),
             updatedAt: new Date()
-        });
+        }, { merge: true });
     }
 
     await batch.commit();
@@ -158,9 +116,8 @@ async function migrateSamplePlatforms() {
         const ref = db.collection('sample_platforms').doc(platform.id);
         batch.set(ref, {
             ...platform,
-            createdAt: new Date(),
             updatedAt: new Date()
-        });
+        }, { merge: true });
     }
 
     await batch.commit();
@@ -175,9 +132,8 @@ async function migrateApiInventory() {
         const ref = db.collection('api_inventory').doc(api.id);
         batch.set(ref, {
             ...api,
-            lastChecked: new Date(),
-            createdAt: new Date()
-        });
+            lastChecked: new Date()
+        }, { merge: true });
     }
 
     await batch.commit();
@@ -205,7 +161,7 @@ async function verifyMigration() {
 
 async function main() {
     console.log('🚀 Starting Mock Data Migration to Firestore\n');
-    console.log('=' .repeat(50));
+    console.log('='.repeat(50));
 
     try {
         await migrateMerchandiseCatalog();
