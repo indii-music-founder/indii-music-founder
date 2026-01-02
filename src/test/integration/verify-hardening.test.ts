@@ -1,10 +1,9 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { IDistributorAdapter } from './types/distributor.ts';
-import { DistributorService } from './DistributorService.ts';
-import { DistributionPersistenceService } from './DistributionPersistenceService.ts';
-import type { ExtendedGoldenMetadata } from '../metadata/types.ts';
-import type { ReleaseAssets } from './types/distributor.ts';
+import { IDistributorAdapter, ReleaseAssets } from '@/services/distribution/types/distributor';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import { DistributionPersistenceService } from '@/services/distribution/DistributionPersistenceService';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 async function verifyHardening() {
     console.log('🚀 Starting Distribution Hardening Verification...\n');

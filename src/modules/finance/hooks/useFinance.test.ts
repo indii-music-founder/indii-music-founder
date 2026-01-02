@@ -14,6 +14,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 vi.mock('@/services/finance/FinanceService', () => ({
+    FinanceService: vi.fn(), // Class mock if needed, but we use instance
     financeService: {
         getExpenses: vi.fn(),
         addExpense: vi.fn(),

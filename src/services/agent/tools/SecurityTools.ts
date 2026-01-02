@@ -1,5 +1,5 @@
 
-import { AI } from '../../ai/AIService';
+import { AI } from '@/services/ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { delay } from '@/utils/async';

@@ -31,6 +31,9 @@ vi.mock('@sentry/react', () => ({
 
 vi.mock('@/services/firebase', () => ({
     db: {},
+    auth: {
+        currentUser: { uid: 'user-123' }
+    }
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -44,8 +47,9 @@ vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     updateDoc: vi.fn(),
     increment: vi.fn(),
-    Timestamp: {
-        now: () => ({ toDate: () => new Date() })
+    Timestamp: class Timestamp {
+        static now() { return { toDate: () => new Date('2024-03-20') }; }
+        toDate() { return new Date('2024-03-20'); }
     }
 }));
 
@@ -83,7 +87,7 @@ describe('FinanceService', () => {
                 'MOCK_COLLECTION_REF',
                 expect.objectContaining({
                     ...expense,
-                    createdAt: 'MOCK_TIMESTAMP'
+                    createdAt: expect.any(Object) // Matches the Timestamp object
                 })
             );
             expect(result).toBe('new-expense-id');
@@ -104,7 +108,7 @@ describe('FinanceService', () => {
                 }
             ];
 
-            mockGetDocs.mockResolvedValueOnce({ docs: mockDocs });
+            mockGetDocs.mockResolvedValueOnce({ docs: mockDocs, empty: false });
 
             const expenses = await financeService.getExpenses('user-123');
 
@@ -120,19 +124,30 @@ describe('FinanceService', () => {
     describe('fetchEarnings', () => {
         it('should call revenueService and return mapped earnings data', async () => {
             const mockRevenueStats = {
-                totalRevenue: 1000.50,
-                revenueBySource: { direct: 800.00, social: 200.50 },
-                revenueByProduct: {
-                    'prod_1': 500.25,
-                    'prod_2': 500.25
-                }
+                period: { startDate: '2024-01-01', endDate: '2024-01-31' },
+                totalGrossRevenue: 1000.50,
+                totalNetRevenue: 1000.50,
+                totalStreams: 1000,
+                totalDownloads: 10,
+                currencyCode: 'USD',
+                byPlatform: [],
+                byTerritory: [],
+                byRelease: [
+                    { releaseId: 'rel-1', title: 'Song 1', revenue: 500.25 },
+                    { releaseId: 'rel-2', title: 'Song 2', revenue: 500.25 }
+                ]
             };
 
-            mockGetUserRevenueStats.mockResolvedValueOnce(mockRevenueStats);
+            mockGetDocs.mockResolvedValueOnce({
+                empty: false,
+                docs: [{
+                    data: () => mockRevenueStats
+                }]
+            });
 
             const result = await financeService.fetchEarnings('user-123');
 
-            expect(mockGetUserRevenueStats).toHaveBeenCalledWith('user-123');
+            expect(mockGetDocs).toHaveBeenCalled();
             expect(result).toBeDefined();
             expect(result.totalGrossRevenue).toBe(1000.50);
             expect(result.totalNetRevenue).toBe(1000.50);
@@ -143,7 +158,7 @@ describe('FinanceService', () => {
 
         it('should handle errors by logging to Sentry', async () => {
             const error = new Error('Test Error');
-            mockGetUserRevenueStats.mockRejectedValueOnce(error);
+            mockGetDocs.mockRejectedValueOnce(error);
 
             await expect(financeService.fetchEarnings('user-123')).rejects.toThrow('Test Error');
             expect(mockCaptureException).toHaveBeenCalledWith(error);

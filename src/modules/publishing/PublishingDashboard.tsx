@@ -390,8 +390,8 @@ export default function PublishingDashboard() {
                                                     </button>
 
                                                     <div className="relative w-14 h-14 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-                                                        {release.assets.coverArtUrl ? (
-                                                            <img src={release.assets.coverArtUrl} alt={release.metadata.trackTitle} className="w-full h-full object-cover" />
+                                                        {release.assets.coverArt ? (
+                                                            <img src={release.assets.coverArt.url} alt={release.metadata.trackTitle} className="w-full h-full object-cover" />
                                                         ) : (
                                                             <Music size={20} className="text-gray-600" />
                                                         )}

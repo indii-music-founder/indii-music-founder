@@ -152,14 +152,13 @@ class DDEXParserImpl {
           startDate: '', // Extract from file
           endDate: '',
         },
-        reportCreatedDateTime: new Date().toISOString(),
+        startDate: '', // Legacy compatibility
+        endDate: '',   // Legacy compatibility
+        currency: 'USD', // Legacy compatibility
         currencyCode: 'USD',
         summary: {
           totalUsageCount,
           totalRevenue,
-          totalStreams,
-          totalDownloads,
-          currencyCode: 'USD',
         },
         transactions,
       };
@@ -406,17 +405,20 @@ class DDEXParserImpl {
       usageType: this.mapUsageType(record['UsageType'] || record['TransactionType']),
       usageCount: parseInt(record['UsageCount'] || record['Quantity'] || '0', 10),
       revenueAmount: parseFloat(record['Revenue'] || record['Amount'] || '0'),
-      currencyCode: record['Currency'] || 'USD',
+      currency: record['Currency'] || 'USD',
+      currencyCode: record['Currency'] || 'USD', // Duplicate for compatibility if needed
       territoryCode: record['Territory'] || record['Country'] || 'US',
       serviceName: record['ServiceName'] || record['DSP'],
+      periodStart: '', // Needs parsing from record
+      periodEnd: ''   // Needs parsing from record
     };
   }
 
-  private mapUsageType(type: string): 'OnDemandStream' | 'ProgrammedStream' | 'Download' | 'Other' {
+  private mapUsageType(type: string): 'OnDemandStream' | 'ProgrammedStream' | 'Download' | 'RingtoneDownload' | 'Unknown' {
     const normalized = type.toLowerCase();
     if (normalized.includes('stream')) return 'OnDemandStream';
     if (normalized.includes('download')) return 'Download';
-    return 'Other';
+    return 'Unknown';
   }
 }
 

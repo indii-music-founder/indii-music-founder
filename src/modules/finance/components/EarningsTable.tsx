@@ -25,7 +25,6 @@ export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Release</TableHead>
-                        <TableHead>ISRC</TableHead>
                         <TableHead className="text-right">Streams</TableHead>
                         <TableHead className="text-right">Downloads</TableHead>
                         <TableHead className="text-right">Revenue</TableHead>
@@ -35,7 +34,6 @@ export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
                     {data.map((row) => (
                         <TableRow key={row.releaseId}>
                             <TableCell className="font-medium">{row.releaseName}</TableCell>
-                            <TableCell>{row.isrc || '-'}</TableCell>
                             <TableCell className="text-right">{row.streams.toLocaleString()}</TableCell>
                             <TableCell className="text-right">{row.downloads.toLocaleString()}</TableCell>
                             <TableCell className="text-right">${row.revenue.toFixed(2)}</TableCell>

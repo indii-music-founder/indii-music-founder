@@ -13,6 +13,7 @@ export class PublicistService {
     private static campaignsCollection = 'publicist_campaigns';
     private static contactsCollection = 'publicist_contacts';
 
+
     /**
      * Subscribe to user's campaigns
      */
