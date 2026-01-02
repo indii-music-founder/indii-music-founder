@@ -9,6 +9,7 @@ import { firebaseConfig, env } from '@/config/env';
 import { getFunctions } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 export const app = initializeApp(firebaseConfig);
 
@@ -41,7 +42,7 @@ export const auth = getAuth(app);
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);
 remoteConfig.defaultConfig = {
-    model_name: 'gemini-1.5-flash',
+    model_name: AI_MODELS.TEXT.FAST,
     vertex_location: 'us-central1'
 };
 

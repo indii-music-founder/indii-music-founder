@@ -1,8 +1,6 @@
 import {
     getGenerativeModel,
-    getLiveGenerativeModel,
     GenerativeModel,
-    LiveGenerativeModel,
     GenerateContentResult,
     GenerateContentStreamResult,
     Content,
@@ -10,12 +8,10 @@ import {
     Schema,
     GenerationConfig
 } from 'firebase/ai';
-import { ai, remoteConfig } from '@/services/firebase';
+import { AI_MODELS } from '@/core/config/ai-models';
+import { app, ai, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-
-// Default model if remote config fails
-const FALLBACK_MODEL = 'gemini-1.5-flash';
 
 export interface ChatMessage {
     role: 'user' | 'model';
@@ -41,13 +37,14 @@ export class FirebaseAIService {
             await fetchAndActivate(remoteConfig);
 
             // 2. Get Model Name and Location
-            const modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
+            // We use the central AI_MODELS constant as the absolute fallback
+            const modelName = getValue(remoteConfig, 'model_name').asString() || AI_MODELS.TEXT.FAST;
+            const location = getValue(remoteConfig, 'vertex_location').asString() || 'us-central1';
 
             console.log(`[FirebaseAIService] Initializing with model: ${modelName}`);
 
-            // 3. Initialize SDK
-            // Note: 'ai' is already initialized in @/services/firebase with 
-            // VertexAIBackend and useLimitedUseAppCheckTokens: true.
+            // 3. Initialize Generative Model
+            // 'ai' instance in @/services/firebase is pre-configured with App Check
             this.model = getGenerativeModel(ai, {
                 model: modelName
             });
@@ -105,33 +102,35 @@ export class FirebaseAIService {
     }
 
     /**
-     * HIGH LEVEL: Generate text with optional thinking budget and system instruction.
+     * GENERIC: Generate text with specific config
      */
     async generateText(
         prompt: string,
-        thinkingBudget?: number,
-        systemInstruction?: string
+        systemInstruction?: string,
+        isThink?: boolean
     ): Promise<string> {
         await this.ensureInitialized();
-        const config: GenerationConfig = thinkingBudget ? { thinkingConfig: { thinkingBudget } } : {};
 
-        const modelCallback = getGenerativeModel(ai, {
+        const config: GenerationConfig = isThink ? {
+            thinkingConfig: { thinkingLevel: 'MEDIUM' }
+        } : {};
+
+        const model = getGenerativeModel(ai, {
             model: this.model!.model,
             generationConfig: config,
             systemInstruction
         });
 
-        const result = await modelCallback.generateContent(prompt);
+        const result = await model.generateContent(prompt);
         return result.response.text();
     }
 
     /**
-     * HIGH LEVEL: Generate structured data from a prompt and schema.
+     * STRUCTURED: Generate JSON data
      */
     async generateStructuredData<T>(
         prompt: string,
         schema: Schema,
-        thinkingBudget?: number,
         systemInstruction?: string
     ): Promise<T> {
         await this.ensureInitialized();
@@ -139,97 +138,21 @@ export class FirebaseAIService {
             responseMimeType: 'application/json',
             responseSchema: schema
         };
-        if (thinkingBudget) {
-            config.thinkingConfig = { thinkingBudget };
-        }
 
-        const modelCallback = getGenerativeModel(ai, {
+        const model = getGenerativeModel(ai, {
             model: this.model!.model,
             generationConfig: config,
             systemInstruction
         });
 
-        const result = await modelCallback.generateContent(prompt);
+        const result = await model.generateContent(prompt);
         const text = result.response.text();
         try {
             return JSON.parse(text) as T;
         } catch (e) {
-            console.error('[FirebaseAIService] JSON parse failed:', text, e);
+            console.error('[FirebaseAIService] JSON Parse Error:', text);
             throw e;
         }
-    }
-
-    /**
-     * HIGH LEVEL: Multi-turn chat.
-     */
-    async chat(
-        history: ChatMessage[],
-        newMessage: string,
-        systemInstruction?: string
-    ): Promise<string> {
-        await this.ensureInitialized();
-        const modelCallback = getGenerativeModel(ai, {
-            model: this.model!.model,
-            systemInstruction
-        });
-
-        const chatSession = modelCallback.startChat({ history });
-        const result = await chatSession.sendMessage(newMessage);
-        return result.response.text();
-    }
-
-    /**
-     * MULTIMODAL: Analyze an image (base64).
-     */
-    async analyzeImage(
-        prompt: string,
-        imageBase64: string,
-        mimeType: string = 'image/jpeg'
-    ): Promise<string> {
-        await this.ensureInitialized();
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-        const imagePart: Part = {
-            inlineData: { data: base64Data, mimeType }
-        };
-
-        const result = await this.model!.generateContent([prompt, imagePart]);
-        return result.response.text();
-    }
-
-    /**
-     * MULTIMODAL: Analyze generic parts (Video, Audio, PDF).
-     */
-    async analyzeMultimodal(
-        prompt: string,
-        parts: Part[]
-    ): Promise<string> {
-        await this.ensureInitialized();
-        const result = await this.model!.generateContent([prompt, ...parts]);
-        return result.response.text();
-    }
-
-    /**
-     * ADVANCED: Grounding with Google Search.
-     */
-    async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
-        await this.ensureInitialized();
-        const modelWithSearch = getGenerativeModel(ai, {
-            model: this.model!.model,
-            tools: [{ googleSearch: {} } as any]
-        });
-
-        return await modelWithSearch.generateContent(prompt);
-    }
-
-    /**
-     * ADVANCED: Live API for real-time bi-directional communication.
-     */
-    async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
-        await this.ensureInitialized();
-        return getLiveGenerativeModel(ai, {
-            model: 'gemini-2.0-flash-exp', // Live usually needs newest models
-            systemInstruction
-        });
     }
 
     private async ensureInitialized() {
@@ -239,8 +162,7 @@ export class FirebaseAIService {
     }
 
     private handleError(error: unknown): AppException {
-        console.error('[FirebaseAIService] Generation Error:', error);
-
+        console.error('[FirebaseAIService] AI Error:', error);
         const msg = error instanceof Error ? error.message : String(error);
 
         if (msg.includes('permission-denied') || msg.includes('app-check-token')) {

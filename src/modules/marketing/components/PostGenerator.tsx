@@ -83,21 +83,22 @@ export default function PostGenerator() {
         `;
 
         try {
-            // Using Gemini 3 Fast for high-throughput generation
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST, // gemini-3-flash-preview
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                config: {
-                    temperature: 0.9, // Creative but controlled
-                }
-            });
+            // Using Gemini 3 for high-throughput generation with native structured output
+            const postSchema = {
+                type: 'object',
+                properties: {
+                    caption: { type: 'string' },
+                    hashtags: { type: 'array', items: { type: 'string' } },
+                    imagePrompt: { type: 'string' }
+                },
+                required: ['caption', 'hashtags', 'imagePrompt']
+            };
 
-            const text = res.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, postSchema as any);
 
-            const caption = typeof data.caption === 'string' ? data.caption : '';
+            const caption = data.caption || '';
             const hashtags = Array.isArray(data.hashtags) ? data.hashtags : [];
-            const imagePrompt = typeof data.imagePrompt === 'string' ? data.imagePrompt : `Abstract visual for ${topic}`;
+            const imagePrompt = data.imagePrompt || `Abstract visual for ${topic}`;
 
             if (caption) {
                 const newResult: PostContent = {
