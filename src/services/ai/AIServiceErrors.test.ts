@@ -1,29 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from 'vitest';
 import { AI } from './AIService';
 import { firebaseAI } from './FirebaseAIService';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
-// Mock FirebaseAIService
-vi.mock('./FirebaseAIService', () => ({
-    firebaseAI: {
-        generateContent: vi.fn(),
-        generateContentStream: vi.fn()
-    }
-}));
-
-// Mock others
 vi.mock('@/services/firebase', () => ({
-    functions: {}
+    functions: {},
+    ai: {},
+    remoteConfig: {}
 }));
 
 describe('AIService Integration (Client SDK)', () => {
+    let generateContentSpy: MockInstance;
+    let generateContentStreamSpy: MockInstance;
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Since we removed the module mock, we spy on the real instance methods
+        // Default implementation to return empty object to prevent crashes if test doesn't mock return
+        generateContentSpy = vi.spyOn(firebaseAI, 'generateContent').mockImplementation(async () => ({}) as any);
+        generateContentStreamSpy = vi.spyOn(firebaseAI, 'generateContentStream').mockImplementation(async () => ({} as any));
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('should delegate generateContent to firebaseAI and return wrapped response', async () => {
-        (firebaseAI.generateContent as any).mockResolvedValue('Hello World');
+        generateContentSpy.mockResolvedValue({
+            response: {
+                candidates: [{
+                    content: { role: 'model', parts: [{ text: 'Hello World' }] }
+                }],
+                text: () => 'Hello World'
+            }
+        });
 
         const result = await AI.generateContent({
             model: 'gemini-pro',
@@ -31,11 +41,17 @@ describe('AIService Integration (Client SDK)', () => {
         });
 
         expect(result.text()).toBe('Hello World');
-        expect(firebaseAI.generateContent).toHaveBeenCalledWith([{ role: 'user', parts: [{ text: 'Hi' }] }]);
+        expect(generateContentSpy).toHaveBeenCalledWith(
+            expect.arrayContaining([{ role: 'user', parts: [{ text: 'Hi' }] }]),
+            'gemini-pro',
+            undefined,
+            undefined,
+            undefined
+        );
     });
 
     it('should map exceptions from firebaseAI to legacy error handling', async () => {
-        (firebaseAI.generateContent as any).mockRejectedValue(
+        generateContentSpy.mockRejectedValue(
             new AppException(AppErrorCode.UNAUTHORIZED, 'Verification Failed')
         );
 
@@ -48,11 +64,12 @@ describe('AIService Integration (Client SDK)', () => {
     it('should delegate generateContentStream to firebaseAI', async () => {
         const mockStream = new ReadableStream({
             start(controller) {
+                // Return string, as FirebaseAIService does (so AIService wraps it in {text})
                 controller.enqueue('Chunk 1');
                 controller.close();
             }
         });
-        (firebaseAI.generateContentStream as any).mockResolvedValue(mockStream);
+        generateContentStreamSpy.mockResolvedValue(mockStream);
 
         const stream = await AI.generateContentStream({
             model: 'gemini-pro',
@@ -62,5 +79,26 @@ describe('AIService Integration (Client SDK)', () => {
         const reader = stream.getReader();
         const { value } = await reader.read();
         expect(value?.text()).toBe('Chunk 1');
+    });
+
+    it('should delegate generateText to firebaseAI', async () => {
+        const spy = vi.spyOn(firebaseAI, 'generateText').mockResolvedValue('Generated Text');
+
+        const text = await AI.generateText('Prompt', 1000, 'System Instruction');
+
+        expect(text).toBe('Generated Text');
+        expect(spy).toHaveBeenCalledWith('Prompt', 1000, 'System Instruction');
+    });
+
+    it('should delegate generateStructuredData to firebaseAI', async () => {
+        const schema = { type: 'object' };
+        const mockData = { key: 'value' };
+        // Use any for complex types if needed or exact type
+        const spy = vi.spyOn(firebaseAI, 'generateStructuredData').mockResolvedValue(mockData);
+
+        const data = await AI.generateStructuredData('Prompt', schema, 1000, 'System Instruction');
+
+        expect(data).toBe(mockData);
+        expect(spy).toHaveBeenCalledWith('Prompt', schema, 1000, 'System Instruction');
     });
 });

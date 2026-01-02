@@ -1,8 +1,9 @@
 import { AI } from '../ai/AIService';
+import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { isInlineDataPart, isTextPart } from '@/shared/types/ai.dto';
+import { isInlineDataPart } from '@/shared/types/ai.dto';
 
 export class EditingService {
 
@@ -145,25 +146,17 @@ export class EditingService {
         negativePrompt?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
-            // Use Veo for video editing/analysis
-            const model = AI_MODELS.VIDEO.EDIT;
-
-            const response = await AI.generateContent({
-                model,
-                contents: {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: options.video.mimeType, data: options.video.data } },
-                        { text: `Edit this video: ${options.prompt}` + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '') }
-                    ]
-                },
-                config: {
-                    // Video config if needed
-                }
-            });
+            // Use firebaseAI for video editing/analysis
+            const response = await firebaseAI.generateContent([{
+                role: 'user',
+                parts: [
+                    { inlineData: { mimeType: options.video.mimeType, data: options.video.data } },
+                    { text: `Edit this video: ${options.prompt}` + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '') }
+                ]
+            }]);
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && isInlineDataPart(part)) {
+            if (part && 'inlineData' in part && part.inlineData) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
                     id: crypto.randomUUID(),
@@ -172,10 +165,11 @@ export class EditingService {
                 };
             }
 
-            if (part && isTextPart(part) && part.text.startsWith('http')) {
+            const text = response.response.text();
+            if (text && text.startsWith('http')) {
                 return {
                     id: crypto.randomUUID(),
-                    url: part.text,
+                    url: text,
                     prompt: `Video Edit: ${options.prompt}`
                 };
             }
@@ -225,21 +219,17 @@ export class EditingService {
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const contents: any = { role: 'user', parts: [] };
+            const parts: any[] = [];
             options.images.forEach((img, idx) => {
-                contents.parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
-                contents.parts.push({ text: `[Reference ${idx + 1}]` });
+                parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+                parts.push({ text: `[Reference ${idx + 1}]` });
             });
-            contents.parts.push({ text: `Combine these references. ${options.prompt} ${options.projectContext || ''}` });
+            parts.push({ text: `Combine these references. ${options.prompt} ${options.projectContext || ''}` });
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.IMAGE.GENERATION,
-                contents,
-                config: AI_CONFIG.IMAGE.DEFAULT
-            });
+            const response = await firebaseAI.generateContent([{ role: 'user', parts }]);
 
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && isInlineDataPart(part)) {
+            if (part && 'inlineData' in part && part.inlineData) {
                 const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 return {
                     id: crypto.randomUUID(),
@@ -265,17 +255,17 @@ export class EditingService {
         try {
             // Step 1: Plan Scenes
             const plannerPrompt = `We are generating a sequence of ${options.count} images with a time jump of ${options.timeDeltaLabel} per frame based on: "${options.prompt}". 
-            Break this into ${options.count} specific scene descriptions. Return JSON { "scenes": [] }`;
+            Break this into ${options.count} specific scene descriptions.`;
 
-            const planRes = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: plannerPrompt }] },
-                config: {
-                    responseMimeType: 'application/json',
-                    ...AI_CONFIG.THINKING.HIGH
-                }
-            });
-            const plan = AI.parseJSON<{ scenes: string[] }>(planRes.text());
+            const planSchema = {
+                type: 'object',
+                properties: {
+                    scenes: { type: 'array', items: { type: 'string' } }
+                },
+                required: ['scenes']
+            };
+
+            const plan = await firebaseAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema as any);
             const scenes = plan.scenes || [];
             while (scenes.length < options.count) scenes.push(`${options.prompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -285,41 +275,28 @@ export class EditingService {
             for (let i = 0; i < options.count; i++) {
                 // Step 2: Analyze Context (if prev image exists)
                 if (previousImage) {
-                    const analysisRes = await AI.generateContent({
-                        model: AI_MODELS.TEXT.FAST,
-                        contents: {
-                            role: 'user',
-                            parts: [
-                                { inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } },
-                                { text: `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.` }
-                            ]
-                        },
-                        config: {
-                            ...AI_CONFIG.THINKING.LOW
-                        }
-                    });
-                    visualContext = analysisRes.text() || "";
+                    visualContext = await firebaseAI.analyzeImage(
+                        `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.`,
+                        previousImage.data,
+                        previousImage.mimeType
+                    );
                 }
 
                 // Step 3: Generate Frame
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const contents: any = { role: 'user', parts: [] };
+                const parts: any[] = [];
                 if (previousImage) {
-                    contents.parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
-                    contents.parts.push({ text: `[Reference Frame]` });
+                    parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
+                    parts.push({ text: `[Reference Frame]` });
                 }
 
                 const promptText = `Next keyframe (Time Delta: ${options.timeDeltaLabel}): ${scenes[i]}. \n\nVisual DNA & Temporal Context: ${visualContext}. \n\n${options.projectContext || ''}`;
-                contents.parts.push({ text: promptText });
+                parts.push({ text: promptText });
 
-                const response = await AI.generateContent({
-                    model: AI_MODELS.IMAGE.GENERATION,
-                    contents,
-                    config: AI_CONFIG.IMAGE.DEFAULT
-                });
+                const response = await firebaseAI.rawGenerateContent([{ role: 'user', parts }]);
 
                 const part = response.response.candidates?.[0]?.content?.parts?.[0];
-                if (part && isInlineDataPart(part) && part.inlineData.mimeType && part.inlineData.data) {
+                if (part && 'inlineData' in part && part.inlineData && part.inlineData.mimeType && part.inlineData.data) {
                     const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                     previousImage = { mimeType: part.inlineData.mimeType, data: part.inlineData.data };
                     results.push({

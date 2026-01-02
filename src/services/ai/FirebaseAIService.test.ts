@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from './FirebaseAIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // HOISTED MOCKS
 const {
@@ -76,8 +76,9 @@ describe('FirebaseAIService', () => {
         const result = await service.generateContent('Test Prompt');
 
         expect(bootSpy).toHaveBeenCalled();
-        expect(result).toBe('Mock AI Response');
+        expect(result.response.text()).toBe('Mock AI Response');
     });
+
 
     it('should handle generateText with system instructions', async () => {
         const result = await service.generateText('Prompt', 1024, 'Be a cat');
@@ -96,6 +97,63 @@ describe('FirebaseAIService', () => {
         const result = await service.chat([], 'Hello');
         expect(result).toBe('Mock AI Response');
         expect(mockGenerativeModel.startChat).toHaveBeenCalled();
+    });
+
+    it('should handle generateStructuredData', async () => {
+        const schema = { type: 'object', properties: { test: { type: 'string' } } };
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ test: 'success' }) }
+        });
+
+        const result = await service.generateStructuredData('Prompt', schema as any);
+        expect(result).toEqual({ test: 'success' });
+
+        const { getGenerativeModel } = await import('firebase/ai');
+        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            generationConfig: expect.objectContaining({
+                responseMimeType: 'application/json',
+                responseSchema: schema
+            })
+        }));
+    });
+
+    it('should handle analyzeImage', async () => {
+        await service.analyzeImage('What is this?', 'data:image/png;base64,encoded...', 'image/png');
+
+        expect(mockGenerateContent).toHaveBeenCalledWith(expect.arrayContaining([
+            'What is this?',
+            expect.objectContaining({
+                inlineData: { data: 'encoded...', mimeType: 'image/png' }
+            })
+        ]));
+    });
+
+    it('should handle analyzeMultimodal', async () => {
+        const parts = [{ text: 'Extra Part' }];
+        await service.analyzeMultimodal('Explain', parts);
+
+        expect(mockGenerateContent).toHaveBeenCalledWith(['Explain', ...parts]);
+    });
+
+    it('should handle generateGroundedContent', async () => {
+        await service.generateGroundedContent('Search this');
+
+        const { getGenerativeModel } = await import('firebase/ai');
+        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            tools: expect.arrayContaining([
+                expect.objectContaining({ googleSearch: {} })
+            ])
+        }));
+    });
+
+    it('should handle getLiveModel', async () => {
+        const { getLiveGenerativeModel } = await import('firebase/ai');
+        await service.getLiveModel('System instruction');
+
+        expect(getLiveGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            model: AI_MODELS.TEXT.AGENT,
+            systemInstruction: 'System instruction'
+        }));
     });
 
     it('should handle App Check failures gracefully', async () => {

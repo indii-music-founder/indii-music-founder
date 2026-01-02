@@ -34,14 +34,14 @@ vi.mock('@/services/ai/AIService', () => ({
 describe('Specialist Agents Connection', () => {
     it('should have Brand, Road, and Marketing agents registered', () => {
         const brandAgent = agentRegistry.get('brand');
-        const roadAgent = agentRegistry.get('road');
+        const roadAgent = agentRegistry.get('road-manager');
         const marketingAgent = agentRegistry.get('marketing');
 
         expect(brandAgent).toBeDefined();
         expect(brandAgent?.id).toBe('brand');
 
         expect(roadAgent).toBeDefined();
-        expect(roadAgent?.id).toBe('road');
+        expect(roadAgent?.id).toBe('road-manager');
 
         expect(marketingAgent).toBeDefined();
         expect(marketingAgent?.id).toBe('marketing');

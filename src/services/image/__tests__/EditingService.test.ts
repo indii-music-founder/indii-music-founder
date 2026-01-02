@@ -1,12 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Editing } from '../EditingService';
 import { AI } from '../../ai/AIService';
+import { firebaseAI } from '../../ai/FirebaseAIService';
+
+// Mock FirebaseAIService
+vi.mock('../../ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        rawGenerateContent: vi.fn(),
+        analyzeImage: vi.fn(),
+        generateStructuredData: vi.fn()
+    }
+}));
 
 // Mock AI service
 // Mock AI service
 vi.mock('../../ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
+        generateStructuredData: vi.fn(), // Add this
         parseJSON: vi.fn(),
     }
 }));
@@ -86,34 +97,44 @@ describe('EditingService', () => {
     describe('generateStoryChain', () => {
         it('should generate story chain successfully', async () => {
             // Mock Planner Response
-            (AI.generateContent as any)
-                .mockResolvedValueOnce({ text: () => JSON.stringify({ scenes: ['Scene 1', 'Scene 2'] }) }) // Planner
-                .mockResolvedValueOnce({ text: () => 'Visual Context' }) // Context Analysis
-                .mockResolvedValueOnce({ // Frame 1
-                    response: {
-                        candidates: [{
-                            content: {
-                                parts: [{
-                                    inlineData: { mimeType: 'image/png', data: 'frame1' }
-                                }]
-                            }
-                        }]
-                    }
-                })
-                .mockResolvedValueOnce({ text: () => 'Visual Context 2' }) // Context Analysis 2
-                .mockResolvedValueOnce({ // Frame 2
-                    response: {
-                        candidates: [{
-                            content: {
-                                parts: [{
-                                    inlineData: { mimeType: 'image/png', data: 'frame2' }
-                                }]
-                            }
-                        }]
-                    }
-                });
+            // Mock Planner
+            (firebaseAI.generateStructuredData as any).mockResolvedValue({ scenes: ['Scene 1', 'Scene 2'] });
 
-            (AI.parseJSON as any).mockReturnValue({ scenes: ['Scene 1', 'Scene 2'] });
+            // Mock Visual Context Analysis (called for each frame)
+            (firebaseAI.analyzeImage as any).mockResolvedValue('Visual Context');
+
+            // Mock Frame Generation (called for each frame)
+            (firebaseAI.rawGenerateContent as any).mockResolvedValue({
+                response: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: { mimeType: 'image/png', data: 'frame_data' } // simplified data for both
+                            }]
+                        }
+                    }]
+                }
+            });
+
+            // We need to customize the return based on call index if we want specific 'frame1', 'frame2'
+            // or just ensure it returns something valid.
+            // Let's make it return dynamic data if needed, or just accept 'frame_data' for both for simplicity to pass the test.
+            // Use mockImplementation if we want sequence.
+            let callCount = 0;
+            (firebaseAI.rawGenerateContent as any).mockImplementation(async () => {
+                callCount++;
+                return {
+                    response: {
+                        candidates: [{
+                            content: {
+                                parts: [{
+                                    inlineData: { mimeType: 'image/png', data: `frame${callCount}` }
+                                }]
+                            }
+                        }]
+                    }
+                };
+            });
 
             const result = await Editing.generateStoryChain({
                 prompt: 'story',
@@ -142,6 +163,13 @@ describe('EditingService', () => {
                 }
             };
             mockHttpsCallable.mockResolvedValue(mockResponse);
+
+            // Fix: Mock parseJSON for the result parsing if used in multiMaskEdit?
+            // multiMaskEdit uses `Editing.editImage` which calls httpsCallable directly.
+            // The test mocks `httpsCallable` just above.
+            // But `editImage` returns `{ id, url, prompt }`
+            // Wait, multiMaskEdit implementation iterates and calls `editImage`.
+            // So relying on `editImage` is correct.
 
             const result = await Editing.multiMaskEdit({
                 image: { mimeType: 'image/png', data: 'base' },

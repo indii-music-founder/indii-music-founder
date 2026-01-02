@@ -67,13 +67,10 @@ export async function runAgenticWorkflow(
             onUpdate("Using general knowledge...");
             if (sources.length === 0) reasoning.push("No files or Retrieval failed. Fallback to General LLM.");
 
-            const response = await AI.generateContent({
+            responseText = await AI.generateText(query, {
                 model: AI_MODELS.TEXT.FAST,
-                contents: { role: 'user', parts: [{ text: query }] },
-                config: { temperature: 0.0 } // Set to 0.0 as per GEMINI.md for maximum factuality
-            });
-
-            responseText = response.text() || "I couldn't generate a response.";
+                temperature: 0.0
+            }) || "I couldn't generate a response.";
         }
 
     } catch (error) {
@@ -115,19 +112,21 @@ export async function processForKnowledgeBase(
     // content is used below in various conditionals
 
     if (typeof content === 'string') {
-        const systemPrompt = `Summarize this content and extract a title. Output JSON: { "title": "...", "summary": "..." }`;
-        try {
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: { role: 'user', parts: [{ text: content }] },
-                config: { responseMimeType: 'application/json', systemInstruction: systemPrompt }
-            });
+        const schema = {
+            type: 'object',
+            properties: {
+                title: { type: 'string' },
+                summary: { type: 'string' }
+            },
+            required: ['title', 'summary']
+        };
 
-            const text = response.text();
-            if (text) {
-                const metadata = JSON.parse(text);
-                displayTitle = metadata.title || fileName;
-            }
+        try {
+            const metadata = await AI.generateStructuredData<{ title: string; summary: string }>(
+                `Summarize this content and extract a title:\n${content}`,
+                schema as any
+            );
+            displayTitle = metadata.title || fileName;
         } catch (error) {
             console.warn("Metadata extraction failed, using defaults:", error);
         }

@@ -140,12 +140,10 @@ describe('VideoTools', () => {
             expect(mockGenerateLongFormVideo).toHaveBeenCalledWith({
                 prompt: 'chain video',
                 totalDuration: 9,
-                startImage: 'data:image/png;base64,start',
-                orgId: expect.any(String) // or specific mock value if orgId is mocked in store
+                firstFrame: 'data:image/png;base64,start'
             });
 
             expect(result).toContain('Long-form generation job started. Job ID: job-id');
         });
     });
 });
-
