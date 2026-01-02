@@ -23,7 +23,7 @@ export class DistributionSyncService {
             id: docId,
             title: data.metadata.releaseTitle || data.metadata.trackTitle,
             artist: data.metadata.artistName,
-            coverArtUrl: data.assets?.coverArtUrl,
+            coverArtUrl: data.assets?.coverArt?.url,
             releaseDate: data.metadata.releaseDate,
             deployments
         };

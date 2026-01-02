@@ -21,13 +21,15 @@ export interface EarningsSummary {
         streams: number;
         downloads: number;
     }[];
-    byRelease: {
-        releaseId: string;
-        releaseName: string;
-        revenue: number;
-        streams: number;
-        downloads: number;
-    }[];
+    byRelease: ReleaseEarnings[];
+}
+
+export interface ReleaseEarnings {
+    releaseId: string;
+    releaseName: string;
+    revenue: number;
+    streams: number;
+    downloads: number;
 }
 
 export interface DSRReport {

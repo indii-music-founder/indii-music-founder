@@ -34,42 +34,7 @@ export class MarketingService {
             return snapshot.data() as { totalReach: number; engagementRate: number; activeCampaigns: number };
         }
 
-        // Auto-seed if missing
-        return this.seedDatabase(userProfile.id);
-    }
-
-    private static async seedDatabase(userId: string) {
-        console.log("Seeding Marketing Database...");
-        const initialStats = {
-            totalReach: 15400,
-            engagementRate: 4.2,
-            activeCampaigns: 1
-        };
-
-        const statsRef = doc(db, 'users', userId, 'stats', 'marketing');
-        await setDoc(statsRef, {
-            ...initialStats,
-            lastUpdated: serverTimestamp()
-        });
-
-        // Seed a default campaign
-        const campaignData = {
-            name: 'Launch Campaign (Demo)',
-            platform: 'instagram',
-            startDate: Timestamp.now().toMillis(), // Store as number for consistency with types often used
-            status: CampaignStatus.EXECUTING,
-            userId: userId,
-            budget: 500,
-            spent: 120,
-            performance: {
-                reach: 5400,
-                clicks: 320
-            },
-            createdAt: serverTimestamp()
-        };
-        await addDoc(collection(db, 'campaigns'), campaignData);
-
-        return initialStats;
+        return { totalReach: 0, engagementRate: 0, activeCampaigns: 0 };
     }
 
     /**

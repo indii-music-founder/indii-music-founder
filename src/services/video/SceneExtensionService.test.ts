@@ -41,7 +41,7 @@ describe('SceneExtensionService', () => {
     it('should generate a 24s video in 3 segments about "dogs having fun"', async () => {
         // 1. Mock MembershipService to allow the operation
         vi.mocked(MembershipService.checkQuota).mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 10 });
-        vi.mocked(MembershipService.checkVideoDurationQuota).mockResolvedValue({ allowed: true, currentDuration: 0, maxDuration: 60 });
+        vi.mocked(MembershipService.checkVideoDurationQuota).mockResolvedValue({ allowed: true, maxDuration: 60, tierName: 'pro' });
         vi.mocked(MembershipService.getCurrentTier).mockResolvedValue('pro');
 
         // 2. Mock AI.generateVideo to return a fake URI

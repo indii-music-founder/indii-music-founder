@@ -15,12 +15,13 @@ describe('DSRService Fee Calculation', () => {
             senderId: symphonicPartyId,
             recipientId: 'PADPIDA',
             reportingPeriod: { startDate: '2025-01-01', endDate: '2025-01-31' },
-            reportCreatedDateTime: '2025-02-01T12:00:00Z',
+            startDate: '2025-01-01',
+            endDate: '2025-01-31',
+            currency: 'USD',
             currencyCode: 'USD',
             summary: {
                 totalUsageCount: 1,
-                totalRevenue: 100,
-                currencyCode: 'USD'
+                totalRevenue: 100
             },
             transactions: [
                 {
@@ -29,8 +30,10 @@ describe('DSRService Fee Calculation', () => {
                     usageType: 'Download',
                     usageCount: 1,
                     revenueAmount: 100,
-                    currencyCode: 'USD',
-                    territoryCode: 'US'
+                    currency: 'USD',
+                    territoryCode: 'US',
+                    periodStart: '2025-01-01',
+                    periodEnd: '2025-01-31'
                 }
             ]
         };
@@ -78,12 +81,13 @@ describe('DSRService Fee Calculation', () => {
             senderId: distrokidPartyId,
             recipientId: 'PADPIDA',
             reportingPeriod: { startDate: '2025-01-01', endDate: '2025-01-31' },
-            reportCreatedDateTime: '2025-02-01T12:00:00Z',
+            startDate: '2025-01-01',
+            endDate: '2025-01-31',
+            currency: 'USD',
             currencyCode: 'USD',
             summary: {
                 totalUsageCount: 1,
-                totalRevenue: 100,
-                currencyCode: 'USD'
+                totalRevenue: 100
             },
             transactions: [
                 {
@@ -92,8 +96,10 @@ describe('DSRService Fee Calculation', () => {
                     usageType: 'Download',
                     usageCount: 1,
                     revenueAmount: 100,
-                    currencyCode: 'USD',
-                    territoryCode: 'US'
+                    currency: 'USD',
+                    territoryCode: 'US',
+                    periodStart: '2025-01-01',
+                    periodEnd: '2025-01-31'
                 }
             ]
         };
