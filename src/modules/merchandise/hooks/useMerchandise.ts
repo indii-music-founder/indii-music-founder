@@ -7,55 +7,52 @@ export const useMerchandise = () => {
     const { userProfile } = useStore();
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [catalog, setCatalog] = useState<any[]>([]);
-    const [catalogError, setCatalogError] = useState<string | null>(null);
+    const [isProductsLoading, setIsProductsLoading] = useState(true);
+    const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Load catalog on mount
     useEffect(() => {
+        let mounted = true;
+        setIsCatalogLoading(true);
+
         MerchandiseService.getCatalog()
             .then((data) => {
-                setCatalog(data);
-                setLoading(false);
+                if (mounted) {
+                    setCatalog(data);
+                    setIsCatalogLoading(false);
+                }
             })
             .catch((err) => {
-                console.error("Failed to load catalog:", err);
-                setCatalogError(err.message);
-                setLoading(false);
+                if (mounted) {
+                    console.error("Failed to load catalog:", err);
+                    setError(err instanceof Error ? err.message : 'Failed to load catalog');
+                    setIsCatalogLoading(false);
+                }
             });
+
+        return () => {
+            mounted = false;
+        };
     }, []);
-    const [catalogError, setCatalogError] = useState<Error | null>(null);
 
+    // Subscribe to user's products
     useEffect(() => {
-        if (!userProfile?.id) return;
+        if (!userProfile?.id) {
+            setProducts([]);
+            setIsProductsLoading(false);
+            return;
+        }
 
-        setLoading(true);
-        setCatalogError(null);
+        setIsProductsLoading(true);
+        setError(null);
 
-        // Subscribe to user's products
         const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
             setProducts(data);
-            setLoading(false);
+            setIsProductsLoading(false);
         });
 
-        // Load product catalog templates
-        MerchandiseService.getCatalog()
-            .then((data) => {
-                setCatalog(data);
-                // If products are also loaded (or if we track catalog loading separately),
-                // we might want to ensure loading is false here too, but the product subscription handles the main loading state.
-            })
-            .catch((error) => {
-                console.error("Failed to load merchandise catalog:", error);
-                // Ideally set an error state here, but for now just logging as per review feedback to avoid silent failure
-            .then(setCatalog)
-            .catch((err) => {
-                console.error("Failed to load catalog:", err);
-                setCatalogError(err);
-                setLoading(false);
-            });
-
-        return () => unsubscribe?.();
+        return () => unsubscribe();
     }, [userProfile?.id]);
 
     const standardProducts = useMemo(() => products.filter(p => p.category === 'standard'), [products]);
@@ -70,14 +67,15 @@ export const useMerchandise = () => {
         return MerchandiseService.createFromCatalog(catalogId, userProfile.id, customizations);
     }, [userProfile?.id]);
 
+    const loading = isProductsLoading || isCatalogLoading;
+
     return {
         products,
         standardProducts,
         proProducts,
         catalog,
         loading,
-        catalog,
-        catalogError,
+        error,
         addProduct: MerchandiseService.addProduct,
         deleteProduct: MerchandiseService.deleteProduct,
         createFromCatalog
