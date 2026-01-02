@@ -18,6 +18,7 @@ import type {
   DashboardRelease,
   ReleaseStatus,
 } from './types/distributor';
+import type { ReleaseDeployment } from './types/persistence';
 
 
 import { distributionStore } from './DistributionPersistenceService';
@@ -189,7 +190,7 @@ class DistributorServiceImpl {
     const internalId = metadata.id || 'unknown-release-id';
 
     // 1. Create Persistence Record (Pending)
-    const deployment = this.store.createDeployment(internalId, distributorId, 'validating', {
+    const deployment = await this.store.createDeployment(internalId, distributorId, 'validating', {
       title: metadata.releaseTitle || metadata.trackTitle,
       artist: metadata.artistName,
       coverArtUrl: assets.coverArt?.url
@@ -437,10 +438,10 @@ class DistributorServiceImpl {
     const results: Record<string, { status: string; error?: string }> = {};
 
     // Get all known deployments for this release from store
-    const deployments = this.store.getDeploymentsForRelease(releaseId);
+    const deployments = await this.store.getDeploymentsForRelease(releaseId);
 
     await Promise.all(
-      deployments.map(async (deployment) => {
+      deployments.map(async (deployment: ReleaseDeployment) => {
         const adapter = this.adapters.get(deployment.distributorId);
         if (!adapter) return;
 
@@ -473,11 +474,11 @@ class DistributorServiceImpl {
   /**
    * Get all releases with their deployment statuses for the dashboard
    */
-  getAllReleases(): DashboardRelease[] {
-    const deployments = this.store.getAllDeployments();
+  async getAllReleases(): Promise<DashboardRelease[]> {
+    const deployments = await this.store.getAllDeployments();
     const grouped: Record<string, DashboardRelease> = {};
 
-    deployments.forEach((d) => {
+    deployments.forEach((d: ReleaseDeployment) => {
       if (!grouped[d.internalReleaseId]) {
         grouped[d.internalReleaseId] = {
           id: d.internalReleaseId,

@@ -24,7 +24,7 @@ export interface DeliveryProfile {
 export const SPOTIFY_PROFILE: DeliveryProfile = {
     id: 'spotify',
     partnerName: 'Spotify',
-    dpid: 'PADPIDA201202202', // Example Spotify DPID
+    dpid: { partyId: 'PADPIDA201202202', partyName: 'Spotify' }, // Example Spotify DPID
     isTestMode: true, // Defaulting to Test Mode for Peer Conformance
     deliveryMethod: 'SFTP_Batch',
     ernVersion: '4.3'
@@ -33,7 +33,7 @@ export const SPOTIFY_PROFILE: DeliveryProfile = {
 export const APPLE_PROFILE: DeliveryProfile = {
     id: 'apple',
     partnerName: 'Apple Music',
-    dpid: 'PADPIDA201202203',
+    dpid: { partyId: 'PADPIDA201202203', partyName: 'Apple Music' },
     isTestMode: true,
     deliveryMethod: 'SFTP_Single', // Apple often uses Transporter (pkg)
     ernVersion: '4.3'
