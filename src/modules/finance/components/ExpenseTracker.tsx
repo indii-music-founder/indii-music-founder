@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, DollarSign, Camera, CheckCircle, Loader2, Plus, X } from 'lucide-react';
+import { DollarSign, Camera, Loader2, Plus, X } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';
 import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
+import { ExpenseItem } from './ExpenseItem';
 
 export const ExpenseTracker: React.FC = () => {
     const { userProfile } = useStore();
@@ -245,20 +246,7 @@ export const ExpenseTracker: React.FC = () => {
                         </div>
                     ) : (
                         expenses.map(expense => (
-                            <div key={expense.id} className="bg-[#161b22] p-4 rounded-lg border border-gray-800 flex justify-between items-center hover:border-gray-700 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
-                                        <CheckCircle size={18} />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-white font-medium">{expense.vendor}</h4>
-                                        <p className="text-xs text-gray-400">{expense.date} • {expense.category}</p>
-                                    </div>
-                                </div>
-                                <div className="text-white font-mono font-bold">
-                                    -${expense.amount.toFixed(2)}
-                                </div>
-                            </div>
+                            <ExpenseItem key={expense.id} expense={expense} />
                         ))
                     )}
                 </div>
