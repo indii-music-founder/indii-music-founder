@@ -54,6 +54,10 @@ export default function VideoWorkflow() {
     // Director State
     const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
 
+    // Stable handler for drag start
+    const handleDragStart = React.useCallback((e: React.DragEvent, item: HistoryItem) => {
+        // Drag logic
+    }, []);
 
     // Sync pending prompt
     useEffect(() => {
@@ -287,7 +291,7 @@ export default function VideoWorkflow() {
                     items={generatedHistory.filter(h => h.type === 'video')}
                     selectedId={activeVideo?.id || null}
                     onSelect={setActiveVideo}
-                    onDragStart={() => { }}
+                    onDragStart={handleDragStart}
                 />
             </div>
 
