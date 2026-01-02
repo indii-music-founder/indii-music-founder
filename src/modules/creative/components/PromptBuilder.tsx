@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo, useId } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,16 +26,10 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
     onTagClick: (tag: string) => void;
     variant?: 'purple' | 'yellow';
 }) => {
-    // Generate unique ID for accessibility
-    const dropdownId = useId();
-
     return (
         <div className="relative">
             <button
                 onClick={(e) => { e.stopPropagation(); onToggle(); }}
-                aria-expanded={isOpen}
-                aria-controls={dropdownId}
-                aria-haspopup="true"
                 className={`px-3 py-1.5 text-xs rounded-full border transition-all flex items-center gap-1 ${isOpen
                     ? variant === 'yellow' ? 'bg-yellow-900/50 border-yellow-500 text-yellow-200' : 'bg-purple-900/50 border-purple-500 text-purple-200'
                     : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'
@@ -49,7 +43,6 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        id={dropdownId}
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 5 }}

@@ -12,6 +12,7 @@ import {
 } from '../types/distributor';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
+import { delay } from '@/utils/async';
 
 /**
  * TuneCore Adapter
@@ -72,7 +73,7 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         if (!credentials.apiKey) {
             throw new Error('TuneCore requires an API key');
         }
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await delay(500);
         this.apiKey = credentials.apiKey;
         this.connected = true;
     }

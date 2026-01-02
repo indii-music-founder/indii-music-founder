@@ -14,6 +14,7 @@ import { SFTPTransporter } from '../transport/SFTPTransporter';
 import type { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
+import { delay } from '@/utils/async';
 
 /**
  * Symphonic Adapter
@@ -75,7 +76,7 @@ export class SymphonicAdapter implements IDistributorAdapter {
         if (!credentials.username || !credentials.password) {
             throw new Error('Symphonic requires username and password');
         }
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        await delay(800);
         this.username = credentials.username;
         this.connected = true;
     }
@@ -121,7 +122,7 @@ export class SymphonicAdapter implements IDistributorAdapter {
             }
 
             // Mock delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await delay(1000);
 
             // Persist
             await distributionStore.createDeployment(releaseId, this.id, 'delivered', {

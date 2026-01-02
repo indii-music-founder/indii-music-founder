@@ -1,6 +1,6 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 
 // ============================================================================
 // Types for VideoTools
@@ -26,33 +26,33 @@ interface VideoGenerationOptions {
 export const VideoTools = {
     generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
         try {
-            let imageInput;
-            if (args.image) {
-                const match = args.image.match(/^data:(.+);base64,(.+)$/);
-                if (match) {
-                    imageInput = { mimeType: match[1], data: match[2] };
-                }
-            }
-
             const results = await VideoGeneration.generateVideo({
                 prompt: args.prompt,
                 firstFrame: args.image,
             });
 
             if (results.length > 0) {
-                const uri = results[0].url;
+                const videoJob = results[0];
+
+                // WAIT for job if URL is missing
+                let finalUrl = videoJob.url;
+                if (!finalUrl) {
+                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                    finalUrl = completedJob.videoUrl;
+                }
+
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
-                    id: crypto.randomUUID(),
-                    url: uri,
+                    id: videoJob.id,
+                    url: finalUrl,
                     prompt: args.prompt,
                     type: 'video',
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
-                return `Video generated successfully: ${uri}`;
+                return `Video generated successfully: ${finalUrl}`;
             }
-            return "Video generation failed (no URI returned).";
+            return "Video generation failed (no result returned).";
         } catch (e: unknown) {
             if (e instanceof Error) {
                 throw new Error(`Video generation failed: ${e.message}`);
@@ -183,19 +183,27 @@ export const VideoTools = {
             const results = await VideoGeneration.generateVideo(options);
 
             if (results.length > 0) {
-                const uri = results[0].url;
+                const videoJob = results[0];
+
+                // WAIT for job if URL is missing
+                let finalUrl = videoJob.url;
+                if (!finalUrl) {
+                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                    finalUrl = completedJob.videoUrl;
+                }
+
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
-                    id: crypto.randomUUID(),
-                    url: uri,
+                    id: videoJob.id,
+                    url: finalUrl,
                     prompt: args.prompt,
                     type: 'video',
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
-                return `Video extended successfully: ${uri}`;
+                return `Video extended successfully: ${finalUrl}`;
             }
-            return "Video extension failed (no URI returned).";
+            return "Video extension failed (no result returned).";
         } catch (e: unknown) {
             if (e instanceof Error) {
                 throw new Error(`Video extension failed: ${e.message}`);
@@ -241,85 +249,22 @@ export const VideoTools = {
     },
     generate_video_chain: async (args: { prompt: string, startImage: string, totalDuration: number }) => {
         try {
-            // "The user should be able to choose anywhere from a total of an eight second video... up to six minutes and 32 seconds"
-            // "daisychains in a manner where the system takes the last frame automatically creates it for the first frame"
-
-            // 1. Validate Input
-            const match = args.startImage.match(/^data:(.+);base64,(.+)$/);
-            if (!match) {
-                return "Invalid start image. Must be a base64 data URI.";
-            }
-
-            const { extractVideoFrame } = await import('@/utils/video');
-            const { addToHistory, currentProjectId } = useStore.getState();
-
-            // 2. Calculate Segments
-            // Standard generation is ~5-8s usually? Let's assume VideoService defaults (which might be 5s or 8s depending on model).
-            // Veo/Gemini models often output ~5s. 
-            // 6m 32s = 392 seconds. 
-            // If chunks are 5s: ~79 chunks.
-            // If chunks are 8s: ~49 chunks.
-
-            // We'll proceed with a loop until total duration is reached.
-
-            let currentImage = args.startImage; // Keep as string (Data URI)
-            let accumulatedDuration = 0;
-            const generatedUrls: string[] = [];
-
-            // Prevent infinite loops / excessively long requests
-            const MAX_ITERATIONS = 50;
-            let iteration = 0;
-
             useStore.getState().addAgentMessage({
                 id: crypto.randomUUID(),
                 role: 'system',
-                text: `Starting video chain generation for target duration ${args.totalDuration}s...`,
+                text: `Queuing long-form background job for ${args.totalDuration}s...`,
                 timestamp: Date.now()
             });
 
-            while (accumulatedDuration < args.totalDuration && iteration < MAX_ITERATIONS) {
-                iteration++;
+            // Use the refactored background-driven service
+            const results = await VideoGeneration.generateLongFormVideo({
+                prompt: args.prompt,
+                totalDuration: args.totalDuration,
+                firstFrame: args.startImage, // Map startImage to firstFrame
+            });
 
-                // Generate segment
-                const results = await VideoGeneration.generateVideo({
-                    prompt: args.prompt + (iteration > 1 ? ` (Part ${iteration}, continuation)` : ""),
-                    firstFrame: currentImage // Pass the data URI string directly
-                });
-
-                if (results.length === 0) {
-                    return `Video chain broke at iteration ${iteration}. Failed to generate segment.`;
-                }
-
-                const segmentUrl = results[0].url;
-                generatedUrls.push(segmentUrl);
-                accumulatedDuration += 5; // Assuming 5s per clip for now unless we get duration from Result.
-
-                // Add to history immediately so user sees progress
-                addToHistory({
-                    id: crypto.randomUUID(),
-                    url: segmentUrl,
-                    prompt: `${args.prompt} [Part ${iteration}]`,
-                    type: 'video',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-
-                // Extract last frame for next iteration
-                // Note: extracting frame from a URL (which might be Signed URL) requires fetching it.
-                // Our extractVideoFrame utility handles valid src URLs.
-                const lastFrameData = await extractVideoFrame(segmentUrl);
-
-                if (!lastFrameData) {
-                    return `Video chain broke at iteration ${iteration}. Could not extract last frame for chain.`;
-                }
-
-                currentImage = lastFrameData; // Update for next loop (it's already a string)
-
-                // Rate limit safety
-                await new Promise(r => setTimeout(r, 1000));
-            }
-
-            return `Video chain completed! Generated ${generatedUrls.length} segments.`;
+            const jobId = results[0]?.id;
+            return `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`;
 
         } catch (e: unknown) {
             if (e instanceof Error) {
@@ -343,17 +288,23 @@ export const VideoTools = {
             });
 
             if (results.length > 0) {
-                const uri = results[0].url;
+                const videoJob = results[0];
+                let finalUrl = videoJob.url;
+                if (!finalUrl) {
+                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                    finalUrl = completedJob.videoUrl;
+                }
+
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
-                    id: crypto.randomUUID(),
-                    url: uri,
+                    id: videoJob.id,
+                    url: finalUrl,
                     prompt: args.prompt || "Frame Interpolation",
                     type: 'video',
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
-                return `Sequence interpolated successfully: ${uri}`;
+                return `Sequence interpolated successfully: ${finalUrl}`;
             }
             return "Interpolation failed (no URI returned).";
 
