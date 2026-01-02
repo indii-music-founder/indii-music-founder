@@ -1,66 +1,94 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Hoist mocks using vi.hoisted to ensure they are available for vi.mock
-const mocks = vi.hoisted(() => {
+// Hoist mocks to ensure they are available for vi.mock
+const {
+    mockFirestore,
+    mockCollection,
+    mockDoc,
+    mockSet,
+    mockGet,
+    mockFieldValue,
+    mockStorage,
+    mockBucket,
+    mockFile,
+    mockSave,
+    mockPublicUrl,
+    mockInitializeApp,
+    mockHttpsOnCall,
+    mockHttpsError,
+    mockInngestSend,
+    mockAuthVerifyIdToken
+} = vi.hoisted(() => {
     const mockSet = vi.fn();
-    const mockDoc = vi.fn(() => ({ set: mockSet }));
+    const mockGet = vi.fn();
+    const mockDoc = vi.fn(() => ({ set: mockSet, get: mockGet }));
     const mockCollection = vi.fn(() => ({ doc: mockDoc }));
     const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
     const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
-    const mockAuthGetClient = vi.fn();
-    const mockAuthGetProjectId = vi.fn();
-    const mockStorage = vi.fn(() => ({
-        bucket: () => ({
-            file: () => ({
-                save: vi.fn(),
-                getSignedUrl: vi.fn().mockResolvedValue(['https://signed-url.com/video.mp4'])
-            })
-        })
-    }));
 
-    // Define MockGoogleAuth inside the factory to avoid hoisting issues
-    class MockGoogleAuth {
-        getClient() { return mockAuthGetClient(); }
-        getProjectId() { return mockAuthGetProjectId(); }
+    const mockSave = vi.fn();
+    const mockPublicUrl = vi.fn(() => 'https://mock-storage-url.com/video.mp4');
+    const mockFile = vi.fn(() => ({ save: mockSave, publicUrl: mockPublicUrl }));
+    const mockBucket = vi.fn(() => ({ file: mockFile }));
+    const mockStorage = vi.fn(() => ({ bucket: mockBucket }));
+
+    const mockInitializeApp = vi.fn();
+    const mockHttpsOnCall = vi.fn();
+
+    // Proper HttpsError mock class
+    class HttpsError extends Error {
+        code: string;
+        details: any;
+        constructor(code: string, message: string, details?: any) {
+            super(message);
+            this.code = code;
+            this.details = details;
+        }
     }
+    const mockHttpsError = HttpsError;
+
+    const mockInngestSend = vi.fn();
+
+    const mockAuthVerifyIdToken = vi.fn();
 
     return {
-        mockSet,
-        mockDoc,
-        mockCollection,
         mockFirestore,
+        mockCollection,
+        mockDoc,
+        mockSet,
+        mockGet,
         mockFieldValue,
-        mockAuthGetClient,
-        mockAuthGetProjectId,
         mockStorage,
-        MockGoogleAuth
+        mockBucket,
+        mockFile,
+        mockSave,
+        mockPublicUrl,
+        mockInitializeApp,
+        mockHttpsOnCall,
+        mockHttpsError,
+        mockInngestSend,
+        mockAuthVerifyIdToken
     };
 });
 
 // Mock Firebase Admin
 vi.mock('firebase-admin', () => ({
-    initializeApp: vi.fn(),
-    firestore: Object.assign(mocks.mockFirestore, { FieldValue: mocks.mockFieldValue }),
-    storage: mocks.mockStorage,
-    auth: vi.fn()
+    initializeApp: mockInitializeApp,
+    firestore: Object.assign(mockFirestore, { FieldValue: mockFieldValue }),
+    storage: mockStorage,
+    auth: vi.fn(() => ({
+        verifyIdToken: mockAuthVerifyIdToken
+    }))
 }));
 
-// Mock Inngest
-vi.mock('inngest', () => {
-    return {
-        Inngest: vi.fn().mockImplementation(() => ({
-            createFunction: vi.fn(),
-            send: vi.fn()
-        }))
-    };
-});
-
-// Mock firebase-functions
+// Mock Firebase Functions
 vi.mock('firebase-functions/v1', () => ({
     runWith: vi.fn().mockReturnThis(),
     https: {
-        onCall: vi.fn(),
-        onRequest: vi.fn()
+        onCall: mockHttpsOnCall,
+        onRequest: vi.fn(),
+        HttpsError: mockHttpsError,
+        CallableContext: vi.fn()
     }
 }));
 
@@ -68,67 +96,92 @@ vi.mock('firebase-functions/params', () => ({
     defineSecret: vi.fn(() => ({ value: () => 'secret' }))
 }));
 
-vi.mock('google-auth-library', () => {
+// Mock Inngest
+vi.mock('inngest', () => {
     return {
-        GoogleAuth: mocks.MockGoogleAuth
+        Inngest: class {
+            constructor() {
+                return {
+                    createFunction: vi.fn(),
+                    send: mockInngestSend
+                };
+            }
+        }
     };
 });
 
-// Import after mocks are set up
-import * as videoLib from '../lib/video';
-import * as admin from 'firebase-admin';
+// Mock GoogleAuth
+vi.mock('google-auth-library', () => {
+    return {
+        GoogleAuth: vi.fn().mockImplementation(() => ({
+            getClient: vi.fn().mockResolvedValue({
+                getAccessToken: vi.fn().mockResolvedValue({ token: 'mock-token' })
+            }),
+            getProjectId: vi.fn().mockResolvedValue('mock-project')
+        }))
+    };
+});
 
-describe('Video Backend Logic', () => {
-    beforeEach(() => {
+// Mock Transcoder
+vi.mock('@google-cloud/video-transcoder', () => ({
+    TranscoderServiceClient: vi.fn().mockImplementation(() => ({
+        createJob: vi.fn().mockResolvedValue([{ name: 'mock-job-name' }]),
+        locationPath: vi.fn()
+    }))
+}));
+
+describe('Video Backend', () => {
+
+    // Dynamically import the functions to test
+    let triggerLongFormVideoJob: any;
+
+    beforeEach(async () => {
         vi.clearAllMocks();
+        // Reset modules to ensure fresh import for each test if needed
+        vi.resetModules();
+
+        // Mock the onCall implementation to capture the handler
+        mockHttpsOnCall.mockImplementation((handler) => {
+            return handler;
+        });
+
+        const index = await import('../index');
+        triggerLongFormVideoJob = index.triggerLongFormVideoJob;
     });
 
-    it('should successfully generate video and update firestore (Unit Test for Lib)', async () => {
-        // Setup Mocks
-        mocks.mockAuthGetClient.mockResolvedValue({
-            getAccessToken: async () => ({ token: 'mock-token' })
-        });
-        mocks.mockAuthGetProjectId.mockResolvedValue('mock-project');
+    it('should validate prompts array in triggerLongFormVideoJob', async () => {
+        const handler = triggerLongFormVideoJob;
 
-        // Mock global fetch
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                predictions: [{
-                    bytesBase64Encoded: 'mock-base64-video-data'
-                }]
-            })
-        });
+        const context = { auth: { uid: 'test-user' } };
 
-        const input = {
-            jobId: 'test-job-id',
-            userId: 'user-123',
-            prompt: 'test prompt',
-            orgId: 'org-123',
-            options: {
-                duration: '5s' as const,
-                aspectRatio: '16:9' as const
-            }
-        };
+        // Test Case 1: Empty prompts array
+        await expect(handler({
+            jobId: 'job-123',
+            prompts: []
+        }, context)).rejects.toThrow('Missing required fields: prompts (non-empty array) or jobId.');
 
-        const updateStatusMock = vi.fn();
+        // Test Case 2: Missing prompts
+        await expect(handler({
+            jobId: 'job-123'
+        }, context)).rejects.toThrow('Missing required fields: prompts (non-empty array) or jobId.');
 
-        const videoUrl = await videoLib.generateVideoWithVeo(input, updateStatusMock);
+        // Test Case 3: Valid input
+        await handler({
+            jobId: 'job-123',
+            prompts: ['Test prompt'],
+            orgId: 'org-1'
+        }, context);
 
-        expect(updateStatusMock).toHaveBeenCalledWith('processing');
+        expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({
+            id: 'job-123',
+            status: 'queued',
+            isLongForm: true
+        }));
+        expect(mockInngestSend).toHaveBeenCalled();
+    });
 
-        // Vertex AI Call Verification
-        expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining('aiplatform.googleapis.com'),
-            expect.objectContaining({
-                method: 'POST',
-                headers: expect.objectContaining({
-                    'Authorization': 'Bearer mock-token'
-                })
-            })
-        );
-
-        expect(videoUrl).toBe('https://signed-url.com/video.mp4');
-        expect(updateStatusMock).toHaveBeenLastCalledWith('completed', { videoUrl: 'https://signed-url.com/video.mp4', progress: 100 });
+    it('should require authentication for triggerLongFormVideoJob', async () => {
+        const handler = triggerLongFormVideoJob;
+        await expect(handler({}, {})).rejects.toThrow('User must be authenticated');
     });
 });

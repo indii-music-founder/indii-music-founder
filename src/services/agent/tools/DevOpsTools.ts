@@ -1,3 +1,4 @@
+import { delay } from '@/utils/async';
 
 // Tool: DevOps Infrastructure Mock
 // This tool simulates interaction with Google Cloud Platform services (GKE, GCE).
@@ -5,7 +6,7 @@
 
 export const list_clusters = async () => {
     console.log(`[DevOps Mock] Listing GKE clusters`);
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await delay(800);
 
     return JSON.stringify([
         { name: 'prod-cluster-us-central1', status: 'RUNNING', location: 'us-central1-a', nodes: 5, version: '1.27.3-gke.100' },
@@ -56,7 +57,7 @@ export const list_instances = async () => {
 
 export const restart_service = async (args: { service_name: string }) => {
     console.log(`[DevOps Mock] Restarting service: ${args.service_name}`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await delay(2000);
 
     return JSON.stringify({
         status: 'SUCCESS',

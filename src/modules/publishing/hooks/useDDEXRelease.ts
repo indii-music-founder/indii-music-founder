@@ -69,7 +69,7 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
 
 // Initial assets
 const INITIAL_ASSETS: Partial<ReleaseAssets> = {
-  audioFiles: [],
+  audioFile: undefined,
   coverArt: undefined
 };
 
@@ -190,16 +190,15 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
       // Extract metadata from file if audio
       if (type === 'audio') {
-        const ext = file.name.split('.').pop()?.toLowerCase() || 'wav';
         const audioInfo = {
           url,
           mimeType: file.type,
           sizeBytes: file.size,
-          format: (['wav', 'flac', 'mp3'].includes(ext) ? ext : 'wav') as 'wav' | 'flac' | 'mp3',
+          format: (file.name.split('.').pop()?.toLowerCase() || 'wav') as 'wav' | 'flac' | 'mp3' | 'aac',
           sampleRate: 44100, // Placeholder, would ideally use audio context to detect
           bitDepth: 16       // Placeholder
         };
-        updateAssets({ audioFiles: [audioInfo] });
+        updateAssets({ audioFile: audioInfo });
       } else {
         const coverInfo = {
           url,
@@ -241,7 +240,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         break;
 
       case 'assets':
-        if (!assets.audioFiles || assets.audioFiles.length === 0) errors.push('Audio file is required');
+        if (!assets.audioFile) errors.push('Audio file is required');
         if (!assets.coverArt) errors.push('Cover art is required');
         break;
 
@@ -292,15 +291,9 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     setCurrentStep('submitting');
 
     try {
-      const primaryAudio = assets.audioFiles?.[0];
-      if (!primaryAudio) throw new Error("Audio file missing");
-      if (!assets.coverArt) throw new Error("Cover art missing");
-
-      // Ensure audio format matches stricter type
-      const validAudioFiles = (assets.audioFiles || []).map(f => ({
-        ...f,
-        format: (['wav', 'flac', 'mp3'].includes(f.format) ? f.format : 'wav') as 'wav' | 'flac' | 'mp3'
-      }));
+      // Determine audio format, defaulting to 'wav' if aac or unknown
+      const rawFormat = assets.audioFile?.format || 'wav';
+      const audioFormat: AudioFormat = (rawFormat === 'aac' ? 'wav' : rawFormat) as AudioFormat;
 
       // Create release record
       const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
@@ -309,8 +302,13 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         userId: userProfile.id,
         metadata: metadata as ExtendedGoldenMetadata,
         assets: {
-            audioFiles: validAudioFiles,
-            coverArt: assets.coverArt
+          audioUrl: assets.audioFile?.url || '',
+          audioFormat,
+          audioSampleRate: assets.audioFile?.sampleRate || 44100,
+          audioBitDepth: assets.audioFile?.bitDepth || 16,
+          coverArtUrl: assets.coverArt?.url || '',
+          coverArtWidth: assets.coverArt?.width || 3000,
+          coverArtHeight: assets.coverArt?.height || 3000
         },
         status: 'draft',
         distributors: selectedDistributors.map(id => ({

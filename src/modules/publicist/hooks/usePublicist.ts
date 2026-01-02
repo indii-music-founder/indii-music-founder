@@ -19,6 +19,7 @@ export const usePublicist = () => {
         if (!userProfile?.id) return;
 
         setLoading(true);
+
         // Subscribe to live data
         const unsubCampaigns = PublicistService.subscribeToCampaigns(userProfile.id, (data) => {
             setCampaigns(data);

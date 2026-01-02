@@ -1,8 +1,7 @@
-import { DistributorService } from '@/services/distribution/DistributorService';
-import { credentialService } from '@/services/security/CredentialService';
-import { IDistributorAdapter, DistributorId, ReleaseResult, ReleaseStatus, DistributorEarnings, DistributorRequirements, ValidationResult, DistributorCredentials } from '@/services/distribution/types/distributor';
-import { ExtendedGoldenMetadata, ReleaseAssets } from '@/services/metadata/types';
-import { DateRange } from '@/services/ddex/types/common';
+import { DistributorService } from './DistributorService';
+import { credentialService } from '../security/CredentialService';
+import { IDistributorAdapter, DistributorId, ReleaseResult, ReleaseStatus, DistributorEarnings, DistributorRequirements, ValidationResult, ExtendedGoldenMetadata, ReleaseAssets, DistributorCredentials } from './types/distributor';
+import { DateRange } from '../ddex/types/common';
 
 // Mock Adapter for testing
 class MockAdapter implements IDistributorAdapter {

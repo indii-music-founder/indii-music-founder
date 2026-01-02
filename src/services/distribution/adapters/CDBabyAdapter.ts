@@ -14,6 +14,7 @@ import { SFTPTransporter } from '../transport/SFTPTransporter';
 import type { CDBabyPackageBuilder } from '../cdbaby/CDBabyPackageBuilder';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
+import { delay } from '@/utils/async';
 
 /**
  * CD Baby Adapter
@@ -80,7 +81,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
         if (!credentials.username) {
             throw new Error('CD Baby requires a username');
         }
-        await new Promise((resolve) => setTimeout(resolve, 600));
+        await delay(600);
         this.username = credentials.username;
         this.connected = true;
     }
@@ -128,7 +129,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
             }
 
             // Simulate delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await delay(1000);
 
             // Persist
             await distributionStore.createDeployment(releaseId, this.id, 'delivered', {
@@ -206,7 +207,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
         const earnings = await earningsService.getEarnings(this.id, releaseId, period);
 
         if (!earnings) {
-             return {
+            return {
                 distributorId: this.id,
                 releaseId,
                 period,
