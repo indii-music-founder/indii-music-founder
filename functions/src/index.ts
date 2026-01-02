@@ -4,10 +4,7 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
-import { GoogleAuth } from "google-auth-library";
-import { z } from "zod";
-import { generateVideoLogic } from "./lib/video";
-import { generateVideoWithVeo, VideoJobSchema } from "./lib/video";
+import { generateVideoLogic, VideoJobSchema } from "./lib/video";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -28,34 +25,8 @@ const getInngestClient = () => {
 const corsHandler = corsLib({ origin: true });
 
 // ----------------------------------------------------------------------------
-// Shared Gemini Functions
-// ----------------------------------------------------------------------------
-
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
-
-// Validation Schemas
-const VideoJobSchema = z.object({
-    jobId: z.string().uuid().or(z.string().min(1)), // UUID preferred but string allowed for backward compat
-    prompt: z.string().min(1).max(5000),
-    orgId: z.string().optional().default("personal"),
-    aspectRatio: z.string().optional().default("16:9"),
-    duration: z.string().optional(),
-    durationSeconds: z.number().optional(),
-    resolution: z.string().optional(),
-    fps: z.number().optional(),
-    cameraMovement: z.string().optional(),
-    motionStrength: z.number().optional(),
-    // Advanced Options
-    seed: z.number().optional(),
-    negativePrompt: z.string().optional(),
-    model: z.string().optional(),
-    firstFrame: z.string().optional(),
-    lastFrame: z.string().optional(),
-    timeOffset: z.number().optional(),
-    ingredients: z.array(z.string()).optional(),
-    shotList: z.array(z.any()).optional() // Allow shotList as any array for now
-});
 
 /**
  * Trigger Video Generation Job
@@ -81,8 +52,13 @@ export const triggerVideoJob = functions
 
         const userId = context.auth.uid;
 
+        // Construct input matching the schema
+        // The client might pass { jobId, prompt, ... }
+        // We ensure defaults are respected via Zod.
+        const inputData: any = { ...(data as any), userId };
+
         // Zod Validation
-        const validation = VideoJobSchema.safeParse(data);
+        const validation = VideoJobSchema.safeParse(inputData);
         if (!validation.success) {
              throw new functions.https.HttpsError(
                 "invalid-argument",
@@ -90,40 +66,12 @@ export const triggerVideoJob = functions
             );
         }
 
-        const { jobId, prompt, orgId, ...options } = validation.data;
+        const jobData = validation.data;
 
         try {
             // 1. Create Initial Job Record in Firestore
             // We do this BEFORE sending the event to prevent race conditions where
             // the UI subscribes to a doc that doesn't exist yet.
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                id: jobId,
-                userId: userId,
-                orgId: orgId,
-                prompt: prompt,
-        // Use Zod for validation
-        const result = VideoJobSchema.safeParse({
-            jobId: data.jobId,
-            userId: userId,
-            orgId: data.orgId,
-            prompt: data.prompt,
-            options: data.options || {
-                duration: data.duration, // Backward compatibility
-                aspectRatio: data.aspectRatio
-            }
-        });
-
-        if (!result.success) {
-             throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Invalid input: ${result.error.message}`
-            );
-        }
-
-        const jobData = result.data;
-
-        try {
-            // 1. Create Initial Job Record in Firestore
             await admin.firestore().collection("videoJobs").doc(jobData.jobId).set({
                 id: jobData.jobId,
                 userId: jobData.userId,
@@ -139,14 +87,6 @@ export const triggerVideoJob = functions
 
             await inngest.send({
                 name: "video/generate.requested",
-                data: {
-                    jobId: jobId,
-                    userId: userId,
-                    orgId: orgId,
-                    prompt: prompt,
-                    options: options,
-                    timestamp: Date.now(),
-                },
                 data: jobData,
                 user: {
                     id: jobData.userId,
@@ -185,118 +125,6 @@ export const inngestApi = functions
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
             generateVideoLogic
-            async ({ event, step }) => {
-                // Ensure typed access or validation here as well
-                const eventData = event.data;
-                // Double check critical fields
-                if (!eventData.jobId || !eventData.prompt || !eventData.userId) {
-                    throw new Error("Missing critical event data (jobId, prompt, userId)");
-                }
-
-                const { jobId, prompt, userId, options } = eventData;
-                const { jobId, userId } = event.data;
-
-                try {
-                     const videoUrl = await step.run("generate-veo-video", async () => {
-                        return await generateVideoWithVeo(
-                            event.data,
-                            async (status: string, data: any = {}) => {
-                                await admin.firestore().collection("videoJobs").doc(jobId).set({
-                                    status: status,
-                                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                                    ...data
-                                }, { merge: true });
-                            }
-                        };
-
-                        const response = await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(requestBody)
-                        });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
-                        }
-
-                        const result = await response.json();
-                        const predictions = result.predictions;
-
-                        if (!predictions || predictions.length === 0) {
-                            throw new Error("No predictions returned from Veo API");
-                        }
-
-                        const prediction = predictions[0];
-
-                        // Handle different possible response formats
-
-                        // Case A: Base64 Encoded Video
-                        if (prediction.bytesBase64Encoded) {
-                            const bucket = admin.storage().bucket();
-                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
-                                metadata: { contentType: 'video/mp4' }
-                            });
-
-                            const [url] = await file.getSignedUrl({
-                                action: 'read',
-                                expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
-                            });
-
-                            return url;
-                        }
-
-                        // Case B: GCS URI
-                        if (prediction.gcsUri) {
-                             // Note: GCS URIs (gs://) are not directly accessible via HTTP.
-                             // Ideally we would sign this URL or copy it to our bucket.
-                             // For now, we return it as is, or we could copy it.
-                             return prediction.gcsUri;
-                        }
-
-                        // Case C: Video URI (Direct HTTP link if supported)
-                        if (prediction.videoUri) {
-                            return prediction.videoUri;
-                        }
-
-                        // If it returns a GCS URI in gcsUri
-                        if (prediction.gcsUri) {
-                             return prediction.gcsUri;
-                        }
-
-                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
-                    });
-
-                    // Step 3: Update status to complete
-                    await step.run("update-status-complete", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "completed", // Aligning with 'completed' vs 'complete' inconsistency - defaulting to 'completed'
-                            videoUrl: videoUri,
-                            progress: 100,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                        );
-                     });
-
-                    return { success: true, videoUrl };
-
-                } catch (error: any) {
-                    await step.run("update-status-failed", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "failed",
-                            error: error.message || "Unknown error during video generation",
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                    // Re-throw to allow Inngest to handle retries if configured
-                    throw error;
-                }
-            }
         );
 
         const handler = serve({
@@ -570,8 +398,30 @@ export const ragProxy = functions
             }
 
             try {
-                const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
+
+                // SECURITY: Restrict proxy to allowed RAG paths to prevent abuse of the API key
+                // Allows:
+                // - /v1beta/files... (Upload/Get/Delete)
+                // - /upload/v1beta/files... (Upload Media)
+                // - /v1beta/fileSearchStores... (Create/Get Stores)
+                // - /v1beta/models... (Generate Content, etc)
+                // - /v1beta/operations... (Poll Operations)
+                const allowedPrefixes = [
+                    '/v1beta/files',
+                    '/upload/v1beta/files',
+                    '/v1beta/fileSearchStores',
+                    '/v1beta/models',
+                    '/v1beta/operations'
+                ];
+
+                if (!allowedPrefixes.some(prefix => targetPath.startsWith(prefix))) {
+                    console.warn(`[ragProxy] Blocked unauthorized path: ${targetPath}`);
+                    res.status(403).send({ error: 'Forbidden: Path not allowed via ragProxy.' });
+                    return;
+                }
+
+                const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {

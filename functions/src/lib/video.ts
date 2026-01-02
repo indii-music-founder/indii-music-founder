@@ -1,149 +1,30 @@
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
-
-/**
- * Core logic for generating video via Vertex AI (Veo)
- * This is separated from index.ts to improve testability and organization.
- */
-export const generateVideoLogic = async ({ event, step }: any) => {
-    const { jobId, prompt, userId, options } = event.data;
-
-    try {
-        // Step 1: Update status to processing
-        await step.run("update-status-processing", async () => {
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                status: "processing",
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        });
-
-        // Step 2: Generate Video via Vertex AI (Veo)
-        const videoUri = await step.run("generate-veo-video", async () => {
-            // Use GoogleAuth to get credentials for Vertex AI
-            const auth = new GoogleAuth({
-                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-            });
-
-            const client = await auth.getClient();
-            const projectId = await auth.getProjectId();
-            const accessToken = await client.getAccessToken();
-            const location = 'us-central1';
-            // Using the Veo 3.1 Preview model
-            const modelId = 'veo-3.1-generate-preview';
-
-            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
-
-            // Construct request body for Veo
-            const requestBody = {
-                instances: [
-                    {
-                        prompt: prompt,
-                    }
-                ],
-                parameters: {
-                    sampleCount: 1,
-                    // Map options to Veo parameters
-                    videoLength: options?.duration || options?.durationSeconds || "5s",
-                    aspectRatio: options?.aspectRatio || "16:9"
-                }
-            };
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
-            }
-
-            const result = await response.json();
-            const predictions = result.predictions;
-
-            if (!predictions || predictions.length === 0) {
-                throw new Error("No predictions returned from Veo API");
-            }
-
-            const prediction = predictions[0];
-
-            // Handle different possible response formats
-
-            // Case A: Base64 Encoded Video
-            if (prediction.bytesBase64Encoded) {
-                const bucket = admin.storage().bucket();
-                const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
-                    metadata: { contentType: 'video/mp4' },
-                    // public: true - REMOVED for security
-                });
-
-                // Generate Signed URL
-                const [signedUrl] = await file.getSignedUrl({
-                    action: 'read',
-                    expires: Date.now() + 1000 * 60 * 60 * 24 * 2, // 2 days
-                });
-
-                return signedUrl;
-            }
-
-            // Case B: GCS URI
-            if (prediction.gcsUri) {
-                 // Note: GCS URIs (gs://) are not directly accessible via HTTP.
-                 // Ideally we would sign this URL or copy it to our bucket.
-                 // For now, we return it as is, or we could copy it.
-                 return prediction.gcsUri;
-            }
-
-            // Case C: Video URI (Direct HTTP link if supported)
-            if (prediction.videoUri) {
-                return prediction.videoUri;
-            }
-
-            throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
-        });
-
-        // Step 3: Update status to complete
-        await step.run("update-status-complete", async () => {
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                status: "completed", // Aligning with 'completed' vs 'complete' inconsistency - defaulting to 'completed'
-                videoUrl: videoUri,
-                progress: 100,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        });
-
-        return { success: true, videoUrl: videoUri };
-
-    } catch (error: any) {
-        await step.run("update-status-failed", async () => {
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                status: "failed",
-                error: error.message || "Unknown error during video generation",
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        });
-        // Re-throw to allow Inngest to handle retries if configured
-        throw error;
-    }
-};
 import { z } from "zod";
-import * as admin from "firebase-admin";
-import { GoogleAuth } from "google-auth-library";
 
 // Validation Schema
 export const VideoJobSchema = z.object({
-    jobId: z.string().uuid(),
+    jobId: z.string().uuid().or(z.string().min(1)), // UUID preferred but string allowed for backward compat
     userId: z.string(),
     orgId: z.string().optional().default("personal"),
-    prompt: z.string().min(1),
+    prompt: z.string().min(1).max(5000),
     options: z.object({
         duration: z.enum(["5s", "10s"]).optional().default("5s"),
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional().default("16:9"),
+        // Advanced Options restoration
+        durationSeconds: z.number().optional(),
+        resolution: z.string().optional(),
+        fps: z.number().optional(),
+        cameraMovement: z.string().optional(),
+        motionStrength: z.number().optional(),
+        seed: z.number().optional(),
+        negativePrompt: z.string().optional(),
+        model: z.string().optional(),
+        firstFrame: z.string().optional(),
+        lastFrame: z.string().optional(),
+        timeOffset: z.number().optional(),
+        ingredients: z.array(z.string()).optional(),
+        shotList: z.array(z.any()).optional() // Allow shotList as any array for now
     }).optional().default({})
 });
 
@@ -181,7 +62,7 @@ export async function generateVideoWithVeo(
         instances: [{ prompt }],
         parameters: {
             sampleCount: 1,
-            videoLength: options.duration,
+            videoLength: options.duration || (options.durationSeconds ? `${options.durationSeconds}s` : "5s"),
             aspectRatio: options.aspectRatio
         }
     };
@@ -230,8 +111,6 @@ export async function generateVideoWithVeo(
         });
         videoUrl = signedUrl;
     } else if (prediction.gcsUri) {
-         // If it's a gs:// URI, we return it. The frontend might need to handle it or we might need to copy it.
-         // For now, assuming standard flow.
          videoUrl = prediction.gcsUri;
     } else if (prediction.videoUri) {
         videoUrl = prediction.videoUri;
@@ -244,3 +123,21 @@ export async function generateVideoWithVeo(
 
     return videoUrl;
 }
+
+/**
+ * Core logic for generating video via Vertex AI (Veo)
+ * This is the Inngest step handler.
+ */
+export const generateVideoLogic = async ({ event, step }: any) => {
+    const { jobId } = event.data;
+
+    return await step.run("generate-veo-video", async () => {
+        return await generateVideoWithVeo(event.data, async (status, data) => {
+             await admin.firestore().collection("videoJobs").doc(jobId).set({
+                status,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                ...data
+            }, { merge: true });
+        });
+    });
+};
