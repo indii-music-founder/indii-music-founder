@@ -50,21 +50,12 @@ export const MarketingTools = {
         Goal: ${goal}.
         ${budget ? `Budget: ${budget}` : ''}
         ${duration ? `Duration: ${duration}` : ''}
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(CreateCampaignBriefSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.create_campaign_brief error:', error);
-            // Fallback safe response
             return JSON.stringify({
                 campaignName: `${product} Campaign`,
                 targetAudience: "General Audience",
@@ -80,17 +71,9 @@ export const MarketingTools = {
         const prompt = `
         You are a Market Researcher. Analyze the target audience for genre: ${genre}.
         ${similar_artists ? `Similar Artists: ${similar_artists.join(', ')}` : ''}
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(AnalyzeAudienceSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.analyze_audience error:', error);
@@ -109,21 +92,12 @@ export const MarketingTools = {
         You are a Content Scheduler. Plan a schedule starting ${campaign_start}.
         Platforms: ${platforms.join(', ')}.
         Frequency: ${frequency}.
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(ScheduleContentSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.schedule_content error:', error);
-            // Fallback
             return JSON.stringify({
                 status: "scheduled",
                 count: 0,
@@ -136,17 +110,9 @@ export const MarketingTools = {
         const schema = zodToJsonSchema(TrackPerformanceSchema);
         const prompt = `
         You are a Marketing Analyst. Generate a simulated performance report for Campaign ID: ${campaignId}.
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
         try {
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = result.text();
-            const data = AI.parseJSON(text);
+            const data = await AI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(TrackPerformanceSchema.parse(data));
         } catch (error) {
             console.error('MarketingTools.track_performance error:', error);

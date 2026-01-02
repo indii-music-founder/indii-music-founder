@@ -1,16 +1,13 @@
 import React from 'react';
-import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
-import { Calendar, MoreHorizontal, ChevronRight, Activity } from 'lucide-react';
 import { CampaignAsset, CampaignStatus } from '../types';
-import { Calendar, TrendingUp, MoreHorizontal, ChevronRight, Activity } from 'lucide-react';
+import { Calendar, MoreHorizontal, ChevronRight, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Fix for React 19 type mismatch with Lucide
-const CalendarIcon = Calendar as any;
-// const TrendingUpIcon = TrendingUp as any; // Unused
-const MoreHorizontalIcon = MoreHorizontal as any;
-const ChevronRightIcon = ChevronRight as any;
-const ActivityIcon = Activity as any;
+const CalendarIcon = Calendar as React.FC<{ size?: number; className?: string }>;
+const MoreHorizontalIcon = MoreHorizontal as React.FC<{ size?: number; className?: string }>;
+const ChevronRightIcon = ChevronRight as React.FC<{ size?: number; className?: string }>;
+const ActivityIcon = Activity as React.FC<{ size?: number; className?: string }>;
 
 interface CampaignCardProps {
     campaign: CampaignAsset;
@@ -25,28 +22,22 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
     const completedPosts = campaign.posts.filter(p => p.status === CampaignStatus.DONE).length;
     const progress = Math.round((completedPosts / campaign.posts.length) * 100) || 0;
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(campaign);
+        }
+    };
+
     return (
         <motion.div
             role="button"
             tabIndex={0}
             aria-label={`Select campaign: ${campaign.title}`}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelect(campaign);
-                }
-            }}
+            onKeyDown={handleKeyDown}
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
-            className="group relative overflow-hidden rounded-2xl bg-gray-900/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/50 hover:shadow-2xl hover:shadow-dept-marketing/20 hover:bg-gray-900/60"
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
-            aria-label={`Select campaign: ${campaign.title}`}
-            // Bolt UI Unification: Using dept-marketing for visual hierarchy and removing hardcoded hexes
-            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
-            // Added focus-visible styles for accessibility
             className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
         >
             {/* Background Gradient Mesh - Brand Accent */}
@@ -99,19 +90,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-gray-400">
-                        <span>Progress</span>
-                        <span className="text-white font-medium">{progress}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                 <div className="space-y-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Campaign Progress">
                     <div className="flex justify-between text-xs text-muted-foreground">
-                        <span id={`progress-label-${campaign.id}`}>Progress</span>
+                        <span>Progress</span>
                         <span className="text-foreground font-medium">{progress}%</span>
                     </div>
                     <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden" aria-hidden="true">
@@ -142,7 +123,6 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                         Manage <ChevronRightIcon size={14} />
                     </div>
                 </div>
-
             </div>
         </motion.div>
     );
