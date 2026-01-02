@@ -30,6 +30,19 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
     const completedPosts = campaign.posts.filter(p => p.status === CampaignStatus.DONE).length;
     const progress = Math.round((completedPosts / campaign.posts.length) * 100) || 0;
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        // Prevent activation if the event originated from a child interactive element (like the More Options button)
+        // This stops bubbling events from triggering the card selection
+        if (e.target !== e.currentTarget) {
+            return;
+        }
+
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(campaign);
+        }
+    };
+
     return (
         <motion.div
             role="button"
@@ -44,8 +57,14 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label={`Select campaign: ${campaign.title}`}
             // Bolt UI Unification: Using dept-marketing for visual hierarchy and removing hardcoded hexes
             className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
+            // Added focus-visible styles for accessibility
+            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
         >
             {/* Background Gradient Mesh - Marketing Primary to Campaign Secondary */}
             <div className="absolute inset-0 bg-gradient-to-br from-dept-marketing/5 via-transparent to-dept-campaign/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -74,6 +93,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             e.stopPropagation();
                         }}
                         onKeyDown={(e) => {
+                            // Stop propagation of key events to prevent triggering the card's handler
                             e.stopPropagation();
                         }}
                     >

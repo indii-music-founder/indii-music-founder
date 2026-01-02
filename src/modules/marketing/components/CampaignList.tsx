@@ -53,7 +53,8 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 <motion.div variants={itemVars}>
                     <button
                         onClick={onCreateNew}
-                        className="w-full h-full min-h-[220px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 hover:border-purple-500/50 transition-all duration-300"
+                        // Added focus styles for accessibility
+                        className="w-full h-full min-h-[220px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 hover:border-purple-500/50 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                     >
                         <div className="h-16 w-16 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20 group-hover:scale-110 transition-all duration-300">
                             <PlusIcon size={32} className="text-gray-400 group-hover:text-purple-400" />
