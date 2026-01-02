@@ -33,11 +33,28 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateVideoLogic = exports.VideoJobSchema = void 0;
+exports.generateVideoLogic = exports.LongFormVideoJobSchema = exports.VideoJobSchema = exports.VIDEO_CONSTANTS = void 0;
 exports.generateVideoWithVeo = generateVideoWithVeo;
 const admin = __importStar(require("firebase-admin"));
 const google_auth_library_1 = require("google-auth-library");
 const zod_1 = require("zod");
+// Constants
+exports.VIDEO_CONSTANTS = {
+    MODELS: {
+        VEO_PREVIEW: 'veo-3.1-generate-preview'
+    },
+    LOCATIONS: {
+        US_CENTRAL1: 'us-central1'
+    },
+    EVENTS: {
+        GENERATE_REQUESTED: 'video/generate.requested',
+        LONG_FORM_REQUESTED: 'video/long_form.requested',
+        STITCH_REQUESTED: 'video/stitch.requested'
+    },
+    COLLECTIONS: {
+        VIDEO_JOBS: 'videoJobs'
+    }
+};
 // Validation Schema
 exports.VideoJobSchema = zod_1.z.object({
     jobId: zod_1.z.string().uuid().or(zod_1.z.string().min(1)), // UUID preferred but string allowed for backward compat
@@ -63,6 +80,15 @@ exports.VideoJobSchema = zod_1.z.object({
         shotList: zod_1.z.array(zod_1.z.any()).optional() // Allow shotList as any array for now
     }).optional().default({})
 });
+exports.LongFormVideoJobSchema = zod_1.z.object({
+    jobId: zod_1.z.string().uuid().or(zod_1.z.string().min(1)),
+    userId: zod_1.z.string(),
+    orgId: zod_1.z.string().optional().default("personal"),
+    prompts: zod_1.z.array(zod_1.z.string()),
+    totalDuration: zod_1.z.number(),
+    startImage: zod_1.z.string().optional(),
+    options: exports.VideoJobSchema.shape.options
+});
 /**
  * Calls Vertex AI (Veo) to generate a video.
  * Handles API authentication, request formatting, and response parsing.
@@ -79,8 +105,8 @@ async function generateVideoWithVeo(input, updateStatus) {
     const client = await auth.getClient();
     const projectId = await auth.getProjectId();
     const accessToken = await client.getAccessToken();
-    const location = 'us-central1';
-    const modelId = 'veo-3.1-generate-preview';
+    const location = exports.VIDEO_CONSTANTS.LOCATIONS.US_CENTRAL1;
+    const modelId = exports.VIDEO_CONSTANTS.MODELS.VEO_PREVIEW;
     const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
     // 3. Construct Request
     const requestBody = {
@@ -148,7 +174,7 @@ const generateVideoLogic = async ({ event, step }) => {
     const { jobId } = event.data;
     return await step.run("generate-veo-video", async () => {
         return await generateVideoWithVeo(event.data, async (status, data) => {
-            await admin.firestore().collection("videoJobs").doc(jobId).set(Object.assign({ status, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, data), { merge: true });
+            await admin.firestore().collection(exports.VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set(Object.assign({ status, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, data), { merge: true });
         });
     });
 };

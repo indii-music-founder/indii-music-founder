@@ -16,16 +16,16 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
             exit={{ opacity: 0, scale: 0.95 }}
             whileHover={{ y: -4 }}
             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            className="group relative glass hover:bg-black/60 transition-all duration-300 hover:border-sonic-purple/30 overflow-hidden p-5 rounded-2xl"
+            className="group relative glass hover:bg-black/60 transition-all duration-300 hover:border-dept-campaign/30 overflow-hidden p-5 rounded-2xl"
         >
             {/* Status Badge */}
             <div className="absolute top-4 right-4 z-10">
                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border backdrop-blur-md ${campaign.status === 'Live' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
-                    campaign.status === 'Scheduled' ? 'bg-sonic-blue/10 border-sonic-blue/20 text-sonic-blue' :
+                    campaign.status === 'Scheduled' ? 'bg-dept-distribution/10 border-dept-distribution/20 text-dept-distribution' :
                         'bg-muted/10 border-border text-muted-foreground'
                     }`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${campaign.status === 'Live' ? 'bg-green-400 animate-pulse' :
-                        campaign.status === 'Scheduled' ? 'bg-sonic-blue' :
+                        campaign.status === 'Scheduled' ? 'bg-dept-distribution' :
                             'bg-muted-foreground'
                         }`} />
                     <span className="text-[10px] font-bold uppercase tracking-wider">{campaign.status}</span>
@@ -47,7 +47,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
 
                 {/* Header */}
                 <div>
-                    <h3 className="text-lg font-bold text-foreground group-hover:text-sonic-purple transition-colors leading-tight mb-1">
+                    <h3 className="text-lg font-bold text-foreground group-hover:text-dept-campaign transition-colors leading-tight mb-1">
                         {campaign.title}
                     </h3>
                     <p className="text-sm text-muted-foreground font-medium flex items-center gap-2">
@@ -70,7 +70,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
                             initial={{ width: 0 }}
                             animate={{ width: `${campaign.progress}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
-                            className="h-full bg-gradient-to-r from-sonic-purple to-sonic-blue"
+                            className="h-full bg-gradient-to-r from-dept-campaign to-dept-marketing"
                         />
                     </div>
                 </div>
@@ -94,7 +94,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
             </div>
 
             {/* Decorative Glow */}
-            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-sonic-purple/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-dept-campaign/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
         </motion.div>
     );
 }

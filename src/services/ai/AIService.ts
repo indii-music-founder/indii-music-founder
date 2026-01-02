@@ -153,59 +153,46 @@ export class AIService {
     async generateContent(options: GenerateContentOptions): Promise<WrappedResponse> {
         return this.withRetry(async () => {
             try {
-                // Construct path for the proxy to forward to Google Generative Language API
+                // Construct the full URL using the helper
+                // This ensures we always target the correct model endpoint via the proxy
                 const endpointPath = `/v1beta/models/${options.model}:generateContent`;
                 const proxyUrl = endpointService.getFunctionUrl('ragProxy');
 
-                // We append the target path to the proxy URL if the proxy is set up to handle it
-                // Based on standard simple proxy patterns: POST to proxy with body.
-                // However, ragProxy checks req.path. So we might need to construct the URL effectively.
-                // Assuming standard Cloud Function behavior: URL is BaseURL/functionName
-                // But ragProxy code says: const targetPath = req.path;
-
-                // If the function is hosted at /ragProxy, req.path is usually /.
-                // To pass dynamic path info to a specialized proxy function, we often need to use a rewrites rule or query param.
-                // Let's check `firebase.json` or assume we send the target as a header or body if req.path isn't reliable directly without hosting rewrites.
-
-                // Actually, examining ragProxy again: 
-                // It uses `https.onRequest`. If we call `.../ragProxy/v1beta/models/...`, req.path *might* capture the suffix if rewritten.
-                // Without hosting rewrites, req.path is just /.
-
-                // Use a safer fallback: Use `generateContentStream` usage pattern or `httpsCallable` if possible?
-                // `ragProxy` is an `onRequest`. 
-                // Let's assume for now we call the function URL + the path we want masked.
-                // Standard Firebase Functions URL: https://region-project.cloudfunctions.net/ragProxy
-                // If we append /v1beta/..., it might 404 unless allowed.
-
-                // Alternative: Use `generateContentProxy` callable if we had one.
-                // But we have `ragProxy`. 
-
-                // Let's try appending the path. If it fails, we know why.
-                const url = `${proxyUrl}${endpointPath}`;
+                // Ensure no double slashes if proxyUrl ends with /
+                const baseUrl = proxyUrl.endsWith('/') ? proxyUrl.slice(0, -1) : proxyUrl;
+                const url = `${baseUrl}${endpointPath}`;
 
                 const contents = Array.isArray(options.contents)
                     ? options.contents
                     : [options.contents];
 
+                const requestBody = {
+                    contents: contents,
+                    generationConfig: options.config,
+                    systemInstruction: options.systemInstruction ? { parts: [{ text: options.systemInstruction }] } : undefined,
+                    tools: options.tools
+                };
+
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents,
-                        systemInstruction: options.systemInstruction ? { parts: [{ text: options.systemInstruction }] } : undefined,
-                        tools: options.tools,
-                        generationConfig: options.config
-                    })
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Proxy Error ${response.status}: ${errorText}`);
+                    throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
                 }
 
                 const result = await response.json();
 
-                // Normalize response
+                // Basic validation of the response structure
+                if (!result.candidates && !result.promptFeedback) {
+                    throw new Error("Invalid response format from Gemini API");
+                }
+
                 const mappedResponse: GenerateContentResponse = {
                     candidates: result.candidates?.map((c: any): Candidate => ({
                         content: {
@@ -222,9 +209,10 @@ export class AIService {
                             })
                         },
                         finishReason: c.finishReason,
+                        citationMetadata: c.citationMetadata,
                         safetyRatings: c.safetyRatings,
                         index: c.index
-                    })),
+                    })) || [],
                     promptFeedback: result.promptFeedback
                 };
 

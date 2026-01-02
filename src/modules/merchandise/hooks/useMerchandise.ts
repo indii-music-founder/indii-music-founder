@@ -18,6 +18,9 @@ export const useMerchandise = () => {
         const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
             setProducts(data);
             setLoading(false);
+        }, (error) => {
+            console.error("Failed to load products:", error);
+            setLoading(false);
         });
 
         // Load product catalog templates

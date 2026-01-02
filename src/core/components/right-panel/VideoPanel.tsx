@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus, Move, Loader2 } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { motion } from 'framer-motion';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { useStore } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
 

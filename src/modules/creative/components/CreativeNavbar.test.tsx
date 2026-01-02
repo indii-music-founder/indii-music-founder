@@ -3,14 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeNavbar from './CreativeNavbar';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 
 // Mock dependencies
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
-vi.mock('@/services/video/VideoGenerationService');
+vi.mock('@/services/image/VideoGenerationService');
 vi.mock('@/services/image/ImageGenerationService');
 vi.mock('@/services/screen/ScreenControlService');
 vi.mock('@/services/firebase', () => ({

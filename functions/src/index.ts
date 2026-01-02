@@ -7,7 +7,7 @@ import { serve } from "inngest/express";
 import corsLib from "cors";
 import { GoogleAuth } from "google-auth-library";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
-import { generateVideoLogic, VideoJobSchema } from "./lib/video";
+import { generateVideoLogic, VideoJobSchema, LongFormVideoJobSchema, VIDEO_CONSTANTS } from "./lib/video";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -75,7 +75,7 @@ export const triggerVideoJob = functions
             // 1. Create Initial Job Record in Firestore
             // We do this BEFORE sending the event to prevent race conditions where
             // the UI subscribes to a doc that doesn't exist yet.
-            await admin.firestore().collection("videoJobs").doc(jobData.jobId).set({
+            await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobData.jobId).set({
                 id: jobData.jobId,
                 userId: jobData.userId,
                 orgId: jobData.orgId,
@@ -89,7 +89,7 @@ export const triggerVideoJob = functions
             const inngest = getInngestClient();
 
             await inngest.send({
-                name: "video/generate.requested",
+                name: VIDEO_CONSTANTS.EVENTS.GENERATE_REQUESTED,
                 data: jobData,
                 user: {
                     id: jobData.userId,
@@ -129,21 +129,33 @@ export const triggerLongFormVideoJob = functions
         }
 
         const userId = context.auth.uid;
-        const { prompts, jobId, orgId, totalDuration, startImage, ...options } = data;
 
-        if (!prompts || !Array.isArray(prompts) || !jobId) {
+        // Prepare data for validation
+        const inputData = {
+            ...data,
+            userId,
+            // Ensure options is an object if not provided
+            options: data.options || {}
+        };
+
+        // Zod Validation
+        const validation = LongFormVideoJobSchema.safeParse(inputData);
+        if (!validation.success) {
             throw new functions.https.HttpsError(
                 "invalid-argument",
-                "Missing required fields: prompts (array) or jobId."
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
+        const jobData = validation.data;
+        const { jobId, orgId, prompts, totalDuration, startImage, options } = jobData;
+
         try {
             // 1. Create Parent Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
                 id: jobId,
                 userId: userId,
-                orgId: orgId || "personal",
+                orgId: orgId,
                 prompt: prompts[0], // Main prompt
                 status: "queued",
                 isLongForm: true,
@@ -157,11 +169,11 @@ export const triggerLongFormVideoJob = functions
             const inngest = getInngestClient();
 
             await inngest.send({
-                name: "video/long_form.requested",
+                name: VIDEO_CONSTANTS.EVENTS.LONG_FORM_REQUESTED,
                 data: {
                     jobId: jobId,
                     userId: userId,
-                    orgId: orgId || "personal",
+                    orgId: orgId,
                     prompts: prompts,
                     totalDuration: totalDuration,
                     startImage: startImage,
@@ -206,7 +218,7 @@ export const inngestApi = functions
         // 2. Long Form Video Generation Logic (Daisychaining)
         const generateLongFormVideoFn = inngestClient.createFunction(
             { id: "generate-long-video-logic" },
-            { event: "video/long_form.requested" },
+            { event: VIDEO_CONSTANTS.EVENTS.LONG_FORM_REQUESTED },
             async ({ event, step }) => {
                 const { jobId, prompts, userId, startImage, options } = event.data;
                 const segmentUrls: string[] = [];
@@ -215,7 +227,7 @@ export const inngestApi = functions
                 try {
                     // Update main job status
                     await step.run("update-parent-processing", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
                             status: "processing",
                             updatedAt: admin.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
@@ -233,8 +245,8 @@ export const inngestApi = functions
                             const client = await auth.getClient();
                             const projectId = await auth.getProjectId();
                             const accessToken = await client.getAccessToken();
-                            const location = 'us-central1';
-                            const modelId = 'veo-3.1-generate-preview';
+                            const location = VIDEO_CONSTANTS.LOCATIONS.US_CENTRAL1;
+                            const modelId = VIDEO_CONSTANTS.MODELS.VEO_PREVIEW;
 
                             const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
@@ -282,7 +294,7 @@ export const inngestApi = functions
                         segmentUrls.push(segmentUrl);
 
                         await step.run(`update-progress-${i}`, async () => {
-                            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
                                 completedSegments: i + 1,
                                 progress: Math.floor(((i + 1) / prompts.length) * 100),
                                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -295,7 +307,7 @@ export const inngestApi = functions
 
                     await step.run("trigger-stitch", async () => {
                         await inngestClient.send({
-                            name: "video/stitch.requested",
+                            name: VIDEO_CONSTANTS.EVENTS.STITCH_REQUESTED,
                             data: {
                                 jobId,
                                 userId,
@@ -306,7 +318,7 @@ export const inngestApi = functions
 
                 } catch (error: any) {
                     await step.run("mark-failed", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
                             status: "failed",
                             error: error.message,
                             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -319,14 +331,14 @@ export const inngestApi = functions
 
         const stitchVideoFn = inngestClient.createFunction(
             { id: "stitch-video-segments" },
-            { event: "video/stitch.requested" },
+            { event: VIDEO_CONSTANTS.EVENTS.STITCH_REQUESTED },
             async ({ event, step }) => {
                 const { jobId, userId, segmentUrls } = event.data;
                 const transcoder = new TranscoderServiceClient();
 
                 try {
                     const projectId = await admin.app().options.projectId;
-                    const location = 'us-central1';
+                    const location = VIDEO_CONSTANTS.LOCATIONS.US_CENTRAL1;
                     const bucket = admin.storage().bucket();
                     const outputUri = `gs://${bucket.name}/videos/${userId}/${jobId}_final.mp4`;
 
@@ -371,7 +383,7 @@ export const inngestApi = functions
                         });
 
                         // Update job with temporary stitching status
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
                             status: "stitching",
                             transcoderJobName: job.name,
                             updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -380,8 +392,10 @@ export const inngestApi = functions
 
                 } catch (error: any) {
                     console.error("Stitching failed:", error);
-                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                    await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
+                        status: "failed",
                         stitchError: error.message,
+                        error: `Stitching failed: ${error.message}`,
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
                 }

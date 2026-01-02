@@ -5,7 +5,7 @@ import VideoWorkflow from './VideoWorkflow';
 import { useStore } from '@/core/store';
 import { extractVideoFrame } from '../../utils/video';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 
 // Mock Store
@@ -48,7 +48,7 @@ vi.mock('./components/FrameSelectionModal', () => ({
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
-vi.mock('@/services/video/VideoGenerationService', () => ({
+vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
@@ -166,5 +166,21 @@ describe('VideoWorkflow', () => {
             url: 'http://video.url',
             type: 'video'
         }));
+    });
+
+    it('displays stitching status correctly', async () => {
+        (useVideoEditorStore as any).mockReturnValue({
+            jobId: 'job-stitch',
+            status: 'stitching',
+            setJobId: mockSetJobId,
+            setStatus: mockSetJobStatus,
+            progress: 100
+        });
+        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'stitching' });
+
+        render(<VideoWorkflow />);
+
+        expect(screen.getByText(/Stitching Masterpiece/i)).toBeInTheDocument();
+        expect(screen.getByText(/Finalizing your unified video/i)).toBeInTheDocument();
     });
 });

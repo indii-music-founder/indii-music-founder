@@ -16,6 +16,7 @@ export interface VideoJob {
     status: 'queued' | 'processing' | 'completed' | 'failed';
     videoUrl?: string;
     error?: string;
+    progress?: number;
     createdAt: number;
     updatedAt?: number;
 }
@@ -210,12 +211,16 @@ export class VideoGenerationServiceImpl {
                 `${options.prompt} (Part ${i + 1}/${numBlocks})`
             );
 
+            // Strip non-serializable fields (like functions)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { onProgress, ...serializableOptions } = options;
+
             await triggerLongFormVideoJob({
                 jobId,
                 prompts,
                 orgId,
                 startImage: options.firstFrame,
-                ...options
+                ...serializableOptions
             });
 
             // Return a placeholder list with the main jobId
@@ -275,6 +280,14 @@ export class VideoGenerationServiceImpl {
             }
         }, (error) => {
             console.error(`[VideoGenerationService] Subscription error for ${jobId}:`, error);
+            // In case of permission errors or other failures, notify listener of failure
+            callback({
+                id: jobId,
+                prompt: '',
+                status: 'failed',
+                error: `Connection lost: ${error.message}`,
+                createdAt: Date.now()
+            } as VideoJob);
         });
     }
 

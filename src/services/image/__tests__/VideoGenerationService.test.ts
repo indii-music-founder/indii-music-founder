@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '../VideoGenerationService';
 import { db, functions, auth } from '@/services/firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, updateDoc, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
@@ -63,7 +63,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('@/utils/video', () => ({
-    extractVideoFrame: vi.fn().mockResolvedValue('data:image/png;base64,mockframe')
+  extractVideoFrame: vi.fn().mockResolvedValue('data:image/png;base64,mockframe')
 }));
 
 describe('VideoGenerationService', () => {
@@ -99,15 +99,15 @@ describe('VideoGenerationService', () => {
     });
 
     it('should throw error if user is not authenticated', async () => {
-       // @ts-ignore
-       auth.currentUser = null;
-       await expect(VideoGenerationService.generateVideo({
-         prompt: 'Test prompt',
-       })).rejects.toThrow('must be signed in');
+      // @ts-ignore
+      auth.currentUser = null;
+      await expect(VideoGenerationService.generateVideo({
+        prompt: 'Test prompt',
+      })).rejects.toThrow('must be signed in');
 
-       // Restore auth
-       // @ts-ignore
-       auth.currentUser = { uid: 'test-user' };
+      // Restore auth
+      // @ts-ignore
+      auth.currentUser = { uid: 'test-user' };
     });
 
     it('should throw error if quota exceeded', async () => {

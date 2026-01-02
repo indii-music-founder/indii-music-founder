@@ -3,17 +3,29 @@ import {
     query,
     where,
     onSnapshot,
-    addDoc
+    addDoc,
+    QuerySnapshot,
+    DocumentData
 } from 'firebase/firestore';
-import { db } from '../firebase'; // Corrected path to src/services/firebase.ts
-import { Campaign, Contact } from '../../modules/publicist/types';
+import { db } from '@/services/firebase';
+import { Campaign, Contact } from '@/modules/publicist/types'; // Updated import path to alias
+import { COLLECTIONS } from '@/core/config/collections';
+import { z } from 'zod';
 
+// Define Zod schemas for runtime validation
+const CampaignSchema = z.object({
+    userId: z.string(),
+    name: z.string(),
+    // Add other fields based on Campaign interface if needed, keeping it loose for now to match interface
+    // For strictness we'd define the full schema, but pass-through is safer for refactoring
+}).passthrough();
+
+const ContactSchema = z.object({
+    userId: z.string(),
+    name: z.string(),
+}).passthrough();
 
 export class PublicistService {
-    private static campaignsCollection = 'publicist_campaigns';
-    private static contactsCollection = 'publicist_contacts';
-
-
     /**
      * Subscribe to user's campaigns
      */
@@ -21,18 +33,30 @@ export class PublicistService {
         if (!userId) return () => { };
 
         const q = query(
-            collection(db, this.campaignsCollection),
+            collection(db, COLLECTIONS.PUBLICIST.CAMPAIGNS),
             where('userId', '==', userId)
         );
 
-        return onSnapshot(q, (snapshot) => {
-            const campaigns = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Campaign[];
+        return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+            const campaigns: Campaign[] = [];
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const parseResult = CampaignSchema.safeParse(data);
+
+                if (parseResult.success) {
+                    campaigns.push({
+                        id: doc.id,
+                        ...data
+                    } as Campaign);
+                } else {
+                    console.warn(`[PublicistService] Invalid campaign document ${doc.id}:`, parseResult.error);
+                }
+            });
+
             callback(campaigns);
         }, (error) => {
-            console.error("Error fetching campaigns:", error);
+            console.error("[PublicistService] Error fetching campaigns:", error);
             callback([]);
         });
     }
@@ -44,24 +68,36 @@ export class PublicistService {
         if (!userId) return () => { };
 
         const q = query(
-            collection(db, this.contactsCollection),
+            collection(db, COLLECTIONS.PUBLICIST.CONTACTS),
             where('userId', '==', userId)
         );
 
-        return onSnapshot(q, (snapshot) => {
-            const contacts = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Contact[];
+        return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+            const contacts: Contact[] = [];
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const parseResult = ContactSchema.safeParse(data);
+
+                if (parseResult.success) {
+                    contacts.push({
+                        id: doc.id,
+                        ...data
+                    } as Contact);
+                } else {
+                    console.warn(`[PublicistService] Invalid contact document ${doc.id}:`, parseResult.error);
+                }
+            });
+
             callback(contacts);
         }, (error) => {
-            console.error("Error fetching contacts:", error);
+            console.error("[PublicistService] Error fetching contacts:", error);
             callback([]);
         });
     }
 
     static async addCampaign(userId: string, campaign: Omit<Campaign, 'id'>) {
-        return addDoc(collection(db, this.campaignsCollection), {
+        return addDoc(collection(db, COLLECTIONS.PUBLICIST.CAMPAIGNS), {
             ...campaign,
             userId,
             createdAt: new Date()
@@ -69,10 +105,11 @@ export class PublicistService {
     }
 
     static async addContact(userId: string, contact: Omit<Contact, 'id'>) {
-        return addDoc(collection(db, this.contactsCollection), {
+        return addDoc(collection(db, COLLECTIONS.PUBLICIST.CONTACTS), {
             ...contact,
             userId,
             createdAt: new Date()
         });
     }
 }
+

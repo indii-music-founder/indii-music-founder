@@ -20,7 +20,7 @@ export const MerchandiseService = {
     /**
      * Subscribe to products for a user
      */
-    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void) => {
+    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void, errorCallback?: (error: any) => void) => {
         const q = query(
             collection(db, COLLECTION_NAME),
             where('userId', '==', userId)
@@ -32,7 +32,7 @@ export const MerchandiseService = {
                 ...docSnap.data()
             } as MerchProduct));
             callback(products);
-        });
+        }, errorCallback);
     },
 
     /**

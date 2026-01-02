@@ -2,6 +2,24 @@ import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 
+// Constants
+export const VIDEO_CONSTANTS = {
+    MODELS: {
+        VEO_PREVIEW: 'veo-3.1-generate-preview'
+    },
+    LOCATIONS: {
+        US_CENTRAL1: 'us-central1'
+    },
+    EVENTS: {
+        GENERATE_REQUESTED: 'video/generate.requested',
+        LONG_FORM_REQUESTED: 'video/long_form.requested',
+        STITCH_REQUESTED: 'video/stitch.requested'
+    },
+    COLLECTIONS: {
+        VIDEO_JOBS: 'videoJobs'
+    }
+} as const;
+
 // Validation Schema
 export const VideoJobSchema = z.object({
     jobId: z.string().uuid().or(z.string().min(1)), // UUID preferred but string allowed for backward compat
@@ -28,7 +46,18 @@ export const VideoJobSchema = z.object({
     }).optional().default({})
 });
 
+export const LongFormVideoJobSchema = z.object({
+    jobId: z.string().uuid().or(z.string().min(1)),
+    userId: z.string(),
+    orgId: z.string().optional().default("personal"),
+    prompts: z.array(z.string()),
+    totalDuration: z.number(),
+    startImage: z.string().optional(),
+    options: VideoJobSchema.shape.options
+});
+
 export type VideoJobInput = z.infer<typeof VideoJobSchema>;
+export type LongFormVideoJobInput = z.infer<typeof LongFormVideoJobSchema>;
 
 /**
  * Calls Vertex AI (Veo) to generate a video.
@@ -52,8 +81,8 @@ export async function generateVideoWithVeo(
     const client = await auth.getClient();
     const projectId = await auth.getProjectId();
     const accessToken = await client.getAccessToken();
-    const location = 'us-central1';
-    const modelId = 'veo-3.1-generate-preview';
+    const location = VIDEO_CONSTANTS.LOCATIONS.US_CENTRAL1;
+    const modelId = VIDEO_CONSTANTS.MODELS.VEO_PREVIEW;
 
     const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
@@ -111,7 +140,7 @@ export async function generateVideoWithVeo(
         });
         videoUrl = signedUrl;
     } else if (prediction.gcsUri) {
-         videoUrl = prediction.gcsUri;
+        videoUrl = prediction.gcsUri;
     } else if (prediction.videoUri) {
         videoUrl = prediction.videoUri;
     } else {
@@ -133,7 +162,7 @@ export const generateVideoLogic = async ({ event, step }: any) => {
 
     return await step.run("generate-veo-video", async () => {
         return await generateVideoWithVeo(event.data, async (status, data) => {
-             await admin.firestore().collection("videoJobs").doc(jobId).set({
+            await admin.firestore().collection(VIDEO_CONSTANTS.COLLECTIONS.VIDEO_JOBS).doc(jobId).set({
                 status,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 ...data
@@ -141,3 +170,4 @@ export const generateVideoLogic = async ({ event, step }: any) => {
         });
     });
 };
+
