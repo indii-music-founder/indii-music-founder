@@ -33,7 +33,7 @@ export default function MarketingDashboard() {
             </button>
             <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-6 py-2 bg-dept-marketing hover:bg-dept-marketing/90 text-white font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-dept-marketing/20"
+                className="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-pink-900/20"
             >
                 <Plus size={20} /> Create Campaign
             </button>
@@ -51,7 +51,7 @@ export default function MarketingDashboard() {
 
         // Empty cells for start of month
         for (let i = 0; i < firstDayOfMonth; i++) {
-            days.push(<div key={`empty-${i}`} className="h-32 bg-background border border-border/50"></div>);
+            days.push(<div key={`empty-${i}`} className="h-32 bg-[#0d1117] border border-gray-800/50"></div>);
         }
 
         // Days of month
@@ -65,8 +65,8 @@ export default function MarketingDashboard() {
             });
 
             days.push(
-                <div key={i} className="h-32 bg-background border border-border/50 p-2 relative group hover:bg-surface transition-colors">
-                    <span className={`text-sm font-mono ${i === today.getDate() ? 'text-dept-marketing font-bold' : 'text-muted-foreground'}`}>
+                <div key={i} className="h-32 bg-[#0d1117] border border-gray-800/50 p-2 relative group hover:bg-[#161b22] transition-colors">
+                    <span className={`text-sm font-mono ${i === today.getDate() ? 'text-pink-500 font-bold' : 'text-gray-500'}`}>
                         {i}
                     </span>
 
@@ -105,7 +105,7 @@ export default function MarketingDashboard() {
         <ModuleDashboard
             title="Marketing Dashboard"
             description="Plan, execute, and track your campaigns."
-            icon={<Megaphone className="text-dept-marketing" />}
+            icon={<Megaphone className="text-pink-500" />}
             actions={DashboardActions}
             tabs={[
                 { label: 'Overview', value: 'overview' },
@@ -153,35 +153,35 @@ export default function MarketingDashboard() {
                     )}
 
                     {/* Calendar Section */}
-                    <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
-                        <div className="p-6 border-b border-border flex items-center justify-between">
-                            <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-                                <Calendar size={18} className="text-muted-foreground" />
+                    <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden shadow-sm">
+                        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+                            <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
+                                <Calendar size={18} className="text-gray-400" />
                                 {currentMonth} Campaign Calendar
                             </h3>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span className="w-2 h-2 rounded-full bg-dept-social"></span> Social
-                                    <span className="w-2 h-2 rounded-full bg-dept-creative ml-2"></span> Email
+                                <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span> Social
+                                    <span className="w-2 h-2 rounded-full bg-purple-500 ml-2"></span> Email
                                     <span className="w-2 h-2 rounded-full bg-green-500 ml-2"></span> Content
                                 </div>
-                                <button className="p-2 hover:bg-surface-elevated rounded text-muted-foreground transition-colors">
+                                <button className="p-2 hover:bg-gray-800 rounded text-gray-400 transition-colors">
                                     <MoreHorizontal size={20} />
                                 </button>
                             </div>
                         </div>
 
                         {/* Calendar Grid Header */}
-                        <div className="grid grid-cols-7 bg-background border-b border-border">
+                        <div className="grid grid-cols-7 bg-[#0d1117] border-b border-gray-800">
                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-                                <div key={day} className={`py-3 text-center text-xs font-semibold ${i === 0 || i === 6 ? 'text-muted-foreground/70' : 'text-muted-foreground'} uppercase tracking-wider`}>
+                                <div key={day} className={`py-3 text-center text-xs font-semibold ${i === 0 || i === 6 ? 'text-gray-600' : 'text-gray-500'} uppercase tracking-wider`}>
                                     {day}
                                 </div>
                             ))}
                         </div>
 
                         {/* Calendar Grid Body */}
-                        <div className="grid grid-cols-7 bg-background">
+                        <div className="grid grid-cols-7 bg-[#0d1117]">
                             {renderCalendarGrid()}
                         </div>
                     </div>
@@ -198,16 +198,16 @@ export default function MarketingDashboard() {
 // Helper Component for Stats
 function StatusCard({ title, value, icon, trend, subtext, color }: { title: string, value: string, icon: React.ReactNode, trend?: string, subtext?: string, color: 'blue' | 'purple' | 'pink' }) {
     const colorClasses = {
-        blue: { bg: 'bg-dept-social/10', text: 'text-dept-social' },
-        purple: { bg: 'bg-dept-creative/10', text: 'text-dept-creative' },
-        pink: { bg: 'bg-dept-marketing/10', text: 'text-dept-marketing' }
+        blue: { bg: 'bg-blue-500/10', text: 'text-blue-400' },
+        purple: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
+        pink: { bg: 'bg-pink-500/10', text: 'text-pink-400' }
     };
 
     return (
-        <div className="bg-surface border border-border rounded-xl p-6 flex items-center justify-between hover:border-border/80 transition-colors shadow-sm">
+        <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 flex items-center justify-between hover:border-gray-700 transition-colors shadow-sm">
             <div>
-                <p className="text-muted-foreground text-sm mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-foreground mb-1">
+                <p className="text-gray-400 text-sm mb-1">{title}</p>
+                <h3 className="text-2xl font-bold text-white mb-1">
                     {value}
                 </h3>
                 {trend && (
@@ -216,7 +216,7 @@ function StatusCard({ title, value, icon, trend, subtext, color }: { title: stri
                     </span>
                 )}
                 {subtext && (
-                    <span className="text-muted-foreground text-xs block">
+                    <span className="text-gray-500 text-xs block">
                         {subtext}
                     </span>
                 )}

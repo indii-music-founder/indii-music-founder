@@ -58,14 +58,8 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         set((state) => ({ distribution: { ...state.distribution, isConnecting: true, error: null } }));
 
         try {
-            // Use environment variables for credentials in this version (replacing hardcoded Alpha keys).
-            // In a full production build, this would integrate with CredentialService or a UI modal.
-            const credentials = { apiKey: process.env.VITE_DISTRIBUTOR_API_KEY || '' };
-            if (!credentials.apiKey) {
-                console.warn('No API key found in env, strictly relying on mock adapters requiring no keys or failing gracefully');
-            }
-
-            await DistributorService.connect(distributorId, credentials);
+            // For Alpha, we simulate connection with mock credentials if none provided
+            await DistributorService.connect(distributorId, { apiKey: 'ALPHA_MOCK_KEY' });
 
             // Refresh connections after successful connect
             const connections = await DistributorService.getConnectionStatus();

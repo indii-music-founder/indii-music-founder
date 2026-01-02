@@ -4,20 +4,11 @@ import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
 import { functions, db, auth } from '@/services/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
-
-export interface VideoJob {
-    id: string;
-    prompt: string;
-    status: 'queued' | 'processing' | 'completed' | 'failed';
-    videoUrl?: string;
-    error?: string;
-    createdAt: number;
-    updatedAt?: number;
-}
+import { delay } from '@/utils/async';
 
 export interface VideoGenerationOptions {
     prompt: string;
@@ -38,7 +29,7 @@ export interface VideoGenerationOptions {
     orgId?: string;
 }
 
-export class VideoGenerationServiceImpl {
+export class VideoGenerationService {
 
     private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
         try {
@@ -139,14 +130,58 @@ export class VideoGenerationServiceImpl {
         // Return a mock entry that the UI can subscribe to via Firebase
         return [{
             id: jobId,
-            url: '',
+            url: '', // Empty URL signifies an async job
             prompt: enrichedPrompt
         }];
     }
 
+    /**
+     * Subscribes to a video job status.
+     */
+    subscribeToJob(jobId: string, callback: (job: any) => void): () => void {
+        const jobRef = doc(db, 'videoJobs', jobId);
+        return onSnapshot(jobRef, (snapshot) => {
+            if (snapshot.exists()) {
+                callback({ id: snapshot.id, ...snapshot.data() });
+            } else {
+                callback(null);
+            }
+        });
+    }
+
+    /**
+     * Await a job to reach a terminal state (completed or failed).
+     */
+    async waitForJob(jobId: string, timeoutMs: number = 300000): Promise<any> {
+        let unsub: (() => void) | undefined;
+
+        const jobPromise = new Promise((resolve, reject) => {
+            unsub = this.subscribeToJob(jobId, (job) => {
+                if (!job) return;
+                if (job.status === 'completed' || job.status === 'failed') {
+                    if (job.status === 'completed') {
+                        resolve(job);
+                    } else {
+                        reject(new Error(job.error || 'Video generation failed.'));
+                    }
+                }
+            });
+        });
+
+        const timeoutPromise = delay(timeoutMs).then(() => {
+            throw new Error(`Video generation timeout for Job ID: ${jobId}`);
+        });
+
+        try {
+            return await Promise.race([jobPromise, timeoutPromise]);
+        } finally {
+            if (unsub) unsub();
+        }
+    }
+
     async generateLongFormVideo(options: {
         prompt: string;
-        totalDuration: number; // in seconds
+        totalDuration: number;
         aspectRatio?: string;
         resolution?: string;
         seed?: number;
@@ -154,11 +189,6 @@ export class VideoGenerationServiceImpl {
         firstFrame?: string;
         onProgress?: (current: number, total: number) => void;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const BLOCK_DURATION = 8; // seconds
-        const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
-        const results: { id: string, url: string, prompt: string }[] = [];
-        let currentFirstFrame = options.firstFrame;
-
         // Pre-flight duration quota check
         const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
         if (!durationCheck.allowed) {
@@ -173,48 +203,44 @@ export class VideoGenerationServiceImpl {
         }
 
         try {
-            for (let i = 0; i < numBlocks; i++) {
-                if (options.onProgress) {
-                    options.onProgress(i + 1, numBlocks);
-                }
+            const jobId = `long_${uuidv4()}`;
+            const orgId = useStore.getState().currentOrganizationId;
+            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
-                // Generate 8s block
-                const blockResults = await this.generateVideo({
-                    prompt: `${options.prompt} (Part ${i + 1}/${numBlocks})`,
-                    aspectRatio: options.aspectRatio,
-                    resolution: options.resolution,
-                    seed: options.seed ? options.seed + i : undefined,
-                    negativePrompt: options.negativePrompt,
-                    firstFrame: currentFirstFrame,
-                });
+            // Construct segment-wise prompts for the background worker
+            const BLOCK_DURATION = 8;
+            const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
+            const prompts = Array.from({ length: numBlocks }, (_, i) =>
+                `${options.prompt} (Part ${i + 1}/${numBlocks})`
+            );
 
-                if (blockResults.length > 0) {
-                    const video = blockResults[0];
-                    results.push(video);
+            await triggerLongFormVideoJob({
+                jobId,
+                prompts,
+                orgId,
+                startImage: options.firstFrame,
+                ...options
+            });
 
-                    // Extract last frame for next iteration
-                    try {
-                        const lastFrameData = await extractVideoFrame(video.url);
-                        currentFirstFrame = lastFrameData;
-                    } catch (err: unknown) {
-                        console.warn(`Failed to extract frame from video ${video.id}, breaking chain.`, err);
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
+            // Return a placeholder list with the main jobId
+            // The UI will subscribe to this jobId and see updates as progress changes
+            return [{
+                id: jobId,
+                url: '',
+                prompt: options.prompt
+            }];
+
         } catch (e: unknown) {
             console.error("Long Form Generation Error:", e);
             throw e;
         }
-
-        return results;
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
         try {
-            // Re-importing inside function to ensure context but can be top-level
+            const { functions } = await import('../firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
             const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
             const jobId = uuidv4();
@@ -230,49 +256,6 @@ export class VideoGenerationServiceImpl {
             throw error;
         }
     }
-
-    /**
-     * Subscribes to the status of a specific video job.
-     * Returns an unsubscribe function.
-     */
-    subscribeToJob(jobId: string, callback: (job: VideoJob | null) => void): Unsubscribe {
-        const jobRef = doc(db, 'videoJobs', jobId);
-
-        return onSnapshot(jobRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.data();
-                callback({
-                    id: snapshot.id,
-                    prompt: data.prompt,
-                    status: data.status,
-                    videoUrl: data.videoUrl,
-                    error: data.error,
-                    createdAt: data.createdAt?.toMillis() || Date.now(),
-                    updatedAt: data.updatedAt?.toMillis()
-                } as VideoJob);
-            } else {
-                callback(null);
-            }
-        }, (error) => {
-            console.error(`[VideoGenerationService] Subscription error for ${jobId}:`, error);
-        });
-    }
-
-    /**
-     * One-off check for job status (polling alternative)
-     */
-    async getJobStatus(jobId: string): Promise<VideoJob | null> {
-        return new Promise((resolve, reject) => {
-            const unsub = this.subscribeToJob(jobId, (job) => {
-                unsub();
-                resolve(job);
-            });
-        });
-    }
 }
 
-// Export singleton instance and alias for backward compatibility
-export const VideoGenerationService = new VideoGenerationServiceImpl();
-export const VideoGeneration = VideoGenerationService;
-// Also export as default if needed, or keep named exports
-export default VideoGenerationService;
+export const VideoGeneration = new VideoGenerationService();
