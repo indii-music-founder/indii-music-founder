@@ -41,9 +41,14 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
+            // Mock console.error to avoid noise
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
             const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
             expect(result.approved).toBe(false);
             expect(result.critique).toBe("AI Generation Failed");
+
+            consoleSpy.mockRestore();
         });
     });
 
@@ -78,7 +83,10 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
+            // RoadTools returns a stringified JSON
+            const resultString = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
+            const result = JSON.parse(resultString);
+
             expect(result.route).toContain("NY");
             expect(result.totalDistance).toBe("100 miles");
         });

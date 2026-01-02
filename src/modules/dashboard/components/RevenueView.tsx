@@ -23,6 +23,7 @@ export default function RevenueView() {
 
                 setTotalRevenue(stats.totalRevenue);
                 setRevenueBySource(stats.sources);
+                setRevenueBySource(stats.revenueBySource || { direct: 0, social: 0 });
 
                 // Process top products
                 const sortedProducts = Object.entries(stats.revenueByProduct)
