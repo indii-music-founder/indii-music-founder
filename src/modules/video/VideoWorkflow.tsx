@@ -106,6 +106,30 @@ export default function VideoWorkflow() {
                     setJobProgress(data.progress);
                 }
 
+                        if (newStatus === 'completed' && data.videoUrl) {
+                            const newAsset = {
+                                id: jobId,
+                                url: data.videoUrl,
+                                prompt: data.prompt || localPromptRef.current,
+                                type: 'video' as const,
+                                timestamp: Date.now(),
+                                projectId: currentProjectId || 'default',
+                                orgId: currentOrganizationId
+                            };
+                            addToHistory(newAsset);
+                            setActiveVideo(newAsset); // Auto-play result
+                            toast.success('Scene generated!');
+                            setJobId(null);
+                            setJobStatus('idle');
+                        } else if (newStatus === 'failed') {
+                            toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
+                            setJobId(null);
+                            setJobStatus('failed');
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Job listener error:", e);
                 if (newStatus === 'completed' && data.videoUrl) {
                     const newAsset = {
                         id: jobId,

@@ -189,6 +189,40 @@ export class VideoGenerationService {
         firstFrame?: string;
         onProgress?: (current: number, total: number) => void;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+        const jobId = uuidv4();
+        const orgId = useStore.getState().currentOrganizationId;
+
+        // Generate prompts for segments (server will handle daisychaining)
+        const BLOCK_DURATION = 5; // Veo generates 5s clips
+        const numSegments = Math.ceil(options.totalDuration / BLOCK_DURATION);
+        const prompts = Array.from({ length: numSegments }, (_, i) =>
+            `${options.prompt} (Part ${i + 1}/${numSegments})`
+        );
+
+        // Explicitly map properties to avoid spreading non-serializable objects (like onProgress)
+        // and to match backend schema.
+        await triggerLongFormVideoJob({
+            jobId,
+            prompts,
+            orgId,
+            totalDuration: options.totalDuration,
+            startImage: options.firstFrame,
+            // Pass specific options expected by VideoJobSchema
+            options: {
+                aspectRatio: options.aspectRatio || "16:9",
+                resolution: options.resolution,
+                seed: options.seed,
+                negativePrompt: options.negativePrompt
+            }
+        });
+
+        // Return a placeholder for the parent job
+        return [{
+            id: jobId,
+            url: '', // Will be updated when completed
+            prompt: options.prompt
+        }];
         // Pre-flight duration quota check
         const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
         if (!durationCheck.allowed) {
