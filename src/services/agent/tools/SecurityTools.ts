@@ -228,6 +228,7 @@ export const SecurityTools = {
             SecurityReportSchema.parse(report);
             return JSON.stringify(report, null, 2);
         } catch (e) {
+            console.warn('SecurityReportSchema validation failed:', e);
             return JSON.stringify(report, null, 2);
         }
     }

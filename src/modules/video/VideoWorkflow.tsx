@@ -113,6 +113,7 @@ export default function VideoWorkflow() {
                         prompt: data.prompt || localPromptRef.current,
                         type: 'video' as const,
                         timestamp: Date.now(),
+                        projectId: currentProjectId || 'default',
                         projectId: 'default',
                         orgId: currentOrganizationId
                     };

@@ -24,6 +24,14 @@ export const useMerchandise = () => {
 
         // Load product catalog templates
         MerchandiseService.getCatalog()
+            .then((data) => {
+                setCatalog(data);
+                // If products are also loaded (or if we track catalog loading separately),
+                // we might want to ensure loading is false here too, but the product subscription handles the main loading state.
+            })
+            .catch((error) => {
+                console.error("Failed to load merchandise catalog:", error);
+                // Ideally set an error state here, but for now just logging as per review feedback to avoid silent failure
             .then(setCatalog)
             .catch((err) => {
                 console.error("Failed to load catalog:", err);

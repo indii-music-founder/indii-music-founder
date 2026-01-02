@@ -139,6 +139,10 @@ export const triggerLongFormVideoJob = functions
             );
         }
 
+        // TODO: Add rate limiting check against user tier
+        // Example: const userTier = await getUserTier(userId);
+        // if (prompts.length > userTier.maxSegments) throw ...
+
         try {
             // 1. Create Parent Job Record
             await admin.firestore().collection("videoJobs").doc(jobId).set({
@@ -270,6 +274,7 @@ export const inngestApi = functions
                             return file.publicUrl();
                         }
 
+                        return prediction.videoUri || prediction.gcsUri || "";
                         if (prediction.videoUri) return prediction.videoUri;
                         if (prediction.gcsUri) return prediction.gcsUri;
                         throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
@@ -307,6 +312,9 @@ export const inngestApi = functions
             async ({ event, step }) => {
                 const { jobId, prompts, userId, startImage, options } = event.data;
                 const segmentUrls: string[] = [];
+                // Note: currentStartImage needs to be updated for true daisychaining
+                // Currently implementing simplified flow per MVP requirements
+                let currentStartImage = startImage;
                 const currentStartImage = startImage;
 
                 try {
@@ -370,6 +378,11 @@ export const inngestApi = functions
                             }
 
                             const result = await response.json();
+
+                            if (!result.predictions || result.predictions.length === 0) {
+                                throw new Error(`Veo Segment ${i}: No predictions returned`);
+                            }
+
                             if (!result.predictions || result.predictions.length === 0) {
                                 throw new Error(`Veo Segment ${i}: No predictions returned`);
                             }
@@ -388,6 +401,7 @@ export const inngestApi = functions
 
                             if (prediction.videoUri) return prediction.videoUri;
                             if (prediction.gcsUri) return prediction.gcsUri;
+
                             throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
                         });
 
@@ -401,6 +415,12 @@ export const inngestApi = functions
                             }, { merge: true });
                         });
 
+                        // TODO: Extract last frame from segmentUrl to use as startImage for next segment
+                        // This requires a frame extraction service (e.g., FFmpeg Cloud Function)
+                        // Without this, segments won't have visual continuity
+                        if (i < prompts.length - 1) {
+                            console.warn(`[LongForm] Daisychaining not implemented - segment ${i} generated independently`);
+                        }
                         // Note: In real daisychaining we would extract frame here.
                         // Integration with separate frame extraction service would go here.
                     }
@@ -438,6 +458,9 @@ export const inngestApi = functions
 
                 try {
                     const projectId = await admin.app().options.projectId;
+                    if (!projectId) {
+                        throw new Error("Project ID not configured");
+                    }
                     const location = 'us-central1';
                     const bucket = admin.storage().bucket();
                     const outputUri = `gs://${bucket.name}/videos/${userId}/${jobId}_final.mp4`;
@@ -453,6 +476,7 @@ export const inngestApi = functions
                                         if (uri.startsWith('https://storage.googleapis.com/')) {
                                             uri = uri.replace('https://storage.googleapis.com/', 'gs://').replace(/\?.+$/, '');
                                         } else if (!uri.startsWith('gs://')) {
+                                            // Fallback or error, for now we assume it might be convertible or throw
                                             throw new Error(`Invalid storage URL format: ${url}`);
                                         }
                                         return { key: `input${index}`, uri };
@@ -498,6 +522,12 @@ export const inngestApi = functions
                 } catch (error: any) {
                     console.error("Stitching failed:", error);
                     await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        status: "failed",
+                        stitchError: error.message,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                } finally {
+                    await transcoder.close();
                         stitchError: error.message,
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
@@ -776,6 +806,22 @@ export const ragProxy = functions
             }
 
             try {
+                const allowedPrefixes = [
+                    '/v1beta/files',
+                    '/v1beta/models',
+                    '/upload/v1beta/files'
+                ];
+
+                if (!allowedPrefixes.some(prefix => req.path.startsWith(prefix))) {
+                    res.status(403).send('Forbidden: Path not allowed');
+                    return;
+                }
+
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
+                // Preserve query parameters
+                const queryString = req.url.split('?')[1] || '';
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;

@@ -48,6 +48,7 @@ vi.mock('./components/FrameSelectionModal', () => ({
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
+vi.mock('@/services/video/VideoGenerationService', () => ({
 vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),

@@ -279,6 +279,13 @@ service cloud.firestore {
     }
 
     // ========================================
+    // DISTRIBUTION DEPLOYMENTS (user-scoped)
+    // ========================================
+
+    match /deployments/{deploymentId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     // DISTRIBUTION DEPLOYMENTS (org-scoped)
     // ========================================
 

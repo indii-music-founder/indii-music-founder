@@ -1,4 +1,6 @@
 import React from 'react';
+import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
+import { Calendar, MoreHorizontal, ChevronRight, Activity } from 'lucide-react';
 import { CampaignAsset, CampaignStatus } from '../types';
 import { Calendar, TrendingUp, MoreHorizontal, ChevronRight, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -101,6 +103,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                     <div className="flex justify-between text-xs text-gray-400">
                         <span>Progress</span>
                         <span className="text-white font-medium">{progress}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                     </div>
                     <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                 <div className="space-y-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Campaign Progress">

@@ -1,5 +1,6 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { delay } from '@/utils/async';
 
@@ -289,17 +290,24 @@ export const VideoTools = {
             });
 
             if (results.length > 0) {
-                const uri = results[0].url;
+                const videoJob = results[0];
+                let finalUrl = videoJob.url;
+
+                if (!finalUrl) {
+                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                    finalUrl = completedJob.videoUrl;
+                }
+
                 const { addToHistory, currentProjectId } = useStore.getState();
                 addToHistory({
-                    id: crypto.randomUUID(),
-                    url: uri,
+                    id: videoJob.id,
+                    url: finalUrl,
                     prompt: args.prompt || "Frame Interpolation",
                     type: 'video',
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
-                return `Sequence interpolated successfully: ${uri}`;
+                return `Sequence interpolated successfully: ${finalUrl}`;
             }
             return "Interpolation failed (no URI returned).";
 

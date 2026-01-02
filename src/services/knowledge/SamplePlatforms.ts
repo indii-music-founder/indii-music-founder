@@ -66,6 +66,16 @@ const FALLBACK_PLATFORMS: SamplePlatform[] = [
 // Cache for loaded platforms
 let platformsCache: SamplePlatform[] | null = null;
 
+const isValidSamplePlatform = (data: unknown): data is Omit<SamplePlatform, 'id'> => {
+    if (typeof data !== 'object' || data === null) return false;
+    const d = data as Record<string, unknown>;
+    return (
+        typeof d.name === 'string' &&
+        Array.isArray(d.keywords) &&
+        ['Royalty-Free', 'Clearance-Required', 'Subscription-Based'].includes(d.defaultLicenseType as string)
+    );
+};
+
 /**
  * Load sample platforms from Firestore with fallback to static data
  */
@@ -75,6 +85,16 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
     try {
         const snapshot = await getDocs(collection(db, 'sample_platforms'));
         if (!snapshot.empty) {
+            const validPlatforms = snapshot.docs
+                .filter(doc => isValidSamplePlatform(doc.data()))
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as SamplePlatform));
+            if (validPlatforms.length > 0) {
+                platformsCache = validPlatforms;
+                return platformsCache;
+            }
             platformsCache = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -95,6 +115,26 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
  */
 export const getSamplePlatforms = (): SamplePlatform[] => {
     return platformsCache || FALLBACK_PLATFORMS;
+};
+
+const findPlatformByKeyword = (platforms: SamplePlatform[], input: string): SamplePlatform | null => {
+    const normalized = input.toLowerCase();
+    return platforms.find(p => p.keywords.some(k => normalized.includes(k))) || null;
+};
+
+/**
+ * Identify a platform from input text (sync version)
+ */
+export const identifyPlatform = (input: string): SamplePlatform | null => {
+    return findPlatformByKeyword(getSamplePlatforms(), input);
+};
+
+/**
+ * Identify a platform from input text (async version that ensures platforms are loaded)
+ */
+export const identifyPlatformAsync = async (input: string): Promise<SamplePlatform | null> => {
+    const platforms = await loadSamplePlatforms();
+    return findPlatformByKeyword(platforms, input);
 };
 
 /**
