@@ -246,14 +246,12 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
 
     useEffect(() => {
         if (post.productId) {
-            // Fetch product details
-            // In a real app, use a data loader or cache
-            MarketplaceService.getProductsByArtist(post.authorId).then(products => {
-                const found = products.find(p => p.id === post.productId);
-                if (found) setEmbeddedProduct(found);
+            // ⚡ Bolt Optimization: Use direct document lookup (O(1)) instead of fetching entire catalog (O(N))
+            MarketplaceService.getProductById(post.productId).then(product => {
+                if (product) setEmbeddedProduct(product);
             });
         }
-    }, [post.productId, post.authorId]);
+    }, [post.productId]);
 
     return (
         <article className="p-4 hover:bg-[#161b22] transition-colors group">
