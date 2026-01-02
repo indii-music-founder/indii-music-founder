@@ -22,7 +22,7 @@ export default function RevenueView() {
                 const stats = await revenueService.getUserRevenueStats(userProfile.id);
 
                 setTotalRevenue(stats.totalRevenue);
-                setRevenueBySource(stats.revenueBySource);
+                setRevenueBySource(stats.revenueBySource || { direct: 0, social: 0 });
 
                 // Process top products
                 const sortedProducts = Object.entries(stats.revenueByProduct)
