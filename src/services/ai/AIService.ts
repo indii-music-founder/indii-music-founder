@@ -19,7 +19,6 @@ import {
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { delay as asyncDelay } from '@/utils/async';
-import { firebaseAI } from './FirebaseAIService';
 
 // ============================================================================
 // Helper Functions
@@ -152,25 +151,91 @@ export class AIService {
      * Generate content using RAG Proxy (Server-side API Key)
      */
     async generateContent(options: GenerateContentOptions): Promise<WrappedResponse> {
-        try {
-            const text = await firebaseAI.generateContent(options.contents as any);
+        return this.withRetry(async () => {
+            try {
+                // Construct path for the proxy to forward to Google Generative Language API
+                const endpointPath = `/v1beta/models/${options.model}:generateContent`;
+                const proxyUrl = endpointService.getFunctionUrl('ragProxy');
 
-            const mappedResponse: GenerateContentResponse = {
-                candidates: [{
-                    content: {
-                        role: 'model',
-                        parts: [{ text }]
-                    }
-                }]
-            };
+                // We append the target path to the proxy URL if the proxy is set up to handle it
+                // Based on standard simple proxy patterns: POST to proxy with body.
+                // However, ragProxy checks req.path. So we might need to construct the URL effectively.
+                // Assuming standard Cloud Function behavior: URL is BaseURL/functionName
+                // But ragProxy code says: const targetPath = req.path;
 
-            return wrapResponse(mappedResponse);
+                // If the function is hosted at /ragProxy, req.path is usually /.
+                // To pass dynamic path info to a specialized proxy function, we often need to use a rewrites rule or query param.
+                // Let's check `firebase.json` or assume we send the target as a header or body if req.path isn't reliable directly without hosting rewrites.
 
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Generate Content Failed:', err.message);
-            throw err;
-        }
+                // Actually, examining ragProxy again: 
+                // It uses `https.onRequest`. If we call `.../ragProxy/v1beta/models/...`, req.path *might* capture the suffix if rewritten.
+                // Without hosting rewrites, req.path is just /.
+
+                // Use a safer fallback: Use `generateContentStream` usage pattern or `httpsCallable` if possible?
+                // `ragProxy` is an `onRequest`. 
+                // Let's assume for now we call the function URL + the path we want masked.
+                // Standard Firebase Functions URL: https://region-project.cloudfunctions.net/ragProxy
+                // If we append /v1beta/..., it might 404 unless allowed.
+
+                // Alternative: Use `generateContentProxy` callable if we had one.
+                // But we have `ragProxy`. 
+
+                // Let's try appending the path. If it fails, we know why.
+                const url = `${proxyUrl}${endpointPath}`;
+
+                const contents = Array.isArray(options.contents)
+                    ? options.contents
+                    : [options.contents];
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents,
+                        systemInstruction: options.systemInstruction ? { parts: [{ text: options.systemInstruction }] } : undefined,
+                        tools: options.tools,
+                        generationConfig: options.config
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Proxy Error ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                // Normalize response
+                const mappedResponse: GenerateContentResponse = {
+                    candidates: result.candidates?.map((c: any): Candidate => ({
+                        content: {
+                            role: c.content?.role ?? 'model',
+                            parts: (c.content?.parts ?? []).map((p: any): ContentPart => {
+                                if (p.text) return { text: p.text };
+                                if (p.functionCall) return {
+                                    functionCall: {
+                                        name: p.functionCall.name,
+                                        args: p.functionCall.args
+                                    }
+                                };
+                                return { text: '' };
+                            })
+                        },
+                        finishReason: c.finishReason,
+                        safetyRatings: c.safetyRatings,
+                        index: c.index
+                    })),
+                    promptFeedback: result.promptFeedback
+                };
+
+                return wrapResponse(mappedResponse);
+
+            } catch (error) {
+                const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+                console.error('[AIService] Generate Content Failed:', err.message);
+                throw err;
+            }
+        });
     }
 
     /**
@@ -207,22 +272,71 @@ export class AIService {
      * Generate content with streaming response
      */
     async generateContentStream(options: GenerateStreamOptions): Promise<ReadableStream<StreamChunk>> {
-        try {
-            const stream = await firebaseAI.generateContentStream(options.contents as any);
+        // Points to our secure backend function which holds the API key
+        const functionUrl = endpointService.getFunctionUrl('generateContentStream');
 
-            const transformer = new TransformStream<string, StreamChunk>({
-                transform(chunk, controller) {
-                    controller.enqueue({ text: () => chunk });
-                }
-            });
+        const response = await this.withRetry(() => fetch(functionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: options.model,
+                contents: options.contents,
+                config: options.config
+            })
+        }));
 
-            return stream.pipeThrough(transformer);
-
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
-            console.error('[AIService] Generate Content Stream Failed:', err.message);
-            throw err;
+        if (!response.ok) {
+            console.error(`[AIService] Stream Response Error: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            throw new AppException(
+                AppErrorCode.NETWORK_ERROR,
+                `Generate Content Stream Failed: ${errorText}`
+            );
         }
+
+        if (!response.body) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'No response body');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        return new ReadableStream<StreamChunk>({
+            async start(controller) {
+                try {
+                    let buffer = '';
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+
+
+                        const chunk = decoder.decode(value, { stream: true });
+                        buffer += chunk;
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() ?? '';
+
+                        for (const line of lines) {
+                            if (line.trim() === '') continue;
+                            try {
+                                const parsed = JSON.parse(line) as { text?: string };
+                                if (parsed.text) {
+                                    const text = parsed.text;
+                                    controller.enqueue({ text: () => text });
+                                }
+                            } catch {
+                                // console.warn('[AIService] Failed to parse stream chunk:', line);
+                                // SIlently fail on non-json chunks (like keep-alive newlines)
+                            }
+                        }
+                    }
+                    controller.close();
+                } catch (err) {
+                    controller.error(err);
+                }
+            }
+        });
     }
 
     /**

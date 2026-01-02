@@ -42,15 +42,6 @@ export default function VideoWorkflow() {
         setProgress: setJobProgress
     } = useVideoEditorStore();
 
-    // Expose store for E2E testing
-    useEffect(() => {
-        // @ts-ignore
-        if (window.electronAPI || window.__TEST_MODE__) {
-            // @ts-ignore
-            window.useVideoEditorStore = useVideoEditorStore;
-        }
-    }, []);
-
     const toast = useToast();
 
     // View State: 'director' (Generation) or 'editor' (Timeline)
@@ -115,6 +106,38 @@ export default function VideoWorkflow() {
                     setJobProgress(data.progress);
                 }
 
+
+                        // Update progress
+                        if (data.progress) {
+                            useVideoEditorStore.getState().setProgress(data.progress);
+                        }
+
+                        if (newStatus === 'completed' && data.videoUrl) {
+                            const newAsset = {
+                                id: jobId,
+                                url: data.videoUrl,
+                                prompt: data.prompt || localPromptRef.current,
+                                type: 'video' as const,
+                                timestamp: Date.now(),
+                                projectId: currentProjectId || 'default',
+                                orgId: currentOrganizationId
+                            };
+                            addToHistory(newAsset);
+                            setActiveVideo(newAsset); // Auto-play result
+                            toast.success('Scene generated!');
+                            setJobId(null);
+                            setJobStatus('idle');
+                            useVideoEditorStore.getState().setProgress(0);
+                        } else if (newStatus === 'failed') {
+                            toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
+                            setJobId(null);
+                            setJobStatus('failed');
+                            useVideoEditorStore.getState().setProgress(0);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Job listener error:", e);
                 if (newStatus === 'completed' && data.videoUrl) {
                     const newAsset = {
                         id: jobId,
@@ -122,7 +145,8 @@ export default function VideoWorkflow() {
                         prompt: data.prompt || localPromptRef.current,
                         type: 'video' as const,
                         timestamp: Date.now(),
-                        projectId: currentProjectId,
+                        projectId: currentProjectId || 'default',
+                        projectId: 'default',
                         orgId: currentOrganizationId
                     };
                     addToHistory(newAsset);
@@ -139,7 +163,7 @@ export default function VideoWorkflow() {
         });
 
         return () => { if (unsubscribe) unsubscribe(); };
-    }, [jobId, addToHistory, toast, setJobId, setJobStatus, setJobProgress, currentProjectId, currentOrganizationId, setActiveVideo]);
+    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
 
     const handleGenerate = async () => {
         setJobStatus('queued');
@@ -229,6 +253,27 @@ export default function VideoWorkflow() {
                                         <Sparkles size={24} className="text-purple-400 animate-pulse" />
                                     </div>
                                 </div>
+                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
+                                    {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-2">
+                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
+                                    {jobStatus === 'stitching' ? 'Stitching Scenes...' : 'Imaginating Scene...'}
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-2">
+                                    {jobStatus === 'stitching'
+                                        ? 'Combining segments into final cut'
+                                        : 'AI Director is rendering your vision'}
+                                </p>
+
+                                {useVideoEditorStore.getState().progress > 0 && (
+                                    <div className="w-64 h-2 bg-gray-800 rounded-full mt-4 overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                                            style={{ width: `${useVideoEditorStore.getState().progress}%` }}
+                                        />
+                                    </div>
+                                )}
                                 <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
                                     {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
                                 </h3>

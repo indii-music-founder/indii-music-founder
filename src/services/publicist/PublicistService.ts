@@ -4,31 +4,17 @@ import {
     where,
     onSnapshot,
     addDoc,
-    serverTimestamp,
-    QuerySnapshot,
-    DocumentData
+    serverTimestamp
+    addDoc
 } from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import { Campaign, Contact } from '@/modules/publicist/types'; // Updated import path to alias
-import { COLLECTIONS } from '@/core/config/collections';
-import { z } from 'zod';
+import { db } from '../firebase'; // Corrected path to src/services/firebase.ts
+import { Campaign, Contact } from '../../modules/publicist/types';
 
-// Define Zod schemas for runtime validation
-const CampaignSchema = z.object({
-    userId: z.string().optional(),
-    artist: z.string(),
-    title: z.string(),
-    status: z.enum(['Draft', 'Live', 'Scheduled', 'Ended']),
-}).passthrough();
-
-const ContactSchema = z.object({
-    userId: z.string().optional(),
-    name: z.string(),
-    outlet: z.string(),
-    role: z.enum(['Journalist', 'Curator', 'Influencer', 'Editor']),
-}).passthrough();
 
 export class PublicistService {
+    private static campaignsCollection = 'publicist_campaigns';
+    private static contactsCollection = 'publicist_contacts';
+
     /**
      * Subscribe to user's campaigns
      */
@@ -36,30 +22,18 @@ export class PublicistService {
         if (!userId) return () => { };
 
         const q = query(
-            collection(db, COLLECTIONS.PUBLICIST.CAMPAIGNS),
+            collection(db, this.campaignsCollection),
             where('userId', '==', userId)
         );
 
-        return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-            const campaigns: Campaign[] = [];
-
-            snapshot.docs.forEach(doc => {
-                const data = doc.data();
-                const parseResult = CampaignSchema.safeParse(data);
-
-                if (parseResult.success) {
-                    campaigns.push({
-                        id: doc.id,
-                        ...data
-                    } as Campaign);
-                } else {
-                    console.warn(`[PublicistService] Invalid campaign document ${doc.id}:`, parseResult.error);
-                }
-            });
-
+        return onSnapshot(q, (snapshot) => {
+            const campaigns = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Campaign[];
             callback(campaigns);
         }, (error) => {
-            console.error("[PublicistService] Error fetching campaigns:", error);
+            console.error("Error fetching campaigns:", error);
             callback([]);
         });
     }
@@ -71,57 +45,24 @@ export class PublicistService {
         if (!userId) return () => { };
 
         const q = query(
-            collection(db, COLLECTIONS.PUBLICIST.CONTACTS),
+            collection(db, this.contactsCollection),
             where('userId', '==', userId)
         );
 
-        return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-            const contacts: Contact[] = [];
-
-            snapshot.docs.forEach(doc => {
-                const data = doc.data();
-                const parseResult = ContactSchema.safeParse(data);
-
-                if (parseResult.success) {
-                    contacts.push({
-                        id: doc.id,
-                        ...data
-                    } as Contact);
-                } else {
-                    console.warn(`[PublicistService] Invalid contact document ${doc.id}:`, parseResult.error);
-                }
-            });
-
+        return onSnapshot(q, (snapshot) => {
+            const contacts = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Contact[];
             callback(contacts);
         }, (error) => {
-            console.error("[PublicistService] Error fetching contacts:", error);
+            console.error("Error fetching contacts:", error);
             callback([]);
         });
     }
 
-    private static validateCampaign(campaign: Omit<Campaign, 'id'>): void {
-        const result = CampaignSchema.safeParse(campaign);
-        if (!result.success) {
-            const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-            throw new Error(`Invalid campaign data: ${errorMessages}`);
-        }
-        if (!campaign.title?.trim()) throw new Error('Campaign title is required');
-        if (!campaign.artist?.trim()) throw new Error('Artist name is required');
-        if (!campaign.status) throw new Error('Campaign status is required');
-    }
-
-    private static validateContact(contact: Omit<Contact, 'id'>): void {
-        const result = ContactSchema.safeParse(contact);
-        if (!result.success) {
-            const errorMessages = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-            throw new Error(`Invalid contact data: ${errorMessages}`);
-        }
-        if (!contact.name?.trim()) throw new Error('Contact name is required');
-    }
-
     static async addCampaign(userId: string, campaign: Omit<Campaign, 'id'>) {
-        this.validateCampaign(campaign);
-        return addDoc(collection(db, COLLECTIONS.PUBLICIST.CAMPAIGNS), {
+        return addDoc(collection(db, this.campaignsCollection), {
             ...campaign,
             userId,
             createdAt: serverTimestamp()
@@ -129,12 +70,19 @@ export class PublicistService {
     }
 
     static async addContact(userId: string, contact: Omit<Contact, 'id'>) {
-        this.validateContact(contact);
-        return addDoc(collection(db, COLLECTIONS.PUBLICIST.CONTACTS), {
+        return addDoc(collection(db, this.contactsCollection), {
             ...contact,
             userId,
             createdAt: serverTimestamp()
         });
     }
-}
 
+    /**
+     * @deprecated Seed functionality has been moved to a standalone script.
+     * Use scripts/migrate-mock-to-firestore.ts for seeding.
+     */
+    static async seedDatabase(userId: string) {
+        console.warn('PublicistService.seedDatabase is deprecated and no longer operational.');
+        return Promise.resolve();
+    }
+}

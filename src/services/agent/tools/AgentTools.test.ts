@@ -30,33 +30,28 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const resultString = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
-            const result = JSON.parse(resultString);
+            const resultStr = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const result = JSON.parse(resultStr);
             expect(result.approved).toBe(true);
             expect(result.score).toBe(9);
         });
 
         it('verify_output handles invalid JSON response gracefully', async () => {
-            const mockResponse = {
+             const mockResponse = {
                 text: () => "Invalid JSON"
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            // Mock console.error to avoid noise
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
-            const resultString = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
-            const result = JSON.parse(resultString);
+            const resultStr = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const result = JSON.parse(resultStr);
             expect(result.approved).toBe(false);
             expect(result.critique).toBe("AI Generation Failed");
-
-            consoleSpy.mockRestore();
         });
     });
 
     describe('MarketingTools', () => {
         it('create_campaign_brief handles valid JSON response', async () => {
-            const mockResponse = {
+             const mockResponse = {
                 text: () => JSON.stringify({
                     campaignName: "Test Campaign",
                     targetAudience: "Gen Z",
@@ -67,8 +62,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const resultString = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
-            const result = JSON.parse(resultString);
+            const resultStr = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
+            const result = JSON.parse(resultStr);
             expect(result.campaignName).toBe("Test Campaign");
             expect(result.targetAudience).toBe("Gen Z");
         });
@@ -76,7 +71,7 @@ describe('Agent Tools Validation', () => {
 
     describe('RoadTools', () => {
         it('plan_tour_route handles valid JSON response', async () => {
-            const mockResponse = {
+             const mockResponse = {
                 text: () => JSON.stringify({
                     route: ["NY", "NJ"],
                     totalDistance: "100 miles",
@@ -86,9 +81,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            // RoadTools returns a stringified JSON
-            const resultString = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
-            const result = JSON.parse(resultString);
+            const resultStr = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
+            const result = JSON.parse(resultStr);
             expect(result.route).toContain("NY");
             expect(result.totalDistance).toBe("100 miles");
         });

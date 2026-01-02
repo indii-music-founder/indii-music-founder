@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { MerchProduct } from '@/modules/merchandise/types';
 
@@ -20,7 +20,7 @@ export const MerchandiseService = {
     /**
      * Subscribe to products for a user
      */
-    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void, errorCallback?: (error: any) => void) => {
+    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void) => {
         const q = query(
             collection(db, COLLECTION_NAME),
             where('userId', '==', userId)
@@ -32,7 +32,7 @@ export const MerchandiseService = {
                 ...docSnap.data()
             } as MerchProduct));
             callback(products);
-        }, errorCallback);
+        });
     },
 
     /**
@@ -60,13 +60,12 @@ export const MerchandiseService = {
         price?: string;
         image?: string;
     }) => {
-        const docSnap = await getDoc(doc(db, CATALOG_COLLECTION, catalogId));
+        const catalog = await MerchandiseService.getCatalog();
+        const template = catalog.find(p => p.id === catalogId);
 
-        if (!docSnap.exists()) {
+        if (!template) {
             throw new Error(`Catalog product ${catalogId} not found`);
         }
-
-        const template = { id: docSnap.id, ...docSnap.data() } as CatalogProduct;
 
         const product: Omit<MerchProduct, 'id'> = {
             title: customizations?.title || template.title,

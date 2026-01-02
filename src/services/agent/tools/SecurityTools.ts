@@ -1,5 +1,5 @@
 
-import { AI } from '@/services/ai/AIService';
+import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { delay } from '@/utils/async';
@@ -228,6 +228,7 @@ export const SecurityTools = {
             SecurityReportSchema.parse(report);
             return JSON.stringify(report, null, 2);
         } catch (e) {
+            console.warn('SecurityReportSchema validation failed:', e);
             return JSON.stringify(report, null, 2);
         }
     }
