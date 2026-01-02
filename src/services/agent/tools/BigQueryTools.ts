@@ -1,3 +1,4 @@
+import { delay } from '@/utils/async';
 
 // Tool: BigQuery Mock
 // This tool simulates BigQuery data retrieval for the Finance Agent.
@@ -7,7 +8,7 @@ export const execute_bigquery_query = async (args: { query: string }) => {
     console.log(`[BigQuery Mock] Executing query: ${args.query}`);
 
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await delay(1500);
 
     const lowerQuery = args.query.toLowerCase();
 

@@ -3,11 +3,7 @@ import {
     query,
     where,
     onSnapshot,
-    addDoc,
-    doc,
-    setDoc,
-    getDocs,
-    writeBatch
+    addDoc
 } from 'firebase/firestore';
 import { db } from '../firebase'; // Corrected path to src/services/firebase.ts
 import { Campaign, Contact } from '../../modules/publicist/types';
@@ -16,7 +12,6 @@ import { Campaign, Contact } from '../../modules/publicist/types';
 export class PublicistService {
     private static campaignsCollection = 'publicist_campaigns';
     private static contactsCollection = 'publicist_contacts';
-
 
     /**
      * Subscribe to user's campaigns

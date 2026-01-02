@@ -18,6 +18,7 @@ import {
     Candidate
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
+import { delay as asyncDelay } from '@/utils/async';
 
 // ============================================================================
 // Helper Functions
@@ -260,7 +261,7 @@ export class AIService {
 
             if (retries > 0 && isRetryable) {
                 console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await asyncDelay(delay);
                 return this.withRetry(operation, retries - 1, delay * 2);
             }
             throw error;
@@ -383,7 +384,7 @@ export class AIService {
                     }
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await asyncDelay(1000);
                 attempts++;
             }
 

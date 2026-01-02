@@ -5,7 +5,7 @@ import VideoWorkflow from './VideoWorkflow';
 import { useStore } from '@/core/store';
 import { extractVideoFrame } from '../../utils/video';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 
 // Mock Store
@@ -47,9 +47,11 @@ vi.mock('./components/FrameSelectionModal', () => ({
 
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
-vi.mock('@/services/video/VideoGenerationService', () => ({
+const mockSubscribeToJob = vi.fn();
+vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+        subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
     },
 }));
 
@@ -118,16 +120,10 @@ describe('VideoWorkflow', () => {
 
         render(<VideoWorkflow />);
 
-        // Assuming there is a generate button or similar trigger
-        // Note: The actual trigger in UI might be inside DirectorPromptBar which is child.
-        // If DirectorPromptBar needs 'onGenerate', VideoWorkflow passes handleGenerate.
-        // We'll simulate finding the Generate button if it exists or trigger the form.
+        // Set prompt first
+        const input = screen.getByPlaceholderText(/describe your scene/i);
+        fireEvent.change(input, { target: { value: 'Cyberpunk city' } });
 
-        // Since DirectorPromptBar uses an input and enter or button, lets try to find the button.
-        // Assuming DirectorPromptBar has a button with text "Generate" or similar icon.
-
-        // If explicit button not found, we might need to adjust test or mock DirectorPromptBar.
-        // But let's assume standard button.
         const generateBtn = screen.getByRole('button', { name: /generate/i });
         fireEvent.click(generateBtn);
 
@@ -137,7 +133,7 @@ describe('VideoWorkflow', () => {
         });
     });
 
-    it('listens to Firestore updates when jobId is present', async () => {
+    it('listens to job updates via VideoGeneration service', async () => {
         // Setup store with a jobId
         (useVideoEditorStore as any).mockReturnValue({
             jobId: 'job-123',
@@ -148,12 +144,13 @@ describe('VideoWorkflow', () => {
 
         (useVideoEditorStore as any).getState.mockReturnValue({ status: 'queued' });
 
-        // Mock onSnapshot
-        mockOnSnapshot.mockImplementation((ref, callback) => {
+        // Mock subscribeToJob
+        mockSubscribeToJob.mockImplementation((id, callback) => {
             // Simulate completion
             callback({
-                exists: () => true,
-                data: () => ({ status: 'completed', videoUrl: 'http://video.url', prompt: 'test prompt' })
+                status: 'completed',
+                videoUrl: 'http://video.url',
+                prompt: 'test prompt'
             });
             return () => { };
         });
@@ -161,7 +158,7 @@ describe('VideoWorkflow', () => {
         render(<VideoWorkflow />);
 
         await waitFor(() => {
-            expect(mockOnSnapshot).toHaveBeenCalled();
+            expect(mockSubscribeToJob).toHaveBeenCalledWith('job-123', expect.any(Function));
         });
 
         expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({

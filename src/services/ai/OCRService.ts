@@ -1,5 +1,5 @@
-
 import { createWorker } from 'tesseract.js';
+import { delay } from '@/utils/async';
 
 export const OCRService = {
     /**
@@ -24,9 +24,9 @@ export const OCRService = {
         });
 
         // Add timeout to prevent infinite hanging
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('OCR Metadata Download Timed Out')), 60000)
-        );
+        const timeoutPromise = delay(60000).then(() => {
+            throw new Error('OCR Metadata Download Timed Out');
+        });
 
         try {
             const result = await Promise.race([

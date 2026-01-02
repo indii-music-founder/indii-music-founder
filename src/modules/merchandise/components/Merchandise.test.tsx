@@ -32,9 +32,11 @@ describe('Merchandise Components', () => {
             products: [...mockStandardProducts, ...mockProProducts],
             standardProducts: mockStandardProducts,
             proProducts: mockProProducts,
+            catalog: [],
             loading: false,
             addProduct: vi.fn(),
-            deleteProduct: vi.fn()
+            deleteProduct: vi.fn(),
+            createFromCatalog: vi.fn()
         });
 
         render(<BananaMerch />);
@@ -50,9 +52,11 @@ describe('Merchandise Components', () => {
             products: [...mockStandardProducts, ...mockProProducts],
             standardProducts: mockStandardProducts,
             proProducts: mockProProducts,
+            catalog: [],
             loading: false,
             addProduct: vi.fn(),
-            deleteProduct: vi.fn()
+            deleteProduct: vi.fn(),
+            createFromCatalog: vi.fn()
         });
 
         render(<BananaProMerch />);
@@ -66,9 +70,11 @@ describe('Merchandise Components', () => {
             products: [],
             standardProducts: [],
             proProducts: [],
+            catalog: [],
             loading: false, // assuming component handles empty list gracefully
             addProduct: vi.fn(),
-            deleteProduct: vi.fn()
+            deleteProduct: vi.fn(),
+            createFromCatalog: vi.fn()
         });
 
         render(<BananaMerch />);
