@@ -13,10 +13,10 @@ async function verifyHardening() {
     const releaseId = uuidv4();
     console.log(`🆔 Test Internal Release ID: ${releaseId}`);
 
-    // Initialize store with local CWD to avoid Electron path errors
-    const localStore = new DistributionPersistenceService({ cwd: process.cwd() });
-    localStore.clearAll();
-    console.log('🧹 Store Cleared (Local CWD)');
+    // Initialize store
+    const localStore = new DistributionPersistenceService();
+    // Note: clearAll no longer exists - this is a Firestore-backed service
+    console.log('🧹 Store Initialized (Firestore-backed)');
 
     // Inject local store into DistributorService
     DistributorService.setPersistenceService(localStore);
@@ -175,7 +175,7 @@ async function verifyHardening() {
 
     // 4. Verify Immediate Persistence
     console.log('\n💾 Verifying Persistence...');
-    let deployments = localStore.getDeploymentsForRelease(releaseId);
+    let deployments = await localStore.getDeploymentsForRelease(releaseId);
     if (deployments.length === 1) {
         console.log(`✅ Persistence Found: [${deployments[0].status}] ${deployments[0].distributorId}`);
     } else {
@@ -191,7 +191,7 @@ async function verifyHardening() {
     console.log('Status Report:', statuses);
 
     // Verify store was updated (simulating that the getStatus call refreshed it)
-    deployments = localStore.getDeploymentsForRelease(releaseId);
+    deployments = await localStore.getDeploymentsForRelease(releaseId);
     console.log(`Current Store Status: ${deployments[0].status}`);
 
     console.log('\n✨ Hardening Verification Complete!');

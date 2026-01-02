@@ -30,7 +30,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const resultStr = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const result = JSON.parse(resultStr);
             expect(result.approved).toBe(true);
             expect(result.score).toBe(9);
         });
@@ -41,7 +42,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const resultStr = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            const result = JSON.parse(resultStr);
             expect(result.approved).toBe(false);
             expect(result.critique).toBe("AI Generation Failed");
         });
@@ -60,7 +62,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
+            const resultStr = await MarketingTools.create_campaign_brief({ product: "Song", goal: "Viral" });
+            const result = JSON.parse(resultStr);
             expect(result.campaignName).toBe("Test Campaign");
             expect(result.targetAudience).toBe("Gen Z");
         });
@@ -78,7 +81,8 @@ describe('Agent Tools Validation', () => {
             };
             vi.mocked(AI.generateContent).mockResolvedValue(mockResponse as any);
 
-            const result = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
+            const resultStr = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
+            const result = JSON.parse(resultStr);
             expect(result.route).toContain("NY");
             expect(result.totalDistance).toBe("100 miles");
         });

@@ -2,6 +2,7 @@
 import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
+import { delay } from '@/utils/async';
 
 /**
  * Security Tools
@@ -82,7 +83,7 @@ export const SecurityTools = {
     },
 
     rotate_credentials: async ({ service_name }: { service_name: string }) => {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await delay(500);
         return JSON.stringify({
             service: service_name,
             action: 'rotate_credentials',
@@ -204,7 +205,7 @@ export const SecurityTools = {
             SecurityReportSchema.parse(report);
             return JSON.stringify(report, null, 2);
         } catch (e) {
-             return JSON.stringify(report, null, 2);
+            return JSON.stringify(report, null, 2);
         }
     }
 };

@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useFinance } from './useFinance';
-import { FinanceService } from '@/services/finance/FinanceService';
+import { financeService } from '@/services/finance/FinanceService';
 import * as Sentry from '@sentry/react';
 
 // Mock dependencies
@@ -14,7 +14,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 vi.mock('@/services/finance/FinanceService', () => ({
-    FinanceService: {
+    financeService: {
         getExpenses: vi.fn(),
         addExpense: vi.fn(),
         fetchEarnings: vi.fn()
@@ -68,7 +68,7 @@ describe('useFinance', () => {
 
     it('should load expenses successfully', async () => {
         const mockExpenses = [{ id: '1', amount: 100 } as any];
-        (FinanceService.getExpenses as any).mockResolvedValue(mockExpenses);
+        (financeService.getExpenses as any).mockResolvedValue(mockExpenses);
 
         const { result } = renderHook(() => useFinance());
 
@@ -77,12 +77,12 @@ describe('useFinance', () => {
         });
 
         expect(result.current.expenses).toEqual(mockExpenses);
-        expect(FinanceService.getExpenses).toHaveBeenCalledWith('user-123');
+        expect(financeService.getExpenses).toHaveBeenCalledWith('user-123');
     });
 
     it('should handle errors when loading expenses', async () => {
         const error = new Error('Fetch failed');
-        (FinanceService.getExpenses as any).mockRejectedValue(error);
+        (financeService.getExpenses as any).mockRejectedValue(error);
 
         const { result } = renderHook(() => useFinance());
 
@@ -96,8 +96,8 @@ describe('useFinance', () => {
     });
 
     it('should add expense successfully', async () => {
-        (FinanceService.addExpense as any).mockResolvedValue('new-id');
-        (FinanceService.getExpenses as any).mockResolvedValue([]);
+        (financeService.addExpense as any).mockResolvedValue('new-id');
+        (financeService.getExpenses as any).mockResolvedValue([]);
 
         const { result } = renderHook(() => useFinance());
         const newExpense = { amount: 50, vendor: 'Test' } as any;
@@ -107,8 +107,8 @@ describe('useFinance', () => {
             expect(success).toBe(true);
         });
 
-        expect(FinanceService.addExpense).toHaveBeenCalledWith(newExpense);
+        expect(financeService.addExpense).toHaveBeenCalledWith(newExpense);
         // It should also reload expenses
-        expect(FinanceService.getExpenses).toHaveBeenCalled();
+        expect(financeService.getExpenses).toHaveBeenCalled();
     });
 });

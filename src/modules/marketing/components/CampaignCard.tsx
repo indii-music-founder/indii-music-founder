@@ -28,10 +28,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
-            className="group relative overflow-hidden rounded-2xl bg-gray-900/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:bg-gray-900/60"
+            className="group relative overflow-hidden rounded-2xl bg-gray-900/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/50 hover:shadow-2xl hover:shadow-dept-marketing/20 hover:bg-gray-900/60"
         >
-            {/* Background Gradient Mesh */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Background Gradient Mesh - Brand Accent */}
+            <div className="absolute inset-0 bg-gradient-to-br from-dept-marketing/10 via-transparent to-dept-campaign/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div className="p-6 relative z-10 space-y-4">
                 {/* Header */}
@@ -44,7 +44,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                                 </span>
                             )}
-                            <h3 className="text-lg font-bold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-300 transition-colors">
+                            <h3 className="text-lg font-bold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-dept-marketing group-hover:to-dept-campaign transition-all">
                                 {campaign.title}
                             </h3>
                         </div>
@@ -63,16 +63,16 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 py-2">
-                    <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-dept-marketing/20 transition-colors">
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                            <ActivityIcon size={12} className="text-purple-400" />
+                            <ActivityIcon size={12} className="text-dept-marketing" />
                             <span>Posts</span>
                         </div>
                         <span className="text-lg font-semibold text-gray-200">{campaign.posts.length}</span>
                     </div>
-                    <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
+                    <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-dept-campaign/20 transition-colors">
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                            <CalendarIcon size={12} className="text-pink-400" />
+                            <CalendarIcon size={12} className="text-dept-campaign" />
                             <span>Duration</span>
                         </div>
                         <span className="text-lg font-semibold text-gray-200">{campaign.durationDays}d</span>
@@ -91,7 +91,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 1, ease: "easeOut" }}
                             className={`h-full rounded-full ${isDone ? 'bg-green-500' :
-                                isActive ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                                isActive ? 'bg-gradient-to-r from-dept-marketing to-dept-campaign' :
                                     'bg-gray-600'
                                 }`}
                         />
@@ -109,10 +109,11 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                         </span>
                         <span>{campaign.startDate}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-medium text-purple-400 group-hover:translate-x-1 transition-transform">
+                    <div className="flex items-center gap-1 text-xs font-medium text-dept-marketing group-hover:translate-x-1 transition-transform">
                         Manage <ChevronRightIcon size={14} />
                     </div>
                 </div>
+
             </div>
         </motion.div>
     );

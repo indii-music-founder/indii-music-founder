@@ -47,9 +47,11 @@ vi.mock('./components/FrameSelectionModal', () => ({
 
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
+const mockSubscribeToJob = vi.fn();
 vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+        subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
     },
 }));
 
@@ -131,7 +133,7 @@ describe('VideoWorkflow', () => {
         });
     });
 
-    it('listens to Firestore updates when jobId is present', async () => {
+    it('listens to job updates via VideoGeneration service', async () => {
         // Setup store with a jobId
         (useVideoEditorStore as any).mockReturnValue({
             jobId: 'job-123',
@@ -142,12 +144,13 @@ describe('VideoWorkflow', () => {
 
         (useVideoEditorStore as any).getState.mockReturnValue({ status: 'queued' });
 
-        // Mock onSnapshot
-        mockOnSnapshot.mockImplementation((ref, callback) => {
+        // Mock subscribeToJob
+        mockSubscribeToJob.mockImplementation((id, callback) => {
             // Simulate completion
             callback({
-                exists: () => true,
-                data: () => ({ status: 'completed', videoUrl: 'http://video.url', prompt: 'test prompt' })
+                status: 'completed',
+                videoUrl: 'http://video.url',
+                prompt: 'test prompt'
             });
             return () => { };
         });
@@ -155,7 +158,7 @@ describe('VideoWorkflow', () => {
         render(<VideoWorkflow />);
 
         await waitFor(() => {
-            expect(mockOnSnapshot).toHaveBeenCalled();
+            expect(mockSubscribeToJob).toHaveBeenCalledWith('job-123', expect.any(Function));
         });
 
         expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({

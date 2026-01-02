@@ -235,6 +235,69 @@ service cloud.firestore {
     }
 
     // ========================================
+    // MERCHANDISE CATALOG (admin-managed, public read)
+    // ========================================
+
+    match /merchandise_catalog/{productId} {
+      // Anyone authenticated can read the catalog
+      allow read: if isAuthenticated();
+      // Only admins can write (TODO: implement admin check)
+      allow write: if false;
+    }
+
+    // ========================================
+    // SAMPLE PLATFORMS (knowledge base, public read)
+    // ========================================
+
+    match /sample_platforms/{platformId} {
+      // Anyone authenticated can read platform info
+      allow read: if isAuthenticated();
+      // Only admins can write
+      allow write: if false;
+    }
+
+    // ========================================
+    // API INVENTORY (system config, admin only)
+    // ========================================
+
+    match /api_inventory/{apiId} {
+      // Authenticated users can read API status
+      allow read: if isAuthenticated();
+      // Only admins can write
+      allow write: if false;
+    }
+
+    // ========================================
+    // ONBOARDING TEMPLATES (admin-managed)
+    // ========================================
+
+    match /onboarding_templates/{templateId} {
+      // Anyone authenticated can read templates
+      allow read: if isAuthenticated();
+      // Only admins can write
+      allow write: if false;
+    }
+
+    // ========================================
+    // DISTRIBUTION DEPLOYMENTS (user-scoped)
+    // ========================================
+
+    match /deployments/{deploymentId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // MERCHANDISE (user products)
+    // ========================================
+
+    match /merchandise/{productId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

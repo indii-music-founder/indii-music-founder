@@ -1,6 +1,7 @@
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useStore } from '@/core/store';
+import { delay } from '@/utils/async';
 
 export interface ManufactureRequest {
     productId: string;
@@ -50,13 +51,13 @@ export const ShowroomService = {
             });
 
             // Simulate processing delay then update status
-            setTimeout(async () => {
+            delay(2000).then(async () => {
                 try {
                     await updateDoc(docRef, { status: 'completed' });
                 } catch (e) {
                     console.error("Failed to update manufacture status", e);
                 }
-            }, 2000);
+            });
 
             return {
                 success: true,
@@ -110,7 +111,7 @@ export const ShowroomService = {
             });
 
             // Beta delay
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await delay(3000);
 
             // Mock result for now, but persistent record exists
             const resultUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80";
@@ -166,7 +167,7 @@ export const ShowroomService = {
                 status: 'processing'
             });
 
-            await new Promise(resolve => setTimeout(resolve, 3500));
+            await delay(3500);
 
             const resultUrl = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ254Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxxXmD3v6Te/giphy.gif";
 
