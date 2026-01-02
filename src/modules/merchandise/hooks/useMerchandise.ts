@@ -8,6 +8,22 @@ export const useMerchandise = () => {
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
     const [loading, setLoading] = useState(true);
+    const [catalog, setCatalog] = useState<any[]>([]);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
+
+    // Load catalog on mount
+    useEffect(() => {
+        MerchandiseService.getCatalog()
+            .then((data) => {
+                setCatalog(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Failed to load catalog:", err);
+                setCatalogError(err.message);
+                setLoading(false);
+            });
+    }, []);
     const [catalogError, setCatalogError] = useState<Error | null>(null);
 
     useEffect(() => {
@@ -60,6 +76,7 @@ export const useMerchandise = () => {
         proProducts,
         catalog,
         loading,
+        catalog,
         catalogError,
         addProduct: MerchandiseService.addProduct,
         deleteProduct: MerchandiseService.deleteProduct,

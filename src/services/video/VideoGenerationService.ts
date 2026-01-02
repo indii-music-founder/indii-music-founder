@@ -187,8 +187,17 @@ export class VideoGenerationService {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
-        onProgress?: (current: number, total: number) => void;
+        // Options like onProgress are not serializable and handled via subscription now
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Enforce Authentication
+        if (!auth.currentUser) {
+            throw new Error("You must be signed in to generate video. Please log in.");
+        }
+
+        const orgId = useStore.getState().currentOrganizationId;
+        const jobId = uuidv4();
+        const BLOCK_DURATION = 5; // Veo default blocks
+        const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
         const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
         const jobId = uuidv4();
         const orgId = useStore.getState().currentOrganizationId;
@@ -237,6 +246,34 @@ export class VideoGenerationService {
         }
 
         try {
+            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+
+            // Generate prompts array for blocks
+            const prompts = Array.from({ length: numBlocks }, (_, i) => `${options.prompt} (Segment ${i + 1}/${numBlocks})`);
+
+            await triggerLongFormVideoJob({
+                jobId,
+                prompts,
+                orgId,
+                startImage: options.firstFrame,
+                totalDuration: options.totalDuration,
+                aspectRatio: options.aspectRatio,
+                resolution: options.resolution,
+                seed: options.seed,
+                negativePrompt: options.negativePrompt,
+            });
+
+            // Return a mock entry that the UI can subscribe to via Firebase
+            // The URL is empty because it's asynchronous
+            return [{
+                id: jobId,
+                url: '',
+                prompt: options.prompt
+            }];
+
+        } catch (error) {
+            console.error("Failed to trigger long-form video generation:", error);
+            throw error;
             const jobId = `long_${uuidv4()}`;
             const orgId = useStore.getState().currentOrganizationId;
             const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
