@@ -6,6 +6,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 
 // Switch to File API resource types
 import { AI_MODELS } from '../../core/config/ai-models.ts';
+import { delay } from '@/utils/async';
 
 export interface GeminiFile {
     name: string; // "files/..."
@@ -66,7 +67,7 @@ export class GeminiRetrievalService {
                         }
                         const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
                         console.warn(`Gemini API 429/5xx (${endpoint}). Retrying in ${waitTime}ms...`);
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        await delay(waitTime);
                         continue;
                     }
                     const errorText = await response.text();
@@ -81,7 +82,7 @@ export class GeminiRetrievalService {
                 if (attempt >= maxRetries) throw error;
                 const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
                 console.warn(`Gemini Network Error (${endpoint}). Retrying in ${waitTime}ms...`, errorMessage);
-                await new Promise(resolve => setTimeout(resolve, waitTime));
+                await delay(waitTime);
             }
         }
         throw new Error("Gemini API request failed after retries");
@@ -161,7 +162,7 @@ export class GeminiRetrievalService {
             state = file.state;
             if (state === "FAILED") throw new Error("File processing failed");
             if (state === "ACTIVE") return;
-            await new Promise(r => setTimeout(r, 2000));
+            await delay(2000);
         }
     }
 
@@ -249,7 +250,7 @@ export class GeminiRetrievalService {
             let op = res;
             let attempts = 0;
             while (!op.done && attempts < 10) {
-                await new Promise(r => setTimeout(r, 1000));
+                await delay(1000);
                 // Operation name is like "operations/..."
                 op = await this.fetch(op.name);
                 attempts++;

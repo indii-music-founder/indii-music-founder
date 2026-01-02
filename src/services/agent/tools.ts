@@ -17,7 +17,6 @@ import { MarketingTools } from './tools/MarketingTools';
 import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
-import { PublicistTools } from './tools/PublicistTools';
 import { VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
@@ -38,13 +37,9 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...RoadTools,
     ...SecurityTools,
     ...DevOpsTools,
-    ...PublicistTools,
-    ...PUBLICIST_TOOLS, // Keeping original specific publicist tools if they differ, or merge? PublicistTools covers the new requirements.
+    ...PUBLICIST_TOOLS,
     ...FinanceTools
 };
-
-// Merging PUBLICIST_TOOLS might have overlap, but the new PublicistTools has specific implementations for write_press_release, etc.
-// Let's assume PublicistTools takes precedence if names collide, due to spread order.
 
 export const BASE_TOOLS = `
 AVAILABLE TOOLS:
@@ -69,34 +64,45 @@ AVAILABLE TOOLS:
 19. recall_memories(query: string) - Search long-term memory.
 20. verify_output(goal: string, content: string) - Critique generated content.
 21. request_approval(content: string) - Pause and ask user for approval.
-22. write_press_release(topic: string, angle?: string, quotes?: string[]) - Write a press release.
-23. generate_crisis_response(scenario: string, stakeholders: string[]) - Generate crisis response.
-24. pitch_story(outlet: string, hook: string) - Write a pitch email.
-25. extend_video(videoUrl: string, direction: string, frame: number) - Extend video (direction: 'forwards' or 'backwards').
-26. update_keyframe(clipId: string, property: string, frame: number, value: number, easing: string) - Add or update a keyframe.
-27. list_organizations() - List all organizations.
-28. switch_organization(orgId: string) - Switch to a different organization.
-29. create_organization(name: string) - Create a new organization.
-30. get_organization_details() - Get details of current organization.
-31. list_files(limit?: number, type?: string) - List recently generated files.
-32. search_files(query: string, type?: string) - Search files by name or type.
-33. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
-34. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.
-35. get_distance_matrix(origins: string[], destinations: string[]) - Calculate travel time and distance between locations.
-36. analyze_brand_consistency(content: string, brand_guidelines?: string) - Analyze brand consistency.
-37. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
-38. audit_visual_assets(assets: string[]) - Audit visual assets.
-39. create_campaign_brief(product: string, goal: string, budget?: string, duration?: string) - Create marketing campaign brief.
-40. analyze_audience(genre: string, similar_artists?: string[]) - Analyze target audience.
-41. schedule_content(campaign_start: string, platforms: string[], frequency: string) - Create content calendar.
-42. track_performance(campaignId: string) - Track marketing performance.
-43. plan_tour_route(locations?: string[], start_location?: string, end_location?: string, stops?: string[], timeframe?: string) - Plan tour route.
-44. calculate_tour_budget(days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string) - Calculate tour budget.
-45. generate_itinerary(route?: any, city?: string, date?: string, venue?: string, show_time?: string) - Generate daily itinerary.
-46. audit_permissions(project_id?: string) - Audit security permissions.
-47. scan_for_vulnerabilities(scope: string) - Scan for vulnerabilities.
-48. check_api_status(api_name: string) - Check API status.
-49. scan_content(text: string) - Scan content for sensitive data.
-50. rotate_credentials(service_name: string) - Rotate credentials.
-51. verify_zero_touch_prod(service_name: string) - Verify zero-touch prod.
+22. write_press_release(headline: string, company_name: string, key_points: string[], contact_info: string) - Write a press release.
+23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate crisis response.
+24. extend_video(videoUrl: string, direction: string, frame: number) - Extend video (direction: 'forwards' or 'backwards').
+25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing: string) - Add or update a keyframe.
+26. list_organizations() - List all organizations.
+27. switch_organization(orgId: string) - Switch to a different organization.
+28. create_organization(name: string) - Create a new organization.
+29. get_organization_details() - Get details of current organization.
+30. list_files(limit?: number, type?: string) - List recently generated files.
+31. search_files(query: string, type?: string) - Search files by name or type.
+32. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
+33. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.
+34. get_distance_matrix(origins: string[], destinations: string[]) - Calculate travel time and distance between locations.
+35. analyze_brand_consistency(content: string, type: string) - Analyze brand consistency.
+36. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
+37. audit_visual_assets(assets: string[]) - Audit visual assets.
+38. create_campaign_brief(product: string, goal: string) - Create marketing campaign brief.
+39. analyze_audience(platform: string) - Analyze target audience.
+40. schedule_content(posts: any[]) - Create content schedule.
+41. plan_tour_route(locations?: string[], start_location?: string, end_location?: string, stops?: string[], timeframe?: string) - Plan tour route.
+42. calculate_tour_budget(days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string) - Calculate tour budget.
+43. generate_itinerary(route?: any, city?: string, date?: string, venue?: string, show_time?: string) - Generate daily itinerary.
+44. audit_permissions(project_id?: string) - Audit security permissions.
+45. scan_for_vulnerabilities(scope: string) - Scan for vulnerabilities.
+46. track_performance(campaignId: string) - Track campaign performance.
+47. check_api_status(api_name: string) - Check API status.
+48. scan_content(text: string) - Scan content for sensitive data.
+49. rotate_credentials(service_name: string) - Rotate credentials.
+50. verify_zero_touch_prod(service_name: string) - Verify zero-touch prod.
+35. analyze_brand_consistency(content: string, brand_guidelines?: string) - Analyze brand consistency.
+36. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
+37. audit_visual_assets(assets: string[]) - Audit visual assets.
+38. create_campaign_brief(product: string, goal: string, budget?: string, duration?: string) - Create marketing campaign brief.
+39. analyze_audience(genre: string, similar_artists?: string[]) - Analyze target audience.
+40. schedule_content(campaign_start: string, platforms: string[], frequency: string) - Create content calendar.
+41. track_performance(campaignId: string) - Track marketing performance.
+42. plan_tour_route(start_location: string, end_location: string, stops: string[], timeframe: string) - Plan tour route.
+43. calculate_tour_budget(crew_size: number, duration_days: number, accommodation_level: string) - Calculate tour budget.
+44. generate_itinerary(city: string, date: string, venue: string, show_time: string) - Generate daily itinerary.
+45. audit_permissions(project_id?: string) - Audit security permissions.
+46. scan_for_vulnerabilities(scope: string) - Scan for vulnerabilities.
 `;

@@ -131,7 +131,15 @@ export interface DDEXReleaseRecord {
     metadata: ExtendedGoldenMetadata;
 
     // Assets
-    assets: ReleaseAssets;
+    assets: {
+        audioUrl: string;
+        audioFormat: 'wav' | 'flac' | 'mp3';
+        audioSampleRate: number;
+        audioBitDepth: number;
+        coverArtUrl: string;
+        coverArtWidth: number;
+        coverArtHeight: number;
+    };
 
     // Distribution State
     status: ReleaseDistributionStatus;
@@ -149,42 +157,6 @@ export interface DDEXReleaseRecord {
     updatedAt: string;
     submittedAt?: string;
     publishedAt?: string;
-}
-
-export interface AudioFile {
-    url: string; // URL or File Path
-    mimeType: string;
-    sizeBytes: number;
-    format: 'wav' | 'flac' | 'mp3';
-    sampleRate: number;
-    bitDepth: number;
-    durationSeconds?: number;
-    filename?: string;
-    md5Checksum?: string;
-}
-
-export interface ImageFile {
-    url: string; // URL or File Path
-    mimeType: string;
-    sizeBytes: number;
-    width: number;
-    height: number;
-    filename?: string;
-    md5Checksum?: string;
-}
-
-export interface ReleaseAssets {
-    audioFiles: AudioFile[]; // Supports multiple formats (e.g. WAV, FLAC, MP3) of the same track
-    coverArt: ImageFile;
-    lyrics?: {
-        text: string;
-        language: string;
-    };
-    additionalMaterials?: {
-        url: string;
-        type: string;
-        filename: string;
-    }[];
 }
 
 export const INITIAL_METADATA: GoldenMetadata = {

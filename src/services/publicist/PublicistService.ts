@@ -4,10 +4,8 @@ import {
     where,
     onSnapshot,
     addDoc,
-    doc,
-    setDoc,
-    getDocs,
-    writeBatch
+    serverTimestamp
+    addDoc
 } from 'firebase/firestore';
 import { db } from '../firebase'; // Corrected path to src/services/firebase.ts
 import { Campaign, Contact } from '../../modules/publicist/types';
@@ -16,7 +14,6 @@ import { Campaign, Contact } from '../../modules/publicist/types';
 export class PublicistService {
     private static campaignsCollection = 'publicist_campaigns';
     private static contactsCollection = 'publicist_contacts';
-
 
     /**
      * Subscribe to user's campaigns
@@ -68,7 +65,7 @@ export class PublicistService {
         return addDoc(collection(db, this.campaignsCollection), {
             ...campaign,
             userId,
-            createdAt: new Date()
+            createdAt: serverTimestamp()
         });
     }
 
@@ -76,7 +73,16 @@ export class PublicistService {
         return addDoc(collection(db, this.contactsCollection), {
             ...contact,
             userId,
-            createdAt: new Date()
+            createdAt: serverTimestamp()
         });
+    }
+
+    /**
+     * @deprecated Seed functionality has been moved to a standalone script.
+     * Use scripts/migrate-mock-to-firestore.ts for seeding.
+     */
+    static async seedDatabase(userId: string) {
+        console.warn('PublicistService.seedDatabase is deprecated and no longer operational.');
+        return Promise.resolve();
     }
 }

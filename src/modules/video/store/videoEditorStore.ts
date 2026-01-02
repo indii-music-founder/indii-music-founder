@@ -152,6 +152,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     referenceImages: [],
     generateAudio: true,
     timelineZoom: 1,
+    progress: 0,
 
     viewMode: 'director',
     setViewMode: (mode) => set({ viewMode: mode }),

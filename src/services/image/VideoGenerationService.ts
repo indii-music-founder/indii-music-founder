@@ -2,31 +2,31 @@ import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
+import { extractVideoFrame } from '@/utils/video';
 import { functions, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { delay } from '@/utils/async';
-import { functions, db } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
-import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
-
-export interface VideoJob {
-    id: string;
-    prompt: string;
-    status: 'queued' | 'processing' | 'completed' | 'failed';
-    videoUrl?: string;
-    error?: string;
-    createdAt: number;
-    updatedAt?: number;
-}
 
 export interface VideoGenerationOptions {
-    aspectRatio?: '16:9' | '9:16' | '1:1';
-    duration?: '5s' | '10s';
-    style?: string;
+    prompt: string;
+    aspectRatio?: string;
+    resolution?: string;
+    seed?: number;
+    negativePrompt?: string;
+    model?: string;
+    firstFrame?: string;
+    lastFrame?: string;
+    timeOffset?: number;
+    ingredients?: string[];
+    duration?: number;
+    fps?: number;
+    cameraMovement?: string;
+    motionStrength?: number;
+    shotList?: ShotItem[];
+    orgId?: string;
 }
 
 export class VideoGenerationService {
@@ -187,51 +187,8 @@ export class VideoGenerationService {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
-        // Options like onProgress are not serializable and handled via subscription now
+        onProgress?: (current: number, total: number) => void;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        // Enforce Authentication
-        if (!auth.currentUser) {
-            throw new Error("You must be signed in to generate video. Please log in.");
-        }
-
-        const orgId = useStore.getState().currentOrganizationId;
-        const jobId = uuidv4();
-        const BLOCK_DURATION = 5; // Veo default blocks
-        const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
-        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
-        const jobId = uuidv4();
-        const orgId = useStore.getState().currentOrganizationId;
-
-        // Generate prompts for segments (server will handle daisychaining)
-        const BLOCK_DURATION = 5; // Veo generates 5s clips
-        const numSegments = Math.ceil(options.totalDuration / BLOCK_DURATION);
-        const prompts = Array.from({ length: numSegments }, (_, i) =>
-            `${options.prompt} (Part ${i + 1}/${numSegments})`
-        );
-
-        // Explicitly map properties to avoid spreading non-serializable objects (like onProgress)
-        // and to match backend schema.
-        await triggerLongFormVideoJob({
-            jobId,
-            prompts,
-            orgId,
-            totalDuration: options.totalDuration,
-            startImage: options.firstFrame,
-            // Pass specific options expected by VideoJobSchema
-            options: {
-                aspectRatio: options.aspectRatio || "16:9",
-                resolution: options.resolution,
-                seed: options.seed,
-                negativePrompt: options.negativePrompt
-            }
-        });
-
-        // Return a placeholder for the parent job
-        return [{
-            id: jobId,
-            url: '', // Will be updated when completed
-            prompt: options.prompt
-        }];
         // Pre-flight duration quota check
         const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
         if (!durationCheck.allowed) {
@@ -246,41 +203,20 @@ export class VideoGenerationService {
         }
 
         try {
-            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
-
-            // Generate prompts array for blocks
-            const prompts = Array.from({ length: numBlocks }, (_, i) => `${options.prompt} (Segment ${i + 1}/${numBlocks})`);
-
-            await triggerLongFormVideoJob({
-                jobId,
-                prompts,
-                orgId,
-                startImage: options.firstFrame,
-                totalDuration: options.totalDuration,
-                aspectRatio: options.aspectRatio,
-                resolution: options.resolution,
-                seed: options.seed,
-                negativePrompt: options.negativePrompt,
-            });
-
-            // Return a mock entry that the UI can subscribe to via Firebase
-            // The URL is empty because it's asynchronous
-            return [{
-                id: jobId,
-                url: '',
-                prompt: options.prompt
-            }];
-
-        } catch (error) {
-            console.error("Failed to trigger long-form video generation:", error);
-            throw error;
             const jobId = `long_${uuidv4()}`;
             const orgId = useStore.getState().currentOrganizationId;
             const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
+            // Construct segment-wise prompts for the background worker
+            const BLOCK_DURATION = 8;
+            const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
+            const prompts = Array.from({ length: numBlocks }, (_, i) =>
+                `${options.prompt} (Part ${i + 1}/${numBlocks})`
+            );
+
             await triggerLongFormVideoJob({
                 jobId,
-                prompts: [options.prompt], // Array wrapper for initial prompt
+                prompts,
                 orgId,
                 startImage: options.firstFrame,
                 totalDuration: options.totalDuration,
@@ -303,15 +239,8 @@ export class VideoGenerationService {
             throw e;
         }
     }
-class VideoGenerationServiceImpl {
-    /**
-     * Triggers a video generation job via Cloud Functions.
-     * Returns the jobId for tracking.
-     */
-    async generateVideo(prompt: string, options: VideoGenerationOptions = {}): Promise<string> {
-        const jobId = uuidv4();
-        const triggerFn = httpsCallable(functions, 'triggerVideoJob');
 
+    async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
         try {
             const { functions } = await import('../firebase');
             const { httpsCallable } = await import('firebase/functions');
@@ -322,59 +251,15 @@ class VideoGenerationServiceImpl {
 
             await triggerVideoJob({
                 ...options,
-            await triggerFn({
                 jobId,
-                prompt,
-                ...options
             });
-            return jobId;
+
+            return { jobId };
         } catch (error) {
-            console.error('[VideoGenerationService] Failed to trigger job:', error);
+            console.error("Failed to trigger video generation:", error);
             throw error;
         }
     }
 }
 
 export const VideoGeneration = new VideoGenerationService();
-
-    /**
-     * Subscribes to the status of a specific video job.
-     * Returns an unsubscribe function.
-     */
-    subscribeToJob(jobId: string, callback: (job: VideoJob | null) => void): Unsubscribe {
-        const jobRef = doc(db, 'videoJobs', jobId);
-
-        return onSnapshot(jobRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.data();
-                callback({
-                    id: snapshot.id,
-                    prompt: data.prompt, // Note: Ensure prompt is saved in trigger or update
-                    status: data.status,
-                    videoUrl: data.videoUrl,
-                    error: data.error,
-                    createdAt: data.createdAt?.toMillis() || Date.now(),
-                    updatedAt: data.updatedAt?.toMillis()
-                } as VideoJob);
-            } else {
-                callback(null);
-            }
-        }, (error) => {
-            console.error(`[VideoGenerationService] Subscription error for ${jobId}:`, error);
-        });
-    }
-
-    /**
-     * One-off check for job status (polling alternative)
-     */
-    async getJobStatus(jobId: string): Promise<VideoJob | null> {
-        return new Promise((resolve, reject) => {
-            const unsub = this.subscribeToJob(jobId, (job) => {
-                unsub();
-                resolve(job);
-            });
-        });
-    }
-}
-
-export const VideoGenerationService = new VideoGenerationServiceImpl();
