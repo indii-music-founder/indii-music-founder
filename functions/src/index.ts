@@ -207,6 +207,79 @@ export const inngestApi = functions
                                     ...data
                                 }, { merge: true });
                             }
+                        };
+
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
+                        }
+
+                        const result = await response.json();
+                        const predictions = result.predictions;
+
+                        if (!predictions || predictions.length === 0) {
+                            throw new Error("No predictions returned from Veo API");
+                        }
+
+                        const prediction = predictions[0];
+
+                        // Handle different possible response formats
+
+                        // Case A: Base64 Encoded Video
+                        if (prediction.bytesBase64Encoded) {
+                            const bucket = admin.storage().bucket();
+                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                                metadata: { contentType: 'video/mp4' }
+                            });
+
+                            const [url] = await file.getSignedUrl({
+                                action: 'read',
+                                expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // 7 days
+                            });
+
+                            return url;
+                        }
+
+                        // Case B: GCS URI
+                        if (prediction.gcsUri) {
+                             // Note: GCS URIs (gs://) are not directly accessible via HTTP.
+                             // Ideally we would sign this URL or copy it to our bucket.
+                             // For now, we return it as is, or we could copy it.
+                             return prediction.gcsUri;
+                        }
+
+                        // Case C: Video URI (Direct HTTP link if supported)
+                        if (prediction.videoUri) {
+                            return prediction.videoUri;
+                        }
+
+                        // If it returns a GCS URI in gcsUri
+                        if (prediction.gcsUri) {
+                             return prediction.gcsUri;
+                        }
+
+                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
+                    });
+
+                    // Step 3: Update status to complete
+                    await step.run("update-status-complete", async () => {
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "completed", // Aligning with 'completed' vs 'complete' inconsistency - defaulting to 'completed'
+                            videoUrl: videoUri,
+                            progress: 100,
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
                         );
                      });
 
