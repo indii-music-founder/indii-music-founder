@@ -26,14 +26,14 @@ vi.mock('@/services/image/ImageGenerationService', () => ({
     }
 }));
 
-vi.mock('@/services/image/VideoGenerationService', () => ({
+vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: vi.fn()
     }
 }));
 
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
 describe('Filmmaking Grammar Tools', () => {
 

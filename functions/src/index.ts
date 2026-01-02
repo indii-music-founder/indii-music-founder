@@ -5,6 +5,7 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { GoogleAuth } from "google-auth-library";
+import { z } from "zod";
 import { generateVideoLogic } from "./lib/video";
 import { generateVideoWithVeo, VideoJobSchema } from "./lib/video";
 
@@ -33,6 +34,29 @@ const corsHandler = corsLib({ origin: true });
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
 
+// Validation Schemas
+const VideoJobSchema = z.object({
+    jobId: z.string().uuid().or(z.string().min(1)), // UUID preferred but string allowed for backward compat
+    prompt: z.string().min(1).max(5000),
+    orgId: z.string().optional().default("personal"),
+    aspectRatio: z.string().optional().default("16:9"),
+    duration: z.string().optional(),
+    durationSeconds: z.number().optional(),
+    resolution: z.string().optional(),
+    fps: z.number().optional(),
+    cameraMovement: z.string().optional(),
+    motionStrength: z.number().optional(),
+    // Advanced Options
+    seed: z.number().optional(),
+    negativePrompt: z.string().optional(),
+    model: z.string().optional(),
+    firstFrame: z.string().optional(),
+    lastFrame: z.string().optional(),
+    timeOffset: z.number().optional(),
+    ingredients: z.array(z.string()).optional(),
+    shotList: z.array(z.any()).optional() // Allow shotList as any array for now
+});
+
 /**
  * Trigger Video Generation Job
  *
@@ -47,7 +71,7 @@ export const triggerVideoJob = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -57,6 +81,26 @@ export const triggerVideoJob = functions
 
         const userId = context.auth.uid;
 
+        // Zod Validation
+        const validation = VideoJobSchema.safeParse(data);
+        if (!validation.success) {
+             throw new functions.https.HttpsError(
+                "invalid-argument",
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+            );
+        }
+
+        const { jobId, prompt, orgId, ...options } = validation.data;
+
+        try {
+            // 1. Create Initial Job Record in Firestore
+            // We do this BEFORE sending the event to prevent race conditions where
+            // the UI subscribes to a doc that doesn't exist yet.
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                id: jobId,
+                userId: userId,
+                orgId: orgId,
+                prompt: prompt,
         // Use Zod for validation
         const result = VideoJobSchema.safeParse({
             jobId: data.jobId,
@@ -95,6 +139,14 @@ export const triggerVideoJob = functions
 
             await inngest.send({
                 name: "video/generate.requested",
+                data: {
+                    jobId: jobId,
+                    userId: userId,
+                    orgId: orgId,
+                    prompt: prompt,
+                    options: options,
+                    timestamp: Date.now(),
+                },
                 data: jobData,
                 user: {
                     id: jobData.userId,
@@ -134,6 +186,14 @@ export const inngestApi = functions
             { event: "video/generate.requested" },
             generateVideoLogic
             async ({ event, step }) => {
+                // Ensure typed access or validation here as well
+                const eventData = event.data;
+                // Double check critical fields
+                if (!eventData.jobId || !eventData.prompt || !eventData.userId) {
+                    throw new Error("Missing critical event data (jobId, prompt, userId)");
+                }
+
+                const { jobId, prompt, userId, options } = eventData;
                 const { jobId, userId } = event.data;
 
                 try {

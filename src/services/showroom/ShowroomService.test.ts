@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ShowroomService } from './ShowroomService';
 import { Editing } from '@/services/image/EditingService';
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
 // Mock dependencies
 vi.mock('@/services/image/EditingService', () => ({
@@ -10,7 +10,7 @@ vi.mock('@/services/image/EditingService', () => ({
     }
 }));
 
-vi.mock('@/services/image/VideoGenerationService', () => ({
+vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: vi.fn()
     }
