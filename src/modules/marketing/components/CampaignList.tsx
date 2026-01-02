@@ -12,6 +12,7 @@ interface CampaignListProps {
     campaigns: CampaignAsset[];
     onSelectCampaign: (campaign: CampaignAsset) => void;
     onCreateNew: () => void;
+    onAIGenerate?: () => void;
 }
 
 const containerVars = {
@@ -29,7 +30,7 @@ const itemVars = {
     show: { opacity: 1, y: 0 }
 };
 
-const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign, onCreateNew }) => {
+const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign, onCreateNew, onAIGenerate }) => {
     return (
         <div className="space-y-8">
             {/* Section Header */}
@@ -49,6 +50,29 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 animate="show"
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
+                {/* AI Generate Card */}
+                {onAIGenerate && (
+                    <motion.div variants={itemVars}>
+                        <button
+                            onClick={onAIGenerate}
+                            className="w-full h-full min-h-[220px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-pink-500/30 bg-gradient-to-br from-pink-900/10 to-purple-900/10 hover:from-pink-900/20 hover:to-purple-900/20 hover:border-pink-500/50 transition-all duration-300"
+                        >
+                            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                                <SparklesIcon size={32} className="text-pink-400 group-hover:text-pink-300" />
+                            </div>
+                            <div className="text-center">
+                                <h3 className="font-semibold text-white group-hover:text-pink-200 transition-colors">Generate with AI</h3>
+                                <p className="text-sm text-gray-500 mt-1 max-w-[200px]">Create a complete campaign from a brief</p>
+                            </div>
+
+                            {/* Decorative Sparkles */}
+                            <div className="absolute top-4 right-4">
+                                <SparklesIcon size={16} className="text-pink-400 animate-pulse" />
+                            </div>
+                        </button>
+                    </motion.div>
+                )}
+
                 {/* Create New Card */}
                 <motion.div variants={itemVars}>
                     <button
@@ -60,7 +84,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                         </div>
                         <div className="text-center">
                             <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors">New Campaign</h3>
-                            <p className="text-sm text-gray-500 mt-1 max-w-[200px]">Launch a new AI-driven marketing campaign</p>
+                            <p className="text-sm text-gray-500 mt-1 max-w-[200px]">Create manually from scratch</p>
                         </div>
 
                         {/* Decorative AI Sparkles */}
