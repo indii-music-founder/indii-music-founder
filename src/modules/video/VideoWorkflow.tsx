@@ -114,7 +114,7 @@ export default function VideoWorkflow() {
                                 prompt: data.prompt || localPromptRef.current,
                                 type: 'video' as const,
                                 timestamp: Date.now(),
-                                projectId: 'default',
+                                projectId: currentProjectId || 'default',
                                 orgId: currentOrganizationId
                             };
                             addToHistory(newAsset);
@@ -123,7 +123,7 @@ export default function VideoWorkflow() {
                             setJobId(null);
                             setJobStatus('idle');
                         } else if (newStatus === 'failed') {
-                            toast.error('Generation failed');
+                            toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
                             setJobId(null);
                             setJobStatus('failed');
                         }

@@ -154,62 +154,40 @@ export class VideoGenerationServiceImpl {
         firstFrame?: string;
         onProgress?: (current: number, total: number) => void;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const BLOCK_DURATION = 8; // seconds
-        const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
-        const results: { id: string, url: string, prompt: string }[] = [];
-        let currentFirstFrame = options.firstFrame;
+        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+        const jobId = uuidv4();
+        const orgId = useStore.getState().currentOrganizationId;
 
-        // Pre-flight duration quota check
-        const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
-        if (!durationCheck.allowed) {
-            const tier = await MembershipService.getCurrentTier();
-            throw new QuotaExceededError(
-                'video_duration',
-                tier,
-                `Video duration ${options.totalDuration}s exceeds ${durationCheck.tierName} tier limit of ${durationCheck.maxDuration}s`,
-                options.totalDuration,
-                durationCheck.maxDuration
-            );
-        }
+        // Generate prompts for segments (server will handle daisychaining)
+        const BLOCK_DURATION = 5; // Veo generates 5s clips
+        const numSegments = Math.ceil(options.totalDuration / BLOCK_DURATION);
+        const prompts = Array.from({ length: numSegments }, (_, i) =>
+            `${options.prompt} (Part ${i + 1}/${numSegments})`
+        );
 
-        try {
-            for (let i = 0; i < numBlocks; i++) {
-                if (options.onProgress) {
-                    options.onProgress(i + 1, numBlocks);
-                }
-
-                // Generate 8s block
-                const blockResults = await this.generateVideo({
-                    prompt: `${options.prompt} (Part ${i + 1}/${numBlocks})`,
-                    aspectRatio: options.aspectRatio,
-                    resolution: options.resolution,
-                    seed: options.seed ? options.seed + i : undefined,
-                    negativePrompt: options.negativePrompt,
-                    firstFrame: currentFirstFrame,
-                });
-
-                if (blockResults.length > 0) {
-                    const video = blockResults[0];
-                    results.push(video);
-
-                    // Extract last frame for next iteration
-                    try {
-                        const lastFrameData = await extractVideoFrame(video.url);
-                        currentFirstFrame = lastFrameData;
-                    } catch (err: unknown) {
-                        console.warn(`Failed to extract frame from video ${video.id}, breaking chain.`, err);
-                        break;
-                    }
-                } else {
-                    break;
-                }
+        // Explicitly map properties to avoid spreading non-serializable objects (like onProgress)
+        // and to match backend schema.
+        await triggerLongFormVideoJob({
+            jobId,
+            prompts,
+            orgId,
+            totalDuration: options.totalDuration,
+            startImage: options.firstFrame,
+            // Pass specific options expected by VideoJobSchema
+            options: {
+                aspectRatio: options.aspectRatio || "16:9",
+                resolution: options.resolution,
+                seed: options.seed,
+                negativePrompt: options.negativePrompt
             }
-        } catch (e: unknown) {
-            console.error("Long Form Generation Error:", e);
-            throw e;
-        }
+        });
 
-        return results;
+        // Return a placeholder for the parent job
+        return [{
+            id: jobId,
+            url: '', // Will be updated when completed
+            prompt: options.prompt
+        }];
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {

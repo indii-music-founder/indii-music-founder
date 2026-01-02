@@ -5,6 +5,7 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { generateVideoLogic, VideoJobSchema } from "./lib/video";
+import { generateLongFormVideoFn, stitchVideoFn, LongFormVideoJobSchema } from "./lib/long_form_video";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -15,7 +16,7 @@ const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 // Lazy Initialize Inngest Client
-const getInngestClient = () => {
+export const getInngestClient = () => {
     return new Inngest({
         id: "indii-os-functions",
         eventKey: inngestEventKey.value()
@@ -23,6 +24,31 @@ const getInngestClient = () => {
 };
 
 const corsHandler = corsLib({ origin: true });
+
+// ----------------------------------------------------------------------------
+// Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
+// ----------------------------------------------------------------------------
+type MembershipTier = 'free' | 'pro' | 'enterprise';
+
+interface TierLimits {
+    maxVideoDuration: number;          // Max seconds per job
+    maxVideoGenerationsPerDay: number; // Max jobs per day
+}
+
+const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
+    free: {
+        maxVideoDuration: 8 * 60,          // 8 minutes
+        maxVideoGenerationsPerDay: 5,
+    },
+    pro: {
+        maxVideoDuration: 60 * 60,         // 60 minutes
+        maxVideoGenerationsPerDay: 50,
+    },
+    enterprise: {
+        maxVideoDuration: 4 * 60 * 60,     // 4 hours
+        maxVideoGenerationsPerDay: 500,
+    },
+};
 
 // ----------------------------------------------------------------------------
 // Video Generation (Veo)
@@ -107,6 +133,149 @@ export const triggerVideoJob = functions
     });
 
 /**
+ * Trigger Long Form Video Generation Job
+ *
+ * Handles multi-segment video generation (daisychaining) as a background process.
+ */
+export const triggerLongFormVideoJob = functions
+    .runWith({
+        secrets: [inngestEventKey],
+        timeoutSeconds: 60,
+        memory: "256MB"
+    })
+    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
+                "unauthenticated",
+                "User must be authenticated for long form generation."
+            );
+        }
+        const userId = context.auth.uid;
+
+        // Zod Validation
+        const inputData = { ...data, userId };
+        const validation = LongFormVideoJobSchema.safeParse(inputData);
+
+        if (!validation.success) {
+             throw new functions.https.HttpsError(
+                "invalid-argument",
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+            );
+        }
+
+        const { prompts, jobId, orgId, totalDuration, startImage, options } = validation.data;
+
+        // Additional validation explicitly requested by PR
+        if (prompts.length === 0) {
+             throw new functions.https.HttpsError(
+                "invalid-argument",
+                "Prompts array must not be empty."
+            );
+        }
+
+        try {
+            // ------------------------------------------------------------------
+            // Quota Enforcement (Server-Side)
+            // ------------------------------------------------------------------
+
+            // 1. Determine User Tier (Fallback to 'free')
+            let userTier: MembershipTier = 'free';
+            if (orgId && orgId !== 'personal') {
+                // Check Organization Plan
+                const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
+                if (orgDoc.exists) {
+                    const orgData = orgDoc.data();
+                    userTier = (orgData?.plan as MembershipTier) || 'free';
+                }
+            } else {
+                 // Check User Profile (Fallback) - assuming user profile might have plan info
+                 // usually stored in organizations or subscriptions. defaulting to free for safety.
+            }
+
+            const limits = TIER_LIMITS[userTier];
+
+            // 2. Validate Duration Limit
+            const durationNum = parseFloat(totalDuration || "0"); // Assuming string "60" or number
+            if (durationNum > limits.maxVideoDuration) {
+                 throw new functions.https.HttpsError(
+                    "resource-exhausted",
+                    `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
+                );
+            }
+
+            // 3. Validate Daily Usage Limit (Rate Limiting)
+            const today = new Date().toISOString().split('T')[0];
+            const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
+
+            await admin.firestore().runTransaction(async (transaction) => {
+                const usageDoc = await transaction.get(usageRef);
+                const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
+
+                if (currentUsage >= limits.maxVideoGenerationsPerDay) {
+                    throw new functions.https.HttpsError(
+                        "resource-exhausted",
+                        `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
+                    );
+                }
+
+                // Increment Usage Optimistically (or wait for job completion? better to reserve slot)
+                // We will increment here to prevent burst abuse.
+                if (!usageDoc.exists) {
+                    transaction.set(usageRef, { videosGenerated: 1, date: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+                } else {
+                    transaction.update(usageRef, { videosGenerated: admin.firestore.FieldValue.increment(1), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+                }
+            });
+
+            // ------------------------------------------------------------------
+
+            // 1. Create Parent Job Record
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                id: jobId,
+                userId: userId,
+                orgId: orgId || "personal",
+                prompt: prompts[0], // Main prompt
+                status: "queued",
+                isLongForm: true,
+                totalSegments: prompts.length,
+                completedSegments: 0,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 2. Publish Event to Inngest for Long Form
+            const inngest = getInngestClient();
+            await inngest.send({
+                name: "video/long_form.requested",
+                data: {
+                    jobId: jobId,
+                    userId: userId,
+                    orgId: orgId || "personal",
+                    prompts: prompts,
+                    totalDuration: totalDuration,
+                    startImage: startImage,
+                    options: options,
+                    timestamp: Date.now(),
+                },
+                user: { id: userId }
+            });
+
+            return { success: true, message: "Long form video generation started." };
+
+        } catch (error: any) {
+            console.error("[LongFormVideoJob] Error:", error);
+            // Re-throw HttpsErrors directly
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
+            throw new functions.https.HttpsError(
+                "internal",
+                `Failed to queue long form job: ${error.message}`
+            );
+        }
+    });
+
+/**
  * Inngest API Endpoint
  *
  * This is the entry point for Inngest Cloud to call back into our functions
@@ -121,15 +290,19 @@ export const inngestApi = functions
         const inngestClient = getInngestClient();
 
         // Actual Video Generation Logic using Veo
-        const generateVideoFn = inngestClient.createFunction(
+        const generateVideo = inngestClient.createFunction(
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
             generateVideoLogic
         );
 
+        // Register Long Form Functions
+        const generateLongForm = generateLongFormVideoFn(inngestClient);
+        const stitchVideo = stitchVideoFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideoFn],
+            functions: [generateVideo, generateLongForm, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
 
