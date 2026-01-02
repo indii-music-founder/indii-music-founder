@@ -1,3 +1,5 @@
+import { functions, db } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';

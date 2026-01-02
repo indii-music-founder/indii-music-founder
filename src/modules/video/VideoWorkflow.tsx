@@ -106,6 +106,7 @@ export default function VideoWorkflow() {
                     setJobProgress(data.progress);
                 }
 
+
                         // Update progress
                         if (data.progress) {
                             useVideoEditorStore.getState().setProgress(data.progress);
@@ -252,6 +253,10 @@ export default function VideoWorkflow() {
                                         <Sparkles size={24} className="text-purple-400 animate-pulse" />
                                     </div>
                                 </div>
+                                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
+                                    {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-2">
                                 <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
                                     {jobStatus === 'stitching' ? 'Stitching Scenes...' : 'Imaginating Scene...'}
                                 </h3>

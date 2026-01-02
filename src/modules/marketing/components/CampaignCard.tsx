@@ -107,6 +107,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                     <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                     </div>
                     <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
                 <div className="space-y-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Campaign Progress">
                     <div className="flex justify-between text-xs text-muted-foreground">
                         <span id={`progress-label-${campaign.id}`}>Progress</span>

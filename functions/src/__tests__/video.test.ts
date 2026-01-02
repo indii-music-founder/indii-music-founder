@@ -1,4 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as admin from 'firebase-admin';
+
+// Mock Firebase Admin
+vi.mock('firebase-admin', () => ({
+    initializeApp: vi.fn(),
+    firestore: vi.fn(() => ({
+        collection: vi.fn(() => ({
+            doc: vi.fn(() => ({
+                set: vi.fn(),
+                get: vi.fn()
+            }))
+        })),
+        FieldValue: {
+            serverTimestamp: vi.fn()
+        }
+    })),
+    storage: vi.fn(),
+    auth: vi.fn()
 
 // Hoist mocks to top level to avoid ReferenceError
 const mockSet = vi.fn();
@@ -122,6 +140,43 @@ vi.mock('firebase-functions/params', () => ({
 
 vi.mock('@google-cloud/vertexai', () => ({
     VertexAI: vi.fn()
+}));
+
+describe('Video Backend', () => {
+    it('should be testable', () => {
+        expect(true).toBe(true);
+    });
+
+    it('should initialize firebase admin when module loads', async () => {
+        // Dynamic import to trigger execution
+        await import('../index');
+        expect(admin.initializeApp).toHaveBeenCalled();
+    });
+});
+
+// Mocks
+const mockSet = vi.fn();
+const mockDoc = vi.fn(() => ({ set: mockSet }));
+const mockCollection = vi.fn(() => ({ doc: mockDoc }));
+const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
+const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
+
+const mockAuthGetClient = vi.fn();
+const mockAuthGetProjectId = vi.fn();
+
+// Mock Modules
+vi.mock('firebase-admin', () => ({
+    initializeApp: vi.fn(),
+    firestore: Object.assign(mockFirestore, { FieldValue: mockFieldValue }),
+    storage: vi.fn(() => ({
+        bucket: () => ({
+            file: () => ({
+                save: vi.fn(),
+                makePublic: vi.fn(),
+                publicUrl: () => 'https://mock-storage-url.com/video.mp4'
+            })
+        })
+    }))
 }));
 
 // Mock GoogleAuth class using a class-like structure for the mock

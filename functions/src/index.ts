@@ -240,6 +240,13 @@ export const triggerLongFormVideoJob = functions
         const userId = context.auth.uid;
         const { prompts, jobId, orgId, totalDuration, startImage, ...options } = data;
 
+        if (!prompts || !Array.isArray(prompts) || !jobId) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                "Missing required fields: prompts (array) or jobId."
+            );
+        }
+
         // Validation: Ensure prompts is a non-empty array
         if (!prompts || !Array.isArray(prompts) || prompts.length === 0 || !jobId) {
             throw new functions.https.HttpsError(
@@ -472,6 +479,7 @@ export const inngestApi = functions
                                 instances: [
                                     {
                                         prompt: prompt,
+                                        ...(currentStartImage ? { image: { bytesBase64Encoded: currentStartImage.split(',')[1] } } : {})
                                         ...(currentStartImage ? {
                                             image: {
                                                 bytesBase64Encoded: currentStartImage.includes(',')
@@ -497,6 +505,9 @@ export const inngestApi = functions
                                 body: JSON.stringify(requestBody)
                             });
 
+                            if (!response.ok) throw new Error(`Veo Segment ${i} failed`);
+
+                            const result = await response.json();
                             if (!response.ok) {
                                 const errorText = await response.text();
                                 throw new Error(`Veo Segment ${i} failed: ${response.status} ${errorText}`);
@@ -533,6 +544,7 @@ export const inngestApi = functions
                                 });
                                 return file.publicUrl();
                             }
+                            return prediction.videoUri || prediction.gcsUri || "";
 
                             // If URI returned (Video/GCS), return it directly (it's already a URL)
                             return prediction.videoUri || prediction.gcsUri;
@@ -663,6 +675,10 @@ export const inngestApi = functions
                             job: {
                                 outputUri,
                                 config: {
+                                    inputs: segmentUrls.map((url: string, index: number) => ({
+                                        key: `input${index}`,
+                                        uri: url.replace('https://storage.googleapis.com/', 'gs://').replace(/\?.+$/, '')
+                                    })),
                                     inputs: segmentUrls.map((url: string, index: number) => {
                                         let uri = url;
                                         if (uri.startsWith('https://storage.googleapis.com/')) {
@@ -728,6 +744,12 @@ export const inngestApi = functions
                         }, { merge: true });
                     });
 
+                } catch (error: any) {
+                    console.error("Stitching failed:", error);
+                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        stitchError: error.message,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
                     // Wait for completion (Polling)
                     // We poll every 5 seconds for up to 5 minutes
                     let finalState = 'PROCESSING';
@@ -1069,6 +1091,8 @@ export const ragProxy = functions
             }
 
             try {
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
                 const allowedPrefixes = [
                     '/v1beta/files',
                     '/v1beta/models',
