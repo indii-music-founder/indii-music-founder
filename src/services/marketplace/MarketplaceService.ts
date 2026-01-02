@@ -30,53 +30,6 @@ export class MarketplaceService {
     }
 
     /**
-     * Seed initial products for a user.
-     */
-    static async seedDatabase(userId: string): Promise<void> {
-        const { writeBatch, doc } = await import('firebase/firestore');
-        const batch = writeBatch(db);
-        const initialProducts: Omit<Product, 'id' | 'createdAt' | 'isActive'>[] = [
-            {
-                sellerId: userId,
-                title: 'Debut Album - Digital Download',
-                price: 9.99,
-                currency: 'USD',
-                description: 'Full high-quality MP3/FLAC download.',
-                type: 'album',
-                inventory: 9999,
-                images: ['https://placehold.co/400x400/purple/white?text=Album']
-            },
-            {
-                sellerId: userId,
-                title: 'Band T-Shirt',
-                price: 24.99,
-                currency: 'USD',
-                description: '100% Cotton, Black.',
-                type: 'merch',
-                inventory: 50,
-                images: ['https://placehold.co/400x400/black/white?text=T-Shirt']
-            }
-        ];
-
-        for (const p of initialProducts) {
-            const docRef = doc(collection(db, this.PRODUCTS_COLLECTION));
-            batch.set(docRef, {
-                ...p,
-                createdAt: serverTimestamp(),
-                isActive: true
-            });
-        }
-
-        try {
-            await batch.commit();
-            console.log(`[MarketplaceService] Successfully seeded ${initialProducts.length} products`);
-        } catch (error) {
-            console.error('[MarketplaceService] Failed to seed database:', error);
-            throw error;
-        }
-    }
-
-    /**
      * Get all active products for a specific artist.
      */
     static async getProductsByArtist(artistId: string): Promise<Product[]> {
