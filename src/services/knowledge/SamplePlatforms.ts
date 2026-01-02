@@ -95,6 +95,11 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
                 platformsCache = validPlatforms;
                 return platformsCache;
             }
+            platformsCache = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as SamplePlatform));
+            return platformsCache;
         }
     } catch (error) {
         console.warn('[SamplePlatforms] Failed to load from Firestore, using fallback:', error);
@@ -130,6 +135,24 @@ export const identifyPlatform = (input: string): SamplePlatform | null => {
 export const identifyPlatformAsync = async (input: string): Promise<SamplePlatform | null> => {
     const platforms = await loadSamplePlatforms();
     return findPlatformByKeyword(platforms, input);
+};
+
+/**
+ * Identify a platform from input text (sync version)
+ */
+export const identifyPlatform = (input: string): SamplePlatform | null => {
+    const normalized = input.toLowerCase();
+    const platforms = getSamplePlatforms();
+    return platforms.find(p => p.keywords.some(k => normalized.includes(k))) || null;
+};
+
+/**
+ * Identify a platform from input text (async version that ensures platforms are loaded)
+ */
+export const identifyPlatformAsync = async (input: string): Promise<SamplePlatform | null> => {
+    const platforms = await loadSamplePlatforms();
+    const normalized = input.toLowerCase();
+    return platforms.find(p => p.keywords.some(k => normalized.includes(k))) || null;
 };
 
 // Legacy export for backwards compatibility

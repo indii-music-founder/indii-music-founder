@@ -53,6 +53,10 @@ We are adopting a backend-first monitoring approach:
 
 - **Functions**: Successfully deployed to `<PROJECT_ID>` (`<REGION>`).
 - **PR**: Updates pushed to "Video Generation Updates" PR.
+### 3. Deployment
+
+- **Functions**: Successfully deployed to `indiios-v-1-1` (us-central1).
+- **PR**: Updates pushed to PR #304 (`conflict-resolution...`).
 
 ## Verification
 
@@ -64,3 +68,4 @@ We are adopting a backend-first monitoring approach:
 
 - **Frame Extraction**: Implement "daisychaining" logic using a dedicated frame extraction service (e.g., Cloud Run with ffmpeg) to improve segment transition smoothness.
 - **Error Handling**: Enhance auto-retry policies for the Transcoder API interactions and implement webhook/polling for Transcoder job completion.
+- **Error Handling**: Enhance auto-retry policies for the Transcoder API interactions.

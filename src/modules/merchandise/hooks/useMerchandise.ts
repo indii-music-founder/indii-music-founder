@@ -8,11 +8,13 @@ export const useMerchandise = () => {
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
     const [loading, setLoading] = useState(true);
+    const [catalogError, setCatalogError] = useState<Error | null>(null);
 
     useEffect(() => {
         if (!userProfile?.id) return;
 
         setLoading(true);
+        setCatalogError(null);
 
         // Subscribe to user's products
         const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
@@ -30,6 +32,11 @@ export const useMerchandise = () => {
             .catch((error) => {
                 console.error("Failed to load merchandise catalog:", error);
                 // Ideally set an error state here, but for now just logging as per review feedback to avoid silent failure
+            .then(setCatalog)
+            .catch((err) => {
+                console.error("Failed to load catalog:", err);
+                setCatalogError(err);
+                setLoading(false);
             });
 
         return () => unsubscribe?.();
@@ -53,6 +60,7 @@ export const useMerchandise = () => {
         proProducts,
         catalog,
         loading,
+        catalogError,
         addProduct: MerchandiseService.addProduct,
         deleteProduct: MerchandiseService.deleteProduct,
         createFromCatalog

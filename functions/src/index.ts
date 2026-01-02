@@ -275,6 +275,9 @@ export const inngestApi = functions
                         }
 
                         return prediction.videoUri || prediction.gcsUri || "";
+                        if (prediction.videoUri) return prediction.videoUri;
+                        if (prediction.gcsUri) return prediction.gcsUri;
+                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                     });
 
                     // Update status to complete
@@ -312,6 +315,7 @@ export const inngestApi = functions
                 // Note: currentStartImage needs to be updated for true daisychaining
                 // Currently implementing simplified flow per MVP requirements
                 let currentStartImage = startImage;
+                const currentStartImage = startImage;
 
                 try {
                     // Update main job status
@@ -379,6 +383,9 @@ export const inngestApi = functions
                                 throw new Error(`Veo Segment ${i}: No predictions returned`);
                             }
 
+                            if (!result.predictions || result.predictions.length === 0) {
+                                throw new Error(`Veo Segment ${i}: No predictions returned`);
+                            }
                             const prediction = result.predictions[0];
 
                             const bucket = admin.storage().bucket();
@@ -414,6 +421,8 @@ export const inngestApi = functions
                         if (i < prompts.length - 1) {
                             console.warn(`[LongForm] Daisychaining not implemented - segment ${i} generated independently`);
                         }
+                        // Note: In real daisychaining we would extract frame here.
+                        // Integration with separate frame extraction service would go here.
                     }
 
                     await step.run("trigger-stitch", async () => {
@@ -519,6 +528,9 @@ export const inngestApi = functions
                     }, { merge: true });
                 } finally {
                     await transcoder.close();
+                        stitchError: error.message,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
                 }
             }
         );
@@ -810,6 +822,9 @@ export const ragProxy = functions
                 // Preserve query parameters
                 const queryString = req.url.split('?')[1] || '';
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,

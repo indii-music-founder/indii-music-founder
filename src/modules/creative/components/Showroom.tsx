@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/image/VideoGenerationService';
 import { Editing } from '@/services/image/EditingService';
 
 // Placement options for different product types
