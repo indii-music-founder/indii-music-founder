@@ -152,12 +152,17 @@ export class VideoGenerationServiceImpl {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
-        onProgress?: (current: number, total: number) => void;
+        // Options like onProgress are not serializable and handled via subscription now
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const BLOCK_DURATION = 8; // seconds
+        // Enforce Authentication
+        if (!auth.currentUser) {
+            throw new Error("You must be signed in to generate video. Please log in.");
+        }
+
+        const orgId = useStore.getState().currentOrganizationId;
+        const jobId = uuidv4();
+        const BLOCK_DURATION = 5; // Veo default blocks
         const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
-        const results: { id: string, url: string, prompt: string }[] = [];
-        let currentFirstFrame = options.firstFrame;
 
         // Pre-flight duration quota check
         const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
@@ -173,43 +178,35 @@ export class VideoGenerationServiceImpl {
         }
 
         try {
-            for (let i = 0; i < numBlocks; i++) {
-                if (options.onProgress) {
-                    options.onProgress(i + 1, numBlocks);
-                }
+            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
-                // Generate 8s block
-                const blockResults = await this.generateVideo({
-                    prompt: `${options.prompt} (Part ${i + 1}/${numBlocks})`,
-                    aspectRatio: options.aspectRatio,
-                    resolution: options.resolution,
-                    seed: options.seed ? options.seed + i : undefined,
-                    negativePrompt: options.negativePrompt,
-                    firstFrame: currentFirstFrame,
-                });
+            // Generate prompts array for blocks
+            const prompts = Array.from({ length: numBlocks }, (_, i) => `${options.prompt} (Segment ${i + 1}/${numBlocks})`);
 
-                if (blockResults.length > 0) {
-                    const video = blockResults[0];
-                    results.push(video);
+            await triggerLongFormVideoJob({
+                jobId,
+                prompts,
+                orgId,
+                startImage: options.firstFrame,
+                totalDuration: options.totalDuration,
+                aspectRatio: options.aspectRatio,
+                resolution: options.resolution,
+                seed: options.seed,
+                negativePrompt: options.negativePrompt,
+            });
 
-                    // Extract last frame for next iteration
-                    try {
-                        const lastFrameData = await extractVideoFrame(video.url);
-                        currentFirstFrame = lastFrameData;
-                    } catch (err: unknown) {
-                        console.warn(`Failed to extract frame from video ${video.id}, breaking chain.`, err);
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
-        } catch (e: unknown) {
-            console.error("Long Form Generation Error:", e);
-            throw e;
+            // Return a mock entry that the UI can subscribe to via Firebase
+            // The URL is empty because it's asynchronous
+            return [{
+                id: jobId,
+                url: '',
+                prompt: options.prompt
+            }];
+
+        } catch (error) {
+            console.error("Failed to trigger long-form video generation:", error);
+            throw error;
         }
-
-        return results;
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {

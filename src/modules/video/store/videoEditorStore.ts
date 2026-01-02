@@ -81,9 +81,11 @@ interface VideoEditorState {
 
     // Job Tracking
     jobId: string | null;
-    status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed';
+    status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
+    progress: number;
     setJobId: (id: string | null) => void;
-    setStatus: (status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed') => void;
+    setStatus: (status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed') => void;
+    setProgress: (progress: number) => void;
 
     // Membership
     membershipTier: MembershipTier;
@@ -144,6 +146,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     selectedClipId: null,
     jobId: null,
     status: 'idle',
+    progress: 0,
     membershipTier: 'free',
     extendedProject: null,
     referenceImages: [],
@@ -155,6 +158,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
 
     setJobId: (id) => set({ jobId: id }),
     setStatus: (status) => set({ status }),
+    setProgress: (progress) => set({ progress }),
     setMembershipTier: (tier) => set({ membershipTier: tier }),
 
     // Scene Extension actions
