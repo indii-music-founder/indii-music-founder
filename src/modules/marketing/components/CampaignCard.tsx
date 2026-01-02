@@ -32,11 +32,20 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
 
     return (
         <motion.div
+            role="button"
+            tabIndex={0}
+            aria-label={`Select campaign: ${campaign.title}`}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(campaign);
+                }
+            }}
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
             // Bolt UI Unification: Using dept-marketing for visual hierarchy and removing hardcoded hexes
-            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60"
+            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60 focus-visible:ring-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
         >
             {/* Background Gradient Mesh - Marketing Primary to Campaign Secondary */}
             <div className="absolute inset-0 bg-gradient-to-br from-dept-marketing/5 via-transparent to-dept-campaign/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -59,9 +68,12 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                         <p className="text-sm text-muted-foreground line-clamp-1">{campaign.description || "No description provided."}</p>
                     </div>
                     <button
-                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-white/5"
+                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-dept-marketing focus-visible:outline-none"
                         aria-label="More options"
                         onClick={(e) => {
+                            e.stopPropagation();
+                        }}
+                        onKeyDown={(e) => {
                             e.stopPropagation();
                         }}
                     >
@@ -90,12 +102,12 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="space-y-2">
+                <div className="space-y-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Campaign Progress">
                     <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Progress</span>
+                        <span id={`progress-label-${campaign.id}`}>Progress</span>
                         <span className="text-foreground font-medium">{progress}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden" aria-hidden="true">
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
