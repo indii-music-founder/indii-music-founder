@@ -9,7 +9,7 @@ import {
     audit_permissions
 } from './SecurityTools';
 import { AI } from '@/services/ai/AIService';
-import { getDocs } from 'firebase/firestore';
+import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('@/services/ai/AIService', () => ({
@@ -39,35 +39,39 @@ describe('SecurityTools (Mocked)', () => {
 
     describe('audit_permissions', () => {
         it('should return real Firestore data if available', async () => {
-            // Mock Firestore response
-            const mockDocs = [
-                { data: () => ({ role: 'admin' }) },
-                { data: () => ({ role: 'editor' }) },
-                { data: () => ({ role: 'admin' }) }
-            ];
-            (getDocs as any).mockResolvedValue({
-                empty: false,
-                forEach: (cb: any) => mockDocs.forEach(cb)
+            // Mock Firestore response for Organization
+            const mockOrgData = {
+                ownerId: 'user-1',
+                members: ['user-1', 'user-2', 'user-3']
+            };
+
+            (getDoc as any).mockResolvedValue({
+                exists: () => true,
+                data: () => mockOrgData
             });
 
-            const result = await audit_permissions({ project_id: 'test-project' });
+            const result = await audit_permissions({ project_id: 'org-1' });
             const parsed = JSON.parse(result);
 
             expect(parsed.status).toBe("Live Audit Complete");
-            // 2 admins, 1 editor
-            const adminRole = parsed.roles.find((r: any) => r.role === 'admin');
-            const editorRole = parsed.roles.find((r: any) => r.role === 'editor');
 
-            expect(adminRole.count).toBe(2);
-            expect(editorRole.count).toBe(1);
+            // Logic: owner = admin, others = viewer
+            // user-1 is owner -> admin
+            // user-2, user-3 -> viewer
+
+            const adminRole = parsed.roles.find((r: any) => r.role === 'admin');
+            const viewerRole = parsed.roles.find((r: any) => r.role === 'viewer');
+
+            expect(adminRole.count).toBe(1);
+            expect(viewerRole.count).toBe(2);
 
             // AI should NOT be called
             expect(AI.generateContent).not.toHaveBeenCalled();
         });
 
         it('should fallback to AI if Firestore returns empty/error', async () => {
-            // Mock Firestore empty
-            (getDocs as any).mockResolvedValue({ empty: true });
+            // Mock Firestore not found
+            (getDoc as any).mockResolvedValue({ exists: () => false });
 
             // Mock AI response
             const mockAIResponse = {

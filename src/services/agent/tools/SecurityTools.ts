@@ -164,22 +164,23 @@ export const SecurityTools = {
 
         if (project_id) {
             try {
-                // Attempt to query 'users' where projectId is present in their allowed projects (hypothetical schema)
-                // OR check 'file_nodes' to see owner diversity
-                // Since schema is loosely defined in memory, we'll try to query a 'project_members' subcollection or similar.
-                // Assuming 'deployments' collection tracks organization members per memory.
+                // Corrected Logic: Query 'organizations' collection instead of non-existent 'deployments'
+                // Schema: { members: string[], ownerId: string }
+                const docRef = doc(db, 'organizations', project_id);
+                const docSnap = await getDoc(docRef);
 
-                // Let's try querying 'deployments' (which holds org members) if project_id is treated as an org
-                const q = query(collection(db, 'deployments'), where('orgId', '==', project_id));
-                const snap = await getDocs(q);
-
-                if (!snap.empty) {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
                     realRoles = {};
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        const role = data.role || 'viewer';
+                    const members = data.members || [];
+                    const ownerId = data.ownerId;
+
+                    members.forEach((userId: string) => {
+                        // Infer role since schema doesn't store it explicitly
+                        const role = (userId === ownerId) ? 'admin' : 'viewer';
                         realRoles![role] = (realRoles![role] || 0) + 1;
                     });
+
                     projectIdFound = true;
                 }
             } catch (e) {
