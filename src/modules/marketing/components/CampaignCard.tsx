@@ -35,6 +35,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onSelect(campaign)}
+            // Bolt UI Unification: Using dept-marketing for visual hierarchy and removing hardcoded hexes
+            className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-white/5 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60"
             className="group relative overflow-hidden rounded-2xl bg-surface/40 border border-border/50 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-dept-marketing/30 hover:shadow-2xl hover:shadow-dept-marketing/10 hover:bg-surface/60"
         >
             {/* Background Gradient Mesh */}
@@ -76,6 +78,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                     <div className="bg-black/20 rounded-xl p-3 border border-border/10 group-hover:border-dept-marketing/20 transition-colors">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                             {/* Marketing Activity */}
                             <ActivityIcon size={12} className="text-dept-marketing" />
@@ -86,6 +89,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                     <div className="bg-black/20 rounded-xl p-3 border border-border/10 group-hover:border-dept-campaign/20 transition-colors">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                             {/* Campaign Duration */}
                             <CalendarIcon size={12} className="text-dept-campaign" />
@@ -124,6 +128,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             isDone ? 'bg-success/10 border-success/20 text-success' :
                                 'bg-secondary border-border'
                 <div className="pt-2 flex justify-between items-center border-t border-white/5">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className={`px-2 py-0.5 rounded-full border ${isActive ? 'bg-green-500/10 border-green-500/20 text-green-400' :
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span className={`px-2 py-0.5 rounded-full border ${isActive ? 'bg-dept-marketing/10 border-dept-marketing/20 text-dept-marketing' :
                             isDone ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
