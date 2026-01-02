@@ -85,6 +85,14 @@ export const triggerVideoJob = functions
         }
 
         const userId = context.auth.uid;
+        // Construct input matching the schema
+        // The client might pass { jobId, prompt, ... }
+        // We ensure defaults are respected via Zod.
+        const inputData: any = { ...(data as any), userId };
+
+        // Zod Validation
+        const validation = VideoJobSchema.safeParse(inputData);
+        if (!validation.success) {
         const { prompt, jobId, orgId, ...options } = data;
 
         if (!prompt || !jobId) {
@@ -397,6 +405,9 @@ export const inngestApi = functions
                             return file.publicUrl();
                         }
 
+                        if (prediction.videoUri) return prediction.videoUri;
+                        if (prediction.gcsUri) return prediction.gcsUri;
+                        throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
                         return prediction.videoUri || prediction.gcsUri || "";
                         if (prediction.videoUri) return prediction.videoUri;
                         if (prediction.gcsUri) return prediction.gcsUri;
@@ -518,6 +529,9 @@ export const inngestApi = functions
                                 throw new Error(`Veo Segment ${i}: No predictions returned`);
                             }
                             const prediction = result.predictions[0];
+
+                            const bucket = admin.storage().bucket();
+                            const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
 
                             // Check output format
                             if (!prediction.bytesBase64Encoded && !prediction.videoUri && !prediction.gcsUri) {

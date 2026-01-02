@@ -154,6 +154,35 @@ describe('Video Backend', () => {
     });
 });
 
+// Hoisted Mocks
+const {
+    mockSet,
+    mockDoc,
+    mockCollection,
+    mockFirestore,
+    mockFieldValue,
+    mockAuthGetClient,
+    mockAuthGetProjectId
+} = vi.hoisted(() => {
+    const mockSet = vi.fn();
+    const mockDoc = vi.fn(() => ({ set: mockSet }));
+    const mockCollection = vi.fn(() => ({ doc: mockDoc }));
+    const mockFirestore = vi.fn(() => ({ collection: mockCollection }));
+    const mockFieldValue = { serverTimestamp: vi.fn(() => 'TIMESTAMP') };
+
+    const mockAuthGetClient = vi.fn();
+    const mockAuthGetProjectId = vi.fn();
+
+    return {
+        mockSet,
+        mockDoc,
+        mockCollection,
+        mockFirestore,
+        mockFieldValue,
+        mockAuthGetClient,
+        mockAuthGetProjectId
+    };
+});
 // Mocks
 const mockSet = vi.fn();
 const mockDoc = vi.fn(() => ({ set: mockSet }));
@@ -176,6 +205,23 @@ vi.mock('firebase-admin', () => ({
                 publicUrl: () => 'https://mock-storage-url.com/video.mp4'
             })
         })
+    })),
+    // Add auth mock if needed by other tests, though not strictly used in this test file's logic blocks
+    auth: vi.fn()
+}));
+
+// Mock GoogleAuth class using a class-like structure for the mock
+class MockGoogleAuth {
+    getClient() { return mockAuthGetClient(); }
+    getProjectId() { return mockAuthGetProjectId(); }
+}
+
+vi.mock('google-auth-library', () => {
+    return {
+        GoogleAuth: MockGoogleAuth
+    };
+});
+
     }))
 }));
 

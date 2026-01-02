@@ -159,6 +159,11 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
         const snapshot = await getDocs(collection(db, 'sample_platforms'));
         if (!snapshot.empty) {
             const validPlatforms = snapshot.docs
+                .filter(doc => isValidSamplePlatform(doc.data()))
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as SamplePlatform));
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(isValidSamplePlatform);
 

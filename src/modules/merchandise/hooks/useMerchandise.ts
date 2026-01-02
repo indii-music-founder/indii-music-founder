@@ -27,6 +27,7 @@ export const useMerchandise = () => {
         });
 
         // Load product catalog templates
+        MerchandiseService.getCatalog().then(setCatalog).catch(console.error);
         MerchandiseService.getCatalog()
             .then(setCatalog)
             .catch((err) => {

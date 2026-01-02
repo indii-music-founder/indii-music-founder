@@ -248,6 +248,16 @@ export class VideoGenerationService {
         }
 
         try {
+            const jobId = `long_${uuidv4()}`;
+            const orgId = useStore.getState().currentOrganizationId;
+            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+
+            // Construct segment-wise prompts for the background worker
+            const BLOCK_DURATION = 8;
+            const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
+            const prompts = Array.from({ length: numBlocks }, (_, i) =>
+                `${options.prompt} (Part ${i + 1}/${numBlocks})`
+            );
             const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
             // Generate prompts array for blocks
@@ -258,6 +268,7 @@ export class VideoGenerationService {
                 prompts,
                 orgId,
                 startImage: options.firstFrame,
+                ...options
                 totalDuration: options.totalDuration,
                 aspectRatio: options.aspectRatio,
                 resolution: options.resolution,
@@ -335,6 +346,9 @@ class VideoGenerationServiceImpl {
             throw error;
         }
     }
+}
+
+export const VideoGeneration = new VideoGenerationService();
 }
 
 export const VideoGeneration = new VideoGenerationService();
