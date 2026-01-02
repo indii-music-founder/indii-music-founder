@@ -31,6 +31,10 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     firebaseStorageBucket: z.string().optional(),
     firebaseDatabaseURL: z.string().url().optional(),
 
+    // App Check
+    VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),
+    VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: z.string().optional(),
+
     skipOnboarding: z.boolean().default(false),
 });
 
@@ -58,6 +62,8 @@ const processEnv = {
     firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
     firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
     firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL'),
+    appCheckKey: readEnv('VITE_FIREBASE_APP_CHECK_KEY'),
+    appCheckDebugToken: readEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'),
 
     skipOnboarding: toBoolean(readEnv('VITE_SKIP_ONBOARDING')),
 };
@@ -101,6 +107,9 @@ export const env = {
     VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
+    // App Check keys - use processEnv directly since Zod schema uses different property names
+    appCheckKey: processEnv.appCheckKey,
+    appCheckDebugToken: processEnv.appCheckDebugToken,
 };
 // Firebase defaults for the production project. These keep the web app working when
 // environment overrides are not supplied (e.g., on Firebase Hosting deployments).

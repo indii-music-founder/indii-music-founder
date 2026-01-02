@@ -8,10 +8,12 @@ const mockAddToHistory = vi.fn();
 const mockAddKeyframe = vi.fn();
 const mockUpdateKeyframe = vi.fn();
 const mockGetState = vi.fn();
+const mockGenerateLongFormVideo = vi.fn();
 
 vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: (...args: any[]) => mockGenerateVideo(...args)
+        generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+        generateLongFormVideo: (...args: any[]) => mockGenerateLongFormVideo(...args)
     }
 }));
 
@@ -125,42 +127,24 @@ describe('VideoTools', () => {
     });
 
     describe('generate_video_chain', () => {
-        it('should chain overlapping video generation steps', async () => {
-            // Mock sequence:
-            // 1. Generate segment 1 (8s)
-            mockGenerateVideo.mockResolvedValueOnce([{ url: 'http://segment1.mp4' }]);
-            mockExtractVideoFrame.mockResolvedValueOnce('data:image/png;base64,frame1');
-
-            // 2. Generate segment 2 (8s) using frame1
-            mockGenerateVideo.mockResolvedValueOnce([{ url: 'http://segment2.mp4' }]);
-            mockExtractVideoFrame.mockResolvedValueOnce('data:image/png;base64,frame2');
-
-            // We request 16s total.
-            // Loop 1: duration < 16. Current time 0. Gen 8s. New time 8.
-            // Loop 2: duration < 16. Current time 8. Gen 8s. New time 16.
-            // Stop.
+        it('should call generateLongFormVideo with correct parameters', async () => {
+            // Mock generateLongFormVideo which is now used by the tool
+            mockGenerateLongFormVideo.mockResolvedValue([{ id: 'job-id', url: '', prompt: 'chain video' }]);
 
             const result = await VideoTools.generate_video_chain({
                 startImage: 'data:image/png;base64,start',
-                totalDuration: 9, // < 10 (2 * 5s)
+                totalDuration: 9,
                 prompt: 'chain video'
             });
 
-            expect(mockGenerateVideo).toHaveBeenCalledTimes(2);
-
-            // First call uses start image
-            expect(mockGenerateVideo).toHaveBeenNthCalledWith(1, {
-                firstFrame: 'data:image/png;base64,start',
-                prompt: 'chain video'
+            expect(mockGenerateLongFormVideo).toHaveBeenCalledWith({
+                prompt: 'chain video',
+                totalDuration: 9,
+                startImage: 'data:image/png;base64,start',
+                orgId: expect.any(String) // or specific mock value if orgId is mocked in store
             });
 
-            // Second call uses extracted frame from segment 1
-            expect(mockGenerateVideo).toHaveBeenNthCalledWith(2, {
-                firstFrame: 'data:image/png;base64,frame1',
-                prompt: 'chain video (Part 2, continuation)'
-            });
-
-            expect(result).toContain('Generated 2 segments');
+            expect(result).toContain('Long-form generation job started. Job ID: job-id');
         });
     });
 });
