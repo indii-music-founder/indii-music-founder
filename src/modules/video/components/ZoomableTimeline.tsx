@@ -7,7 +7,7 @@
  * - Visual zoom indicator
  */
 
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
@@ -143,27 +143,32 @@ interface FrameRulerProps {
     frameWidth: number;
 }
 
-function FrameRuler({ totalFrames, fps, zoom, frameWidth }: FrameRulerProps) {
-    // Calculate tick interval based on zoom level
-    const getTickInterval = () => {
+const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, frameWidth }: FrameRulerProps) {
+    // Calculate tick interval based on zoom level thresholds
+    // This value only changes when zoom crosses specific thresholds
+    const tickInterval = useMemo(() => {
         if (zoom >= 2) return fps / 4; // Show quarter-second marks
         if (zoom >= 1) return fps / 2; // Show half-second marks
         if (zoom >= 0.5) return fps; // Show second marks
         return fps * 2; // Show 2-second marks
-    };
+    }, [zoom, fps]);
 
-    const tickInterval = getTickInterval();
-    const ticks: { frame: number; label: string; isSecond: boolean }[] = [];
+    // Generate ticks only when the interval or duration changes
+    // This prevents regenerating thousands of objects during smooth zoom transitions
+    // where the interval remains constant (e.g., zooming from 1.1 to 1.9)
+    const ticks = useMemo(() => {
+        const result: { frame: number; label: string; isSecond: boolean }[] = [];
+        for (let frame = 0; frame <= totalFrames; frame += tickInterval) {
+            const seconds = frame / fps;
+            const isSecond = frame % fps === 0;
+            const label = isSecond
+                ? formatTime(seconds)
+                : '';
 
-    for (let frame = 0; frame <= totalFrames; frame += tickInterval) {
-        const seconds = frame / fps;
-        const isSecond = frame % fps === 0;
-        const label = isSecond
-            ? formatTime(seconds)
-            : '';
-
-        ticks.push({ frame, label, isSecond });
-    }
+            result.push({ frame, label, isSecond });
+        }
+        return result;
+    }, [totalFrames, tickInterval, fps]);
 
     return (
         <div
@@ -188,7 +193,7 @@ function FrameRuler({ totalFrames, fps, zoom, frameWidth }: FrameRulerProps) {
             ))}
         </div>
     );
-}
+});
 
 function formatTime(seconds: number): string {
     const mins = Math.floor(seconds / 60);
