@@ -8,7 +8,6 @@ import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
 
 import { GoogleAuth } from "google-auth-library";
-import { GoogleAuth } from "google-auth-library";
 import { VideoJobSchema } from "./lib/video";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 
@@ -81,7 +80,6 @@ export const triggerVideoJob = functions
 
         const userId = context.auth.uid;
         // Construct input matching the schema
-        const inputData: any = { ...(data as any), userId };
         const inputData: any = { ...data, userId };
 
         // Zod Validation
@@ -90,7 +88,7 @@ export const triggerVideoJob = functions
             throw new functions.https.HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map((i: any) => i.message).join(", ")}`
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+                    `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
@@ -198,7 +196,6 @@ export const triggerLongFormVideoJob = functions
             const durationNum = parseFloat((totalDuration || 0).toString());
 
             // 2. Validate Duration Limit
-            const durationNum = parseFloat(totalDuration || "0");
             if (durationNum > limits.maxVideoDuration) {
                 throw new functions.https.HttpsError(
                     "resource-exhausted",
@@ -495,13 +492,12 @@ export const inngestApi = functions
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
         // Register Long Form Functions
-        const generateLongForm = generateLongFormVideoFn(inngestClient);
+
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({
             client: inngestClient,
             functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
-            functions: [generateVideoFn, generateLongForm, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
 
@@ -784,7 +780,6 @@ export const ragProxy = functions
 
                 const queryString = req.url.split('?')[1] || '';
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
-                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,

@@ -5,7 +5,7 @@ import { MarketingTools } from './MarketingTools';
 import { RoadTools } from './RoadTools';
 import { AI } from '@/services/ai/AIService';
 
-// Mock the AI service
+// Mock the AI service (for Marketing/RoadTools)
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
@@ -13,6 +13,24 @@ vi.mock('@/services/ai/AIService', () => ({
         parseJSON: vi.fn((str) => JSON.parse(str))
     }
 }));
+
+// Mock the Firebase AI service (for BrandTools)
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        generateStructuredData: vi.fn(),
+        generateContent: vi.fn(),
+        parseJSON: vi.fn((text) => JSON.parse(text))
+    }
+}));
+
+// Mock MarketingService (for persistence)
+vi.mock('@/services/marketing/MarketingService', () => ({
+    MarketingService: {
+        createCampaign: vi.fn().mockResolvedValue({ id: 'mock-campaign-id' })
+    }
+}));
+
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 describe('Agent Tools Validation', () => {
 
@@ -22,7 +40,7 @@ describe('Agent Tools Validation', () => {
 
     describe('BrandTools', () => {
         it('verify_output handles valid JSON response', async () => {
-            vi.mocked(AI.generateStructuredData).mockResolvedValue({
+            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue({
                 approved: true,
                 critique: "Great job",
                 score: 9
@@ -35,7 +53,7 @@ describe('Agent Tools Validation', () => {
         });
 
         it('verify_output handles invalid JSON response gracefully', async () => {
-            vi.mocked(AI.generateStructuredData).mockRejectedValue(new Error("AI Generation Failed"));
+            vi.mocked(firebaseAI.generateStructuredData).mockRejectedValue(new Error("AI Generation Failed"));
 
             const resultStr = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
             const result = JSON.parse(resultStr);

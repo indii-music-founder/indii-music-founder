@@ -17,7 +17,10 @@ vi.mock('@/services/merchandise/MerchandiseService', () => ({
 // Mock the store
 const mockUseStore = vi.fn();
 vi.mock('@/core/store', () => ({
-    useStore: () => mockUseStore()
+    useStore: (selector: any) => {
+        const state = mockUseStore();
+        return selector ? selector(state) : state;
+    }
 }));
 
 describe('useMerchandise', () => {
@@ -33,7 +36,7 @@ describe('useMerchandise', () => {
     it('should load catalog on mount', async () => {
         const mockCatalog = [{ id: '1', title: 'Test Product', category: 'standard', basePrice: 10, image: 'img.jpg' }];
         vi.mocked(MerchandiseService.getCatalog).mockResolvedValue(mockCatalog as any);
-        vi.mocked(MerchandiseService.subscribeToProducts).mockReturnValue(() => {});
+        vi.mocked(MerchandiseService.subscribeToProducts).mockReturnValue(() => { });
 
         const { result } = renderHook(() => useMerchandise());
 
@@ -54,7 +57,7 @@ describe('useMerchandise', () => {
         // Mock subscribe implementation
         vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((userId, callback) => {
             callback(mockProducts as any);
-            return () => {};
+            return () => { };
         });
 
         const { result } = renderHook(() => useMerchandise());
@@ -69,7 +72,7 @@ describe('useMerchandise', () => {
     it('should handle catalog loading errors', async () => {
         const error = new Error('Failed to fetch');
         vi.mocked(MerchandiseService.getCatalog).mockRejectedValue(error);
-        vi.mocked(MerchandiseService.subscribeToProducts).mockReturnValue(() => {});
+        vi.mocked(MerchandiseService.subscribeToProducts).mockReturnValue(() => { });
 
         const { result } = renderHook(() => useMerchandise());
 
@@ -96,7 +99,7 @@ describe('useMerchandise', () => {
 
         vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((userId, callback) => {
             callback(mockProducts as any);
-            return () => {};
+            return () => { };
         });
 
         const { result } = renderHook(() => useMerchandise());

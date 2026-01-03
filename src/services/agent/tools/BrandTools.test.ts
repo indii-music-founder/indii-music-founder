@@ -3,13 +3,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrandTools } from './BrandTools';
 import { AI } from '@/services/ai/AIService';
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+// Mock the Firebase AI service
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
         generateStructuredData: vi.fn(),
         generateContent: vi.fn(),
         parseJSON: vi.fn((text) => JSON.parse(text))
     }
 }));
+
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 describe('BrandTools', () => {
     beforeEach(() => {
@@ -22,11 +25,11 @@ describe('BrandTools', () => {
             critique: "Looks good",
             score: 9
         };
-        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.verify_output({ goal: 'Be bold', content: 'BOLD CONTENT' });
         expect(JSON.parse(result)).toEqual(mockResponse);
-        expect(AI.generateStructuredData).toHaveBeenCalled();
+        expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('analyze_brand_consistency returns valid schema', async () => {
@@ -35,11 +38,11 @@ describe('BrandTools', () => {
             issues: [],
             recommendations: ["Keep it up"]
         };
-        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.analyze_brand_consistency({ content: 'test content' });
         expect(JSON.parse(result)).toEqual(mockResponse);
-        expect(AI.generateStructuredData).toHaveBeenCalled();
+        expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('generate_brand_guidelines returns valid schema', async () => {
@@ -48,11 +51,11 @@ describe('BrandTools', () => {
             visuals: "Blue and White",
             dos_and_donts: ["Do this", "Don't do that"]
         };
-        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.generate_brand_guidelines({ name: 'TestBrand', values: ['Trust'] });
         expect(JSON.parse(result)).toEqual(mockResponse);
-        expect(AI.generateStructuredData).toHaveBeenCalled();
+        expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
     it('audit_visual_assets returns valid schema', async () => {
@@ -61,10 +64,10 @@ describe('BrandTools', () => {
             flagged_assets: ["image1.jpg"],
             report: "Image 1 has wrong colors"
         };
-        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.audit_visual_assets({ assets: ['image1.jpg'] });
         expect(JSON.parse(result)).toEqual(mockResponse);
-        expect(AI.generateStructuredData).toHaveBeenCalled();
+        expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 });
