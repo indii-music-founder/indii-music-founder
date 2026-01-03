@@ -49,17 +49,34 @@ export async function executeQuery(
     try {
         const bigquery = getBigQueryClient();
 
-        // Validate query (basic SQL injection prevention)
+        // SQL injection prevention - strict validation
+        const trimmedQuery = query.trim();
+
+        // 1. Query length limit (prevent DoS)
+        if (trimmedQuery.length > 10000) {
+            throw new Error('Query exceeds maximum length (10000 characters)');
+        }
+
+        // 2. Only allow SELECT queries
+        if (!/^\s*SELECT\s/i.test(trimmedQuery)) {
+            throw new Error('Only SELECT queries are allowed');
+        }
+
+        // 3. Block dangerous patterns
         const dangerousPatterns = [
-            /;\s*(DROP|DELETE|TRUNCATE|ALTER|CREATE)\s/i,
-            /;\s*UPDATE\s.*SET/i,
-            /--/,
-            /\/\*/,
+            /;\s*(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|GRANT|REVOKE)\s/i,
+            /INTO\s+OUTFILE/i,
+            /LOAD_FILE\s*\(/i,
+            /--/,                    // SQL comments
+            /\/\*/,                  // Block comments
+            /xp_/i,                  // SQL Server extended procedures
+            /EXEC(\s|\()/i,          // Execute statements
+            /UNION\s+ALL\s+SELECT/i, // Union injection
         ];
 
         for (const pattern of dangerousPatterns) {
-            if (pattern.test(query)) {
-                throw new Error('Query contains potentially dangerous patterns');
+            if (pattern.test(trimmedQuery)) {
+                throw new Error('Query contains prohibited patterns');
             }
         }
 

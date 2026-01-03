@@ -209,11 +209,15 @@ export class GeneralistAgent extends BaseAgent {
         4. When the task is complete, you MUST use "final_response" to finish.`;
 
         let iterations = 0;
+        let consecutiveNoProgress = 0; // Track iterations without progress
         let currentInput = task;
         const history = useStore.getState().agentHistory;
         let finalResponseText = '';
+        const MAX_ITERATIONS = 8;
+        const MAX_NO_PROGRESS = 3; // Bail out after 3 iterations without progress
 
-        while (iterations < 8) { // Limit iterations for safety
+        while (iterations < MAX_ITERATIONS) { // Limit iterations for safety
+            iterations++; // Increment at start to ensure we always count
 
             const parts: any[] = [];
 
@@ -305,28 +309,33 @@ export class GeneralistAgent extends BaseAgent {
             }
 
             if (finalResponseText) break; // Break outer loop
-            if (!stepActionTaken) {
-                // If we finished stream but didn't act, maybe verify validity or just loop?
-                // If buffer still has data, it might be malformed JSON.
+
+            if (stepActionTaken) {
+                consecutiveNoProgress = 0; // Reset on progress
+            } else {
+                consecutiveNoProgress++;
+                // If buffer still has data, it might be malformed JSON
                 if (buffer.trim().length > 0) {
                     console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
+                }
+                // Bail out if we're stuck
+                if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
+                    console.error(`[GeneralistAgent] No progress after ${MAX_NO_PROGRESS} iterations, bailing out`);
+                    return { text: 'Agent unable to complete task - no actionable response generated.' };
                 }
             }
 
         } catch (err: any) {
             console.error("Generalist Loop Error:", err);
             onProgress?.({ type: 'thought', content: `Error: ${err.message || 'Unknown error'}` });
-            iterations++; // Ensure we increment even on error to prevent infinite loops
+            consecutiveNoProgress++;
 
-            // After 3 consecutive errors, give up
-            if (iterations >= 3) {
-                return { text: `Error after ${iterations} attempts: ${err.message || 'Unknown error'}` };
+            // After too many consecutive errors, give up
+            if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
+                return { text: `Error after ${consecutiveNoProgress} failed attempts: ${err.message || 'Unknown error'}` };
             }
             // Otherwise continue to retry
-            continue;
         }
-
-        iterations++;
     }
 
         return { text: finalResponseText || "Task completed (no final text)." };

@@ -47,32 +47,28 @@ remoteConfig.defaultConfig = {
 };
 
 // Initialize App Check
-
-// Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {
-    // Debug token for local development
-    if (env.DEV) {
+    // Debug token for local development - only set if explicitly configured
+    if (env.DEV && env.appCheckDebugToken) {
         // @ts-ignore
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken || true;
+        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
     }
 
-    // Warn if missing key in production
+    // Require App Check key in production
     if (!env.DEV && !env.appCheckKey) {
-        console.warn('App Check key missing in production. Security verification may fail.');
+        console.error('SECURITY: App Check key missing in production. App Check disabled.');
     }
 
-    // Initialize if key exists or strictly in DEV mode
-    if (env.appCheckKey || env.DEV) {
+    // Only initialize App Check if we have a valid key
+    if (env.appCheckKey) {
         try {
-            // Use a placeholder if dependent on env.appCheckKey but it is undefined in DEV/TEST
-            const key = env.appCheckKey || '6Lc...PLACEHOLDER...';
             appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(key),
+                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey),
                 isTokenAutoRefreshEnabled: true
             });
         } catch (e) {
-            console.warn('App Check init failed:', e);
+            console.error('App Check initialization failed:', e);
         }
     }
 }
