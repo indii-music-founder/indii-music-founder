@@ -5,12 +5,9 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
-import { generateVideoLogic, VideoJobSchema } from "./lib/video";
-import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { GoogleAuth } from "google-auth-library";
-import { generateLongFormVideoFn, stitchVideoFn, LongFormVideoJobSchema } from "./lib/long_form_video";
-import { GoogleAuth } from "google-auth-library";
-import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
+import { VideoJobSchema } from "./lib/video";
+import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -56,9 +53,6 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
 };
 
 // ----------------------------------------------------------------------------
-// Shared Gemini Functions
-// ----------------------------------------------------------------------------
-
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
 
@@ -67,8 +61,6 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  *
  * This callable function acts as the bridge between the Client App (Electron)
  * and the Asynchronous Worker Queue (Inngest).
- *
- * Security: protected by Firebase Auth (onCall).
  */
 export const triggerVideoJob = functions
     .runWith({
@@ -86,26 +78,21 @@ export const triggerVideoJob = functions
 
         const userId = context.auth.uid;
         // Construct input matching the schema
-        // The client might pass { jobId, prompt, ... }
-        // We ensure defaults are respected via Zod.
-        const inputData: any = { ...(data as any), userId };
+        const inputData: any = { ...data, userId };
 
         // Zod Validation
         const validation = VideoJobSchema.safeParse(inputData);
         if (!validation.success) {
-        const { prompt, jobId, orgId, ...options } = data;
-
-        if (!prompt || !jobId) {
             throw new functions.https.HttpsError(
                 "invalid-argument",
-                "Missing required fields: prompt or jobId."
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
+        const { prompt, jobId, orgId, ...options } = inputData;
+
         try {
             // 1. Create Initial Job Record in Firestore
-            // We do this BEFORE sending the event to prevent race conditions where
-            // the UI subscribes to a doc that doesn't exist yet.
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 id: jobId,
                 userId: userId,
@@ -172,17 +159,17 @@ export const triggerLongFormVideoJob = functions
         const validation = LongFormVideoJobSchema.safeParse(inputData);
 
         if (!validation.success) {
-             throw new functions.https.HttpsError(
+            throw new functions.https.HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
-        const { prompts, jobId, orgId, totalDuration, startImage, options } = validation.data;
+        const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
 
-        // Additional validation explicitly requested by PR
+        // Additional validation
         if (prompts.length === 0) {
-             throw new functions.https.HttpsError(
+            throw new functions.https.HttpsError(
                 "invalid-argument",
                 "Prompts array must not be empty."
             );
@@ -192,33 +179,26 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
             // Quota Enforcement (Server-Side)
             // ------------------------------------------------------------------
-
-            // 1. Determine User Tier (Fallback to 'free')
             let userTier: MembershipTier = 'free';
             if (orgId && orgId !== 'personal') {
-                // Check Organization Plan
                 const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
                 if (orgDoc.exists) {
                     const orgData = orgDoc.data();
                     userTier = (orgData?.plan as MembershipTier) || 'free';
                 }
-            } else {
-                 // Check User Profile (Fallback) - assuming user profile might have plan info
-                 // usually stored in organizations or subscriptions. defaulting to free for safety.
             }
 
             const limits = TIER_LIMITS[userTier];
+            const durationNum = parseFloat((totalDuration || 0).toString());
 
-            // 2. Validate Duration Limit
-            const durationNum = parseFloat(totalDuration || "0"); // Assuming string "60" or number
             if (durationNum > limits.maxVideoDuration) {
-                 throw new functions.https.HttpsError(
+                throw new functions.https.HttpsError(
                     "resource-exhausted",
                     `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
                 );
             }
 
-            // 3. Validate Daily Usage Limit (Rate Limiting)
+            // Daily Usage Check
             const today = new Date().toISOString().split('T')[0];
             const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
 
@@ -233,8 +213,6 @@ export const triggerLongFormVideoJob = functions
                     );
                 }
 
-                // Increment Usage Optimistically (or wait for job completion? better to reserve slot)
-                // We will increment here to prevent burst abuse.
                 if (!usageDoc.exists) {
                     transaction.set(usageRef, { videosGenerated: 1, date: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
                 } else {
@@ -244,30 +222,6 @@ export const triggerLongFormVideoJob = functions
 
             // ------------------------------------------------------------------
 
-
-        const userId = context.auth.uid;
-        const { prompts, jobId, orgId, totalDuration, startImage, ...options } = data;
-
-        if (!prompts || !Array.isArray(prompts) || !jobId) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                "Missing required fields: prompts (array) or jobId."
-            );
-        }
-
-        // Validation: Ensure prompts is a non-empty array
-        if (!prompts || !Array.isArray(prompts) || prompts.length === 0 || !jobId) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                "Missing required fields: prompts (non-empty array) or jobId."
-            );
-        }
-
-        // TODO: Add rate limiting check against user tier
-        // Example: const userTier = await getUserTier(userId);
-        // if (prompts.length > userTier.maxSegments) throw ...
-
-        try {
             // 1. Create Parent Job Record
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 id: jobId,
@@ -304,13 +258,106 @@ export const triggerLongFormVideoJob = functions
 
         } catch (error: any) {
             console.error("[LongFormVideoJob] Error:", error);
-            // Re-throw HttpsErrors directly
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue long form job: ${error.message}`
+            );
+        }
+    });
+
+/**
+ * Render Video Composition (Stitching)
+ *
+ * Receives a project composition from the frontend editor, flattens it,
+ * and queues a stitching job via Inngest.
+ */
+export const renderVideo = functions
+    .runWith({
+        secrets: [inngestEventKey],
+        timeoutSeconds: 60,
+        memory: "256MB"
+    })
+    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
+                "unauthenticated",
+                "User must be authenticated to render video."
+            );
+        }
+
+        const userId = context.auth.uid;
+        const { compositionId, inputProps } = data;
+        const project = inputProps?.project;
+
+        if (!project || !project.tracks || !project.clips) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                "Invalid project data. Missing tracks or clips."
+            );
+        }
+
+        const jobId = compositionId || `render_${Date.now()}`;
+
+        try {
+            // 1. Flatten Tracks to Segment List
+            // Simple logic: sort clips by startFrame.
+            // Note: This MVP implementation assumes sequential non-overlapping clips
+            // or prioritizes the first track for stitching.
+            // Google Transcoder Stitching requires a list of inputs.
+
+            // Filter only video clips
+            const videoClips = project.clips
+                .filter((c: any) => c.type === 'video')
+                .sort((a: any, b: any) => a.startFrame - b.startFrame);
+
+            if (videoClips.length === 0) {
+                throw new functions.https.HttpsError(
+                    "failed-precondition",
+                    "No video clips found in project to render."
+                );
+            }
+
+            const segmentUrls = videoClips.map((c: any) => c.src);
+
+            // 2. Create Job Record
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                id: jobId,
+                userId: userId,
+                orgId: "personal",
+                status: "queued",
+                type: "render_stitch",
+                clipCount: videoClips.length,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 3. Trigger Stitching via Inngest
+            const inngest = getInngestClient();
+
+            await inngest.send({
+                name: "video/stitch.requested",
+                data: {
+                    jobId: jobId,
+                    userId: userId,
+                    segmentUrls: segmentUrls,
+                    options: {
+                        resolution: `${project.width}x${project.height}`,
+                        aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
+                    }
+                },
+                user: { id: userId }
+            });
+
+            return { success: true, renderId: jobId, message: "Render job queued." };
+
+        } catch (error: any) {
+            console.error("[RenderVideo] Error:", error);
+            throw new functions.https.HttpsError(
+                "internal",
+                `Failed to queue render job: ${error.message}`
             );
         }
     });
@@ -329,9 +376,6 @@ export const inngestApi = functions
     .https.onRequest((req, res) => {
         const inngestClient = getInngestClient();
 
-        // 1. Standard Video Generation
-        // Actual Video Generation Logic using Veo
-        const generateVideo = inngestClient.createFunction(
         // 1. Single Video Generation Logic using Veo
         const generateVideoFn = inngestClient.createFunction(
             { id: "generate-video-logic" },
@@ -408,10 +452,6 @@ export const inngestApi = functions
                         if (prediction.videoUri) return prediction.videoUri;
                         if (prediction.gcsUri) return prediction.gcsUri;
                         throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
-                        return prediction.videoUri || prediction.gcsUri || "";
-                        if (prediction.videoUri) return prediction.videoUri;
-                        if (prediction.gcsUri) return prediction.gcsUri;
-                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                     });
 
                     // Update status to complete
@@ -439,404 +479,13 @@ export const inngestApi = functions
             }
         );
 
-        // 2. Long Form Video Generation (Daisychaining)
-        const generateLongFormVideoFn = inngestClient.createFunction(
-            { id: "generate-long-form-video" },
-            { event: "video/long_form.requested" },
-            async ({ event, step }) => {
-                const { jobId, prompts, userId, orgId, startImage, options } = event.data;
-                const segmentUrls: string[] = [];
-                // Defensively declare as let to support future daisy-chaining implementation
-                let currentStartImage = startImage;
-        // 2. Long Form Video Generation Logic (Daisychaining)
-        const generateLongFormVideoFn = inngestClient.createFunction(
-            { id: "generate-long-video-logic" },
-            { event: "video/long_form.requested" },
-            async ({ event, step }) => {
-                const { jobId, prompts, userId, startImage, options } = event.data;
-                const segmentUrls: string[] = [];
-                // Note: currentStartImage needs to be updated for true daisychaining
-                // Currently implementing simplified flow per MVP requirements
-                let currentStartImage = startImage;
-                const currentStartImage = startImage;
-
-                try {
-                    // Update main job status
-                    await step.run("update-parent-processing", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "processing",
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-
-                    for (let i = 0; i < prompts.length; i++) {
-                        const segmentId = `${jobId}_seg_${i}`;
-                        const prompt = prompts[i];
-
-                        const segmentUrl = await step.run(`generate-segment-${i}`, async () => {
-                            const auth = new GoogleAuth({
-                                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                            });
-
-                            const client = await auth.getClient();
-                            const projectId = await auth.getProjectId();
-                            const accessToken = await client.getAccessToken();
-                            const location = 'us-central1';
-                            const modelId = 'veo-3.1-generate-preview';
-
-                            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
-
-                            const requestBody = {
-                                instances: [
-                                    {
-                                        prompt: prompt,
-                                        ...(currentStartImage ? { image: { bytesBase64Encoded: currentStartImage.split(',')[1] } } : {})
-                                        ...(currentStartImage ? {
-                                            image: {
-                                                bytesBase64Encoded: currentStartImage.includes(',')
-                                                    ? currentStartImage.split(',')[1]
-                                                    : currentStartImage
-                                            }
-                                        } : {})
-                                    }
-                                ],
-                                parameters: {
-                                    sampleCount: 1,
-                                    videoLength: "5s",
-                                    aspectRatio: options?.aspectRatio || "16:9"
-                                }
-                            };
-
-                            const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Bearer ${accessToken.token}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(requestBody)
-                            });
-
-                            if (!response.ok) throw new Error(`Veo Segment ${i} failed`);
-
-                            const result = await response.json();
-                            if (!response.ok) {
-                                const errorText = await response.text();
-                                throw new Error(`Veo Segment ${i} failed: ${response.status} ${errorText}`);
-                            }
-
-                            const result = await response.json();
-                            if (!result.predictions || result.predictions.length === 0) {
-                                throw new Error(`Veo Segment ${i}: No predictions returned`);
-                            }
-                            const prediction = result.predictions[0];
-
-                            const bucket = admin.storage().bucket();
-                            const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
-
-                            // Check output format
-                            if (!prediction.bytesBase64Encoded && !prediction.videoUri && !prediction.gcsUri) {
-                                throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
-                            }
-
-                            if (!result.predictions || result.predictions.length === 0) {
-                                throw new Error(`Veo Segment ${i}: No predictions returned`);
-                            }
-
-                            if (!result.predictions || result.predictions.length === 0) {
-                                throw new Error(`Veo Segment ${i}: No predictions returned`);
-                            }
-                            const prediction = result.predictions[0];
-
-                            const bucket = admin.storage().bucket();
-                            const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
-
-                            // If bytes returned, save to storage
-                            if (prediction.bytesBase64Encoded) {
-                                await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
-                                    metadata: { contentType: 'video/mp4' },
-                                    public: true
-                                });
-                                return file.publicUrl();
-                            }
-                            return prediction.videoUri || prediction.gcsUri || "";
-
-                            // If URI returned (Video/GCS), return it directly (it's already a URL)
-                            return prediction.videoUri || prediction.gcsUri;
-                            if (prediction.videoUri) return prediction.videoUri;
-                            if (prediction.gcsUri) return prediction.gcsUri;
-
-                            throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
-                        });
-
-                        segmentUrls.push(segmentUrl);
-
-                        // Update progress
-                        await step.run(`update-progress-${i}`, async () => {
-                            await admin.firestore().collection("videoJobs").doc(jobId).set({
-                                completedSegments: i + 1,
-                                progress: Math.floor(((i + 1) / prompts.length) * 100),
-                                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                            }, { merge: true });
-                        });
-
-                        // TODO: Extract last frame from segmentUrl to use as startImage for next segment
-                        // This requires a frame extraction service (e.g., FFmpeg Cloud Function)
-                        // Without this, segments won't have visual continuity
-                        // For now, we reuse initial startImage or fail to update it, breaking daisy chain visual continuity.
-                        // currentStartImage = ...
-                    }
-
-                    // 3. Trigger Stitching
-                    await step.sendEvent({
-                        name: "video/stitch.requested",
-                        data: { jobId, userId, segmentUrls, options },
-                        user: { id: userId }
-                    });
-
-                } catch (error: any) {
-                    console.error("Long Form Logic Error:", error);
-                    await admin.firestore().collection("videoJobs").doc(jobId).set({
-                        status: "failed",
-                        error: error.message,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                        if (i < prompts.length - 1) {
-                            console.warn(`[LongForm] Daisychaining not implemented - segment ${i} generated independently`);
-                        }
-                        // Note: In real daisychaining we would extract frame here.
-                        // Integration with separate frame extraction service would go here.
-                    }
-
-                    await step.run("trigger-stitch", async () => {
-                        await inngestClient.send({
-                            name: "video/stitch.requested",
-                            data: {
-                                jobId,
-                                userId,
-                                segmentUrls
-                            }
-                        });
-                    });
-
-                } catch (error: any) {
-                    await step.run("mark-failed", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "failed",
-                            error: error.message,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                    throw error;
-                }
-            }
-        );
-
-        // 3. Stitching Function (Server-Side using Google Transcoder)
-        const stitchVideoFn = inngestClient.createFunction(
-            { id: "stitch-video-segments" },
-            { event: "video/stitch.requested" },
-            async ({ event, step }) => {
-                const { jobId, userId, segmentUrls, options } = event.data;
-                const { jobId, userId, segmentUrls } = event.data;
-                const transcoder = new TranscoderServiceClient();
-
-                try {
-                    const projectId = await admin.app().options.projectId;
-                    if (!projectId) {
-                        throw new Error("Project ID not configured");
-                    }
-
-                    const location = 'us-central1';
-                    const bucket = admin.storage().bucket();
-                    const outputUri = `gs://${bucket.name}/videos/${userId}/${jobId}_final.mp4`;
-
-                    // Dynamic Resolution Logic
-                    let width = 1280;
-                    let height = 720;
-
-                    if (options?.aspectRatio) {
-                        switch (options.aspectRatio) {
-                            case "9:16":
-                                width = 720;
-                                height = 1280;
-                                break;
-                            case "1:1":
-                                width = 1080;
-                                height = 1080;
-                                break;
-                            case "21:9":
-                                width = 1920;
-                                height = 822; // Approx for cinema scope
-                                break;
-                            case "16:9":
-                            default:
-                                width = 1280;
-                                height = 720;
-                                break;
-                        }
-                    } else if (options?.resolution) {
-                        // Parse resolution string if provided (e.g. "1080p", "4k")
-                        // For now default to 720p logic above if not explicit
-                    }
-
-                    // Create Transcoder Job
-                    const transcoderJobName = await step.run("create-transcoder-job", async () => {
-                        const [job] = await transcoder.createJob({
-                            parent: transcoder.locationPath(projectId, location),
-                    await step.run("create-transcoder-job", async () => {
-                        const [job] = await transcoder.createJob({
-                            parent: transcoder.locationPath(projectId!, location),
-                            job: {
-                                outputUri,
-                                config: {
-                                    inputs: segmentUrls.map((url: string, index: number) => ({
-                                        key: `input${index}`,
-                                        uri: url.replace('https://storage.googleapis.com/', 'gs://').replace(/\?.+$/, '')
-                                    })),
-                                    inputs: segmentUrls.map((url: string, index: number) => {
-                                        let uri = url;
-                                        if (uri.startsWith('https://storage.googleapis.com/')) {
-                                             uri = uri.replace('https://storage.googleapis.com/', 'gs://').replace(/\?.+$/, '');
-                                        } else if (!uri.startsWith('gs://')) {
-                                             // If it's a signed URL or other HTTP URL, we might need to download it or fail?
-                                             // For now assuming storage.googleapis.com or gs://
-                                             // If it comes from Veo as https uri, we hope it is accessible or convertible.
-                                             // If Veo returns arbitrary public URL, Transcoder might not access it without gs://
-                                             // Let's assume standard behavior for now.
-                                            uri = uri.replace('https://storage.googleapis.com/', 'gs://').replace(/\?.+$/, '');
-                                        } else if (!uri.startsWith('gs://')) {
-                                            // Fallback or error, for now we assume it might be convertible or throw
-                                            throw new Error(`Invalid storage URL format: ${url}`);
-                                        }
-                                        return { key: `input${index}`, uri };
-                                    }),
-                                    editList: [
-                                        {
-                                            key: "atom0",
-                                            inputs: segmentUrls.map((_: any, index: number) => `input${index}`)
-                                        }
-                                    ],
-                                    elementaryStreams: [
-                                        {
-                                            key: "video_stream0",
-                                            videoStream: {
-                                                h264: {
-                                                    heightPixels: height,
-                                                    widthPixels: width,
-                                                    heightPixels: 720,
-                                                    widthPixels: 1280,
-                                                    bitrateBps: 5000000,
-                                                    frameRate: 30,
-                                                },
-                                            },
-                                        }
-                                    ],
-                                    muxStreams: [
-                                        {
-                                            key: "final_output",
-                                            container: "mp4",
-                                            elementaryStreams: ["video_stream0"],
-                                        }
-                                    ]
-                                }
-                            }
-                        });
-                        return job.name;
-                    });
-
-                    // Update job with stitching status
-                    await step.run("update-stitching-status", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "stitching",
-                            transcoderJobName,
-
-                        // Update job with temporary stitching status
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "stitching",
-                            transcoderJobName: job.name,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-
-                } catch (error: any) {
-                    console.error("Stitching failed:", error);
-                    await admin.firestore().collection("videoJobs").doc(jobId).set({
-                        stitchError: error.message,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                    // Wait for completion (Polling)
-                    // We poll every 5 seconds for up to 5 minutes
-                    let finalState = 'PROCESSING';
-                    for (let i = 0; i < 60; i++) {
-                         await step.sleep("5s");
-                         const status = await step.run(`check-job-status-${i}`, async () => {
-                             const [job] = await transcoder.getJob({ name: transcoderJobName });
-                             return job.state;
-                         });
-
-                         if (status === 'SUCCEEDED' || status === 'FAILED') {
-                             finalState = status as string;
-                             break;
-                         }
-                    }
-
-                    if (finalState === 'SUCCEEDED') {
-                         // Get Signed URL for final output
-                         const videoUrl = await step.run("get-final-url", async () => {
-                             const file = bucket.file(`videos/${userId}/${jobId}_final.mp4`);
-                             const [url] = await file.getSignedUrl({
-                                 action: 'read',
-                                 expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-                             });
-                             return url;
-                         });
-
-                         await step.run("mark-completed", async () => {
-                             await admin.firestore().collection("videoJobs").doc(jobId).set({
-                                 status: "completed",
-                                 videoUrl,
-                                 progress: 100,
-                                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                             }, { merge: true });
-                         });
-
-                    } else {
-                        throw new Error(`Transcoding job failed or timed out with state: ${finalState}`);
-                    }
-
-                } catch (error: any) {
-                    console.error("Stitching failed:", error);
-                    await admin.firestore().collection("videoJobs").doc(jobId).set({
-                        status: "failed",
-                        stitchError: error.message,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                    throw error;
-                } finally {
-                    await transcoder.close();
-                }
-            }
-        );
-
-        const handler = serve({
-            client: inngestClient,
-                } finally {
-                    await transcoder.close();
-                        stitchError: error.message,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                }
-            }
-        );
-
         // Register Long Form Functions
         const generateLongForm = generateLongFormVideoFn(inngestClient);
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongForm, stitchVideo],
-            functions: [generateVideoFn, generateLongFormVideoFn, stitchVideoFn],
+            functions: [generateVideoFn, generateLongForm, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
 
@@ -845,7 +494,6 @@ export const inngestApi = functions
 
 // ----------------------------------------------------------------------------
 // Image Generation (Gemini)
-// Legacy / Shared Gemini Functions
 // ----------------------------------------------------------------------------
 
 interface GenerateImageRequestData {
@@ -1118,13 +766,6 @@ export const ragProxy = functions
                     return;
                 }
 
-                const baseUrl = 'https://generativelanguage.googleapis.com';
-                const targetPath = req.path;
-                // Preserve query parameters
-                const queryString = req.url.split('?')[1] || '';
-                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
-                const baseUrl = 'https://generativelanguage.googleapis.com';
-                const targetPath = req.path;
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {
