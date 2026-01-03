@@ -1,15 +1,17 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
     size?: "default" | "sm" | "lg" | "icon"
     asChild?: boolean
+    isLoading?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
+    ({ className, variant = "default", size = "default", asChild = false, isLoading = false, children, disabled, ...props }, ref) => {
         // Simplified variant mapping without class-variance-authority
         const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
 
@@ -35,8 +37,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             <Comp
                 className={cn(baseStyles, variants[variant], sizes[size], className)}
                 ref={ref}
+                disabled={disabled || isLoading}
+                aria-disabled={disabled || isLoading}
+                data-loading={isLoading}
                 {...props}
-            />
+            >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {children}
+            </Comp>
         )
     }
 )
