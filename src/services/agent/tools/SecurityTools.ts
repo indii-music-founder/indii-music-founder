@@ -3,7 +3,7 @@ import { AI } from '../../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { delay } from '@/utils/async';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
 /**
@@ -155,7 +155,56 @@ export const SecurityTools = {
         });
     },
 
+    /**
+     * Enhanced Audit: Attempts to count real project members from Firestore.
+     */
     audit_permissions: async ({ project_id }: { project_id?: string }) => {
+        let realRoles: Record<string, number> | null = null;
+        let projectIdFound = false;
+
+        if (project_id) {
+            try {
+                // Corrected Logic: Query 'organizations' collection instead of non-existent 'deployments'
+                // Schema: { members: string[], ownerId: string }
+                const docRef = doc(db, 'organizations', project_id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    realRoles = {};
+                    const members = data.members || [];
+                    const ownerId = data.ownerId;
+
+                    members.forEach((userId: string) => {
+                        // Infer role since schema doesn't store it explicitly
+                        const role = (userId === ownerId) ? 'admin' : 'viewer';
+                        realRoles![role] = (realRoles![role] || 0) + 1;
+                    });
+
+                    projectIdFound = true;
+                }
+            } catch (e) {
+                console.warn('[SecurityTools] Failed to query real permissions:', e);
+            }
+        }
+
+        // If we found real data, format it
+        if (realRoles) {
+             const rolesArray = Object.entries(realRoles).map(([role, count]) => ({
+                role,
+                count,
+                risk: role === 'admin' && count > 3 ? 'HIGH' : 'LOW'
+            }));
+
+            return JSON.stringify({
+                project_id: project_id,
+                status: "Live Audit Complete",
+                roles: rolesArray,
+                recommendations: rolesArray.length > 0 ? ["Review access periodically"] : ["No members found"]
+            });
+        }
+
+        // Fallback to AI Simulation
         const prompt = `
         You are a Security Officer. Perform a Permission Audit ${project_id ? `for project ${project_id}` : 'for the organization'}.
         Review standard roles: Admin, Editor, Viewer.

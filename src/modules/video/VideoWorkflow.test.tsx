@@ -15,7 +15,7 @@ vi.mock('@/core/store', () => ({
 
 vi.mock('./store/videoEditorStore', () => {
     const fn = vi.fn();
-    (fn as any).getState = vi.fn(() => ({ status: 'idle' }));
+    (fn as any).getState = vi.fn(() => ({ status: 'idle', setProgress: vi.fn() }));
     return { useVideoEditorStore: fn };
 });
 
@@ -48,7 +48,6 @@ vi.mock('./components/FrameSelectionModal', () => ({
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
-vi.mock('@/services/video/VideoGenerationService', () => ({
 vi.mock('@/services/image/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
@@ -111,7 +110,7 @@ describe('VideoWorkflow', () => {
         });
 
         // Ensure getState Returns correctly
-        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'idle' });
+        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'idle', setProgress: vi.fn() });
 
         (useToast as any).mockReturnValue(mockToast);
     });
@@ -143,7 +142,7 @@ describe('VideoWorkflow', () => {
             setStatus: mockSetJobStatus,
         });
 
-        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'queued' });
+        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'queued', setProgress: vi.fn() });
 
         // Mock subscribeToJob
         mockSubscribeToJob.mockImplementation((id, callback) => {

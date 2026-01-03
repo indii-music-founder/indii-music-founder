@@ -1,14 +1,97 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     check_api_status,
     scan_content,
     rotate_credentials,
     verify_zero_touch_prod,
     check_core_dump_policy,
-    audit_workload_isolation
+    audit_workload_isolation,
+    audit_permissions
 } from './SecurityTools';
+import { AI } from '@/services/ai/AIService';
+import { getDoc } from 'firebase/firestore';
+
+// Mock dependencies
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn(),
+        generateStructuredData: vi.fn()
+    }
+}));
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...actual as any,
+        getDocs: vi.fn(),
+        collection: vi.fn(),
+        query: vi.fn(),
+        where: vi.fn(),
+        doc: vi.fn(),
+        getDoc: vi.fn()
+    };
+});
 
 describe('SecurityTools (Mocked)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('audit_permissions', () => {
+        it('should return real Firestore data if available', async () => {
+            // Mock Firestore response for Organization
+            const mockOrgData = {
+                ownerId: 'user-1',
+                members: ['user-1', 'user-2', 'user-3']
+            };
+
+            (getDoc as any).mockResolvedValue({
+                exists: () => true,
+                data: () => mockOrgData
+            });
+
+            const result = await audit_permissions({ project_id: 'org-1' });
+            const parsed = JSON.parse(result);
+
+            expect(parsed.status).toBe("Live Audit Complete");
+
+            // Logic: owner = admin, others = viewer
+            // user-1 is owner -> admin
+            // user-2, user-3 -> viewer
+
+            const adminRole = parsed.roles.find((r: any) => r.role === 'admin');
+            const viewerRole = parsed.roles.find((r: any) => r.role === 'viewer');
+
+            expect(adminRole.count).toBe(1);
+            expect(viewerRole.count).toBe(2);
+
+            // AI should NOT be called
+            expect(AI.generateContent).not.toHaveBeenCalled();
+        });
+
+        it('should fallback to AI if Firestore returns empty/error', async () => {
+            // Mock Firestore not found
+            (getDoc as any).mockResolvedValue({ exists: () => false });
+
+            // Mock AI response
+            const mockAIResponse = {
+                project_id: 'test-project',
+                status: 'AI Audit',
+                roles: [{ role: 'admin', count: 1, risk: 'LOW' }],
+                recommendations: []
+            };
+            (AI.generateContent as any).mockResolvedValue({
+                text: () => JSON.stringify(mockAIResponse)
+            });
+
+            const result = await audit_permissions({ project_id: 'test-project' });
+            const parsed = JSON.parse(result);
+
+            expect(parsed.status).toBe("AI Audit");
+            expect(AI.generateContent).toHaveBeenCalled();
+        });
+    });
+
     describe('check_api_status', () => {
         it('should return ACTIVE for known active API', async () => {
             const result = await check_api_status({ api_name: 'payment-api' });
@@ -91,10 +174,6 @@ describe('SecurityTools (Mocked)', () => {
         it('should show enabled (and medium risk) for non-critical service', async () => {
             const result = await check_core_dump_policy({ service_name: 'generic-app' });
             const parsed = JSON.parse(result);
-            // In our mock logic, non-auth/non-key services are assumed to NOT have it explicitly disabled (mock logic inversion)
-            // Wait, looking at logic: const isFoundational = service_name.includes('auth') || service_name.includes('key');
-            // const coreDumpsDisabled = isFoundational;
-            // So if not foundational, it is ENABLED.
             expect(parsed.setting).toBe('ENABLED');
             expect(parsed.risk_level).toBe('MEDIUM');
         });

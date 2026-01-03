@@ -27,6 +27,11 @@ const AnalyzeAudienceSchema = z.object({
 const ScheduleContentSchema = z.object({
     status: z.literal("scheduled"),
     count: z.number(),
+    schedule: z.array(z.object({
+        date: z.string(),
+        platform: z.string(),
+        type: z.string()
+    })),
     nextPost: z.string()
 });
 
@@ -86,24 +91,47 @@ export const MarketingTools = {
         }
     },
 
+    /**
+     * Enhanced Schedule Content: Uses real JS Dates instead of AI hallucination for the calendar.
+     */
     schedule_content: async ({ campaign_start, platforms, frequency }: { campaign_start: string; platforms: string[]; frequency: string }) => {
-        const schema = zodToJsonSchema(ScheduleContentSchema);
-        const prompt = `
-        You are a Content Scheduler. Plan a schedule starting ${campaign_start}.
-        Platforms: ${platforms.join(', ')}.
-        Frequency: ${frequency}.
-        `;
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(ScheduleContentSchema.parse(data));
-        } catch (error) {
-            console.error('MarketingTools.schedule_content error:', error);
-            return JSON.stringify({
-                status: "scheduled",
-                count: 0,
-                nextPost: "Unknown"
+        // Parse start date (default to today if invalid)
+        const startDate = new Date(campaign_start);
+        const validStartDate = isNaN(startDate.getTime()) ? new Date() : startDate;
+
+        // Determine Interval (days)
+        let intervalDays = 7; // default weekly
+        const freqLower = frequency.toLowerCase();
+        if (freqLower.includes("daily")) intervalDays = 1;
+        else if (freqLower.includes("bi-weekly") || freqLower.includes("twice a week")) intervalDays = 3;
+        else if (freqLower.includes("monthly")) intervalDays = 30;
+
+        // Generate 4 weeks of content
+        const schedule = [];
+        const postsPerPlatform = 4; // limit for this batch
+
+        for (let i = 0; i < postsPerPlatform; i++) {
+            const postDate = new Date(validStartDate);
+            postDate.setDate(validStartDate.getDate() + (i * intervalDays));
+
+            platforms.forEach(platform => {
+                schedule.push({
+                    date: postDate.toISOString(),
+                    platform: platform,
+                    type: "Social Post" // generic type
+                });
             });
         }
+
+        // Sort by date
+        schedule.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+        return JSON.stringify({
+            status: "scheduled",
+            count: schedule.length,
+            schedule: schedule,
+            nextPost: schedule.length > 0 ? schedule[0].date : "None"
+        });
     },
 
     track_performance: async ({ campaignId }: { campaignId: string }) => {
