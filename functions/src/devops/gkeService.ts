@@ -57,7 +57,7 @@ export async function listClusters(projectId: string): Promise<ClusterInfo[]> {
             location: cluster.location || 'unknown',
             nodes: cluster.currentNodeCount || 0,
             version: cluster.currentMasterVersion || 'unknown',
-            endpoint: cluster.endpoint,
+            endpoint: cluster.endpoint ?? undefined,
         }));
     } catch (error) {
         logger.error('[GKE] listClusters failed:', error);
@@ -83,10 +83,13 @@ export async function getClusterStatus(
         const alerts: string[] = [];
 
         // Check cluster conditions for issues
+        // Note: StatusCondition uses 'code' and 'message', not 'status' and 'type'
         if (cluster.conditions) {
             for (const condition of cluster.conditions) {
-                if (condition.status === 'True' && condition.type !== 'Available') {
-                    alerts.push(`${condition.type}: ${condition.message || 'Issue detected'}`);
+                const conditionCode = (condition as { code?: string }).code;
+                const conditionMessage = condition.message;
+                if (conditionCode && conditionCode !== 'GKE_NODE_POOL_OK') {
+                    alerts.push(`${conditionCode}: ${conditionMessage || 'Issue detected'}`);
                 }
             }
         }
@@ -106,9 +109,9 @@ export async function getClusterStatus(
             alerts,
             nodeCount: cluster.currentNodeCount || 0,
             conditions: cluster.conditions?.map((c) => ({
-                type: c.type || '',
-                status: c.status || '',
-                message: c.message,
+                type: (c as { code?: string }).code || '',
+                status: c.canonicalCode || 'UNKNOWN',
+                message: c.message ?? undefined,
             })),
         };
     } catch (error) {
