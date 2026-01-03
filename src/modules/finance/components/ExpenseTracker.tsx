@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { DollarSign, Camera, Loader2, Plus, X } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
@@ -8,7 +8,7 @@ import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
 import { ExpenseItem } from './ExpenseItem';
 
-export const ExpenseTracker: React.FC = () => {
+export const ExpenseTracker: React.FC = React.memo(() => {
     const { userProfile } = useStore();
     const {
         expenses,
@@ -31,6 +31,33 @@ export const ExpenseTracker: React.FC = () => {
     useEffect(() => {
         loadExpenses();
     }, [loadExpenses]);
+
+    // ⚡ Bolt Optimization: Memoize total calculation to avoid O(N) on every keystroke
+    const totalSpend = useMemo(() => {
+        return expenses.reduce((a, b) => a + b.amount, 0).toFixed(2);
+    }, [expenses]);
+
+    // ⚡ Bolt Optimization: Memoize list rendering to avoid re-mapping on form updates
+    const expenseList = useMemo(() => {
+        if (isLoading) {
+            return (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="animate-spin text-gray-600 mb-2" />
+                    <p className="text-gray-500 text-sm">Loading expenses...</p>
+                </div>
+            );
+        }
+        if (expenses.length === 0) {
+            return (
+                <div className="text-center text-gray-500 py-10">
+                    No expenses recorded yet. Note your costs to calculate tax deductions.
+                </div>
+            );
+        }
+        return expenses.map(expense => (
+            <ExpenseItem key={expense.id} expense={expense} />
+        ));
+    }, [expenses, isLoading]);
 
     const processFile = useCallback(async (file: File) => {
         if (!userProfile?.id) return;
@@ -142,7 +169,7 @@ export const ExpenseTracker: React.FC = () => {
                         Add Manual
                     </button>
                     <div className="text-right">
-                        <div className="text-2xl font-bold text-white">${expenses.reduce((a, b) => a + b.amount, 0).toFixed(2)}</div>
+                        <div className="text-2xl font-bold text-white">${totalSpend}</div>
                         <div className="text-xs text-teal-500 font-mono">TOTAL SPEND</div>
                     </div>
                 </div>
@@ -235,20 +262,7 @@ export const ExpenseTracker: React.FC = () => {
 
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <Loader2 className="animate-spin text-gray-600 mb-2" />
-                            <p className="text-gray-500 text-sm">Loading expenses...</p>
-                        </div>
-                    ) : expenses.length === 0 ? (
-                        <div className="text-center text-gray-500 py-10">
-                            No expenses recorded yet. Note your costs to calculate tax deductions.
-                        </div>
-                    ) : (
-                        expenses.map(expense => (
-                            <ExpenseItem key={expense.id} expense={expense} />
-                        ))
-                    )}
+                    {expenseList}
                 </div>
 
                 {/* Drop Zone */}
@@ -282,4 +296,6 @@ export const ExpenseTracker: React.FC = () => {
             </div>
         </div>
     );
-};
+});
+
+ExpenseTracker.displayName = 'ExpenseTracker';
