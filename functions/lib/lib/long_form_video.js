@@ -219,6 +219,10 @@ const generateLongFormVideoFn = (inngestClient) => inngestClient.createFunction(
                     // Continue without chaining if extraction fails
                 }
             }
+            // TODO: Extract last frame from segmentUrl to use as startImage for next segment
+            // This requires a frame extraction service (e.g., FFmpeg Cloud Function)
+            // Without this, segments won't have visual continuity
+            console.warn(`[LongForm] Daisychaining not fully implemented - segment ${i} generated, but frame extraction for next segment skipped.`);
         }
         // All segments done, trigger stitching
         await step.sendEvent({

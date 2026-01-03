@@ -48,6 +48,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ragProxy = exports.generateContentStream = exports.editImage = exports.generateImageV3 = exports.inngestApi = exports.triggerLongFormVideoJob = exports.triggerVideoJob = exports.getInngestClient = void 0;
+exports.ragProxy = exports.generateContentStream = exports.editImage = exports.generateImageV3 = exports.inngestApi = exports.renderVideo = exports.triggerLongFormVideoJob = exports.triggerVideoJob = exports.getInngestClient = void 0;
 // indiiOS Cloud Functions - V1.1
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
@@ -57,6 +58,7 @@ const express_1 = require("inngest/express");
 const cors_1 = __importDefault(require("cors"));
 const video_1 = require("./lib/video");
 const google_auth_library_1 = require("google-auth-library");
+const video_1 = require("./lib/video");
 const long_form_video_1 = require("./lib/long_form_video");
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -113,6 +115,7 @@ exports.triggerVideoJob = functions
     const validation = video_1.VideoJobSchema.safeParse(inputData);
     if (!validation.success) {
         throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map((i) => i.message).join(", ")}`);
+        throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`);
     }
     const { prompt, jobId, orgId } = inputData, options = __rest(inputData, ["prompt", "jobId", "orgId"]);
     try {
@@ -198,6 +201,11 @@ exports.triggerLongFormVideoJob = functions
             throw new functions.https.HttpsError("resource-exhausted", `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`);
         }
         // 3. Validate Daily Usage Limit (Rate Limiting)
+        const durationNum = parseFloat((totalDuration || 0).toString());
+        if (durationNum > limits.maxVideoDuration) {
+            throw new functions.https.HttpsError("resource-exhausted", `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`);
+        }
+        // Daily Usage Check
         const today = new Date().toISOString().split('T')[0];
         const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
         await admin.firestore().runTransaction(async (transaction) => {
@@ -217,6 +225,7 @@ exports.triggerLongFormVideoJob = functions
         });
         // ------------------------------------------------------------------
         // 4. Create Parent Job Record
+        // 1. Create Parent Job Record
         await admin.firestore().collection("videoJobs").doc(jobId).set({
             id: jobId,
             userId: userId,
@@ -230,6 +239,7 @@ exports.triggerLongFormVideoJob = functions
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         // 5. Publish Event to Inngest for Long Form
+        // 2. Publish Event to Inngest for Long Form
         const inngest = (0, exports.getInngestClient)();
         await inngest.send({
             name: "video/long_form.requested",
@@ -253,6 +263,76 @@ exports.triggerLongFormVideoJob = functions
             throw error;
         }
         throw new functions.https.HttpsError("internal", `Failed to queue long form job: ${error.message}`);
+    }
+});
+/**
+ * Render Video Composition (Stitching)
+ *
+ * Receives a project composition from the frontend editor, flattens it,
+ * and queues a stitching job via Inngest.
+ */
+exports.renderVideo = functions
+    .runWith({
+    secrets: [inngestEventKey],
+    timeoutSeconds: 60,
+    memory: "256MB"
+})
+    .https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated to render video.");
+    }
+    const userId = context.auth.uid;
+    const { compositionId, inputProps } = data;
+    const project = inputProps === null || inputProps === void 0 ? void 0 : inputProps.project;
+    if (!project || !project.tracks || !project.clips) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid project data. Missing tracks or clips.");
+    }
+    const jobId = compositionId || `render_${Date.now()}`;
+    try {
+        // 1. Flatten Tracks to Segment List
+        // Simple logic: sort clips by startFrame.
+        // Note: This MVP implementation assumes sequential non-overlapping clips
+        // or prioritizes the first track for stitching.
+        // Google Transcoder Stitching requires a list of inputs.
+        // Filter only video clips
+        const videoClips = project.clips
+            .filter((c) => c.type === 'video')
+            .sort((a, b) => a.startFrame - b.startFrame);
+        if (videoClips.length === 0) {
+            throw new functions.https.HttpsError("failed-precondition", "No video clips found in project to render.");
+        }
+        const segmentUrls = videoClips.map((c) => c.src);
+        // 2. Create Job Record
+        await admin.firestore().collection("videoJobs").doc(jobId).set({
+            id: jobId,
+            userId: userId,
+            orgId: "personal",
+            status: "queued",
+            type: "render_stitch",
+            clipCount: videoClips.length,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        // 3. Trigger Stitching via Inngest
+        const inngest = (0, exports.getInngestClient)();
+        await inngest.send({
+            name: "video/stitch.requested",
+            data: {
+                jobId: jobId,
+                userId: userId,
+                segmentUrls: segmentUrls,
+                options: {
+                    resolution: `${project.width}x${project.height}`,
+                    aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
+                }
+            },
+            user: { id: userId }
+        });
+        return { success: true, renderId: jobId, message: "Render job queued." };
+    }
+    catch (error) {
+        console.error("[RenderVideo] Error:", error);
+        throw new functions.https.HttpsError("internal", `Failed to queue render job: ${error.message}`);
     }
 });
 /**
@@ -331,6 +411,7 @@ exports.inngestApi = functions
                 if (prediction.gcsUri)
                     return prediction.gcsUri;
                 throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
+                throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
             });
             // Update status to complete
             await step.run("update-status-complete", async () => {
@@ -361,6 +442,12 @@ exports.inngestApi = functions
     const handler = (0, express_1.serve)({
         client: inngestClient,
         functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
+    // Register Long Form Functions
+    const generateLongForm = (0, long_form_video_1.generateLongFormVideoFn)(inngestClient);
+    const stitchVideo = (0, long_form_video_1.stitchVideoFn)(inngestClient);
+    const handler = (0, express_1.serve)({
+        client: inngestClient,
+        functions: [generateVideoFn, generateLongForm, stitchVideo],
         signingKey: inngestSigningKey.value(),
     });
     return handler(req, res);
@@ -598,6 +685,7 @@ exports.ragProxy = functions
             }
             const queryString = req.url.split('?')[1] || '';
             const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+            const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
             const fetchOptions = {
                 method: req.method,
                 headers: {

@@ -8,6 +8,8 @@ import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
 
 import { GoogleAuth } from "google-auth-library";
+import { GoogleAuth } from "google-auth-library";
+import { VideoJobSchema } from "./lib/video";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 
 // Initialize Firebase Admin
@@ -80,6 +82,7 @@ export const triggerVideoJob = functions
         const userId = context.auth.uid;
         // Construct input matching the schema
         const inputData: any = { ...(data as any), userId };
+        const inputData: any = { ...data, userId };
 
         // Zod Validation
         const validation = VideoJobSchema.safeParse(inputData);
@@ -87,6 +90,7 @@ export const triggerVideoJob = functions
             throw new functions.https.HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map((i: any) => i.message).join(", ")}`
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
@@ -181,8 +185,6 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
             // Quota Enforcement (Server-Side)
             // ------------------------------------------------------------------
-
-            // 1. Determine User Tier (Fallback to 'free')
             let userTier: MembershipTier = 'free';
             if (orgId && orgId !== 'personal') {
                 const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
@@ -193,6 +195,7 @@ export const triggerLongFormVideoJob = functions
             }
 
             const limits = TIER_LIMITS[userTier];
+            const durationNum = parseFloat((totalDuration || 0).toString());
 
             // 2. Validate Duration Limit
             const durationNum = parseFloat(totalDuration || "0");
@@ -203,7 +206,7 @@ export const triggerLongFormVideoJob = functions
                 );
             }
 
-            // 3. Validate Daily Usage Limit (Rate Limiting)
+            // Daily Usage Check
             const today = new Date().toISOString().split('T')[0];
             const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
 
@@ -229,6 +232,7 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
 
             // 4. Create Parent Job Record
+            // 1. Create Parent Job Record
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 id: jobId,
                 userId: userId,
@@ -270,6 +274,100 @@ export const triggerLongFormVideoJob = functions
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue long form job: ${error.message}`
+            );
+        }
+    });
+
+/**
+ * Render Video Composition (Stitching)
+ *
+ * Receives a project composition from the frontend editor, flattens it,
+ * and queues a stitching job via Inngest.
+ */
+export const renderVideo = functions
+    .runWith({
+        secrets: [inngestEventKey],
+        timeoutSeconds: 60,
+        memory: "256MB"
+    })
+    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
+                "unauthenticated",
+                "User must be authenticated to render video."
+            );
+        }
+
+        const userId = context.auth.uid;
+        const { compositionId, inputProps } = data;
+        const project = inputProps?.project;
+
+        if (!project || !project.tracks || !project.clips) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                "Invalid project data. Missing tracks or clips."
+            );
+        }
+
+        const jobId = compositionId || `render_${Date.now()}`;
+
+        try {
+            // 1. Flatten Tracks to Segment List
+            // Simple logic: sort clips by startFrame.
+            // Note: This MVP implementation assumes sequential non-overlapping clips
+            // or prioritizes the first track for stitching.
+            // Google Transcoder Stitching requires a list of inputs.
+
+            // Filter only video clips
+            const videoClips = project.clips
+                .filter((c: any) => c.type === 'video')
+                .sort((a: any, b: any) => a.startFrame - b.startFrame);
+
+            if (videoClips.length === 0) {
+                throw new functions.https.HttpsError(
+                    "failed-precondition",
+                    "No video clips found in project to render."
+                );
+            }
+
+            const segmentUrls = videoClips.map((c: any) => c.src);
+
+            // 2. Create Job Record
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                id: jobId,
+                userId: userId,
+                orgId: "personal",
+                status: "queued",
+                type: "render_stitch",
+                clipCount: videoClips.length,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 3. Trigger Stitching via Inngest
+            const inngest = getInngestClient();
+
+            await inngest.send({
+                name: "video/stitch.requested",
+                data: {
+                    jobId: jobId,
+                    userId: userId,
+                    segmentUrls: segmentUrls,
+                    options: {
+                        resolution: `${project.width}x${project.height}`,
+                        aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
+                    }
+                },
+                user: { id: userId }
+            });
+
+            return { success: true, renderId: jobId, message: "Render job queued." };
+
+        } catch (error: any) {
+            console.error("[RenderVideo] Error:", error);
+            throw new functions.https.HttpsError(
+                "internal",
+                `Failed to queue render job: ${error.message}`
             );
         }
     });
@@ -364,6 +462,7 @@ export const inngestApi = functions
                         if (prediction.videoUri) return prediction.videoUri;
                         if (prediction.gcsUri) return prediction.gcsUri;
                         throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
+                        throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
                     });
 
                     // Update status to complete
@@ -395,11 +494,14 @@ export const inngestApi = functions
         const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
+        // Register Long Form Functions
+        const generateLongForm = generateLongFormVideoFn(inngestClient);
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({
             client: inngestClient,
             functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
+            functions: [generateVideoFn, generateLongForm, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
 
@@ -408,7 +510,6 @@ export const inngestApi = functions
 
 // ----------------------------------------------------------------------------
 // Image Generation (Gemini)
-// Legacy / Shared Gemini Functions
 // ----------------------------------------------------------------------------
 
 interface GenerateImageRequestData {
@@ -683,6 +784,7 @@ export const ragProxy = functions
 
                 const queryString = req.url.split('?')[1] || '';
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,
