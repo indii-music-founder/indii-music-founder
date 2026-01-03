@@ -23,7 +23,8 @@ module.exports = {
       console.log(`Re-signing ${appPath} after fuse modifications...`);
 
       try {
-        execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+        const { spawnSync } = require('child_process');
+        spawnSync('codesign', ['--force', '--deep', '--sign', '-', appPath], { stdio: 'inherit' });
         console.log('Ad-hoc signing complete.');
       } catch (err) {
         console.error('Warning: Ad-hoc signing failed:', err.message);

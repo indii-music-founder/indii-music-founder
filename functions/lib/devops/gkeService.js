@@ -34,14 +34,17 @@ async function listClusters(projectId) {
             parent: `projects/${projectId}/locations/-`, // '-' means all locations
         });
         const clusters = response.data.clusters || [];
-        return clusters.map((cluster) => ({
-            name: cluster.name || 'unknown',
-            status: cluster.status || 'UNKNOWN',
-            location: cluster.location || 'unknown',
-            nodes: cluster.currentNodeCount || 0,
-            version: cluster.currentMasterVersion || 'unknown',
-            endpoint: cluster.endpoint,
-        }));
+        return clusters.map((cluster) => {
+            var _a;
+            return ({
+                name: cluster.name || 'unknown',
+                status: cluster.status || 'UNKNOWN',
+                location: cluster.location || 'unknown',
+                nodes: cluster.currentNodeCount || 0,
+                version: cluster.currentMasterVersion || 'unknown',
+                endpoint: (_a = cluster.endpoint) !== null && _a !== void 0 ? _a : undefined,
+            });
+        });
     }
     catch (error) {
         firebase_functions_1.logger.error('[GKE] listClusters failed:', error);
@@ -61,10 +64,13 @@ async function getClusterStatus(projectId, location, clusterName) {
         const cluster = response.data;
         const alerts = [];
         // Check cluster conditions for issues
+        // Note: StatusCondition uses 'code' and 'message', not 'status' and 'type'
         if (cluster.conditions) {
             for (const condition of cluster.conditions) {
-                if (condition.status === 'True' && condition.type !== 'Available') {
-                    alerts.push(`${condition.type}: ${condition.message || 'Issue detected'}`);
+                const conditionCode = condition.code;
+                const conditionMessage = condition.message;
+                if (conditionCode && conditionCode !== 'GKE_NODE_POOL_OK') {
+                    alerts.push(`${conditionCode}: ${conditionMessage || 'Issue detected'}`);
                 }
             }
         }
@@ -83,11 +89,14 @@ async function getClusterStatus(projectId, location, clusterName) {
             status,
             alerts,
             nodeCount: cluster.currentNodeCount || 0,
-            conditions: (_a = cluster.conditions) === null || _a === void 0 ? void 0 : _a.map((c) => ({
-                type: c.type || '',
-                status: c.status || '',
-                message: c.message,
-            })),
+            conditions: (_a = cluster.conditions) === null || _a === void 0 ? void 0 : _a.map((c) => {
+                var _a;
+                return ({
+                    type: c.code || '',
+                    status: c.canonicalCode || 'UNKNOWN',
+                    message: (_a = c.message) !== null && _a !== void 0 ? _a : undefined,
+                });
+            }),
         };
     }
     catch (error) {

@@ -71,8 +71,8 @@ export async function listInstances(projectId: string): Promise<InstanceInfo[]> 
                     name: instance.name || 'unknown',
                     zone: zoneName,
                     status: instance.status || 'UNKNOWN',
-                    internalIp,
-                    externalIp,
+                    internalIp: internalIp ?? undefined,
+                    externalIp: externalIp ?? undefined,
                     machineType,
                 });
             }

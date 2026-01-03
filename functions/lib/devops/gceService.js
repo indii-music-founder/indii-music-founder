@@ -61,8 +61,8 @@ async function listInstances(projectId) {
                     name: instance.name || 'unknown',
                     zone: zoneName,
                     status: instance.status || 'UNKNOWN',
-                    internalIp,
-                    externalIp,
+                    internalIp: internalIp !== null && internalIp !== void 0 ? internalIp : undefined,
+                    externalIp: externalIp !== null && externalIp !== void 0 ? externalIp : undefined,
                     machineType,
                 });
             }

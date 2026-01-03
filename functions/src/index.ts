@@ -8,7 +8,7 @@ import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
 
 import { GoogleAuth } from "google-auth-library";
-import { VideoJobSchema } from "./lib/video";
+
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 
 // Initialize Firebase Admin
@@ -70,7 +70,7 @@ export const triggerVideoJob = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -80,15 +80,15 @@ export const triggerVideoJob = functions
 
         const userId = context.auth.uid;
         // Construct input matching the schema
-        const inputData: any = { ...data, userId };
+        const safeData = (typeof data === 'object' && data !== null) ? data : {};
+        const inputData: any = { ...safeData, userId };
 
         // Zod Validation
         const validation = VideoJobSchema.safeParse(inputData);
         if (!validation.success) {
             throw new functions.https.HttpsError(
                 "invalid-argument",
-                `Validation failed: ${validation.error.issues.map((i: any) => i.message).join(", ")}`
-                    `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
@@ -148,7 +148,7 @@ export const triggerLongFormVideoJob = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -158,7 +158,8 @@ export const triggerLongFormVideoJob = functions
         const userId = context.auth.uid;
 
         // Zod Validation
-        const inputData = { ...data, userId };
+        const safeData = (typeof data === 'object' && data !== null) ? data : {};
+        const inputData = { ...safeData, userId };
         const validation = LongFormVideoJobSchema.safeParse(inputData);
 
         if (!validation.success) {
@@ -287,7 +288,7 @@ export const renderVideo = functions
         timeoutSeconds: 60,
         memory: "256MB"
     })
-    .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -296,7 +297,8 @@ export const renderVideo = functions
         }
 
         const userId = context.auth.uid;
-        const { compositionId, inputProps } = data;
+        const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, any> : {};
+        const { compositionId, inputProps } = safeData;
         const project = inputProps?.project;
 
         if (!project || !project.tracks || !project.clips) {
@@ -458,7 +460,6 @@ export const inngestApi = functions
 
                         if (prediction.videoUri) return prediction.videoUri;
                         if (prediction.gcsUri) return prediction.gcsUri;
-                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                         throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
                     });
 
@@ -781,7 +782,11 @@ export const ragProxy = functions
                     '/upload/v1beta/files'
                 ];
 
-                if (!allowedPrefixes.some(prefix => req.path.startsWith(prefix))) {
+                const isAllowed = allowedPrefixes.some(prefix =>
+                    req.path === prefix || req.path.startsWith(prefix + '/')
+                );
+
+                if (!isAllowed) {
                     res.status(403).send('Forbidden: Path not allowed');
                     return;
                 }

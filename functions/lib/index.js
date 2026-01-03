@@ -108,12 +108,12 @@ exports.triggerVideoJob = functions
     }
     const userId = context.auth.uid;
     // Construct input matching the schema
-    const inputData = Object.assign(Object.assign({}, data), { userId });
-    const inputData = Object.assign(Object.assign({}, data), { userId });
+    const safeData = (typeof data === 'object' && data !== null) ? data : {};
+    const inputData = Object.assign(Object.assign({}, safeData), { userId });
     // Zod Validation
     const validation = video_1.VideoJobSchema.safeParse(inputData);
     if (!validation.success) {
-        throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map((i) => i.message).join(", ")}` `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`);
+        throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`);
     }
     const { prompt, jobId, orgId } = inputData, options = __rest(inputData, ["prompt", "jobId", "orgId"]);
     try {
@@ -168,7 +168,8 @@ exports.triggerLongFormVideoJob = functions
     }
     const userId = context.auth.uid;
     // Zod Validation
-    const inputData = Object.assign(Object.assign({}, data), { userId });
+    const safeData = (typeof data === 'object' && data !== null) ? data : {};
+    const inputData = Object.assign(Object.assign({}, safeData), { userId });
     const validation = long_form_video_1.LongFormVideoJobSchema.safeParse(inputData);
     if (!validation.success) {
         throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`);
@@ -194,7 +195,6 @@ exports.triggerLongFormVideoJob = functions
         const limits = TIER_LIMITS[userTier];
         const durationNum = parseFloat((totalDuration || 0).toString());
         // 2. Validate Duration Limit
-        const durationNum = parseFloat(totalDuration || "0");
         if (durationNum > limits.maxVideoDuration) {
             throw new functions.https.HttpsError("resource-exhausted", `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`);
         }
@@ -274,7 +274,8 @@ exports.renderVideo = functions
         throw new functions.https.HttpsError("unauthenticated", "User must be authenticated to render video.");
     }
     const userId = context.auth.uid;
-    const { compositionId, inputProps } = data;
+    const safeData = (typeof data === 'object' && data !== null) ? data : {};
+    const { compositionId, inputProps } = safeData;
     const project = inputProps === null || inputProps === void 0 ? void 0 : inputProps.project;
     if (!project || !project.tracks || !project.clips) {
         throw new functions.https.HttpsError("invalid-argument", "Invalid project data. Missing tracks or clips.");
@@ -402,7 +403,6 @@ exports.inngestApi = functions
                     return prediction.videoUri;
                 if (prediction.gcsUri)
                     return prediction.gcsUri;
-                throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                 throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
             });
             // Update status to complete
@@ -431,12 +431,10 @@ exports.inngestApi = functions
     const generateLongFormVideo = (0, long_form_video_1.generateLongFormVideoFn)(inngestClient);
     // 3. Stitching Function (Server-Side using Google Transcoder)
     // Register Long Form Functions
-    const generateLongForm = (0, long_form_video_1.generateLongFormVideoFn)(inngestClient);
     const stitchVideo = (0, long_form_video_1.stitchVideoFn)(inngestClient);
     const handler = (0, express_1.serve)({
         client: inngestClient,
         functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
-        functions: [generateVideoFn, generateLongForm, stitchVideo],
         signingKey: inngestSigningKey.value(),
     });
     return handler(req, res);
@@ -571,7 +569,11 @@ exports.generateContentStream = functions
             res.status(401).send('Unauthorized');
             return;
         }
-        const idToken = authHeader.split('Bearer ')[1];
+        const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
+        if (!idToken) {
+            res.status(401).send('Unauthorized: Missing token');
+            return;
+        }
         try {
             await admin.auth().verifyIdToken(idToken);
         }
@@ -652,7 +654,11 @@ exports.ragProxy = functions
             res.status(401).send('Unauthorized');
             return;
         }
-        const idToken = authHeader.split('Bearer ')[1];
+        const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
+        if (!idToken) {
+            res.status(401).send('Unauthorized: Missing token');
+            return;
+        }
         try {
             await admin.auth().verifyIdToken(idToken);
         }
@@ -668,13 +674,13 @@ exports.ragProxy = functions
                 '/v1beta/models',
                 '/upload/v1beta/files'
             ];
-            if (!allowedPrefixes.some(prefix => req.path.startsWith(prefix))) {
+            const isAllowed = allowedPrefixes.some(prefix => req.path === prefix || req.path.startsWith(prefix + '/'));
+            if (!isAllowed) {
                 res.status(403).send('Forbidden: Path not allowed');
                 return;
             }
             const queryString = req.url.split('?')[1] || '';
             const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
-            const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
             const fetchOptions = {
                 method: req.method,
                 headers: {

@@ -7,7 +7,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 console.log('--- Auth Configuration Audit ---');
 
 const expectedKey = process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY;
-const expectedAppId = process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:3af738739465ea4095e9bd";
+const expectedAppId = process.env.VITE_FIREBASE_APP_ID || "MISSING_APP_ID_CONFIGURATION";
 
 // 1. Check src/config/env.ts
 const envPath = path.join(__dirname, '../src/config/env.ts');

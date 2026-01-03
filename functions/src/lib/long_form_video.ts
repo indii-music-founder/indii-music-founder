@@ -187,18 +187,23 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                                     }
                                 });
 
-                                // 3. Poll for Completion
+                                // 3. Poll for Completion (Max 40s)
                                 let finalState = 'PROCESSING';
-                                for (let j = 0; j < 30; j++) {
+                                for (let j = 0; j < 20; j++) {
                                     await new Promise(r => setTimeout(r, 2000));
-                                    const [status] = await transcoder.getJob({ name: job.name });
-                                    if (status.state === 'SUCCEEDED' || status.state === 'FAILED') {
-                                        finalState = status.state as string;
-                                        break;
+                                    try {
+                                        const [status] = await transcoder.getJob({ name: job.name });
+                                        if (status.state === 'SUCCEEDED' || status.state === 'FAILED') {
+                                            finalState = status.state as string;
+                                            break;
+                                        }
+                                    } catch (err: any) {
+                                        console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                        // Continue polling unless critical failure
                                     }
                                 }
 
-                                if (finalState !== 'SUCCEEDED') throw new Error(`Frame extraction failed: ${finalState}`);
+                                if (finalState !== 'SUCCEEDED') throw new Error(`Frame extraction failed or timed out: ${finalState}`);
 
                                 // 4. Download and Convert to Base64
                                 // Wait a bit for file consistency
