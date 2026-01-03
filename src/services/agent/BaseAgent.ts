@@ -199,11 +199,16 @@ ${task}
             tool => !specialistToolNames.has(tool.name)
         );
 
-        // Merge specialist tools with filtered superpowers
-        const allTools: ToolDefinition[] = [
-            ...(this.tools || []),
-            ...(filteredSuperpowers.length > 0 ? [{ functionDeclarations: filteredSuperpowers }] : [])
+        // Merge specialist tools with filtered superpowers into a SINGLE tool object
+        // This avoids the "Multiple tools are supported only when they are all search tools" error.
+        const allFunctions: FunctionDeclaration[] = [
+            ...(this.tools || []).flatMap(t => t.functionDeclarations || []),
+            ...filteredSuperpowers
         ];
+
+        const allTools: ToolDefinition[] = allFunctions.length > 0
+            ? [{ functionDeclarations: allFunctions }]
+            : [];
 
         try {
             onProgress?.({ type: 'thought', content: 'Generating response...' });

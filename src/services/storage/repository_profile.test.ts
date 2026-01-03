@@ -28,7 +28,7 @@ vi.mock('idb', () => ({
 vi.mock('../firebase', () => ({
     db: {},
     storage: {},
-    auth: { currentUser: { uid: 'superuser-id' } }
+    auth: { currentUser: { uid: 'test-user-uid' } }
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -47,7 +47,7 @@ vi.mock('firebase/storage', () => ({
 
 describe('Profile Persistence', () => {
     const mockProfile: UserProfile = {
-        id: 'superuser',
+        id: 'guest',
         bio: 'Test Bio',
         preferences: {},
         brandKit: {
@@ -78,9 +78,10 @@ describe('Profile Persistence', () => {
     });
 
     it('should save profile to storage', async () => {
-        await saveProfileToStorage(mockProfile);
+        const profileForSync = { ...mockProfile, id: 'test-user-uid' };
+        await saveProfileToStorage(profileForSync);
 
-        expect(mockPut).toHaveBeenCalledWith('profile', mockProfile);
+        expect(mockPut).toHaveBeenCalledWith('profile', profileForSync);
         // We also expect it to try to sync to cloud (mocked)
         const { setDoc } = await import('firebase/firestore');
         expect(setDoc).toHaveBeenCalled();
@@ -89,16 +90,16 @@ describe('Profile Persistence', () => {
     it('should load profile from storage', async () => {
         mockGet.mockResolvedValueOnce(mockProfile);
 
-        const profile = await getProfileFromStorage('superuser');
+        const profile = await getProfileFromStorage('guest');
 
-        expect(mockGet).toHaveBeenCalledWith('profile', 'superuser');
+        expect(mockGet).toHaveBeenCalledWith('profile', 'guest');
         expect(profile).toEqual(mockProfile);
     });
 
     it('should return undefined if profile not found locally or cloud', async () => {
         mockGet.mockResolvedValueOnce(undefined);
 
-        const profile = await getProfileFromStorage('superuser');
+        const profile = await getProfileFromStorage('guest');
 
         expect(profile).toBeUndefined();
     });

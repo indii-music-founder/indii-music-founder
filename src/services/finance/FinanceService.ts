@@ -51,7 +51,7 @@ export class FinanceService {
    */
   async getEarningsSummary(userId: string): Promise<EarningsSummary> {
     try {
-      if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'superuser')) {
+      if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
         throw new Error('Unauthorized');
       }
       // Use the RevenueService to get aggregated stats
@@ -86,7 +86,7 @@ export class FinanceService {
    */
   async fetchEarnings(userId: string): Promise<DSREarningsSummary> {
     try {
-      if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'superuser')) {
+      if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
         throw new Error('Unauthorized');
       }
 

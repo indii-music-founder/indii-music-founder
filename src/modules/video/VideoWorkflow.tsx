@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Layout, Video, Sparkles, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
@@ -148,22 +148,42 @@ export default function VideoWorkflow() {
             // Update global prompt before generating
             setPrompt(localPrompt);
 
-            const results = await VideoGeneration.generateVideo({
-                prompt: localPrompt,
-                resolution: studioControls.resolution,
-                aspectRatio: studioControls.aspectRatio,
-                negativePrompt: studioControls.negativePrompt,
-                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                fps: studioControls.fps,
-                cameraMovement: studioControls.cameraMovement,
-                motionStrength: studioControls.motionStrength,
-                shotList: studioControls.shotList,
-                firstFrame: videoInputs.firstFrame?.url,
-                lastFrame: videoInputs.lastFrame?.url,
-                timeOffset: videoInputs.timeOffset,
-                ingredients: videoInputs.ingredients?.map(i => i.url),
-                orgId: currentOrganizationId
-            });
+            let results: { id: string; url: string; prompt: string; }[] = [];
+
+            // Check for long-form Video
+            if (studioControls.duration > 8) {
+                results = await VideoGeneration.generateLongFormVideo({
+                    prompt: localPrompt,
+                    totalDuration: studioControls.duration,
+                    aspectRatio: studioControls.aspectRatio,
+                    resolution: studioControls.resolution,
+                    negativePrompt: studioControls.negativePrompt,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    firstFrame: videoInputs.firstFrame?.url,
+                    onProgress: (current, total) => {
+                        // Optional: Could wire this up to a local progress update if store supports it
+                        console.log(`Segment ${current}/${total}`);
+                    }
+                });
+            } else {
+                results = await VideoGeneration.generateVideo({
+                    prompt: localPrompt,
+                    resolution: studioControls.resolution,
+                    aspectRatio: studioControls.aspectRatio,
+                    negativePrompt: studioControls.negativePrompt,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    fps: studioControls.fps,
+                    cameraMovement: studioControls.cameraMovement,
+                    motionStrength: studioControls.motionStrength,
+                    shotList: studioControls.shotList,
+                    firstFrame: videoInputs.firstFrame?.url,
+                    lastFrame: videoInputs.lastFrame?.url,
+                    timeOffset: videoInputs.timeOffset,
+                    ingredients: videoInputs.ingredients?.map(i => i.url),
+                    orgId: currentOrganizationId,
+                    duration: studioControls.duration
+                });
+            }
 
             if (results && results.length > 0) {
                 const firstResult = results[0];

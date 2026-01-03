@@ -236,30 +236,28 @@ export default function App() {
     //     );
     // }
 
+    // console.log('[App] Rendering JSX...');
     return (
         <ToastProvider>
-            <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans">
-                <ApiKeyErrorModal />
-
+            <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans" data-testid="app-container">
                 {/* Left Sidebar - Hidden for standalone modules */}
                 {showChrome && (
                     <div className="hidden md:block h-full">
-                        <Sidebar />
+                        <ErrorBoundary>
+                            <Sidebar />
+                        </ErrorBoundary>
                     </div>
                 )}
 
-                {/* Main Content Area */}
                 <main className="flex-1 flex flex-col min-w-0 bg-background relative">
                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                         <ErrorBoundary>
                             <Suspense fallback={<LoadingFallback />}>
-                                { /* Direct Module Rendering - No Auth Gate */}
                                 <ModuleRenderer moduleId={currentModule as ModuleId} />
                             </Suspense>
                         </ErrorBoundary>
                     </div>
 
-                    {/* Command Bar - Hidden for standalone modules */}
                     {showChrome && (
                         <div className="flex-shrink-0 z-10 relative">
                             <ErrorBoundary>
@@ -271,10 +269,18 @@ export default function App() {
                 </main>
 
                 {/* Right Panel - Hidden for standalone modules */}
-                {showChrome && <RightPanel />}
+                {showChrome && (
+                    <ErrorBoundary>
+                        <RightPanel />
+                    </ErrorBoundary>
+                )}
 
                 {/* Mobile Navigation - Hidden for standalone modules */}
-                {showChrome && <MobileNav />}
+                {showChrome && (
+                    <ErrorBoundary>
+                        <MobileNav />
+                    </ErrorBoundary>
+                )}
 
                 {/* DevTools HUD - Only in Development */}
                 {import.meta.env.DEV && (

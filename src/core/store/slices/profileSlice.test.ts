@@ -14,7 +14,7 @@ describe('ProfileSlice Persistence', () => {
     let useStore: any;
 
     const mockProfile: UserProfile = {
-        id: 'superuser',
+        id: 'guest',
         bio: 'Test Bio',
         preferences: {},
         brandKit: {

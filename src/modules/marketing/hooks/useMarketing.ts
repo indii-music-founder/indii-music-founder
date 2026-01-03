@@ -21,14 +21,14 @@ export function useMarketing() {
 
     // Initial Data Fetch & Realtime Listeners
     useEffect(() => {
-        // Validation: If no profile, or if "superuser" mode but no real auth, skip listeners
+        // Validation: If no profile, or if "guest" mode but no real auth, skip listeners
         // This prevents the "Internal Assertion Failed" crash when querying prohibited collections without auth
-        const isSuperUserStub = userProfile?.id === 'superuser';
+        const isGuestStub = userProfile?.id === 'guest';
         const isReallyAuthenticated = !!auth.currentUser;
 
-        if (!userProfile?.id || (isSuperUserStub && !isReallyAuthenticated)) {
-            if (isSuperUserStub && !isReallyAuthenticated) {
-                console.warn("[Marketing] Running in offline/superuser stub mode. Firestore sync disabled.");
+        if (!userProfile?.id || (isGuestStub && !isReallyAuthenticated)) {
+            if (isGuestStub && !isReallyAuthenticated) {
+                console.warn("[Marketing] Running in offline/guest stub mode. Firestore sync disabled.");
             }
             const timer = setTimeout(() => setIsLoading(false), 0);
             return () => clearTimeout(timer);
@@ -37,8 +37,8 @@ export function useMarketing() {
         const timer = setTimeout(() => setIsLoading(true), 0);
         const unsubscribe = () => clearTimeout(timer);
 
-        let unsubscribeStats: () => void = () => {};
-        let unsubscribeCampaigns: () => void = () => {};
+        let unsubscribeStats: () => void = () => { };
+        let unsubscribeCampaigns: () => void = () => { };
 
         try {
             // 1. Listen to Stats

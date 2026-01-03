@@ -1,28 +1,24 @@
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
 import {
-    type IDistributorAdapter,
-    type DistributorId,
-    type DistributorRequirements,
-    type DistributorCredentials,
-    type ReleaseAssets,
-    type ReleaseResult,
-    type ReleaseStatus,
-    type DistributorEarnings,
-} from '../types/distributor';
-
-/**
- * DistroKid Adapter
- * Integration with DistroKid (Simulated Bulk Upload)
- */
-// import type { DistroKidPackageBuilder } from '../distrokid/DistroKidPackageBuilder';
-import { earningsService } from '../EarningsService';
-import { distributionStore } from '../DistributionPersistenceService';
-import { delay } from '@/utils/async';
+    IDistributorAdapter,
+    DistributorId,
+    DistributorRequirements,
+    ReleaseStatus,
+    ReleaseResult,
+    DistributorCredentials,
+    DistributorEarnings,
+    ValidationResult,
+    ReleaseAssets,
+    ExtendedGoldenMetadata,
+    DateRange
+} from '@/services/distribution/types/distributor';
+import { ernService } from '@/services/ddex/ERNService';
 
 export class DistroKidAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
     readonly name = 'DistroKid';
+
+    private connected = false;
+    private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'distrokid',
@@ -34,20 +30,20 @@ export class DistroKidAdapter implements IDistributorAdapter {
             aspectRatio: '1:1',
             allowedFormats: ['jpg', 'png'],
             maxSizeBytes: 25 * 1024 * 1024,
-            colorMode: 'RGB',
+            colorMode: 'RGB'
         },
         audio: {
-            allowedFormats: ['wav', 'flac', 'mp3'],
+            allowedFormats: ['wav'],
             minSampleRate: 44100,
             recommendedSampleRate: 44100,
             minBitDepth: 16,
             channels: 'stereo',
         },
         metadata: {
-            requiredFields: ['trackTitle', 'artistName', 'genre'],
-            maxTitleLength: 255,
-            maxArtistNameLength: 255,
-            isrcRequired: false,
+            requiredFields: ['title', 'artist', 'genre'],
+            maxTitleLength: 200,
+            maxArtistNameLength: 100,
+            isrcRequired: false, // DistroKid assigns ISRCs
             upcRequired: false,
             genreRequired: true,
             languageRequired: true,
@@ -60,159 +56,133 @@ export class DistroKidAdapter implements IDistributorAdapter {
             model: 'subscription',
             annualFee: 19.99,
             payoutPercentage: 100,
-        },
+        }
     };
-
-    private connected = false;
-    private apiKey: string | null = null;
 
     async isConnected(): Promise<boolean> {
         return this.connected;
     }
 
     async connect(credentials: DistributorCredentials): Promise<void> {
-        if (!credentials.apiKey) {
-            throw new Error('DistroKid requires an API key');
+        // Mock connection - in reality would validate API key if available, or SFTP creds
+        if (credentials.apiKey || credentials.sftpHost) {
+            this.credentials = credentials;
+            this.connected = true;
+        } else {
+            throw new Error('Invalid credentials provided for DistroKid');
         }
-        await delay(500);
-        this.apiKey = credentials.apiKey;
-        this.connected = true;
     }
 
     async disconnect(): Promise<void> {
-        this.apiKey = null;
         this.connected = false;
+        this.credentials = undefined;
     }
 
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
-        if (!this.connected) throw new Error('Not connected');
-
-        console.log('[DistroKid] Initiating release build:', metadata.trackTitle);
-        const releaseId = `DK-${Date.now()}`;
-
-        // Simulate upload delay
-        await delay(1500);
+        if (!this.connected) {
+            throw new Error('Not connected to DistroKid');
+        }
 
         try {
-            // 1. Build Package (Simulating Bulk Upload Preparation)
-            const { DistroKidPackageBuilder } = await import('../distrokid/DistroKidPackageBuilder');
-            const builder = new DistroKidPackageBuilder();
-            const { packagePath } = await builder.buildPackage(metadata, assets, releaseId);
+            // 1. Generate DDEX ERN
+            const ernResult = await ernService.generateERN(metadata, 'PADPIDA2014022801G', 'distrokid', assets);
 
-            console.log(`[DistroKid] Package created at: ${packagePath}`);
-            console.log('[DistroKid] Ready for manual/bulk upload tool.');
+            if (!ernResult.success || !ernResult.xml) {
+                return {
+                    success: false,
+                    status: 'failed',
+                    errors: [{ code: 'ERN_GENERATION_FAILED', message: ernResult.error || 'Failed to generate ERN' }]
+                };
+            }
 
-            // Persist deployment
-            await distributionStore.createDeployment(
-                releaseId,
-                this.id,
-                'delivered',
-                {
-                    title: metadata.trackTitle,
-                    artist: metadata.artistName,
-                    coverArtUrl: assets.coverArt.url
-                }
-            );
+            // 2. Mock Transmission (SFTP Upload)
+            // console.log('[DistroKid] Uploading ERN to SFTP...', ernResult.xml.substring(0, 100) + '...');
+            // console.log('[DistroKid] Uploading Assets...', assets.audioFiles.length, 'audio files');
 
+            // 3. Return Pending Status
             return {
                 success: true,
-                status: 'delivered', // Using 'delivered' to indicate package is ready on disk
-                releaseId: releaseId,
-                distributorReleaseId: `INT-DK-${Date.now()}`,
+                releaseId: metadata.id, // Internal ID
+                distributorReleaseId: `DK-${Date.now()}`,
+                status: 'processing',
                 metadata: {
-                    estimatedLiveDate: '2025-01-15',
-                    upcAssigned: metadata.upc || 'PENDING_BULK',
-                    isrcAssigned: metadata.isrc || 'PENDING_BULK',
-                },
+                    estimatedLiveDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    reviewRequired: false,
+                    isrcAssigned: 'US-DK1-25-00001', // Mock
+                    upcAssigned: '123456789012', // Mock
+                }
             };
-        } catch (error) {
-            console.error('[DistroKid] Build failed:', error);
+        } catch (e) {
             return {
                 success: false,
                 status: 'failed',
-                errors: [{
-                    code: 'BUILD_FAILED',
-                    message: error instanceof Error ? error.message : 'Unknown Build Error'
-                }],
-                releaseId
+                errors: [{ code: 'SUBMISSION_FAILED', message: e instanceof Error ? e.message : 'Unknown error' }]
             };
         }
     }
 
     async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to DistroKid');
-        }
-
-        console.log(`[DistroKid] Updating release ${releaseId}`);
-
-        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
-        if (deployments.length > 0) {
-            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
-        }
-
+        // DistroKid often requires full takedown and re-upload for metadata changes, specific logic here
         return {
-            success: true,
-            status: 'processing',
-            releaseId: releaseId,
-            distributorReleaseId: `INT-DK-${Date.now()}`,
-            metadata: {
-                estimatedLiveDate: '2025-02-01',
-                upcAssigned: updates.upc || 'PENDING_DK_BULK'
-            },
+            success: false,
+            status: 'failed',
+            errors: [{ code: 'NOT_SUPPORTED', message: 'Updates not supported, please issue a takedown and new release.' }]
         };
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
-        if (!this.connected) throw new Error('Not connected');
-        return 'processing';
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        // Mock status check
+        return 'live';
     }
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        if (!this.connected) throw new Error('Not connected');
-        return { success: true, status: 'takedown_requested', distributorReleaseId: releaseId };
+        return {
+            success: true,
+            status: 'takedown_requested'
+        };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        if (!this.connected) throw new Error('Not connected');
-
-        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
-
-        if (!earnings) {
-            // Return zeroed structure if no data found (instead of mock data)
-            return {
-                distributorId: this.id,
-                releaseId,
-                period,
-                streams: 0,
-                downloads: 0,
-                grossRevenue: 0,
-                distributorFee: 0,
-                netRevenue: 0,
-                currencyCode: 'USD',
-                lastUpdated: new Date().toISOString(),
-                breakdown: [],
-            };
-        }
-
-        return earnings;
+        // Mock Earnings Data
+        return {
+            distributorId: 'distrokid',
+            releaseId: releaseId,
+            period: period,
+            streams: Math.floor(Math.random() * 50000),
+            downloads: Math.floor(Math.random() * 100),
+            grossRevenue: 150.00,
+            distributorFee: 0, // 100% Payout
+            netRevenue: 150.00,
+            currencyCode: 'USD',
+            lastUpdated: new Date().toISOString()
+        };
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        if (!this.connected) {
-            throw new Error('Not connected to DistroKid');
-        }
-        return await earningsService.getAllEarnings(this.id, period);
+        return [await this.getEarnings('mock-release-1', period)];
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
-        const errors: ValidationResult['errors'] = [];
-        if (!metadata.trackTitle) errors.push({ code: 'MISSING_TITLE', message: 'Title required', field: 'trackTitle', severity: 'error' });
-        return { isValid: errors.length === 0, errors, warnings: [] };
+        // Basic validation against requirements
+        const errors: string[] = [];
+        if (!metadata.title) errors.push('Title is required');
+        if (!metadata.primaryArtist) errors.push('Artist is required');
+
+        return {
+            isValid: errors.length === 0,
+            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' }))
+        };
     }
 
     async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
-        const valid = !!assets.audioFile || (assets.audioFiles && assets.audioFiles.length > 0);
-        return { isValid: valid, errors: valid ? [] : [{ code: 'NO_AUDIO', message: 'Audio missing', field: 'audio', severity: 'error' }], warnings: [] };
+        const errors: string[] = [];
+        // Check Cover Art
+        if (assets.coverArt.width < this.requirements.coverArt.minWidth) {
+            errors.push(`Cover art must be at least ${this.requirements.coverArt.minWidth}px`);
+        }
+        return {
+            isValid: errors.length === 0,
+            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' }))
+        };
     }
 }

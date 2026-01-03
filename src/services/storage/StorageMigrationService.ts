@@ -1,4 +1,4 @@
-import { db, storage } from '../firebase';
+import { auth, db, storage } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { initDB } from './repository';
@@ -20,7 +20,7 @@ export class StorageMigrationService {
     }
 
     async migrateAllData(): Promise<void> {
-        const user = { uid: 'superuser-id' };
+        const user = auth.currentUser;
         if (!user) throw new Error("User must be logged in to migrate data");
 
         console.log("Starting migration for user:", user.uid);

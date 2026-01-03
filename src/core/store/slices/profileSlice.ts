@@ -24,9 +24,9 @@ export interface ProfileSlice {
     setTheme: (theme: 'dark' | 'light' | 'banana' | 'banana-pro') => void;
 }
 
-// Default Superuser Profile
+// Default Guest Profile
 const DEFAULT_USER_PROFILE: UserProfile = {
-    id: 'superuser',
+    id: 'guest',
     bio: 'Creative Director',
     preferences: '{}',
     brandKit: {
@@ -57,7 +57,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
 export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     currentOrganizationId: 'org-default',
     organizations: [
-        { id: 'org-default', name: 'HQ', plan: 'enterprise', members: ['superuser'] }
+        { id: 'org-default', name: 'HQ', plan: 'enterprise', members: ['guest'] }
     ],
     userProfile: DEFAULT_USER_PROFILE,
     // Auth state delegated to AuthSlice
