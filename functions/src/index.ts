@@ -669,7 +669,11 @@ export const generateContentStream = functions
                 res.status(401).send('Unauthorized');
                 return;
             }
-            const idToken = authHeader.split('Bearer ')[1];
+            const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
+            if (!idToken) {
+                res.status(401).send('Unauthorized: Missing token');
+                return;
+            }
             try {
                 await admin.auth().verifyIdToken(idToken);
             } catch (error) {
@@ -756,7 +760,11 @@ export const ragProxy = functions
                 res.status(401).send('Unauthorized');
                 return;
             }
-            const idToken = authHeader.split('Bearer ')[1];
+            const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
+            if (!idToken) {
+                res.status(401).send('Unauthorized: Missing token');
+                return;
+            }
             try {
                 await admin.auth().verifyIdToken(idToken);
             } catch (error) {

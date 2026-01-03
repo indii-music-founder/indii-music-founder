@@ -17,6 +17,7 @@ const Map: React.FC<MapProps> = ({ center, zoom, markers }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<google.maps.Map>();
 
+    // Initialize map once on mount
     useEffect(() => {
         if (ref.current && !map) {
             setMap(new window.google.maps.Map(ref.current, {
@@ -35,7 +36,8 @@ const Map: React.FC<MapProps> = ({ center, zoom, markers }) => {
                 ]
             }));
         }
-    }, [ref, map]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run once on mount - center/zoom updates handled by separate effect
 
     useEffect(() => {
         if (map) {
