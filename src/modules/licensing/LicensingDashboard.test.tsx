@@ -42,14 +42,14 @@ describe('LicensingDashboard', () => {
         (useLicensing as any).mockReturnValue({
             licenses: [],
             requests: [],
-            isLoading: true,
+            loading: true,
             actions: {}
         });
 
         render(<LicensingDashboard />);
         // Look for the spinner or loading indicator logic
         // The component renders a specific div structure for loading
-        const spinner = document.querySelector('.animate-spin');
+        const spinner = screen.getByTestId('loading-spinner');
         expect(spinner).toBeInTheDocument();
     });
 
@@ -69,15 +69,13 @@ describe('LicensingDashboard', () => {
         expect(screen.getByText('Artist A')).toBeInTheDocument();
     });
 
-    it('triggers draft action on button click', () => {
-        const draftAgreementMock = vi.fn();
+    it('triggers draft action on button click', async () => {
+        const initiateDraftingMock = vi.fn();
         (useLicensing as any).mockReturnValue({
             licenses: [],
             requests: mockRequests,
             isLoading: false,
-            actions: {
-                draftAgreement: draftAgreementMock,
-            }
+            initiateDrafting: initiateDraftingMock
         });
 
         render(<LicensingDashboard />);
@@ -85,6 +83,6 @@ describe('LicensingDashboard', () => {
         const draftButton = screen.getByText('DRAFT AGREEMENT');
         fireEvent.click(draftButton);
 
-        expect(draftAgreementMock).toHaveBeenCalledWith(mockRequests[0]);
+        expect(initiateDraftingMock).toHaveBeenCalledWith(mockRequests[0]);
     });
 });

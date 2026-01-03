@@ -1,5 +1,6 @@
 
 import { AI } from '@/services/ai/AIService';
+import { MarketingService } from '@/services/marketing/MarketingService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -58,7 +59,27 @@ export const MarketingTools = {
         `;
         try {
             const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(CreateCampaignBriefSchema.parse(data));
+            const parsed = CreateCampaignBriefSchema.parse(data);
+
+            // AUTO-PERSIST: Save the generated brief to the database
+            try {
+                await MarketingService.createCampaign({
+                    name: parsed.campaignName,
+                    platform: parsed.channels[0] || 'general',
+                    startDate: Date.now(),
+                    status: 'PENDING' as any, // Cast to avoid deep type import for now if needed
+                    budget: parseFloat(parsed.budget.replace(/[^0-9.]/g, '')) || 0,
+                    spent: 0,
+                    performance: { reach: 0, clicks: 0 },
+                    // Extra brief data stored in a JSON field or similar
+                    ...parsed
+                } as any);
+                console.log(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
+            } catch (persistError) {
+                console.warn('[MarketingTools] Persistence failed:', persistError);
+            }
+
+            return JSON.stringify(parsed);
         } catch (error) {
             console.error('MarketingTools.create_campaign_brief error:', error);
             return JSON.stringify({

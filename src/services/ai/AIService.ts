@@ -1,5 +1,3 @@
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
 import {
     Content,
     ContentPart,
@@ -270,63 +268,11 @@ export class AIService {
      * Generate video using Vertex AI backend
      */
     /**
-     * Generate video using Vertex AI backend (via synchronous polling of Async Job)
+     * Generate video using Vertex AI backend (via unified FirebaseAIService)
      */
     async generateVideo(options: GenerateVideoOptions): Promise<string> {
         try {
-            // Import dynamically to avoid circular deps if any, though likely fine here
-            const { db } = await import('@/services/firebase');
-            const { doc, getDoc } = await import('firebase/firestore');
-
-            const triggerVideoJobFn = httpsCallable(functions, 'triggerVideoJob');
-            const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-            // 1. Trigger the background job
-            await this.withRetry(() => triggerVideoJobFn({
-                jobId,
-                prompt: options.prompt,
-                model: options.model,
-                image: options.image, // Base64 image
-                ...options.config
-            }));
-
-            // 2. Poll for completion with dynamic timeout
-            // Calculate timeout: 10 seconds per second of video, minimum 2 minutes, maximum 10 minutes
-            const durationSeconds = options.config?.durationSeconds || 8; // Default 8 second video
-            const calculatedTimeout = Math.max(120000, durationSeconds * 10000); // 10s polling per second of video
-            const timeoutMs = options.timeoutMs || Math.min(calculatedTimeout, 600000); // Cap at 10 minutes
-            const pollInterval = 1000; // 1 second
-            const maxAttempts = Math.ceil(timeoutMs / pollInterval);
-
-            let attempts = 0;
-            console.log(`[AIService] Video generation timeout: ${timeoutMs}ms (${maxAttempts} attempts)`);
-
-            while (attempts < maxAttempts) {
-                const jobRef = doc(db, 'videoJobs', jobId);
-                const jobSnap = await getDoc(jobRef);
-
-                if (jobSnap.exists()) {
-                    const data = jobSnap.data();
-                    if (data?.status === 'complete' && data.videoUrl) {
-                        return data.videoUrl;
-                    }
-                    if (data?.status === 'failed') {
-                        throw new AppException(
-                            AppErrorCode.INTERNAL_ERROR,
-                            `Video generation failed: ${data.error || 'Unknown error'}`
-                        );
-                    }
-                }
-
-                await asyncDelay(1000);
-                attempts++;
-            }
-
-            throw new AppException(
-                AppErrorCode.TIMEOUT,
-                'Video generation timed out'
-            );
-
+            return await this.withRetry(() => firebaseAI.generateVideo(options));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
             console.error('[AIService] Video Gen Error:', err.message);

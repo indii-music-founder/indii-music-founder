@@ -20,13 +20,27 @@ vi.mock('firebase/remote-config', () => ({
     }))
 }));
 
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(),
+    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: {} }))
+}));
+
+vi.mock('firebase/firestore', () => ({
+    getFirestore: vi.fn(),
+    doc: vi.fn(),
+    getDoc: vi.fn()
+}));
+
 const mockGenerativeModel = {
     model: 'mock-model-v1',
     generateContent: mockGenerateContent,
     generateContentStream: mockGenerateContentStream,
     startChat: vi.fn(() => ({
         sendMessage: mockGenerateContent
-    }))
+    })),
+    embedContent: vi.fn().mockResolvedValue({
+        embedding: { values: [0.1, 0.2, 0.3] }
+    })
 };
 
 vi.mock('firebase/ai', () => ({
@@ -40,7 +54,9 @@ vi.mock('firebase/ai', () => ({
 vi.mock('@/services/firebase', () => ({
     app: {},
     remoteConfig: {},
-    ai: {}
+    ai: {},
+    functions: {},
+    db: {}
 }));
 
 describe('FirebaseAIService', () => {
@@ -146,6 +162,16 @@ describe('FirebaseAIService', () => {
         }));
     });
 
+    it('should handle embedContent', async () => {
+        const result = await service.embedContent({
+            model: 'mock-model-v1',
+            content: { role: 'user', parts: [{ text: 'Embed me' }] }
+        });
+
+        expect(result.values).toEqual([0.1, 0.2, 0.3]);
+        expect(mockGenerativeModel.embedContent).toHaveBeenCalled();
+    });
+
     it('should handle getLiveModel', async () => {
         const { getLiveGenerativeModel } = await import('firebase/ai');
         await service.getLiveModel('System instruction');
@@ -168,5 +194,27 @@ describe('FirebaseAIService', () => {
         const reader = stream.getReader();
         const { value } = await reader.read();
         expect(value).toBe('Stream');
+    });
+
+    it('should handle generateVideo with polling', async () => {
+        const { httpsCallable } = await import('firebase/functions');
+        const { getDoc } = await import('firebase/firestore');
+
+        (httpsCallable as any).mockReturnValue(vi.fn().mockResolvedValue({ data: {} }));
+        (getDoc as any).mockResolvedValueOnce({
+            exists: () => true,
+            data: () => ({ status: 'pending' })
+        }).mockResolvedValueOnce({
+            exists: () => true,
+            data: () => ({ status: 'complete', videoUrl: 'http://video.mp4' })
+        });
+
+        const result = await service.generateVideo({
+            prompt: 'Cinematic video',
+            model: 'veo-v1',
+            config: { durationSeconds: 5 }
+        });
+
+        expect(result).toBe('http://video.mp4');
     });
 });

@@ -22,6 +22,8 @@ import {
     FunctionCallPart,
     GenerateContentResponse,
     WrappedResponse,
+    GenerateVideoRequest,
+    GenerateVideoResponse,
     GenerateImageRequest,
     GenerateImageResponse
 } from '@/shared/types/ai.dto';
@@ -317,29 +319,59 @@ export class FirebaseAIService {
     }
 
     /**
-     * HIGH LEVEL: Generate video using backend proxy
+     * HIGH LEVEL: Generate video using backend proxy (via synchronous polling of Async Job)
      */
-    async generateVideo(prompt: string, model: string = 'veo-3.1-generate-preview', image?: string): Promise<string> {
+    async generateVideo(options: GenerateVideoRequest & { timeoutMs?: number }): Promise<string> {
         const { db } = await import('@/services/firebase');
         const { doc, getDoc } = await import('firebase/firestore');
 
-        const triggerVideoJobFn = httpsCallable(functions, 'triggerVideoJob');
+        const triggerVideoJobFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'triggerVideoJob');
         const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        await triggerVideoJobFn({ jobId, prompt, model, image });
+        // 1. Trigger the background job
+        await this.withRetry(() => triggerVideoJobFn({
+            jobId,
+            prompt: options.prompt,
+            model: options.model,
+            image: options.image,
+            ...options.config
+        } as any));
+
+        // 2. Poll for completion with dynamic timeout
+        const durationSeconds = options.config?.durationSeconds || 8;
+        const calculatedTimeout = Math.max(120000, durationSeconds * 10000);
+        const timeoutMs = options.timeoutMs || Math.min(calculatedTimeout, 600000);
+        const pollInterval = 1000;
+        const maxAttempts = Math.ceil(timeoutMs / pollInterval);
 
         let attempts = 0;
-        while (attempts < 120) {
-            const jobSnap = await getDoc(doc(db, 'videoJobs', jobId));
+        console.log(`[FirebaseAIService] Video generation timeout: ${timeoutMs}ms (${maxAttempts} attempts)`);
+
+        while (attempts < maxAttempts) {
+            const jobRef = doc(db, 'videoJobs', jobId);
+            const jobSnap = await getDoc(jobRef);
+
             if (jobSnap.exists()) {
                 const data = jobSnap.data();
-                if (data?.status === 'complete' && data.videoUrl) return data.videoUrl;
-                if (data?.status === 'failed') throw new Error(`Video failed: ${data.error}`);
+                if (data?.status === 'complete' && data.videoUrl) {
+                    return data.videoUrl;
+                }
+                if (data?.status === 'failed') {
+                    throw new AppException(
+                        AppErrorCode.INTERNAL_ERROR,
+                        `Video generation failed: ${data.error || 'Unknown error'}`
+                    );
+                }
             }
-            await new Promise(r => setTimeout(r, 1000));
+
+            await new Promise(r => setTimeout(r, pollInterval));
             attempts++;
         }
-        throw new Error('Video generation timed out');
+
+        throw new AppException(
+            AppErrorCode.TIMEOUT,
+            'Video generation timed out'
+        );
     }
 
     /**
@@ -351,6 +383,22 @@ export class FirebaseAIService {
         const image = response.data.images?.[0];
         if (!image) throw new Error('No image returned');
         return image.bytesBase64Encoded;
+    }
+
+    /**
+     * CORE: Embed content
+     */
+    async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
+        await this.ensureInitialized();
+        const modelCallback = getGenerativeModel(ai, {
+            model: options.model
+        });
+
+        // Map local Content type to SDK if needed, but structure should match
+        // The SDK expects 'content' or 'contents'. embedContent takes 'content' usually.
+        // Checking SDK: model.embedContent(content)
+        const result = await (modelCallback as any).embedContent(options.content as any);
+        return { values: result.embedding.values };
     }
 
     /**

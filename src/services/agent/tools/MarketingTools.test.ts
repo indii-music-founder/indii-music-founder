@@ -2,10 +2,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MarketingTools } from './MarketingTools';
 import { AI } from '@/services/ai/AIService';
+import { MarketingService } from '@/services/marketing/MarketingService';
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateStructuredData: vi.fn(),
+    }
+}));
+
+vi.mock('@/services/marketing/MarketingService', () => ({
+    MarketingService: {
+        createCampaign: vi.fn(),
     }
 }));
 
@@ -52,5 +59,6 @@ describe('MarketingTools', () => {
 
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
         expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(MarketingService.createCampaign).toHaveBeenCalled();
     });
 });

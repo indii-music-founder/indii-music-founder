@@ -2,10 +2,19 @@ import { describe, it, expect, vi } from 'vitest';
 import { PUBLICIST_TOOLS } from './tools';
 
 // Mock AI Service with alias path
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
         generateContent: vi.fn().mockResolvedValue({
-            text: () => "Mocked AI Response"
+            response: {
+                text: () => JSON.stringify({
+                    headline: "Test Headline",
+                    content: "Mocked AI Response",
+                    contactInfo: "test@example.com",
+                    response: "Mocked AI Response",
+                    sentimentAnalysis: "Positive",
+                    nextSteps: ["Step 1"]
+                })
+            }
         })
     }
 }));
@@ -26,7 +35,8 @@ describe('PUBLICIST_TOOLS', () => {
             key_points: ["Point 1", "Point 2"],
             contact_info: "test@example.com"
         });
-        expect(result).toBe("Mocked AI Response");
+        const parsed = JSON.parse(result);
+        expect(parsed.content).toBe("Mocked AI Response");
     });
 
     it('generate_crisis_response should return text', async () => {
@@ -35,6 +45,7 @@ describe('PUBLICIST_TOOLS', () => {
             sentiment: "Negative",
             platform: "Twitter"
         });
-        expect(result).toBe("Mocked AI Response");
+        const parsed = JSON.parse(result);
+        expect(parsed.response).toBe("Mocked AI Response");
     });
 });

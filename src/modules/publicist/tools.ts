@@ -1,5 +1,4 @@
-
-import { AI } from '../../services/ai/AIService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 
@@ -57,16 +56,11 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = res.text();
+            const res = await firebaseAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
             const result = PressReleaseSchema.parse(parsed);
-            // Return raw text or JSON depending on tool expectation.
-            // Typically tools return a string.
             return JSON.stringify(result, null, 2);
         } catch (e) {
             console.error('PUBLICIST_TOOLS.write_press_release error:', e);
@@ -90,11 +84,8 @@ export const PUBLICIST_TOOLS = {
         `;
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            const text = res.text();
+            const res = await firebaseAI.generateContent(prompt, AI_MODELS.TEXT.AGENT);
+            const text = res.response.text();
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
             const result = CrisisResponseSchema.parse(parsed);
@@ -106,14 +97,12 @@ export const PUBLICIST_TOOLS = {
     },
 
     manage_media_list: async (args: { action: 'add' | 'remove' | 'list', contact?: any }) => {
-        // Mock implementation
         if (args.action === 'list') {
             const list = [
                 { name: "Rolling Stone", contact: "editor@rollingstone.com", tags: ["Music", "Review"] },
                 { name: "Pitchfork", contact: "news@pitchfork.com", tags: ["Indie", "News"] },
                 { name: "Billboard", contact: "info@billboard.com", tags: ["Industry", "Charts"] }
             ];
-            // Validate mock data
             MediaListSchema.parse(list);
             return JSON.stringify(list, null, 2);
         }
@@ -121,14 +110,12 @@ export const PUBLICIST_TOOLS = {
     },
 
     pitch_story: async (args: { outlet: string, angle: string }) => {
-        // Mock implementation
         const pitch = {
             outlet: args.outlet,
             status: "drafted",
             subjectLine: `Exclusive: Why [Artist] is the next big thing`,
             emailBody: `Hi Team at ${args.outlet},\n\nI wanted to share a story about... [AI would generate full pitch based on ${args.angle}]`
         };
-        // Validate
         PitchStorySchema.parse(pitch);
         return JSON.stringify(pitch, null, 2);
     }

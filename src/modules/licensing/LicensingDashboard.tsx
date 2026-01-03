@@ -30,7 +30,7 @@ export default function LicensingDashboard() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="relative">
+                <div className="relative" data-testid="loading-spinner">
                     <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                         <ShieldCheck className="w-6 h-6 text-indigo-400" />
