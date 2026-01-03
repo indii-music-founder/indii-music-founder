@@ -22,11 +22,14 @@ vi.mock('@agents/licensing/prompt.md?raw', () => ({
     default: 'Mock System Prompt'
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
-        generateContent: vi.fn()
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        generateText: vi.fn(),
+        analyzeImage: vi.fn()
     }
 }));
+
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 vi.mock('../tools/LegalTools', () => ({
     LegalTools: {
@@ -124,10 +127,7 @@ describe('LicensingAgent', () => {
 
     describe('analyze_contract', () => {
         it('should use AI to analyze contract data', async () => {
-            const { AI } = await import('@/services/ai/AIService');
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => "Mocked AI analysis summary."
-            } as any);
+            vi.mocked(firebaseAI.analyzeImage).mockResolvedValue("Mocked AI analysis summary.");
 
             const args = {
                 file_data: 'base64data',
@@ -136,7 +136,7 @@ describe('LicensingAgent', () => {
 
             const result = await (LicensingAgent.functions!.analyze_contract as any)(args);
 
-            expect(AI.generateContent).toHaveBeenCalled();
+            expect(firebaseAI.analyzeImage).toHaveBeenCalled();
             expect(result.success).toBe(true);
             expect(result.data.summary).toBe("Mocked AI analysis summary.");
         });

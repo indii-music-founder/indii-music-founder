@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
+import { ApprovalModal } from './components/ApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
@@ -292,6 +293,9 @@ export default function App() {
                         <DevPortWarning />
                     </Suspense>
                 )}
+
+                {/* Agent Approval Modal - Shows when agent requests user approval */}
+                <ApprovalModal />
             </div>
         </ToastProvider>
     );

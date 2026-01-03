@@ -1,74 +1,128 @@
-import { delay } from '@/utils/async';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
-// Tool: BigQuery Mock
-// This tool simulates BigQuery data retrieval for the Finance Agent.
-// In a production environment, this would use the @google-cloud/bigquery library to query a real dataset.
+// Tool: BigQuery (Real queries via Cloud Functions)
+// This tool executes BigQuery queries through Firebase Cloud Functions.
+// Backend uses @google-cloud/bigquery for real data retrieval.
 
-export const execute_bigquery_query = async (args: { query: string }) => {
-    console.log(`[BigQuery Mock] Executing query: ${args.query}`);
+interface BigQueryField {
+    name: string;
+    type: string;
+    mode?: string;
+    description?: string;
+}
 
-    // Simulate network delay
-    await delay(1500);
+interface BigQuerySchema {
+    tableId: string;
+    fields: BigQueryField[];
+}
 
-    const lowerQuery = args.query.toLowerCase();
+interface BigQueryDataset {
+    datasetId: string;
+    location: string;
+    createdAt: string;
+}
 
-    // Mock Dataset: Sales
-    if (lowerQuery.includes('sales') || lowerQuery.includes('revenue')) {
-        return JSON.stringify([
-            { quarter: '2025-Q1', revenue: 150000, region: 'North America' },
-            { quarter: '2025-Q1', revenue: 80000, region: 'Europe' },
-            { quarter: '2025-Q1', revenue: 60000, region: 'Asia' },
-            { quarter: '2024-Q4', revenue: 200000, region: 'North America' } // Comparison data
-        ]);
+interface QueryResult {
+    rows: Record<string, unknown>[];
+    totalRows: number;
+    schema: BigQueryField[];
+    jobId: string;
+}
+
+export const execute_bigquery_query = async (args: {
+    query: string;
+    projectId?: string;
+    maxResults?: number;
+    useLegacySql?: boolean;
+}) => {
+    console.log(`[BigQuery] Executing query: ${args.query.substring(0, 100)}...`);
+
+    try {
+        const executeBigQueryQueryFn = httpsCallable<
+            { query: string; projectId?: string; maxResults?: number; useLegacySql?: boolean },
+            QueryResult
+        >(functions, 'executeBigQueryQuery');
+
+        const result = await executeBigQueryQueryFn({
+            query: args.query,
+            projectId: args.projectId,
+            maxResults: args.maxResults || 1000,
+            useLegacySql: args.useLegacySql || false
+        });
+
+        return JSON.stringify({
+            rows: result.data.rows,
+            totalRows: result.data.totalRows,
+            schema: result.data.schema,
+            jobId: result.data.jobId
+        });
+    } catch (error) {
+        const err = error as Error;
+        console.error('[BigQuery] Query failed:', err.message);
+        return JSON.stringify({
+            error: err.message,
+            hint: 'Check query syntax and ensure BigQuery API is enabled with proper permissions.'
+        });
     }
-
-    // Mock Dataset: Budget / Expenses
-    if (lowerQuery.includes('budget') || lowerQuery.includes('spend') || lowerQuery.includes('cost')) {
-        return JSON.stringify([
-            { category: 'Marketing', budget: 50000, spent: 45000, status: 'On Track' },
-            { category: 'R&D', budget: 120000, spent: 110000, status: 'On Track' },
-            { category: 'Operations', budget: 30000, spent: 35000, status: 'Over Budget' }
-        ]);
-    }
-
-    // Mock Dataset: ROI
-    if (lowerQuery.includes('roi') || lowerQuery.includes('return')) {
-        return JSON.stringify([
-            { campaign: 'Summer_Launch', cost: 20000, revenue_generated: 80000, roi: '300%' },
-            { campaign: 'Influencer_Push', cost: 15000, revenue_generated: 45000, roi: '200%' }
-        ]);
-    }
-
-    // Default fallback
-    return JSON.stringify([
-        { message: "Query executed successfully, but no specific mock data matched the query keywords (sales, budget, roi).", rows_returned: 0 }
-    ]);
 };
 
-export const get_table_schema = async (args: { table_id: string }) => {
-    console.log(`[BigQuery Mock] Getting schema for: ${args.table_id}`);
+export const get_table_schema = async (args: {
+    table_id: string;
+    dataset_id: string;
+    projectId?: string;
+}) => {
+    console.log(`[BigQuery] Getting schema for: ${args.dataset_id}.${args.table_id}`);
 
-    if (args.table_id.includes('sales')) {
+    try {
+        const getBigQueryTableSchemaFn = httpsCallable<
+            { tableId: string; datasetId: string; projectId?: string },
+            BigQuerySchema
+        >(functions, 'getBigQueryTableSchema');
+
+        const result = await getBigQueryTableSchemaFn({
+            tableId: args.table_id,
+            datasetId: args.dataset_id,
+            projectId: args.projectId
+        });
+
+        return JSON.stringify(result.data);
+    } catch (error) {
+        const err = error as Error;
+        console.error('[BigQuery] Failed to get schema:', err.message);
         return JSON.stringify({
-            fields: [
-                { name: 'date', type: 'DATE' },
-                { name: 'revenue', type: 'FLOAT' },
-                { name: 'region', type: 'STRING' },
-                { name: 'product_id', type: 'STRING' }
-            ]
+            error: err.message,
+            message: 'Table not found or access denied.'
         });
     }
+};
 
-    if (args.table_id.includes('budget')) {
+export const list_datasets = async (args?: { projectId?: string }) => {
+    console.log(`[BigQuery] Listing datasets`);
+
+    try {
+        const listBigQueryDatasetsFn = httpsCallable<
+            { projectId?: string },
+            { datasets: BigQueryDataset[] }
+        >(functions, 'listBigQueryDatasets');
+
+        const result = await listBigQueryDatasetsFn({
+            projectId: args?.projectId
+        });
+
+        return JSON.stringify(result.data.datasets);
+    } catch (error) {
+        const err = error as Error;
+        console.error('[BigQuery] Failed to list datasets:', err.message);
         return JSON.stringify({
-            fields: [
-                { name: 'department', type: 'STRING' },
-                { name: 'budget_allocated', type: 'FLOAT' },
-                { name: 'budget_spent', type: 'FLOAT' },
-                { name: 'fiscal_year', type: 'INTEGER' }
-            ]
+            error: err.message,
+            hint: 'Ensure BigQuery API is enabled and service account has bigquery.datasets.list permission.'
         });
     }
+};
 
-    return JSON.stringify({ message: "Table not found." });
+export const BigQueryTools = {
+    execute_bigquery_query,
+    get_table_schema,
+    list_datasets
 };

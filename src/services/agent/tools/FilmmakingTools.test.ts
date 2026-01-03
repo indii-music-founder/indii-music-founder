@@ -7,10 +7,18 @@ import { AI } from '@/services/ai/AIService';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        generateStructuredData: vi.fn(),
+        generateText: vi.fn(),
+        analyzeImage: vi.fn()
+    }
+}));
+
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
-        generateVideo: vi.fn() // Only if called directly, but tools usually call VideoGenerationService
+        generateVideo: vi.fn()
     }
 }));
 
@@ -32,6 +40,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
@@ -66,13 +75,11 @@ describe('Filmmaking Grammar Tools', () => {
                 beats: [{ beat: 1, name: "Intro" }]
             };
 
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => JSON.stringify(mockResponse)
-            } as Awaited<ReturnType<typeof AI.generateContent>>);
+            vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
             expect(result).toContain("Test Script");
-            expect(AI.generateContent).toHaveBeenCalled();
+            expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 

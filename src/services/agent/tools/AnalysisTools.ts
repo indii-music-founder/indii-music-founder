@@ -16,10 +16,6 @@ interface AnalyzeContractArgs extends ToolFunctionArgs {
 
 // Note: search_knowledge moved to KnowledgeTools
 
-interface VerifyOutputArgs extends ToolFunctionArgs {
-    goal: string;
-    content: string;
-}
 
 interface ContractAnalysisResult {
     score?: number;
@@ -90,22 +86,4 @@ export const AnalysisTools = {
 
     // Note: search_knowledge moved to KnowledgeTools
 
-    verify_output: async (args: VerifyOutputArgs): Promise<string> => {
-        try {
-            const { AI } = await import('@/services/ai/AIService');
-            const prompt = `CRITIQUE REQUEST:
-            GOAL: ${args.goal}
-            CONTENT: ${args.content}
-
-            Evaluate if the content meets the goal. Provide a score (1-10) and specific feedback.`;
-
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            return res.text();
-        } catch (e: unknown) {
-            return `Verification failed: ${getErrorMessage(e)}`;
-        }
-    }
 };

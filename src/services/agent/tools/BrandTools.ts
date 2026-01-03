@@ -1,6 +1,4 @@
-
-import { AI } from '@/services/ai/AIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
@@ -45,7 +43,7 @@ export const BrandTools = {
         `;
 
         try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
+            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(VerifyOutputSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.verify_output error:', error);
@@ -66,7 +64,7 @@ export const BrandTools = {
         `;
 
         try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
+            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(AnalyzeBrandConsistencySchema.parse(data));
         } catch (error) {
             console.error('BrandTools.analyze_brand_consistency error:', error);
@@ -85,7 +83,7 @@ export const BrandTools = {
         `;
 
         try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
+            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(GenerateBrandGuidelinesSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.generate_brand_guidelines error:', error);
@@ -104,7 +102,7 @@ export const BrandTools = {
         `;
 
         try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
+            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
             return JSON.stringify(AuditVisualAssetsSchema.parse(data));
         } catch (error) {
             console.error('BrandTools.audit_visual_assets error:', error);

@@ -47,8 +47,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ragProxy = exports.generateContentStream = exports.editImage = exports.generateImageV3 = exports.inngestApi = exports.triggerLongFormVideoJob = exports.triggerVideoJob = exports.getInngestClient = void 0;
-exports.ragProxy = exports.generateContentStream = exports.editImage = exports.generateImageV3 = exports.inngestApi = exports.renderVideo = exports.triggerLongFormVideoJob = exports.triggerVideoJob = exports.getInngestClient = void 0;
+exports.listBigQueryDatasets = exports.getBigQueryTableSchema = exports.executeBigQueryQuery = exports.restartGCEInstance = exports.listGCEInstances = exports.scaleGKENodePool = exports.getGKEClusterStatus = exports.listGKEClusters = exports.ragProxy = exports.generateContentStream = exports.editImage = exports.generateImageV3 = exports.inngestApi = exports.renderVideo = exports.triggerLongFormVideoJob = exports.triggerVideoJob = exports.getInngestClient = void 0;
 // indiiOS Cloud Functions - V1.1
 const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
@@ -58,7 +57,6 @@ const express_1 = require("inngest/express");
 const cors_1 = __importDefault(require("cors"));
 const video_1 = require("./lib/video");
 const google_auth_library_1 = require("google-auth-library");
-const video_1 = require("./lib/video");
 const long_form_video_1 = require("./lib/long_form_video");
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -111,11 +109,11 @@ exports.triggerVideoJob = functions
     const userId = context.auth.uid;
     // Construct input matching the schema
     const inputData = Object.assign(Object.assign({}, data), { userId });
+    const inputData = Object.assign(Object.assign({}, data), { userId });
     // Zod Validation
     const validation = video_1.VideoJobSchema.safeParse(inputData);
     if (!validation.success) {
-        throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map((i) => i.message).join(", ")}`);
-        throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`);
+        throw new functions.https.HttpsError("invalid-argument", `Validation failed: ${validation.error.issues.map((i) => i.message).join(", ")}` `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`);
     }
     const { prompt, jobId, orgId } = inputData, options = __rest(inputData, ["prompt", "jobId", "orgId"]);
     try {
@@ -185,7 +183,6 @@ exports.triggerLongFormVideoJob = functions
         // ------------------------------------------------------------------
         // Quota Enforcement (Server-Side)
         // ------------------------------------------------------------------
-        // 1. Determine User Tier (Fallback to 'free')
         let userTier = 'free';
         if (orgId && orgId !== 'personal') {
             const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
@@ -195,13 +192,9 @@ exports.triggerLongFormVideoJob = functions
             }
         }
         const limits = TIER_LIMITS[userTier];
+        const durationNum = parseFloat((totalDuration || 0).toString());
         // 2. Validate Duration Limit
         const durationNum = parseFloat(totalDuration || "0");
-        if (durationNum > limits.maxVideoDuration) {
-            throw new functions.https.HttpsError("resource-exhausted", `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`);
-        }
-        // 3. Validate Daily Usage Limit (Rate Limiting)
-        const durationNum = parseFloat((totalDuration || 0).toString());
         if (durationNum > limits.maxVideoDuration) {
             throw new functions.https.HttpsError("resource-exhausted", `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`);
         }
@@ -239,7 +232,6 @@ exports.triggerLongFormVideoJob = functions
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         // 5. Publish Event to Inngest for Long Form
-        // 2. Publish Event to Inngest for Long Form
         const inngest = (0, exports.getInngestClient)();
         await inngest.send({
             name: "video/long_form.requested",
@@ -438,15 +430,12 @@ exports.inngestApi = functions
     // 2. Long Form Video Generation Logic (Daisychaining)
     const generateLongFormVideo = (0, long_form_video_1.generateLongFormVideoFn)(inngestClient);
     // 3. Stitching Function (Server-Side using Google Transcoder)
-    const stitchVideo = (0, long_form_video_1.stitchVideoFn)(inngestClient);
-    const handler = (0, express_1.serve)({
-        client: inngestClient,
-        functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
     // Register Long Form Functions
     const generateLongForm = (0, long_form_video_1.generateLongFormVideoFn)(inngestClient);
     const stitchVideo = (0, long_form_video_1.stitchVideoFn)(inngestClient);
     const handler = (0, express_1.serve)({
         client: inngestClient,
+        functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
         functions: [generateVideoFn, generateLongForm, stitchVideo],
         signingKey: inngestSigningKey.value(),
     });
@@ -709,5 +698,174 @@ exports.ragProxy = functions
             res.status(500).send({ error: error.message });
         }
     });
+});
+// ----------------------------------------------------------------------------
+// DevOps Tools - GKE & GCE Management
+// ----------------------------------------------------------------------------
+const gkeService = __importStar(require("./devops/gkeService"));
+const gceService = __importStar(require("./devops/gceService"));
+const bigqueryService = __importStar(require("./analytics/bigqueryService"));
+/**
+ * List GKE Clusters
+ */
+exports.listGKEClusters = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await gkeService.listClusters(projectId);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+/**
+ * Get GKE Cluster Status
+ */
+exports.getGKEClusterStatus = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await gkeService.getClusterStatus(projectId, data.location, data.clusterName);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+/**
+ * Scale GKE Node Pool
+ */
+exports.scaleGKENodePool = functions
+    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await gkeService.scaleNodePool(projectId, data.location, data.clusterName, data.nodePoolName, data.nodeCount);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+/**
+ * List GCE Instances
+ */
+exports.listGCEInstances = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await gceService.listInstances(projectId);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+/**
+ * Restart GCE Instance
+ */
+exports.restartGCEInstance = functions
+    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await gceService.resetInstance(projectId, data.zone, data.instanceName);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+// ----------------------------------------------------------------------------
+// BigQuery Analytics
+// ----------------------------------------------------------------------------
+/**
+ * Execute BigQuery Query
+ */
+exports.executeBigQueryQuery = functions
+    .runWith({ timeoutSeconds: 120, memory: '512MB' })
+    .https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await bigqueryService.executeQuery(data.query, projectId, { maxResults: data.maxResults });
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+/**
+ * Get BigQuery Table Schema
+ */
+exports.getBigQueryTableSchema = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await bigqueryService.getTableSchema(projectId, data.datasetId, data.tableId);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+/**
+ * List BigQuery Datasets
+ */
+exports.listBigQueryDatasets = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+    if (!projectId) {
+        throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+    }
+    try {
+        return await bigqueryService.listDatasets(projectId);
+    }
+    catch (error) {
+        throw new functions.https.HttpsError('internal', error.message);
+    }
 });
 //# sourceMappingURL=index.js.map

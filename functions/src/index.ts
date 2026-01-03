@@ -805,3 +805,191 @@ export const ragProxy = functions
             }
         });
     });
+
+// ----------------------------------------------------------------------------
+// DevOps Tools - GKE & GCE Management
+// ----------------------------------------------------------------------------
+
+import * as gkeService from './devops/gkeService';
+import * as gceService from './devops/gceService';
+import * as bigqueryService from './analytics/bigqueryService';
+
+/**
+ * List GKE Clusters
+ */
+export const listGKEClusters = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (_data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await gkeService.listClusters(projectId);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Get GKE Cluster Status
+ */
+export const getGKEClusterStatus = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (data: { location: string; clusterName: string }, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await gkeService.getClusterStatus(projectId, data.location, data.clusterName);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Scale GKE Node Pool
+ */
+export const scaleGKENodePool = functions
+    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await gkeService.scaleNodePool(projectId, data.location, data.clusterName, data.nodePoolName, data.nodeCount);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * List GCE Instances
+ */
+export const listGCEInstances = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (_data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await gceService.listInstances(projectId);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Restart GCE Instance
+ */
+export const restartGCEInstance = functions
+    .runWith({ timeoutSeconds: 60, memory: '256MB' })
+    .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await gceService.resetInstance(projectId, data.zone, data.instanceName);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+// ----------------------------------------------------------------------------
+// BigQuery Analytics
+// ----------------------------------------------------------------------------
+
+/**
+ * Execute BigQuery Query
+ */
+export const executeBigQueryQuery = functions
+    .runWith({ timeoutSeconds: 120, memory: '512MB' })
+    .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await bigqueryService.executeQuery(data.query, projectId, { maxResults: data.maxResults });
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * Get BigQuery Table Schema
+ */
+export const getBigQueryTableSchema = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await bigqueryService.getTableSchema(projectId, data.datasetId, data.tableId);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });
+
+/**
+ * List BigQuery Datasets
+ */
+export const listBigQueryDatasets = functions
+    .runWith({ timeoutSeconds: 30, memory: '256MB' })
+    .https.onCall(async (_data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+        if (!projectId) {
+            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+        }
+
+        try {
+            return await bigqueryService.listDatasets(projectId);
+        } catch (error: any) {
+            throw new functions.https.HttpsError('internal', error.message);
+        }
+    });

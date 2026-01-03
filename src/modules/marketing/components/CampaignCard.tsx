@@ -66,6 +66,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                         onClick={(e) => {
                             e.stopPropagation();
                         }}
+                        onKeyDown={(e) => {
+                            e.stopPropagation();
+                        }}
                     >
                         <MoreHorizontalIcon size={18} />
                     </button>

@@ -2,17 +2,24 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeNavbar from './CreativeNavbar';
 import { useStore } from '@/core/store';
-import { useToast } from '@/core/context/ToastContext';
+import { useToast, ToastProvider } from '@/core/context/ToastContext';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('@/core/context/ToastContext');
 vi.mock('@/services/video/VideoGenerationService');
 vi.mock('@/services/image/ImageGenerationService');
 vi.mock('@/services/screen/ScreenControlService');
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: vi.fn(() => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+    })),
+    ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 vi.mock('@/services/firebase', () => ({
     auth: {
         currentUser: { uid: 'test-user-id' }
@@ -106,30 +113,32 @@ describe('CreativeNavbar', () => {
     });
 
     it('renders correctly', () => {
-        render(<CreativeNavbar />);
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
         expect(screen.getByText('indiiOS')).toBeInTheDocument();
         expect(screen.getByText('Superuser')).toBeInTheDocument();
-        // "Image" text is in the mode dropdown button
-        expect(screen.getByText('Image')).toBeInTheDocument();
+        // The mode dropdown was replaced by a static "Creative Studio" label
+        expect(screen.getByText('Creative Studio')).toBeInTheDocument();
     });
 
-    it('toggles generation mode', () => {
-        render(<CreativeNavbar />);
-
-        // Open dropdown - find button containing "Image"
-        // Since we mocked ImageSubMenu, the only "Image" text should be in the dropdown button
-        const modeButton = screen.getByText('Image').closest('button');
-        fireEvent.click(modeButton!);
-
-        // Click Video Mode
-        const videoOption = screen.getByText('Video Mode');
-        fireEvent.click(videoOption);
-
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
+    it('shows image sub-menu when in image mode', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+        expect(screen.getByTestId('image-sub-menu')).toBeInTheDocument();
     });
 
     it('opens and closes brand assets drawer', () => {
-        render(<CreativeNavbar />);
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
 
         // Click the toggle button in the mocked ImageSubMenu
         const toggleButton = screen.getByText('Toggle Brand Assets');
@@ -149,7 +158,11 @@ describe('CreativeNavbar', () => {
 
     it('opens projector window', async () => {
         (ScreenControl.requestPermission as any).mockResolvedValue(true);
-        render(<CreativeNavbar />);
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
 
         const projectorButton = screen.getByText('Projector');
         fireEvent.click(projectorButton);

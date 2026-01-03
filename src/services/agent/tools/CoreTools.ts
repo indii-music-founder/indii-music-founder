@@ -1,5 +1,7 @@
 import type { ToolFunctionArgs, AgentContext, ValidAgentId } from '../types';
 import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
+import { useStore } from '@/core/store';
+import type { AgentMode } from '@/core/store/slices/agentSlice';
 
 // ============================================================================
 // Types for CoreTools
@@ -26,6 +28,8 @@ interface SetModeArgs extends ToolFunctionArgs {
 interface UpdatePromptArgs extends ToolFunctionArgs {
     text: string;
 }
+
+const VALID_AGENT_MODES: AgentMode[] = ['assistant', 'autonomous', 'creative', 'research'];
 
 // ============================================================================
 // CoreTools Implementation
@@ -67,14 +71,35 @@ export const CoreTools = {
     },
 
     request_approval: async (args: RequestApprovalArgs): Promise<string> => {
-        // SAFETY: Auto-reject until UI approval flow is implemented
-        // This prevents high-stakes actions from executing without real user confirmation
-        console.warn('[CoreTools] request_approval called but UI not integrated - auto-rejecting for safety');
-        return `[APPROVAL REQUESTED] [AUTO-REJECTED FOR SAFETY] Action "${args.content}" was automatically denied. The approval UI is not yet implemented. Please perform this action manually outside the agent system.`;
+        const { requestApproval } = useStore.getState();
+        const actionType = args.type || 'default';
+
+        console.log(`[CoreTools] Requesting approval for: ${args.content} (type: ${actionType})`);
+
+        try {
+            const approved = await requestApproval(args.content, actionType);
+
+            if (approved) {
+                return `[APPROVED] User approved the action: "${args.content}". You may proceed with the operation.`;
+            } else {
+                return `[REJECTED] User rejected the action: "${args.content}". Do not proceed with this operation.`;
+            }
+        } catch (error) {
+            console.error('[CoreTools] Approval request failed:', error);
+            return `[ERROR] Approval request failed. Action "${args.content}" was not executed for safety.`;
+        }
     },
 
     set_mode: async (args: SetModeArgs): Promise<string> => {
-        return `Switched to ${args.mode} mode (Simulation).`;
+        const { setAgentMode, agentMode } = useStore.getState();
+        const requestedMode = args.mode.toLowerCase() as AgentMode;
+
+        if (!VALID_AGENT_MODES.includes(requestedMode)) {
+            return `Invalid mode "${args.mode}". Valid modes: ${VALID_AGENT_MODES.join(', ')}. Current mode: ${agentMode}`;
+        }
+
+        setAgentMode(requestedMode);
+        return `Successfully switched to ${requestedMode} mode. Previous mode was ${agentMode}.`;
     },
 
     update_prompt: async (args: UpdatePromptArgs): Promise<string> => {

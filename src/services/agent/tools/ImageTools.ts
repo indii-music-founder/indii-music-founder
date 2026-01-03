@@ -3,6 +3,69 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import type { ToolFunctionArgs } from '../types';
 
+/**
+ * Extracts a specific frame from a 2x2 grid image using Canvas API.
+ * @param imageUrl - The data URL of the grid image
+ * @param gridIndex - 0 (top-left), 1 (top-right), 2 (bottom-left), 3 (bottom-right)
+ * @returns Data URL of the extracted frame, or null on failure
+ */
+async function extractFrameFromGrid(imageUrl: string, gridIndex: number): Promise<string | null> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                if (!ctx) {
+                    console.error('[extractFrameFromGrid] Failed to get canvas context');
+                    resolve(null);
+                    return;
+                }
+
+                // Calculate frame dimensions (2x2 grid)
+                const frameWidth = Math.floor(img.width / 2);
+                const frameHeight = Math.floor(img.height / 2);
+
+                // Set canvas to frame size
+                canvas.width = frameWidth;
+                canvas.height = frameHeight;
+
+                // Calculate source position based on grid index
+                // 0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right
+                const col = gridIndex % 2;
+                const row = Math.floor(gridIndex / 2);
+                const sx = col * frameWidth;
+                const sy = row * frameHeight;
+
+                // Draw the cropped section
+                ctx.drawImage(
+                    img,
+                    sx, sy, frameWidth, frameHeight, // Source rectangle
+                    0, 0, frameWidth, frameHeight     // Destination rectangle
+                );
+
+                // Convert to data URL
+                const dataUrl = canvas.toDataURL('image/png');
+                resolve(dataUrl);
+
+            } catch (error) {
+                console.error('[extractFrameFromGrid] Error extracting frame:', error);
+                resolve(null);
+            }
+        };
+
+        img.onerror = () => {
+            console.error('[extractFrameFromGrid] Failed to load image');
+            resolve(null);
+        };
+
+        img.src = imageUrl;
+    });
+}
+
 interface GenerateImageArgs extends ToolFunctionArgs {
     prompt: string;
     count?: number;
@@ -215,9 +278,57 @@ export const ImageTools = {
         }
     },
     extract_grid_frame: async (args: ExtractGridFrameArgs) => {
-        // Placeholder: In a real system this would use OpenCV or AI segmentation to crop the specific panel
-        // For now, we'll just acknowledge the request.
-        return "Extract grid frame not fully implemented. (Simulated success: Framed extracted)";
+        try {
+            const { history, addToHistory, currentProjectId } = useStore.getState();
+
+            // Find the source image - either by ID or get the most recent cinematic_grid
+            let sourceImage;
+            if (args.imageId) {
+                sourceImage = history.find(h => h.id === args.imageId);
+            } else {
+                // Find the most recent cinematic grid
+                sourceImage = [...history]
+                    .reverse()
+                    .find(h => h.meta === 'cinematic_grid' || h.prompt?.includes('cinematic grid'));
+            }
+
+            if (!sourceImage) {
+                return "No grid image found. Please generate a cinematic grid first using render_cinematic_grid.";
+            }
+
+            // Validate grid index (0-3 for 2x2 grid)
+            const gridIndex = args.gridIndex;
+            if (gridIndex < 0 || gridIndex > 3) {
+                return "Invalid grid index. Use 0 (top-left), 1 (top-right), 2 (bottom-left), or 3 (bottom-right).";
+            }
+
+            // Extract the frame using Canvas API
+            const extractedDataUrl = await extractFrameFromGrid(sourceImage.url, gridIndex);
+
+            if (!extractedDataUrl) {
+                return "Failed to extract frame from grid image.";
+            }
+
+            // Add extracted frame to history
+            const frameLabels = ['Wide Shot', 'Medium Shot', 'Close-up', 'Low Angle'];
+            const frameItem = {
+                id: crypto.randomUUID(),
+                url: extractedDataUrl,
+                prompt: `Extracted ${frameLabels[gridIndex]} from cinematic grid`,
+                type: 'image' as const,
+                timestamp: Date.now(),
+                projectId: currentProjectId,
+                meta: 'extracted_frame'
+            };
+
+            addToHistory(frameItem);
+
+            return `Successfully extracted ${frameLabels[gridIndex]} (panel ${gridIndex}) from the cinematic grid. The frame is now in your Gallery.`;
+
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            return `Extract grid frame failed: ${errorMessage}`;
+        }
     },
     set_entity_anchor: async (args: SetEntityAnchorArgs) => {
         try {

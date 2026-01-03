@@ -1,69 +1,178 @@
-import { delay } from '@/utils/async';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
-// Tool: DevOps Infrastructure Mock
-// This tool simulates interaction with Google Cloud Platform services (GKE, GCE).
-// In a production environment, this would use the @google-cloud/container and @google-cloud/compute SDKs.
+// Tool: DevOps Infrastructure (Real GKE/GCE via Cloud Functions)
+// This tool interacts with Google Cloud Platform services through Firebase Cloud Functions.
+// Backend services use @google-cloud/container (GKE) and googleapis (GCE).
 
-export const list_clusters = async () => {
-    console.log(`[DevOps Mock] Listing GKE clusters`);
-    await delay(800);
+interface GKECluster {
+    name: string;
+    status: string;
+    location: string;
+    currentNodeCount: number;
+    currentMasterVersion: string;
+    createTime: string;
+}
 
-    return JSON.stringify([
-        { name: 'prod-cluster-us-central1', status: 'RUNNING', location: 'us-central1-a', nodes: 5, version: '1.27.3-gke.100' },
-        { name: 'staging-cluster-us-west1', status: 'RUNNING', location: 'us-west1-b', nodes: 3, version: '1.28.1-gke.200' },
-        { name: 'dev-cluster-eu-west1', status: 'RECONCILING', location: 'eu-west1-c', nodes: 2, version: '1.29.0-gke.500' }
-    ]);
-};
+interface GKEClusterStatus {
+    name: string;
+    status: string;
+    conditions: Array<{ type: string; status: string; message?: string }>;
+    nodePools: Array<{
+        name: string;
+        status: string;
+        nodeCount: number;
+        autoscaling?: { enabled: boolean; minNodeCount: number; maxNodeCount: number };
+    }>;
+}
 
-export const get_cluster_status = async (args: { cluster_id: string }) => {
-    console.log(`[DevOps Mock] Getting status for cluster: ${args.cluster_id}`);
+interface GCEInstance {
+    name: string;
+    zone: string;
+    status: string;
+    machineType: string;
+    internalIP?: string;
+    externalIP?: string;
+}
 
-    if (args.cluster_id.includes('prod')) {
-        return JSON.stringify({
-            status: 'HEALTHY',
-            uptime: '45d 12h',
-            alerts: []
+interface ScaleResult {
+    success: boolean;
+    message: string;
+    operation?: string;
+}
+
+interface RestartResult {
+    success: boolean;
+    message: string;
+    operation?: string;
+}
+
+export const list_clusters = async (args?: { projectId?: string; location?: string }) => {
+    console.log(`[DevOps] Listing GKE clusters`);
+
+    try {
+        const listGKEClustersFn = httpsCallable<
+            { projectId?: string; location?: string },
+            { clusters: GKECluster[] }
+        >(functions, 'listGKEClusters');
+
+        const result = await listGKEClustersFn({
+            projectId: args?.projectId,
+            location: args?.location || '-' // '-' means all locations
         });
-    }
 
-    if (args.cluster_id.includes('dev')) {
-        return JSON.stringify({
-            status: 'WARNING',
-            uptime: '2d 5h',
-            alerts: ['High CPU usage on node-pool-1', 'Pod restart loop detected in namespace: billing']
+        return JSON.stringify(result.data.clusters);
+    } catch (error) {
+        const err = error as Error;
+        console.error('[DevOps] Failed to list clusters:', err.message);
+        return JSON.stringify({ error: err.message, hint: 'Ensure GKE API is enabled and service account has permissions.' });
+    }
+};
+
+export const get_cluster_status = async (args: { cluster_id: string; projectId?: string; location?: string }) => {
+    console.log(`[DevOps] Getting status for cluster: ${args.cluster_id}`);
+
+    try {
+        const getGKEClusterStatusFn = httpsCallable<
+            { clusterName: string; projectId?: string; location?: string },
+            GKEClusterStatus
+        >(functions, 'getGKEClusterStatus');
+
+        const result = await getGKEClusterStatusFn({
+            clusterName: args.cluster_id,
+            projectId: args.projectId,
+            location: args.location
         });
+
+        return JSON.stringify(result.data);
+    } catch (error) {
+        const err = error as Error;
+        console.error('[DevOps] Failed to get cluster status:', err.message);
+        return JSON.stringify({ error: err.message, status: 'UNKNOWN' });
     }
-
-    return JSON.stringify({ status: 'UNKNOWN', message: 'Cluster not found' });
 };
 
-export const scale_deployment = async (args: { deployment: string, replicas: number, namespace?: string }) => {
-    console.log(`[DevOps Mock] Scaling deployment ${args.deployment} to ${args.replicas} replicas`);
+export const scale_deployment = async (args: {
+    cluster_id: string;
+    nodePoolName: string;
+    nodeCount: number;
+    projectId?: string;
+    location?: string
+}) => {
+    console.log(`[DevOps] Scaling node pool ${args.nodePoolName} in ${args.cluster_id} to ${args.nodeCount} nodes`);
 
-    return JSON.stringify({
-        status: 'SUCCESS',
-        message: `Deployment '${args.deployment}' in namespace '${args.namespace || 'default'}' scaled to ${args.replicas} replicas.`
-    });
+    try {
+        const scaleGKENodePoolFn = httpsCallable<
+            { clusterName: string; nodePoolName: string; nodeCount: number; projectId?: string; location?: string },
+            ScaleResult
+        >(functions, 'scaleGKENodePool');
+
+        const result = await scaleGKENodePoolFn({
+            clusterName: args.cluster_id,
+            nodePoolName: args.nodePoolName,
+            nodeCount: args.nodeCount,
+            projectId: args.projectId,
+            location: args.location
+        });
+
+        return JSON.stringify(result.data);
+    } catch (error) {
+        const err = error as Error;
+        console.error('[DevOps] Failed to scale deployment:', err.message);
+        return JSON.stringify({ success: false, error: err.message });
+    }
 };
 
-export const list_instances = async () => {
-    console.log(`[DevOps Mock] Listing GCE instances`);
-    return JSON.stringify([
-        { name: 'web-server-01', zone: 'us-central1-a', status: 'RUNNING', internal_ip: '10.128.0.15' },
-        { name: 'db-replica-02', zone: 'us-central1-b', status: 'RUNNING', internal_ip: '10.128.0.16' },
-        { name: 'worker-gpu-01', zone: 'us-central1-c', status: 'STOPPED', internal_ip: '10.128.0.22' }
-    ]);
+export const list_instances = async (args?: { projectId?: string; zone?: string }) => {
+    console.log(`[DevOps] Listing GCE instances`);
+
+    try {
+        const listGCEInstancesFn = httpsCallable<
+            { projectId?: string; zone?: string },
+            { instances: GCEInstance[] }
+        >(functions, 'listGCEInstances');
+
+        const result = await listGCEInstancesFn({
+            projectId: args?.projectId,
+            zone: args?.zone
+        });
+
+        return JSON.stringify(result.data.instances);
+    } catch (error) {
+        const err = error as Error;
+        console.error('[DevOps] Failed to list instances:', err.message);
+        return JSON.stringify({ error: err.message, hint: 'Ensure Compute Engine API is enabled.' });
+    }
 };
 
-export const restart_service = async (args: { service_name: string }) => {
-    console.log(`[DevOps Mock] Restarting service: ${args.service_name}`);
-    await delay(2000);
+export const restart_service = async (args: {
+    instance_name: string;
+    zone: string;
+    projectId?: string
+}) => {
+    console.log(`[DevOps] Restarting instance: ${args.instance_name} in ${args.zone}`);
 
-    return JSON.stringify({
-        status: 'SUCCESS',
-        message: `Service '${args.service_name}' has been restarted successfully.`,
-        timestamp: new Date().toISOString()
-    });
+    try {
+        const restartGCEInstanceFn = httpsCallable<
+            { instanceName: string; zone: string; projectId?: string },
+            RestartResult
+        >(functions, 'restartGCEInstance');
+
+        const result = await restartGCEInstanceFn({
+            instanceName: args.instance_name,
+            zone: args.zone,
+            projectId: args.projectId
+        });
+
+        return JSON.stringify({
+            ...result.data,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        const err = error as Error;
+        console.error('[DevOps] Failed to restart instance:', err.message);
+        return JSON.stringify({ success: false, error: err.message });
+    }
 };
 
 export const DevOpsTools = {

@@ -1,16 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { AI } from '../../ai/AIService';
+import { firebaseAI } from '../../ai/FirebaseAIService';
+import { httpsCallable } from 'firebase/functions';
+import { MembershipService } from '@/services/MembershipService';
 
 // Mock dependencies
-vi.mock('../../ai/AIService', () => ({
-    AI: {
-        generateVideo: vi.fn(),
-        generateContent: vi.fn(),
+vi.mock('../../ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result.")
     }
 }));
 
-// Mock MembershipService to allow quota checks in tests
+vi.mock('@/services/firebase', () => ({
+    auth: {
+        currentUser: { uid: 'test-user' }
+    },
+    db: {},
+    functions: {}
+}));
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }))
+}));
+
 vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
         checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
@@ -26,67 +38,44 @@ describe('VideoGenerationService', () => {
     });
 
     describe('generateVideo', () => {
-        it('should generate video successfully', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.url');
-
+        it('should trigger video generation successfully', async () => {
             const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
             expect(result).toHaveLength(1);
-            expect(result[0].url).toBe('http://video.url');
-            expect(AI.generateVideo).toHaveBeenCalled();
+            expect(result[0].id).toBeDefined(); // UUID is generated dynamically
+            expect(result[0].url).toBe(''); // Async job returns empty URL
+            expect(httpsCallable).toHaveBeenCalled();
         });
 
-        it('should throw error if video generation fails', async () => {
-            (AI.generateVideo as any).mockRejectedValue(new Error('Video Error'));
+        it('should throw error if quota is exceeded', async () => {
+            vi.mocked(MembershipService.checkQuota).mockResolvedValueOnce({
+                allowed: false,
+                currentUsage: 10,
+                maxAllowed: 10
+            });
 
             await expect(VideoGeneration.generateVideo({ prompt: 'test video' }))
-                .rejects.toThrow('Video Error');
+                .rejects.toThrow(/Quota exceeded/);
         });
 
-        it('should throw error if video generation returns no result', async () => {
-            (AI.generateVideo as any).mockResolvedValue(null);
-
-            await expect(VideoGeneration.generateVideo({ prompt: 'test video' }))
-                .rejects.toThrow('Video generation returned no result');
-        });
-        it('should include ingredients in the prompt', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.url');
-
+        it('should analyze temporal context when firstFrame is provided', async () => {
             await VideoGeneration.generateVideo({
                 prompt: 'test video',
-                ingredients: ['data:image/png;base64,1', 'data:image/png;base64,2']
+                firstFrame: 'data:image/png;base64,start'
             });
 
-            const callArgs = (AI.generateVideo as any).mock.calls[0][0];
-            expect(callArgs.prompt).toContain('Reference Ingredients');
-            expect(callArgs.prompt).toContain('2 reference images');
+            expect(firebaseAI.analyzeImage).toHaveBeenCalled();
         });
 
-        it('should handle empty ingredients array gracefully', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.url');
-
-            await VideoGeneration.generateVideo({
-                prompt: 'test video',
-                ingredients: []
+        it('should handle long-form video generation', async () => {
+            const result = await VideoGeneration.generateLongFormVideo({
+                prompt: 'long video',
+                totalDuration: 60
             });
 
-            const callArgs = (AI.generateVideo as any).mock.calls[0][0];
-            expect(callArgs.prompt).not.toContain('Reference Ingredients');
-        });
-
-        it('should handle mixed inputs (firstFrame + ingredients)', async () => {
-            (AI.generateVideo as any).mockResolvedValue('http://video.url');
-
-            await VideoGeneration.generateVideo({
-                prompt: 'test video',
-                firstFrame: 'data:image/png;base64,start',
-                ingredients: ['data:image/png;base64,ref1']
-            });
-
-            const callArgs = (AI.generateVideo as any).mock.calls[0][0];
-            expect(callArgs.image).toBeDefined(); // firstFrame
-            expect(callArgs.prompt).toContain('Reference Ingredients');
-            expect(callArgs.prompt).toContain('1 reference images');
+            expect(result).toHaveLength(1);
+            expect(result[0].id).toMatch(/^long_/);
+            expect(result[0].url).toBe('');
         });
     });
 });

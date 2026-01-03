@@ -107,6 +107,8 @@ interface GenerateVideoOptions {
         aspectRatio?: string;
         durationSeconds?: number;
     };
+    /** Custom timeout in milliseconds. Defaults to calculated based on durationSeconds or 2 minutes minimum. */
+    timeoutMs?: number;
 }
 
 interface GenerateImageOptions {
@@ -288,9 +290,16 @@ export class AIService {
                 ...options.config
             }));
 
-            // 2. Poll for completion
+            // 2. Poll for completion with dynamic timeout
+            // Calculate timeout: 10 seconds per second of video, minimum 2 minutes, maximum 10 minutes
+            const durationSeconds = options.config?.durationSeconds || 8; // Default 8 second video
+            const calculatedTimeout = Math.max(120000, durationSeconds * 10000); // 10s polling per second of video
+            const timeoutMs = options.timeoutMs || Math.min(calculatedTimeout, 600000); // Cap at 10 minutes
+            const pollInterval = 1000; // 1 second
+            const maxAttempts = Math.ceil(timeoutMs / pollInterval);
+
             let attempts = 0;
-            const maxAttempts = 120; // 2 minutes (approx 1s interval)
+            console.log(`[AIService] Video generation timeout: ${timeoutMs}ms (${maxAttempts} attempts)`);
 
             while (attempts < maxAttempts) {
                 const jobRef = doc(db, 'videoJobs', jobId);

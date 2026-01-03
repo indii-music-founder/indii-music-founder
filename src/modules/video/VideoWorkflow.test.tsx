@@ -6,7 +6,7 @@ import { useStore } from '@/core/store';
 import { extractVideoFrame } from '../../utils/video';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { useToast } from '@/core/context/ToastContext';
+import { useToast, ToastProvider } from '@/core/context/ToastContext';
 
 // Mock Store
 vi.mock('@/core/store', () => ({
@@ -26,6 +26,7 @@ vi.mock('@/core/context/ToastContext', () => ({
         error: vi.fn(),
         info: vi.fn(),
     })),
+    ToastProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock extractVideoFrame
@@ -118,7 +119,11 @@ describe('VideoWorkflow', () => {
     it('triggers video generation and sets jobId', async () => {
         mockGenerateVideo.mockResolvedValue([{ id: 'job-123', url: '', prompt: 'test' }]);
 
-        render(<VideoWorkflow />);
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
 
         // Set prompt first
         const input = screen.getByPlaceholderText(/describe your scene/i);
@@ -155,7 +160,11 @@ describe('VideoWorkflow', () => {
             return () => { };
         });
 
-        render(<VideoWorkflow />);
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
 
         await waitFor(() => {
             expect(mockSubscribeToJob).toHaveBeenCalledWith('job-123', expect.any(Function));
