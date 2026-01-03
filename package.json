@@ -23,7 +23,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "postinstall": "electron-rebuild",
+    "rebuild": "npx @electron/rebuild",
     "check:merge": "node scripts/check-merge-integrity.js"
   },
   "dependencies": {
@@ -120,7 +120,7 @@
     "dotenv": "^17.2.3",
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
-    "electron-rebuild": "^3.2.9",
+    "@electron/rebuild": "^3.7.1",
     "esbuild": "0.25.12",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
