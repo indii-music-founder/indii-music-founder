@@ -29,6 +29,7 @@ export const useToast = () => {
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // console.log('[ToastProvider] Rendering...');
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
     const addToast = useCallback((message: string, type: ToastType, duration?: number, progress?: number) => {

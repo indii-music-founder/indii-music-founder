@@ -15,7 +15,7 @@ export const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase AI with Production Security (App Check + Vertex AI Backend)
 export const ai = getAI(app, {
-    backend: new VertexAIBackend(),
+    backend: new VertexAIBackend('global'),
     useLimitedUseAppCheckTokens: true
 });
 
@@ -43,21 +43,32 @@ export const auth = getAuth(app);
 export const remoteConfig = getRemoteConfig(app);
 remoteConfig.defaultConfig = {
     model_name: AI_MODELS.TEXT.FAST,
-    vertex_location: 'us-central1'
+    vertex_location: 'global'
 };
+
+// Initialize App Check
 
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {
+    // Debug token for local development
     if (env.DEV) {
         // @ts-ignore
         window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken || true;
     }
 
+    // Warn if missing key in production
+    if (!env.DEV && !env.appCheckKey) {
+        console.warn('App Check key missing in production. Security verification may fail.');
+    }
+
+    // Initialize if key exists or strictly in DEV mode
     if (env.appCheckKey || env.DEV) {
         try {
+            // Use a placeholder if dependent on env.appCheckKey but it is undefined in DEV/TEST
+            const key = env.appCheckKey || '6Lc...PLACEHOLDER...';
             appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey || '6Lc...PLACEHOLDER...'),
+                provider: new ReCaptchaEnterpriseProvider(key),
                 isTokenAutoRefreshEnabled: true
             });
         } catch (e) {
@@ -66,6 +77,7 @@ if (typeof window !== 'undefined') {
     }
 }
 export { appCheck };
+
 
 
 

@@ -43,8 +43,8 @@ export class RevenueService {
    */
   async getUserRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
     try {
-      // Mock for superuser
-      if (userId === 'superuser') {
+      // Mock for guest
+      if (userId === 'guest') {
         return this.getMockRevenueStats(period);
       }
 

@@ -72,6 +72,7 @@ export interface CreativeSlice {
         cameraMovement: string;
         motionStrength: number;
         fps: number;
+        duration: number; // Duration in seconds
         shotList: ShotItem[];
         isCoverArtMode: boolean; // When true, enforces distributor cover art specs
     };
@@ -175,6 +176,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         cameraMovement: 'Static',
         motionStrength: 0.7,
         fps: 24,
+        duration: 5, // Default to 5 seconds
         shotList: [],
         isCoverArtMode: false
     },

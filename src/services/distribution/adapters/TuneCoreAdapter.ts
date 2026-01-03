@@ -1,27 +1,24 @@
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
 import {
-    type IDistributorAdapter,
-    type DistributorId,
-    type DistributorRequirements,
-    type DistributorCredentials,
-    type ReleaseAssets,
-    type ReleaseResult,
-    type ReleaseStatus,
-    type DistributorEarnings,
-} from '../types/distributor';
-import { earningsService } from '../EarningsService';
-import { distributionStore } from '../DistributionPersistenceService';
-import { delay } from '@/utils/async';
-
-/**
- * TuneCore Adapter
- * Integration with TuneCore (API Based)
- */
+    IDistributorAdapter,
+    DistributorId,
+    DistributorRequirements,
+    ReleaseStatus,
+    ReleaseResult,
+    DistributorCredentials,
+    DistributorEarnings,
+    ValidationResult,
+    ReleaseAssets,
+    ExtendedGoldenMetadata,
+    DateRange
+} from '@/services/distribution/types/distributor';
+import { ernService } from '@/services/ddex/ERNService';
 
 export class TuneCoreAdapter implements IDistributorAdapter {
     readonly id: DistributorId = 'tunecore';
     readonly name = 'TuneCore';
+
+    private connected = false;
+    private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'tunecore',
@@ -31,179 +28,152 @@ export class TuneCoreAdapter implements IDistributorAdapter {
             maxWidth: 3000,
             maxHeight: 3000,
             aspectRatio: '1:1',
-            allowedFormats: ['jpg', 'png'],
+            allowedFormats: ['jpg'],
             maxSizeBytes: 20 * 1024 * 1024,
-            colorMode: 'RGB',
+            colorMode: 'RGB'
         },
         audio: {
-            allowedFormats: ['wav', 'flac'],
+            allowedFormats: ['wav'],
             minSampleRate: 44100,
             recommendedSampleRate: 44100,
             minBitDepth: 16,
             channels: 'stereo',
         },
         metadata: {
-            requiredFields: ['trackTitle', 'artistName', 'genre'],
+            requiredFields: ['title', 'artist', 'genre', 'label'],
             maxTitleLength: 255,
             maxArtistNameLength: 255,
-            isrcRequired: false,
+            isrcRequired: true, // TuneCore typically wants ISRC or generates it during creation flow before specific validation
             upcRequired: false,
             genreRequired: true,
             languageRequired: true,
         },
         timing: {
-            minLeadTimeDays: 7,
-            reviewTimeDays: 2,
+            minLeadTimeDays: 14,
+            reviewTimeDays: 3,
         },
         pricing: {
-            model: 'subscription',
-            annualFee: 14.99,
+            model: 'per_release',
+            costPerRelease: 9.99, // Example single
             payoutPercentage: 100,
-        },
+        }
     };
-
-    private connected = false;
-    private apiKey: string | null = null;
 
     async isConnected(): Promise<boolean> {
         return this.connected;
     }
 
     async connect(credentials: DistributorCredentials): Promise<void> {
-        if (!credentials.apiKey) {
-            throw new Error('TuneCore requires an API key');
+        if (credentials.username && credentials.password) {
+            this.credentials = credentials;
+            this.connected = true;
+        } else {
+            throw new Error('Invalid credentials provided for TuneCore');
         }
-        await delay(500);
-        this.apiKey = credentials.apiKey;
-        this.connected = true;
     }
 
     async disconnect(): Promise<void> {
-        this.apiKey = null;
         this.connected = false;
+        this.credentials = undefined;
     }
 
-    async createRelease(metadata: ExtendedGoldenMetadata, _assets: ReleaseAssets): Promise<ReleaseResult> {
+    async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
         if (!this.connected) {
             throw new Error('Not connected to TuneCore');
         }
 
-        console.log(`[TuneCore] Initiating API transmission for: ${metadata.trackTitle}`);
-        const releaseId = `TC-${Date.now()}`;
-
         try {
-            // Mock API call
-            console.log('[TuneCore] API payload sent.');
+            // 1. Generate DDEX ERN - TuneCore uses slightly different profile often, but standard usually works
+            const ernResult = await ernService.generateERN(metadata, 'PADPIDA2014022801G', 'tunecore', assets);
 
-            // Persist
-            await distributionStore.createDeployment(releaseId, this.id, 'processing', {
-                title: metadata.trackTitle,
-                artist: metadata.artistName,
-                coverArtUrl: _assets?.coverArt?.url
-            });
+            if (!ernResult.success || !ernResult.xml) {
+                return {
+                    success: false,
+                    status: 'failed',
+                    errors: [{ code: 'ERN_GENERATION_FAILED', message: ernResult.error || 'Failed to generate ERN' }]
+                };
+            }
 
+            // 2. Mock Transmission
+            // console.log('[TuneCore] Transmitting ERN...');
+
+            // 3. Return Pending Status
             return {
                 success: true,
-                status: 'processing',
-                releaseId: releaseId,
-                distributorReleaseId: `INT-TC-${Date.now()}`,
+                releaseId: metadata.id,
+                distributorReleaseId: `TC-${Date.now()}`,
+                status: 'pending_review',
                 metadata: {
-                    estimatedLiveDate: '2025-01-22',
-                    upcAssigned: metadata.upc || 'PENDING_TC',
-                    isrcAssigned: metadata.isrc || 'PENDING_TC',
-                },
+                    estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                    reviewRequired: true,
+                    isrcAssigned: metadata.isrc || 'US-TC1-25-00001',
+                }
             };
-        } catch (error) {
-            console.error('[TuneCore] API call failed:', error);
+        } catch (e) {
             return {
                 success: false,
                 status: 'failed',
-                errors: [{
-                    code: 'API_ERROR',
-                    message: error instanceof Error ? error.message : 'Unknown API Error'
-                }],
-                releaseId
+                errors: [{ code: 'SUBMISSION_FAILED', message: e instanceof Error ? e.message : 'Unknown error' }]
             };
         }
     }
 
-    async updateRelease(releaseId: string, _updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
-        }
-        console.log(`[TuneCore] Updating release ${releaseId}`);
-
-        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
-        if (deployments.length > 0) {
-            await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
-        }
-
+    async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
         return {
             success: true,
             status: 'processing',
-            distributorReleaseId: releaseId,
+            // Mock update for TuneCore
         };
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
-        }
-        return 'processing';
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        return 'in_review';
     }
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
-        }
         return {
             success: true,
-            status: 'takedown_requested',
-            distributorReleaseId: releaseId,
+            status: 'takedown_requested'
         };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
-        }
-
-        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
-
-        if (!earnings) {
-            return {
-                distributorId: this.id,
-                releaseId,
-                period,
-                streams: 0,
-                downloads: 0,
-                grossRevenue: 0,
-                distributorFee: 0,
-                netRevenue: 0,
-                currencyCode: 'USD',
-                lastUpdated: new Date().toISOString(),
-                breakdown: [],
-            };
-        }
-        return earnings;
-    }
-
-    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        if (!this.connected) {
-            throw new Error('Not connected to TuneCore');
-        }
-        return await earningsService.getAllEarnings(this.id, period);
-    }
-
-    async validateMetadata(_metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         return {
-            isValid: true,
-            errors: [],
-            warnings: [],
+            distributorId: 'tunecore',
+            releaseId: releaseId,
+            period: period,
+            streams: Math.floor(Math.random() * 20000),
+            downloads: Math.floor(Math.random() * 50),
+            grossRevenue: 80.00,
+            distributorFee: 0,
+            netRevenue: 80.00,
+            currencyCode: 'USD',
+            lastUpdated: new Date().toISOString()
         };
     }
 
-    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
-        return { isValid: true, errors: [], warnings: [] };
+    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+        return [await this.getEarnings('mock-release-2', period)];
+    }
+
+    async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
+        const errors: string[] = [];
+        if (!metadata.title) errors.push('Title is required');
+
+        return {
+            isValid: errors.length === 0,
+            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' }))
+        };
+    }
+
+    async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
+        const errors: string[] = [];
+        if (assets.coverArt.width < this.requirements.coverArt.minWidth) {
+            errors.push(`Cover art must be at least ${this.requirements.coverArt.minWidth}px`);
+        }
+        return {
+            isValid: errors.length === 0,
+            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' }))
+        };
     }
 }

@@ -143,6 +143,12 @@ export default function MusicStudio() {
                     console.log(`[MusicStudio] Cache Hit for ${result.file.name}`);
                     features = existingAnalysis.features;
                     fingerprint = existingAnalysis.fingerprint;
+
+                    // Merge saved metadata if it exists
+                    if (existingAnalysis.metadata) {
+                        newTrack.metadata = { ...newTrack.metadata, ...existingAnalysis.metadata };
+                    }
+
                     toast.success('Analysis loaded from library');
                 } else {
                     // 2. Analyze Features if missing
@@ -158,7 +164,7 @@ export default function MusicStudio() {
                     t.id === newTrack.id ? {
                         ...t,
                         features,
-                        metadata: { ...t.metadata, masterFingerprint: fingerprint ?? undefined }
+                        metadata: { ...newTrack.metadata, masterFingerprint: fingerprint ?? undefined }
                     } : t
                 ));
             } catch (err) {
@@ -209,6 +215,9 @@ export default function MusicStudio() {
                     if (existingAnalysis) {
                         features = existingAnalysis.features;
                         fingerprint = existingAnalysis.fingerprint;
+                        if (existingAnalysis.metadata) {
+                            track.metadata = { ...track.metadata, ...existingAnalysis.metadata };
+                        }
                     } else {
                         // 2. Analyze if missing
                         features = await audioAnalysisService.analyze(track.file);
@@ -221,7 +230,7 @@ export default function MusicStudio() {
                         t.id === track.id ? {
                             ...t,
                             features,
-                            metadata: { ...t.metadata, masterFingerprint: fingerprint ?? undefined }
+                            metadata: { ...track.metadata, masterFingerprint: fingerprint ?? undefined }
                         } : t
                     ));
                 } catch (e) {
@@ -246,11 +255,26 @@ export default function MusicStudio() {
     };
 
     // Metadata Update Handler
-    const handleMetadataUpdate = (newData: GoldenMetadata) => {
+    const handleMetadataUpdate = async (newData: GoldenMetadata) => {
         if (!currentTrackId) return;
+
+        const track = loadedAudio.find(t => t.id === currentTrackId);
+        if (!track) return;
+
+        // 1. Update UI
         setLoadedAudio(prev => prev.map(t =>
             t.id === currentTrackId ? { ...t, metadata: newData } : t
         ));
+
+        // 2. Persist to MusicLibrary if file is available
+        if (track.file && track.features) {
+            await MusicLibraryService.saveTrackAnalysis(
+                track.file,
+                track.features,
+                newData.masterFingerprint,
+                newData
+            );
+        }
     };
 
     const activeTrack = loadedAudio.find(t => t.id === currentTrackId);

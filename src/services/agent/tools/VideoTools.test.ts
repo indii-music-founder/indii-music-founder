@@ -10,7 +10,7 @@ const mockUpdateKeyframe = vi.fn();
 const mockGetState = vi.fn();
 const mockGenerateLongFormVideo = vi.fn();
 
-vi.mock('@/services/image/VideoGenerationService', () => ({
+vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         generateLongFormVideo: (...args: any[]) => mockGenerateLongFormVideo(...args)

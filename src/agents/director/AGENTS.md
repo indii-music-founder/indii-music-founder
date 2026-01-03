@@ -20,7 +20,7 @@ To conceptualize and execute stunning visuals, providing authoritative art direc
 
 * **ImageGenerationService** (`src/services/image/ImageGenerationService.ts`):
   * `generate_image`: Main tool for creating visuals.
-* **VideoGenerationService** (`src/services/image/VideoGenerationService.ts`) (Planned/Contextual):
+* **VideoGenerationService** (`src/services/video/VideoGenerationService.ts`) (Planned/Contextual):
   * `generate_video`: For moving pictures.
 
 ## Tech Stack

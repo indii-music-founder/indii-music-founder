@@ -1,5 +1,5 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
-import { VideoGeneration } from '@/services/image/VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 

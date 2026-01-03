@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus, Move, Loader2 } from 'lucide-react';
+import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus, Move, Loader2, Sparkles } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { motion } from 'framer-motion';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -26,13 +26,30 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
 
         setIsGenerating(true);
         try {
-            const results = await VideoGeneration.generateVideo({
-                prompt: videoPrompt,
-                aspectRatio: studioControls.aspectRatio,
-                resolution: studioControls.resolution,
-                negativePrompt: studioControls.negativePrompt,
-                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
-            });
+            let results: { id: string; url: string; prompt: string; }[] = [];
+
+            if (studioControls.duration > 8) {
+                // Trigger Long Form
+                results = await VideoGeneration.generateLongFormVideo({
+                    prompt: videoPrompt,
+                    totalDuration: studioControls.duration,
+                    aspectRatio: studioControls.aspectRatio,
+                    resolution: studioControls.resolution,
+                    negativePrompt: studioControls.negativePrompt,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    firstFrame: undefined // Logic handled in service if needed
+                });
+            } else {
+                // Trigger Single Shot
+                results = await VideoGeneration.generateVideo({
+                    prompt: videoPrompt,
+                    aspectRatio: studioControls.aspectRatio,
+                    resolution: studioControls.resolution,
+                    negativePrompt: studioControls.negativePrompt,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    duration: studioControls.duration
+                });
+            }
 
             if (results.length > 0) {
                 results.forEach(res => {
@@ -230,6 +247,26 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                                 <div className="h-full w-[40%] bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider">DURATION</label>
+                                <span className="text-[10px] text-gray-500 font-mono">{studioControls.duration}s</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="5"
+                                max="60"
+                                step="1"
+                                value={studioControls.duration}
+                                onChange={(e) => setStudioControls({ duration: parseInt(e.target.value) })}
+                                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                            />
+                            {studioControls.duration > 8 && (
+                                <p className="text-[10px] text-purple-400 flex items-center gap-1">
+                                    <Sparkles size={10} /> Long-form generation enabled
+                                </p>
+                            )}
                         </div>
                     </div>
 

@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { MusicLibraryService } from '../music/services/MusicLibraryService';
 
 const AudioAnalyzer: React.FC = () => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -63,10 +64,24 @@ const AudioAnalyzer: React.FC = () => {
     const analyzeAudio = async (file: File) => {
         setIsAnalyzing(true);
         try {
-            // 1. Analyze Audio Features (BPM, Key, Energy)
+            // 1. Check Library First
+            const existingAnalysis = await MusicLibraryService.getTrackAnalysis(file);
+
+            if (existingAnalysis) {
+                setMetadata({
+                    fingerprint: existingAnalysis.fingerprint || 'GENERATION_FAILED',
+                    bpm: existingAnalysis.features.bpm,
+                    key: `${existingAnalysis.features.key} ${existingAnalysis.features.scale}`,
+                    energy: existingAnalysis.features.energy,
+                    duration: existingAnalysis.features.duration
+                });
+                return;
+            }
+
+            // 2. Analyze Audio Features (BPM, Key, Energy)
             const features = await audioAnalysisService.analyze(file);
 
-            // 2. Generate Fingerprint (Composite ID)
+            // 3. Generate Fingerprint (Composite ID)
             let fingerprint: string | undefined;
             try {
                 const result = await fingerprintService.generateFingerprint(file, features);
@@ -75,6 +90,9 @@ const AudioAnalyzer: React.FC = () => {
                 console.error("Fingerprint generation failed:", err);
                 fingerprint = 'GENERATION_FAILED';
             }
+
+            // 4. Persistence
+            await MusicLibraryService.saveTrackAnalysis(file, features, fingerprint);
 
             setMetadata({
                 fingerprint: fingerprint || 'GENERATION_FAILED',

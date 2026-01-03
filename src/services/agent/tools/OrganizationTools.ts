@@ -22,8 +22,13 @@ export const OrganizationTools = {
             return `Error: Organization with ID ${args.orgId} not found.`;
         }
 
+        const userId = store.userProfile?.id;
+        if (!userId) {
+            return "Error: User profile not found. Please log in.";
+        }
+
         try {
-            await OrganizationService.switchOrganization(args.orgId, store.userProfile?.id || 'superuser-id');
+            await OrganizationService.switchOrganization(args.orgId, userId);
             // The service updates localStorage, but we might need to trigger store update if not reactive
             // store.setOrganization is not always enough if it needs full reload
             store.setOrganization(args.orgId);
@@ -41,7 +46,10 @@ export const OrganizationTools = {
     create_organization: async (args: { name: string }) => {
         try {
             const store = useStore.getState();
-            const userId = store.userProfile?.id || 'superuser-id';
+            const userId = store.userProfile?.id;
+            if (!userId) {
+                return "Error: User profile not found. Please log in to create an organization.";
+            }
             const orgId = await OrganizationService.createOrganization(args.name, userId);
 
             // Manually add to store to reflect immediate change
