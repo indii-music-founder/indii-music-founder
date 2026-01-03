@@ -34,9 +34,6 @@ jobs:
     - name: Run Unit Tests
       run: xvfb-run --auto-servernum npm run test
 
-    - name: Rebuild native modules for Electron
-      run: npm run rebuild
-
     - name: Run E2E Tests
       # We need to build the electron app first for E2E tests to run against the built binary if that's how the test is set up.
       # However, our current E2E test runs against the compiled main process in dist-electron.
@@ -47,6 +44,8 @@ jobs:
         xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" npx playwright test --grep-invert "RAG Workflow" || (cat e2e-error.log && exit 1)
 
     - name: Run Web E2E Test (RAG Workflow)
+      # Skip for PRs from forks (secrets not available)
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
       env:
         # These secrets are required for the application to connect to the live backend for RAG.
         VITE_FUNCTIONS_URL: ${{ secrets.VITE_FUNCTIONS_URL }}
@@ -87,9 +86,6 @@ jobs:
       run: |
         rm -rf node_modules package-lock.json
         npm install
-
-    - name: Rebuild native modules for Electron
-      run: npm run rebuild
 
     - name: Build Electron App
       run: npm run electron:build
