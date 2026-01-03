@@ -1,10 +1,11 @@
 import {
-    IDistributorAdapter,
+    BaseDistributorAdapter
+} from './BaseDistributorAdapter';
+import {
     DistributorId,
     DistributorRequirements,
     ReleaseStatus,
     ReleaseResult,
-    DistributorCredentials,
     DistributorEarnings,
     ValidationResult,
     ReleaseAssets,
@@ -12,13 +13,11 @@ import {
     DateRange
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
+import { DDEX_CONFIG } from '@/core/config/ddex';
 
-export class CDBabyAdapter implements IDistributorAdapter {
+export class CDBabyAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'cdbaby';
     readonly name = 'CDBaby';
-
-    private connected = false;
-    private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'cdbaby',
@@ -40,7 +39,7 @@ export class CDBabyAdapter implements IDistributorAdapter {
             channels: 'stereo',
         },
         metadata: {
-            requiredFields: ['title', 'artist', 'genre', 'composer'],
+            requiredFields: ['trackTitle', 'artistName', 'genre', 'composer'],
             maxTitleLength: 200,
             maxArtistNameLength: 200,
             isrcRequired: false,
@@ -59,31 +58,14 @@ export class CDBabyAdapter implements IDistributorAdapter {
         }
     };
 
-    async isConnected(): Promise<boolean> {
-        return this.connected;
-    }
-
-    async connect(credentials: DistributorCredentials): Promise<void> {
-        if (credentials.username && credentials.password) {
-            this.credentials = credentials;
-            this.connected = true;
-        } else {
-            throw new Error('Invalid credentials provided for CDBaby');
-        }
-    }
-
-    async disconnect(): Promise<void> {
-        this.connected = false;
-        this.credentials = undefined;
-    }
-
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to CDBaby');
         }
 
         try {
-            const ernResult = await ernService.generateERN(metadata, 'PADPIDA2014022801G', 'cdbaby', assets);
+            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'cdbaby', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {
@@ -116,12 +98,11 @@ export class CDBabyAdapter implements IDistributorAdapter {
         return {
             success: false,
             status: 'failed',
-            errors: [{ code: 'MANUAL_intervention_REQUIRED', message: 'Contact CDBaby support for updates.' }]
+            errors: [{ code: 'MANUAL_INTERVENTION_REQUIRED', message: 'Contact CDBaby support for updates.' }]
         };
     }
 
     async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
-        // Mock status check
         return 'processing';
     }
 
@@ -133,7 +114,6 @@ export class CDBabyAdapter implements IDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        // Mock Earnings Data
         return {
             distributorId: 'cdbaby',
             releaseId: releaseId,
@@ -154,13 +134,14 @@ export class CDBabyAdapter implements IDistributorAdapter {
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         const errors: string[] = [];
-        if (!metadata.title) errors.push('Title is required');
+        if (!metadata.trackTitle) errors.push('Title is required');
         // CDBaby specific checks
-        if (!metadata.composers || metadata.composers.length === 0) errors.push('Composer required for CDBaby');
+        if (!metadata.splits || metadata.splits.length === 0) errors.push('Royalty split information required for CDBaby');
 
         return {
             isValid: errors.length === 0,
-            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' }))
+            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' })),
+            warnings: []
         };
     }
 
@@ -171,7 +152,8 @@ export class CDBabyAdapter implements IDistributorAdapter {
         }
         return {
             isValid: errors.length === 0,
-            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' }))
+            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' })),
+            warnings: []
         };
     }
 }

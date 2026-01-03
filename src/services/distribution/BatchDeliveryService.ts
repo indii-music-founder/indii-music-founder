@@ -1,5 +1,5 @@
-
 import path from 'path';
+import { DDEX_CONFIG } from '@/core/config/ddex';
 
 /**
  * BatchDeliveryService
@@ -10,21 +10,21 @@ import path from 'path';
  */
 
 export interface BatchManifest {
-    batchId: string;
-    messageSender: string; // DPID
-    messageRecipient: string; // DPID
-    releaseCount: number;
-    createdDateTime: string;
+  batchId: string;
+  messageSender: string; // DPID
+  messageRecipient: string; // DPID
+  releaseCount: number;
+  createdDateTime: string;
 }
 
 export class BatchDeliveryService {
 
-    /**
-     * Generate a Batch Complete Manifest (XML)
-     * This file (BatchComplete_XXX.xml) tells the DSP that a batch upload is finished.
-     */
-    static generateBatchManifest(manifest: BatchManifest): string {
-        return `<?xml version="1.0" encoding="UTF-8"?>
+  /**
+   * Generate a Batch Complete Manifest (XML)
+   * This file (BatchComplete_XXX.xml) tells the DSP that a batch upload is finished.
+   */
+  static generateBatchManifest(manifest: BatchManifest): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <ern:BatchCompleteMessage xmlns:ern="http://ddex.net/xml/ern/43" MessageSchemaVersionId="4.3">
   <MessageHeader>
     <MessageThreadId>${manifest.batchId}</MessageThreadId>
@@ -41,56 +41,56 @@ export class BatchDeliveryService {
     <NumberOfReleasesInBatch>${manifest.releaseCount}</NumberOfReleasesInBatch>
   </BatchDetail>
 </ern:BatchCompleteMessage>`;
+  }
+
+  /**
+   * Structure a batch directory.
+   * Moves individual release packages into a structured batch folder.
+   *
+   * Structure:
+   * /Batch_20240101_001/
+   *   /Release_UPC1/
+   *     ern.xml
+   *     /resources/
+   *   /Release_UPC2/
+   *     ern.xml
+   *     /resources/
+   *   BatchComplete_20240101_001.xml
+   */
+  static async createBatchDirectory(
+    batchId: string,
+    releasePackages: string[], // Paths to individual release folders
+    outputDir: string
+  ): Promise<string> {
+    // Dynamic import fs
+    const fs = await import('fs');
+
+    const batchDir = path.join(outputDir, `Batch_${batchId}`);
+    if (!fs.existsSync(batchDir)) {
+      await fs.promises.mkdir(batchDir, { recursive: true });
     }
 
-    /**
-     * Structure a batch directory.
-     * Moves individual release packages into a structured batch folder.
-     *
-     * Structure:
-     * /Batch_20240101_001/
-     *   /Release_UPC1/
-     *     ern.xml
-     *     /resources/
-     *   /Release_UPC2/
-     *     ern.xml
-     *     /resources/
-     *   BatchComplete_20240101_001.xml
-     */
-    static async createBatchDirectory(
-        batchId: string,
-        releasePackages: string[], // Paths to individual release folders
-        outputDir: string
-    ): Promise<string> {
-        // Dynamic import fs
-        const fs = await import('fs');
-
-        const batchDir = path.join(outputDir, `Batch_${batchId}`);
-        if (!fs.existsSync(batchDir)) {
-            await fs.promises.mkdir(batchDir, { recursive: true });
-        }
-
-        // Move Releases
-        for (const releasePath of releasePackages) {
-            const folderName = path.basename(releasePath);
-            const destPath = path.join(batchDir, folderName);
-            await fs.promises.rename(releasePath, destPath);
-        }
-
-        // Generate Manifest
-        const manifestXml = this.generateBatchManifest({
-            batchId,
-            messageSender: 'PADPIDA001', // Default config
-            messageRecipient: 'PADPIDA002', // Default config
-            releaseCount: releasePackages.length,
-            createdDateTime: new Date().toISOString()
-        });
-
-        await fs.promises.writeFile(
-            path.join(batchDir, `BatchComplete_${batchId}.xml`),
-            manifestXml
-        );
-
-        return batchDir;
+    // Move Releases
+    for (const releasePath of releasePackages) {
+      const folderName = path.basename(releasePath);
+      const destPath = path.join(batchDir, folderName);
+      await fs.promises.rename(releasePath, destPath);
     }
+
+    // Generate Manifest
+    const manifestXml = this.generateBatchManifest({
+      batchId,
+      messageSender: DDEX_CONFIG.PARTY_ID,
+      messageRecipient: 'PADPIDA_RECIPIENT_MOCK', // Recipient should be dynamic in real use
+      releaseCount: releasePackages.length,
+      createdDateTime: new Date().toISOString()
+    });
+
+    await fs.promises.writeFile(
+      path.join(batchDir, `BatchComplete_${batchId}.xml`),
+      manifestXml
+    );
+
+    return batchDir;
+  }
 }

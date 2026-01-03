@@ -20,7 +20,7 @@
 
 export const AI_MODELS = {
     TEXT: {
-        AGENT: 'gemini-3-flash-preview', // Downgraded for testing tools
+        AGENT: 'gemini-3-pro-preview', // Upgraded for better reasoning
         // Faster model for routing and simple tasks
         FAST: 'gemini-3-flash-preview',
     },

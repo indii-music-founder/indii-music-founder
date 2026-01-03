@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SceneExtensionService } from './SceneExtensionService';
-import { AI } from '../ai/AIService';
-import { MembershipService } from '../MembershipService';
+import { SceneExtensionService } from '../SceneExtensionService';
+import { AI } from '../../ai/AIService';
+import { MembershipService } from '../../MembershipService';
 
 // Mock dependencies
-vi.mock('../ai/AIService', () => ({
+vi.mock('../../ai/AIService', () => ({
     AI: {
         generateVideo: vi.fn(),
     },
 }));
 
-vi.mock('../MembershipService', () => ({
+vi.mock('../../MembershipService', () => ({
     MembershipService: {
         checkQuota: vi.fn(),
         checkVideoDurationQuota: vi.fn(),

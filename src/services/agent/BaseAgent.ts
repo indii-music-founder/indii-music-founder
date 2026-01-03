@@ -200,11 +200,12 @@ ${task}
         );
 
         // Merge specialist tools with filtered superpowers into a SINGLE tool object
-        // This avoids the "Multiple tools are supported only when they are all search tools" error.
-        const allFunctions: FunctionDeclaration[] = [
+        // NOTE: We limit the total number of functions to 12 as complex models in Beta
+        // sometimes fail with "Multiple tools" errors when the list is too long.
+        const allFunctions: FunctionDeclaration[] = ([
             ...(this.tools || []).flatMap(t => t.functionDeclarations || []),
             ...filteredSuperpowers
-        ];
+        ]).slice(0, 12);
 
         const allTools: ToolDefinition[] = allFunctions.length > 0
             ? [{ functionDeclarations: allFunctions }]

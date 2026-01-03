@@ -1,6 +1,7 @@
 // import * as fs from 'fs';
 // import * as path from 'path';
 import { ernService } from '@/services/ddex/ERNService';
+import { DDEX_CONFIG } from '@/core/config/ddex';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
 
@@ -50,10 +51,7 @@ export class CDBabyPackageBuilder {
         const packagedFiles: string[] = [];
 
         // 2. Generate and Write XML
-        // CD Baby's DPID for testing or production. Using a placeholder or their known one if available.
-        // Commonly 'PADPIDA2013022602U' is seen in examples for digital distributors, but sticking to config/generic for now.
-        const cdBabyDpid = 'PADPIDA2013022602U';
-        const xmlResult = await ernService.generateERN(metadata, cdBabyDpid, 'CDBABY_ID');
+        const xmlResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'cdbaby');
 
         if (!xmlResult.success || !xmlResult.xml) {
             throw new Error(`Failed to generate ERN for CD Baby: ${xmlResult.error}`);

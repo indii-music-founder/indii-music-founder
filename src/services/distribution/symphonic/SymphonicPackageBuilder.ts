@@ -1,6 +1,7 @@
 // import * as fs from 'fs';
 // import * as path from 'path';
 import { ernService } from '@/services/ddex/ERNService';
+import { DDEX_CONFIG } from '@/core/config/ddex';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
 
@@ -47,7 +48,7 @@ export class SymphonicPackageBuilder {
         const packagedFiles: string[] = [];
 
         // 2. Generate and Write XML
-        const xmlResult = await ernService.generateERN(metadata, 'PADPIDA2014040101U', 'SYMPHONIC_ID');
+        const xmlResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'symphonic');
         if (!xmlResult.success || !xmlResult.xml) {
             throw new Error(`Failed to generate ERN for Symphonic: ${xmlResult.error}`);
         }

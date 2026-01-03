@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RenderService } from './RenderService';
+import { RenderService } from '../RenderService';
 import { renderMedia } from '@remotion/renderer';
 
 // Mock @remotion/renderer
