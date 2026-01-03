@@ -14,3 +14,9 @@
 **Prevention:**
 1. Implemented a strict `allowedPrefixes` list in `ragProxy` to only permit necessary operations.
 2. Future: Move from global API keys to per-user Vertex AI OAuth tokens when possible.
+## 2025-05-25 - Firestore Rules Duplicate Matches
+**Vulnerability:** The `firestore.rules` file contained two separate `match /deployments/{deploymentId}` blocks. The first block (User Scoped) was missing its closing brace `}`, causing a syntax error that effectively merged the subsequent Org Scoped block into it or caused a parse failure.
+**Learning:** Copy-pasting rule blocks without verifying closure syntax can lead to invalid security configurations. Firestore rules must have unique match paths at the same nesting level.
+**Prevention:**
+1.  Visually verify indentation and braces when merging rules.
+2.  Combine conditions for the same resource into a single match block using logical OR (`||`) operators.

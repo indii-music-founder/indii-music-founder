@@ -279,13 +279,6 @@ service cloud.firestore {
     }
 
     // ========================================
-    // DISTRIBUTION DEPLOYMENTS (user-scoped)
-    // ========================================
-
-    match /deployments/{deploymentId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     // DISTRIBUTION DEPLOYMENTS (org-scoped)
     // ========================================
 
@@ -293,6 +286,13 @@ service cloud.firestore {
       allow read: if isResourceOrgMember();
       allow create: if isRequestOrgMember();
       allow update, delete: if isResourceOrgMember();
+    // DISTRIBUTION DEPLOYMENTS (User & Org Scoped)
+    // ========================================
+
+    match /deployments/{deploymentId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isResourceOrgMember();
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || isRequestOrgMember();
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isResourceOrgMember();
     }
 
     // ========================================
