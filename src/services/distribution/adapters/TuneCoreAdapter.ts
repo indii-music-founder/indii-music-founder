@@ -1,10 +1,11 @@
 import {
-    IDistributorAdapter,
+    BaseDistributorAdapter
+} from './BaseDistributorAdapter';
+import {
     DistributorId,
     DistributorRequirements,
     ReleaseStatus,
     ReleaseResult,
-    DistributorCredentials,
     DistributorEarnings,
     ValidationResult,
     ReleaseAssets,
@@ -12,13 +13,11 @@ import {
     DateRange
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
+import { DDEX_CONFIG } from '@/core/config/ddex';
 
-export class TuneCoreAdapter implements IDistributorAdapter {
+export class TuneCoreAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'tunecore';
     readonly name = 'TuneCore';
-
-    private connected = false;
-    private credentials?: DistributorCredentials;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'tunecore',
@@ -59,32 +58,15 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         }
     };
 
-    async isConnected(): Promise<boolean> {
-        return this.connected;
-    }
-
-    async connect(credentials: DistributorCredentials): Promise<void> {
-        if (credentials.username && credentials.password) {
-            this.credentials = credentials;
-            this.connected = true;
-        } else {
-            throw new Error('Invalid credentials provided for TuneCore');
-        }
-    }
-
-    async disconnect(): Promise<void> {
-        this.connected = false;
-        this.credentials = undefined;
-    }
-
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to TuneCore');
         }
 
         try {
-            // 1. Generate DDEX ERN - TuneCore uses slightly different profile often, but standard usually works
-            const ernResult = await ernService.generateERN(metadata, 'PADPIDA2014022801G', 'tunecore', assets);
+            // 1. Generate DDEX ERN
+            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'tunecore', assets);
 
             if (!ernResult.success || !ernResult.xml) {
                 return {
@@ -94,10 +76,7 @@ export class TuneCoreAdapter implements IDistributorAdapter {
                 };
             }
 
-            // 2. Mock Transmission
-            // console.log('[TuneCore] Transmitting ERN...');
-
-            // 3. Return Pending Status
+            // 2. Return Pending Status
             return {
                 success: true,
                 releaseId: metadata.id,
@@ -158,11 +137,12 @@ export class TuneCoreAdapter implements IDistributorAdapter {
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         const errors: string[] = [];
-        if (!metadata.title) errors.push('Title is required');
+        if (!metadata.trackTitle) errors.push('Title is required');
 
         return {
             isValid: errors.length === 0,
-            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' }))
+            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' })),
+            warnings: []
         };
     }
 
@@ -173,7 +153,8 @@ export class TuneCoreAdapter implements IDistributorAdapter {
         }
         return {
             isValid: errors.length === 0,
-            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' }))
+            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' })),
+            warnings: []
         };
     }
 }

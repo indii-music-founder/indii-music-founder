@@ -87,25 +87,35 @@ class DistributorServiceImpl {
 
     let finalCredentials = credentials;
 
-    // 1. If credentials provided, save them
-    if (credentials) {
-      await credentialService.saveCredentials(distributorId, credentials as Record<string, string | undefined>);
-    }
-    // 2. If not provided, try to load them
-    else {
+    // 1. If credentials NOT provided, try to load them from secure storage
+    if (!finalCredentials) {
       const stored = await credentialService.getCredentials(distributorId);
       if (stored) {
         finalCredentials = stored as DistributorCredentials;
       }
     }
 
-    // 3. Connect (or fail if no credentials found)
     if (!finalCredentials) {
       throw new Error(`No credentials found for ${distributorId}. Please provide them to connect.`);
     }
 
-    await adapter.connect(finalCredentials);
-    console.log(`[DistributorService] Connected to ${adapter.name}`);
+    // 2. Attempt real connection via adapter
+    try {
+      await adapter.connect(finalCredentials);
+      console.log(`[DistributorService] Connection verified for ${adapter.name}`);
+
+      // 3. Save successful credentials if they were passed in
+      if (credentials) {
+        await credentialService.saveCredentials(distributorId, credentials as Record<string, string | undefined>);
+        console.log(`[DistributorService] Credentials saved for ${distributorId}`);
+      }
+    } catch (error) {
+      console.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
+      // If connection fails and we were using NEW credentials, don't save them.
+      // If it fails with OLD credentials, maybe we should offer to delete them? 
+      // For now, just throw the error back to UI.
+      throw error;
+    }
   }
 
   /**

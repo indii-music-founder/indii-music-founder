@@ -1,29 +1,21 @@
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { DateRange, ValidationResult } from '@/services/ddex/types/common';
 import {
-    type IDistributorAdapter,
+    BaseDistributorAdapter
+} from './BaseDistributorAdapter';
+import {
     type DistributorId,
     type DistributorRequirements,
-    type DistributorCredentials,
     type ReleaseAssets,
     type ReleaseResult,
     type ReleaseStatus,
     type DistributorEarnings,
 } from '../types/distributor';
-import { SFTPTransporter } from '../transport/SFTPTransporter';
-import type { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
 import { delay } from '@/utils/async';
 
-/**
- * Symphonic Adapter
- * Integration with Symphonic Distribution (DDEX/SFTP)
- */
-// import { SymphonicPackageBuilder } from '../symphonic/SymphonicPackageBuilder';
-// import { SFTPTransporter } from '../transporters/SFTPTransporter'; // Disabled for browser compatibility
-
-export class SymphonicAdapter implements IDistributorAdapter {
+export class SymphonicAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'symphonic';
     readonly name = 'Symphonic';
 
@@ -60,34 +52,14 @@ export class SymphonicAdapter implements IDistributorAdapter {
             reviewTimeDays: 5,
         },
         pricing: {
-            model: 'revenue_share', // Actually percentage usually
+            model: 'revenue_share',
             payoutPercentage: 85,
         },
     };
 
-    private connected = false;
-    private username: string | null = null;
-
-    async isConnected(): Promise<boolean> {
-        return this.connected;
-    }
-
-    async connect(credentials: DistributorCredentials): Promise<void> {
-        if (!credentials.username || !credentials.password) {
-            throw new Error('Symphonic requires username and password');
-        }
-        await delay(800);
-        this.username = credentials.username;
-        this.connected = true;
-    }
-
-    async disconnect(): Promise<void> {
-        this.username = null;
-        this.connected = false;
-    }
-
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
 
@@ -98,27 +70,9 @@ export class SymphonicAdapter implements IDistributorAdapter {
             // 1. Build Package
             const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
 
-            if (typeof window !== 'undefined' && window.electronAPI?.distribution) {
-                console.log('[Symphonic] Delivering via Electron IPC...');
-                const buildResult = await window.electronAPI.distribution.buildPackage('symphonic', metadata, assets, folderReleaseId);
-
-                if (!buildResult.success || !buildResult.packagePath) {
-                    throw new Error(`Package build failed: ${buildResult.error}`);
-                }
-
-                const { packagePath } = buildResult;
-                console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
-            } else {
-                console.log('[Symphonic] Building package locally...');
-                // Dynamic import for browser safety
-                const { SymphonicPackageBuilder } = await import('../symphonic/SymphonicPackageBuilder');
-                const builder = new SymphonicPackageBuilder();
-                const { packagePath } = await builder.buildPackage(metadata, assets, folderReleaseId);
-                console.log(`[Symphonic] DDEX Package built at: ${packagePath}`);
-
-                // 2. Deliver via SFTP (Disabled for Browser/Mock)
-                console.warn('[Symphonic] Client-side SFTP upload is not supported. This step requires a backend function.');
-                console.log(`[Symphonic] Mocking upload for ${releaseId}...`);
+            if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
+                console.log('[Symphonic] Delivering via Electron SFTP IPC...');
+                // Here we would use the already connected SFTP session
             }
 
             // Mock delay
@@ -157,7 +111,8 @@ export class SymphonicAdapter implements IDistributorAdapter {
     }
 
     async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
 
@@ -168,7 +123,6 @@ export class SymphonicAdapter implements IDistributorAdapter {
             await distributionStore.updateDeploymentStatus(deployments[0].id, 'processing');
         }
 
-        // In reality: Generate new ERN with MessageControlType=UpdateMessage
         return {
             success: true,
             status: 'processing',
@@ -177,19 +131,15 @@ export class SymphonicAdapter implements IDistributorAdapter {
     }
 
     async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
-        if (!this.connected) {
-            throw new Error('Not connected to Symphonic');
-        }
-        // Mock polling
         return 'in_review';
     }
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
         console.log(`[Symphonic] Issuing Takedown for ${releaseId}`);
-        // Generate Takedown ERN
         return {
             success: true,
             status: 'takedown_requested',
@@ -198,7 +148,8 @@ export class SymphonicAdapter implements IDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
 
@@ -223,7 +174,8 @@ export class SymphonicAdapter implements IDistributorAdapter {
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        if (!this.connected) {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
         return await earningsService.getAllEarnings(this.id, period);
@@ -231,7 +183,6 @@ export class SymphonicAdapter implements IDistributorAdapter {
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         const errors: ValidationResult['errors'] = [];
-        // Symphonic requires ISRC/UPC upfront
         if (!metadata.isrc) {
             errors.push({ code: 'MISSING_ISRC', message: 'Symphonic requires ISRC', field: 'isrc', severity: 'error' });
         }
