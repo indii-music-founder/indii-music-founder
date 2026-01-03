@@ -2,11 +2,45 @@ import React from 'react';
 import { MerchLayout } from './components/Layout';
 import { MerchCard } from './components/MerchCard';
 import { BananaButton } from './components/BananaButton';
-import { TrendingUp, ShoppingBag, DollarSign, Plus, ArrowRight } from 'lucide-react';
+import { TrendingUp, ShoppingBag, DollarSign, Plus, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useMerchandise } from './hooks/useMerchandise';
+import { useStore } from '@/core/store';
 
 export default function MerchDashboard() {
     const navigate = useNavigate();
+    const { userProfile } = useStore();
+    const { stats, topSellingProducts, products, loading, error } = useMerchandise();
+
+    if (loading) {
+        return (
+            <MerchLayout>
+                <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+                    <Loader2 className="w-10 h-10 text-[#FFE135] animate-spin" />
+                </div>
+            </MerchLayout>
+        );
+    }
+
+    if (error) {
+        return (
+             <MerchLayout>
+                <div className="flex items-center justify-center h-[calc(100vh-100px)] flex-col gap-4">
+                     <p className="text-red-500 font-bold">Failed to load dashboard data.</p>
+                     <p className="text-neutral-400">{error}</p>
+                </div>
+            </MerchLayout>
+        );
+    }
+
+    // Format currency
+    const formatCurrency = (val: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: 0
+        }).format(val);
+    };
 
     return (
         <MerchLayout>
@@ -15,7 +49,7 @@ export default function MerchDashboard() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold text-white mb-1">Morning, Chief 🍌</h2>
+                        <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'} 🍌</h2>
                         <p className="text-neutral-400">Your empire is ripening nicely.</p>
                     </div>
                     <BananaButton onClick={() => navigate('/merchandise/design')} glow size="lg" className="rounded-full">
@@ -28,19 +62,19 @@ export default function MerchDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatsCard
                         title="Banana Juice (Rev)"
-                        value="$12,450"
-                        change="+15%"
+                        value={formatCurrency(stats.totalRevenue)}
+                        change={`+${stats.revenueChange}%`}
                         icon={<DollarSign className="text-[#FFE135]" />}
                     />
                     <StatsCard
                         title="Units Peeled"
-                        value="842"
-                        change="+8%"
+                        value={stats.unitsSold.toString()}
+                        change={`+${stats.unitsChange}%`}
                         icon={<ShoppingBag className="text-[#FFE135]" />}
                     />
                     <StatsCard
                         title="Conversion Rate"
-                        value="3.2%"
+                        value={`${stats.conversionRate}%`}
                         change="+1.1%"
                         icon={<TrendingUp className="text-[#FFE135]" />}
                     />
@@ -56,21 +90,36 @@ export default function MerchDashboard() {
                             <button className="text-xs text-[#FFE135] hover:underline">View All</button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {[1, 2, 3, 4].map((i) => (
-                                <MerchCard key={i} className="group p-4 flex items-center gap-4 cursor-pointer">
-                                    <div className="w-20 h-24 bg-neutral-800 rounded-lg flex items-center justify-center relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-yellow-400/10 group-hover:bg-yellow-400/20 transition-all" />
-                                        <span className="text-2xl">👕</span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-white group-hover:text-[#FFE135] transition-colors">Golden Peel Tee</h4>
-                                        <p className="text-sm text-neutral-500">$35.00 • 124 Sold</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-[#FFE135] font-mono font-bold">$4.3k</span>
-                                    </div>
-                                </MerchCard>
-                            ))}
+                            {topSellingProducts.length > 0 ? (
+                                topSellingProducts.map((product) => (
+                                    <MerchCard key={product.id} className="group p-4 flex items-center gap-4 cursor-pointer">
+                                        <div className="w-20 h-24 bg-neutral-800 rounded-lg flex items-center justify-center relative overflow-hidden">
+                                            {product.image ? (
+                                                <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <>
+                                                    <div className="absolute inset-0 bg-yellow-400/10 group-hover:bg-yellow-400/20 transition-all" />
+                                                    <span className="text-2xl">👕</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-bold text-white group-hover:text-[#FFE135] transition-colors">{product.title}</h4>
+                                            <p className="text-sm text-neutral-500">{product.price} • {product.units} Sold</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-[#FFE135] font-mono font-bold">{formatCurrency(product.revenue)}</span>
+                                        </div>
+                                    </MerchCard>
+                                ))
+                            ) : (
+                                <div className="col-span-2 p-8 text-center border border-dashed border-white/10 rounded-lg">
+                                    <p className="text-neutral-500 mb-4">No sales yet. Time to market that peel!</p>
+                                    <BananaButton size="sm" variant="outline" onClick={() => navigate('/merchandise/design')}>
+                                        Start Selling
+                                    </BananaButton>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -81,23 +130,35 @@ export default function MerchDashboard() {
                             <button className="text-xs text-[#FFE135] hover:underline">Drafts</button>
                         </div>
                         <div className="space-y-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
-                                    <div className="w-12 h-12 bg-neutral-800 rounded-md border border-white/10 flex items-center justify-center">
-                                        <span className="text-lg">🎨</span>
+                            {products.slice(0, 3).map((product) => (
+                                <div key={product.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
+                                    <div className="w-12 h-12 bg-neutral-800 rounded-md border border-white/10 flex items-center justify-center overflow-hidden">
+                                         {product.image ? (
+                                            <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span className="text-lg">🎨</span>
+                                        )}
                                     </div>
                                     <div className="flex-1">
-                                        <h5 className="text-sm font-medium text-white group-hover:text-[#FFE135]">Neon Summer V2</h5>
-                                        <p className="text-xs text-neutral-500">Edited 2h ago</p>
+                                        <h5 className="text-sm font-medium text-white group-hover:text-[#FFE135]">{product.title}</h5>
+                                        <p className="text-xs text-neutral-500">
+                                            {product.createdAt?.toDate ?
+                                                `Added ${product.createdAt.toDate().toLocaleDateString()}` :
+                                                'Just now'
+                                            }
+                                        </p>
                                     </div>
                                     <ArrowRight size={14} className="text-neutral-600 group-hover:text-white" />
                                 </div>
                             ))}
+                             {products.length === 0 && (
+                                <p className="text-neutral-500 text-sm">No products created yet.</p>
+                            )}
                         </div>
 
                         <MerchCard className="p-6 bg-gradient-to-br from-[#FFE135]/10 to-transparent border-[#FFE135]/20">
                             <h4 className="font-bold text-[#FFE135] mb-2">Campaign Ready?</h4>
-                            <p className="text-xs text-neutral-400 mb-4">You have 3 approved designs ready for production.</p>
+                            <p className="text-xs text-neutral-400 mb-4">You have {products.length} approved designs ready for production.</p>
                             <BananaButton size="sm" variant="outline" className="w-full">
                                 Launch Campaign
                             </BananaButton>

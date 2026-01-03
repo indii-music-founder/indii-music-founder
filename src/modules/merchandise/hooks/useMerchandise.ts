@@ -1,43 +1,36 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
+import { revenueService } from '@/services/RevenueService';
 import { MerchProduct } from '../types';
+
+interface MerchStats {
+    totalRevenue: number;
+    unitsSold: number;
+    conversionRate: number; // Placeholder, mocked for now as we don't have visitor stats
+    revenueChange: number; // Percentage
+    unitsChange: number; // Percentage
+}
 
 export const useMerchandise = () => {
     const userProfile = useStore(state => state.userProfile);
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [catalogError, setCatalogError] = useState<Error | null>(null);
+    const [stats, setStats] = useState<MerchStats>({
+        totalRevenue: 0,
+        unitsSold: 0,
+        conversionRate: 0,
+        revenueChange: 0,
+        unitsChange: 0
+    });
+    const [topSellingProducts, setTopSellingProducts] = useState<(MerchProduct & { revenue: number, units: number })[]>([]);
     const [isProductsLoading, setIsProductsLoading] = useState(true);
     const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     // Load catalog on mount
     useEffect(() => {
-        if (!userProfile?.id) return;
-
-        setLoading(true);
-        setCatalogError(null);
-
-        // Subscribe to user's products
-        const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
-            setProducts(data);
-            setLoading(false);
-        });
-
-        // Load product catalog templates
-        MerchandiseService.getCatalog().then(setCatalog).catch(console.error);
-        MerchandiseService.getCatalog()
-            .then(setCatalog)
-            .catch((err) => {
-                console.error("Failed to load catalog:", err);
-                setCatalogError(err);
-            })
-            .finally(() => {
-                // We don't set loading false here because product subscription handles main loading state
-                // But we could split loading states if desired. For now, this ensures errors are tracked.
-            });
         let mounted = true;
         setIsCatalogLoading(true);
 
@@ -80,6 +73,51 @@ export const useMerchandise = () => {
         return () => unsubscribe();
     }, [userProfile?.id]);
 
+    // Fetch Revenue Stats and Compute Top Sellers
+    useEffect(() => {
+        if (!userProfile?.id || isProductsLoading) return; // Wait for products to load first
+
+        const fetchStats = async () => {
+            setIsStatsLoading(true);
+            try {
+                const revenueStats = await revenueService.getUserRevenueStats(userProfile.id, '30d');
+
+                // 1. Update Aggregate Stats
+                setStats({
+                    totalRevenue: revenueStats.sources.merch || 0,
+                    unitsSold: revenueStats.sourceCounts.merch || 0,
+                    conversionRate: 3.2, // Mocked for now
+                    revenueChange: 15,   // Mocked for now (would need compare previous period)
+                    unitsChange: 8       // Mocked for now
+                });
+
+                // 2. Compute Top Sellers
+                // Map revenueByProduct to actual product details
+                const topSellers = products
+                    .map(product => ({
+                        ...product,
+                        revenue: revenueStats.revenueByProduct[product.id] || 0,
+                        units: revenueStats.salesByProduct[product.id] || 0
+                    }))
+                    .filter(p => p.revenue > 0)
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .slice(0, 4); // Top 4
+
+                setTopSellingProducts(topSellers);
+
+            } catch (err) {
+                console.error("Failed to load merch stats:", err);
+                // Don't set main error, just log it, stats will be 0
+            } finally {
+                setIsStatsLoading(false);
+            }
+        };
+
+        fetchStats();
+
+    }, [userProfile?.id, isProductsLoading, products]);
+
+
     const standardProducts = useMemo(() => products.filter(p => p.category === 'standard'), [products]);
     const proProducts = useMemo(() => products.filter(p => p.category === 'pro'), [products]);
 
@@ -92,14 +130,15 @@ export const useMerchandise = () => {
         return MerchandiseService.createFromCatalog(catalogId, userProfile.id, customizations);
     }, [userProfile?.id]);
 
-    const loading = isProductsLoading || isCatalogLoading;
+    const loading = isProductsLoading || isCatalogLoading || isStatsLoading;
 
     return {
         products,
         standardProducts,
         proProducts,
         catalog,
-        catalogError,
+        stats,
+        topSellingProducts,
         loading,
         error,
         addProduct: MerchandiseService.addProduct,

@@ -14,7 +14,14 @@ export interface RevenueStats {
     licensing: number;
     social: number;
   };
+  sourceCounts: {
+    streaming: number;
+    merch: number;
+    licensing: number;
+    social: number;
+  };
   revenueByProduct: Record<string, number>;
+  salesByProduct: Record<string, number>;
   history: {
     date: string;
     amount: number;
@@ -70,7 +77,14 @@ export class RevenueService {
         licensing: 0,
         social: 0
       };
+      const sourceCounts = {
+        streaming: 0,
+        merch: 0,
+        licensing: 0,
+        social: 0
+      };
       const revenueByProduct: Record<string, number> = {};
+      const salesByProduct: Record<string, number> = {};
       const historyMap = new Map<string, number>();
 
       snapshot.docs.forEach(doc => {
@@ -82,17 +96,22 @@ export class RevenueService {
         const source = data.source || 'other';
         if (['streaming', 'royalties', 'direct'].includes(source)) {
           sources.streaming += amount;
+          sourceCounts.streaming += 1;
         } else if (source === 'merch') {
           sources.merch += amount;
+          sourceCounts.merch += 1;
         } else if (source === 'licensing') {
           sources.licensing += amount;
+          sourceCounts.licensing += 1;
         } else if (['social', 'social_drop'].includes(source)) {
           sources.social += amount;
+          sourceCounts.social += 1;
         }
 
         // Aggregate Product
         if (data.productId) {
           revenueByProduct[data.productId] = (revenueByProduct[data.productId] || 0) + amount;
+          salesByProduct[data.productId] = (salesByProduct[data.productId] || 0) + 1;
         }
 
         // Aggregate History
@@ -113,7 +132,9 @@ export class RevenueService {
         lastPayoutAmount: 5000,
         lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
         sources,
+        sourceCounts,
         revenueByProduct,
+        salesByProduct,
         history
       };
 
@@ -217,7 +238,14 @@ export class RevenueService {
         licensing: 10000,
         social: 5000
       },
+      sourceCounts: {
+        streaming: 100,
+        merch: 50,
+        licensing: 20,
+        social: 10
+      },
       revenueByProduct: {},
+      salesByProduct: {},
       history: []
     };
   }
