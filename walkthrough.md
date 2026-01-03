@@ -55,3 +55,11 @@ All relevant test suites passed successfully:
 
 - **Production Key**: Ensure `VITE_FIREBASE_APP_CHECK_KEY` is set in production environment.
 - **Monitoring**: Watch Firebase Console for App Check metrics and Vertex AI quota usage.
+
+## Conflict Resolution
+
+### walkthrough.md Conflict
+
+- **Issue**: `walkthrough.md` was deleted in `origin/main` but modified in the local branch.
+- **Resolution**: Restored the local version of `walkthrough.md` to preserve the detailed documentation of the refactoring process.
+- **Verification**: Confirmed file content integrity and passed regression tests (`FirebaseAIService.test.ts`).
