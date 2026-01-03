@@ -279,6 +279,13 @@ service cloud.firestore {
     }
 
     // ========================================
+    // DISTRIBUTION DEPLOYMENTS (org-scoped)
+    // ========================================
+
+    match /deployments/{deploymentId} {
+      allow read: if isResourceOrgMember();
+      allow create: if isRequestOrgMember();
+      allow update, delete: if isResourceOrgMember();
     // DISTRIBUTION DEPLOYMENTS (User & Org Scoped)
     // ========================================
 
