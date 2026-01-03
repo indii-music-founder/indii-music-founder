@@ -148,6 +148,77 @@ const generateLongFormVideoFn = (inngestClient) => inngestClient.createFunction(
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             });
+            // Extract last frame for daisychaining
+            if (i < prompts.length - 1) {
+                try {
+                    const nextStartImage = await step.run(`extract-frame-${i}`, async () => {
+                        const auth = new google_auth_library_1.GoogleAuth({
+                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                        });
+                        const transcoder = new video_transcoder_1.TranscoderServiceClient();
+                        const projectId = await auth.getProjectId();
+                        const location = 'us-central1';
+                        const bucket = admin.storage().bucket();
+                        const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
+                        // 1. Normalize Input URI
+                        let inputUri = segmentUrl;
+                        if (inputUri.startsWith('https://storage.googleapis.com/')) {
+                            const path = inputUri.replace(`https://storage.googleapis.com/${bucket.name}/`, '');
+                            inputUri = `gs://${bucket.name}/${path}`;
+                        }
+                        // 2. Create Sprite Job (acting as frame extractor)
+                        const [job] = await transcoder.createJob({
+                            parent: transcoder.locationPath(projectId, location),
+                            job: {
+                                outputUri,
+                                config: {
+                                    inputs: [{ key: "input0", uri: inputUri }],
+                                    editList: [{ key: "atom0", inputs: ["input0"] }],
+                                    spriteSheets: [
+                                        {
+                                            filePrefix: "frame_",
+                                            startTimeOffset: { seconds: 4, nanos: 500000000 },
+                                            endTimeOffset: { seconds: 0, nanos: 0 },
+                                            columnCount: 1,
+                                            rowCount: 1,
+                                            totalCount: 1,
+                                            quality: 100
+                                        }
+                                    ]
+                                }
+                            }
+                        });
+                        // 3. Poll for Completion
+                        let finalState = 'PROCESSING';
+                        for (let j = 0; j < 30; j++) {
+                            await new Promise(r => setTimeout(r, 2000));
+                            const [status] = await transcoder.getJob({ name: job.name });
+                            if (status.state === 'SUCCEEDED' || status.state === 'FAILED') {
+                                finalState = status.state;
+                                break;
+                            }
+                        }
+                        if (finalState !== 'SUCCEEDED')
+                            throw new Error(`Frame extraction failed: ${finalState}`);
+                        // 4. Download and Convert to Base64
+                        // Wait a bit for file consistency
+                        await new Promise(r => setTimeout(r, 1000));
+                        const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
+                        if (!files || files.length === 0) {
+                            console.warn(`[LongForm] No frame generated for segment ${i}`);
+                            return undefined; // Fallback
+                        }
+                        const frameFile = files[0];
+                        const [buffer] = await frameFile.download();
+                        return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                    });
+                    currentStartImage = nextStartImage;
+                }
+                catch (e) {
+                    console.warn(`[LongForm] Frame extraction failed for segment ${i}:`, e.message);
+                    // Continue without chaining if extraction fails
+                }
+            }
             // TODO: Extract last frame from segmentUrl to use as startImage for next segment
             // This requires a frame extraction service (e.g., FFmpeg Cloud Function)
             // Without this, segments won't have visual continuity

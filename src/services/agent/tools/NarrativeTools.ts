@@ -1,4 +1,4 @@
-import { AI } from '@/services/ai/AIService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import type { ToolFunctionArgs } from '../types';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -51,21 +51,35 @@ Return ONLY a valid JSON object with the following structure:
 `;
             const prompt = `Synopsis: ${args.synopsis}`;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                systemInstruction: systemPrompt
-            });
+            const response = await firebaseAI.generateStructuredData(
+                [{ text: prompt }],
+                {
+                    type: "object",
+                    properties: {
+                        title: { type: "string" },
+                        logline: { type: "string" },
+                        beats: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    beat: { type: "number" },
+                                    name: { type: "string" },
+                                    description: { type: "string" },
+                                    camera: { type: "string" },
+                                    mood: { type: "string" }
+                                },
+                                required: ["beat", "name", "description"]
+                            }
+                        }
+                    },
+                    required: ["title", "beats"]
+                },
+                undefined as any,
+                systemPrompt
+            );
 
-            const textResponse = response.text();
-
-            // Attempt to parse JSON from the text response
-            const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                return jsonMatch[0];
-            }
-
-            return textResponse;
+            return JSON.stringify(response, null, 2);
 
         } catch (e: unknown) {
             return `Failed to generate script: ${getErrorMessage(e)}`;

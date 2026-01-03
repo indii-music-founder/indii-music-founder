@@ -5,6 +5,8 @@ import { useToast } from '@/core/context/ToastContext';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { AI } from '@/services/ai/AIService';
 import { SocialService } from '@/services/social/SocialService';
+import AIEnhancePostModal from './AIEnhancePostModal';
+import { ScheduledPost, CampaignStatus } from '../types';
 
 interface PostContent {
     platform: string;
@@ -34,6 +36,7 @@ export default function PostGenerator() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const [isScheduling, setIsScheduling] = useState(false);
+    const [isEnhanceModalOpen, setIsEnhanceModalOpen] = useState(false);
 
     // Result State
     const [result, setResult] = useState<PostContent | null>(null);
@@ -174,6 +177,15 @@ export default function PostGenerator() {
         }
     };
 
+
+
+    const handleEnhanceApply = (postId: string, newCopy: string) => {
+        if (result) {
+            setResult({ ...result, caption: newCopy });
+            toast.success("Enhanced copy applied!");
+        }
+    };
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
 
@@ -300,6 +312,14 @@ export default function PostGenerator() {
                                         <Copy size={12} /> Copy
                                     </button>
                                 </div>
+                                <div className="flex justify-end mb-2">
+                                    <button
+                                        onClick={() => setIsEnhanceModalOpen(true)}
+                                        className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                                    >
+                                        <Wand2 size={12} /> Enhance with AI
+                                    </button>
+                                </div>
                                 <textarea
                                     value={result.caption}
                                     onChange={(e) => setResult({ ...result, caption: e.target.value })}
@@ -337,6 +357,33 @@ export default function PostGenerator() {
                 </div>
             </div>
 
-        </div>
+
+
+            {
+                isEnhanceModalOpen && result && (
+                    <AIEnhancePostModal
+                        post={{
+                            id: 'temp-preview',
+                            // Map lowercase platform id to capitalized Title Case for PublishedPost type (rudimentary mapping)
+                            platform: (result.platform === 'twitter' ? 'Twitter' :
+                                result.platform === 'instagram' ? 'Instagram' :
+                                    result.platform === 'linkedin' ? 'LinkedIn' : 'Twitter') as any, // Default fallback or exact mapping
+                            copy: result.caption,
+                            imageAsset: {
+                                assetType: 'image',
+                                title: topic,
+                                imageUrl: result.generatedImageBase64 ? `data:image/png;base64,${result.generatedImageBase64}` : '',
+                                caption: result.caption
+                            },
+                            day: 0,
+                            status: CampaignStatus.PENDING
+                        }}
+                        onClose={() => setIsEnhanceModalOpen(false)}
+                        onApply={handleEnhanceApply}
+                    />
+                )
+            }
+
+        </div >
     );
 }

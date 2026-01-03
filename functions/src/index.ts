@@ -5,6 +5,9 @@ import { Inngest } from "inngest";
 import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
+import { VideoJobSchema } from "./lib/video";
+
+import { GoogleAuth } from "google-auth-library";
 import { GoogleAuth } from "google-auth-library";
 import { VideoJobSchema } from "./lib/video";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
@@ -78,6 +81,7 @@ export const triggerVideoJob = functions
 
         const userId = context.auth.uid;
         // Construct input matching the schema
+        const inputData: any = { ...(data as any), userId };
         const inputData: any = { ...data, userId };
 
         // Zod Validation
@@ -85,6 +89,7 @@ export const triggerVideoJob = functions
         if (!validation.success) {
             throw new functions.https.HttpsError(
                 "invalid-argument",
+                `Validation failed: ${validation.error.issues.map((i: any) => i.message).join(", ")}`
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
@@ -165,6 +170,7 @@ export const triggerLongFormVideoJob = functions
             );
         }
 
+        // Destructure validated data
         const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
 
         // Additional validation
@@ -191,6 +197,8 @@ export const triggerLongFormVideoJob = functions
             const limits = TIER_LIMITS[userTier];
             const durationNum = parseFloat((totalDuration || 0).toString());
 
+            // 2. Validate Duration Limit
+            const durationNum = parseFloat(totalDuration || "0");
             if (durationNum > limits.maxVideoDuration) {
                 throw new functions.https.HttpsError(
                     "resource-exhausted",
@@ -213,6 +221,7 @@ export const triggerLongFormVideoJob = functions
                     );
                 }
 
+                // Increment Usage Optimistically
                 if (!usageDoc.exists) {
                     transaction.set(usageRef, { videosGenerated: 1, date: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
                 } else {
@@ -222,6 +231,7 @@ export const triggerLongFormVideoJob = functions
 
             // ------------------------------------------------------------------
 
+            // 4. Create Parent Job Record
             // 1. Create Parent Job Record
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 id: jobId,
@@ -236,19 +246,19 @@ export const triggerLongFormVideoJob = functions
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            // 2. Publish Event to Inngest for Long Form
+            // 5. Publish Event to Inngest for Long Form
             const inngest = getInngestClient();
 
             await inngest.send({
                 name: "video/long_form.requested",
                 data: {
-                    jobId: jobId,
-                    userId: userId,
+                    jobId,
+                    userId,
                     orgId: orgId || "personal",
-                    prompts: prompts,
-                    totalDuration: totalDuration,
-                    startImage: startImage,
-                    options: options,
+                    prompts,
+                    totalDuration,
+                    startImage,
+                    options,
                     timestamp: Date.now(),
                 },
                 user: { id: userId }
@@ -451,6 +461,7 @@ export const inngestApi = functions
 
                         if (prediction.videoUri) return prediction.videoUri;
                         if (prediction.gcsUri) return prediction.gcsUri;
+                        throw new Error("Unknown Veo response format: " + JSON.stringify(prediction));
                         throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
                     });
 
@@ -479,12 +490,17 @@ export const inngestApi = functions
             }
         );
 
+        // 2. Long Form Video Generation Logic (Daisychaining)
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
+
+        // 3. Stitching Function (Server-Side using Google Transcoder)
         // Register Long Form Functions
         const generateLongForm = generateLongFormVideoFn(inngestClient);
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({
             client: inngestClient,
+            functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
             functions: [generateVideoFn, generateLongForm, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
@@ -766,6 +782,8 @@ export const ragProxy = functions
                     return;
                 }
 
+                const queryString = req.url.split('?')[1] || '';
+                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
                 const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}`;
 
                 const fetchOptions: RequestInit = {

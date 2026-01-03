@@ -101,6 +101,7 @@ export const usePublicist = () => {
         setSearchQuery,
         filterType,
         setFilterType,
-        loading
+        loading,
+        userProfile // Expose for creating campaigns
     };
 };

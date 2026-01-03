@@ -19,6 +19,8 @@ export interface Contact {
     influenceScore: number; // 0-100
     relationshipStrength: 'Strong' | 'Neutral' | 'Weak';
     avatarUrl?: string;
+    notes?: string;
+    lastInteraction?: string;
 }
 
 export interface PublicistStats {
