@@ -1,17 +1,36 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { DistributorCard } from './DistributorCard';
+import ConnectDistributorModal from './ConnectDistributorModal';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import type { IDistributorAdapter } from '@/services/distribution/types/distributor';
 
 export const DistributorConnectionsPanel: React.FC = () => {
-    const { distribution, fetchDistributors, connectDistributor } = useStore();
+    const { distribution, fetchDistributors } = useStore();
     const { connections, loading, error } = distribution;
+
+    const [selectedAdapter, setSelectedAdapter] = useState<IDistributorAdapter | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         fetchDistributors();
     }, []);
 
     const handleConnect = (id: string) => {
-        connectDistributor(id as any);
+        const adapter = DistributorService.getAdapter(id as any);
+        if (adapter) {
+            setSelectedAdapter(adapter);
+            setIsModalOpen(true);
+        } else {
+            console.error(`Adapter not found for ${id}`);
+        }
+    };
+
+    const handleModalSuccess = () => {
+        setIsModalOpen(false);
+        setSelectedAdapter(null);
+        // Refresh connections to show the new status
+        fetchDistributors();
     };
 
     if (loading && connections.length === 0) {
@@ -47,7 +66,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
                         key={dist.distributorId}
                         connection={dist}
                         onConnect={handleConnect}
-                        isConnecting={distribution.isConnecting}
+                        isConnecting={distribution.isConnecting && selectedAdapter?.id === dist.distributorId}
                     />
                 ))}
             </div>
@@ -70,6 +89,15 @@ export const DistributorConnectionsPanel: React.FC = () => {
                 <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
             </div>
+
+            {selectedAdapter && (
+                <ConnectDistributorModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    adapter={selectedAdapter}
+                    onSuccess={handleModalSuccess}
+                />
+            )}
         </div>
     );
 };

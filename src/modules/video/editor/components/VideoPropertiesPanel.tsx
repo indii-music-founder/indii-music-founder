@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { VideoProject, VideoClip } from '../../store/videoEditorStore';
 import { PropertiesPanel, PanelSection, PropertyRow } from '@/components/studio/PropertiesPanel';
+import FrameSelectionModal from '../../components/FrameSelectionModal';
+import { HistoryItem } from '@/core/store';
+import { Image as ImageIcon } from 'lucide-react';
 
 interface VideoPropertiesPanelProps {
     project: VideoProject;
@@ -30,6 +33,7 @@ const KeyframeButton = ({
 );
 
 export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip, currentTime }) => {
+    const [isFrameModalOpen, setIsFrameModalOpen] = useState(false);
 
     const handleAddKeyframe = (property: string, value: number) => {
         if (!selectedClip) return;
@@ -58,6 +62,12 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
         if (!selectedClip || !selectedClip.keyframes?.[property]) return false;
         const relativeFrame = currentTime - selectedClip.startFrame;
         return selectedClip.keyframes[property].some(k => Math.abs(k.frame - relativeFrame) < 1); // Allow 1 frame tolerance
+    };
+
+    const handleSourceSelect = (item: HistoryItem) => {
+        if (selectedClip) {
+            updateClip(selectedClip.id, { src: item.url });
+        }
     };
 
     return (
@@ -312,12 +322,21 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                     {(selectedClip.type === 'video' || selectedClip.type === 'image' || selectedClip.type === 'audio') && (
                         <PanelSection title="Source">
                             <PropertyRow label="Source URL">
-                                <input
-                                    type="text"
-                                    className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
-                                    value={selectedClip.src || ''}
-                                    onChange={(e) => updateClip(selectedClip.id, { src: e.target.value })}
-                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
+                                        value={selectedClip.src || ''}
+                                        onChange={(e) => updateClip(selectedClip.id, { src: e.target.value })}
+                                    />
+                                    <button
+                                        onClick={() => setIsFrameModalOpen(true)}
+                                        className="px-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors border border-gray-700"
+                                        title="Browse or Generate..."
+                                    >
+                                        <ImageIcon size={14} />
+                                    </button>
+                                </div>
                             </PropertyRow>
                         </PanelSection>
                     )}
@@ -327,6 +346,13 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                     <p className="text-xs text-gray-500 italic">Select a clip to edit properties</p>
                 </div>
             )}
+
+            <FrameSelectionModal
+                isOpen={isFrameModalOpen}
+                onClose={() => setIsFrameModalOpen(false)}
+                onSelect={handleSourceSelect}
+                target="ingredient" // Generic usage for clip source
+            />
         </PropertiesPanel>
     );
 };

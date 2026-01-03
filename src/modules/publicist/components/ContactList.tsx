@@ -5,15 +5,17 @@ import { User, Star, TrendingUp, Radio } from 'lucide-react';
 
 interface ContactListProps {
     contacts: Contact[];
+    onSelectContact: (contact: Contact) => void;
 }
 
-export function ContactList({ contacts }: ContactListProps) {
+export function ContactList({ contacts, onSelectContact }: ContactListProps) {
     return (
         <div className="space-y-3">
             <AnimatePresence mode="popLayout">
                 {contacts.map((contact, index) => (
                     <motion.div
                         key={contact.id}
+                        onClick={() => onSelectContact(contact)}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}

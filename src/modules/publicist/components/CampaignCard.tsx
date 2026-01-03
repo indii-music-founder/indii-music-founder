@@ -5,18 +5,20 @@ import { Campaign } from '../types';
 
 interface CampaignCardProps {
     campaign: Campaign;
+    onClick?: (campaign: Campaign) => void;
 }
 
-export function CampaignCard({ campaign }: CampaignCardProps) {
+export function CampaignCard({ campaign, onClick }: CampaignCardProps) {
     return (
         <motion.div
             layout
+            onClick={() => onClick?.(campaign)}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             whileHover={{ y: -4 }}
             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            className="group relative glass hover:bg-black/60 transition-all duration-300 hover:border-dept-campaign/30 overflow-hidden p-5 rounded-2xl"
+            className="group relative glass hover:bg-black/60 transition-all duration-300 hover:border-dept-campaign/30 overflow-hidden p-5 rounded-2xl cursor-pointer"
         >
             {/* Status Badge */}
             <div className="absolute top-4 right-4 z-10">

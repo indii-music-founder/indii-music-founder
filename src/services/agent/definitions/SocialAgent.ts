@@ -1,5 +1,6 @@
 import { AgentConfig } from "../types";
 import systemPrompt from '@agents/social/prompt.md?raw';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 export const SocialAgent: AgentConfig = {
     id: 'social',
@@ -10,15 +11,18 @@ export const SocialAgent: AgentConfig = {
     systemPrompt,
     functions: {
         analyze_trends: async (args: { topic: string }) => {
-            return {
-                success: true,
-                data: {
-                    trend_score: 85,
-                    sentiment: "positive",
-                    keywords: ["viral", "trending", "hot"],
-                    summary: `The topic '${args.topic}' is currently trending with positive sentiment.`
-                }
-            };
+            const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
+            try {
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                return { success: true, data: response };
+            } catch (e) {
+                return { success: false, error: (e as Error).message };
+            }
+        },
+        generate_social_post: async (args: { platform: string, topic: string, tone?: string }) => {
+            const prompt = `Write a ${args.platform} post about "${args.topic}". Tone: ${args.tone || 'engaging'}. Include hashtags.`;
+            const response = await firebaseAI.generateText(prompt);
+            return { success: true, data: { content: response } };
         }
     },
     tools: [{

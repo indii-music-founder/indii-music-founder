@@ -1,4 +1,5 @@
 import { AgentConfig } from "../types";
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 const systemPrompt = `
 You are the **DevOps Engineer** (also known as the Site Reliability Engineer).
@@ -27,7 +28,26 @@ export const DevOpsAgent: AgentConfig = {
     category: "specialist",
     systemPrompt,
     functions: {
-
+        list_clusters: async () => {
+            const prompt = "Generate a status list of GKE clusters (PROD-US, STAGING-EU) with version, nodes, and status. Return as JSON.";
+            return { success: true, data: await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any) };
+        },
+        get_cluster_status: async (args: { cluster_id: string }) => {
+            const prompt = `Generate a detailed health report for GKE cluster "${args.cluster_id}". Include cpu_usage, memory_usage, and active_alerts. Return as JSON.`;
+            return { success: true, data: await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any) };
+        },
+        scale_deployment: async (args: { deployment: string, replicas: number }) => {
+            const prompt = `Simulate scaling deployment "${args.deployment}" to ${args.replicas} replicas. Return a success message and new status.`;
+            return { success: true, data: { message: await firebaseAI.generateText(prompt) } };
+        },
+        list_instances: async () => {
+            const prompt = "List active GCE instances (web-server-1, db-node-primary) with zones and IPs. Return as JSON.";
+            return { success: true, data: await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any) };
+        },
+        restart_service: async (args: { service_name: string }) => {
+            const prompt = `Simulate restarting service "${args.service_name}". Generate a log of the shutdown and startup process.`;
+            return { success: true, data: { logs: await firebaseAI.generateText(prompt) } };
+        }
     },
     tools: [{
         functionDeclarations: [

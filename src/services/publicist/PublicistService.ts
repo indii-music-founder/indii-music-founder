@@ -4,7 +4,9 @@ import {
     where,
     onSnapshot,
     addDoc,
-    serverTimestamp
+    serverTimestamp,
+    doc,
+    updateDoc
 } from 'firebase/firestore';
 import { db } from '../firebase'; // Corrected path to src/services/firebase.ts
 import { Campaign, Contact } from '../../modules/publicist/types';
@@ -73,6 +75,22 @@ export class PublicistService {
             ...contact,
             userId,
             createdAt: serverTimestamp()
+        });
+    }
+
+    static async updateCampaign(campaignId: string, updates: Partial<Campaign>) {
+        const docRef = doc(db, this.campaignsCollection, campaignId);
+        return updateDoc(docRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
+        });
+    }
+
+    static async updateContact(contactId: string, updates: Partial<Contact>) {
+        const docRef = doc(db, this.contactsCollection, contactId);
+        return updateDoc(docRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
         });
     }
 

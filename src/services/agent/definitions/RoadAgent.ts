@@ -1,5 +1,6 @@
 import { AgentConfig } from "../types";
 import systemPrompt from '@agents/road/prompt.md?raw';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 export const RoadAgent: AgentConfig = {
     id: 'road-manager',
@@ -8,8 +9,72 @@ export const RoadAgent: AgentConfig = {
     color: 'bg-yellow-500',
     category: 'manager',
     systemPrompt,
+    functions: {
+        plan_tour_route: async (args: { start_location: string, end_location: string, stops: string[] }) => {
+            const prompt = `Plan a music tour route.
+            Start: ${args.start_location}
+            End: ${args.end_location}
+            Stops: ${args.stops.join(', ')}
+            
+            Provide:
+            1. Optimized Route Order
+            2. Estimated Drive Times
+            3. Recommended Rest Stops`;
+
+            try {
+                const response = await firebaseAI.generateText(prompt);
+                return { success: true, data: { route_plan: response } };
+            } catch (e: any) {
+                return { success: false, error: e.message };
+            }
+        },
+        calculate_tour_budget: async (args: { duration_days: number, crew_size: number }) => {
+            const prompt = `Calculate a detailed tour budget. Duration: ${args.duration_days} days, Crew: ${args.crew_size}. Return a JSON with total_estimated_budget and breakdown (accommodation, travel, per_diem, contingency).`;
+            try {
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                return { success: true, data: response };
+            } catch (e) {
+                return { success: false, error: (e as Error).message };
+            }
+        },
+        search_places: async (args: { query: string }) => {
+            const prompt = `Simulate a Google Maps search for "${args.query}". Return a list of realistic venues/places with ratings and addresses.`;
+            const response = await firebaseAI.generateText(prompt);
+            return { success: true, data: { results: response } };
+        },
+        get_distance_matrix: async () => {
+            const prompt = `Generate a realistic distance matrix for a tour route (e.g., LA to SF). Return distance and duration.`;
+            const response = await firebaseAI.generateText(prompt);
+            return { success: true, data: { matrix: response } };
+        }
+    },
     tools: [{
         functionDeclarations: [
+            {
+                name: "plan_tour_route",
+                description: "Plan an optimized route for a tour.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        start_location: { type: "STRING", description: "Starting city." },
+                        end_location: { type: "STRING", description: "Ending city." },
+                        stops: { type: "ARRAY", items: { type: "STRING" }, description: "List of stops." }
+                    },
+                    required: ["start_location", "end_location"]
+                }
+            },
+            {
+                name: "calculate_tour_budget",
+                description: "Calculate estimated budget for a tour.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        duration_days: { type: "NUMBER", description: "Length of tour in days." },
+                        crew_size: { type: "NUMBER", description: "Number of people." }
+                    },
+                    required: ["duration_days", "crew_size"]
+                }
+            },
             {
                 name: "create_project",
                 description: "Create a new tour or event project.",

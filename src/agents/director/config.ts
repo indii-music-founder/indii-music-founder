@@ -1,5 +1,8 @@
 import { AgentConfig } from "@/services/agent/types";
 import systemPrompt from './prompt.md?raw';
+import { VideoTools } from '@/services/agent/tools/VideoTools';
+import { NarrativeTools } from '@/services/agent/tools/NarrativeTools';
+import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 
 export const DirectorAgent: AgentConfig = {
     id: 'director',
@@ -8,6 +11,19 @@ export const DirectorAgent: AgentConfig = {
     color: 'bg-pink-500',
     category: 'manager',
     systemPrompt,
+    functions: {
+        generate_image: DirectorTools.generate_image,
+        batch_edit_images: DirectorTools.batch_edit_images,
+        generate_video: VideoTools.generate_video,
+        batch_edit_videos: VideoTools.batch_edit_videos,
+        run_showroom_mockup: DirectorTools.run_showroom_mockup,
+        generate_high_res_asset: DirectorTools.generate_high_res_asset,
+        set_entity_anchor: DirectorTools.set_entity_anchor,
+        generate_visual_script: NarrativeTools.generate_visual_script,
+        render_cinematic_grid: DirectorTools.render_cinematic_grid,
+        extract_grid_frame: DirectorTools.extract_grid_frame,
+        interpolate_sequence: VideoTools.interpolate_sequence,
+    },
     tools: [{
         functionDeclarations: [
             {
