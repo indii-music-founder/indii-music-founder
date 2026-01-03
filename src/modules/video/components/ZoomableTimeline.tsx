@@ -153,42 +153,53 @@ const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, fram
         return fps * 2; // Show 2-second marks
     }, [zoom, fps]);
 
-    // Generate ticks only when the interval or duration changes
-    // This prevents regenerating thousands of objects during smooth zoom transitions
-    // where the interval remains constant (e.g., zooming from 1.1 to 1.9)
-    const ticks = useMemo(() => {
-        const result: { frame: number; label: string; isSecond: boolean }[] = [];
-        for (let frame = 0; frame <= totalFrames; frame += tickInterval) {
-            const seconds = frame / fps;
-            const isSecond = frame % fps === 0;
-            const label = isSecond
-                ? formatTime(seconds)
-                : '';
+    // Derived values for CSS grid (Optimization: Use CSS for lines instead of DOM nodes)
+    const unitPx = frameWidth * zoom;
+    const majorInterval = fps;
+    const minorInterval = tickInterval;
 
-            result.push({ frame, label, isSecond });
+    const majorSpacing = majorInterval * unitPx;
+    const minorSpacing = minorInterval * unitPx;
+
+    // Use background gradients for ticks to reduce DOM node count by >90%
+    const backgroundStyle = {
+        backgroundImage: `
+             linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px),
+             linear-gradient(to right, rgba(255,255,255,0.3) 1px, transparent 1px)
+         `,
+        backgroundSize: `
+             ${majorSpacing}px 12px,
+             ${minorSpacing}px 8px
+         `,
+        backgroundRepeat: 'repeat-x',
+        backgroundPosition: '0 0'
+    };
+
+    // Generate labels only (significantly reducing iteration and object creation)
+    const labels = useMemo(() => {
+        const result: { frame: number; label: string }[] = [];
+        // Determine label interval (labels appear on seconds, or every 2s if zoomed out)
+        const step = Math.max(fps, tickInterval);
+
+        for (let frame = 0; frame <= totalFrames; frame += step) {
+            const seconds = frame / fps;
+            result.push({ frame, label: formatTime(seconds) });
         }
         return result;
-    }, [totalFrames, tickInterval, fps]);
+    }, [totalFrames, fps, tickInterval]);
 
     return (
         <div
             className="h-6 bg-black/30 border-t border-white/10 relative overflow-hidden"
-            style={{ width: `${totalFrames * frameWidth * zoom}px` }}
+            style={{ width: `${totalFrames * unitPx}px`, ...backgroundStyle }}
         >
-            {ticks.map(({ frame, label, isSecond }) => (
+            {labels.map(({ frame, label }) => (
                 <div
                     key={frame}
-                    className="absolute top-0 flex flex-col items-center"
-                    style={{ left: `${frame * frameWidth * zoom}px` }}
+                    className="absolute top-0 text-[10px] text-white/60 font-mono mt-3"
+                    style={{ left: `${frame * unitPx}px`, transform: 'translateX(-50%)' }}
                 >
-                    <div
-                        className={`w-px ${isSecond ? 'h-3 bg-white/60' : 'h-2 bg-white/30'}`}
-                    />
-                    {label && (
-                        <span className="text-[10px] text-white/60 font-mono mt-0.5">
-                            {label}
-                        </span>
-                    )}
+                    {label}
                 </div>
             ))}
         </div>
