@@ -53,7 +53,7 @@ describe('VideoGenerationService', () => {
         });
 
         expect(result).toHaveLength(1);
-        expect(result[0].id).toBe('test-job-id');
+        expect(result[0].id).toBe('test-uuid');
         expect(mockHttpsCallable).toHaveBeenCalledWith({
             prompt: 'test prompt',
             resolution: '1080p',

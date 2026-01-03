@@ -17,7 +17,7 @@ vi.mock('@/services/firebase', () => ({
     db: {}, // Mock db object
     storage: {},
     functions: {},
-    auth: {}
+    auth: { currentUser: { uid: 'user-123' } }
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -41,11 +41,14 @@ describe('RevenueService (Production Logic)', () => {
 
     it('getTotalRevenue should query Firestore with correct filter', async () => {
         // Setup mock response
+        const mockDocs = [
+            { data: () => ({ amount: 100 }) },
+            { data: () => ({ amount: 50.50 }) }
+        ];
         mocks.getDocs.mockResolvedValue({
-            forEach: (callback: (doc: any) => void) => {
-                callback({ data: () => ({ amount: 100 }) });
-                callback({ data: () => ({ amount: 50.50 }) });
-            }
+            docs: mockDocs,
+            empty: false,
+            forEach: (callback: (doc: any) => void) => mockDocs.forEach(callback)
         });
 
         const total = await revenueService.getTotalRevenue('user-123');
@@ -56,12 +59,15 @@ describe('RevenueService (Production Logic)', () => {
     });
 
     it('getRevenueBySource should aggregate correctly', async () => {
+        const mockDocs = [
+            { data: () => ({ amount: 100, source: 'direct' }) },
+            { data: () => ({ amount: 50, source: 'social_drop' }) },
+            { data: () => ({ amount: 25, source: 'direct' }) }
+        ];
         mocks.getDocs.mockResolvedValue({
-            forEach: (callback: (doc: any) => void) => {
-                callback({ data: () => ({ amount: 100, source: 'direct' }) });
-                callback({ data: () => ({ amount: 50, source: 'social_drop' }) });
-                callback({ data: () => ({ amount: 25, source: 'direct' }) });
-            }
+            docs: mockDocs,
+            empty: false,
+            forEach: (callback: (doc: any) => void) => mockDocs.forEach(callback)
         });
 
         const breakdown = await revenueService.getRevenueBySource('user-123');

@@ -52,6 +52,16 @@ vi.mock('@/core/components/ModuleErrorBoundary', () => ({
     ModuleErrorBoundary: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
 
+// Mock ToastContext
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        addToast: vi.fn(),
+        removeToast: vi.fn(),
+        toasts: []
+    }),
+    ToastProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+}));
+
 describe('PublicistDashboard', () => {
     it('renders the dashboard header correctly', () => {
         render(<PublicistDashboard />);

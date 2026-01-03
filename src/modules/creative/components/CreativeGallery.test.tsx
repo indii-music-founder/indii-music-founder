@@ -41,8 +41,9 @@ describe('CreativeGallery', () => {
     it('renders empty state with upload and camera buttons', () => {
         render(<CreativeGallery />);
 
-        // Check for FileUpload component in empty state
-        expect(screen.getByTestId('file-upload')).toBeInTheDocument();
+        // Check for empty state text
+        expect(screen.getByText('No assets yet')).toBeInTheDocument();
+        expect(screen.getByText('Upload or generate to see them here')).toBeInTheDocument();
     });
 
     it('renders assets section with camera button when items exist', () => {

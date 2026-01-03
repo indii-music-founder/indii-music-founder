@@ -15,7 +15,8 @@ const {
     mockOrderBy,
     mockInitializeFirestore,
     mockPersistentLocalCache,
-    mockPersistentMultipleTabManager
+    mockPersistentMultipleTabManager,
+    mockSetDoc
 } = vi.hoisted(() => {
     return {
         mockGetDoc: vi.fn(),
@@ -28,7 +29,8 @@ const {
         mockOrderBy: vi.fn(),
         mockInitializeFirestore: vi.fn(),
         mockPersistentLocalCache: vi.fn(),
-        mockPersistentMultipleTabManager: vi.fn()
+        mockPersistentMultipleTabManager: vi.fn(),
+        mockSetDoc: vi.fn()
     };
 });
 
@@ -48,8 +50,12 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => 'MOCK_TIMESTAMP'),
     increment: vi.fn(),
     updateDoc: vi.fn(),
+    setDoc: mockSetDoc, // Added setDoc
     Timestamp: {
-        now: () => ({ toDate: () => new Date() })
+        now: () => ({
+            toDate: () => new Date(),
+            toMillis: () => Date.now()
+        })
     }
 }));
 
@@ -82,18 +88,19 @@ describe('MarketingService', () => {
             expect(stats).toEqual(mockStats);
         });
 
-        it('should fall back to aggregation if stats document does not exist', async () => {
+        it('should seed database if stats document does not exist', async () => {
             mockGetDoc.mockResolvedValueOnce({
                 exists: () => false
             });
-            // Mock empty campaigns for aggregation
+            // Mock empty campaigns for aggregation - not used but kept for context if logic changes
             mockGetDocs.mockResolvedValueOnce({
                 docs: []
             });
 
             const stats = await MarketingService.getMarketingStats();
-            expect(stats.activeCampaigns).toBe(0);
-            expect(stats.totalReach).toBe(0); // Mock fallback value
+            // Expect seeded values
+            expect(stats.activeCampaigns).toBe(1);
+            expect(stats.totalReach).toBe(15400);
         });
     });
 

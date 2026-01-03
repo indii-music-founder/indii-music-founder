@@ -7,7 +7,24 @@ import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdap
 import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { ReleaseAssets, IDistributorAdapter } from '@/services/distribution/types/distributor';
+import type { ReleaseAssets, IDistributorAdapter } from '@/services/distribution/types/distributor';
+
+// Mock dependencies to prevent permission errors
+vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
+    distributionStore: {
+        createDeployment: vi.fn().mockResolvedValue({ id: 'mock-deployment-id' }),
+        getDeploymentsForRelease: vi.fn().mockResolvedValue([]),
+        updateDeploymentStatus: vi.fn(),
+    }
+}));
+
+vi.mock('../EarningsService', () => ({
+    earningsService: {
+        getEarnings: vi.fn().mockResolvedValue(null),
+        getAllEarnings: vi.fn().mockResolvedValue([]),
+    }
+}));
+
 
 describe('All Distribution Adapters Integration', () => {
     let tempDir: string;
@@ -103,7 +120,18 @@ describe('All Distribution Adapters Integration', () => {
         it('should create release successfully', async () => {
             const result = await adapter.createRelease(mockMetadata, mockAssets);
             expect(result.success).toBe(true);
-            expect(result.status).toBe('delivered');
+
+            // Each adapter returns a different status
+            if (adapter.name === 'DistroKid') {
+                expect(result.status).toBe('processing');
+            } else if (adapter.name === 'TuneCore') {
+                expect(result.status).toBe('pending_review');
+            } else if (adapter.name === 'CDBaby') {
+                expect(result.status).toBe('validating');
+            } else {
+                expect(result.status).toBe('delivered');
+            }
+
             expect(result.distributorReleaseId).toBeDefined();
         });
 

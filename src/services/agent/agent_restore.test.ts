@@ -12,7 +12,8 @@ vi.mock('@/core/store', () => ({
             updateAgentMessage: vi.fn(),
             userProfile: { brandKit: { colors: [], fonts: [], releaseDetails: {} } },
             projects: [],
-            currentOrganizationId: 'org-1'
+            currentOrganizationId: 'org-1',
+            requestApproval: vi.fn().mockResolvedValue(true)
         })
     }
 }));
@@ -52,8 +53,8 @@ describe('Agent Zero Restoration', () => {
         expect(result).toContain('Relevant Memories');
     });
 
-    it('request_approval tool should return waiting message', async () => {
+    it('request_approval tool should return approved message', async () => {
         const result = await TOOL_REGISTRY['request_approval']({ content: 'Post this?' });
-        expect(result).toContain('[APPROVAL REQUESTED]');
+        expect(result).toContain('[APPROVED]');
     });
 });

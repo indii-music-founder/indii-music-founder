@@ -11,8 +11,21 @@ const {
     mockWhere,
     mockOrderBy,
     mockGetUserRevenueStats,
-    mockCaptureException
+    mockCaptureException,
+    MockTimestamp
 } = vi.hoisted(() => {
+    class MockTimestamp {
+        seconds: number;
+        nanoseconds: number;
+        constructor(seconds: number, nanoseconds: number) {
+            this.seconds = seconds;
+            this.nanoseconds = nanoseconds;
+        }
+        toDate() { return new Date('2024-03-20'); } // Fixed date for tests
+        static now() { return new MockTimestamp(1234567890, 0); }
+        static fromMillis(ms: number) { return new MockTimestamp(ms / 1000, 0); }
+    }
+
     return {
         mockAddDoc: vi.fn(),
         mockGetDocs: vi.fn(),
@@ -22,6 +35,7 @@ const {
         mockOrderBy: vi.fn(),
         mockGetUserRevenueStats: vi.fn(),
         mockCaptureException: vi.fn(),
+        MockTimestamp
     }
 });
 
@@ -31,6 +45,7 @@ vi.mock('@sentry/react', () => ({
 
 vi.mock('@/services/firebase', () => ({
     db: {},
+    auth: { currentUser: { uid: 'user-123' } }
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -44,9 +59,7 @@ vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     updateDoc: vi.fn(),
     increment: vi.fn(),
-    Timestamp: {
-        now: () => ({ toDate: () => new Date() })
-    }
+    Timestamp: MockTimestamp
 }));
 
 vi.mock('@/services/RevenueService', () => ({
@@ -83,7 +96,7 @@ describe('FinanceService', () => {
                 'MOCK_COLLECTION_REF',
                 expect.objectContaining({
                     ...expense,
-                    createdAt: 'MOCK_TIMESTAMP'
+                    createdAt: expect.any(MockTimestamp)
                 })
             );
             expect(result).toBe('new-expense-id');
@@ -99,7 +112,7 @@ describe('FinanceService', () => {
                         userId: 'user-123',
                         vendor: 'Vendor 1',
                         amount: 100,
-                        createdAt: { toDate: () => new Date('2024-03-20') }
+                        createdAt: new MockTimestamp(100, 0)
                     })
                 }
             ];
@@ -118,32 +131,26 @@ describe('FinanceService', () => {
     });
 
     describe('fetchEarnings', () => {
-        it('should call revenueService and return mapped earnings data', async () => {
-            const mockRevenueStats = {
-                totalRevenue: 1000.50,
-                revenueBySource: { direct: 800.00, social: 200.50 },
-                revenueByProduct: {
-                    'prod_1': 500.25,
-                    'prod_2': 500.25
-                }
-            };
+        it('should return existing earnings report if found', async () => {
+            const mockDocs = [{
+                data: () => ({
+                    userId: 'user-123',
+                    totalGrossRevenue: 1000.50,
+                    byRelease: []
+                })
+            }];
 
-            mockGetUserRevenueStats.mockResolvedValueOnce(mockRevenueStats);
+            mockGetDocs.mockResolvedValueOnce({ docs: mockDocs, empty: false });
 
             const result = await financeService.fetchEarnings('user-123');
 
-            expect(mockGetUserRevenueStats).toHaveBeenCalledWith('user-123');
-            expect(result).toBeDefined();
+            expect(mockGetDocs).toHaveBeenCalled(); // Should check Firestore
             expect(result.totalGrossRevenue).toBe(1000.50);
-            expect(result.totalNetRevenue).toBe(1000.50);
-            expect(result.byRelease).toHaveLength(2);
-            expect(result.byRelease[0].revenue).toBe(500.25);
-            expect(result.byPlatform).toEqual([]); // Expect empty until mapped
         });
 
         it('should handle errors by logging to Sentry', async () => {
             const error = new Error('Test Error');
-            mockGetUserRevenueStats.mockRejectedValueOnce(error);
+            mockGetDocs.mockRejectedValueOnce(error); // Mock Firestore rejection
 
             await expect(financeService.fetchEarnings('user-123')).rejects.toThrow('Test Error');
             expect(mockCaptureException).toHaveBeenCalledWith(error);

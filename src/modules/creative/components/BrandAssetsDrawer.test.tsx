@@ -51,29 +51,9 @@ describe('BrandAssetsDrawer', () => {
     it('calls onClose when close button is clicked', () => {
         render(<BrandAssetsDrawer onClose={mockOnClose} />);
 
-        // Find close button (X icon)
-        // It's the button in the header.
-        const closeButton = screen.getByRole('button', { name: '' }); // X icon usually has no text, might need better selector
-        // Or find by SVG or parent
-        // Let's rely on the fact it's likely the first button or use a test id if we could, but we can't change code.
-        // The header has "Brand Assets" and a button.
-        // Let's try to find the button inside the header div?
-        // Or just click all buttons? No.
-        // The X icon is from lucide-react.
-        // Let's assume it's the button in the header.
-        // We can find by class name if needed, but that's brittle.
-        // Let's try `screen.getAllByRole('button')[0]`? No.
-
-        // Let's use `container.querySelector` or look for the X icon if rendered as SVG.
-        // But `lucide-react` renders SVGs.
-        // Let's try to find by title if it had one, but it doesn't.
-        // Let's try to find the button that contains the X icon.
-        // Since we can't easily select by icon, let's just use `fireEvent.click` on the button that is likely the close button.
-        // It is the only button in the header.
-        // The header has text "Brand Assets".
-        const header = screen.getByText('Brand Assets').closest('div');
-        const button = header?.querySelector('button');
-        fireEvent.click(button!);
+        // Find close button by aria-label
+        const closeButton = screen.getByLabelText('Close brand assets');
+        fireEvent.click(closeButton);
 
         expect(mockOnClose).toHaveBeenCalled();
     });

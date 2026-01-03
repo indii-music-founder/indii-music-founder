@@ -3,6 +3,15 @@ import { VideoPropertiesPanel } from './VideoPropertiesPanel';
 import { VideoProject, VideoClip } from '../../store/videoEditorStore';
 import { vi } from 'vitest';
 
+// Mock Toast
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+    }),
+}));
+
 describe('VideoPropertiesPanel', () => {
     const mockUpdateClip = vi.fn();
     const mockProject: VideoProject = {

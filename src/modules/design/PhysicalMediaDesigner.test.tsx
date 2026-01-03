@@ -107,7 +107,7 @@ describe('PhysicalMediaDesigner (Banana Pro Edition)', () => {
         expect(titleMatches.length).toBeGreaterThan(0);
 
         // Check if new panels appear
-        expect(screen.getByText('Details')).toBeInTheDocument();
+        expect(screen.getByText('Change Template')).toBeInTheDocument();
     });
 
     test('DesignToolbar interactions', () => {
@@ -134,8 +134,8 @@ describe('PhysicalMediaDesigner (Banana Pro Edition)', () => {
         render(<PhysicalMediaDesigner />);
         fireEvent.click(screen.getByText(/CD Front Cover/));
 
-        // Switch to Layers tab 
-        expect(screen.getByText('Layers')).toBeInTheDocument();
+        // Switch to Layers tab check - using getAll because it appears in tab and panel
+        expect(screen.getAllByText('Layers').length).toBeGreaterThan(0);
 
         // Check default layers
         expect(screen.getByText('Main Banana')).toBeInTheDocument();

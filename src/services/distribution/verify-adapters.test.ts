@@ -9,6 +9,23 @@ import { dsrService } from '@/services/ddex/DSRService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 
+// Mock dependencies
+vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
+    distributionStore: {
+        createDeployment: vi.fn().mockResolvedValue({ id: 'mock-deployment-id' }),
+        getDeploymentsForRelease: vi.fn().mockResolvedValue([]),
+        updateDeploymentStatus: vi.fn(),
+    }
+}));
+
+vi.mock('../EarningsService', () => ({
+    earningsService: {
+        getEarnings: vi.fn().mockResolvedValue(null),
+        getAllEarnings: vi.fn().mockResolvedValue([]),
+    }
+}));
+
+
 describe('Distribution System Verification', () => {
     const mockMetadata: ExtendedGoldenMetadata = {
         trackTitle: 'Neon Nights',
@@ -32,7 +49,8 @@ describe('Distribution System Verification', () => {
         aiGeneratedContent: {
             isFullyAIGenerated: false,
             isPartiallyAIGenerated: false
-        }
+        },
+        upc: '123456789012' // Added UPC for Symphonic validation
     } as ExtendedGoldenMetadata;
 
     const mockAssets: ReleaseAssets = {
@@ -99,7 +117,7 @@ describe('Distribution System Verification', () => {
 
     describe('TuneCore Adapter', () => {
         it('should connect successfully', async () => {
-            await expect(tunecore.connect({ accessToken: 'mock-token' })).resolves.not.toThrow();
+            await expect(tunecore.connect({ apiKey: 'mock-key', username: 'test-user' })).resolves.not.toThrow();
         });
 
         it('should create release', async () => {

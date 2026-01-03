@@ -3,7 +3,7 @@ import systemPrompt from '@agents/road/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 export const RoadAgent: AgentConfig = {
-    id: 'road-manager',
+    id: 'road',
     name: 'Road Manager',
     description: 'Manages logistics and tour planning.',
     color: 'bg-yellow-500',

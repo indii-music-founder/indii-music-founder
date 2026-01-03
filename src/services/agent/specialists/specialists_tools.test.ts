@@ -47,7 +47,7 @@ describe('Specialist Agent Tools', () => {
     });
 
     it('RoadAgent should have ops tools', () => {
-        const agent = agentRegistry.get('road-manager');
+        const agent = agentRegistry.get('road');
         if (!agent) throw new Error('Road agent not found');
 
         const tools = (agent as any).tools || [];
