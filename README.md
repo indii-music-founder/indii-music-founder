@@ -34,22 +34,22 @@ indiiOS is a multi-tenant, AI-native creative platform that unifies image genera
 
 ### Creative Studios
 
-| Module | Description |
-|--------|-------------|
+| Module              | Description                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------- |
 | **Creative Studio** | Infinite canvas for AI image generation, editing, and product visualization ("Showroom") |
-| **Video Studio** | Idea-to-brief-to-render pipeline with QA checkpoints ("Director's Cut") using Veo 3.1 |
-| **Music Studio** | Audio analysis tools (BPM, key, energy extraction) powered by Essentia.js |
-| **Workflow Lab** | Node-based automation editor to chain AI tasks across suites |
+| **Video Studio**    | Idea-to-brief-to-render pipeline with QA checkpoints ("Director's Cut") using Veo 3.1    |
+| **Music Studio**    | Audio analysis tools (BPM, key, energy extraction) powered by Essentia.js                |
+| **Workflow Lab**    | Node-based automation editor to chain AI tasks across suites                             |
 
 ### Business Operations
 
-| Module | Description |
-|--------|-------------|
+| Module                        | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
 | **Publishing & Distribution** | Multi-distributor release management with DDEX ERN/DSR support |
-| **Finance** | Revenue tracking, royalty management, and financial analytics |
-| **Marketing** | Campaign management, brand assets, and AI copywriting |
-| **Legal** | Contract review, rights management, and compliance tools |
-| **Touring** | Road management and tour planning |
+| **Finance**                   | Revenue tracking, royalty management, and financial analytics  |
+| **Marketing**                 | Campaign management, brand assets, and AI copywriting          |
+| **Legal**                     | Contract review, rights management, and compliance tools       |
+| **Touring**                   | Road management and tour planning                              |
 
 ### Distribution Integrations
 
@@ -66,9 +66,15 @@ indiiOS is a multi-tenant, AI-native creative platform that unifies image genera
 - **Autonomous Browser Agent** - Fully self-driving Puppeteer instance powered by `gemini-2.5-pro-ui-checkpoint` for real-time web discovery and data extraction.
 - **Context Safety** - Firestore-scoped lookups ensure responses stay within the active workspace
 
----
+### Electron Desktop Application
 
-## Architecture
+- **Browser Agent Integration** - Native Puppeteer IPC for web discovery and automation
+- **SFTP/SSH2 Integration** - Direct distributor file uploads and DDEX delivery
+- **Keytar Integration** - Secure credential storage in OS keychain
+- **Platform-Specific Features** - File system access, native dialogs, and tray notifications
+- **Security Hardened** - Sandbox enabled, Context Isolation active, strict Content Security Policy
+
+---
 
 ### Hub-and-Spoke Agent Model
 
@@ -93,11 +99,11 @@ indiiOS is a multi-tenant, AI-native creative platform that unifies image genera
 
 ### Frontend/Backend Split
 
-| Layer | Technologies | Purpose |
-|-------|--------------|---------|
-| **Frontend** | React 19, Vite, Zustand | UI, real-time chat, canvas editing |
-| **Backend** | Firebase Functions (Node.js 22) | Heavy AI workloads, rate limiting, security |
-| **AI** | Gemini 3.x, Veo 3.1, Vertex AI | Text, image, and video generation |
+| Layer        | Technologies                    | Purpose                                     |
+| ------------ | ------------------------------- | ------------------------------------------- |
+| **Frontend** | React 19, Vite, Zustand         | UI, real-time chat, canvas editing          |
+| **Backend**  | Firebase Functions (Node.js 22) | Heavy AI workloads, rate limiting, security |
+| **AI**       | Gemini 3.x, Veo 3.1, Vertex AI  | Text, image, and video generation           |
 
 ---
 
@@ -129,13 +135,13 @@ indiiOS is a multi-tenant, AI-native creative platform that unifies image genera
 
 ### AI Models
 
-| Purpose | Model |
-|---------|-------|
-| Complex Reasoning | `gemini-3-pro-preview` |
-| Fast Tasks | `gemini-3-flash-preview` |
-| Image Generation | `gemini-3-pro-image-preview` |
-| Video Generation | `veo-3.1-generate-preview` |
-| Browser Agent | `gemini-2.5-pro-ui-checkpoint` |
+| Purpose           | Model                          |
+| ----------------- | ------------------------------ |
+| Complex Reasoning | `gemini-3-pro-preview`         |
+| Fast Tasks        | `gemini-3-flash-preview`       |
+| Image Generation  | `gemini-3-pro-image-preview`   |
+| Video Generation  | `veo-3.1-generate-preview`     |
+| Browser Agent     | `gemini-2.5-pro-ui-checkpoint` |
 
 ---
 
@@ -271,16 +277,16 @@ indiiOS-Alpha-Electron/
 
 ### Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Build production bundle |
-| `npm run electron:dev` | Run Electron in dev mode |
-| `npm run electron:build` | Build Electron app |
-| `npm run test` | Run Vitest unit tests |
-| `npm run test:e2e` | Run Playwright E2E tests |
-| `npm run lint` | Lint with ESLint |
-| `npm run lint:fix` | Auto-fix lint issues |
+| Command                  | Description              |
+| ------------------------ | ------------------------ |
+| `npm run dev`            | Start Vite dev server    |
+| `npm run build`          | Build production bundle  |
+| `npm run electron:dev`   | Run Electron in dev mode |
+| `npm run electron:build` | Build Electron app       |
+| `npm run test`           | Run Vitest unit tests    |
+| `npm run test:e2e`       | Run Playwright E2E tests |
+| `npm run lint`           | Lint with ESLint         |
+| `npm run lint:fix`       | Auto-fix lint issues     |
 
 ### Code Conventions
 
@@ -292,14 +298,14 @@ indiiOS-Alpha-Electron/
 ### Store Architecture
 
 ```typescript
-import { useStore } from '@/core/store';
+import { useStore } from "@/core/store";
 
 function MyComponent() {
   // Select only needed state
   const activeModule = useStore((state) => state.activeModule);
   const { user, activeOrg } = useStore((state) => ({
     user: state.user,
-    activeOrg: state.activeOrg
+    activeOrg: state.activeOrg,
   }));
 }
 ```
@@ -346,10 +352,10 @@ npx playwright test --debug
 
 ### Firebase Hosting
 
-| Target | Site ID | URL |
-|--------|---------|-----|
-| Landing | `indiios-v-1-1` | <https://indiios-v-1-1.web.app> |
-| Studio | `indiios-studio` | <https://indiios-studio.web.app> |
+| Target  | Site ID          | URL                              |
+| ------- | ---------------- | -------------------------------- |
+| Landing | `indiios-v-1-1`  | <https://indiios-v-1-1.web.app>  |
+| Studio  | `indiios-studio` | <https://indiios-studio.web.app> |
 
 ### Manual Deployment
 
@@ -379,16 +385,16 @@ Automated deployment triggers on push to `main` branch. See `.github/workflows/d
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [CLAUDE.md](./CLAUDE.md) | Comprehensive AI assistant guide |
-| [ROADMAP.md](./ROADMAP.md) | Feature roadmap and technical debt |
-| [MODEL_POLICY.md](./MODEL_POLICY.md) | AI model usage requirements |
-| [RULES.md](./RULES.md) | Agent Zero protocol and design standards |
-| [docs/AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke design details |
-| [docs/AUTONOMOUS_BROWSER_AGENT.md](./docs/AUTONOMOUS_BROWSER_AGENT.md) | Self-driving browser internals |
-| [docs/BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md) | Firebase + Vertex AI service map |
-| [docs/DDEX_IMPLEMENTATION_PLAN.md](./docs/DDEX_IMPLEMENTATION_PLAN.md) | Distribution integration details |
+| Document                                                                 | Description                              |
+| ------------------------------------------------------------------------ | ---------------------------------------- |
+| [CLAUDE.md](./CLAUDE.md)                                                 | Comprehensive AI assistant guide         |
+| [ROADMAP.md](./ROADMAP.md)                                               | Feature roadmap and technical debt       |
+| [MODEL_POLICY.md](./MODEL_POLICY.md)                                     | AI model usage requirements              |
+| [RULES.md](./RULES.md)                                                   | Agent Zero protocol and design standards |
+| [docs/AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke design details             |
+| [docs/AUTONOMOUS_BROWSER_AGENT.md](./docs/AUTONOMOUS_BROWSER_AGENT.md)   | Self-driving browser internals           |
+| [docs/BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)           | Firebase + Vertex AI service map         |
+| [docs/DDEX_IMPLEMENTATION_PLAN.md](./docs/DDEX_IMPLEMENTATION_PLAN.md)   | Distribution integration details         |
 
 ---
 
