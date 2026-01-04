@@ -75,7 +75,7 @@ export class FraudDetectionService {
                     try {
                         await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
                     } catch (e) {
-                         console.error('[FraudDetection] Failed to persist alert', e);
+                        console.error('[FraudDetection] Failed to persist alert', e);
                     }
 
                     break; // Flag once per user per batch
@@ -115,7 +115,7 @@ export class FraudDetectionService {
      * Now backed by 'content_rules' collection for known infringements in the demo.
      */
     static async checkCopyright(audioFileUrl: string): Promise<{ safe: boolean; match?: string }> {
-        console.log(`[FraudDetection] Scanning ${audioFileUrl} with ACR...`);
+        console.info(`[FraudDetection] Scanning ${audioFileUrl} with ACR...`);
 
         try {
             // Check against persisted rules instead of hardcoded strings
@@ -131,7 +131,7 @@ export class FraudDetectionService {
             for (const doc of snapshot.docs) {
                 const rule = doc.data();
                 if (rule.pattern && audioFileUrl.includes(rule.pattern)) {
-                     return {
+                    return {
                         safe: false,
                         match: rule.matchMessage || 'Copyright Violation Detected'
                     };
@@ -153,10 +153,10 @@ export class FraudDetectionService {
      * - Detects "nightcore" or "chopped and screwed" styles
      */
     static async checkBroadSpectrum(audioFileUrl: string): Promise<{ safe: boolean; details?: string }> {
-        console.log(`[FraudDetection] Running Broad Spectrum analysis on ${audioFileUrl}...`);
+        console.info(`[FraudDetection] Running Broad Spectrum analysis on ${audioFileUrl}...`);
 
         try {
-             // We can also make this rule-based
+            // We can also make this rule-based
             const q = query(
                 collection(db, 'content_rules'),
                 where('type', '==', 'broad_spectrum')
@@ -166,14 +166,14 @@ export class FraudDetectionService {
             for (const doc of snapshot.docs) {
                 const rule = doc.data();
                 if (rule.pattern && audioFileUrl.includes(rule.pattern)) {
-                     return {
+                    return {
                         safe: false,
                         details: rule.details || 'Detected: Transformed Audio.'
                     };
                 }
             }
         } catch (e) {
-             console.error('[FraudDetection] Failed to query broad spectrum rules', e);
+            console.error('[FraudDetection] Failed to query broad spectrum rules', e);
         }
 
         return { safe: true };

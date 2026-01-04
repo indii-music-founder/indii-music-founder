@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 async function verifySymphonicIntegration() {
-    console.log('🚀 Verifying Symphonic Integration...\n');
+    console.info('🚀 Verifying Symphonic Integration...\n');
 
     // 1. Setup Adapter
     const symphonic = new SymphonicAdapter();
@@ -65,13 +65,13 @@ async function verifySymphonicIntegration() {
     };
 
     // 3. Execute Release Creation
-    console.log('📦 Creating Release Package...');
+    console.info('📦 Creating Release Package...');
     const result = await symphonic.createRelease(mockMetadata, mockAssets);
 
     // 4. Verify Result
     if (result.success && result.status === 'delivered') {
-        console.log(`✅ Success! Release ID: ${result.releaseId}`);
-        console.log(`✅ Status: ${result.status}`);
+        console.info(`✅ Success! Release ID: ${result.releaseId}`);
+        console.info(`✅ Status: ${result.status}`);
     } else {
         console.error('❌ Failed:', result);
     }
@@ -85,7 +85,7 @@ async function verifySymphonicIntegration() {
     if (fs.existsSync(dummyAudioPath)) fs.unlinkSync(dummyAudioPath);
     if (fs.existsSync(dummyCoverPath)) fs.unlinkSync(dummyCoverPath);
 
-    console.log('\n✨ Verification Complete!');
+    console.info('\n✨ Verification Complete!');
 }
 
 verifySymphonicIntegration().catch(console.error);

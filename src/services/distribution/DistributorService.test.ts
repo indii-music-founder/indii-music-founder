@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DistributorService } from './DistributorService';
+import { distributionStore } from './DistributionPersistenceService';
 import { currencyConversionService } from './CurrencyConversionService';
+import { useStore } from '@/core/store';
 import { IDistributorAdapter, DistributorEarnings, DateRange } from './types/distributor';
 
 // Mock CurrencyConversionService
@@ -25,6 +27,16 @@ vi.mock('@/services/security/CredentialService', () => ({
   credentialService: {
     saveCredentials: vi.fn(),
     getCredentials: vi.fn(),
+  }
+}));
+
+// Mock Store
+vi.mock('@/core/store', () => ({
+  useStore: {
+    getState: vi.fn(() => ({
+      userProfile: { id: 'test-user-id' },
+      currentOrganizationId: 'test-org-id'
+    }))
   }
 }));
 
@@ -116,10 +128,10 @@ describe('DistributorService.getAggregatedEarnings', () => {
     // Mock Currency Conversion
     // 1 USD = 1 USD
     (currencyConversionService.convert as any).mockImplementation((amount: number, from: string, to: string) => {
-        if (from === to) return Promise.resolve(amount);
-        if (from === 'USD' && to === 'EUR') return Promise.resolve(amount * 0.92);
-        if (from === 'EUR' && to === 'USD') return Promise.resolve(amount * 1.08); // Approx
-        return Promise.resolve(amount);
+      if (from === to) return Promise.resolve(amount);
+      if (from === 'USD' && to === 'EUR') return Promise.resolve(amount * 0.92);
+      if (from === 'EUR' && to === 'USD') return Promise.resolve(amount * 1.08); // Approx
+      return Promise.resolve(amount);
     });
 
     // Act: Call getAggregatedEarnings
@@ -138,8 +150,56 @@ describe('DistributorService.getAggregatedEarnings', () => {
     expect(result.currencyCode).toBe('USD');
     expect(result.totalGrossRevenue).toBeCloseTo(208, 0);
 
-    // Now verify we can change the target currency
     const resultEUR = await DistributorService.getAggregatedEarnings(releaseId, period, 'EUR');
     expect(resultEUR.currencyCode).toBe('EUR');
+  });
+});
+
+describe('DistributorService.createRelease', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    DistributorService.registerAdapter(mockAdapter1);
+    (mockAdapter1.createRelease as any).mockResolvedValue({
+      success: true,
+      status: 'delivered',
+      distributorReleaseId: 'DIST-123'
+    });
+    (mockAdapter1.validateMetadata as any).mockResolvedValue({ isValid: true, errors: [], warnings: [] });
+    (mockAdapter1.validateAssets as any).mockResolvedValue({ isValid: true, errors: [], warnings: [] });
+
+    // Mock store creation return
+    const mockDeployment = { id: 'deploy-123' };
+    (distributionStore.createDeployment as any).mockResolvedValue(mockDeployment);
+  });
+
+  it('should pass userId and orgId to persistence service', async () => {
+    // Arrange
+    const metadata = { id: 'rel-1', trackTitle: 'Test', artistName: 'Artist' } as any;
+    const assets = { coverArt: { url: 'http://test.com/img.jpg' } } as any;
+
+    // Act
+    await DistributorService.createRelease('distrokid', metadata, assets);
+
+    // Assert
+    expect(distributionStore.createDeployment).toHaveBeenCalledWith(
+      'rel-1',            // internalId
+      'test-user-id',     // userId
+      'test-org-id',      // orgId
+      'distrokid',        // distributorId
+      'validating',       // status
+      expect.anything()   // snapshot
+    );
+  });
+
+  it('should throw if userProfile is missing', async () => {
+    // Arrange
+    (useStore.getState as any).mockReturnValueOnce({ userProfile: null, currentOrganizationId: 'test-org-id' });
+
+    const metadata = { id: 'rel-1' } as any;
+    const assets = {} as any;
+
+    // Act & Assert
+    await expect(DistributorService.createRelease('distrokid', metadata, assets))
+      .rejects.toThrow('User or Organization not identified');
   });
 });

@@ -234,7 +234,7 @@ export class RevenueService {
         ...entry,
         createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp()
       });
-      console.log('[RevenueService] Sale recorded successfully');
+      console.info('[RevenueService] Sale recorded successfully');
     } catch (error) {
       console.error('[RevenueService] Failed to record sale:', error);
       throw error;
@@ -245,7 +245,7 @@ export class RevenueService {
    * Seed initial transactions for a new user/org
    */
   private async seedDatabase(userId: string) {
-    console.log(`[RevenueService] Seeding database for ${userId}...`);
+    console.info(`[RevenueService] Seeding database for ${userId}...`);
 
     const initialSales: RevenueEntry[] = [
       {

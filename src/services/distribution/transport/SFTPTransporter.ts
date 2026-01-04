@@ -24,18 +24,18 @@ export class SFTPTransporter {
     async connect(config: SFTPConfig): Promise<void> {
         this.config = config;
         if (this.dryRun) {
-            console.log('[SFTP] Dry run connected.');
+            console.info('[SFTP] Dry run connected.');
             this.connected = true;
             return;
         }
 
         try {
-            console.log(`[SFTP] Connecting to ${config.host}:${config.port || 22}...`);
+            console.info(`[SFTP] Connecting to ${config.host}:${config.port || 22}...`);
             // Use Electron Bridge
             if (window.electronAPI?.sftp) {
                 await window.electronAPI.sftp.connect(config);
                 this.connected = true;
-                console.log('[SFTP] Connected via Electron.');
+                console.info('[SFTP] Connected via Electron.');
             } else {
                 throw new Error('SFTP not available in this environment');
             }
@@ -52,10 +52,10 @@ export class SFTPTransporter {
     async uploadDirectory(localPath: string, remotePath: string): Promise<string[]> {
         if (!this.connected) throw new Error('SFTP client not connected');
 
-        console.log(`[SFTP] Uploading directory: ${localPath} -> ${remotePath}`);
+        console.info(`[SFTP] Uploading directory: ${localPath} -> ${remotePath}`);
 
         if (this.dryRun) {
-            console.log('[SFTP] Dry run upload complete.');
+            console.info('[SFTP] Dry run upload complete.');
             return ['dry_run_file_1.xml', 'dry_run_file_2.mp3'];
         }
 
@@ -63,7 +63,7 @@ export class SFTPTransporter {
             if (window.electronAPI?.sftp) {
                 const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath);
                 if (result.success && result.files) {
-                    console.log(`[SFTP] Upload complete: ${remotePath}`);
+                    console.info(`[SFTP] Upload complete: ${remotePath}`);
                     return result.files;
                 } else {
                     throw new Error(result.error || 'Upload failed');
@@ -97,7 +97,7 @@ export class SFTPTransporter {
             }
             this.connected = false;
             this.config = null;
-            console.log('[SFTP] Disconnected.');
+            console.info('[SFTP] Disconnected.');
         }
     }
 }

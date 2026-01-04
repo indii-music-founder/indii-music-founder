@@ -286,7 +286,7 @@ export class DeliveryService {
         packagePath: string;
     }): Promise<DeliveryResult> {
         const { releaseId, distributorId, packagePath } = options;
-        console.log(`[DeliveryService] Starting delivery for ${releaseId} to ${distributorId}...`);
+        console.info(`[DeliveryService] Starting delivery for ${releaseId} to ${distributorId}...`);
 
         const credentials = await credentialService.getCredentials(distributorId);
         if (!credentials) {

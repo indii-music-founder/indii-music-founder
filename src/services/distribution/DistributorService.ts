@@ -25,6 +25,7 @@ import { distributionStore } from './DistributionPersistenceService';
 import { credentialService } from '@/services/security/CredentialService';
 import { deliveryService, DeliveryResult } from './DeliveryService';
 import { currencyConversionService } from './CurrencyConversionService';
+import { useStore } from '@/core/store';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
@@ -54,7 +55,7 @@ class DistributorServiceImpl {
    */
   registerAdapter(adapter: IDistributorAdapter): void {
     this.adapters.set(adapter.id, adapter);
-    console.log(`[DistributorService] Registered adapter: ${adapter.name}`);
+    console.info(`[DistributorService] Registered adapter: ${adapter.name}`);
   }
 
   /**
@@ -102,12 +103,12 @@ class DistributorServiceImpl {
     // 2. Attempt real connection via adapter
     try {
       await adapter.connect(finalCredentials);
-      console.log(`[DistributorService] Connection verified for ${adapter.name}`);
+      console.info(`[DistributorService] Connection verified for ${adapter.name}`);
 
       // 3. Save successful credentials if they were passed in
       if (credentials) {
         await credentialService.saveCredentials(distributorId, credentials as Record<string, string | undefined>);
-        console.log(`[DistributorService] Credentials saved for ${distributorId}`);
+        console.info(`[DistributorService] Credentials saved for ${distributorId}`);
       }
     } catch (error) {
       console.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
@@ -199,12 +200,29 @@ class DistributorServiceImpl {
 
     const internalId = metadata.id || 'unknown-release-id';
 
+    // Get userId and orgId from store
+    const { userProfile, currentOrganizationId } = useStore.getState();
+
+    if (!userProfile?.id || !currentOrganizationId) {
+      throw new Error('User or Organization not identified. Cannot create deployment.');
+    }
+
+    const userId = userProfile.id;
+    const orgId = currentOrganizationId;
+
     // 1. Create Persistence Record (Pending)
-    const deployment = await this.store.createDeployment(internalId, distributorId, 'validating', {
-      title: metadata.releaseTitle || metadata.trackTitle,
-      artist: metadata.artistName,
-      coverArtUrl: assets.coverArt?.url
-    });
+    const deployment = await this.store.createDeployment(
+      internalId,
+      userId,
+      orgId,
+      distributorId,
+      'validating',
+      {
+        title: metadata.releaseTitle || metadata.trackTitle,
+        artist: metadata.artistName,
+        coverArtUrl: assets.coverArt?.url
+      }
+    );
 
     try {
       // 2. Validate
@@ -485,7 +503,17 @@ class DistributorServiceImpl {
    * Get all releases with their deployment statuses for the dashboard
    */
   async getAllReleases(): Promise<DashboardRelease[]> {
-    const deployments = await this.store.getAllDeployments();
+    // Get userId and orgId from store to filter deployments
+    const { userProfile, currentOrganizationId } = useStore.getState();
+    if (!userProfile?.id || !currentOrganizationId) {
+      console.warn('[DistributorService] No user/org context for getAllReleases');
+      return [];
+    }
+
+    const deployments = await this.store.getAllDeployments({
+      userId: userProfile.id,
+      orgId: currentOrganizationId
+    });
     const grouped: Record<string, DashboardRelease> = {};
 
     deployments.forEach((d: ReleaseDeployment) => {

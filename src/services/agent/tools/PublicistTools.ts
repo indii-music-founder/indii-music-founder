@@ -1,8 +1,9 @@
-
-import { AI } from '@/services/ai/AIService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // --- Validation Schemas ---
 
@@ -42,92 +43,63 @@ const PitchStorySchema = z.object({
 
 // --- Tools Implementation ---
 
-export const PublicistTools = {
-    write_press_release: async ({ topic, angle, quotes_from }: { topic: string; angle?: string; quotes_from?: string[] }) => {
+export const PublicistTools: Record<string, AnyToolFunction> = {
+    write_press_release: wrapTool('write_press_release', async ({ topic, angle, quotes_from }: { topic: string; angle?: string; quotes_from?: string[] }) => {
         const schema = zodToJsonSchema(WritePressReleaseSchema);
         const prompt = `
         You are a Senior Publicist. Write a Press Release.
         Topic: ${topic}
         ${angle ? `Angle: ${angle}` : ''}
         ${quotes_from ? `Include quotes from: ${quotes_from.join(', ')}` : ''}
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(WritePressReleaseSchema.parse(data));
-        } catch (error) {
-            console.error('PublicistTools.write_press_release error:', error);
-            // Fallback
-            return JSON.stringify({
-                headline: `Press Release: ${topic}`,
-                dateline: new Date().toLocaleDateString(),
-                introduction: "Start of the press release...",
-                body_paragraphs: ["Details to follow."],
-                quotes: [],
-                boilerplate: "About the company...",
-                contact_info: { name: "Media Contact", email: "press@example.com" }
-            });
-        }
-    },
+        const data = await firebaseAI.generateStructuredData(
+            [{ text: prompt }],
+            schema as any
+        );
 
-    generate_crisis_response: async ({ situation, tone }: { situation: string; tone?: string }) => {
+        const validated = WritePressReleaseSchema.parse(data);
+        return toolSuccess(validated, `Press release generated: ${validated.headline}`);
+    }),
+
+    generate_crisis_response: wrapTool('generate_crisis_response', async ({ situation, tone }: { situation: string; tone?: string }) => {
         const schema = zodToJsonSchema(GenerateCrisisResponseSchema);
         const prompt = `
         You are a Crisis Manager. Develop a response strategy.
         Situation: ${situation}
         Tone: ${tone || 'Professional, empathetic, and firm'}.
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(GenerateCrisisResponseSchema.parse(data));
-        } catch (error) {
-            console.error('PublicistTools.generate_crisis_response error:', error);
-            return JSON.stringify({
-                severity_assessment: "HIGH",
-                strategy: "Acknowledge and investigate.",
-                public_statement: "We are aware of the situation regarding " + situation,
-                internal_talking_points: ["Stay calm", "Do not speculate"],
-                actions_to_take: ["Gather facts"]
-            });
-        }
-    },
+        const data = await firebaseAI.generateStructuredData(
+            [{ text: prompt }],
+            schema as any
+        );
 
-    pitch_story: async ({ story_summary, recipient_type }: { story_summary: string; recipient_type?: string }) => {
+        const validated = GenerateCrisisResponseSchema.parse(data);
+        return toolSuccess(validated, "Crisis response strategy developed.");
+    }),
+
+    pitch_story: wrapTool('pitch_story', async ({ story_summary, recipient_type }: { story_summary: string; recipient_type?: string }) => {
         const schema = zodToJsonSchema(PitchStorySchema);
         const prompt = `
         You are a PR Specialist. Write an email pitch.
         Story: ${story_summary}
         Recipient: ${recipient_type || 'General Media'}.
-
-        Output a strict JSON object (no markdown) matching this schema:
-        ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(PitchStorySchema.parse(data));
-        } catch (error) {
-            console.error('PublicistTools.pitch_story error:', error);
-            return JSON.stringify({
-                subject_line: "Story Pitch",
-                hook: "Interesting story...",
-                body: story_summary,
-                call_to_action: "Let me know if you are interested.",
-                angle: "General",
-                target_outlets: ["Blogs", "News"]
-            });
-        }
-    }
+        const data = await firebaseAI.generateStructuredData(
+            [{ text: prompt }],
+            schema as any
+        );
+
+        const validated = PitchStorySchema.parse(data);
+        return toolSuccess(validated, `Email pitch created: ${validated.subject_line}`);
+    })
 };
 
-// Aliases
-export const write_press_release = PublicistTools.write_press_release;
-export const generate_crisis_response = PublicistTools.generate_crisis_response;
-export const pitch_story = PublicistTools.pitch_story;
+// Aliases for historical reasons if needed, but the object is the preferred way
+export const {
+    write_press_release,
+    generate_crisis_response,
+    pitch_story
+} = PublicistTools;

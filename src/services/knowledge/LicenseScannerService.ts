@@ -24,7 +24,7 @@ export class LicenseScannerService {
                 throw new Error('Agent API not available. Are you in the Electron app?');
             }
 
-            console.log('[LicenseScanner] Navigating via Agent:', url);
+            console.info('[LicenseScanner] Navigating via Agent:', url);
             const result = await window.electronAPI.agent.navigateAndExtract(url);
 
             if (!result.success || !result.text) {

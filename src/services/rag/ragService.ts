@@ -133,7 +133,7 @@ export async function processForKnowledgeBase(
     try {
         // Direct upload to Files API - handles PDF/MD/TXT natively now
         const file = await GeminiRetrieval.uploadFile(displayTitle, content);
-        console.log(`[RAG] Ingested native file: ${file.name} (${file.mimeType})`);
+        console.info(`[RAG] Ingested native file: ${file.name} (${file.mimeType})`);
 
         return {
             title: displayTitle,

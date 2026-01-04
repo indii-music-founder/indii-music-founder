@@ -122,26 +122,29 @@ export type ToolFunctionArgs = Record<string, unknown>;
 
 export interface ToolFunctionResult {
     success: boolean;
-    data?: unknown;
+    data?: any;
     error?: string;
     message?: string;
+    /** Metadata for tracing and debugging (e.g. latency, model version used) */
+    metadata?: Record<string, unknown>;
 }
 
 /**
  * Tool function type - accepts any args that extend ToolFunctionArgs
- * The runtime will validate args against the tool schema
+ * The runtime will validate args against the tool schema.
+ * All tools MUST return a ToolFunctionResult for standardization.
  */
 export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
     args: TArgs,
     context?: AgentContext
-) => Promise<ToolFunctionResult | string>;
+) => Promise<ToolFunctionResult>;
 
 /**
  * Generic tool function type for agent configs
  * Uses contravariance to accept more specific arg types
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyToolFunction = (args: any, context?: AgentContext) => Promise<ToolFunctionResult | string>;
+export type AnyToolFunction = (args: any, context?: AgentContext) => Promise<ToolFunctionResult>;
 
 // ============================================================================
 // Agent Configuration Types

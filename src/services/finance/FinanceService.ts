@@ -104,7 +104,7 @@ export class FinanceService {
       }
 
       // If no data, seed with simulated persistent data
-      console.log("No persistent earnings report found, seeding initial report for user:", userId);
+      console.info("[FinanceService] No persistent earnings report found, seeding initial report for user:", userId);
 
       const initialData: DSREarningsSummary & { userId: string, createdAt: any } = {
         userId,

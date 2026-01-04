@@ -7,6 +7,8 @@ import type { DistributorId, ReleaseStatus, ValidationError } from './distributo
 export interface ReleaseDeployment {
     id: string; // Unique deployment ID (UUID)
     internalReleaseId: string; // Link to the GoldenMetadata/Album ID
+    userId: string; // Owner of the deployment
+    orgId: string; // Organization the deployment belongs to
     distributorId: DistributorId;
     status: ReleaseStatus;
 
@@ -38,6 +40,8 @@ export interface ReleaseDeployment {
  * Filter options for querying deployments
  */
 export interface DeploymentFilter {
+    userId?: string;
+    orgId?: string;
     distributorId?: DistributorId;
     internalReleaseId?: string;
     status?: ReleaseStatus;

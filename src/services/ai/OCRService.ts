@@ -19,7 +19,6 @@ export const OCRService = {
                     const percent = Math.round(p * 100);
                     onProgress(`${m.status} (${percent}%)`);
                 }
-                console.log(m);
             }
         });
 
@@ -32,7 +31,7 @@ export const OCRService = {
             const result = await Promise.race([
                 worker.recognize(file),
                 timeoutPromise
-            ]) as any;
+            ]) as { data: { text: string } };
 
             return result.data.text;
         } finally {

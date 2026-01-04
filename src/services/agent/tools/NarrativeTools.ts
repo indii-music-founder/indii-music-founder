@@ -1,34 +1,14 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
-import type { ToolFunctionArgs } from '../types';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // ============================================================================
 // Types for NarrativeTools
 // ============================================================================
 
-interface GenerateVisualScriptArgs extends ToolFunctionArgs {
-    synopsis: string;
-}
-
-// ============================================================================
-// Helper to extract error message
-// ============================================================================
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    return 'An unknown error occurred';
-}
-
-// ============================================================================
-// NarrativeTools Implementation
-// ============================================================================
-
-export const NarrativeTools = {
-    generate_visual_script: async (args: GenerateVisualScriptArgs): Promise<string> => {
-        try {
-            const systemPrompt = `
+export const NarrativeTools: Record<string, AnyToolFunction> = {
+    generate_visual_script: wrapTool('generate_visual_script', async (args: { synopsis: string }) => {
+        const systemPrompt = `
 You are a master filmmaker and narrative structuralist.
 Your task is to convert a raw synopsis into a structured 9-beat visual script.
 Focus on visual storytelling, camera angles, and emotional beats.
@@ -49,45 +29,41 @@ Return ONLY a valid JSON object with the following structure:
   ]
 }
 `;
-            const prompt = `Synopsis: ${args.synopsis}`;
+        const prompt = `Synopsis: ${args.synopsis}`;
 
-            const schema = {
-                type: "object" as const,
-                nullable: false,
-                properties: {
-                    title: { type: "string" as const, nullable: false },
-                    logline: { type: "string" as const, nullable: true },
-                    beats: {
-                        type: "array" as const,
+        const schema = {
+            type: "object" as const,
+            nullable: false,
+            properties: {
+                title: { type: "string" as const, nullable: false },
+                logline: { type: "string" as const, nullable: true },
+                beats: {
+                    type: "array" as const,
+                    nullable: false,
+                    items: {
+                        type: "object" as const,
                         nullable: false,
-                        items: {
-                            type: "object" as const,
-                            nullable: false,
-                            properties: {
-                                beat: { type: "number" as const, nullable: false },
-                                name: { type: "string" as const, nullable: false },
-                                description: { type: "string" as const, nullable: false },
-                                camera: { type: "string" as const, nullable: true },
-                                mood: { type: "string" as const, nullable: true }
-                            },
-                            required: ["beat", "name", "description"] as const
-                        }
+                        properties: {
+                            beat: { type: "number" as const, nullable: false },
+                            name: { type: "string" as const, nullable: false },
+                            description: { type: "string" as const, nullable: false },
+                            camera: { type: "string" as const, nullable: true },
+                            mood: { type: "string" as const, nullable: true }
+                        },
+                        required: ["beat", "name", "description"] as const
                     }
-                },
-                required: ["title", "beats"] as const
-            };
+                }
+            },
+            required: ["title", "beats"] as const
+        };
 
-            const response = await firebaseAI.generateStructuredData(
-                [{ text: prompt }],
-                schema,
-                undefined,
-                systemPrompt
-            );
+        const response = await firebaseAI.generateStructuredData(
+            [{ text: prompt }],
+            schema,
+            undefined,
+            systemPrompt
+        ) as { title: string; beats: any[]; logline?: string };
 
-            return JSON.stringify(response, null, 2);
-
-        } catch (e: unknown) {
-            return `Failed to generate script: ${getErrorMessage(e)}`;
-        }
-    }
+        return toolSuccess(response, `Successfully generated a visual script: ${response.title}`);
+    })
 };

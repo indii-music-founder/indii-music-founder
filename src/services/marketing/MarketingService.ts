@@ -86,7 +86,7 @@ export class MarketingService {
         );
 
         const snapshot = await getDocs(q);
-        console.log('DEBUG: Campaigns Snapshot Size:', snapshot.docs.length);
+
         return snapshot.docs.map(doc => {
             const data = doc.data();
             // validate data structure if needed, or cast with caution
@@ -160,7 +160,7 @@ export class MarketingService {
         // Remove undefined fields to prevent firestore errors? Firestore handles undefined by ignoring or errors depending on config
         // But let's assume valid partial
         // Also remove 'id' if present in updates
-        const { id: _, ...cleanUpdates } = updates as any;
+        const { id: _id, ...cleanUpdates } = updates;
         await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
     }
 }

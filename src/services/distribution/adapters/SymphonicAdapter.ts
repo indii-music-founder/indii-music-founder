@@ -63,7 +63,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             throw new Error('Not connected to Symphonic');
         }
 
-        console.log('[Symphonic] Initiating release delivery:', metadata.trackTitle);
+        console.info('[Symphonic] Initiating release delivery:', metadata.trackTitle);
         const releaseId = `SYM-${Date.now()}`;
 
         try {
@@ -71,19 +71,12 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
 
             if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
-                console.log('[Symphonic] Delivering via Electron SFTP IPC...');
+                console.info('[Symphonic] Delivering via Electron SFTP IPC...');
                 // Here we would use the already connected SFTP session
             }
 
             // Mock delay
             await delay(1000);
-
-            // Persist
-            await distributionStore.createDeployment(releaseId, this.id, 'delivered', {
-                title: metadata.trackTitle,
-                artist: metadata.artistName,
-                coverArtUrl: assets.coverArt.url
-            });
 
             return {
                 success: true,
@@ -116,7 +109,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             throw new Error('Not connected to Symphonic');
         }
 
-        console.log(`[Symphonic] Sending XML Update for ${releaseId} with changes:`, Object.keys(updates));
+        console.info(`[Symphonic] Sending XML Update for ${releaseId} with changes:`, Object.keys(updates));
 
         const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
         if (deployments.length > 0) {
@@ -139,7 +132,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
         if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
-        console.log(`[Symphonic] Issuing Takedown for ${releaseId}`);
+        console.info(`[Symphonic] Issuing Takedown for ${releaseId}`);
         return {
             success: true,
             status: 'takedown_requested',

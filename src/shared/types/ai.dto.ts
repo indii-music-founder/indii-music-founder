@@ -122,6 +122,7 @@ export interface GenerateVideoRequest {
         durationSeconds?: number;
     };
     apiKey?: string;
+    jobId?: string;
 }
 
 export interface GenerateImageRequest {

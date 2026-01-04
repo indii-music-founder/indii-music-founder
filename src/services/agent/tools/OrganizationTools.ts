@@ -1,84 +1,88 @@
 import { useStore } from '@/core/store';
 import { OrganizationService } from '@/services/OrganizationService';
-// import { auth } from '@/services/firebase'; // Removed
+import { wrapTool, toolError } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
-export const OrganizationTools = {
-    list_organizations: async () => {
+export const OrganizationTools: Record<string, AnyToolFunction> = {
+    list_organizations: wrapTool('list_organizations', async () => {
         const store = useStore.getState();
         const orgs = store.organizations || [];
 
         if (orgs.length === 0) {
-            return "No organizations found.";
+            return {
+                message: "No organizations found.",
+                orgs: []
+            };
         }
 
-        return orgs.map(org => `- ${org.name} [ID: ${org.id}] (Plan: ${org.plan})`).join('\n');
-    },
+        return {
+            orgs,
+            message: `Found ${orgs.length} organizations.`
+        };
+    }),
 
-    switch_organization: async (args: { orgId: string }) => {
+    switch_organization: wrapTool('switch_organization', async (args: { orgId: string }) => {
         const store = useStore.getState();
         const org = store.organizations.find(o => o.id === args.orgId);
 
         if (!org) {
-            return `Error: Organization with ID ${args.orgId} not found.`;
+            return toolError(`Organization with ID ${args.orgId} not found.`, "NOT_FOUND");
         }
 
         const userId = store.userProfile?.id;
         if (!userId) {
-            return "Error: User profile not found. Please log in.";
+            return toolError("User profile not found. Please log in.", "AUTH_REQUIRED");
         }
 
-        try {
-            await OrganizationService.switchOrganization(args.orgId, userId);
-            // The service updates localStorage, but we might need to trigger store update if not reactive
-            // store.setOrganization is not always enough if it needs full reload
-            store.setOrganization(args.orgId);
+        await OrganizationService.switchOrganization(args.orgId, userId);
+        store.setOrganization(args.orgId);
 
-            // Reload projects for new org
-            await store.loadProjects();
+        // Reload projects for new org
+        await store.loadProjects();
 
-            return `Successfully switched to organization: ${org.name}`;
-        } catch (e: unknown) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            return `Failed to switch organization: ${errorMessage}`;
+        return {
+            orgId: args.orgId,
+            orgName: org.name,
+            message: `Successfully switched to organization: ${org.name}`
+        };
+    }),
+
+    create_organization: wrapTool('create_organization', async (args: { name: string }) => {
+        const store = useStore.getState();
+        const userId = store.userProfile?.id;
+        if (!userId) {
+            return toolError("User profile not found. Please log in to create an organization.", "AUTH_REQUIRED");
         }
-    },
 
-    create_organization: async (args: { name: string }) => {
-        try {
-            const store = useStore.getState();
-            const userId = store.userProfile?.id;
-            if (!userId) {
-                return "Error: User profile not found. Please log in to create an organization.";
-            }
-            const orgId = await OrganizationService.createOrganization(args.name, userId);
+        const orgId = await OrganizationService.createOrganization(args.name, userId);
 
-            // Manually add to store to reflect immediate change
-            const newOrg = {
-                id: orgId,
-                name: args.name,
-                plan: 'free' as const,
-                members: [userId]
-            };
-            store.addOrganization(newOrg);
-            store.setOrganization(orgId);
+        // Manually add to store to reflect immediate change
+        const newOrg = {
+            id: orgId,
+            name: args.name,
+            plan: 'free' as const,
+            members: [userId]
+        };
+        store.addOrganization(newOrg);
+        store.setOrganization(orgId);
 
-            return `Successfully created organization "${args.name}" (ID: ${orgId}) and switched to it.`;
-        } catch (e: unknown) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            return `Failed to create organization: ${errorMessage}`;
-        }
-    },
+        return {
+            orgId,
+            orgName: args.name,
+            message: `Successfully created organization "${args.name}" (ID: ${orgId}) and switched to it.`
+        };
+    }),
 
-    get_organization_details: async () => {
+    get_organization_details: wrapTool('get_organization_details', async () => {
         const store = useStore.getState();
         const org = store.organizations.find(o => o.id === store.currentOrganizationId);
-        if (!org) return "Current organization not found.";
+        if (!org) {
+            return toolError("Current organization not found.", "NOT_FOUND");
+        }
 
-        return `
-        ID: ${org.id}
-        Name: ${org.name}
-        Plan: ${org.plan}
-        Members: ${org.members?.length || 0}
-        `;
-    }
+        return {
+            ...org,
+            message: `Details retrieved for ${org.name}.`
+        };
+    })
 };

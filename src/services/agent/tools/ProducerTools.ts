@@ -1,40 +1,19 @@
-import { AI } from '@/services/ai/AIService';
-import type { ToolFunctionArgs } from '../types';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // ============================================================================
 // Types for ProducerTools
 // ============================================================================
 
-interface CreateCallSheetArgs extends ToolFunctionArgs {
-    date: string;
-    location: string;
-    cast: string[];
-}
-
-interface BreakdownScriptArgs extends ToolFunctionArgs {
-    script: string;
-}
-
-// ============================================================================
-// Helper to extract error message
-// ============================================================================
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    return 'An unknown error occurred';
-}
-
-// ============================================================================
-// ProducerTools Implementation
-// ============================================================================
-
-export const ProducerTools = {
-    create_call_sheet: async (args: CreateCallSheetArgs): Promise<string> => {
-        try {
-            const systemPrompt = `
+export const ProducerTools: Record<string, AnyToolFunction> = {
+    create_call_sheet: wrapTool('create_call_sheet', async (args: {
+        date: string;
+        location: string;
+        cast: string[];
+    }) => {
+        const systemPrompt = `
 You are a Unit Production Manager.
 Generate a professional Daily Call Sheet as a JSON object.
 Return ONLY valid JSON with this structure:
@@ -54,29 +33,28 @@ Return ONLY valid JSON with this structure:
 }
 Simulate logical schedule and weather.
 `;
-            const prompt = `Create a call sheet JSON for:
+        const prompt = `Create a call sheet JSON for:
 Date: ${args.date}
 Location: ${args.location}
 Cast: ${args.cast.join(', ')}
 `;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                systemInstruction: systemPrompt
-            });
+        const response = await firebaseAI.generateContent(
+            prompt,
+            AI_MODELS.TEXT.AGENT,
+            undefined,
+            systemPrompt
+        );
 
-            const textResponse = response.text();
-            const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
-            return jsonMatch ? jsonMatch[0] : textResponse;
-        } catch (e: unknown) {
-            return `Failed to create call sheet: ${getErrorMessage(e)}`;
-        }
-    },
+        const textResponse = response.response.text();
+        const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+        const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
-    breakdown_script: async (args: BreakdownScriptArgs): Promise<string> => {
-        try {
-            const systemPrompt = `
+        return toolSuccess(data, `Call sheet generated for ${args.date} at ${args.location}`);
+    }),
+
+    breakdown_script: wrapTool('breakdown_script', async (args: { script: string }) => {
+        const systemPrompt = `
 You are a Line Producer.
 Analyze the script and perform a "Script Breakdown".
 Identify every element that costs money or requires logistics.
@@ -87,20 +65,19 @@ Output a JSON list of:
 - VFX shots
 - Special Equipment
 `;
-            const prompt = `Breakdown this script:\n\n${args.script}`;
+        const prompt = `Breakdown this script:\n\n${args.script}`;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                systemInstruction: systemPrompt
-            });
+        const response = await firebaseAI.generateContent(
+            prompt,
+            AI_MODELS.TEXT.AGENT,
+            undefined,
+            systemPrompt
+        );
 
-            const textResponse = response.text();
-            const jsonMatch = textResponse.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-            return jsonMatch ? jsonMatch[0] : textResponse;
+        const textResponse = response.response.text();
+        const jsonMatch = textResponse.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { text: textResponse };
 
-        } catch (e: unknown) {
-            return `Failed to breakdown script: ${getErrorMessage(e)}`;
-        }
-    }
+        return toolSuccess({ breakdown: data }, "Script breakdown completed.");
+    })
 };

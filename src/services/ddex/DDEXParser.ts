@@ -225,13 +225,13 @@ class DDEXParserImpl {
       releaseTitle: {
         titleText: String(
           // Try Title object
-          ((r?.ReleaseDetailsByTerritory as any)?.Title?.TitleText) ||
+          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title?.TitleText) ||
           // Try Title array (sometimes XML parser makes it an array if multiple titles exist)
-          ((r?.ReleaseDetailsByTerritory as any)?.Title?.[0]?.TitleText) ||
+          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title?.[0]?.TitleText) ||
           // Try direct Text (if textNodeName is #text and parser options allow)
-          ((r?.ReleaseDetailsByTerritory as any)?.Title?.['#text']) ||
+          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title?.['#text']) ||
           // Finally, simple direct access if parser flattened it
-          ((r?.ReleaseDetailsByTerritory as any)?.Title) ||
+          ((r?.ReleaseDetailsByTerritory as Record<string, any>)?.Title) ||
           ''
         ),
       },
@@ -298,44 +298,44 @@ class DDEXParserImpl {
 
     // Parse SoundRecordings
     if (resourceList.SoundRecording) {
-        const recordings = Array.isArray(resourceList.SoundRecording)
-            ? resourceList.SoundRecording
-            : [resourceList.SoundRecording];
+      const recordings = Array.isArray(resourceList.SoundRecording)
+        ? resourceList.SoundRecording
+        : [resourceList.SoundRecording];
 
-        recordings.forEach((r: any) => {
-            resources.push({
-                resourceReference: r['@_ResourceReference'],
-                resourceType: 'SoundRecording',
-                resourceId: {
-                    isrc: r.ResourceId?.ISRC
-                },
-                resourceTitle: {
-                    titleText: r.ReferenceTitle?.TitleText
-                },
-                duration: r.Duration,
-                displayArtistName: r.SoundRecordingDetailsByTerritory?.DisplayArtistName
-            });
+      recordings.forEach((r: any) => {
+        resources.push({
+          resourceReference: r['@_ResourceReference'],
+          resourceType: 'SoundRecording',
+          resourceId: {
+            isrc: r.ResourceId?.ISRC
+          },
+          resourceTitle: {
+            titleText: r.ReferenceTitle?.TitleText
+          },
+          duration: r.Duration,
+          displayArtistName: r.SoundRecordingDetailsByTerritory?.DisplayArtistName
         });
+      });
     }
 
     // Parse Images
     if (resourceList.Image) {
-        const images = Array.isArray(resourceList.Image)
-            ? resourceList.Image
-            : [resourceList.Image];
+      const images = Array.isArray(resourceList.Image)
+        ? resourceList.Image
+        : [resourceList.Image];
 
-        images.forEach((r: any) => {
-             resources.push({
-                resourceReference: r['@_ResourceReference'],
-                resourceType: 'Image',
-                resourceId: {
-                    proprietaryId: { id: r.ResourceId?.ProprietaryId?.Id }
-                },
-                resourceTitle: {
-                    titleText: 'Front Cover Image'
-                }
-             });
+      images.forEach((r: any) => {
+        resources.push({
+          resourceReference: r['@_ResourceReference'],
+          resourceType: 'Image',
+          resourceId: {
+            proprietaryId: { id: r.ResourceId?.ProprietaryId?.Id }
+          },
+          resourceTitle: {
+            titleText: 'Front Cover Image'
+          }
         });
+      });
     }
 
     return resources;

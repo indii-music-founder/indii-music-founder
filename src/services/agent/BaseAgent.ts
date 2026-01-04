@@ -118,16 +118,25 @@ export class BaseAgent implements SpecializedAgent {
             },
             delegate_task: async ({ targetAgentId, task }, context) => {
                 const { agentService } = await import('./AgentService');
+                const { toolError } = await import('./utils/ToolUtils');
+
                 if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
-                    return { error: 'Invalid delegation parameters' };
+                    return toolError('Invalid delegation parameters', 'INVALID_ARGS');
                 }
                 // Runtime validation: reject invalid agent IDs to prevent hallucination issues
                 if (!VALID_AGENT_IDS.includes(targetAgentId as ValidAgentId)) {
-                    return {
-                        error: `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`
-                    };
+                    return toolError(
+                        `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
+                        'INVALID_AGENT_ID'
+                    );
                 }
-                return await agentService.runAgent(targetAgentId, task, context);
+                const result = await agentService.runAgent(targetAgentId, task, context);
+                // AgentService.runAgent returns AgentResponse, we wrap it
+                return {
+                    success: true,
+                    data: result,
+                    message: `Delegated task to ${targetAgentId}`
+                };
             },
             ...(config.functions || {} as any)
         };
@@ -229,28 +238,36 @@ ${task}
                 const { name, args } = functionCall;
                 onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
 
+                let result: any;
+
                 // Check local functions first (specialist specific)
                 if (this.functions[name]) {
-                    const result = await this.functions[name](args, enrichedContext);
-                    onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
-                    return {
-                        text: `[Tool: ${name}] Output: ${JSON.stringify(result)}`,
-                        data: result
-                    };
+                    result = await this.functions[name](args, enrichedContext);
                 }
                 // Then check global tool registry
                 else if (TOOL_REGISTRY[name]) {
-                    const result = await TOOL_REGISTRY[name](args);
-                    onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
-                    return {
-                        text: `[Tool: ${name}] Output: ${result}`,
-                        data: result
-                    };
+                    result = await TOOL_REGISTRY[name](args);
                 } else {
-                    return {
-                        text: `Error: Tool '${name}' not implemented.`
+                    result = {
+                        success: false,
+                        error: `Error: Tool '${name}' not implemented.`,
+                        message: `Error: Tool '${name}' not implemented.`
                     };
                 }
+
+                onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
+
+                // Construct a text-friendly output for the AI if it just returned data
+                const outputText = typeof result === 'string'
+                    ? result
+                    : (result.success === false
+                        ? `Error: ${result.error || result.message}`
+                        : `Success: ${JSON.stringify(result.data || result)}`);
+
+                return {
+                    text: `[Tool: ${name}] Output: ${outputText}`,
+                    data: result
+                };
             }
 
             return {

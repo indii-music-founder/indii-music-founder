@@ -1,5 +1,5 @@
 import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
-import { ImageTools } from './tools/ImageTools';
+import { DirectorTools } from './tools/DirectorTools';
 import { VideoTools } from './tools/VideoTools';
 import { MemoryTools } from './tools/MemoryTools';
 import { AnalysisTools } from './tools/AnalysisTools';
@@ -21,7 +21,7 @@ import { VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
-    ...ImageTools,
+    ...DirectorTools,
     ...VideoTools,
     ...MemoryTools,
     ...AnalysisTools,

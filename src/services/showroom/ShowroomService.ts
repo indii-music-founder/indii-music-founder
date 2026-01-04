@@ -27,7 +27,7 @@ export const ShowroomService = {
      * Submits a design to the production line (Firestore).
      */
     async submitToProduction(request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> {
-        console.log("Submitting to production:", request);
+        console.info("[ShowroomService] Submitting to production:", request);
 
         try {
             // Get current user from store (or auth)
@@ -94,7 +94,7 @@ export const ShowroomService = {
             createdAt: serverTimestamp()
         });
 
-        console.log(`Generating ${type} mockup with scene: ${scene}`);
+        console.info(`[ShowroomService] Generating ${type} mockup with scene: ${scene}`);
 
         try {
             const { useStore } = await import('@/core/store');
@@ -153,7 +153,7 @@ export const ShowroomService = {
             createdAt: serverTimestamp()
         });
 
-        console.log(`Animating mockup ${mockupUrl} with motion: ${motion}`);
+        console.info(`[ShowroomService] Animating mockup ${mockupUrl} with motion: ${motion}`);
 
         try {
             const { useStore } = await import('@/core/store');

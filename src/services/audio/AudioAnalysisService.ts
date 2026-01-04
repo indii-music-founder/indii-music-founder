@@ -26,7 +26,7 @@ export class AudioAnalysisService {
 
         this.initPromise = (async () => {
             try {
-                console.log('Loading Essentia.js audio analysis engine...');
+                console.info('Loading Essentia.js audio analysis engine...');
 
                 // HACK: Polyfill/Config for Essentia WASM path in production builds
                 // Essentia's UMD module looks for a global 'EssentiaWASM' object to use as the Module config.
@@ -66,7 +66,7 @@ export class AudioAnalysisService {
                 }
 
                 this.essentia = new Essentia(moduleInstance);
-                console.log('Essentia Audio Analysis Engine initialized.');
+                console.info('Essentia Audio Analysis Engine initialized.');
             } catch (error) {
                 this.initPromise = null; // Allow retry on failure
                 console.error('Failed to initialize Essentia:', error);

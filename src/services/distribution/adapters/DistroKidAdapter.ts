@@ -78,7 +78,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
 
             // 2. Real Transmission (If SFTP is connected)
             if (this.credentials?.sftpHost && window.electronAPI?.sftp) {
-                console.log('[DistroKid] Executing real SFTP delivery...');
+                console.info('[DistroKid] Executing real SFTP delivery...');
                 // In a real scenario, we'd save the XML to a temp file and upload the whole directory
                 // For Alpha, we're verifying the connection works.
             }

@@ -85,7 +85,7 @@ export class CDBabyPackageBuilder {
             packagedFiles.push(destCoverPath);
         }
 
-        console.log(`[CDBabyBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
+        console.info(`[CDBabyBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
 
         return { packagePath, files: packagedFiles };
     }

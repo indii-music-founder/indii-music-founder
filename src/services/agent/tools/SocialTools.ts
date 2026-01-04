@@ -1,57 +1,41 @@
-import { useStore } from '@/core/store';
-import type { ToolFunctionArgs } from '../types';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { SocialService } from '@/services/social/SocialService';
 import { AI_MODELS } from '@/core/config/ai-models';
-
-// ============================================================================
-// Types for SocialTools
-// ============================================================================
-
-interface GenerateSocialPostArgs extends ToolFunctionArgs {
-    platform: string;
-    topic: string;
-    tone?: string;
-}
-
-// ============================================================================
-// Helper to extract error message
-// ============================================================================
-
-function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    return 'An unknown error occurred';
-}
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // ============================================================================
 // SocialTools Implementation
 // ============================================================================
 
-export const SocialTools = {
-    generate_social_post: async (args: GenerateSocialPostArgs): Promise<string> => {
+export const SocialTools: Record<string, AnyToolFunction> = {
+    generate_social_post: wrapTool('generate_social_post', async ({ platform, topic, tone }: { platform: string; topic: string; tone?: string }) => {
+        const prompt = `Generate a ${tone || 'professional'} social media post for ${platform} about ${topic}. Include hashtags.`;
+
+        const result = await firebaseAI.generateContent(
+            prompt,
+            AI_MODELS.TEXT.AGENT
+        );
+        const text = result.response.text();
+
+        // Auto-persist using the robust SocialService
+        let postId: string | null = null;
+        let persistMessage = "Post generated but failed to save to feed.";
+
         try {
-            const { AI } = await import('@/services/ai/AIService');
-            const prompt = `Generate a ${args.tone || 'professional'} social media post for ${args.platform} about ${args.topic}. Include hashtags.`;
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            });
-            const text = result.text();
-
-            const { addToHistory, currentProjectId } = useStore.getState();
-            addToHistory({
-                id: crypto.randomUUID(),
-                url: '',
-                prompt: args.topic,
-                type: 'text',
-                timestamp: Date.now(),
-                projectId: currentProjectId,
-                meta: text
-            });
-
-            return `Generated Post for ${args.platform}:\n${text}`;
-        } catch (e: unknown) {
-            return `Social post generation failed: ${getErrorMessage(e)}`;
+            postId = await SocialService.createPost(text);
+            persistMessage = `Saved to Feed (ID: ${postId})`;
+        } catch (persistError) {
+            console.warn('Failed to persist social post:', persistError);
         }
-    }
+
+        return toolSuccess({
+            platform,
+            content: text,
+            postId
+        }, `Generated Post for ${platform}:\n${text}\n\n${persistMessage}`);
+    })
 };
+
+// Aliases
+export const { generate_social_post } = SocialTools;

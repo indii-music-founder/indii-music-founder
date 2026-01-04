@@ -193,7 +193,7 @@ export class GeminiRetrievalService {
             if (listRes.fileSearchStores && listRes.fileSearchStores.length > 0) {
                 // Use the first one found
                 this.defaultStoreName = listRes.fileSearchStores[0].name;
-                console.log("Using existing FileSearchStore:", this.defaultStoreName);
+                console.info("Using existing FileSearchStore:", this.defaultStoreName);
                 return this.defaultStoreName!;
             }
         } catch (e) {
@@ -207,7 +207,7 @@ export class GeminiRetrievalService {
                 body: JSON.stringify({ displayName: "IndiiOS Default Store" })
             });
             this.defaultStoreName = createRes.name;
-            console.log("Created new FileSearchStore:", this.defaultStoreName);
+            console.info("Created new FileSearchStore:", this.defaultStoreName);
             return this.defaultStoreName!;
         } catch (e: unknown) {
             const err = e as Error;
@@ -234,7 +234,7 @@ export class GeminiRetrievalService {
             resourceName = `files/${resourceName}`;
         }
 
-        console.log(`Importing ${resourceName} into ${storeName}...`);
+        console.info(`Importing ${resourceName} into ${storeName}...`);
 
         try {
             const url = `${storeName}:importFile`; // e.g. fileSearchStores/123:importFile
@@ -244,7 +244,7 @@ export class GeminiRetrievalService {
                     fileName: resourceName
                 })
             });
-            console.log("Import Operation started:", res.name);
+            console.info("Import Operation started:", res.name);
 
             // Wait for operation to complete (simple poll)
             let op = res;
@@ -261,7 +261,7 @@ export class GeminiRetrievalService {
                 // But usually it just works or fails.
                 console.warn(`Import finished with potential error (or valid state): ${JSON.stringify(op.error)}`);
             } else {
-                console.log("File imported successfully.");
+                console.info("File imported successfully.");
             }
 
         } catch (e: unknown) {
@@ -296,7 +296,7 @@ export class GeminiRetrievalService {
                         fileSearchStoreNames: [storeName]
                     }
                 }];
-                console.log(`[RAG] Querying Store: ${storeName} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
+                console.info(`[RAG] Querying Store: ${storeName} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
             } catch (e) {
                 console.error("[RAG] File Search Setup Failed:", e);
             }

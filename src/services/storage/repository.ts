@@ -31,7 +31,7 @@ function queueAssetForSync(id: string, blob: Blob): void {
         timestamp: Date.now(),
         retryCount: 0
     });
-    console.log(`[Repository] Asset ${id} queued for sync (${syncQueue.size} items in queue)`);
+    console.info(`[Repository] Asset ${id} queued for sync (${syncQueue.size} items in queue)`);
 }
 
 /**
@@ -41,7 +41,7 @@ export async function processSyncQueue(): Promise<void> {
     const user = auth.currentUser;
     if (!user || syncQueue.size === 0) return;
 
-    console.log(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
+    console.info(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
 
     const itemsToRemove: string[] = [];
 
@@ -50,7 +50,7 @@ export async function processSyncQueue(): Promise<void> {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
             await uploadBytes(storageRef, item.data);
             itemsToRemove.push(id);
-            console.log(`[Repository] Successfully synced queued asset ${id}`);
+            console.info(`[Repository] Successfully synced queued asset ${id}`);
         } catch (error) {
             console.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
             item.retryCount++;
@@ -65,7 +65,7 @@ export async function processSyncQueue(): Promise<void> {
 
     // Clean up processed items
     itemsToRemove.forEach(id => syncQueue.delete(id));
-    console.log(`[Repository] Sync queue processed. ${syncQueue.size} items remaining.`);
+    console.info(`[Repository] Sync queue processed. ${syncQueue.size} items remaining.`);
 }
 
 // ============================================================================
@@ -270,7 +270,7 @@ export async function saveCanvasStateToStorage(id: string, json: string): Promis
             json,
             updatedAt: new Date().toISOString()
         }, { merge: true });
-        console.log(`[Repository] Saved canvas state for ${id}`);
+        console.info(`[Repository] Saved canvas state for ${id}`);
     } catch (error) {
         console.warn(`Failed to sync canvas state ${id} to cloud:`, error);
     }
@@ -329,7 +329,7 @@ export async function syncWorkflows(): Promise<void> {
     const dbLocal = await initDB();
     const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
 
-    console.log(`Syncing ${localWorkflows.length} workflows to cloud...`);
+    console.info(`Syncing ${localWorkflows.length} workflows to cloud...`);
 
     const batchPromises = localWorkflows.map(async (wf) => {
         try {
@@ -341,5 +341,5 @@ export async function syncWorkflows(): Promise<void> {
     });
 
     await Promise.all(batchPromises);
-    console.log("Workflow sync complete.");
+    console.info("Workflow sync complete.");
 }

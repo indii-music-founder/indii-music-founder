@@ -28,7 +28,7 @@ export class TranscodingService {
      * @returns Promise<boolean> success
      */
     async transcode(options: TranscodeOptions): Promise<boolean> {
-        console.log(`[TranscodingService] Starting job: ${options.inputPath} -> ${options.outputPath} (${options.targetFormat})`);
+        console.info(`[TranscodingService] Starting job: ${options.inputPath} -> ${options.outputPath} (${options.targetFormat})`);
 
         // 1. Validate Input
         if (!this.isValidInput(options.inputPath)) {
@@ -43,8 +43,7 @@ export class TranscodingService {
         // 3. "Write" Output
         // In a real implementation, we would spawn an ffmpeg process here.
         // For now, we assume the caller handles the file system mock or we just log success.
-
-        console.log(`[TranscodingService] Transcode complete: ${options.outputPath}`);
+        console.info(`[TranscodingService] Transcode complete: ${options.outputPath}`);
         return true;
     }
 

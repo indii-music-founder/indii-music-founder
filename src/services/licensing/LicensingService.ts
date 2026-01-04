@@ -57,7 +57,7 @@ export class LicensingService {
      * Create a new license.
      */
     async createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        return this.licensesStore.add(license as any);
+        return this.licensesStore.add(license as unknown as License);
     }
 
     /**
@@ -70,7 +70,7 @@ export class LicensingService {
         return this.requestsStore.add({
             ...request,
             status: request.status || 'checking'
-        } as any);
+        } as unknown as LicenseRequest);
     }
 
 
@@ -132,7 +132,7 @@ export class LicensingService {
      * Seed initial data for a new user/org
      */
     private async seedDatabase(userId: string) {
-        console.log(`[LicensingService] Seeding database for ${userId}...`);
+        console.info(`[LicensingService] Seeding database for ${userId}...`);
 
         const initialLicenses = [
             {

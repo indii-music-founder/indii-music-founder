@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { NarrativeTools } from './NarrativeTools';
-import { ImageTools } from './ImageTools';
+import { DirectorTools } from './DirectorTools';
 import { VideoTools } from './VideoTools';
 import { AI } from '@/services/ai/AIService';
 import { useStore } from '@/core/store';
@@ -69,7 +69,7 @@ describe('Filmmaking Grammar Tools', () => {
     });
 
     describe('NarrativeTools', () => {
-        it('generate_visual_script should return structured JSON', async () => {
+        it('generate_visual_script should return structured JSON within ToolFunctionResult', async () => {
             const mockResponse = {
                 title: "Test Script",
                 beats: [{ beat: 1, name: "Intro" }]
@@ -78,13 +78,16 @@ describe('Filmmaking Grammar Tools', () => {
             vi.mocked(firebaseAI.generateStructuredData).mockResolvedValue(mockResponse);
 
             const result = await NarrativeTools.generate_visual_script({ synopsis: "A test story" });
-            expect(result).toContain("Test Script");
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain("Test Script");
+            expect(result.data.title).toBe("Test Script");
             expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 
-    describe('ImageTools', () => {
-        it('render_cinematic_grid should include entity anchor if set', async () => {
+    describe('Image/DirectorTools', () => {
+        it('render_cinematic_grid should include entity anchor and return ToolFunctionResult', async () => {
             // Mock store with entity anchor
             vi.mocked(useStore.getState).mockReturnValue({
                 currentProjectId: 'test-project',
@@ -101,10 +104,13 @@ describe('Filmmaking Grammar Tools', () => {
 
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue([{
                 id: 'grid-1',
-                url: 'http://grid-url'
+                url: 'data:image/png;base64,gridurl'
             }] as Awaited<ReturnType<typeof ImageGeneration.generateImages>>);
 
-            await ImageTools.render_cinematic_grid({ prompt: "A forest scene" });
+            const result = await DirectorTools.render_cinematic_grid({ prompt: "A forest scene" });
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain("Cinematic grid generated");
 
             expect(ImageGeneration.generateImages).toHaveBeenCalledWith(expect.objectContaining({
                 sourceImages: [{ mimeType: 'image/png', data: 'mockanchordata' }],
@@ -112,28 +118,33 @@ describe('Filmmaking Grammar Tools', () => {
             }));
         });
 
-        it('set_entity_anchor should update store state', async () => {
-            const result = await ImageTools.set_entity_anchor({ image: "data:image/png;base64,newdata" });
+        it('set_entity_anchor should update store state and return ToolFunctionResult', async () => {
+            const result = await DirectorTools.set_entity_anchor({ image: "data:image/png;base64,newdata" });
 
             expect(mockSetEntityAnchor).toHaveBeenCalledWith(expect.objectContaining({
                 url: "data:image/png;base64,newdata",
                 type: 'image'
             }));
-            expect(result).toContain("Entity Anchor set successfully");
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain("Entity Anchor set successfully");
         });
     });
 
     describe('VideoTools', () => {
-        it('interpolate_sequence should call generateVideo with first and last frames', async () => {
+        it('interpolate_sequence should call generateVideo and return ToolFunctionResult', async () => {
             vi.mocked(VideoGeneration.generateVideo).mockResolvedValue([{
                 id: 'vid-1',
                 url: 'http://video-url'
             }] as Awaited<ReturnType<typeof VideoGeneration.generateVideo>>);
 
-            await VideoTools.interpolate_sequence({
+            const result = await VideoTools.interpolate_sequence({
                 firstFrame: "data:image/png;base64,start",
                 lastFrame: "data:image/png;base64,end"
             });
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain("Sequence interpolated successfully");
 
             expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
                 firstFrame: "data:image/png;base64,start",

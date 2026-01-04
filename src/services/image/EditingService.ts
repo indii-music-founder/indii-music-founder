@@ -57,7 +57,7 @@ export class EditingService {
         const count = options.variationCount || 4;
 
         try {
-            console.log("Starting Multi-Mask Edit with", options.masks.length, "masks. Generating", count, "variations.");
+            console.info("Starting Multi-Mask Edit with", options.masks.length, "masks. Generating", count, "variations.");
 
             // We generate 'count' variations. 
             // For each variation, we strip the 'composite' image through the mask pipeline.
@@ -219,7 +219,7 @@ export class EditingService {
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const parts: any[] = [];
+            const parts: import('firebase/ai').Part[] = [];
             options.images.forEach((img, idx) => {
                 parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
                 parts.push({ text: `[Reference ${idx + 1}]` });
@@ -284,7 +284,7 @@ export class EditingService {
 
                 // Step 3: Generate Frame
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const parts: any[] = [];
+                const parts: import('firebase/ai').Part[] = [];
                 if (previousImage) {
                     parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
                     parts.push({ text: `[Reference Frame]` });

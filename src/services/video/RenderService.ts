@@ -18,7 +18,7 @@ export class RenderService {
      */
     async renderComposition(config: RenderConfig): Promise<string> {
         try {
-            console.log(`[RenderService] Starting render for ${config.compositionId}...`);
+            console.info(`[RenderService] Starting render for ${config.compositionId}...`);
 
             // In a real implementation, we would bundle the composition first
             // or point to a pre-bundled serve URL.
@@ -42,7 +42,7 @@ export class RenderService {
                 outputLocation: config.outputLocation,
             } as RenderMediaOptions);
 
-            console.log(`[RenderService] Render complete: ${config.outputLocation}`);
+            console.info(`[RenderService] Render complete: ${config.outputLocation}`);
             return config.outputLocation;
 
         } catch (error: any) {

@@ -30,7 +30,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
   }
 
   async connect(credentials: DistributorCredentials): Promise<void> {
-    console.log(`[${this.name}Adapter] Attempting real connection...`);
+    console.info(`[${this.name}Adapter] Attempting real connection...`);
 
     try {
       // 1. If SFTP credentials provided, try to establish a real connection
@@ -45,7 +45,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
         if (!result.success) {
           throw new Error(`Failed to establish SFTP connection to ${credentials.sftpHost}`);
         }
-        console.log(`[${this.name}Adapter] SFTP Connection Verified.`);
+        console.info(`[${this.name}Adapter] SFTP Connection Verified.`);
       }
 
       // 2. If API Key provided, we'd ideally verify it here via fetch
@@ -53,7 +53,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
       if (credentials.apiKey || credentials.username || credentials.sftpHost) {
         this.credentials = credentials;
         this.connected = true;
-        console.log(`[${this.name}Adapter] Connected successfully.`);
+        console.info(`[${this.name}Adapter] Connected successfully.`);
       } else {
         throw new Error(`Missing required credentials for ${this.name}`);
       }

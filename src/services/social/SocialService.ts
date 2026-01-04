@@ -329,11 +329,11 @@ export class SocialService {
     const snapshot = await getDoc(userRef);
 
     if (snapshot.exists() && snapshot.data()?.socialStats) {
-      console.log('Social stats already exist. Skipping seed.');
+
       return;
     }
 
-    console.log('Seeding Social database...');
+    console.info('[SocialService] Seeding database...');
 
     // 1. Initial Social Stats
     const initialStats: SocialStats = {
@@ -371,6 +371,6 @@ export class SocialService {
     ];
 
     await Promise.all(posts.map(post => addDoc(collection(db, "posts"), post)));
-    console.log('Social database seeded successfully.');
+    console.info('[SocialService] Database seeded successfully.');
   }
 }

@@ -1,11 +1,36 @@
 import { AgentContext } from '../types';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { TraceService } from '../observability/TraceService';
+import { auth } from '@/services/firebase';
 
 import { agentRegistry } from '../registry';
 
+import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
+
 export class AgentOrchestrator {
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
+        const userId = auth.currentUser?.uid || 'anonymous';
+
+        // Start Trace
+        const traceId = await TraceService.startTrace(userId, 'orchestrator', userQuery, {
+            context: {
+                module: context.activeModule,
+                project: context.projectHandle?.name
+            }
+        });
+
+        // 1. Validate Input
+        const validation = InputSanitizer.validate(userQuery);
+        if (!validation.valid) {
+            console.warn('[AgentOrchestrator] Invalid user query:', validation.error);
+            await TraceService.failTrace(traceId, `Invalid input: ${validation.error}`);
+            return 'generalist';
+        }
+
+        // 2. Sanitize Input
+        const sanitizedQuery = InputSanitizer.sanitize(userQuery);
+
         const specializedAgents = agentRegistry.getAll().map(a => ({
             id: a.id,
             name: a.name,
@@ -28,7 +53,7 @@ export class AgentOrchestrator {
         - Active Module: ${context.activeModule || 'none'}
         - Project: ${context.projectHandle?.name || 'none'} (${context.projectHandle?.type || 'none'})
 
-        USER REQUEST: "${userQuery}"
+        USER REQUEST: "${sanitizedQuery}"
 
         ROUTING RULES:
         1. Return ONLY the agent ID (e.g., "legal", "video"). Do not explain.
@@ -58,12 +83,22 @@ export class AgentOrchestrator {
             const route = (res.text() || 'generalist').trim().toLowerCase();
             const validRoutes = AGENTS.map(a => a.id);
 
-            if (validRoutes.includes(route)) {
-                return route;
-            }
-            return 'generalist';
+            const finalRoute = validRoutes.includes(route) ? route : 'generalist';
+
+            // Log Step
+            await TraceService.addStep(traceId, 'routing', {
+                selectedAgent: finalRoute,
+                reasoning: 'AI Model Decision'
+            });
+
+            // Complete Trace
+            await TraceService.completeTrace(traceId, { selectedAgent: finalRoute });
+
+            return finalRoute;
+
         } catch (e: unknown) {
             console.error('[AgentOrchestrator] Routing failed, defaulting to generalist.', e);
+            await TraceService.failTrace(traceId, e instanceof Error ? e.message : String(e));
             return 'generalist';
         }
     }

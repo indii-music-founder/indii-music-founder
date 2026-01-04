@@ -1,9 +1,9 @@
-
-import { AI } from '@/services/ai/AIService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { MarketingService } from '@/services/marketing/MarketingService';
-import { AI_MODELS } from '@/core/config/ai-models';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // --- Validation Schemas ---
 
@@ -25,17 +25,6 @@ const AnalyzeAudienceSchema = z.object({
     reach: z.string()
 });
 
-const ScheduleContentSchema = z.object({
-    status: z.literal("scheduled"),
-    count: z.number(),
-    schedule: z.array(z.object({
-        date: z.string(),
-        platform: z.string(),
-        type: z.string()
-    })),
-    nextPost: z.string()
-});
-
 const TrackPerformanceSchema = z.object({
     campaignId: z.string(),
     metrics: z.object({
@@ -48,8 +37,8 @@ const TrackPerformanceSchema = z.object({
 
 // --- Tools Implementation ---
 
-export const MarketingTools = {
-    create_campaign_brief: async ({ product, goal, budget, duration }: { product: string; goal: string; budget?: string; duration?: string }) => {
+export const MarketingTools: Record<string, AnyToolFunction> = {
+    create_campaign_brief: wrapTool('create_campaign_brief', async ({ product, goal, budget, duration }: { product: string; goal: string; budget?: string; duration?: string }) => {
         const schema = zodToJsonSchema(CreateCampaignBriefSchema);
         const prompt = `
         You are a Marketing Strategist. Create a campaign brief for: ${product}.
@@ -57,80 +46,57 @@ export const MarketingTools = {
         ${budget ? `Budget: ${budget}` : ''}
         ${duration ? `Duration: ${duration}` : ''}
         `;
+
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const parsed = CreateCampaignBriefSchema.parse(data);
+
+        // AUTO-PERSIST: Save the generated brief to the database
         try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            const parsed = CreateCampaignBriefSchema.parse(data);
-
-            // AUTO-PERSIST: Save the generated brief to the database
-            try {
-                const { budget: _budgetStr, ...briefData } = parsed;
-                await MarketingService.createCampaign({
-                    name: parsed.campaignName,
-                    platform: parsed.channels[0] || 'general',
-                    startDate: Date.now(),
-                    status: 'PENDING' as any, // Cast to avoid deep type import for now if needed
-                    budget: parseFloat(parsed.budget.replace(/[^0-9.]/g, '')) || 0,
-                    spent: 0,
-                    performance: { reach: 0, clicks: 0 },
-                    // Extra brief data stored in a JSON field or similar
-                    ...briefData
-                } as any);
-                console.log(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
-            } catch (persistError) {
-                console.warn('[MarketingTools] Persistence failed:', persistError);
-            }
-
-            return JSON.stringify(parsed);
-        } catch (error) {
-            console.error('MarketingTools.create_campaign_brief error:', error);
-            return JSON.stringify({
-                campaignName: `${product} Campaign`,
-                targetAudience: "General Audience",
-                budget: "TBD",
-                channels: [],
-                kpis: []
-            });
+            const { budget: _budgetStr, ...briefData } = parsed;
+            await MarketingService.createCampaign({
+                name: parsed.campaignName,
+                platform: parsed.channels[0] || 'general',
+                startDate: Date.now(),
+                status: 'PENDING' as any,
+                budget: parseFloat(parsed.budget.replace(/[^0-9.]/g, '')) || 0,
+                spent: 0,
+                performance: { reach: 0, clicks: 0 },
+                ...briefData
+            } as any);
+            console.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
+        } catch (persistError) {
+            console.warn('[MarketingTools] Persistence failed:', persistError);
         }
-    },
 
-    analyze_audience: async ({ genre, similar_artists }: { genre: string; similar_artists?: string[] }) => {
+        return toolSuccess(parsed, `Campaign brief created for ${parsed.campaignName} and saved to Marketing Dashboard.`);
+    }),
+
+    analyze_audience: wrapTool('analyze_audience', async ({ genre, similar_artists }: { genre: string; similar_artists?: string[] }) => {
         const schema = zodToJsonSchema(AnalyzeAudienceSchema);
         const prompt = `
         You are a Market Researcher. Analyze the target audience for genre: ${genre}.
         ${similar_artists ? `Similar Artists: ${similar_artists.join(', ')}` : ''}
         `;
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(AnalyzeAudienceSchema.parse(data));
-        } catch (error) {
-            console.error('MarketingTools.analyze_audience error:', error);
-            return JSON.stringify({
-                platform: "General",
-                demographics: { age: "Unknown", locations: [] },
-                interests: [],
-                reach: "Unknown"
-            });
-        }
-    },
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const validated = AnalyzeAudienceSchema.parse(data);
+        return toolSuccess(validated, `Audience analysis completed for ${genre}. Estimated reach: ${validated.reach}.`);
+    }),
 
     /**
      * Enhanced Schedule Content: Uses real JS Dates instead of AI hallucination for the calendar.
      */
-    schedule_content: async ({ campaign_start, platforms, frequency }: { campaign_start: string; platforms: string[]; frequency: string }) => {
-        // Parse start date (default to today if invalid)
+    schedule_content: wrapTool('schedule_content', async ({ campaign_start, platforms, frequency }: { campaign_start: string; platforms: string[]; frequency: string }) => {
         const startDate = new Date(campaign_start);
         const validStartDate = isNaN(startDate.getTime()) ? new Date() : startDate;
 
-        // Determine Interval (days)
-        let intervalDays = 7; // default weekly
+        let intervalDays = 7;
         const freqLower = frequency.toLowerCase();
         if (freqLower.includes("daily")) intervalDays = 1;
         else if (freqLower.includes("bi-weekly") || freqLower.includes("twice a week")) intervalDays = 3;
         else if (freqLower.includes("monthly")) intervalDays = 30;
 
-        // Generate 4 weeks of content
         const schedule: Array<{ date: string; platform: string; type: string }> = [];
-        const postsPerPlatform = 4; // limit for this batch
+        const postsPerPlatform = 4;
 
         for (let i = 0; i < postsPerPlatform; i++) {
             const postDate = new Date(validStartDate);
@@ -140,43 +106,36 @@ export const MarketingTools = {
                 schedule.push({
                     date: postDate.toISOString(),
                     platform: platform,
-                    type: "Social Post" // generic type
+                    type: "Social Post"
                 });
             });
         }
 
-        // Sort by date
         schedule.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        return JSON.stringify({
+        return toolSuccess({
             status: "scheduled",
             count: schedule.length,
             schedule: schedule,
             nextPost: schedule.length > 0 ? schedule[0].date : "None"
-        });
-    },
+        }, `Content schedule generated with ${schedule.length} posts across ${platforms.join(', ')}.`);
+    }),
 
-    track_performance: async ({ campaignId }: { campaignId: string }) => {
+    track_performance: wrapTool('track_performance', async ({ campaignId }: { campaignId: string }) => {
         const schema = zodToJsonSchema(TrackPerformanceSchema);
         const prompt = `
         You are a Marketing Analyst. Generate a simulated performance report for Campaign ID: ${campaignId}.
         `;
-        try {
-            const data = await AI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(TrackPerformanceSchema.parse(data));
-        } catch (error) {
-            console.error('MarketingTools.track_performance error:', error);
-            return JSON.stringify({
-                campaignId,
-                metrics: { impressions: 0, clicks: 0, conversions: 0 },
-                roi: "0%"
-            });
-        }
-    }
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const validated = TrackPerformanceSchema.parse(data);
+        return toolSuccess(validated, `Performance tracking report generated for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
+    })
 };
 
-// Backwards compatibility exports
-export const create_campaign_brief = MarketingTools.create_campaign_brief;
-export const analyze_audience = MarketingTools.analyze_audience;
-export const schedule_content = MarketingTools.schedule_content;
-export const track_performance = MarketingTools.track_performance;
+// Aliases
+export const {
+    create_campaign_brief,
+    analyze_audience,
+    schedule_content,
+    track_performance
+} = MarketingTools;

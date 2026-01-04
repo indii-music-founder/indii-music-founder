@@ -28,6 +28,12 @@ import {
     GenerateImageResponse
 } from '@/shared/types/ai.dto';
 
+import { CircuitBreaker } from './utils/CircuitBreaker';
+import { BREAKER_CONFIGS } from './config/breaker-configs';
+import { InputSanitizer } from './utils/InputSanitizer';
+import { TokenUsageService } from './billing/TokenUsageService';
+import { auth } from '@/services/firebase';
+
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
 
@@ -39,6 +45,11 @@ export interface ChatMessage {
 export class FirebaseAIService {
     private model: GenerativeModel | null = null;
     private isInitialized = false;
+
+    // Circuit Breakers
+    private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
+    private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION);
+    private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES);
 
     constructor() { }
 
@@ -65,7 +76,7 @@ export class FirebaseAIService {
             });
 
             this.isInitialized = true;
-            console.log(`[FirebaseAIService] Initialized with model: ${modelName}`);
+            console.info(`[FirebaseAIService] Initialized with model: ${modelName}`);
 
         } catch (error) {
             console.error('[FirebaseAIService] Bootstrap failed:', error);
@@ -82,24 +93,46 @@ export class FirebaseAIService {
         systemInstruction?: string,
         tools?: Tool[]
     ): Promise<GenerateContentResult> {
+        return this.contentBreaker.execute(async () => {
+            await this.ensureInitialized();
 
-        await this.ensureInitialized();
-        const modelName = modelOverride || this.model!.model;
+            // Rate Limit Check
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                await TokenUsageService.checkQuota(userId);
+            }
 
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            generationConfig: config,
-            systemInstruction,
-            tools
+            const modelName = modelOverride || this.model!.model;
+            // Validate & Sanitize
+            const sanitizedPrompt = this.sanitizePrompt(prompt);
+
+            const modelCallback = getGenerativeModel(ai, {
+                model: modelName,
+                generationConfig: config,
+                systemInstruction,
+                tools
+            });
+
+            try {
+                const result = await modelCallback.generateContent(
+                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt }
+                );
+
+                // Track Usage
+                if (userId && result.response.usageMetadata) {
+                    await TokenUsageService.trackUsage(
+                        userId,
+                        modelName,
+                        result.response.usageMetadata.promptTokenCount || 0,
+                        result.response.usageMetadata.candidatesTokenCount || 0
+                    );
+                }
+
+                return result;
+            } catch (error) {
+                throw this.handleError(error);
+            }
         });
-
-        try {
-            return await modelCallback.generateContent(
-                typeof prompt === 'string' ? prompt : { contents: prompt } as any
-            );
-        } catch (error) {
-            throw this.handleError(error);
-        }
     }
 
     /**
@@ -112,36 +145,74 @@ export class FirebaseAIService {
         systemInstruction?: string,
         tools?: Tool[]
     ): Promise<ReadableStream<string>> {
+        return this.contentBreaker.execute(async () => {
+            await this.ensureInitialized();
 
-        await this.ensureInitialized();
-        const modelName = modelOverride || this.model!.model;
 
-        const modelCallback = getGenerativeModel(ai, {
-            model: modelName,
-            generationConfig: config,
-            systemInstruction,
-            tools
-        });
 
-        try {
-            const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
-                typeof prompt === 'string' ? prompt : { contents: prompt } as any
-            );
+            // Rate Limit Check
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                await TokenUsageService.checkQuota(userId);
+            }
 
-            return new ReadableStream({
-                async start(controller) {
-                    for await (const chunk of result.stream) {
-                        const text = chunk.text();
-                        if (text) {
-                            controller.enqueue(text);
+            const modelName = modelOverride || this.model!.model;
+            const sanitizedPrompt = this.sanitizePrompt(prompt);
+
+            const modelCallback = getGenerativeModel(ai, {
+                model: modelName,
+                systemInstruction: systemInstruction ? {
+                    role: 'system',
+                    parts: [{ text: systemInstruction }] as TextPart[]
+                } : undefined
+            });
+
+            if (tools && tools.length > 0) {
+                // (modelCallback as any).tools = tools; // This depends on SDK version
+            }
+
+            try {
+                const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
+                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt } as any
+                );
+
+                // Track usage when stream completes
+                // The 'response' promise resolves to the aggregated result including usage
+                result.response.then(async (aggResult) => {
+                    if (userId && aggResult.usageMetadata) {
+                        try {
+                            await TokenUsageService.trackUsage(
+                                userId,
+                                modelName,
+                                aggResult.usageMetadata.promptTokenCount || 0,
+                                aggResult.usageMetadata.candidatesTokenCount || 0
+                            );
+                        } catch (e) {
+                            console.error('[FirebaseAIService] Failed to track stream usage:', e);
                         }
                     }
-                    controller.close();
-                }
-            });
-        } catch (error) {
-            throw this.handleError(error);
-        }
+                }).catch(() => { /* Ignore errors here, main loop handles them */ });
+
+                return new ReadableStream({
+                    async start(controller) {
+                        try {
+                            for await (const chunk of result.stream) {
+                                const text = chunk.text();
+                                if (text) {
+                                    controller.enqueue(text);
+                                }
+                            }
+                            controller.close();
+                        } catch (streamError) {
+                            console.error('[FirebaseAIService] Stream read error:', streamError);
+                            controller.error(streamError);
+                        }
+                    }
+                });
+            } catch (error) {
+                throw this.handleError(error);
+            }
+        });
     }
 
     /**
@@ -178,35 +249,37 @@ export class FirebaseAIService {
         thinkingBudgetOrModel?: number | string,
         systemInstructionOrConfig?: string | any
     ): Promise<string> {
-        await this.ensureInitialized();
+        return this.contentBreaker.execute(async () => {
+            await this.ensureInitialized();
 
-        let model = this.model!.model;
-        let config: any = {};
-        let systemInstruction: string | undefined;
+            let model = this.model!.model;
+            let config: any = {};
+            let systemInstruction: string | undefined;
 
-        if (typeof thinkingBudgetOrModel === 'number') {
-            config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
-            systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
-        } else if (typeof thinkingBudgetOrModel === 'string') {
-            model = thinkingBudgetOrModel;
-            config = systemInstructionOrConfig || {};
-            systemInstruction = config.systemInstruction;
-        } else if (thinkingBudgetOrModel && typeof thinkingBudgetOrModel === 'object') {
-            config = thinkingBudgetOrModel;
-            model = config.model || model;
-            systemInstruction = config.systemInstruction;
-        }
+            if (typeof thinkingBudgetOrModel === 'number') {
+                config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
+                systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
+            } else if (typeof thinkingBudgetOrModel === 'string') {
+                model = thinkingBudgetOrModel;
+                config = systemInstructionOrConfig || {};
+                systemInstruction = config.systemInstruction;
+            } else if (thinkingBudgetOrModel && typeof thinkingBudgetOrModel === 'object') {
+                config = thinkingBudgetOrModel;
+                model = config.model || model;
+                systemInstruction = config.systemInstruction;
+            }
 
-        const modelCallback = getGenerativeModel(ai, {
-            model: model,
-            generationConfig: config,
-            systemInstruction: systemInstruction || config?.systemInstruction
+            const modelCallback = getGenerativeModel(ai, {
+                model: model,
+                generationConfig: config,
+                systemInstruction: systemInstruction || config?.systemInstruction
+            });
+
+            const result = await modelCallback.generateContent(
+                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] } as any
+            );
+            return result.response.text();
         });
-
-        const result = await modelCallback.generateContent(
-            typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] } as any
-        );
-        return result.response.text();
     }
 
     /**
@@ -218,31 +291,33 @@ export class FirebaseAIService {
         thinkingBudget?: number,
         systemInstruction?: string
     ): Promise<T> {
-        await this.ensureInitialized();
-        const config: GenerationConfig = {
-            responseMimeType: 'application/json',
-            responseSchema: schema
-        };
-        if (thinkingBudget) {
-            config.thinkingConfig = { thinkingBudget };
-        }
+        return this.contentBreaker.execute(async () => {
+            await this.ensureInitialized();
+            const config: GenerationConfig = {
+                responseMimeType: 'application/json',
+                responseSchema: schema
+            };
+            if (thinkingBudget) {
+                config.thinkingConfig = { thinkingBudget };
+            }
 
-        const modelCallback = getGenerativeModel(ai, {
-            model: this.model!.model,
-            generationConfig: config,
-            systemInstruction
+            const modelCallback = getGenerativeModel(ai, {
+                model: this.model!.model,
+                generationConfig: config,
+                systemInstruction
+            });
+
+            const result = await modelCallback.generateContent(
+                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] } as any
+            );
+            const text = result.response.text();
+            try {
+                return JSON.parse(text) as T;
+            } catch (e) {
+                console.error('[FirebaseAIService] JSON parse failed:', text, e);
+                throw e;
+            }
         });
-
-        const result = await modelCallback.generateContent(
-            typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] } as any
-        );
-        const text = result.response.text();
-        try {
-            return JSON.parse(text) as T;
-        } catch (e) {
-            console.error('[FirebaseAIService] JSON parse failed:', text, e);
-            throw e;
-        }
     }
 
     /**
@@ -322,83 +397,89 @@ export class FirebaseAIService {
      * HIGH LEVEL: Generate video using backend proxy (via synchronous polling of Async Job)
      */
     async generateVideo(options: GenerateVideoRequest & { timeoutMs?: number }): Promise<string> {
-        const { db } = await import('@/services/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
+        return this.mediaBreaker.execute(async () => {
+            const { db } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
 
-        const triggerVideoJobFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'triggerVideoJob');
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const triggerVideoJobFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'triggerVideoJob');
+            const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // 1. Trigger the background job
-        await this.withRetry(() => triggerVideoJobFn({
-            jobId,
-            prompt: options.prompt,
-            model: options.model,
-            image: options.image,
-            ...options.config
-        } as any));
+            // 1. Trigger the background job
+            await this.withRetry(() => triggerVideoJobFn({
+                jobId,
+                prompt: options.prompt,
+                model: options.model,
+                image: options.image,
+                ...options.config
+            }));
 
-        // 2. Poll for completion with dynamic timeout
-        const durationSeconds = options.config?.durationSeconds || 8;
-        const calculatedTimeout = Math.max(120000, durationSeconds * 10000);
-        const timeoutMs = options.timeoutMs || Math.min(calculatedTimeout, 600000);
-        const pollInterval = 1000;
-        const maxAttempts = Math.ceil(timeoutMs / pollInterval);
+            // 2. Poll for completion with dynamic timeout
+            const durationSeconds = options.config?.durationSeconds || 8;
+            const calculatedTimeout = Math.max(120000, durationSeconds * 10000);
+            const timeoutMs = options.timeoutMs || Math.min(calculatedTimeout, 600000);
+            const pollInterval = 1000;
+            const maxAttempts = Math.ceil(timeoutMs / pollInterval);
 
-        let attempts = 0;
-        console.log(`[FirebaseAIService] Video generation timeout: ${timeoutMs}ms (${maxAttempts} attempts)`);
+            let attempts = 0;
+            console.warn(`[FirebaseAIService] Video generation timeout: ${timeoutMs}ms (${maxAttempts} attempts)`);
 
-        while (attempts < maxAttempts) {
-            const jobRef = doc(db, 'videoJobs', jobId);
-            const jobSnap = await getDoc(jobRef);
+            while (attempts < maxAttempts) {
+                const jobRef = doc(db, 'videoJobs', jobId);
+                const jobSnap = await getDoc(jobRef);
 
-            if (jobSnap.exists()) {
-                const data = jobSnap.data();
-                if (data?.status === 'complete' && data.videoUrl) {
-                    return data.videoUrl;
+                if (jobSnap.exists()) {
+                    const data = jobSnap.data();
+                    if (data?.status === 'complete' && data.videoUrl) {
+                        return data.videoUrl;
+                    }
+                    if (data?.status === 'failed') {
+                        throw new AppException(
+                            AppErrorCode.INTERNAL_ERROR,
+                            `Video generation failed: ${data.error || 'Unknown error'}`
+                        );
+                    }
                 }
-                if (data?.status === 'failed') {
-                    throw new AppException(
-                        AppErrorCode.INTERNAL_ERROR,
-                        `Video generation failed: ${data.error || 'Unknown error'}`
-                    );
-                }
+
+                await new Promise(r => setTimeout(r, pollInterval));
+                attempts++;
             }
 
-            await new Promise(r => setTimeout(r, pollInterval));
-            attempts++;
-        }
-
-        throw new AppException(
-            AppErrorCode.TIMEOUT,
-            'Video generation timed out'
-        );
+            throw new AppException(
+                AppErrorCode.TIMEOUT,
+                'Video generation timed out'
+            );
+        });
     }
 
     /**
      * HIGH LEVEL: Generate image using backend proxy
      */
     async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: any): Promise<string> {
-        const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(functions, 'generateImageV3');
-        const response = await generateImageFn({ model, prompt, config });
-        const image = response.data.images?.[0];
-        if (!image) throw new Error('No image returned');
-        return image.bytesBase64Encoded;
+        return this.mediaBreaker.execute(async () => {
+            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(functions, 'generateImageV3');
+            const response = await generateImageFn({ model, prompt, config });
+            const image = response.data.images?.[0];
+            if (!image) throw new Error('No image returned');
+            return image.bytesBase64Encoded;
+        });
     }
 
     /**
      * CORE: Embed content
      */
     async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
-        await this.ensureInitialized();
-        const modelCallback = getGenerativeModel(ai, {
-            model: options.model
-        });
+        return this.auxBreaker.execute(async () => {
+            await this.ensureInitialized();
+            const modelCallback = getGenerativeModel(ai, {
+                model: options.model
+            });
 
-        // Map local Content type to SDK if needed, but structure should match
-        // The SDK expects 'content' or 'contents'. embedContent takes 'content' usually.
-        // Checking SDK: model.embedContent(content)
-        const result = await (modelCallback as any).embedContent(options.content as any);
-        return { values: result.embedding.values };
+            interface GenerativeModelWithEmbed {
+                embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+            }
+            const result = await (modelCallback as unknown as GenerativeModelWithEmbed).embedContent({ content: options.content });
+            return { values: result.embedding.values };
+        });
     }
 
     /**
@@ -438,6 +519,9 @@ export class FirebaseAIService {
         return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
     }
 
+
+    // ... existing handleError ...
+
     /**
      * CORE: Retry logic
      */
@@ -452,6 +536,47 @@ export class FirebaseAIService {
             }
             throw error;
         }
+    }
+
+    /**
+     * Sanitize prompt content to remove control chars and check for injection
+     */
+    private sanitizePrompt(prompt: string | Content[]): string | Content[] {
+        if (typeof prompt === 'string') {
+            if (InputSanitizer.containsInjectionPatterns(prompt)) {
+                console.warn('[FirebaseAIService] Potential Prompt Injection detected:', prompt.substring(0, 50));
+            }
+            return InputSanitizer.sanitize(prompt);
+        }
+
+        if (Array.isArray(prompt)) {
+            return prompt.map(content => ({
+                ...content,
+                parts: content.parts.map(part => {
+                    if (part.text) {
+                        const cleanText = InputSanitizer.sanitize(part.text);
+                        if (InputSanitizer.containsInjectionPatterns(part.text)) {
+                            console.warn('[FirebaseAIService] Potential Prompt Injection detected in content part');
+                        }
+                        return { ...part, text: cleanText };
+                    }
+                    return part;
+                })
+            }));
+        }
+
+        return prompt;
+    }
+
+    /**
+     * Get circuit state for monitoring (internal/admin use)
+     */
+    public getCircuitStates(): Record<string, string> {
+        return {
+            content: this.contentBreaker.getState(),
+            media: this.mediaBreaker.getState(),
+            aux: this.auxBreaker.getState()
+        };
     }
 }
 

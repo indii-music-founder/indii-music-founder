@@ -7,7 +7,7 @@ import type { DistributorId, ReleaseStatus, ValidationError } from './types/dist
 export class DistributionPersistenceService {
     private readonly COLLECTION = 'deployments';
 
-    constructor() {}
+    constructor() { }
 
     /**
      * Records a new deployment or updates an existing one
@@ -26,6 +26,8 @@ export class DistributionPersistenceService {
      */
     async createDeployment(
         internalReleaseId: string,
+        userId: string,
+        orgId: string,
         distributorId: DistributorId,
         initialStatus: ReleaseStatus = 'processing',
         metadata?: { title?: string; artist?: string; coverArtUrl?: string }
@@ -34,6 +36,8 @@ export class DistributionPersistenceService {
         const deployment: ReleaseDeployment = {
             id: uuidv4(),
             internalReleaseId,
+            userId,
+            orgId,
             distributorId,
             status: initialStatus,
             submittedAt: now,
@@ -109,16 +113,15 @@ export class DistributionPersistenceService {
 
     async getAllDeployments(filter?: DeploymentFilter): Promise<ReleaseDeployment[]> {
         try {
-            const constraints: any[] = [];
+            const constraints: import('firebase/firestore').QueryConstraint[] = [];
 
             if (filter) {
+                if (filter.userId) constraints.push(where('userId', '==', filter.userId));
+                if (filter.orgId) constraints.push(where('orgId', '==', filter.orgId));
                 if (filter.distributorId) constraints.push(where('distributorId', '==', filter.distributorId));
                 if (filter.internalReleaseId) constraints.push(where('internalReleaseId', '==', filter.internalReleaseId));
                 if (filter.status) constraints.push(where('status', '==', filter.status));
             }
-
-            // Default order by date if possible, but Firestore requires composite indexes for complex queries.
-            // For now, simple filtering.
 
             const q = query(collection(db, this.COLLECTION), ...constraints);
             const snapshot = await getDocs(q);

@@ -105,7 +105,7 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
 
             // We need to type cast to any because docData contains Timestamp instead of number
             const id = await this.add(docData as any);
-            console.log("Document written with ID: ", id);
+            console.info("[StorageService] Document written with ID: ", id);
             return id;
         } catch (e) {
             console.error("Error adding document: ", e);

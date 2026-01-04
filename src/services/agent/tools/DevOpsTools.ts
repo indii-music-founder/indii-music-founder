@@ -1,5 +1,7 @@
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // Tool: DevOps Infrastructure (Real GKE/GCE via Cloud Functions)
 // This tool interacts with Google Cloud Platform services through Firebase Cloud Functions.
@@ -47,10 +49,10 @@ interface RestartResult {
     operation?: string;
 }
 
-export const list_clusters = async (args?: { projectId?: string; location?: string }) => {
-    console.log(`[DevOps] Listing GKE clusters`);
+export const DevOpsTools: Record<string, AnyToolFunction> = {
+    list_clusters: wrapTool('list_clusters', async (args?: { projectId?: string; location?: string }) => {
+        console.info(`[DevOps] Listing GKE clusters`);
 
-    try {
         const listGKEClustersFn = httpsCallable<
             { projectId?: string; location?: string },
             { clusters: GKECluster[] }
@@ -61,18 +63,14 @@ export const list_clusters = async (args?: { projectId?: string; location?: stri
             location: args?.location || '-' // '-' means all locations
         });
 
-        return JSON.stringify(result.data.clusters);
-    } catch (error) {
-        const err = error as Error;
-        console.error('[DevOps] Failed to list clusters:', err.message);
-        return JSON.stringify({ error: err.message, hint: 'Ensure GKE API is enabled and service account has permissions.' });
-    }
-};
+        return toolSuccess({
+            clusters: result.data.clusters
+        }, `Retrieved ${result.data.clusters.length} GKE clusters.`);
+    }),
 
-export const get_cluster_status = async (args: { cluster_id: string; projectId?: string; location?: string }) => {
-    console.log(`[DevOps] Getting status for cluster: ${args.cluster_id}`);
+    get_cluster_status: wrapTool('get_cluster_status', async (args: { cluster_id: string; projectId?: string; location?: string }) => {
+        console.info(`[DevOps] Getting status for cluster: ${args.cluster_id}`);
 
-    try {
         const getGKEClusterStatusFn = httpsCallable<
             { clusterName: string; projectId?: string; location?: string },
             GKEClusterStatus
@@ -84,24 +82,18 @@ export const get_cluster_status = async (args: { cluster_id: string; projectId?:
             location: args.location
         });
 
-        return JSON.stringify(result.data);
-    } catch (error) {
-        const err = error as Error;
-        console.error('[DevOps] Failed to get cluster status:', err.message);
-        return JSON.stringify({ error: err.message, status: 'UNKNOWN' });
-    }
-};
+        return toolSuccess(result.data, `Retrieved status for cluster ${args.cluster_id}.`);
+    }),
 
-export const scale_deployment = async (args: {
-    cluster_id: string;
-    nodePoolName: string;
-    nodeCount: number;
-    projectId?: string;
-    location?: string
-}) => {
-    console.log(`[DevOps] Scaling node pool ${args.nodePoolName} in ${args.cluster_id} to ${args.nodeCount} nodes`);
+    scale_deployment: wrapTool('scale_deployment', async (args: {
+        cluster_id: string;
+        nodePoolName: string;
+        nodeCount: number;
+        projectId?: string;
+        location?: string
+    }) => {
+        console.info(`[DevOps] Scaling node pool ${args.nodePoolName} in ${args.cluster_id} to ${args.nodeCount} nodes`);
 
-    try {
         const scaleGKENodePoolFn = httpsCallable<
             { clusterName: string; nodePoolName: string; nodeCount: number; projectId?: string; location?: string },
             ScaleResult
@@ -115,18 +107,12 @@ export const scale_deployment = async (args: {
             location: args.location
         });
 
-        return JSON.stringify(result.data);
-    } catch (error) {
-        const err = error as Error;
-        console.error('[DevOps] Failed to scale deployment:', err.message);
-        return JSON.stringify({ success: false, error: err.message });
-    }
-};
+        return toolSuccess(result.data, result.data.success ? `Successfully scaled ${args.nodePoolName}.` : `Failed to scale ${args.nodePoolName}.`);
+    }),
 
-export const list_instances = async (args?: { projectId?: string; zone?: string }) => {
-    console.log(`[DevOps] Listing GCE instances`);
+    list_instances: wrapTool('list_instances', async (args?: { projectId?: string; zone?: string }) => {
+        console.info(`[DevOps] Listing GCE instances`);
 
-    try {
         const listGCEInstancesFn = httpsCallable<
             { projectId?: string; zone?: string },
             { instances: GCEInstance[] }
@@ -137,22 +123,18 @@ export const list_instances = async (args?: { projectId?: string; zone?: string 
             zone: args?.zone
         });
 
-        return JSON.stringify(result.data.instances);
-    } catch (error) {
-        const err = error as Error;
-        console.error('[DevOps] Failed to list instances:', err.message);
-        return JSON.stringify({ error: err.message, hint: 'Ensure Compute Engine API is enabled.' });
-    }
-};
+        return toolSuccess({
+            instances: result.data.instances
+        }, `Retrieved ${result.data.instances.length} GCE instances.`);
+    }),
 
-export const restart_service = async (args: {
-    instance_name: string;
-    zone: string;
-    projectId?: string
-}) => {
-    console.log(`[DevOps] Restarting instance: ${args.instance_name} in ${args.zone}`);
+    restart_service: wrapTool('restart_service', async (args: {
+        instance_name: string;
+        zone: string;
+        projectId?: string
+    }) => {
+        console.info(`[DevOps] Restarting instance: ${args.instance_name} in ${args.zone}`);
 
-    try {
         const restartGCEInstanceFn = httpsCallable<
             { instanceName: string; zone: string; projectId?: string },
             RestartResult
@@ -164,21 +146,9 @@ export const restart_service = async (args: {
             projectId: args.projectId
         });
 
-        return JSON.stringify({
+        return toolSuccess({
             ...result.data,
             timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        const err = error as Error;
-        console.error('[DevOps] Failed to restart instance:', err.message);
-        return JSON.stringify({ success: false, error: err.message });
-    }
-};
-
-export const DevOpsTools = {
-    list_clusters,
-    get_cluster_status,
-    scale_deployment,
-    list_instances,
-    restart_service
+        }, result.data.success ? `Successfully restarted ${args.instance_name}.` : `Failed to restart ${args.instance_name}.`);
+    })
 };

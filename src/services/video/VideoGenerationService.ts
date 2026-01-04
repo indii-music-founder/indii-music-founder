@@ -89,6 +89,21 @@ export class VideoGenerationService {
         return prompt;
     }
 
+    private determineTargetAspectRatio(options: { aspectRatio?: string, userProfile?: UserProfile }): string | undefined {
+        // 1. Explicit override takes precedence
+        if (options.aspectRatio) return options.aspectRatio;
+
+        // 2. Fallback to Distributor Constraints
+        if (options.userProfile) {
+            const constraints = getVideoConstraints(options.userProfile);
+            if (constraints.canvas) {
+                return constraints.canvas.aspectRatio;
+            }
+        }
+
+        return undefined;
+    }
+
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
         // Enforce Authentication
         if (!auth.currentUser) {
@@ -117,14 +132,7 @@ export class VideoGenerationService {
             fps: options.fps
         }, options.userProfile);
 
-        // Determine Aspect Ratio from Distributor if not provided
-        let targetAspectRatio = options.aspectRatio;
-        if (!targetAspectRatio && options.userProfile) {
-            const videoConstraints = getVideoConstraints(options.userProfile);
-            if (videoConstraints.canvas) {
-                targetAspectRatio = videoConstraints.canvas.aspectRatio;
-            }
-        }
+        const targetAspectRatio = this.determineTargetAspectRatio(options);
 
         const orgId = useStore.getState().currentOrganizationId;
 
@@ -219,14 +227,7 @@ export class VideoGenerationService {
             // Enrich prompt with distributor context
             const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
 
-            // Determine Aspect Ratio from Distributor if not provided
-            let targetAspectRatio = options.aspectRatio;
-            if (!targetAspectRatio && options.userProfile) {
-                const videoConstraints = getVideoConstraints(options.userProfile);
-                if (videoConstraints.canvas) {
-                    targetAspectRatio = videoConstraints.canvas.aspectRatio;
-                }
-            }
+            const targetAspectRatio = this.determineTargetAspectRatio(options);
 
             // Construct segment-wise prompts for the background worker
             const BLOCK_DURATION = 8;

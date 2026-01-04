@@ -1,37 +1,34 @@
 import { runAgenticWorkflow } from '@/services/rag/ragService';
 import { useStore } from '@/core/store';
+import { wrapTool, toolError } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
-export const KnowledgeTools = {
-    search_knowledge: async (args: { query: string }) => {
+export const KnowledgeTools: Record<string, AnyToolFunction> = {
+    search_knowledge: wrapTool('search_knowledge', async (args: { query: string }) => {
         const store = useStore.getState();
         const userProfile = store.userProfile;
 
         if (!userProfile) {
-            return "Error: User profile not loaded. Please log in.";
+            return toolError("User profile not loaded. Please log in.", "AUTH_REQUIRED");
         }
 
-        try {
-            // We pass a simple logger for updates
-            // Note: activeTrack is null for now as it's not strictly required for general knowledge queries
-            const { asset } = await runAgenticWorkflow(
-                args.query,
-                userProfile,
-                null,
-                (update) => console.log(`[RAG] ${update}`),
-                () => { } // Update Doc Status dummy
-            );
+        // We pass a simple logger for updates
+        // Note: activeTrack is null for now as it's not strictly required for general knowledge queries
+        const { asset } = await runAgenticWorkflow(
+            args.query,
+            userProfile,
+            null,
+            (update) => console.info(`[RAG] ${update}`),
+            () => { } // Update Doc Status dummy
+        );
 
-            // Return structured data for the agent to consume
-            return JSON.stringify({
-                answer: asset.content,
-                sources: asset.sources.map(s => ({
-                    title: s.name
-                }))
-            });
-        } catch (e: unknown) {
-            console.error("Knowledge Tool Error:", e);
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            return JSON.stringify({ error: `Failed to search knowledge base: ${errorMessage}` });
-        }
-    }
+        // Return structured data for the agent to consume
+        return {
+            answer: asset.content,
+            sources: asset.sources.map(s => ({
+                title: s.name
+            })),
+            message: "Knowledge search completed successfully."
+        };
+    })
 };

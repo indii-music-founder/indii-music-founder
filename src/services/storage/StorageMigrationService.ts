@@ -23,12 +23,12 @@ export class StorageMigrationService {
         const user = auth.currentUser;
         if (!user) throw new Error("User must be logged in to migrate data");
 
-        console.log("Starting migration for user:", user.uid);
+        console.info("[StorageMigrationService] Starting migration for user:", user.uid);
 
         await this.migrateAssets(user.uid);
         await this.migrateWorkflows(user.uid);
 
-        console.log("Migration complete");
+        console.info("[StorageMigrationService] Migration complete");
     }
 
     private async migrateAssets(userId: string): Promise<void> {

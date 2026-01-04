@@ -1,6 +1,8 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { wrapTool } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // --- Zod Schemas ---
 
@@ -30,8 +32,8 @@ const AuditVisualAssetsSchema = z.object({
 
 // --- Tools Implementation ---
 
-export const BrandTools = {
-    verify_output: async ({ goal, content }: { goal: string; content: string }) => {
+export const BrandTools: Record<string, AnyToolFunction> = {
+    verify_output: wrapTool('verify_output', async ({ goal, content }: { goal: string; content: string }) => {
         const schema = zodToJsonSchema(VerifyOutputSchema);
         const prompt = `
         You are a strict Brand Manager. Verify if the following content meets the goal.
@@ -42,16 +44,17 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(VerifyOutputSchema.parse(data));
-        } catch (error) {
-            console.error('BrandTools.verify_output error:', error);
-            return JSON.stringify({ approved: false, critique: "AI Generation Failed", score: 0 });
-        }
-    },
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const validated = VerifyOutputSchema.parse(data);
+        return {
+            ...validated,
+            message: validated.approved
+                ? "Content approved by brand manager."
+                : `Content rejected: ${validated.critique}`
+        };
+    }),
 
-    analyze_brand_consistency: async ({ content, brand_guidelines }: { content: string; brand_guidelines?: string }) => {
+    analyze_brand_consistency: wrapTool('analyze_brand_consistency', async ({ content, brand_guidelines }: { content: string; brand_guidelines?: string }) => {
         const schema = zodToJsonSchema(AnalyzeBrandConsistencySchema);
         const prompt = `
         You are a Brand Specialist. Analyze the consistency of the following content.
@@ -63,16 +66,17 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(AnalyzeBrandConsistencySchema.parse(data));
-        } catch (error) {
-            console.error('BrandTools.analyze_brand_consistency error:', error);
-            return JSON.stringify({ consistent: false, issues: ["AI Analysis Failed"], recommendations: [] });
-        }
-    },
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const validated = AnalyzeBrandConsistencySchema.parse(data);
+        return {
+            ...validated,
+            message: validated.consistent
+                ? "Content is brand consistent."
+                : `Found ${validated.issues.length} consistency issues.`
+        };
+    }),
 
-    generate_brand_guidelines: async ({ name, values }: { name: string; values: string[] }) => {
+    generate_brand_guidelines: wrapTool('generate_brand_guidelines', async ({ name, values }: { name: string; values: string[] }) => {
         const schema = zodToJsonSchema(GenerateBrandGuidelinesSchema);
         const prompt = `
         Create a structured Brand Guidelines document for a brand named "${name}".
@@ -82,16 +86,15 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(GenerateBrandGuidelinesSchema.parse(data));
-        } catch (error) {
-            console.error('BrandTools.generate_brand_guidelines error:', error);
-            return JSON.stringify({ voice: "Error", visuals: "Error", dos_and_donts: [] });
-        }
-    },
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const validated = GenerateBrandGuidelinesSchema.parse(data);
+        return {
+            ...validated,
+            message: `Brand guidelines generated for ${name}.`
+        };
+    }),
 
-    audit_visual_assets: async ({ assets }: { assets: string[] }) => {
+    audit_visual_assets: wrapTool('audit_visual_assets', async ({ assets }: { assets: string[] }) => {
         const schema = zodToJsonSchema(AuditVisualAssetsSchema);
         const prompt = `
         Audit the following list of visual assets for brand compliance (simulated):
@@ -101,12 +104,13 @@ export const BrandTools = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        try {
-            const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
-            return JSON.stringify(AuditVisualAssetsSchema.parse(data));
-        } catch (error) {
-            console.error('BrandTools.audit_visual_assets error:', error);
-            return JSON.stringify({ compliant: false, flagged_assets: [], report: "AI Audit Failed" });
-        }
-    }
+        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const validated = AuditVisualAssetsSchema.parse(data);
+        return {
+            ...validated,
+            message: validated.compliant
+                ? "All assets are compliant."
+                : `Flagged ${validated.flagged_assets.length} non-compliant assets.`
+        };
+    })
 };

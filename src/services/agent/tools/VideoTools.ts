@@ -1,325 +1,284 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration, VideoGenerationOptions } from '@/services/video/VideoGenerationService';
-
-// ============================================================================
-// Types for VideoTools
-// ============================================================================
-
-
-
-
-
-
-
-
-
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // ============================================================================
 // VideoTools Implementation
 // ============================================================================
 
-export const VideoTools = {
-    generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
-        try {
-            const { userProfile } = useStore.getState();
-            const results = await VideoGeneration.generateVideo({
+export const VideoTools: Record<string, AnyToolFunction> = {
+    generate_video: wrapTool('generate_video', async (args: { prompt: string, image?: string, duration?: number }) => {
+        const { userProfile } = useStore.getState();
+        const results = await VideoGeneration.generateVideo({
+            prompt: args.prompt,
+            firstFrame: args.image,
+            userProfile
+        });
+
+        if (results.length > 0) {
+            const videoJob = results[0];
+
+            // WAIT for job if URL is missing
+            let finalUrl = videoJob.url;
+            if (!finalUrl) {
+                const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                finalUrl = completedJob.videoUrl;
+            }
+
+            const { addToHistory, currentProjectId } = useStore.getState();
+            addToHistory({
+                id: videoJob.id,
+                url: finalUrl,
                 prompt: args.prompt,
-                firstFrame: args.image,
-                userProfile
+                type: 'video',
+                timestamp: Date.now(),
+                projectId: currentProjectId
             });
 
-            if (results.length > 0) {
-                const videoJob = results[0];
-
-                // WAIT for job if URL is missing
-                let finalUrl = videoJob.url;
-                if (!finalUrl) {
-                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                    finalUrl = completedJob.videoUrl;
-                }
-
-                const { addToHistory, currentProjectId } = useStore.getState();
-                addToHistory({
-                    id: videoJob.id,
-                    url: finalUrl,
-                    prompt: args.prompt,
-                    type: 'video',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-                return `Video generated successfully: ${finalUrl}`;
-            }
-            return "Video generation failed (no result returned).";
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Video generation failed: ${e.message}`);
-            }
-            throw new Error(`Video generation failed: An unknown error occurred.`);
+            return toolSuccess({
+                id: videoJob.id,
+                url: finalUrl,
+                prompt: args.prompt
+            }, `Video generated successfully: ${finalUrl}`);
         }
-    },
-    generate_motion_brush: async (args: { image: string, mask: string, prompt?: string }) => {
-        try {
-            const { Video } = await import('@/services/video/VideoService');
+        return toolError('GENERATION_FAILED', 'Video generation failed (no result returned).');
+    }),
 
-            const imgMatch = args.image.match(/^data:(.+);base64,(.+)$/);
-            const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
+    generate_motion_brush: wrapTool('generate_motion_brush', async (args: { image: string, mask: string, prompt?: string }) => {
+        const { Video } = await import('@/services/video/VideoService');
 
-            if (!imgMatch || !maskMatch) {
-                return "Invalid image or mask data. Must be base64 data URIs.";
-            }
+        const imgMatch = args.image.match(/^data:(.+);base64,(.+)$/);
+        const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
 
-            const image = { mimeType: imgMatch[1], data: imgMatch[2] };
-            const mask = { mimeType: maskMatch[1], data: maskMatch[2] };
-
-            const uri = await Video.generateMotionBrush(image, mask);
-
-            if (uri) {
-                const { addToHistory, currentProjectId } = useStore.getState();
-                addToHistory({
-                    id: crypto.randomUUID(),
-                    url: uri,
-                    prompt: args.prompt || "Motion Brush",
-                    type: 'video',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-                return `Motion Brush video generated successfully: ${uri}`;
-            }
-            return "Motion Brush generation failed.";
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Motion Brush failed: ${e.message}`);
-            }
-            throw new Error(`Motion Brush failed: An unknown error occurred.`);
+        if (!imgMatch || !maskMatch) {
+            return toolError('INVALID_INPUT', "Invalid image or mask data. Must be base64 data URIs.");
         }
-    },
-    batch_edit_videos: async (args: { prompt: string, videoIndices?: number[] }) => {
-        try {
-            const { uploadedImages, addToHistory, currentProjectId } = useStore.getState();
 
-            const allVideos = uploadedImages.filter(img => img.type === 'video');
+        const image = { mimeType: imgMatch[1], data: imgMatch[2] };
+        const mask = { mimeType: maskMatch[1], data: maskMatch[2] };
 
-            if (allVideos.length === 0) {
-                return "No videos found in uploads to edit. Please upload videos first.";
-            }
+        const uri = await Video.generateMotionBrush(image, mask);
 
-            const targetVideos = args.videoIndices
-                ? args.videoIndices.map(i => allVideos[i]).filter(Boolean)
-                : allVideos;
-
-            if (targetVideos.length === 0) {
-                return "No valid videos found for the provided indices.";
-            }
-
-            const videoDataList = targetVideos.map(vid => {
-                const match = vid.url.match(/^data:(.+);base64,(.+)$/);
-                if (match) {
-                    return { mimeType: match[1], data: match[2] };
-                }
-                return null;
-            }).filter(vid => vid !== null) as { mimeType: string; data: string }[];
-
-            if (videoDataList.length === 0) {
-                return "Could not process video data from uploads. Ensure they are valid data URIs.";
-            }
-
-            const results = await Editing.batchEditVideo({
-                videos: videoDataList,
-                prompt: args.prompt,
-                onProgress: (current, total) => {
-                    useStore.getState().addAgentMessage({
-                        id: crypto.randomUUID(),
-                        role: 'system',
-                        text: `Processing video ${current} of ${total}...`,
-                        timestamp: Date.now()
-                    });
-                }
-            });
-
-            if (results.length > 0) {
-                results.forEach(res => {
-                    addToHistory({
-                        id: res.id,
-                        url: res.url,
-                        prompt: res.prompt,
-                        type: 'video',
-                        timestamp: Date.now(),
-                        projectId: currentProjectId
-                    });
-                });
-                return `Successfully processed ${results.length} videos based on instruction: "${args.prompt}".`;
-            }
-            return "Batch video processing completed but no videos were returned.";
-
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Batch video processing failed: ${e.message}`);
-            }
-            throw new Error(`Batch video processing failed: An unknown error occurred.`);
-        }
-    },
-    extend_video: async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
-        try {
-            const { extractVideoFrame } = await import('@/utils/video');
-            const frameData = await extractVideoFrame(args.videoUrl);
-
-            if (!frameData) {
-                return "Failed to extract frame from the provided video URL.";
-            }
-
-            const options: VideoGenerationOptions = {
-                prompt: args.prompt,
-            };
-
-            if (args.direction === 'start') {
-                options.lastFrame = frameData; // If extending start, the video frame becomes the END of the new clip
-            } else {
-                options.firstFrame = frameData; // If extending end, the video frame becomes the START of the new clip
-            }
-
-            const { userProfile } = useStore.getState();
-            options.userProfile = userProfile;
-
-            const results = await VideoGeneration.generateVideo(options);
-
-            if (results.length > 0) {
-                const videoJob = results[0];
-
-                // WAIT for job if URL is missing
-                let finalUrl = videoJob.url;
-                if (!finalUrl) {
-                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                    finalUrl = completedJob.videoUrl;
-                }
-
-                const { addToHistory, currentProjectId } = useStore.getState();
-                addToHistory({
-                    id: videoJob.id,
-                    url: finalUrl,
-                    prompt: args.prompt,
-                    type: 'video',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-                return `Video extended successfully: ${finalUrl}`;
-            }
-            return "Video extension failed (no result returned).";
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Video extension failed: ${e.message}`);
-            }
-            throw new Error(`Video extension failed: An unknown error occurred.`);
-        }
-    },
-    update_keyframe: async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
-        try {
-            const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
-            const { updateKeyframe, addKeyframe, project } = useVideoEditorStore.getState();
-            const clip = project.clips.find(c => c.id === args.clipId);
-
-            if (!clip) {
-                return `Clip with ID ${args.clipId} not found.`;
-            }
-
-            // If easing is provided, we might need to update after adding, or just use update if it exists.
-            // Since addKeyframe doesn't take easing in the interface I saw (wait, let me check the file content again),
-            // I need to be careful.
-
-            // Looking at videoEditorStore.ts:
-            // addKeyframe: (clipId, property, frame, value) => void;
-            // updateKeyframe: (clipId, property, frame, updates) => void;
-
-            // So addKeyframe only sets value. If I want to set easing, I need to call updateKeyframe afterwards.
-
-            // 1. Add/Overwrite value
-            addKeyframe(args.clipId, args.property, args.frame, args.value);
-
-            // 2. Update easing if provided
-            if (args.easing) {
-                updateKeyframe(args.clipId, args.property, args.frame, { easing: args.easing });
-            }
-
-            return `Keyframe updated for clip ${args.clipId} on property ${args.property} at frame ${args.frame} with value ${args.value}${args.easing ? ` and easing ${args.easing}` : ''}.`;
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Keyframe update failed: ${e.message}`);
-            }
-            throw new Error(`Keyframe update failed: An unknown error occurred.`);
-        }
-    },
-    generate_video_chain: async (args: { prompt: string, startImage: string, totalDuration: number }) => {
-        try {
-            useStore.getState().addAgentMessage({
+        if (uri) {
+            const { addToHistory, currentProjectId } = useStore.getState();
+            addToHistory({
                 id: crypto.randomUUID(),
-                role: 'system',
-                text: `Queuing long-form background job for ${args.totalDuration}s...`,
-                timestamp: Date.now()
+                url: uri,
+                prompt: args.prompt || "Motion Brush",
+                type: 'video',
+                timestamp: Date.now(),
+                projectId: currentProjectId
             });
-
-            const { userProfile } = useStore.getState();
-
-            // Use the refactored background-driven service
-            const results = await VideoGeneration.generateLongFormVideo({
-                prompt: args.prompt,
-                totalDuration: args.totalDuration,
-                firstFrame: args.startImage,
-                userProfile
-            });
-
-            const jobId = results[0]?.id;
-            return `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`;
-
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Video chain generation failed: ${e.message}`);
-            }
-            throw new Error(`Video chain generation failed: An unknown error occurred.`);
+            return toolSuccess({
+                url: uri
+            }, `Motion Brush video generated successfully: ${uri}`);
         }
-    },
-    interpolate_sequence: async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
-        try {
-            // "Interpolate_Sequence(Frame_A, Frame_B)"
-            // "Google V3.1 generates the transition pixels between these locked states."
+        return toolError('GENERATION_FAILED', "Motion Brush generation failed.");
+    }),
 
-            // (Assuming the underlying service supports this, which many video models do).
+    batch_edit_videos: wrapTool('batch_edit_videos', async (args: { prompt: string, videoIndices?: number[] }) => {
+        const { uploadedImages, addToHistory, currentProjectId } = useStore.getState();
+        const allVideos = uploadedImages.filter(img => img.type === 'video');
 
-            const { userProfile } = useStore.getState();
+        if (allVideos.length === 0) {
+            return toolError('NOT_FOUND', "No videos found in uploads to edit. Please upload videos first.");
+        }
 
-            const results = await VideoGeneration.generateVideo({
-                prompt: args.prompt || "Smooth transition between frames",
-                firstFrame: args.firstFrame,
-                lastFrame: args.lastFrame,
-                userProfile
-            });
+        const targetVideos = args.videoIndices
+            ? args.videoIndices.map(i => allVideos[i]).filter(Boolean)
+            : allVideos;
 
-            if (results.length > 0) {
-                const videoJob = results[0];
-                let finalUrl = videoJob.url;
+        if (targetVideos.length === 0) {
+            return toolError('INVALID_INDEX', "No valid videos found for the provided indices.");
+        }
 
-                if (!finalUrl) {
-                    const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                    finalUrl = completedJob.videoUrl;
-                }
+        const videoDataList = targetVideos.map(vid => {
+            const match = vid.url.match(/^data:(.+);base64,(.+)$/);
+            if (match) {
+                return { mimeType: match[1], data: match[2] };
+            }
+            return null;
+        }).filter(vid => vid !== null) as { mimeType: string; data: string }[];
 
-                const { addToHistory, currentProjectId } = useStore.getState();
+        if (videoDataList.length === 0) {
+            return toolError('PROCESSING_FAILED', "Could not process video data from uploads. Ensure they are valid data URIs.");
+        }
+
+        const results = await Editing.batchEditVideo({
+            videos: videoDataList,
+            prompt: args.prompt,
+            onProgress: (current, total) => {
+                useStore.getState().addAgentMessage({
+                    id: crypto.randomUUID(),
+                    role: 'system',
+                    text: `Processing video ${current} of ${total}...`,
+                    timestamp: Date.now()
+                });
+            }
+        });
+
+        if (results.length > 0) {
+            results.forEach(res => {
                 addToHistory({
-                    id: videoJob.id,
-                    url: finalUrl,
-                    prompt: args.prompt || "Frame Interpolation",
+                    id: res.id,
+                    url: res.url,
+                    prompt: res.prompt,
                     type: 'video',
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
-                return `Sequence interpolated successfully: ${finalUrl}`;
-            }
-            return "Interpolation failed (no URI returned).";
-
-        } catch (e: unknown) {
-            if (e instanceof Error) {
-                throw new Error(`Interpolation failed: ${e.message}`);
-            }
-            throw new Error(`Interpolation failed: An unknown error occurred.`);
+            });
+            return toolSuccess({
+                processedCount: results.length,
+                results
+            }, `Successfully processed ${results.length} videos based on instruction: "${args.prompt}".`);
         }
-    }
+        return toolError('PROCESSING_FAILED', "Batch video processing completed but no videos were returned.");
+    }),
+
+    extend_video: wrapTool('extend_video', async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
+        const { extractVideoFrame } = await import('@/utils/video');
+        const frameData = await extractVideoFrame(args.videoUrl);
+
+        if (!frameData) {
+            return toolError('EXTRACTION_FAILED', "Failed to extract frame from the provided video URL.");
+        }
+
+        const options: VideoGenerationOptions = {
+            prompt: args.prompt,
+        };
+
+        if (args.direction === 'start') {
+            options.lastFrame = frameData;
+        } else {
+            options.firstFrame = frameData;
+        }
+
+        const { userProfile } = useStore.getState();
+        options.userProfile = userProfile;
+
+        const results = await VideoGeneration.generateVideo(options);
+
+        if (results.length > 0) {
+            const videoJob = results[0];
+
+            let finalUrl = videoJob.url;
+            if (!finalUrl) {
+                const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                finalUrl = completedJob.videoUrl;
+            }
+
+            const { addToHistory, currentProjectId } = useStore.getState();
+            addToHistory({
+                id: videoJob.id,
+                url: finalUrl,
+                prompt: args.prompt,
+                type: 'video',
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            });
+
+            return toolSuccess({
+                id: videoJob.id,
+                url: finalUrl
+            }, `Video extended successfully: ${finalUrl}`);
+        }
+        return toolError('GENERATION_FAILED', "Video extension failed (no result returned).");
+    }),
+
+    update_keyframe: wrapTool('update_keyframe', async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
+        const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
+        const { updateKeyframe, addKeyframe, project } = useVideoEditorStore.getState();
+        const clip = project.clips.find(c => c.id === args.clipId);
+
+        if (!clip) {
+            return toolError('NOT_FOUND', `Clip with ID ${args.clipId} not found.`);
+        }
+
+        addKeyframe(args.clipId, args.property, args.frame, args.value);
+
+        if (args.easing) {
+            updateKeyframe(args.clipId, args.property, args.frame, { easing: args.easing });
+        }
+
+        return toolSuccess({
+            clipId: args.clipId,
+            property: args.property,
+            frame: args.frame,
+            value: args.value,
+            easing: args.easing
+        }, `Keyframe updated for clip ${args.clipId} on property ${args.property} at frame ${args.frame} with value ${args.value}${args.easing ? ` and easing ${args.easing}` : ''}.`);
+    }),
+
+    generate_video_chain: wrapTool('generate_video_chain', async (args: { prompt: string, startImage: string, totalDuration: number }) => {
+        useStore.getState().addAgentMessage({
+            id: crypto.randomUUID(),
+            role: 'system',
+            text: `Queuing long-form background job for ${args.totalDuration}s...`,
+            timestamp: Date.now()
+        });
+
+        const { userProfile } = useStore.getState();
+
+        const results = await VideoGeneration.generateLongFormVideo({
+            prompt: args.prompt,
+            totalDuration: args.totalDuration,
+            firstFrame: args.startImage,
+            userProfile
+        });
+
+        const jobId = results[0]?.id;
+        return toolSuccess({
+            jobId
+        }, `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`);
+    }),
+
+    interpolate_sequence: wrapTool('interpolate_sequence', async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
+        const { userProfile } = useStore.getState();
+        const results = await VideoGeneration.generateVideo({
+            prompt: args.prompt || "Smooth transition between frames",
+            firstFrame: args.firstFrame,
+            lastFrame: args.lastFrame,
+            userProfile
+        });
+
+        if (results.length > 0) {
+            const videoJob = results[0];
+            let finalUrl = videoJob.url;
+
+            if (!finalUrl) {
+                const completedJob = await VideoGeneration.waitForJob(videoJob.id);
+                finalUrl = completedJob.videoUrl;
+            }
+
+            const { addToHistory, currentProjectId } = useStore.getState();
+            addToHistory({
+                id: videoJob.id,
+                url: finalUrl,
+                prompt: args.prompt || "Frame Interpolation",
+                type: 'video',
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            });
+
+            return toolSuccess({
+                id: videoJob.id,
+                url: finalUrl
+            }, `Sequence interpolated successfully: ${finalUrl}`);
+        }
+        return toolError('GENERATION_FAILED', "Interpolation failed (no result returned).");
+    })
 };
+
+// Aliases
+export const {
+    generate_video,
+    generate_motion_brush,
+    batch_edit_videos,
+    extend_video,
+    update_keyframe,
+    generate_video_chain,
+    interpolate_sequence
+} = VideoTools;

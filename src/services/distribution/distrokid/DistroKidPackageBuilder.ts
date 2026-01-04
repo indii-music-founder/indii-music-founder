@@ -88,7 +88,7 @@ export class DistroKidPackageBuilder {
             packagedFiles.push(destCoverPath);
         }
 
-        console.log(`[DistroKidBuilder] Built package: ${packagePath}`);
+        console.info(`[DistroKidBuilder] Built package: ${packagePath}`);
         return { packagePath, files: packagedFiles };
     }
 

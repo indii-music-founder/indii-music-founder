@@ -1,51 +1,42 @@
 import { StorageService } from '@/services/StorageService';
+import { wrapTool } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
-export const StorageTools = {
-    list_files: async (args: { limit?: number, type?: string }) => {
-        try {
-            const count = args.limit || 20;
-            const items = await StorageService.loadHistory(count);
+export const StorageTools: Record<string, AnyToolFunction> = {
+    list_files: wrapTool('list_files', async (args: { limit?: number, type?: string }) => {
+        const count = args.limit || 20;
+        const items = await StorageService.loadHistory(count);
 
-            let filtered = items;
-            if (args.type) {
-                filtered = items.filter(item => item.type === args.type);
-            }
-
-            if (filtered.length === 0) {
-                return "No files found.";
-            }
-
-            return filtered.map(item =>
-                `- [${item.type}] ${item.prompt || 'No prompt'} (${new Date(item.timestamp).toLocaleString()})`
-            ).join('\n');
-        } catch (e: unknown) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            return `Failed to list files: ${errorMessage}`;
+        let filtered = items;
+        if (args.type) {
+            filtered = items.filter(item => item.type === args.type);
         }
-    },
 
-    search_files: async (args: { query: string }) => {
-        try {
-            // Basic efficient search: load recent usage and filter. 
-            // Ideally backend would support search.
-            const items = await StorageService.loadHistory(100);
-            const q = args.query.toLowerCase();
+        return {
+            files: filtered,
+            count: filtered.length,
+            message: filtered.length === 0 ? "No files found." : `Found ${filtered.length} files.`
+        };
+    }),
 
-            const matches = items.filter(item =>
-                (item.prompt && item.prompt.toLowerCase().includes(q)) ||
-                (item.type && item.type.toLowerCase().includes(q))
-            );
+    search_files: wrapTool('search_files', async (args: { query: string }) => {
+        // Basic efficient search: load recent usage and filter. 
+        // Ideally backend would support search.
+        const items = await StorageService.loadHistory(100);
+        const q = args.query.toLowerCase();
 
-            if (matches.length === 0) {
-                return `No files found matching query "${args.query}".`;
-            }
+        const matches = items.filter(item =>
+            (item.prompt && item.prompt.toLowerCase().includes(q)) ||
+            (item.type && item.type.toLowerCase().includes(q))
+        );
 
-            return matches.map(item =>
-                `- [${item.type}] ${item.prompt || 'No prompt'} (${new Date(item.timestamp).toLocaleString()})`
-            ).join('\n');
-        } catch (e: unknown) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            return `Failed to search files: ${errorMessage}`;
-        }
-    }
+        return {
+            results: matches,
+            count: matches.length,
+            message: matches.length === 0 ? `No files found matching query "${args.query}".` : `Found ${matches.length} files matching "${args.query}".`
+        };
+    })
 };
+
+// Aliases
+export const { list_files, search_files } = StorageTools;
