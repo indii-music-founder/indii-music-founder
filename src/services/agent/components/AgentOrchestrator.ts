@@ -56,39 +56,63 @@ export class AgentOrchestrator {
         USER REQUEST: "${sanitizedQuery}"
 
         ROUTING RULES:
-        1. Return ONLY the agent ID (e.g., "legal", "video"). Do not explain.
+        1. You MUST return a JSON object with the following structure:
+           {
+             "targetAgentId": "string", // One of the available agent IDs
+             "confidence": number, // 0.0 to 1.0
+             "reasoning": "string" // Brief explanation of why this agent was chosen
+           }
         2. If the request is about the current project's domain, prioritize that specialist.
         3. If the request requires looking up information, general reasoning, or falls outside specific domains, use "generalist".
         4. "legal" handles contracts, agreements, and splits.
         5. "music" handles audio analysis, lyrics, and production.
         6. "video" handles storyboards, treatments, and video editing.
         7. "marketing" handles social media, campaigns, and brand strategy.
-
-        EXAMPLES:
-        "Draft a split sheet" -> legal
-        "Make this bass punchier" -> music
-        "Generate a storyboard for the verse" -> video
-        "Post this to TikTok" -> marketing
-        "How do I use this app?" -> generalist
-        "What is the capital of France?" -> generalist
         `;
 
         try {
             const res = await AI.generateContent({
                 model: AI_MODELS.TEXT.FAST,
                 contents: { role: 'user', parts: [{ text: prompt }] },
-                config: { ...AI_CONFIG.THINKING.LOW }
+                config: {
+                    ...AI_CONFIG.THINKING.LOW,
+                    responseMimeType: 'application/json'
+                }
             });
 
-            const route = (res.text() || 'generalist').trim().toLowerCase();
-            const validRoutes = AGENTS.map(a => a.id);
+            const textResponse = res.text() || '{}';
+            let parsedResponse: { targetAgentId: string; confidence: number; reasoning: string };
 
-            const finalRoute = validRoutes.includes(route) ? route : 'generalist';
+            try {
+                parsedResponse = JSON.parse(textResponse);
+            } catch (parseError) {
+                console.warn('[AgentOrchestrator] Failed to parse JSON response:', textResponse);
+                await TraceService.addStep(traceId, 'routing', {
+                    selectedAgent: 'generalist',
+                    reasoning: 'JSON Parse Error, fallback to generalist',
+                    rawResponse: textResponse
+                });
+                await TraceService.completeTrace(traceId, { selectedAgent: 'generalist' });
+                return 'generalist';
+            }
+
+            const { targetAgentId, confidence, reasoning } = parsedResponse;
+            const validRoutes = AGENTS.map(a => a.id);
+            let finalRoute = validRoutes.includes(targetAgentId) ? targetAgentId : 'generalist';
+
+            // Confidence Threshold Check
+            const CONFIDENCE_THRESHOLD = 0.7;
+            if (confidence < CONFIDENCE_THRESHOLD) {
+                console.info(`[AgentOrchestrator] Low confidence (${confidence}) for ${targetAgentId}, falling back to generalist.`);
+                finalRoute = 'generalist';
+            }
 
             // Log Step
             await TraceService.addStep(traceId, 'routing', {
                 selectedAgent: finalRoute,
-                reasoning: 'AI Model Decision'
+                confidence,
+                reasoning,
+                originalDecision: targetAgentId
             });
 
             // Complete Trace
