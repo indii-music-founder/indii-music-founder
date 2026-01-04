@@ -22,6 +22,8 @@ export default function InfiniteCanvas() {
     const isDragging = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });
     const dragImageId = useRef<string | null>(null);
+    // ⚡ Bolt Optimization: Accumulate drag delta locally to avoid triggering React re-renders via store updates
+    const dragAccumulator = useRef({ x: 0, y: 0 });
     const selectionStart = useRef<{ x: number, y: number } | null>(null);
     const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
     const rafId = useRef<number | null>(null);
@@ -72,7 +74,7 @@ export default function InfiniteCanvas() {
 
         // Images
         canvasImages.forEach(img => {
-        let image = imageCache.current.get(img.id);
+            let image = imageCache.current.get(img.id);
             if (!image) {
                 image = new window.Image();
                 image.src = img.base64;
@@ -84,12 +86,22 @@ export default function InfiniteCanvas() {
                 // Ensure width/height are numbers
                 const w = img.width ?? 0;
                 const h = img.height ?? 0;
-                ctx.drawImage(image, img.x, img.y, w, h);
+
+                // ⚡ Bolt Optimization: Apply local drag offset during render
+                let drawX = img.x;
+                let drawY = img.y;
+
+                if (img.id === dragImageId.current) {
+                    drawX += dragAccumulator.current.x;
+                    drawY += dragAccumulator.current.y;
+                }
+
+                ctx.drawImage(image, drawX, drawY, w, h);
 
                 if (img.id === selectedCanvasImageId) {
                     ctx.strokeStyle = '#3b82f6';
                     ctx.lineWidth = 4 / scale;
-                    ctx.strokeRect(img.x, img.y, w, h);
+                    ctx.strokeRect(drawX, drawY, w, h);
                 }
             }
         });
@@ -143,6 +155,7 @@ export default function InfiniteCanvas() {
 
         lastPos.current = { x: cx, y: cy };
         isDragging.current = true;
+        dragAccumulator.current = { x: 0, y: 0 }; // Reset accumulator
 
         if (tool === 'generate') {
             selectionStart.current = { x: cx, y: cy };
@@ -190,11 +203,10 @@ export default function InfiniteCanvas() {
         }
 
         if (dragImageId.current && tool === 'select') {
-            // Updating store will trigger re-render, which calls effect -> requestDraw
-            updateCanvasImage(dragImageId.current, {
-                x: canvasImages.find(i => i.id === dragImageId.current)!.x + (dx / scale),
-                y: canvasImages.find(i => i.id === dragImageId.current)!.y + (dy / scale)
-            });
+            // ⚡ Bolt Optimization: Update local accumulator instead of store
+            dragAccumulator.current.x += dx / scale;
+            dragAccumulator.current.y += dy / scale;
+            requestDraw();
         } else {
             // Pan logic: direct ref update + draw call (no react render)
             offsetRef.current = {
@@ -207,6 +219,18 @@ export default function InfiniteCanvas() {
 
     const handleMouseUp = async () => {
         isDragging.current = false;
+
+        // ⚡ Bolt Optimization: Commit final position to store
+        if (dragImageId.current && tool === 'select') {
+            const img = canvasImages.find(i => i.id === dragImageId.current);
+            if (img && (dragAccumulator.current.x !== 0 || dragAccumulator.current.y !== 0)) {
+                updateCanvasImage(dragImageId.current, {
+                    x: img.x + dragAccumulator.current.x,
+                    y: img.y + dragAccumulator.current.y
+                });
+            }
+        }
+
         dragImageId.current = null;
 
         if (tool === 'generate' && selectionStart.current) {
