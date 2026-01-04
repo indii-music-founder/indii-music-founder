@@ -15,6 +15,13 @@ const base64ToBlob = (base64: string, type = 'image/png'): Blob => {
     return new Blob([arr], { type });
 };
 
+const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms))
+    ]);
+};
+
 // Helper to persist image to Storage and Resources
 const persistImage = async (base64: string | string, prompt: string, type: 'image' = 'image'): Promise<string> => {
     // 1. Handle base64 string
@@ -43,7 +50,12 @@ const persistImage = async (base64: string | string, prompt: string, type: 'imag
             const storagePath = `projects/${currentProjectId}/${userProfile.id}/${filename}`;
 
             // Upload
-            const downloadUrl = await StorageService.uploadFile(blob, storagePath);
+            // Upload with timeout (20s)
+            const downloadUrl = await withTimeout(
+                StorageService.uploadFile(blob, storagePath),
+                20000,
+                'Image upload'
+            );
             displayUrl = downloadUrl; // Use remote URL for display + history to ensure consistency
 
             // Create File Node (Sidebar)
@@ -170,7 +182,12 @@ export const DirectorTools = {
     generate_high_res_asset: async (args: { prompt: string, templateType: string }) => {
         try {
             const fullPrompt = `High resolution asset for ${args.templateType}. ${args.prompt}. Print quality, 4k.`;
-            const base64 = await firebaseAI.generateImage(fullPrompt);
+            // Add 120s timeout for high-res generation (it can be slow)
+            const base64 = await withTimeout(
+                firebaseAI.generateImage(fullPrompt),
+                120000,
+                'Image generation'
+            );
 
             // Save to history
             // Persist and get URL
