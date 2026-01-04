@@ -2,22 +2,84 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
+import { StorageService } from '@/services/StorageService';
 
-const base64ToBlobUrl = (base64: string, type = 'image/png'): string => {
-    // Basic conversion for browser environments
-    try {
-        const binStr = atob(base64);
-        const len = binStr.length;
-        const arr = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            arr[i] = binStr.charCodeAt(i);
-        }
-        const blob = new Blob([arr], { type });
-        return URL.createObjectURL(blob);
-    } catch (e) {
-        console.warn('Failed to create blob URL, falling back to empty', e);
-        return '';
+// Helper to convert base64 to Blob for upload
+const base64ToBlob = (base64: string, type = 'image/png'): Blob => {
+    const binStr = atob(base64);
+    const len = binStr.length;
+    const arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        arr[i] = binStr.charCodeAt(i);
     }
+    return new Blob([arr], { type });
+};
+
+// Helper to persist image to Storage and Resources
+const persistImage = async (base64: string | string, prompt: string, type: 'image' = 'image'): Promise<string> => {
+    // 1. Handle base64 string
+    let dataUrl = base64;
+    let b64Content = base64;
+
+    if (base64.startsWith('data:')) {
+        dataUrl = base64;
+        b64Content = base64.split(',')[1];
+    } else {
+        dataUrl = `data:image/png;base64,${base64}`;
+    }
+
+    const { currentProjectId, userProfile, addToHistory, createFileNode } = useStore.getState();
+
+    // 2. Upload to Storage if possible (to populate Resources)
+    let displayUrl = dataUrl;
+
+    if (currentProjectId && userProfile?.id) {
+        try {
+            const blob = base64ToBlob(b64Content);
+            const timestamp = Date.now();
+            // Sanitize prompt for filename
+            const safeName = prompt.slice(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const filename = `gen_${timestamp}_${safeName}.png`;
+            const storagePath = `projects/${currentProjectId}/${userProfile.id}/${filename}`;
+
+            // Upload
+            const downloadUrl = await StorageService.uploadFile(blob, storagePath);
+            displayUrl = downloadUrl; // Use remote URL for display + history to ensure consistency
+
+            // Create File Node (Sidebar)
+            await createFileNode(
+                filename,
+                null, // Root level or specific folder? Root for now.
+                currentProjectId,
+                userProfile.id,
+                'image',
+                {
+                    url: downloadUrl,
+                    storagePath,
+                    size: blob.size,
+                    mimeType: 'image/png'
+                }
+            );
+
+            console.log("Persisted generated image to resources:", filename);
+
+        } catch (e) {
+            console.error("Failed to persist image to storage/resources:", e);
+            // Fallback to data URL continues
+        }
+    }
+
+    // 3. Add to History
+    addToHistory({
+        id: crypto.randomUUID(),
+        url: displayUrl,
+        prompt: prompt,
+        type: type,
+        timestamp: Date.now(),
+        projectId: currentProjectId || 'unknown'
+    });
+
+    return displayUrl;
 };
 
 export const DirectorTools = {
@@ -32,23 +94,11 @@ export const DirectorTools = {
             });
 
             // Mock saving to history since we don't have the full infrastructure here
-            const url = `data:image/png;base64,${base64}`;
-            const { addToHistory, currentProjectId } = useStore.getState();
-
-            addToHistory({
-                id: crypto.randomUUID(),
-                url: url,
-                prompt: args.prompt,
-                type: 'image',
-                timestamp: Date.now(),
-                projectId: currentProjectId
-            });
-
-            // Create blob URL for lighter chat rendering
-            const blobUrl = base64ToBlobUrl(base64);
+            // Persist and get URL
+            const url = await persistImage(base64, args.prompt);
 
             // Return markdown image format for generic Chat UI rendering
-            return `![Generated Image](${blobUrl})`;
+            return `![Generated Image](${url})`;
         } catch (e: any) {
             return `Image generation failed: ${e.message}`;
         }
@@ -123,21 +173,11 @@ export const DirectorTools = {
             const base64 = await firebaseAI.generateImage(fullPrompt);
 
             // Save to history
-            const url = `data:image/png;base64,${base64}`;
-            const { addToHistory, currentProjectId } = useStore.getState();
+            // Persist and get URL
+            const url = await persistImage(base64, `High-Res Asset: ${args.templateType}`);
 
-            addToHistory({
-                id: crypto.randomUUID(),
-                url: url,
-                prompt: `High-Res Asset: ${args.templateType} - ${args.prompt}`,
-                type: 'image',
-                timestamp: Date.now(),
-                projectId: currentProjectId
-            });
-
-            // Display using blob URL to avoid text overflow
-            const blobUrl = base64ToBlobUrl(base64);
-            return `![High Res Asset](${blobUrl})\n\nHigh-res asset generated for ${args.templateType}.`;
+            // Display using persistent URL
+            return `![High Res Asset](${url})\n\nHigh-res asset generated for ${args.templateType}.`;
         } catch (e: any) {
             return `Asset generation failed: ${e.message}`;
         }
@@ -210,21 +250,22 @@ export const DirectorTools = {
             });
 
             if (result) {
-                addToHistory({
-                    id: result.id,
-                    url: result.url,
-                    prompt: `Extracted Frame ${args.gridIndex}`,
-                    type: 'image',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-                // Create blob URL from the result url (which is currently a data url from EditingService usually, or we need to process it)
-                // result.url is likely data:uri given the implementation of set_entity_anchor logic implies it.
-                // But let's check safely.
                 let displayUrl = result.url;
+
+                // If it's a data URL, try to persist it
                 if (result.url.startsWith('data:')) {
-                    const b64 = result.url.split(',')[1];
-                    displayUrl = base64ToBlobUrl(b64);
+                    displayUrl = await persistImage(result.url, `Extracted Frame ${args.gridIndex}`);
+                } else {
+                    // Still add to history if standard URL
+                    const { addToHistory, currentProjectId } = useStore.getState();
+                    addToHistory({
+                        id: result.id,
+                        url: result.url,
+                        prompt: `Extracted Frame ${args.gridIndex}`,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
                 }
 
                 return `![Extracted Frame](${displayUrl})\n\nFrame ${args.gridIndex} extracted.`;
