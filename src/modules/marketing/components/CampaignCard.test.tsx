@@ -6,6 +6,7 @@ import { CampaignAsset, CampaignStatus } from '../types';
 describe('CampaignCard', () => {
     const mockCampaign: CampaignAsset = {
         id: '1',
+        assetType: 'campaign',
         title: 'Test Campaign',
         description: 'Test Description',
         status: CampaignStatus.EXECUTING,
@@ -13,15 +14,6 @@ describe('CampaignCard', () => {
         endDate: '2023-01-31',
         durationDays: 30,
         posts: [], // Empty posts for simplicity
-        platform: 'instagram',
-        type: 'awareness',
-        targetAudience: 'Test Audience',
-        assets: [],
-        budget: 1000,
-        createdAt: 0,
-        updatedAt: 0,
-        userId: 'test-user',
-        metrics: {} as any
     };
 
     const mockOnSelect = vi.fn();

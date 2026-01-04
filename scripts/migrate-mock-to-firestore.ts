@@ -146,9 +146,6 @@ async function migrateMerchandiseCatalog() {
             skipped++;
             continue;
         }
-
-    for (const product of MERCHANDISE_CATALOG) {
-        const ref = db.collection('merchandise_catalog').doc(product.id);
         batch.set(ref, {
             ...product,
             createdAt: new Date(),
@@ -160,8 +157,6 @@ async function migrateMerchandiseCatalog() {
         await batch.commit();
     }
     console.log(`   ✅ Migrated ${MERCHANDISE_CATALOG.length - skipped} products (${skipped} skipped)`);
-    await batch.commit();
-    console.log(`   ✅ Migrated ${MERCHANDISE_CATALOG.length} products`);
 }
 
 async function migrateSamplePlatforms() {
@@ -177,9 +172,6 @@ async function migrateSamplePlatforms() {
             skipped++;
             continue;
         }
-
-    for (const platform of SAMPLE_PLATFORMS) {
-        const ref = db.collection('sample_platforms').doc(platform.id);
         batch.set(ref, {
             ...platform,
             createdAt: new Date(),
@@ -191,8 +183,6 @@ async function migrateSamplePlatforms() {
         await batch.commit();
     }
     console.log(`   ✅ Migrated ${SAMPLE_PLATFORMS.length - skipped} platforms (${skipped} skipped)`);
-    await batch.commit();
-    console.log(`   ✅ Migrated ${SAMPLE_PLATFORMS.length} platforms`);
 }
 
 async function migrateApiInventory() {
@@ -208,9 +198,6 @@ async function migrateApiInventory() {
             skipped++;
             continue;
         }
-
-    for (const api of API_INVENTORY) {
-        const ref = db.collection('api_inventory').doc(api.id);
         batch.set(ref, {
             ...api,
             lastChecked: new Date(),
@@ -222,8 +209,6 @@ async function migrateApiInventory() {
         await batch.commit();
     }
     console.log(`   ✅ Migrated ${API_INVENTORY.length - skipped} APIs (${skipped} skipped)`);
-    await batch.commit();
-    console.log(`   ✅ Migrated ${API_INVENTORY.length} APIs`);
 }
 
 async function verifyMigration() {

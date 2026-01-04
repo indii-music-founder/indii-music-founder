@@ -12,12 +12,12 @@ interface ContactDetailsModalProps {
 }
 
 export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen, onClose, contact }) => {
-    if (!contact) return null;
-
-    const [relationship, setRelationship] = useState<Contact['relationshipStrength']>(contact.relationshipStrength);
-    const [note, setNote] = useState(contact.notes || '');
+    const [relationship, setRelationship] = useState<Contact['relationshipStrength'] | undefined>(contact?.relationshipStrength);
+    const [note, setNote] = useState(contact?.notes || '');
     const [isSaving, setIsSaving] = useState(false);
     const toast = useToast();
+
+    if (!contact) return null;
 
     const handleRelationshipChange = async (newStrength: Contact['relationshipStrength']) => {
         setRelationship(newStrength);

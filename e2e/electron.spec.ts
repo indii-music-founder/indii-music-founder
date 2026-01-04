@@ -11,7 +11,7 @@ test.describe('Electron IPC', () => {
             const electronPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron');
 
             // Debug: Check if preload script exists
-            const preloadPath = path.join(process.cwd(), 'dist-electron', 'preload.mjs');
+            const preloadPath = path.join(process.cwd(), 'dist-electron', 'preload.cjs');
             console.log('Test: Checking preload path:', preloadPath);
             if (fs.existsSync(preloadPath)) {
                 console.log('Test: Preload file exists');
@@ -62,7 +62,7 @@ test.describe('Electron IPC', () => {
 
             // Assertions
             expect(['darwin', 'win32', 'linux']).toContain(platform);
-            expect(version).toBe('0.0.0'); // Matches package.json version
+            expect(version).toBe('0.1.0-beta.2'); // Matches package.json version
 
             // Close the app
             await electronApp.close();

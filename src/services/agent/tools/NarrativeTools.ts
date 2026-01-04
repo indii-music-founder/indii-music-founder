@@ -51,31 +51,36 @@ Return ONLY a valid JSON object with the following structure:
 `;
             const prompt = `Synopsis: ${args.synopsis}`;
 
+            const schema = {
+                type: "object" as const,
+                nullable: false,
+                properties: {
+                    title: { type: "string" as const, nullable: false },
+                    logline: { type: "string" as const, nullable: true },
+                    beats: {
+                        type: "array" as const,
+                        nullable: false,
+                        items: {
+                            type: "object" as const,
+                            nullable: false,
+                            properties: {
+                                beat: { type: "number" as const, nullable: false },
+                                name: { type: "string" as const, nullable: false },
+                                description: { type: "string" as const, nullable: false },
+                                camera: { type: "string" as const, nullable: true },
+                                mood: { type: "string" as const, nullable: true }
+                            },
+                            required: ["beat", "name", "description"] as const
+                        }
+                    }
+                },
+                required: ["title", "beats"] as const
+            };
+
             const response = await firebaseAI.generateStructuredData(
                 [{ text: prompt }],
-                {
-                    type: "object",
-                    properties: {
-                        title: { type: "string" },
-                        logline: { type: "string" },
-                        beats: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    beat: { type: "number" },
-                                    name: { type: "string" },
-                                    description: { type: "string" },
-                                    camera: { type: "string" },
-                                    mood: { type: "string" }
-                                },
-                                required: ["beat", "name", "description"]
-                            }
-                        }
-                    },
-                    required: ["title", "beats"]
-                },
-                undefined as any,
+                schema,
+                undefined,
                 systemPrompt
             );
 

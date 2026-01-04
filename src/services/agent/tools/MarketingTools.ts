@@ -63,6 +63,7 @@ export const MarketingTools = {
 
             // AUTO-PERSIST: Save the generated brief to the database
             try {
+                const { budget: _budgetStr, ...briefData } = parsed;
                 await MarketingService.createCampaign({
                     name: parsed.campaignName,
                     platform: parsed.channels[0] || 'general',
@@ -72,7 +73,7 @@ export const MarketingTools = {
                     spent: 0,
                     performance: { reach: 0, clicks: 0 },
                     // Extra brief data stored in a JSON field or similar
-                    ...parsed
+                    ...briefData
                 } as any);
                 console.log(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
             } catch (persistError) {
@@ -128,7 +129,7 @@ export const MarketingTools = {
         else if (freqLower.includes("monthly")) intervalDays = 30;
 
         // Generate 4 weeks of content
-        const schedule = [];
+        const schedule: Array<{ date: string; platform: string; type: string }> = [];
         const postsPerPlatform = 4; // limit for this batch
 
         for (let i = 0; i < postsPerPlatform; i++) {

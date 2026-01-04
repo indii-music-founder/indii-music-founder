@@ -67,10 +67,7 @@ export async function runAgenticWorkflow(
             onUpdate("Using general knowledge...");
             if (sources.length === 0) reasoning.push("No files or Retrieval failed. Fallback to General LLM.");
 
-            responseText = await AI.generateText(query, {
-                model: AI_MODELS.TEXT.FAST,
-                temperature: 0.0
-            }) || "I couldn't generate a response.";
+            responseText = await AI.generateText(query) || "I couldn't generate a response.";
         }
 
     } catch (error) {

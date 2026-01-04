@@ -51,7 +51,7 @@ let appCheck = null;
 if (typeof window !== 'undefined') {
     // Debug token for local development - only set if explicitly configured
     if (env.DEV && env.appCheckDebugToken) {
-        // @ts-ignore
+        // @ts-expect-error - Firebase App Check debug token property not in Window interface
         window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
     }
 

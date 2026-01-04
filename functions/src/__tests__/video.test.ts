@@ -129,7 +129,7 @@ describe('Video Functions', () => {
 
     describe('triggerVideoJob', () => {
         it('should throw unauthenticated error if no context.auth', async () => {
-            // @ts-ignore
+            // @ts-expect-error - Testing unauthenticated access
             await expect(triggerVideoJob({}, {} as any))
                 .rejects.toThrow('User must be authenticated');
         });

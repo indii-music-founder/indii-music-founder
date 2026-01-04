@@ -6,7 +6,6 @@ import { usePublicist } from './hooks/usePublicist';
 // Mock the usePublicist hook
 vi.mock('./hooks/usePublicist', () => ({
     usePublicist: vi.fn(() => ({
-
         campaigns: [
             {
                 id: '1',
@@ -43,7 +42,8 @@ vi.mock('./hooks/usePublicist', () => ({
         searchQuery: '',
         setSearchQuery: vi.fn(),
         filterType: 'all',
-        setFilterType: vi.fn()
+        setFilterType: vi.fn(),
+        userProfile: { id: 'test-user' } as any
     }))
 }));
 
@@ -95,7 +95,8 @@ describe('PublicistDashboard', () => {
             searchQuery: '',
             setSearchQuery: vi.fn(),
             filterType: 'all',
-            setFilterType: vi.fn()
+            setFilterType: vi.fn(),
+            userProfile: { id: 'test-user' } as any
         });
 
         render(<PublicistDashboard />);

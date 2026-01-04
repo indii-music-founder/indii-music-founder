@@ -19,7 +19,6 @@ describe('ExpenseItem', () => {
     category: 'Equipment',
     description: 'New cables',
     createdAt: 1000,
-    updatedAt: 1000,
   };
 
   it('renders expense details correctly', () => {

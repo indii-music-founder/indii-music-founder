@@ -27,16 +27,26 @@ describe('Merchandise Components', () => {
         { id: '3', title: 'Pro Hoodie', price: '$60.00', category: 'pro', features: ['Heavyweight'], image: 'hoodie.jpg', userId: 'user-1', createdAt: new Date() }
     ];
 
+    const defaultMockReturn = {
+        products: [] as MerchProduct[],
+        standardProducts: [] as MerchProduct[],
+        proProducts: [] as MerchProduct[],
+        catalog: [],
+        stats: { totalRevenue: 0, unitsSold: 0, conversionRate: 0, revenueChange: 0, unitsChange: 0 },
+        topSellingProducts: [],
+        loading: false,
+        error: null,
+        addProduct: vi.fn(),
+        deleteProduct: vi.fn(),
+        createFromCatalog: vi.fn()
+    };
+
     it('BananaMerch renders standard products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
+            ...defaultMockReturn,
             products: [...mockStandardProducts, ...mockProProducts],
             standardProducts: mockStandardProducts,
             proProducts: mockProProducts,
-            catalog: [],
-            loading: false,
-            addProduct: vi.fn(),
-            deleteProduct: vi.fn(),
-            createFromCatalog: vi.fn()
         });
 
         render(<BananaMerch />);
@@ -49,14 +59,10 @@ describe('Merchandise Components', () => {
 
     it('BananaProMerch renders pro products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
+            ...defaultMockReturn,
             products: [...mockStandardProducts, ...mockProProducts],
             standardProducts: mockStandardProducts,
             proProducts: mockProProducts,
-            catalog: [],
-            loading: false,
-            addProduct: vi.fn(),
-            deleteProduct: vi.fn(),
-            createFromCatalog: vi.fn()
         });
 
         render(<BananaProMerch />);
@@ -67,14 +73,8 @@ describe('Merchandise Components', () => {
 
     it('shows loading state or empty state if no products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
-            products: [],
-            standardProducts: [],
-            proProducts: [],
-            catalog: [],
+            ...defaultMockReturn,
             loading: false, // assuming component handles empty list gracefully
-            addProduct: vi.fn(),
-            deleteProduct: vi.fn(),
-            createFromCatalog: vi.fn()
         });
 
         render(<BananaMerch />);

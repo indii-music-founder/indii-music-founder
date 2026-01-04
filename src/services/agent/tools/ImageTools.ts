@@ -1,4 +1,4 @@
-import { useStore } from '@/core/store';
+import { useStore, HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import type { ToolFunctionArgs } from '../types';
@@ -279,17 +279,17 @@ export const ImageTools = {
     },
     extract_grid_frame: async (args: ExtractGridFrameArgs) => {
         try {
-            const { history, addToHistory, currentProjectId } = useStore.getState();
+            const { generatedHistory, addToHistory, currentProjectId } = useStore.getState();
 
             // Find the source image - either by ID or get the most recent cinematic_grid
             let sourceImage;
             if (args.imageId) {
-                sourceImage = history.find(h => h.id === args.imageId);
+                sourceImage = generatedHistory.find((h: HistoryItem) => h.id === args.imageId);
             } else {
                 // Find the most recent cinematic grid
-                sourceImage = [...history]
+                sourceImage = [...generatedHistory]
                     .reverse()
-                    .find(h => h.meta === 'cinematic_grid' || h.prompt?.includes('cinematic grid'));
+                    .find((h: HistoryItem) => h.meta === 'cinematic_grid' || h.prompt?.includes('cinematic grid'));
             }
 
             if (!sourceImage) {
