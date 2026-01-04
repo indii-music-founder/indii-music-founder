@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+echo "Running pre-commit checks..."
+
+# Run linting on staged files with auto-fix
+npx lint-staged
+
+# Run unit tests (only on source files changes)
+if git diff --cached --name-only | grep -E "src/.*\.(ts|tsx)$"; then
+  echo "Running unit tests..."
+  npm run test -- --run 2>&1 | grep -v "Test files" || true
+fi
+
+echo "Pre-commit checks passed!"

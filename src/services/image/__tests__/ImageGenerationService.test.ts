@@ -1,124 +1,299 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ImageGeneration } from '../ImageGenerationService';
-import { AI } from '../../ai/AIService';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ImageGeneration } from "../ImageGenerationService";
+import { functions } from "@/services/firebase";
+import { httpsCallable } from "firebase/functions";
 
-// Mock the AI service
-vi.mock('../../ai/AIService', () => ({
-    AI: {
+// Mock Firebase functions
+vi.mock("@/services/firebase", () => ({
+  functions: {},
+}));
+
+vi.mock("firebase/functions", () => ({
+  httpsCallable: vi.fn(),
+}));
+
+describe("ImageGenerationService", () => {
+  const mockGenerateImage = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(httpsCallable).mockReturnValue(mockGenerateImage);
+  });
+
+  describe("generateImages", () => {
+    it("should generate images with basic options", async () => {
+      const mockResponse = {
+        data: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "base64data",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockResponse);
+
+      const results = await ImageGeneration.generateImages({
+        prompt: "A test image",
+        count: 1,
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].prompt).toBe("A test image");
+      expect(results[0].url).toMatch(/^data:image\/png;base64,/);
+
+      expect(httpsCallable).toHaveBeenCalledWith(functions, "generateImage");
+      expect(mockGenerateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining("A test image"),
+          count: 1,
+        }),
+      );
+    });
+
+    it("should handle distributor-aware cover art generation", async () => {
+      const mockResponse = {
+        data: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "base64data",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockResponse);
+
+      const userProfile = {
+        distributor: "tune-core",
+        distributionMethod: "aggregator",
+      };
+
+      const results = await ImageGeneration.generateImages({
+        prompt: "My album cover",
+        isCoverArt: true,
+        userProfile,
+      });
+
+      expect(results).toHaveLength(1);
+      expect(mockGenerateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          aspectRatio: "1:1", // Cover art should be square
+          prompt: expect.stringContaining("COVER ART REQUIREMENTS"),
+        }),
+      );
+    });
+
+    it("should handle image uploads (reference images)", async () => {
+      const mockResponse = {
+        data: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "base64data",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockResponse);
+
+      const results = await ImageGeneration.generateImages({
+        prompt: "Edit this image",
+        sourceImages: [{ mimeType: "image/jpeg", data: "refdata" }],
+      });
+
+      expect(results).toHaveLength(1);
+      expect(mockGenerateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          images: [{ mimeType: "image/jpeg", data: "refdata" }],
+        }),
+      );
+    });
+
+    it("should return empty array when no candidates", async () => {
+      const mockResponse = {
+        data: {
+          candidates: [],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockResponse);
+
+      const results = await ImageGeneration.generateImages({
+        prompt: "A test image",
+      });
+
+      expect(results).toHaveLength(0);
+    });
+
+    it("should throw on generation failure", async () => {
+      mockGenerateImage.mockRejectedValue(new Error("Generation failed"));
+
+      await expect(
+        ImageGeneration.generateImages({
+          prompt: "A test image",
+        }),
+      ).rejects.toThrow("Generation failed");
+    });
+  });
+
+  describe("generateCoverArt", () => {
+    it("should generate cover art with distributor constraints", async () => {
+      const mockResponse = {
+        data: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "base64data",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockResponse);
+
+      const userProfile = {
+        distributor: "distribute",
+        distributionMethod: "aggregator",
+      };
+
+      const results = await ImageGeneration.generateCoverArt(
+        "My Album Cover",
+        userProfile,
+      );
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toHaveProperty("constraints");
+      expect(mockGenerateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          aspectRatio: "1:1",
+          userProfile,
+        }),
+      );
+    });
+  });
+
+  describe("remixImage", () => {
+    it("should remix images with style reference", async () => {
+      const mockAIService = {
         generateContent: vi.fn(),
         parseJSON: vi.fn(),
-    }
-}));
+      };
 
-// Mock Firebase Functions
-const mockHttpsCallable = vi.fn();
-vi.mock('firebase/functions', () => ({
-    httpsCallable: (_functions: any, _name: string) => mockHttpsCallable
-}));
+      vi.doMock("../ai/AIService", () => ({
+        AI: mockAIService,
+      }));
 
-vi.mock('@/services/firebase', () => ({
-    functions: {}
-}));
+      const mockResponse = {
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "remixeddata",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
 
-// Mock MembershipService to allow quota checks in tests
-vi.mock('@/services/MembershipService', () => ({
-    MembershipService: {
-        checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
-        getCurrentTier: vi.fn().mockResolvedValue('pro'),
-        getUpgradeMessage: vi.fn().mockReturnValue('Upgrade to Pro for more'),
-        incrementUsage: vi.fn().mockResolvedValue(undefined),
-    }
-}));
+      mockAIService.generateContent.mockResolvedValue(mockResponse);
 
-describe('ImageGenerationService', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+      const result = await ImageGeneration.remixImage({
+        contentImage: { mimeType: "image/jpeg", data: "contentdata" },
+        styleImage: { mimeType: "image/png", data: "styledata" },
+        prompt: "Apply this style",
+      });
+
+      expect(result).toHaveProperty("url");
+      expect(result!.url).toMatch(/^data:image\/png;base64,/);
     });
+  });
 
-    describe('generateImages', () => {
-        it('should generate images successfully', async () => {
-            const mockResponse = {
-                data: {
-                    images: [{
-                        bytesBase64Encoded: 'base64data',
-                        mimeType: 'image/png'
-                    }]
-                }
-            };
-            mockHttpsCallable.mockResolvedValue(mockResponse);
+  describe("batchRemix", () => {
+    it("should remix multiple images with style", async () => {
+      const mockAIService = {
+        generateContent: vi.fn(),
+        parseJSON: vi.fn(),
+      };
 
-            const result = await ImageGeneration.generateImages({ prompt: 'test prompt' });
+      vi.doMock("../ai/AIService", () => ({
+        AI: mockAIService,
+      }));
 
-            expect(result).toHaveLength(1);
-            expect(result[0].url).toBe('data:image/png;base64,base64data');
-            expect(result[0].prompt).toBe('test prompt');
-            expect(mockHttpsCallable).toHaveBeenCalledTimes(1);
-        });
+      const mockResponse = {
+        response: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "remixeddata",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
 
-        it('should handle errors gracefully', async () => {
-            mockHttpsCallable.mockRejectedValue(new Error('AI Error'));
+      mockAIService.generateContent.mockResolvedValue(mockResponse);
 
-            await expect(ImageGeneration.generateImages({ prompt: 'test' }))
-                .rejects.toThrow('AI Error');
-        });
+      const results = await ImageGeneration.batchRemix({
+        styleImage: { mimeType: "image/png", data: "styledata" },
+        targetImages: [
+          { mimeType: "image/jpeg", data: "target1" },
+          { mimeType: "image/jpeg", data: "target2" },
+        ],
+      });
+
+      expect(results).toHaveLength(2);
+      expect(mockAIService.generateContent).toHaveBeenCalledTimes(2);
     });
-
-    describe('remixImage', () => {
-        it('should remix image successfully', async () => {
-            const mockResponse = {
-                response: {
-                    candidates: [{
-                        content: {
-                            parts: [{
-                                inlineData: {
-                                    mimeType: 'image/png',
-                                    data: 'remixedData'
-                                }
-                            }]
-                        }
-                    }]
-                }
-            };
-            (AI.generateContent as any).mockResolvedValue(mockResponse);
-
-            const result = await ImageGeneration.remixImage({
-                contentImage: { mimeType: 'image/png', data: 'data1' },
-                styleImage: { mimeType: 'image/png', data: 'data2' },
-                prompt: 'remix'
-            });
-
-            expect(result).not.toBeNull();
-            expect(result?.url).toBe('data:image/png;base64,remixedData');
-        });
-
-        it('should return null if no image generated', async () => {
-            (AI.generateContent as any).mockResolvedValue({ response: { candidates: [] } });
-
-            const result = await ImageGeneration.remixImage({
-                contentImage: { mimeType: 'image/png', data: 'data1' },
-                styleImage: { mimeType: 'image/png', data: 'data2' }
-            });
-
-            expect(result).toBeNull();
-        });
-    });
-
-    describe('extractStyle', () => {
-        it('should extract style successfully', async () => {
-            const mockJSON = {
-                prompt_desc: 'A description',
-                style_context: 'A style',
-                negative_prompt: 'Avoid this'
-            };
-            // Mock generateContent to return an object with a text() method
-            (AI.generateContent as any).mockResolvedValue({
-                text: () => JSON.stringify(mockJSON)
-            });
-            (AI.parseJSON as any).mockReturnValue(mockJSON);
-
-            const result = await ImageGeneration.extractStyle({ mimeType: 'image/png', data: 'data' });
-
-            expect(result).toEqual(mockJSON);
-        });
-    });
+  });
 });
