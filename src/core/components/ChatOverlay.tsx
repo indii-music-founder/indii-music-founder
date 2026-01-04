@@ -59,7 +59,9 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
                                 <span className="opacity-50 mt-0.5 select-none text-[10px]">
                                     {thought.type === 'tool' ? '🛠️' : '🧠'}
                                 </span>
-                                <span className={thought.type === 'error' ? 'text-red-400' : ''}>{thought.text}</span>
+                                <span className={thought.type === 'error' ? 'text-red-400' : ''}>
+                                    {thought.text.length > 200 ? thought.text.substring(0, 200) + '...' : thought.text}
+                                </span>
                             </div>
                         ))}
                     </motion.div>

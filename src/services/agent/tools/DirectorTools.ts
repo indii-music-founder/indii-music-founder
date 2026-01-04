@@ -27,7 +27,8 @@ export const DirectorTools = {
                 projectId: currentProjectId
             });
 
-            return `Image generated: ${url}`;
+            // Return a summary instead of the full base64 string to prevent UI overflow
+            return `Image generated successfully.`;
         } catch (e: any) {
             return `Image generation failed: ${e.message}`;
         }
@@ -100,6 +101,20 @@ export const DirectorTools = {
         try {
             const fullPrompt = `High resolution asset for ${args.templateType}. ${args.prompt}. Print quality, 4k.`;
             const base64 = await firebaseAI.generateImage(fullPrompt);
+
+            // Save to history
+            const url = `data:image/png;base64,${base64}`;
+            const { addToHistory, currentProjectId } = useStore.getState();
+
+            addToHistory({
+                id: crypto.randomUUID(),
+                url: url,
+                prompt: `High-Res Asset: ${args.templateType} - ${args.prompt}`,
+                type: 'image',
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            });
+
             return `High-res asset generated for ${args.templateType}.`;
         } catch (e: any) {
             return `Asset generation failed: ${e.message}`;
