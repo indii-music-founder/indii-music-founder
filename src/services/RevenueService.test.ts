@@ -26,7 +26,10 @@ vi.mock('firebase/firestore', () => ({
     getDocs: mocks.getDocs,
     query: mocks.query,
     where: mocks.where,
-    Timestamp: { fromMillis: vi.fn(t => t) },
+    Timestamp: {
+        fromMillis: vi.fn(t => ({ toDate: () => new Date(t) })),
+        fromDate: vi.fn(d => ({ toDate: () => d }))
+    },
     orderBy: vi.fn(),
     limit: vi.fn()
 }));

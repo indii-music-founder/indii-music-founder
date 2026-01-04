@@ -7,7 +7,7 @@ import { MerchProduct } from '../types';
 interface MerchStats {
     totalRevenue: number;
     unitsSold: number;
-    conversionRate: number; // Placeholder, mocked for now as we don't have visitor stats
+    conversionRate: number | null; // Nullable if not available
     revenueChange: number; // Percentage
     unitsChange: number; // Percentage
 }
@@ -19,7 +19,7 @@ export const useMerchandise = () => {
     const [stats, setStats] = useState<MerchStats>({
         totalRevenue: 0,
         unitsSold: 0,
-        conversionRate: 0,
+        conversionRate: null,
         revenueChange: 0,
         unitsChange: 0
     });
@@ -80,15 +80,16 @@ export const useMerchandise = () => {
         const fetchStats = async () => {
             setIsStatsLoading(true);
             try {
+                // Fetch real stats using new period filtering
                 const revenueStats = await revenueService.getUserRevenueStats(userProfile.id, '30d');
 
-                // 1. Update Aggregate Stats
+                // 1. Update Aggregate Stats with real data
                 setStats({
                     totalRevenue: revenueStats.sources.merch || 0,
                     unitsSold: revenueStats.sourceCounts.merch || 0,
-                    conversionRate: 3.2, // Mocked for now
-                    revenueChange: 15,   // Mocked for now (would need compare previous period)
-                    unitsChange: 8       // Mocked for now
+                    conversionRate: null, // Still no visitor tracking, explicitly null
+                    revenueChange: revenueStats.revenueChange, // Real calculated change
+                    unitsChange: 0 // Placeholder: requires similar diff logic for units if needed, keeping 0 for now to avoid "fake" number
                 });
 
                 // 2. Compute Top Sellers
