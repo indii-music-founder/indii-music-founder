@@ -41,6 +41,22 @@ export interface DistributorRequirements {
         notes: string[];
     };
 
+    // Video Requirements (Spotify Canvas, Music Videos)
+    video?: {
+        formats: string[]; // e.g., ['MP4', 'MOV']
+        canvas?: {         // Spotify Canvas / Apple Motion
+            minDuration: number; // seconds (e.g., 3)
+            maxDuration: number; // seconds (e.g., 8)
+            aspectRatio: string; // e.g., "9:16"
+            resolution: string;  // e.g., "720x1280" or "1080x1920"
+        };
+        musicVideo?: {
+            maxResolution: string; // e.g., "4K", "1080p"
+            acceptedFormats: string[];
+        };
+        notes: string[];
+    };
+
     // Timeline & Process
     timeline: {
         minLeadTime: string;       // e.g., "2-3 weeks recommended"
@@ -144,7 +160,21 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Use the "Teams" feature for splits - set it up BEFORE release',
             'Enable YouTube Content ID for passive income from covers/uses',
             'Verify your Spotify for Artists profile immediately after release'
-        ]
+        ],
+        video: {
+            formats: ['MP4', 'MOV'],
+            canvas: {
+                minDuration: 3,
+                maxDuration: 8,
+                aspectRatio: '9:16',
+                resolution: '1080x1920'
+            },
+            notes: [
+                'DistroKid distributes Spotify Canvas automatically',
+                'No audio in Canvas videos',
+                'No text or logos in Canvas'
+            ]
+        }
     },
 
     tunecore: {
@@ -219,7 +249,24 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Consider their publishing admin for sync opportunities',
             'Keep releases active - they get removed if you don\'t renew',
             'Use their analytics to track performance across platforms'
-        ]
+        ],
+        video: {
+            formats: ['MP4', 'MOV'],
+            canvas: {
+                minDuration: 3,
+                maxDuration: 8,
+                aspectRatio: '9:16',
+                resolution: '1080x1920'
+            },
+            musicVideo: {
+                maxResolution: '4K',
+                acceptedFormats: ['MOV', 'MP4']
+            },
+            notes: [
+                'TuneCore distributes Music Videos to Vevo/Apple Music',
+                'Spotify Canvas supported via portal'
+            ]
+        }
     },
 
     cdbaby: {
@@ -292,7 +339,17 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Great for physical merch - they handle CD and vinyl distribution',
             'Their sync licensing program is legitimate - opt in!',
             'One-time fee means no pressure to renew'
-        ]
+        ],
+        video: {
+            formats: ['MP4', 'MOV'],
+            musicVideo: {
+                maxResolution: '4K',
+                acceptedFormats: ['MOV', 'MP4']
+            },
+            notes: [
+                'CD Baby distributes Music Videos to Vevo/Apple/Tidal /Amazon'
+            ]
+        }
     },
 
     awal: {
@@ -366,7 +423,18 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Great stepping stone between indie and major label',
             'Their playlist team actually pitches - use the lead time',
             'Connect with their A&R for marketing support'
-        ]
+        ],
+        video: {
+            formats: ['MP4', 'MOV'],
+            musicVideo: {
+                maxResolution: '4K',
+                acceptedFormats: ['MOV', 'MP4']
+            },
+            notes: [
+                'AWAL has strong video distribution network',
+                'Vevo partnership available for select artists'
+            ]
+        }
     },
 
     ditto: {
@@ -432,7 +500,13 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Good option for UK-based artists',
             'Their record label services can help scale',
             'Check out their additional marketing packages'
-        ]
+        ],
+        video: {
+            formats: ['MP4'],
+            notes: [
+                'Vevo channel setup available'
+            ]
+        }
     },
 
     unitedmasters: {
@@ -494,7 +568,13 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Their brand partnerships are unique - great for hip-hop/R&B',
             'Apply for Select tier for better payout',
             'Strong in urban/hip-hop genre connections'
-        ]
+        ],
+        video: {
+            formats: ['MP4', 'MOV'],
+            notes: [
+                'Strong focus on short-form video content (TikTok/IG)'
+            ]
+        }
     },
 
     amuse: {
@@ -555,7 +635,11 @@ export const DISTRIBUTOR_REQUIREMENTS: Record<string, DistributorRequirements> =
             'Great mobile experience - release from your phone',
             'Their label program scouts from their platform',
             'Good for quick releases'
-        ]
+        ],
+        video: {
+            formats: ['MP4', 'MOV'],
+            notes: []
+        }
     }
 };
 
@@ -618,7 +702,11 @@ ${requirements.audio.notes.slice(0, 2).map(n => `   - ${n}`).join('\n')}
 📋 **Metadata**: ${requirements.metadata.requiredFields.join(', ')}
    - ISRC: ${requirements.metadata.isrcRequired ? 'Required' : 'Auto-generated'}
    - UPC: ${requirements.metadata.upcRequired ? 'Required' : 'Auto-generated'}
-
+${requirements.video ? `
+🎥 **Video**:
+   - Formats: ${requirements.video.formats.join(', ')}
+   ${requirements.video.canvas ? `- Spotify Canvas: ${requirements.video.canvas.aspectRatio} (${requirements.video.canvas.minDuration}-${requirements.video.canvas.maxDuration}s)` : ''}
+` : ''}
 ⏱️ **Timeline**: Upload ${requirements.timeline.minLeadTime} before release date
 
 💰 **Payout**: ${requirements.pricing.artistPayout} (${requirements.pricing.model})

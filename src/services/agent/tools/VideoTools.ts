@@ -1,7 +1,6 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { delay } from '@/utils/async';
+import { VideoGeneration, VideoGenerationOptions } from '@/services/video/VideoGenerationService';
 
 // ============================================================================
 // Types for VideoTools
@@ -14,11 +13,7 @@ import { delay } from '@/utils/async';
 
 
 
-interface VideoGenerationOptions {
-    prompt: string;
-    firstFrame?: string;
-    lastFrame?: string;
-}
+
 
 // ============================================================================
 // VideoTools Implementation
@@ -27,9 +22,11 @@ interface VideoGenerationOptions {
 export const VideoTools = {
     generate_video: async (args: { prompt: string, image?: string, duration?: number }) => {
         try {
+            const { userProfile } = useStore.getState();
             const results = await VideoGeneration.generateVideo({
                 prompt: args.prompt,
                 firstFrame: args.image,
+                userProfile
             });
 
             if (results.length > 0) {
@@ -181,6 +178,9 @@ export const VideoTools = {
                 options.firstFrame = frameData; // If extending end, the video frame becomes the START of the new clip
             }
 
+            const { userProfile } = useStore.getState();
+            options.userProfile = userProfile;
+
             const results = await VideoGeneration.generateVideo(options);
 
             if (results.length > 0) {
@@ -257,11 +257,14 @@ export const VideoTools = {
                 timestamp: Date.now()
             });
 
+            const { userProfile } = useStore.getState();
+
             // Use the refactored background-driven service
             const results = await VideoGeneration.generateLongFormVideo({
                 prompt: args.prompt,
                 totalDuration: args.totalDuration,
                 firstFrame: args.startImage,
+                userProfile
             });
 
             const jobId = results[0]?.id;
@@ -279,13 +282,15 @@ export const VideoTools = {
             // "Interpolate_Sequence(Frame_A, Frame_B)"
             // "Google V3.1 generates the transition pixels between these locked states."
 
-            // We use VideoGeneration service but pass both firstFrame and lastFrame.
             // (Assuming the underlying service supports this, which many video models do).
+
+            const { userProfile } = useStore.getState();
 
             const results = await VideoGeneration.generateVideo({
                 prompt: args.prompt || "Smooth transition between frames",
                 firstFrame: args.firstFrame,
-                lastFrame: args.lastFrame
+                lastFrame: args.lastFrame,
+                userProfile
             });
 
             if (results.length > 0) {

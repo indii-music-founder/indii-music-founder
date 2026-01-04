@@ -49,12 +49,28 @@ export interface TimelineConstraints {
     notes: string[];
 }
 
+export interface VideoConstraints {
+    formats: string[];
+    canvas?: {
+        minDuration: number;
+        maxDuration: number;
+        aspectRatio: string;
+        resolution: string;
+    };
+    musicVideo?: {
+        maxResolution: string;
+        acceptedFormats: string[];
+    };
+    notes: string[];
+}
+
 export interface DistributorContext {
     distributor: DistributorRequirements | null;
     image: ImageConstraints;
     audio: AudioConstraints;
     metadata: MetadataConstraints;
     timeline: TimelineConstraints;
+    video: VideoConstraints;
     isConfigured: boolean;
     summary: string;
 }
@@ -95,6 +111,11 @@ const DEFAULT_TIMELINE_CONSTRAINTS: TimelineConstraints = {
     reviewTimeDays: 3,
     recommendedLeadTimeDays: 14,
     notes: ['No distributor configured - recommend 2 weeks lead time']
+};
+
+const DEFAULT_VIDEO_CONSTRAINTS: VideoConstraints = {
+    formats: ['MP4', 'MOV'],
+    notes: ['No distributor configured - using standard video formats']
 };
 
 // --- Helper Functions ---
@@ -157,6 +178,7 @@ export function buildDistributorContext(profile: UserProfile): DistributorContex
             audio: DEFAULT_AUDIO_CONSTRAINTS,
             metadata: DEFAULT_METADATA_CONSTRAINTS,
             timeline: DEFAULT_TIMELINE_CONSTRAINTS,
+            video: DEFAULT_VIDEO_CONSTRAINTS,
             isConfigured: false,
             summary: 'No distributor configured. Using industry-standard specifications.'
         };
@@ -171,6 +193,7 @@ export function buildDistributorContext(profile: UserProfile): DistributorContex
             audio: DEFAULT_AUDIO_CONSTRAINTS,
             metadata: DEFAULT_METADATA_CONSTRAINTS,
             timeline: DEFAULT_TIMELINE_CONSTRAINTS,
+            video: DEFAULT_VIDEO_CONSTRAINTS,
             isConfigured: false,
             summary: `Distributor "${distributorName}" not recognized. Using industry-standard specifications.`
         };
@@ -216,12 +239,20 @@ export function buildDistributorContext(profile: UserProfile): DistributorContex
         notes: distro.timeline.notes || []
     };
 
+    const videoConstraints: VideoConstraints = {
+        formats: distro.video?.formats || ['MP4', 'MOV'],
+        canvas: distro.video?.canvas,
+        musicVideo: distro.video?.musicVideo,
+        notes: distro.video?.notes || []
+    };
+
     return {
         distributor: distro,
         image: imageConstraints,
         audio: audioConstraints,
         metadata: metadataConstraints,
         timeline: timelineConstraints,
+        video: videoConstraints,
         isConfigured: true,
         summary: `Configured for ${distro.name}. Cover art: ${minSize.width}x${minSize.height}px min, ${distro.audio.format}, ${distro.pricing.artistPayout} payout.`
     };
@@ -255,6 +286,13 @@ export function getMetadataConstraints(profile: UserProfile): MetadataConstraint
  */
 export function getTimelineConstraints(profile: UserProfile): TimelineConstraints {
     return buildDistributorContext(profile).timeline;
+}
+
+/**
+ * Get video requirements for the current distributor
+ */
+export function getVideoConstraints(profile: UserProfile): VideoConstraints {
+    return buildDistributorContext(profile).video;
 }
 
 /**

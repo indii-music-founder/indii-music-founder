@@ -10,6 +10,8 @@ import { httpsCallable } from 'firebase/functions';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { delay } from '@/utils/async';
+import { UserProfile } from '@/modules/workflow/types';
+import { getVideoConstraints } from '../onboarding/DistributorContext';
 
 export interface VideoGenerationOptions {
     prompt: string;
@@ -28,6 +30,7 @@ export interface VideoGenerationOptions {
     motionStrength?: number;
     shotList?: ShotItem[];
     orgId?: string;
+    userProfile?: UserProfile;
 }
 
 export class VideoGenerationService {
@@ -67,8 +70,16 @@ export class VideoGenerationService {
         }
     }
 
-    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number }): string {
+    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number }, userProfile?: UserProfile): string {
         let prompt = basePrompt;
+
+        if (userProfile) {
+            const constraints = getVideoConstraints(userProfile);
+            if (constraints.canvas) {
+                prompt += `. Optimized for Spotify Canvas (${constraints.canvas.resolution}, vertical 9:16). High visual impact loop.`;
+            }
+        }
+
         if (settings.camera && settings.camera !== 'Static') {
             prompt += `, cinematic ${settings.camera.toLowerCase()} camera movement`;
         }
@@ -104,12 +115,22 @@ export class VideoGenerationService {
             camera: options.cameraMovement,
             motion: options.motionStrength,
             fps: options.fps
-        });
+        }, options.userProfile);
+
+        // Determine Aspect Ratio from Distributor if not provided
+        let targetAspectRatio = options.aspectRatio;
+        if (!targetAspectRatio && options.userProfile) {
+            const videoConstraints = getVideoConstraints(options.userProfile);
+            if (videoConstraints.canvas) {
+                targetAspectRatio = videoConstraints.canvas.aspectRatio;
+            }
+        }
 
         const orgId = useStore.getState().currentOrganizationId;
 
         const { jobId } = await this.triggerVideoGeneration({
             ...options,
+            aspectRatio: targetAspectRatio,
             prompt: enrichedPrompt,
             orgId
         });
@@ -175,6 +196,7 @@ export class VideoGenerationService {
         negativePrompt?: string;
         firstFrame?: string;
         onProgress?: (current: number, total: number) => void;
+        userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Pre-flight duration quota check
         const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
@@ -194,11 +216,23 @@ export class VideoGenerationService {
             const orgId = useStore.getState().currentOrganizationId;
             const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
+            // Enrich prompt with distributor context
+            const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
+
+            // Determine Aspect Ratio from Distributor if not provided
+            let targetAspectRatio = options.aspectRatio;
+            if (!targetAspectRatio && options.userProfile) {
+                const videoConstraints = getVideoConstraints(options.userProfile);
+                if (videoConstraints.canvas) {
+                    targetAspectRatio = videoConstraints.canvas.aspectRatio;
+                }
+            }
+
             // Construct segment-wise prompts for the background worker
             const BLOCK_DURATION = 8;
             const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
             const prompts = Array.from({ length: numBlocks }, (_, i) =>
-                `${options.prompt} (Part ${i + 1}/${numBlocks})`
+                `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
             );
 
             await triggerLongFormVideoJob({
@@ -207,7 +241,7 @@ export class VideoGenerationService {
                 orgId,
                 startImage: options.firstFrame,
                 totalDuration: options.totalDuration,
-                aspectRatio: options.aspectRatio,
+                aspectRatio: targetAspectRatio,
                 resolution: options.resolution,
                 seed: options.seed,
                 negativePrompt: options.negativePrompt,
