@@ -1,12 +1,19 @@
-
 import { ipcMain } from 'electron';
 import { credentialService } from '../services/CredentialService';
 import { DistributorId } from '../../src/services/distribution/types/distributor';
 
+interface Credentials {
+    apiKey?: string;
+    apiSecret?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    [key: string]: string | undefined;
+}
+
 export const registerCredentialHandlers = () => {
 
     // Save Credentials
-    ipcMain.handle('credentials:save', async (_event, id: string, creds: any) => {
+    ipcMain.handle('credentials:save', async (_event, id: string, creds: Credentials) => {
         try {
             await credentialService.saveCredentials(id as DistributorId, creds);
             return { success: true };

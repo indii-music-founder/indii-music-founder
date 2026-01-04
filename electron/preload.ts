@@ -2,6 +2,23 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 console.log('[Preload] Initializing context bridge...');
 
+// Type definitions for IPC communication
+interface Credentials {
+    apiKey?: string;
+    apiSecret?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    [key: string]: string | undefined;
+}
+
+interface SFTPConfig {
+    host: string;
+    port?: number;
+    username: string;
+    password?: string;
+    privateKey?: string;
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
     // General
     getPlatform: () => ipcRenderer.invoke('get-platform'),
@@ -17,8 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Credentials (Secure Main Process Storage)
     credentials: {
-        save: (id: string, creds: any) => ipcRenderer.invoke('credentials:save', id, creds),
-        get: (id: string) => ipcRenderer.invoke('credentials:get', id),
+        save: (id: string, creds: Credentials) => ipcRenderer.invoke('credentials:save', id, creds),
+        get: (id: string): Promise<Credentials | null> => ipcRenderer.invoke('credentials:get', id),
         delete: (id: string) => ipcRenderer.invoke('credentials:delete', id)
     },
 
@@ -35,7 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // SFTP (Distribution)
     sftp: {
-        connect: (config: any) => ipcRenderer.invoke('sftp:connect', config),
+        connect: (config: SFTPConfig) => ipcRenderer.invoke('sftp:connect', config),
         uploadDirectory: (localPath: string, remotePath: string) => ipcRenderer.invoke('sftp:upload-directory', localPath, remotePath),
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
