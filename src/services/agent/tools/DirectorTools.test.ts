@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DirectorTools } from './DirectorTools';
 import { useStore } from '@/core/store';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
@@ -27,6 +27,7 @@ vi.mock('@/services/image/EditingService', () => ({
 
 describe('DirectorTools', () => {
     let mockAddToHistory: any;
+    let originalURL: any;
 
     beforeEach(() => {
         mockAddToHistory = vi.fn();
@@ -37,18 +38,40 @@ describe('DirectorTools', () => {
             setEntityAnchor: vi.fn()
         });
         vi.clearAllMocks();
+
+        // Mock URL.createObjectURL
+        originalURL = global.URL;
+        global.URL = {
+            ...originalURL,
+            createObjectURL: vi.fn(() => 'blob:mock-url')
+        } as any;
+
+        // Mock global atob and Blob for the helper
+        global.atob = vi.fn((str) => str); // Simple mock
+        global.Blob = class {
+            size: number;
+            constructor(content: any[]) {
+                this.size = content[0]?.length || 0;
+            }
+        } as any;
+    });
+
+    afterEach(() => {
+        global.URL = originalURL;
+        vi.restoreAllMocks();
     });
 
     describe('generate_image', () => {
-        it('should return a summary message and not the base64 string', async () => {
+        it('should return a markdown image with blob url', async () => {
             (firebaseAI.generateImage as any).mockResolvedValue('fake-base64-string');
 
             const result = await DirectorTools.generate_image({ prompt: 'test prompt' });
 
-            expect(result).toBe('Image generated successfully.');
+            expect(result).toBe('![Generated Image](blob:mock-url)');
             expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
                 type: 'image',
-                prompt: 'test prompt'
+                prompt: 'test prompt',
+                url: expect.stringContaining('data:image/png;base64,fake-base64-string')
             }));
             expect(firebaseAI.generateImage).toHaveBeenCalledWith('test prompt', undefined, expect.any(Object));
         });
@@ -61,7 +84,7 @@ describe('DirectorTools', () => {
     });
 
     describe('generate_high_res_asset', () => {
-        it('should generate image, save to history, and return summary', async () => {
+        it('should generate image, save to history, and return markdown', async () => {
             (firebaseAI.generateImage as any).mockResolvedValue('high-res-base64');
 
             const result = await DirectorTools.generate_high_res_asset({
@@ -69,9 +92,10 @@ describe('DirectorTools', () => {
                 templateType: 'cd_front'
             });
 
-            expect(result).toBe('High-res asset generated for cd_front.');
+            expect(result).toContain('![High Res Asset](blob:mock-url)');
+            expect(result).toContain('High-res asset generated for cd_front.');
 
-            // Verify persistence
+            // Verify persistence uses data url
             expect(mockAddToHistory).toHaveBeenCalledTimes(1);
             expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
                 type: 'image',

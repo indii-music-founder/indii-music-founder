@@ -3,6 +3,23 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 
+const base64ToBlobUrl = (base64: string, type = 'image/png'): string => {
+    // Basic conversion for browser environments
+    try {
+        const binStr = atob(base64);
+        const len = binStr.length;
+        const arr = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            arr[i] = binStr.charCodeAt(i);
+        }
+        const blob = new Blob([arr], { type });
+        return URL.createObjectURL(blob);
+    } catch (e) {
+        console.warn('Failed to create blob URL, falling back to empty', e);
+        return '';
+    }
+};
+
 export const DirectorTools = {
     generate_image: async (args: { prompt: string, count?: number, negativePrompt?: string }) => {
         try {
@@ -27,8 +44,11 @@ export const DirectorTools = {
                 projectId: currentProjectId
             });
 
-            // Return a summary instead of the full base64 string to prevent UI overflow
-            return `Image generated successfully.`;
+            // Create blob URL for lighter chat rendering
+            const blobUrl = base64ToBlobUrl(base64);
+
+            // Return markdown image format for generic Chat UI rendering
+            return `![Generated Image](${blobUrl})`;
         } catch (e: any) {
             return `Image generation failed: ${e.message}`;
         }
@@ -115,7 +135,9 @@ export const DirectorTools = {
                 projectId: currentProjectId
             });
 
-            return `High-res asset generated for ${args.templateType}.`;
+            // Display using blob URL to avoid text overflow
+            const blobUrl = base64ToBlobUrl(base64);
+            return `![High Res Asset](${blobUrl})\n\nHigh-res asset generated for ${args.templateType}.`;
         } catch (e: any) {
             return `Asset generation failed: ${e.message}`;
         }
@@ -196,7 +218,16 @@ export const DirectorTools = {
                     timestamp: Date.now(),
                     projectId: currentProjectId
                 });
-                return `Frame ${args.gridIndex} extracted.`;
+                // Create blob URL from the result url (which is currently a data url from EditingService usually, or we need to process it)
+                // result.url is likely data:uri given the implementation of set_entity_anchor logic implies it.
+                // But let's check safely.
+                let displayUrl = result.url;
+                if (result.url.startsWith('data:')) {
+                    const b64 = result.url.split(',')[1];
+                    displayUrl = base64ToBlobUrl(b64);
+                }
+
+                return `![Extracted Frame](${displayUrl})\n\nFrame ${args.gridIndex} extracted.`;
             }
 
             return "Extraction failed: No result returned.";
