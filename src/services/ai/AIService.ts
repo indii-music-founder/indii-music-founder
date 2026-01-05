@@ -394,6 +394,21 @@ export class AIService {
     }
 
     /**
+     * BATCHING: Embed multiple documents in parallel
+     */
+    async batchEmbedContents(contents: Content[], model?: string): Promise<number[][]> {
+        try {
+            return await this.withRetry(() => firebaseAI.batchEmbedContents(contents, model));
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                `Batch Embed Content Failed: ${err.message}`
+            );
+        }
+    }
+
+    /**
      * Parse JSON from AI response, handling markdown code blocks
      */
     parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {

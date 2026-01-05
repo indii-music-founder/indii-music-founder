@@ -173,7 +173,8 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
             }
         } catch (e) {
             console.error("Error loading history: ", e);
-            return [];
+            // Throw so UI can show error state instead of silent empty list
+            throw e;
         }
     }
 }

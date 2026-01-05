@@ -50,6 +50,7 @@ export class VoiceService {
             this.recognition.start();
         } catch (e) {
             console.error("Failed to start speech recognition", e);
+            if (onError) onError(e);
             this.isListening = false;
         }
     }

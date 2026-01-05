@@ -41,13 +41,33 @@ import { auth } from '@/services/firebase';
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
 
+// Interface for BatchEmbedContentsResponse (missing in SDK types)
+interface BatchEmbedContentsResponse {
+    embeddings: { values: number[] }[];
+}
+
+// Interface for Google Search Tool support (not yet in official firebase/ai types)
+interface GoogleSearchTool {
+    googleSearch: Record<string, never>;
+}
+
+type AITool = Tool | GoogleSearchTool;
+
+// Interface for GenerativeModel with batching support
+interface ExtendedGenerativeModel extends GenerativeModel {
+    batchEmbedContents?(request: { requests: { content: Content }[] }): Promise<BatchEmbedContentsResponse>;
+    embedContent?(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+}
+
+// Duplicates removed
+
 export interface ChatMessage {
     role: 'user' | 'model';
     parts: Part[];
 }
 
 export class FirebaseAIService {
-    private model: GenerativeModel | null = null;
+    private model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
 
     // Circuit Breakers
@@ -101,7 +121,8 @@ export class FirebaseAIService {
         modelOverride?: string,
         config?: GenerationConfig,
         systemInstruction?: string,
-        tools?: Tool[]
+        tools?: Tool[],
+        options?: { signal?: AbortSignal }
     ): Promise<GenerateContentResult> {
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
@@ -124,8 +145,12 @@ export class FirebaseAIService {
             });
 
             try {
+                // @ts-ignore - options param not in typed definition but supported
                 const result = await modelCallback.generateContent(
-                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt }
+                    typeof sanitizedPrompt === 'string'
+                        ? sanitizedPrompt
+                        : { contents: [{ role: 'user', parts: sanitizedPrompt }] } as any, // Cast to any until SDK types update
+                    options
                 );
 
                 // Track Usage
@@ -153,7 +178,8 @@ export class FirebaseAIService {
         modelOverride?: string,
         config?: GenerationConfig,
         systemInstruction?: string,
-        tools?: Tool[]
+        tools?: Tool[],
+        options?: { signal?: AbortSignal }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
@@ -178,8 +204,10 @@ export class FirebaseAIService {
             });
 
             try {
+                // @ts-ignore - Signal supported in SDK
                 const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
-                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt } as any
+                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
+                    options
                 );
 
                 // Wrap the final response promise
@@ -258,9 +286,10 @@ export class FirebaseAIService {
         modelOverride?: string,
         config?: any,
         systemInstruction?: string,
-        tools?: any[]
+        tools?: any[],
+        options?: { signal?: AbortSignal }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
-        return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools);
+        return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 
     /**
@@ -298,7 +327,7 @@ export class FirebaseAIService {
             });
 
             const result = await modelCallback.generateContent(
-                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] } as any
+                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] }
             );
             return result.response.text();
         });
@@ -330,7 +359,7 @@ export class FirebaseAIService {
             });
 
             const result = await modelCallback.generateContent(
-                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] } as any
+                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] }
             );
             const text = result.response.text();
             try {
@@ -398,7 +427,7 @@ export class FirebaseAIService {
         await this.ensureInitialized();
         const modelWithSearch = getGenerativeModel(ai, {
             model: this.model!.model,
-            tools: [{ googleSearch: {} } as any]
+            tools: [{ googleSearch: {} }] as unknown as Tool[]
         });
 
         return await modelWithSearch.generateContent(prompt);
@@ -474,6 +503,55 @@ export class FirebaseAIService {
     }
 
     /**
+     * BATCHING: Embed multiple documents in parallel
+     */
+    async batchEmbedContents(
+        contents: Content[],
+        modelOverride?: string
+    ): Promise<number[][]> {
+        return this.contentBreaker.execute(async () => {
+            await this.ensureInitialized();
+
+            const userId = auth.currentUser?.uid;
+            if (userId) {
+                await TokenUsageService.checkQuota(userId);
+            }
+
+            const modelName = modelOverride || 'text-embedding-004';
+            const modelCallback = getGenerativeModel(ai, { model: modelName });
+
+            try {
+                // If batchEmbedContents is available, use it (need to cast modelCallback as any if types are missing)
+                // Otherwise fall back to Promise.all
+                const modelExtended = modelCallback as ExtendedGenerativeModel;
+
+                if (typeof modelExtended.batchEmbedContents === 'function') {
+                    const requests = contents.map(c => ({ content: c }));
+                    const result = await modelExtended.batchEmbedContents({ requests });
+                    return result.embeddings.map((e) => e.values);
+                } else {
+                    // Polyfill: Run in parallel
+                    // console.warn('[FirebaseAIService] batchEmbedContents not supported, falling back to parallel');
+                    if (typeof modelExtended.embedContent !== 'function') {
+                        const modelAny = modelCallback as any;
+                        if (typeof modelAny.embedContent === 'function') {
+                            const promises = contents.map(c => modelAny.embedContent({ content: c }));
+                            const results = await Promise.all(promises);
+                            return results.map((r: any) => r.embedding.values);
+                        }
+                        throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
+                    }
+                    const promises = contents.map(c => modelExtended.embedContent!({ content: c }));
+                    const results = await Promise.all(promises);
+                    return results.map(r => r.embedding.values);
+                }
+            } catch (error) {
+                throw this.handleError(error);
+            }
+        });
+    }
+
+    /**
      * HIGH LEVEL: Generate image using backend proxy
      */
     async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: any): Promise<string> {
@@ -494,6 +572,10 @@ export class FirebaseAIService {
         voice: string = 'Kore',
         modelOverride?: string
     ): Promise<GenerateSpeechResponse> {
+        if (!text || text.trim().length === 0) {
+            throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Cannot generate speech for empty text');
+        }
+
         return this.mediaBreaker.execute(async () => {
             await this.ensureInitialized();
 
