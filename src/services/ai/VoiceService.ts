@@ -1,8 +1,13 @@
+import { AI } from '@/services/ai/AIService';
+import { audioService } from '@/services/audio/AudioService';
 
 export class VoiceService {
     private recognition: any | null = null;
-    private synthesis: SpeechSynthesis | null = typeof window !== 'undefined' ? window.speechSynthesis : null;
     private isListening: boolean = false;
+
+    private get synthesis(): SpeechSynthesis | null {
+        return typeof window !== 'undefined' ? (window.speechSynthesis || (global as any).speechSynthesis) : null;
+    }
 
     constructor() {
         if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
@@ -56,27 +61,32 @@ export class VoiceService {
         }
     }
 
-    speak(text: string, voiceName?: string) {
-        if (!this.synthesis) return;
+    async speak(text: string, voiceName?: string) {
+        // Stop current audio first
+        audioService.stop();
 
-        // Cancel any ongoing speech
-        this.synthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // Select voice if available
-        const voices = this.synthesis.getVoices();
-        // Prefer a natural sounding English voice
-        const preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha')) || voices[0];
-
-        if (preferredVoice) {
-            utterance.voice = preferredVoice;
+        try {
+            console.log(`[VoiceService] Generating high-quality speech for: "${text.substring(0, 30)}..." with voice: ${voiceName || 'Kore'}`);
+            const response = await AI.generateSpeech(text, voiceName || 'Kore');
+            await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
+        } catch (error) {
+            console.error('[VoiceService] Gemini TTS failed, falling back to browser:', error);
+            this.fallbackSpeak(text);
         }
+    }
 
+    private fallbackSpeak(text: string) {
+        if (!this.synthesis) return;
+        this.synthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voices = this.synthesis.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha')) || voices[0];
+        if (preferredVoice) utterance.voice = preferredVoice;
         this.synthesis.speak(utterance);
     }
 
     stopSpeaking() {
+        audioService.stop();
         if (this.synthesis) {
             this.synthesis.cancel();
         }

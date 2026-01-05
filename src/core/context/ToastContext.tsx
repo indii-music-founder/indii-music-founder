@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Toast, ToastMessage, ToastType } from '../components/Toast';
 import { v4 as uuidv4 } from 'uuid';
+import { events } from '../events';
 
 interface ToastContextType {
     showToast: (message: string, type: ToastType, duration?: number) => void;
@@ -45,6 +46,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updateToast = useCallback((id: string, updates: Partial<ToastMessage>) => {
         setToasts(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     }, []);
+
+    useEffect(() => {
+        const handleAlert = (data: any) => {
+            const type = data.level === 'error' ? 'error' :
+                data.level === 'warning' ? 'warning' :
+                    data.level === 'success' ? 'success' : 'info';
+            addToast(data.message, type);
+        };
+
+        events.on('SYSTEM_ALERT', handleAlert);
+        return () => events.off('SYSTEM_ALERT', handleAlert);
+    }, [addToast]);
 
     const loadingToast = useCallback((message: string) => {
         return addToast(message, 'loading', undefined, 0);

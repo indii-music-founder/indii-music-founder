@@ -18,5 +18,6 @@ export interface AgentTrace {
     endTime?: any; // Firestore Timestamp
     steps: TraceStep[];
     metadata?: Record<string, any>; // Helper for querying (e.g., projectId)
+    swarmId?: string; // Root trace ID for the entire swarm
     error?: string;
 }

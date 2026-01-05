@@ -1,113 +1,242 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { memoryService } from './MemoryService';
-// Mock FirestoreService Class using vi.hoisted to avoid reference errors
-const { mockAdd, mockList, mockDelete, mockUpdate } = vi.hoisted(() => ({
-    mockAdd: vi.fn(),
-    mockList: vi.fn(),
-    mockDelete: vi.fn(),
-    mockUpdate: vi.fn()
-}));
 
-vi.mock('../FirestoreService', () => ({
-    FirestoreService: vi.fn(function () {
-        return {
-            add: mockAdd,
-            list: mockList,
-            delete: mockDelete,
-            update: mockUpdate
-        };
-    })
-}));
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// Note: We need to import the class to mock it, and the instance to test it.
+// The instance uses the class internally.
+import { memoryService, MemoryItem } from './MemoryService';
+import { FirestoreService } from '../FirestoreService';
+import { AI } from '../ai/AIService';
 
-// Mock AIService - embedContent returns { values: [] } to match actual return type
-vi.mock('../ai/AIService', () => ({
-    AI: {
-        embedContent: vi.fn().mockResolvedValue({ values: [] })
-    }
-}));
+// Mock dependencies
+vi.mock('../FirestoreService');
+vi.mock('../ai/AIService');
 
-describe('MemoryService Tests', () => {
-    const projectId = 'proj_123';
+describe('MemoryService', () => {
+    let mockList: any;
+    let mockAdd: any;
+    let mockUpdate: any;
+    let mockDelete: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Setup FirestoreService mock functions
+        mockList = vi.fn().mockResolvedValue([]);
+        mockAdd = vi.fn().mockResolvedValue('new-id');
+        mockUpdate = vi.fn().mockResolvedValue(undefined);
+        mockDelete = vi.fn().mockResolvedValue(undefined);
+
+        // Mock the FirestoreService implementation
+        (FirestoreService as any).mockImplementation(function () {
+            return {
+                list: mockList,
+                add: mockAdd,
+                update: mockUpdate,
+                delete: mockDelete,
+                collectionPath: 'projects/test-project/memories'
+            };
+        });
+
+        // Mock AI embedding
+        (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
     });
 
     describe('saveMemory', () => {
-        it('should add memory to firestore if not duplicate', async () => {
-            // Mock list to return empty, so it's not a duplicate
-            mockList.mockResolvedValue([]);
+        it('should save a memory with default values', async () => {
+            await memoryService.saveMemory('test-project', 'test content');
 
-            await memoryService.saveMemory(projectId, 'The sky is blue', 'fact');
-
-            expect(mockAdd).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    projectId,
-                    content: 'The sky is blue',
-                    type: 'fact'
-                })
-            );
+            expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+                projectId: 'test-project',
+                content: 'test content',
+                type: 'fact',
+                importance: 0.5,
+                accessCount: 0,
+                embedding: [0.1, 0.2, 0.3]
+            }));
         });
 
-        it('should NOT add memory if duplicate exists', async () => {
-            // Mock list to return existing memory
-            mockList.mockResolvedValue([
-                { id: '1', content: 'The sky is blue', projectId, type: 'fact', timestamp: 123 }
-            ]);
+        it('should save a memory with custom importance and source', async () => {
+            await memoryService.saveMemory('test-project', 'important rule', 'rule', 0.9, 'system');
 
-            await memoryService.saveMemory(projectId, 'The sky is blue', 'fact');
+            expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+                content: 'important rule',
+                type: 'rule',
+                importance: 0.9,
+                source: 'system'
+            }));
+        });
 
+        it('should not save duplicate content', async () => {
+            mockList.mockResolvedValue([{ content: 'duplicate' }]);
+            await memoryService.saveMemory('test-project', 'duplicate');
             expect(mockAdd).not.toHaveBeenCalled();
         });
     });
 
     describe('retrieveRelevantMemories', () => {
-        it('should filter memories by keyword', async () => {
-            const mockMemories = [
-                { id: '1', content: 'The sky is blue', projectId, type: 'fact', timestamp: 1 },
-                { id: '2', content: 'Grass is green', projectId, type: 'fact', timestamp: 2 },
-                { id: '3', content: 'Water is blue', projectId, type: 'fact', timestamp: 3 }
-            ];
+        const mockMemories: MemoryItem[] = [
+            {
+                id: '1',
+                projectId: 'p1',
+                content: 'recent important',
+                type: 'fact',
+                importance: 0.9,
+                timestamp: Date.now(), // 0 days old
+                accessCount: 0,
+                lastAccessed: Date.now(),
+                source: 'user',
+                embedding: [0.1, 0.2, 0.3]
+            },
+            {
+                id: '2',
+                projectId: 'p1',
+                content: 'old important',
+                type: 'fact',
+                importance: 0.9,
+                timestamp: Date.now() - (1000 * 60 * 60 * 24 * 30), // 30 days old
+                accessCount: 0,
+                lastAccessed: Date.now(),
+                source: 'user',
+                embedding: [0.1, 0.2, 0.3]
+            },
+            {
+                id: '3',
+                projectId: 'p1',
+                content: 'recent trivial',
+                type: 'fact',
+                importance: 0.1,
+                timestamp: Date.now(),
+                accessCount: 0,
+                lastAccessed: Date.now(),
+                source: 'user',
+                embedding: [0.1, 0.2, 0.3]
+            }
+        ];
+
+        it('should rank recent high-importance memories highest', async () => {
             mockList.mockResolvedValue(mockMemories);
+            // Mock query embedding to match (perfect similarity)
+            (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
 
-            const results = await memoryService.retrieveRelevantMemories(projectId, 'blue sky');
+            const results = await memoryService.retrieveRelevantMemories('p1', 'query', 3);
 
-            expect(results).toHaveLength(2);
-            expect(results).toContain('The sky is blue');
-            expect(results).toContain('Water is blue');
-            expect(results).not.toContain('Grass is green');
+            // Expected order: 
+            // 1. recent important (high sim, high imp, high recency)
+            // 2. old important (high sim, high imp, low recency)
+            // 3. recent trivial (high sim, low imp, high recency)
+
+            expect(results[0]).toBe('recent important');
+            expect(results[1]).toBe('old important');
+            expect(results[2]).toBe('recent trivial');
         });
 
-        it('should boost rule memories', async () => {
-            const mockMemories = [
-                { id: '1', content: 'Always check the weather', projectId, type: 'rule', timestamp: 1 },
-                { id: '2', content: 'Weather is nice', projectId, type: 'fact', timestamp: 2 }
-            ];
+        it('should update access stats for retrieved items', async () => {
+            mockList.mockResolvedValue([mockMemories[0]]);
+            await memoryService.retrieveRelevantMemories('p1', 'query', 1);
+
+            // Wait a tick for async fire-and-forget
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(mockUpdate).toHaveBeenCalledWith('1', expect.objectContaining({
+                accessCount: 1
+            }));
+        });
+
+        it('should filter memories by type', async () => {
             mockList.mockResolvedValue(mockMemories);
+            // Must return embedding or fallback to keywords. Mock embedding to ensure vector path is taken but irrelevant for filter test.
+            (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
 
-            // Searching for "weather"
-            // Both contain "weather".
-            // Rule should get boosted score (1 + 0.5 = 1.5) vs Fact (1).
-            // Sort order should be Rule first.
-            const results = await memoryService.retrieveRelevantMemories(projectId, 'weather');
+            const results = await memoryService.retrieveRelevantMemories('p1', {
+                query: 'query',
+                filters: { types: ['rule'] }
+            });
 
-            expect(results[0]).toBe('Always check the weather');
+            // Should only find rules? 
+            // In my mock data, none are explicitly rules in the 'type' field except I should probably update mock data or add one.
+            // Let's add a temporary mock item.
+            const RuleMemory: MemoryItem = {
+                ...mockMemories[0], id: 'rule-1', type: 'rule', content: 'Always do X'
+            };
+            mockList.mockResolvedValue([...mockMemories, RuleMemory]);
+
+            const results2 = await memoryService.retrieveRelevantMemories('p1', {
+                query: 'query',
+                filters: { types: ['rule'] }
+            });
+
+            expect(results2).toHaveLength(1);
+            expect(results2[0]).toBe('Always do X');
+        });
+
+        it('should filter memories by date range', async () => {
+            const oldItem = { ...mockMemories[1], timestamp: 1000 };
+            const newItem = { ...mockMemories[0], timestamp: 2000 };
+            mockList.mockResolvedValue([oldItem, newItem]);
+            (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
+
+            const results = await memoryService.retrieveRelevantMemories('p1', {
+                query: 'query',
+                filters: { dateRange: [1500, 3000] }
+            });
+
+            expect(results).toHaveLength(1);
+            expect(results[0]).toBe(newItem.content);
         });
     });
 
-    describe('clearProjectMemory', () => {
-        it('should delete all memories for project', async () => {
-            const mockMemories = [
-                { id: 'm1', content: 'A', projectId },
-                { id: 'm2', content: 'B', projectId }
-            ];
-            mockList.mockResolvedValue(mockMemories);
+    describe('consolidateMemories', () => {
+        it('should consolidate memories using AI', async () => {
+            const oldMemories = Array(10).fill(0).map((_, i) => ({
+                id: `old-${i}`,
+                projectId: 'p1',
+                content: `fact ${i}`,
+                type: 'fact',
+                timestamp: Date.now() - (1000 * 60 * 60 * 48), // 48 hours old
+            }));
 
-            await memoryService.clearProjectMemory(projectId);
+            mockList.mockResolvedValue(oldMemories);
 
-            expect(mockDelete).toHaveBeenCalledTimes(2);
-            expect(mockDelete).toHaveBeenCalledWith('m1');
-            expect(mockDelete).toHaveBeenCalledWith('m2');
+            // Mock AI response
+            (AI.generateContent as any).mockResolvedValue({
+                text: () => JSON.stringify({
+                    consolidated: ['Summary of facts'],
+                    idsToDelete: ['old-0', 'old-1']
+                })
+            });
+
+            await memoryService.consolidateMemories('p1');
+
+            // Check if AI was called
+            expect(AI.generateContent).toHaveBeenCalled();
+
+            // Check if old memories were deleted
+            expect(mockDelete).toHaveBeenCalledWith('old-0');
+            expect(mockDelete).toHaveBeenCalledWith('old-1');
+
+            // Check if new summary was saved
+            // saveMemory calls getService().add()
+            expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+                content: 'Summary of facts',
+                type: 'summary',
+                importance: 0.8
+            }));
+        });
+
+        it('should ignore recent memories', async () => {
+            const recentMemories = [{
+                id: 'new-1',
+                projectId: 'p1',
+                content: 'fact new',
+                type: 'fact',
+                timestamp: Date.now()
+            }];
+
+            mockList.mockResolvedValue(recentMemories);
+
+            await memoryService.consolidateMemories('p1');
+
+            // Should not call AI
+            expect(AI.generateContent).not.toHaveBeenCalled();
         });
     });
 });

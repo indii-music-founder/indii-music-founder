@@ -1,5 +1,6 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback } from './registry';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { ZodType } from 'zod';
 import { TOOL_REGISTRY } from './tools';
 import { AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId } from './types';
 
@@ -87,6 +88,85 @@ const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             },
             required: ['targetAgentId', 'task']
         }
+    },
+    {
+        name: 'consult_experts',
+        description: 'Consult multiple specialized agents in parallel to get diverse perspectives on a complex sub-task.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                consultations: {
+                    type: 'ARRAY',
+                    description: 'List of specific tasks to delegate to specialized agents.',
+                    items: {
+                        type: 'OBJECT',
+                        properties: {
+                            targetAgentId: { type: 'STRING', description: `The ID of the agent to consult. MUST be one of: ${VALID_AGENT_IDS_LIST}` },
+                            task: { type: 'STRING', description: 'The specific question or instruction for this specialist.' }
+                        },
+                        required: ['targetAgentId', 'task']
+                    }
+                }
+            },
+            required: ['consultations']
+        }
+    },
+    {
+        name: 'speak',
+        description: 'Read text aloud using the agents voice. Use this for proactive notifications or to emphasize important information.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                text: { type: 'STRING', description: 'The text to read aloud.' },
+                voice: { type: 'STRING', description: 'Optional voice override (e.g., Kore, Puck, Charon, Vega, Capella).' }
+            },
+            required: ['text']
+        }
+    },
+    {
+        name: 'schedule_task',
+        description: 'Schedule a task to be executed automatically after a delay (e.g., follow-ups, reminders).',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                targetAgentId: { type: 'STRING', description: `Agent to execute. Valid IDs: ${VALID_AGENT_IDS_LIST}` },
+                task: { type: 'STRING', description: 'The instruction to execute.' },
+                delayMinutes: { type: 'NUMBER', description: 'Minutes to wait before execution.' }
+            },
+            required: ['targetAgentId', 'task', 'delayMinutes']
+        }
+    },
+    {
+        name: 'subscribe_to_event',
+        description: 'Subscribe to a system event to trigger an autonomous response (e.g., when a task completes).',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                eventType: {
+                    type: 'STRING',
+                    enum: ['TASK_COMPLETED', 'TASK_FAILED', 'SYSTEM_ALERT'],
+                    description: 'The type of event to monitor.'
+                },
+                task: { type: 'STRING', description: 'The instruction to execute when the event occurs.' }
+            },
+            required: ['eventType', 'task']
+        }
+    },
+    {
+        name: 'send_notification',
+        description: 'Display a proactive notification (toast) to the user.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                type: {
+                    type: 'STRING',
+                    enum: ['info', 'success', 'warning', 'error'],
+                    description: 'The style of the notification.'
+                },
+                message: { type: 'STRING', description: 'The message to display.' }
+            },
+            required: ['type', 'message']
+        }
     }
 ];
 
@@ -99,6 +179,7 @@ export class BaseAgent implements SpecializedAgent {
     public systemPrompt: string;
     public tools: ToolDefinition[];
     protected functions: Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>;
+    private toolSchemas: Map<string, ZodType> = new Map();
 
     constructor(config: AgentConfig) {
         this.id = config.id;
@@ -108,6 +189,16 @@ export class BaseAgent implements SpecializedAgent {
         this.category = config.category;
         this.systemPrompt = config.systemPrompt;
         this.tools = config.tools || [];
+
+        // Populate tool schemas for validation
+        this.tools.forEach(def => {
+            def.functionDeclarations.forEach(fn => {
+                if (fn.schema) {
+                    this.toolSchemas.set(fn.name, fn.schema);
+                }
+            });
+        });
+
         this.functions = {
             get_project_details: async ({ projectId }) => {
                 const { useStore } = await import('@/core/store');
@@ -130,7 +221,7 @@ export class BaseAgent implements SpecializedAgent {
                         'INVALID_AGENT_ID'
                     );
                 }
-                const result = await agentService.runAgent(targetAgentId, task, context);
+                const result = await agentService.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
                 // AgentService.runAgent returns AgentResponse, we wrap it
                 return {
                     success: true,
@@ -138,11 +229,95 @@ export class BaseAgent implements SpecializedAgent {
                     message: `Delegated task to ${targetAgentId}`
                 };
             },
+            consult_experts: async ({ consultations }, context) => {
+                const { agentService } = await import('./AgentService');
+                const { toolError } = await import('./utils/ToolUtils');
+
+                if (!Array.isArray(consultations)) {
+                    return toolError('Consultations must be an array', 'INVALID_ARGS');
+                }
+
+                try {
+                    const results = await Promise.all(
+                        consultations.map(async (c: any) => {
+                            if (!VALID_AGENT_IDS.includes(c.targetAgentId as ValidAgentId)) {
+                                return { agentId: c.targetAgentId, error: `Invalid agent ID: ${c.targetAgentId}` };
+                            }
+                            const res = await agentService.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
+                            return { agentId: c.targetAgentId, response: res };
+                        })
+                    );
+
+                    return {
+                        success: true,
+                        data: { results },
+                        message: `Consulted ${consultations.length} experts`
+                    };
+                } catch (error: any) {
+                    return toolError(`Consultation failed: ${error.message}`, 'EXECUTION_ERROR');
+                }
+            },
+            schedule_task: async ({ targetAgentId, task, delayMinutes }: { targetAgentId: string; task: string; delayMinutes: number }) => {
+                const { proactiveService } = await import('./ProactiveService');
+                const executeAt = Date.now() + (delayMinutes * 60000);
+                const taskId = await proactiveService.scheduleTask(targetAgentId, task, executeAt);
+                return {
+                    success: true,
+                    data: { taskId },
+                    message: `Task scheduled for ${new Date(executeAt).toLocaleString()}`
+                };
+            },
+            subscribe_to_event: async ({ eventType, task }: { eventType: string; task: string }) => {
+                const { proactiveService } = await import('./ProactiveService');
+                const taskId = await proactiveService.subscribeToEvent(this.id, eventType as any, task);
+                return {
+                    success: true,
+                    data: { taskId },
+                    message: `Agent ${this.name} subscribed to ${eventType}`
+                };
+            },
+            send_notification: async ({ type, message }: { type: 'info' | 'success' | 'warning' | 'error'; message: string }) => {
+                const { events } = await import('@/core/events');
+                events.emit('SYSTEM_ALERT', { level: type, message });
+                return {
+                    success: true,
+                    message: 'Notification sent'
+                };
+            },
+            speak: async ({ text, voice }: { text: string; voice?: string }) => {
+                const { AI } = await import('@/services/ai/AIService');
+                const { audioService } = await import('@/services/audio/AudioService');
+
+                const VOICE_MAP: Record<string, string> = {
+                    'kyra': 'Kore',
+                    'liora': 'Vega',
+                    'mistral': 'Charon',
+                    'seraph': 'Capella',
+                    'vance': 'Puck'
+                };
+
+                const selectedVoice = voice || VOICE_MAP[this.id.toLowerCase()] || 'Kore';
+
+                try {
+                    const response = await AI.generateSpeech(text, selectedVoice);
+                    await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
+                    return {
+                        success: true,
+                        message: 'Speech generated and played'
+                    };
+                } catch (error: any) {
+                    console.error('[BaseAgent] Speak failure:', error);
+                    return {
+                        success: false,
+                        message: `Failed to speak: ${error.message}`
+                    };
+                }
+            },
             ...(config.functions || {} as any)
         };
     }
 
-    async execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback): Promise<AgentResponse> {
+    async execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import AI Service to prevent circular deps during registry loading
         const { AI } = await import('@/services/ai/AIService');
 
@@ -161,6 +336,12 @@ export class BaseAgent implements SpecializedAgent {
         - **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.
         - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
         - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
+        - **Collaboration:** If a task requires expertise outside your primary domain (${this.name}), call 'delegate_task' to hand it over to a specialist. For complex problems needing multiple viewpoints, use 'consult_experts'.
+
+        ## COLLABORATION PROTOCOL
+        - If you are receiving a delegated task (check context.traceId), be extremely concise and data-oriented.
+        - When delegating, provide full context so the next agent doesn't need to ask follow-up questions.
+        - Use 'consult_experts' when you need parallel logic (e.g., both music and marketing perspectives).
 
         ## TONE & STYLE
         - Be direct and concise. Avoid "As an AI..." boilerplate.
@@ -208,12 +389,16 @@ ${task}
             tool => !specialistToolNames.has(tool.name)
         );
 
-        // Merge specialist tools with filtered superpowers into a SINGLE tool object
-        // NOTE: We limit the total number of functions to 12 as complex models in Beta
-        // sometimes fail with "Multiple tools" errors when the list is too long.
+        // Merge specialist tools with filtered superpowers
+        // We prioritize core collaboration tools to ensure swarming always works
+        const collaborationToolNames = ['delegate_task', 'consult_experts'];
+        const collaborationTools = filteredSuperpowers.filter(t => collaborationToolNames.includes(t.name));
+        const otherSuperpowers = filteredSuperpowers.filter(t => !collaborationToolNames.includes(t.name));
+
         const allFunctions: FunctionDeclaration[] = ([
+            ...collaborationTools,
             ...(this.tools || []).flatMap(t => t.functionDeclarations || []),
-            ...filteredSuperpowers
+            ...otherSuperpowers
         ]).slice(0, 12);
 
         const allTools: ToolDefinition[] = allFunctions.length > 0
@@ -223,15 +408,43 @@ ${task}
         try {
             onProgress?.({ type: 'thought', content: 'Generating response...' });
 
-            const response = await AI.generateContent({
+            const { stream, response: responsePromise } = await AI.generateContentStream({
                 model: AI_MODELS.TEXT.AGENT,
-                contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: fullPrompt },
+                        ...(attachments || []).map(a => ({
+                            inlineData: { mimeType: a.mimeType, data: a.base64 }
+                        }))
+                    ]
+                }],
                 config: {
                     ...AI_CONFIG.THINKING.LOW
                 },
-                tools: allTools as any
+                tools: allTools as any,
+                signal
             });
 
+            // Consume stream for tokens
+            const reader = stream.getReader();
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunkText = value.text();
+                    if (chunkText) {
+                        onProgress?.({ type: 'token', content: chunkText });
+                    }
+                }
+            } catch (streamError) {
+                console.warn('[BaseAgent] Stream read interrupted:', streamError);
+            } finally {
+                reader.releaseLock();
+            }
+
+            const response = await responsePromise;
             const functionCall = response.functionCalls()?.[0];
 
             if (functionCall) {
@@ -242,7 +455,23 @@ ${task}
 
                 // Check local functions first (specialist specific)
                 if (this.functions[name]) {
-                    result = await this.functions[name](args, enrichedContext);
+                    try {
+                        // Validate against Zod schema if available
+                        const schema = this.toolSchemas.get(name);
+                        if (schema) {
+                            // This throws if invalid
+                            schema.parse(args);
+                        }
+                        result = await this.functions[name](args, enrichedContext);
+                    } catch (err: unknown) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        console.warn(`[BaseAgent] Tool validation failed for ${name}:`, msg);
+                        result = {
+                            success: false,
+                            error: `Validation Error: ${msg}`,
+                            message: `Invalid arguments for tool '${name}': ${msg}`
+                        };
+                    }
                 }
                 // Then check global tool registry
                 else if (TOOL_REGISTRY[name]) {

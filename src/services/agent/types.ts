@@ -19,10 +19,13 @@ export interface ToolParameters {
     required?: string[];
 }
 
+import { ZodType } from 'zod';
+
 export interface FunctionDeclaration {
     name: string;
     description: string;
     parameters: ToolParameters;
+    schema?: ZodType;
 }
 
 export interface ToolDefinition {
@@ -103,6 +106,23 @@ export interface AgentContext {
     activeModule?: string;
     userProfile?: UserProfile;
     distributor?: DistributorInfo;
+    traceId?: string;
+    attachments?: { mimeType: string; base64: string }[];
+}
+
+export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';
+
+export interface ProactiveTask {
+    id: string;
+    agentId: string;
+    task: string;
+    triggerType: ProactiveTriggerType;
+    executeAt?: number; // timestamp
+    eventPattern?: string; // e.g. 'TASK_COMPLETED' or regex
+    status: 'pending' | 'executing' | 'completed' | 'failed';
+    createdAt: number;
+    lastError?: string;
+    userId: string;
 }
 
 // Using types from @/modules/workflow/types via imports above

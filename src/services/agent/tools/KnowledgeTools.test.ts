@@ -49,10 +49,10 @@ describe('KnowledgeTools', () => {
                 query: 'What is the meaning of life?'
             });
 
-            const parsed = JSON.parse(result);
-            expect(parsed.answer).toBe('The answer to your question is 42.');
-            expect(parsed.sources).toHaveLength(2);
-            expect(parsed.sources[0].title).toBe('Guide.pdf');
+            const data = result.data;
+            expect(data.answer).toBe('The answer to your question is 42.');
+            expect(data.sources).toHaveLength(2);
+            expect(data.sources[0].title).toBe('Guide.pdf');
         });
 
         it('should pass user profile to workflow', async () => {
@@ -75,7 +75,8 @@ describe('KnowledgeTools', () => {
 
             const result = await KnowledgeTools.search_knowledge({ query: 'test' });
 
-            expect(result).toContain('Error: User profile not loaded');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('User profile not loaded');
             expect(runAgenticWorkflow).not.toHaveBeenCalled();
         });
 
@@ -86,9 +87,8 @@ describe('KnowledgeTools', () => {
 
             const result = await KnowledgeTools.search_knowledge({ query: 'test' });
 
-            const parsed = JSON.parse(result);
-            expect(parsed.error).toContain('Failed to search knowledge base');
-            expect(parsed.error).toContain('Knowledge base unavailable');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Knowledge base unavailable');
         });
 
         it('should handle empty sources', async () => {
@@ -100,9 +100,9 @@ describe('KnowledgeTools', () => {
 
             const result = await KnowledgeTools.search_knowledge({ query: 'obscure topic' });
 
-            const parsed = JSON.parse(result);
-            expect(parsed.answer).toBe('No specific sources found.');
-            expect(parsed.sources).toHaveLength(0);
+            const data = result.data;
+            expect(data.answer).toBe('No specific sources found.');
+            expect(data.sources).toHaveLength(0);
         });
 
         it('should map source names to titles', async () => {
@@ -117,17 +117,17 @@ describe('KnowledgeTools', () => {
 
             const result = await KnowledgeTools.search_knowledge({ query: 'test' });
 
-            const parsed = JSON.parse(result);
-            expect(parsed.sources[0].title).toBe('Document 1.pdf');
-            expect(parsed.sources[1].title).toBe('Document 2.md');
+            const data = result.data;
+            expect(data.sources[0].title).toBe('Document 1.pdf');
+            expect(data.sources[1].title).toBe('Document 2.md');
         });
 
         it('should log progress updates', async () => {
-            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
 
             const mockAsset = { content: 'Answer', sources: [] };
             (runAgenticWorkflow as any).mockImplementation(
-                async (query, profile, track, onUpdate) => {
+                async (query: any, profile: any, track: any, onUpdate: any) => {
                     onUpdate('Searching...');
                     onUpdate('Processing results...');
                     return { asset: mockAsset };
@@ -147,8 +147,8 @@ describe('KnowledgeTools', () => {
 
             const result = await KnowledgeTools.search_knowledge({ query: 'test' });
 
-            const parsed = JSON.parse(result);
-            expect(parsed.error).toContain('Failed to search knowledge base');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('String error');
         });
     });
 });

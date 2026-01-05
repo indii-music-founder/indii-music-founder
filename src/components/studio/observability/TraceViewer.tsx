@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
+import { SwarmGraph } from './SwarmGraph';
+import { XRayPanel } from './XRayPanel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LayoutGrid, Network } from 'lucide-react';
 
 export function TraceViewer() {
     const [traces, setTraces] = useState<AgentTrace[]>([]);
@@ -39,108 +43,107 @@ export function TraceViewer() {
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px] w-full p-4">
-            {/* Trace List */}
-            <Card className="col-span-1 h-full flex flex-col">
-                <CardHeader>
-                    <CardTitle>Agent Traces</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-hidden p-0">
-                    <ScrollArea className="h-full">
-                        <div className="space-y-2 p-4">
-                            {traces.map((trace) => (
-                                <div
-                                    key={trace.id}
-                                    onClick={() => setSelectedTrace(trace)}
-                                    className={`p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${selectedTrace?.id === trace.id ? 'bg-muted border-primary' : ''
-                                        }`}
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <Badge variant={getStatusColor(trace.status) as any}>
-                                            {trace.agentId}
-                                        </Badge>
-                                        <span className="text-xs text-muted-foreground">
-                                            {trace.startTime?.seconds ? formatDistanceToNow(new Date(trace.startTime.seconds * 1000), { addSuffix: true }) : 'Now'}
-                                        </span>
-                                    </div>
-                                    <div className="text-sm line-clamp-2 text-muted-foreground">
-                                        {trace.input}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </CardContent>
-            </Card>
+        <div className="flex flex-col h-full w-full p-4 space-y-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold tracking-tight">Agent Observability</h2>
+                <Tabs defaultValue="list" className="w-[400px]">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="list" className="flex items-center gap-2">
+                            <LayoutGrid size={14} />
+                            List View
+                        </TabsTrigger>
+                        <TabsTrigger value="graph" className="flex items-center gap-2">
+                            <Network size={14} />
+                            Swarm Graph
+                        </TabsTrigger>
+                    </TabsList>
 
-            {/* Trace Details */}
-            <Card className="col-span-2 h-full flex flex-col">
-                <CardHeader>
-                    <CardTitle>Trace Details</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-hidden">
-                    {selectedTrace ? (
-                        <ScrollArea className="h-full pr-4">
-                            <div className="space-y-6">
-                                {/* Metadata Section */}
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <span className="font-semibold text-muted-foreground">ID:</span> {selectedTrace.id}
-                                    </div>
-                                    <div>
-                                        <span className="font-semibold text-muted-foreground">Status:</span>
-                                        <span className={`ml-2 uppercase font-bold ${selectedTrace.status === 'failed' ? 'text-red-500' : 'text-green-500'}`}>
-                                            {selectedTrace.status}
-                                        </span>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <span className="font-semibold text-muted-foreground">Input:</span>
-                                        <div className="mt-1 p-2 bg-muted rounded font-mono text-xs">
-                                            {selectedTrace.input}
-                                        </div>
-                                    </div>
-                                    {selectedTrace.error && (
-                                        <div className="col-span-2 text-red-500">
-                                            <span className="font-semibold">Error:</span> {selectedTrace.error}
-                                        </div>
-                                    )}
-                                </div>
+                    <TabsContent value="list" className="mt-0">
+                        {/* List View handled below in main grid */}
+                    </TabsContent>
+                    <TabsContent value="graph" className="mt-0">
+                        {/* Graph View handled below in main grid */}
+                    </TabsContent>
+                </Tabs>
+            </div>
 
-                                {/* Steps Section */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold border-b pb-2">Execution Steps ({selectedTrace.steps?.length || 0})</h3>
-                                    {selectedTrace.steps?.map((step, idx) => (
-                                        <div key={idx} className="border rounded-md p-3 space-y-2">
-                                            <div className="flex justify-between items-center text-xs text-muted-foreground">
-                                                <span className="uppercase font-bold tracking-wider">{step.type}</span>
-                                                <span>{new Date(step.timestamp).toLocaleTimeString()}</span>
-                                            </div>
-
-                                            {/* Step Content */}
-                                            <div className="text-sm font-mono bg-black/5 p-2 rounded overflow-x-auto whitespace-pre-wrap">
-                                                {typeof step.content === 'string'
-                                                    ? step.content
-                                                    : JSON.stringify(step.content, null, 2)}
-                                            </div>
-
-                                            {/* Metadata if any */}
-                                            {step.metadata && (
-                                                <div className="text-xs text-muted-foreground mt-2">
-                                                    <pre>{JSON.stringify(step.metadata, null, 2)}</pre>
+            <Tabs defaultValue="list" className="flex-1 flex flex-col min-h-0">
+                <TabsContent value="list" className="flex-1 min-h-0 mt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
+                        {/* Trace List */}
+                        <Card className="col-span-1 h-full flex flex-col bg-black/40 border-white/10">
+                            <CardHeader className="py-4">
+                                <CardTitle className="text-sm font-medium">Recent Traces</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 overflow-hidden p-0 border-t border-white/5">
+                                <ScrollArea className="h-full">
+                                    <div className="space-y-1 p-2">
+                                        {traces.map((trace) => (
+                                            <div
+                                                key={trace.id}
+                                                onClick={() => setSelectedTrace(trace)}
+                                                className={`p-3 rounded-md border border-transparent cursor-pointer hover:bg-white/5 transition-all ${selectedTrace?.id === trace.id ? 'bg-white/10 border-white/10 shadow-lg ring-1 ring-white/10' : ''
+                                                    }`}
+                                            >
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <Badge variant={getStatusColor(trace.status) as any} className="text-[10px] py-0 px-1.5 h-4">
+                                                        {trace.agentId}
+                                                    </Badge>
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {trace.startTime?.seconds ? formatDistanceToNow(new Date(trace.startTime.seconds * 1000), { addSuffix: true }) : 'Now'}
+                                                    </span>
                                                 </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                                                <div className="text-xs line-clamp-1 text-muted-foreground font-mono">
+                                                    {trace.input}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+
+                        {/* Trace Details */}
+                        <Card className="col-span-2 h-full flex flex-col bg-black/40 border-white/10 overflow-hidden">
+                            <CardHeader className="py-4 border-b border-white/5">
+                                <CardTitle className="text-sm font-medium flex justify-between items-center">
+                                    <span>Execution Details</span>
+                                    {selectedTrace && (
+                                        <Badge variant="outline" className="font-mono text-[10px]">
+                                            {selectedTrace.id.slice(0, 12)}
+                                        </Badge>
+                                    )}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 overflow-hidden p-0 relative">
+                                {selectedTrace ? (
+                                    <XRayPanel trace={selectedTrace} />
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm italic">
+                                        Select a trace to view details
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="graph" className="flex-1 min-h-0 mt-0">
+                    <Card className="h-full flex flex-col bg-black/40 border-white/10 overflow-hidden">
+                        <div className="flex-1 relative flex">
+                            <div className="flex-1 min-w-0">
+                                <SwarmGraph
+                                    swarmId={selectedTrace?.swarmId || selectedTrace?.id || ''}
+                                    onNodeClick={(t) => setSelectedTrace(t)}
+                                />
                             </div>
-                        </ScrollArea>
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-muted-foreground">
-                            Select a trace to view details
+                            <div className="w-[350px] flex-shrink-0 border-l border-white/10 hidden lg:block">
+                                <XRayPanel trace={selectedTrace} />
+                            </div>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

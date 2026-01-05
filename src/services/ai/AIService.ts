@@ -8,14 +8,28 @@ import {
     GenerateVideoResponse,
     GenerateImageRequest,
     GenerateImageResponse,
+    GenerateSpeechResponse,
     GenerationConfig,
     ToolConfig,
     WrappedResponse,
-    Candidate
+    Candidate,
+    GenerateContentOptions,
+    GenerateStreamOptions,
+    GenerateVideoOptions,
+    GenerateImageOptions,
+    EmbedContentOptions,
+    StreamChunk,
+    RetryableError
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
+import { AI_MODELS } from '@/core/config/ai-models';
+// import { trace } from '../agent/observability/TraceService';
+import { RateLimiter } from './RateLimiter';
 import { delay as asyncDelay } from '@/utils/async';
 import { firebaseAI } from './FirebaseAIService';
+import { AIResponseCache } from './context/AIResponseCache';
+
+const responseCache = new AIResponseCache();
 
 // ============================================================================
 // Helper Functions
@@ -77,69 +91,29 @@ function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
 }
 
 // ============================================================================
-// Types for AIService
-// ============================================================================
-
-interface GenerateContentOptions {
-    model: string;
-    contents: Content | Content[];
-    config?: GenerationConfig;
-    systemInstruction?: string;
-    tools?: ToolConfig[];
-}
-
-interface GenerateStreamOptions {
-    model: string;
-    contents: Content[];
-    config?: GenerationConfig;
-    systemInstruction?: string;
-    tools?: ToolConfig[];
-}
-
-
-interface GenerateVideoOptions {
-    model: string;
-    prompt: string;
-    image?: { imageBytes: string; mimeType: string };
-    config?: GenerationConfig & {
-        aspectRatio?: string;
-        durationSeconds?: number;
-    };
-    /** Custom timeout in milliseconds. Defaults to calculated based on durationSeconds or 2 minutes minimum. */
-    timeoutMs?: number;
-}
-
-interface GenerateImageOptions {
-    model: string;
-    prompt: string;
-    config?: GenerationConfig & {
-        numberOfImages?: number;
-        aspectRatio?: string;
-        negativePrompt?: string;
-    };
-}
-
-interface EmbedContentOptions {
-    model: string;
-    content: Content;
-}
-
-interface StreamChunk {
-    text: () => string;
-}
-
-interface RetryableError extends Error {
-    code?: string;
-}
-
-// ============================================================================
 // AIService Class
 // ============================================================================
 
 export class AIService {
     // Note: AIService delegates generation to FirebaseAIService (Client SDK),
     // which handles Auth and App Check.
-    constructor() { }
+    private cache: AIResponseCache;
+    private static instance: AIService;
+    private activeRequests: Map<string, Promise<WrappedResponse>> = new Map();
+
+    // Default: 60 RPM (adjust based on quota)
+    private rateLimiter: RateLimiter = new RateLimiter(60);
+
+    private constructor() {
+        this.cache = new AIResponseCache();
+    }
+
+    public static getInstance(): AIService {
+        if (!AIService.instance) {
+            AIService.instance = new AIService();
+        }
+        return AIService.instance;
+    }
 
     /**
      * HIGH LEVEL: Generate text using client-side SDK
@@ -156,46 +130,157 @@ export class AIService {
     }
 
     /**
-     * Generate content using client-side SDK via firebaseAI
+     * Generates content using the Google Gemini model.
+     * Includes caching, retries, request coalescing, and rate limiting.
      */
-    async generateContent(options: GenerateContentOptions): Promise<WrappedResponse> {
-        return this.withRetry(async () => {
-            try {
-                const contents = Array.isArray(options.contents) ? options.contents : [options.contents];
-                const result = await firebaseAI.generateContent(
-                    contents,
-                    options.model,
-                    options.config,
-                    options.systemInstruction,
-                    options.tools
-                );
+    generateContent(prompt: string | any, options: GenerateContentOptions = {}): Promise<WrappedResponse> {
+        // If first argument is an object and not a string/array, treat it as options
+        if (typeof prompt === 'object' && prompt !== null && !Array.isArray(prompt)) {
+            options = { ...prompt, ...options };
+        }
 
-                // Map firebase/ai candidate to legacy Candidate
-                const mappedCandidates: Candidate[] = (result.response.candidates || []).map(c => ({
-                    content: {
-                        role: 'model',
-                        parts: (c.content?.parts || []).map(p => {
-                            if ('text' in p) return { text: p.text || '' } as TextPart;
-                            if ('functionCall' in p) return { functionCall: p.functionCall } as FunctionCallPart;
-                            return { text: '' } as TextPart;
-                        })
-                    },
-                    finishReason: (c.finishReason as any) || 'STOP',
-                    index: c.index || 0
-                }));
+        // Ensure model is set
+        const model = options.model || AI_MODELS.TEXT.AGENT;
 
-                return wrapResponse({
-                    candidates: mappedCandidates
-                });
-
-            } catch (error) {
-                const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-                console.error('[AIService] Generate Content Failed:', err.message);
-                throw err;
+        // Handle prompt argument if provided (legacy support & convenience)
+        let contents = options.contents;
+        if (typeof prompt === 'string' && prompt.length > 0) {
+            if (!contents) {
+                contents = [{ role: 'user', parts: [{ text: prompt }] }];
             }
-        });
-    }
+        }
+        // If contents is still undefined, look at prompt as 'any' maybe? 
+        // But for typing safety we expect contents to be populated if prompt is not string.
+        if (!contents) {
+            contents = [];
+        }
+        if (!Array.isArray(contents)) {
+            contents = [contents];
+        }
 
+        // Update options with resolved contents for cache key generation
+        const effectiveOptions = { ...options, model, contents };
+
+        // 0. Cache Check
+        const cacheKey = this.cache.generateKey(effectiveOptions);
+        if (!options.skipCache) {
+            const cached = this.cache.get(cacheKey);
+            if (cached) {
+                return Promise.resolve(wrapResponse(cached));
+            }
+        }
+
+        // 1. Request Coalescing
+        if (options.cache !== false && cacheKey && this.activeRequests.has(cacheKey)) {
+            return this.activeRequests.get(cacheKey)!;
+        }
+
+        // Define the Async Operation
+        const executeRequest = async (): Promise<WrappedResponse> => {
+            // 2. Rate Limiting Acquisition
+            await this.rateLimiter.acquire(30000);
+
+            return this.withRetry(async () => {
+                // Default timeout: 60s (can be disabled with infinity or customized)
+                const timeoutMs = options.timeout ?? 60000;
+                const signal = options.signal;
+
+                const generateOp = async () => {
+                    try {
+                        const result = await firebaseAI.generateContent(
+                            contents as Content[], // asserted from above logic
+                            model,
+                            options.config,
+                            options.systemInstruction,
+                            options.tools
+                        );
+
+                        // Map firebase/ai candidate to legacy Candidate
+                        const mappedCandidates: Candidate[] = (result.response.candidates || []).map(c => ({
+                            content: {
+                                role: 'model',
+                                parts: (c.content?.parts || []).map(p => {
+                                    if ('text' in p) return { text: p.text || '' } as TextPart;
+                                    if ('functionCall' in p) return { functionCall: p.functionCall } as FunctionCallPart;
+                                    return { text: '' } as TextPart;
+                                })
+                            },
+                            finishReason: (c.finishReason as any) || 'STOP',
+                            index: c.index || 0
+                        }));
+
+                        if (options.cache !== false && cacheKey) {
+                            // Default TTL or from options if added later
+                            this.cache.set(cacheKey, result.response as any, options.cacheTTL);
+                        }
+
+                        return wrapResponse({
+                            candidates: mappedCandidates
+                        });
+
+                    } catch (error: any) {
+                        // Pass through retryable errors to be handled by withRetry
+                        if (
+                            error?.code === 'resource-exhausted' ||
+                            error?.code === 'unavailable' ||
+                            error?.message?.includes('429') ||
+                            error?.message?.includes('503')
+                        ) {
+                            throw error;
+                        }
+
+                        const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+                        console.error('[AIService] Generate Content Failed:', err.message);
+                        throw err;
+                    }
+                };
+
+                // Implement Race between Generation, Timeout, and AbortSignal
+                return new Promise<WrappedResponse>((resolve, reject) => {
+                    const timer = setTimeout(() => {
+                        reject(new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${timeoutMs}ms`));
+                    }, timeoutMs);
+
+                    if (signal) {
+                        if (signal.aborted) {
+                            clearTimeout(timer);
+                            return reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled'));
+                        }
+                        signal.addEventListener('abort', () => {
+                            clearTimeout(timer);
+                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled'));
+                        });
+                    }
+
+                    generateOp()
+                        .then(res => {
+                            clearTimeout(timer);
+                            resolve(res);
+                        })
+                        .catch(err => {
+                            clearTimeout(timer);
+                            reject(err);
+                        });
+                });
+            });
+        };
+
+        const requestPromise = executeRequest();
+
+        if (options.cache !== false && cacheKey) {
+            this.activeRequests.set(cacheKey, requestPromise);
+            // Cleanup pending request after completion (success or error)
+            requestPromise.finally(() => {
+                if (this.activeRequests.get(cacheKey) === requestPromise) {
+                    this.activeRequests.delete(cacheKey);
+                }
+            }).catch(() => {
+                // Ignore errors in the cleanup chain as they are handled by the caller
+            });
+        }
+
+        return requestPromise;
+    }
 
     /**
      * Retry logic with exponential backoff for transient errors
@@ -230,43 +315,23 @@ export class AIService {
     /**
      * Generate content with streaming response
      */
-    async generateContentStream(options: GenerateStreamOptions): Promise<ReadableStream<StreamChunk>> {
+    async generateContentStream(options: GenerateContentOptions): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         try {
-            const stream = await firebaseAI.generateContentStream(
-                options.contents,
+            await this.rateLimiter.acquire();
+
+            return await firebaseAI.generateContentStream(
+                (options.contents as any) || [],
                 options.model,
                 options.config,
                 options.systemInstruction,
-                options.tools
+                options.tools as any
             );
-
-            const reader = stream.getReader();
-
-            return new ReadableStream<StreamChunk>({
-                async start(controller) {
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-                            if (value) {
-                                controller.enqueue({ text: () => value });
-                            }
-                        }
-                        controller.close();
-                    } catch (err) {
-                        controller.error(err);
-                    }
-                }
-            });
         } catch (error) {
             console.error('[AIService] Stream Response Error:', error);
             throw AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
         }
     }
 
-    /**
-     * Generate video using Vertex AI backend
-     */
     /**
      * Generate video using Vertex AI backend (via unified FirebaseAIService)
      */
@@ -293,6 +358,19 @@ export class AIService {
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
             console.error('[AIService] Image Gen Error:', err.message);
+            throw err;
+        }
+    }
+
+    /**
+     * Generate speech from text using TTS
+     */
+    async generateSpeech(text: string, voice?: string, modelOverride?: string): Promise<GenerateSpeechResponse> {
+        try {
+            return await this.withRetry(() => firebaseAI.generateSpeech(text, voice, modelOverride));
+        } catch (error) {
+            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
+            console.error('[AIService] Speech Gen Error:', err.message);
             throw err;
         }
     }
@@ -329,4 +407,4 @@ export class AIService {
     }
 }
 
-export const AI = new AIService();
+export const AI = AIService.getInstance();

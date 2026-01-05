@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { useStore, AgentMessage, AgentThought } from '@/core/store';
+import { useVoice } from '@/core/context/VoiceContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -227,7 +228,7 @@ export default function ChatOverlay() {
     const userProfile = useStore(state => state.userProfile);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
 
-    const [isMuted, setIsMuted] = useState(true);
+    const { isVoiceEnabled, setVoiceEnabled } = useVoice();
     const lastSpokenIdRef = useRef<string | null>(null);
 
     // Get the first available reference image to use as avatar
@@ -235,7 +236,7 @@ export default function ChatOverlay() {
 
     // Auto-speak effect
     useEffect(() => {
-        if (isMuted || !isAgentOpen) {
+        if (!isVoiceEnabled || !isAgentOpen) {
             voiceService.stopSpeaking();
             return;
         }
@@ -243,10 +244,20 @@ export default function ChatOverlay() {
         const lastMsg = agentHistory[agentHistory.length - 1];
         if (lastMsg && lastMsg.role === 'model' && !lastMsg.isStreaming && lastMsg.text && lastMsg.id !== lastSpokenIdRef.current) {
             lastSpokenIdRef.current = lastMsg.id;
-            const timer = setTimeout(() => voiceService.speak(lastMsg.text), 0);
+
+            const VOICE_MAP: Record<string, string> = {
+                'kyra': 'Kore',
+                'liora': 'Vega',
+                'mistral': 'Charon',
+                'seraph': 'Capella',
+                'vance': 'Puck'
+            };
+            const voice = lastMsg.agentId ? VOICE_MAP[lastMsg.agentId.toLowerCase()] || 'Kore' : 'Kore';
+
+            const timer = setTimeout(() => voiceService.speak(lastMsg.text, voice), 0);
             return () => clearTimeout(timer);
         }
-    }, [agentHistory, isMuted, isAgentOpen]);
+    }, [agentHistory, isVoiceEnabled, isAgentOpen]);
 
     if (!isAgentOpen) return null;
 
@@ -263,11 +274,14 @@ export default function ChatOverlay() {
                 <div className="pointer-events-auto h-full flex flex-col">
                     {/* Voice Toggle */}
                     <button
-                        onClick={() => setIsMuted(!isMuted)}
-                        className="absolute top-4 right-8 p-2 rounded-full bg-black/50 hover:bg-black/70 text-gray-400 hover:text-white transition-colors z-50 backdrop-blur-sm border border-white/10"
-                        title={isMuted ? "Unmute Text-to-Speech" : "Mute Text-to-Speech"}
+                        onClick={() => setVoiceEnabled(!isVoiceEnabled)}
+                        className={`absolute top-4 right-8 p-2 rounded-full transition-all z-50 backdrop-blur-sm border ${isVoiceEnabled
+                                ? 'bg-purple-600/20 text-purple-400 border-purple-500/30'
+                                : 'bg-black/50 text-gray-500 border-white/10'
+                            }`}
+                        title={!isVoiceEnabled ? "Enable Voice Interface" : "Disable Voice Interface"}
                     >
-                        {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                        {!isVoiceEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />}
                     </button>
 
                     {/* Virtualized Container */}

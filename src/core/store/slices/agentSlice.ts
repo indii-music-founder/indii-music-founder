@@ -8,6 +8,7 @@ export interface AgentMessage {
     attachments?: { mimeType: string; base64: string }[];
     isStreaming?: boolean;
     thoughts?: AgentThought[];
+    agentId?: string;
 }
 
 export interface AgentThought {

@@ -8,7 +8,8 @@ export enum AppErrorCode {
     UNAUTHORIZED = 'UNAUTHORIZED',
     NOT_FOUND = 'NOT_FOUND',
     RATE_LIMITED = 'RATE_LIMITED',
-    TIMEOUT = 'TIMEOUT'
+    TIMEOUT = 'TIMEOUT',
+    CANCELLED = 'CANCELLED'
 }
 
 export interface ErrorDetails {

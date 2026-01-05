@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
+import { VoiceProvider } from './context/VoiceContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
@@ -239,64 +240,66 @@ export default function App() {
 
     // console.log('[App] Rendering JSX...');
     return (
-        <ToastProvider>
-            <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans" data-testid="app-container">
-                {/* Left Sidebar - Hidden for standalone modules */}
-                {showChrome && (
-                    <div className="hidden md:block h-full">
-                        <ErrorBoundary>
-                            <Sidebar />
-                        </ErrorBoundary>
-                    </div>
-                )}
-
-                <main className="flex-1 flex flex-col min-w-0 bg-background relative">
-                    <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                        <ErrorBoundary>
-                            <Suspense fallback={<LoadingFallback />}>
-                                <ModuleRenderer moduleId={currentModule as ModuleId} />
-                            </Suspense>
-                        </ErrorBoundary>
-                    </div>
-
+        <VoiceProvider>
+            <ToastProvider>
+                <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans" data-testid="app-container">
+                    {/* Left Sidebar - Hidden for standalone modules */}
                     {showChrome && (
-                        <div className="flex-shrink-0 z-10 relative">
+                        <div className="hidden md:block h-full">
                             <ErrorBoundary>
-                                <ChatOverlay />
-                                <CommandBar />
+                                <Sidebar />
                             </ErrorBoundary>
                         </div>
                     )}
-                </main>
 
-                {/* Right Panel - Hidden for standalone modules */}
-                {showChrome && (
-                    <ErrorBoundary>
-                        <RightPanel />
-                    </ErrorBoundary>
-                )}
-
-                {/* Mobile Navigation - Hidden for standalone modules */}
-                {showChrome && (
-                    <ErrorBoundary>
-                        <MobileNav />
-                    </ErrorBoundary>
-                )}
-
-                {/* DevTools HUD - Only in Development */}
-                {import.meta.env.DEV && (
-                    <Suspense fallback={null}>
-                        <TestPlaybookPanel />
-                        <div className="fixed bottom-4 left-4 z-50">
-                            <AudioStressTest />
+                    <main className="flex-1 flex flex-col min-w-0 bg-background relative">
+                        <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                            <ErrorBoundary>
+                                <Suspense fallback={<LoadingFallback />}>
+                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
+                                </Suspense>
+                            </ErrorBoundary>
                         </div>
-                        <DevPortWarning />
-                    </Suspense>
-                )}
 
-                {/* Agent Approval Modal - Shows when agent requests user approval */}
-                <ApprovalModal />
-            </div>
-        </ToastProvider>
+                        {showChrome && (
+                            <div className="flex-shrink-0 z-10 relative">
+                                <ErrorBoundary>
+                                    <ChatOverlay />
+                                    <CommandBar />
+                                </ErrorBoundary>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Right Panel - Hidden for standalone modules */}
+                    {showChrome && (
+                        <ErrorBoundary>
+                            <RightPanel />
+                        </ErrorBoundary>
+                    )}
+
+                    {/* Mobile Navigation - Hidden for standalone modules */}
+                    {showChrome && (
+                        <ErrorBoundary>
+                            <MobileNav />
+                        </ErrorBoundary>
+                    )}
+
+                    {/* DevTools HUD - Only in Development */}
+                    {import.meta.env.DEV && (
+                        <Suspense fallback={null}>
+                            <TestPlaybookPanel />
+                            <div className="fixed bottom-4 left-4 z-50">
+                                <AudioStressTest />
+                            </div>
+                            <DevPortWarning />
+                        </Suspense>
+                    )}
+
+                    {/* Agent Approval Modal - Shows when agent requests user approval */}
+                    <ApprovalModal />
+                </div>
+            </ToastProvider>
+        </VoiceProvider>
     );
 }

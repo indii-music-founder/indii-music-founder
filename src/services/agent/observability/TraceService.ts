@@ -1,5 +1,5 @@
 import { db } from '@/services/firebase';
-import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where } from 'firebase/firestore';
 import { AgentTrace, TraceStep, TraceStatus } from './types';
 
 export class TraceService {
@@ -12,7 +12,8 @@ export class TraceService {
         userId: string,
         agentId: string,
         input: string,
-        metadata?: Record<string, any>
+        metadata?: Record<string, any>,
+        parentTraceId?: string
     ): Promise<string> {
         if (!userId) {
             console.warn('[TraceService] No userId provided, skipping trace.');
@@ -31,7 +32,11 @@ export class TraceService {
                 status: 'pending',
                 startTime: serverTimestamp(),
                 steps: [],
-                metadata: metadata || {}
+                swarmId: metadata?.swarmId || (parentTraceId ? null : traceId), // Use provided swarmId, or self if root
+                metadata: {
+                    ...(metadata || {}),
+                    ...(parentTraceId ? { parentTraceId } : {})
+                }
             };
 
             await setDoc(ref, trace);
@@ -103,5 +108,15 @@ export class TraceService {
         } catch (e) {
             console.error(`[TraceService] Failed to fail trace ${traceId}:`, e);
         }
+    }
+
+    /**
+     * Get all traces in a swarm
+     */
+    static getSwarmQuery(swarmId: string) {
+        return query(
+            collection(db, this.COLLECTION),
+            where('swarmId', '==', swarmId)
+        );
     }
 }

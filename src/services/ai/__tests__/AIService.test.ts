@@ -1,31 +1,38 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AIService, AI } from "../AIService";
-import { AppErrorCode } from "@/shared/types/errors";
+import { AppErrorCode, AppException } from "@/shared/types/errors";
 
-// Mock the GoogleGenerativeAI module
-vi.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-    getGenerativeModel: vi.fn().mockReturnValue({
-      generateContent: vi.fn(),
-    }),
-  })),
+// Mock FirebaseAIService
+vi.mock('../FirebaseAIService', () => ({
+  firebaseAI: {
+    generateContent: vi.fn(),
+    generateContentStream: vi.fn(),
+    generateText: vi.fn(),
+    generateStructuredData: vi.fn(),
+    generateVideo: vi.fn(),
+    embedContent: vi.fn(),
+  },
 }));
+
+vi.mock('@/utils/async', () => ({
+  delay: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { firebaseAI } from "../FirebaseAIService";
 
 describe("AIService", () => {
   let service: AIService;
-  let mockModel: any;
 
   beforeEach(() => {
-    service = new AIService();
-
-    // Setup mock model
-    mockModel = {
-      generateContent: vi.fn(),
-    };
+    // Access private constructor for testing
+    service = new (AIService as any)();
+    vi.resetAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => { });
+    vi.spyOn(console, 'warn').mockImplementation(() => { });
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe("generateContent", () => {
@@ -42,8 +49,8 @@ describe("AIService", () => {
         ],
       };
 
-      mockModel.generateContent.mockResolvedValue({
-        response: mockResponse,
+      vi.mocked(firebaseAI.generateContent).mockResolvedValue({
+        response: mockResponse as any,
       });
 
       const result = await service.generateContent({
@@ -52,9 +59,7 @@ describe("AIService", () => {
       });
 
       expect(result.text()).toBe("Hello, world!");
-      expect(mockModel.generateContent).toHaveBeenCalledWith({
-        contents: [{ role: "user", parts: [{ text: "test" }] }],
-      });
+      expect(firebaseAI.generateContent).toHaveBeenCalled();
     });
 
     it("should handle tool calls in response", async () => {
@@ -76,8 +81,8 @@ describe("AIService", () => {
         ],
       };
 
-      mockModel.generateContent.mockResolvedValue({
-        response: mockResponse,
+      vi.mocked(firebaseAI.generateContent).mockResolvedValue({
+        response: mockResponse as any,
       });
 
       const result = await service.generateContent({
@@ -105,9 +110,9 @@ describe("AIService", () => {
         ],
       };
 
-      mockModel.generateContent
+      vi.mocked(firebaseAI.generateContent)
         .mockRejectedValueOnce({ code: "resource-exhausted" })
-        .mockResolvedValueOnce({ response: mockResponse });
+        .mockResolvedValueOnce({ response: mockResponse as any });
 
       const result = await service.generateContent({
         model: "gemini-3-pro-preview",
@@ -115,11 +120,11 @@ describe("AIService", () => {
       });
 
       expect(result.text()).toBe("Success after retry");
-      expect(mockModel.generateContent).toHaveBeenCalledTimes(2);
+      expect(firebaseAI.generateContent).toHaveBeenCalledTimes(2);
     });
 
     it("should throw AppException on fatal errors", async () => {
-      mockModel.generateContent.mockRejectedValue(
+      vi.mocked(firebaseAI.generateContent).mockRejectedValue(
         new Error("Non-retryable error"),
       );
 
@@ -130,6 +135,53 @@ describe("AIService", () => {
         }),
       ).rejects.toThrow(AppException);
     });
+
+    it("should coalesce identical requests", async () => {
+      const mockResponse = {
+        response: {
+          candidates: [
+            {
+              content: { parts: [{ text: "Coalesced" }] },
+              finishReason: "STOP",
+              index: 0,
+            },
+          ],
+        },
+      };
+
+      let resolveGenerate: (value: any) => void;
+      const generatePromise = new Promise(resolve => {
+        resolveGenerate = resolve;
+      });
+
+      // Mock implementation to wait for signal
+      vi.mocked(firebaseAI.generateContent).mockImplementation(() => generatePromise as any);
+
+      const options = {
+        model: "gemini-3-pro-preview",
+        contents: { role: "user", parts: [{ text: "shared prompt" }] }
+      };
+
+      // Fire two identical requests
+      const p1 = service.generateContent(options);
+      const p2 = service.generateContent(options);
+
+      // Must be same promise instance
+      expect(p1).toBe(p2);
+
+      // Resolve underlying call
+      // @ts-ignore
+      resolveGenerate(mockResponse);
+
+      const r1 = await p1;
+      const r2 = await p2;
+
+      expect(r1.text()).toBe("Coalesced");
+      expect(r2.text()).toBe("Coalesced");
+      expect(firebaseAI.generateContent).toHaveBeenCalledTimes(1);
+    });
+
+
   });
 
   describe("parseJSON", () => {

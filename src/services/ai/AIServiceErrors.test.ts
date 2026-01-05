@@ -9,16 +9,23 @@ vi.mock('@/services/firebase', () => ({
     remoteConfig: {}
 }));
 
-describe('AIService Integration (Client SDK)', () => {
-    let generateContentSpy: MockInstance;
-    let generateContentStreamSpy: MockInstance;
+// Mock FirebaseAIService module
+vi.mock('./FirebaseAIService', () => ({
+    firebaseAI: {
+        generateContent: vi.fn(),
+        generateContentStream: vi.fn(),
+        generateText: vi.fn(),
+        generateStructuredData: vi.fn(),
+        analyzeImage: vi.fn(),
+        analyzeMultimodal: vi.fn(),
+        embedContent: vi.fn(),
+    }
+}));
 
+describe('AIService Integration (Client SDK)', () => {
+    // No need for separate spies variables if we access via imported mock
     beforeEach(() => {
-        vi.clearAllMocks();
-        // Since we removed the module mock, we spy on the real instance methods
-        // Default implementation to return empty object to prevent crashes if test doesn't mock return
-        generateContentSpy = vi.spyOn(firebaseAI, 'generateContent').mockImplementation(async () => ({}) as any);
-        generateContentStreamSpy = vi.spyOn(firebaseAI, 'generateContentStream').mockImplementation(async () => ({} as any));
+        vi.resetAllMocks();
     });
 
     afterEach(() => {
@@ -26,14 +33,14 @@ describe('AIService Integration (Client SDK)', () => {
     });
 
     it('should delegate generateContent to firebaseAI and return wrapped response', async () => {
-        generateContentSpy.mockResolvedValue({
+        vi.mocked(firebaseAI.generateContent).mockResolvedValue({
             response: {
                 candidates: [{
                     content: { role: 'model', parts: [{ text: 'Hello World' }] }
                 }],
                 text: () => 'Hello World'
             }
-        });
+        } as any);
 
         const result = await AI.generateContent({
             model: 'gemini-pro',
@@ -41,7 +48,7 @@ describe('AIService Integration (Client SDK)', () => {
         });
 
         expect(result.text()).toBe('Hello World');
-        expect(generateContentSpy).toHaveBeenCalledWith(
+        expect(firebaseAI.generateContent).toHaveBeenCalledWith(
             expect.arrayContaining([{ role: 'user', parts: [{ text: 'Hi' }] }]),
             'gemini-pro',
             undefined,
@@ -51,7 +58,7 @@ describe('AIService Integration (Client SDK)', () => {
     });
 
     it('should map exceptions from firebaseAI to legacy error handling', async () => {
-        generateContentSpy.mockRejectedValue(
+        vi.mocked(firebaseAI.generateContent).mockRejectedValue(
             new AppException(AppErrorCode.UNAUTHORIZED, 'Verification Failed')
         );
 
@@ -69,7 +76,7 @@ describe('AIService Integration (Client SDK)', () => {
                 controller.close();
             }
         });
-        generateContentStreamSpy.mockResolvedValue(mockStream);
+        vi.mocked(firebaseAI.generateContentStream).mockResolvedValue(mockStream);
 
         const stream = await AI.generateContentStream({
             model: 'gemini-pro',

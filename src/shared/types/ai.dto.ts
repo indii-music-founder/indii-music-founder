@@ -62,11 +62,25 @@ export interface ToolConfig {
 // ============================================================================
 
 export interface ThinkingConfig {
-    thinkingLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+    includeThoughts?: boolean;
+    thinkingBudget?: number;
 }
 
 export interface ImageConfig {
     imageSize?: '1K' | '2K' | '4K' | string;
+}
+
+export interface PrebuiltVoiceConfig {
+    voiceName: string;
+}
+
+export interface VoiceConfig {
+    prebuiltVoiceConfig?: PrebuiltVoiceConfig;
+}
+
+export interface SpeechConfig {
+    voiceConfig?: VoiceConfig;
 }
 
 export interface GenerationConfig {
@@ -81,6 +95,8 @@ export interface GenerationConfig {
     // Extended SDK properties
     thinkingConfig?: ThinkingConfig;
     imageConfig?: ImageConfig;
+    speechConfig?: SpeechConfig;
+    responseModalities?: ('TEXT' | 'IMAGE' | 'AUDIO')[];
     systemInstruction?: string;
     tools?: ToolConfig[];
     // Image generation specific
@@ -216,6 +232,17 @@ export interface GenerateImageResponse {
     };
 }
 
+export interface AudioPart {
+    inlineData: {
+        mimeType: string;
+        data: string; // base64
+    };
+}
+
+export interface GenerateSpeechResponse {
+    audio: AudioPart;
+}
+
 export interface EmbedContentResponse {
     embedding: {
         values: number[];
@@ -248,6 +275,69 @@ export function isFunctionCallPart(part: ContentPart): part is FunctionCallPart 
     return 'functionCall' in part;
 }
 
+
 export function isFunctionResponsePart(part: ContentPart): part is FunctionResponsePart {
     return 'functionResponse' in part;
+}
+
+// ============================================================================
+// Service Options (Moved from AIService to prevent cycles)
+// ============================================================================
+
+export interface GenerateContentOptions {
+    model?: string;
+    contents?: Content | Content[];
+    config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: ToolConfig[];
+    signal?: AbortSignal;
+    timeout?: number;
+    // Caching options
+    skipCache?: boolean;
+    cache?: boolean;
+    cacheTTL?: number;
+}
+
+export interface GenerateStreamOptions {
+    model: string;
+    contents: Content[];
+    config?: GenerationConfig;
+    systemInstruction?: string;
+    tools?: ToolConfig[];
+}
+
+export interface GenerateVideoOptions {
+    model: string;
+    prompt: string;
+    image?: { imageBytes: string; mimeType: string };
+    config?: GenerationConfig & {
+        aspectRatio?: string;
+        durationSeconds?: number;
+    };
+    /** Custom timeout in milliseconds. Defaults to calculated based on durationSeconds or 2 minutes minimum. */
+    timeoutMs?: number;
+}
+
+export interface GenerateImageOptions {
+    model: string;
+    prompt: string;
+    config?: GenerationConfig & {
+        numberOfImages?: number;
+        aspectRatio?: string;
+        negativePrompt?: string;
+    };
+}
+
+export interface EmbedContentOptions {
+    model: string;
+    content: Content;
+}
+
+export interface StreamChunk {
+    text: () => string;
+    functionCalls: () => FunctionCallPart['functionCall'][];
+}
+
+export interface RetryableError extends Error {
+    code?: string;
 }

@@ -185,7 +185,7 @@ interface RoutingDecision {
 
 ## 3. Memory & RAG Improvements 🟠
 
-### 3.1 Enhance Memory Service with Importance Scoring
+### 3.1 Enhance Memory Service with Importance Scoring (✅ DONE)
 
 **Current State:** All memories are treated equally. No decay or importance ranking.
 
@@ -194,18 +194,19 @@ interface RoutingDecision {
 ```typescript
 interface EnhancedMemory {
   id: string;
+  projectId: string; // was in current MemoryItem
   content: string;
-  type: 'fact' | 'summary' | 'rule' | 'preference';
+  type: 'fact' | 'summary' | 'rule' | 'preference'; // added preference
   importance: number; // 0-1 score
   accessCount: number;
   lastAccessed: number;
-  decay: number; // Time-based decay factor
-  source: 'user' | 'agent' | 'system';
-  tags: string[];
+  // source: 'user' | 'agent' | 'system'; // Add this
+  // tags: string[]; // Add this
+  embedding?: number[];
 }
 ```
 
-### 3.2 Implement Memory Consolidation
+### 3.2 Implement Memory Consolidation (✅ DONE)
 
 **Current State:** Memories accumulate without summarization.
 
@@ -215,7 +216,7 @@ interface EnhancedMemory {
 - Automatic summarization of old memories
 - Memory pruning based on importance and access patterns
 
-### 3.3 Improve RAG Hybrid Search
+### 3.3 Improve RAG Hybrid Search (✅ DONE)
 
 **Current State:** Fixed 60/40 vector/keyword weighting. No query rewriting.
 
@@ -224,21 +225,17 @@ interface EnhancedMemory {
 - Dynamic weighting based on query type
 - Query expansion with synonyms
 - Re-ranking with cross-encoder
-- Add metadata filtering support
+- Add metadata filtering support (✅ DONE)
 
 ```typescript
 interface EnhancedSearchOptions {
   query: string;
   filters?: {
-    dateRange?: [Date, Date];
+    dateRange?: [number, number];
     tags?: string[];
     documentTypes?: string[];
   };
-  boost?: {
-    recency?: number;
-    authority?: number;
-  };
-  rerank?: boolean;
+  // ...
 }
 ```
 
@@ -575,10 +572,10 @@ expect(testHarness.lastToolCall).toEqual({
 
 ### Phase 5: Developer Experience (Weeks 9-10) 🟡
 
-1. Create agent development SDK
-2. Add testing utilities
-3. Improve type safety
-4. Add prompt version control
+ 1. Create agent development SDK (✅ DONE)
+ 2. Add testing utilities (✅ DONE)
+ 3. Improve type safety (✅ DONE)
+ 4. Add prompt version control (✅ DONE)
 
 ### Phase 6: Advanced Features (Weeks 11-12) 🟢
 

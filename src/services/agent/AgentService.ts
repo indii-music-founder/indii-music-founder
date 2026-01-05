@@ -52,7 +52,8 @@ export class AgentService {
                 text: '',
                 timestamp: Date.now(),
                 isStreaming: true,
-                thoughts: []
+                thoughts: [],
+                agentId
             });
 
             let currentStreamedText = '';
@@ -79,7 +80,7 @@ export class AgentService {
                         });
                     }
                 }
-            });
+            }, undefined, undefined, attachments);
 
             if (result && result.text) {
                 if (!result.text.includes("Agent Zero")) {
@@ -99,7 +100,7 @@ export class AgentService {
     }
 
 
-    async runAgent(agentId: string, task: string, parentContext?: AgentContext): Promise<unknown> {
+    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<unknown> {
         // Build a pipeline context from the parent context or fresh
         const context = parentContext || await this.contextPipeline.buildContext();
 
@@ -107,7 +108,15 @@ export class AgentService {
         if (!context.chatHistory) context.chatHistory = [];
         if (!context.chatHistoryString) context.chatHistoryString = '';
 
-        return await this.executor.execute(agentId, task, context as any);
+        return await this.executor.execute(
+            agentId,
+            task,
+            context as any,
+            undefined,
+            undefined,
+            parentTraceId,
+            attachments || context.attachments
+        );
     }
 
     private addSystemMessage(text: string) {
