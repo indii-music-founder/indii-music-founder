@@ -27,6 +27,24 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
 
+    // Close on Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    // Close on backdrop click
+    const handleBackdropClick = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !startDate) {
@@ -60,6 +78,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     return (
         <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={handleBackdropClick}
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
@@ -90,6 +109,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             placeholder="e.g., Summer Single Release"
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
                             required
+                            autoFocus
                         />
                     </div>
 

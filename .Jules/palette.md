@@ -11,3 +11,6 @@
 ## 2025-05-23 - Modal Accessibility Standards
 **Learning:** Modals often lack semantic structure, making them invisible or confusing to screen readers. Specifically, they miss `role="dialog"`, `aria-modal="true"`, and keyboard support for the Escape key, which is a critical expectation for keyboard users.
 **Action:** Always wrap modal overlays with `role="dialog"` and `aria-modal="true"`, link the title via `aria-labelledby`, and ensure `useEffect` handles the Escape key to close the modal.
+## 2024-05-23 - [Modal Accessibility Pattern]
+**Learning:** This project lacks a shared `Modal` or `Dialog` component in `src/components/ui`. Developers are creating custom modals (like `CreateCampaignModal`) that often miss standard accessibility features (Escape key, backdrop click, focus management).
+**Action:** When working on modals in this repo, always manually verify and implement: 1. `useEffect` for 'Escape' key. 2. `onClick` handler for backdrop closing (checking `e.target === e.currentTarget`). 3. `role="dialog"` and `aria-modal="true"`. 4. `autoFocus` on the first interactive element.
