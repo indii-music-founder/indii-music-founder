@@ -59,3 +59,4 @@ credentials/
 distribution-store.json
 scripts/verify-dpid-config.ts
 tsconfig.verify.jsonfunctions/lib/
+dist-electron-studio/

@@ -72,12 +72,17 @@ if [ "$BUILD_MODE" = "debug" ]; then
   DEV_PID=$!
 else
   # Production build
+  # Production build
   if [[ "$PLATFORM" = "all" ]]; then
     # Build all platforms
     npm run electron:build
   else
     # Build specific platform
-    npm run build:electron -- --$PLATFORM -- --$BUILD_MODE
+    # 1. Compile Main Process
+    npm run build:electron
+    
+    # 2. Package
+    npx electron-builder --$PLATFORM --publish never
   fi
 fi
 
