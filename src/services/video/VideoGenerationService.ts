@@ -7,7 +7,8 @@ import { extractVideoFrame } from '@/utils/video';
 import { functions, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { MembershipService } from '@/services/MembershipService';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { delay } from '@/utils/async';
 import { UserProfile } from '@/modules/workflow/types';
@@ -59,10 +60,10 @@ export class VideoGenerationService {
 
     private async checkVideoQuota(count: number = 1): Promise<{ canGenerate: boolean, reason?: string }> {
         try {
-            const quota = await MembershipService.checkQuota('video', count);
+            const quotaCheck = await subscriptionService.canPerformAction('generateVideo', count);
             return {
-                canGenerate: quota.allowed,
-                reason: quota.allowed ? undefined : MembershipService.getUpgradeMessage(await MembershipService.getCurrentTier(), 'video')
+                canGenerate: quotaCheck.allowed,
+                reason: quotaCheck.allowed ? undefined : quotaCheck.reason
             };
         } catch (e) {
             console.error("Quota check failed", e);
@@ -207,15 +208,15 @@ export class VideoGenerationService {
         userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Pre-flight duration quota check
-        const durationCheck = await MembershipService.checkVideoDurationQuota(options.totalDuration);
-        if (!durationCheck.allowed) {
-            const tier = await MembershipService.getCurrentTier();
+        const quotaCheck = await subscriptionService.canPerformAction('generateVideo', options.totalDuration);
+        if (!quotaCheck.allowed) {
+            const tier = await subscriptionService.getCurrentSubscription().then(s => s.tier);
             throw new QuotaExceededError(
                 'video_duration',
-                tier,
-                `Video duration ${options.totalDuration}s exceeds ${durationCheck.tierName} tier limit of ${durationCheck.maxDuration}s`,
+                await tier,
+                quotaCheck.reason || `Video duration ${options.totalDuration}s exceeds tier limit`,
                 options.totalDuration,
-                durationCheck.maxDuration
+                quotaCheck.currentUsage?.limit || options.totalDuration
             );
         }
 

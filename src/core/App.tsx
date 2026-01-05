@@ -10,6 +10,7 @@ import { MobileNav } from './components/MobileNav';
 import LoginForm from './components/auth/LoginForm';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
+import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
@@ -287,6 +288,9 @@ export default function App() {
 
                     {/* Agent Approval Modal - Shows when agent requests user approval */}
                     <ApprovalModal />
+                    
+                    {/* Instrument Approval Manager - Shows for instrument execution approvals */}
+                    <ApprovalManager />
                 </div>
             </ToastProvider>
         </VoiceProvider>

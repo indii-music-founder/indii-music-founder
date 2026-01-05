@@ -1011,3 +1011,16 @@ export const listBigQueryDatasets = functions
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
+
+// ----------------------------------------------------------------------------
+// Subscription Functions (Gen 2)
+// ----------------------------------------------------------------------------
+import { getSubscription } from './subscription/getSubscription';
+import { createCheckoutSession } from './subscription/createCheckoutSession';
+import { getCustomerPortal } from './subscription/getCustomerPortal';
+import { cancelSubscription } from './subscription/cancelSubscription';
+import { resumeSubscription } from './subscription/resumeSubscription';
+import { getUsageStats } from './subscription/getUsageStats';
+import { trackUsage } from './subscription/trackUsage';
+
+export { getSubscription, createCheckoutSession, getCustomerPortal, cancelSubscription, resumeSubscription, getUsageStats, trackUsage };

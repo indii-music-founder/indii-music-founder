@@ -426,22 +426,39 @@ ${task}
                 signal
             });
 
-            // Consume stream for tokens
-            const reader = stream.getReader();
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+            // Consume stream for tokens (Robust handling)
+            const streamIterator = {
+                [Symbol.asyncIterator]: async function* () {
+                    if (typeof stream.getReader === 'function') {
+                        const reader = stream.getReader();
+                        try {
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) return;
+                                yield value;
+                            }
+                        } finally {
+                            reader.releaseLock();
+                        }
+                    } else if (Symbol.asyncIterator in stream) {
+                        // @ts-ignore
+                        yield* stream;
+                    } else {
+                        // Not iterable, warn but don't crash
+                        console.warn('[BaseAgent] Stream is not iterable');
+                    }
+                }
+            };
 
-                    const chunkText = value.text();
+            try {
+                for await (const value of streamIterator) {
+                    const chunkText = typeof value.text === 'function' ? value.text() : '';
                     if (chunkText) {
                         onProgress?.({ type: 'token', content: chunkText });
                     }
                 }
             } catch (streamError) {
                 console.warn('[BaseAgent] Stream read interrupted:', streamError);
-            } finally {
-                reader.releaseLock();
             }
 
             const response = await responsePromise;

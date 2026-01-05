@@ -6,7 +6,8 @@ import { env } from '@/config/env';
 import { isInlineDataPart } from '@/shared/types/ai.dto';
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
-import { MembershipService } from '@/services/MembershipService';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 
 export interface ImageGenerationOptions {
@@ -77,16 +78,15 @@ export class ImageGenerationService {
         const results: { id: string, url: string, prompt: string }[] = [];
         const count = options.count || 1;
 
-        // Pre-flight quota check (Section 8 compliance)
-        const quotaCheck = await MembershipService.checkQuota('image', count);
+        // Pre-flight quota check
+        const quotaCheck = await subscriptionService.canPerformAction('generateImage', count);
         if (!quotaCheck.allowed) {
-            const tier = await MembershipService.getCurrentTier();
             throw new QuotaExceededError(
                 'images',
-                tier,
-                MembershipService.getUpgradeMessage(tier, 'images'),
-                quotaCheck.currentUsage,
-                quotaCheck.maxAllowed
+                await subscriptionService.getCurrentSubscription().then(s => s.tier),
+                quotaCheck.reason || 'Quota exceeded',
+                quotaCheck.currentUsage?.used || 0,
+                quotaCheck.currentUsage?.limit || count
             );
         }
 
@@ -134,13 +134,17 @@ export class ImageGenerationService {
             throw err;
         }
 
-        // Increment usage counter after successful generation
+        // Track usage after successful generation
         if (results.length > 0) {
             try {
                 const { useStore } = await import('@/core/store');
                 const userId = useStore.getState().userProfile?.id;
                 if (userId) {
-                    await MembershipService.incrementUsage(userId, 'image', results.length);
+                    await usageTracker.trackImageGeneration(userId, results.length, {
+                        prompt: options.prompt,
+                        aspectRatio: options.aspectRatio,
+                        resolution: options.resolution
+                    });
                 }
             } catch (e) {
                 console.warn('[ImageGenerationService] Failed to track usage:', e);

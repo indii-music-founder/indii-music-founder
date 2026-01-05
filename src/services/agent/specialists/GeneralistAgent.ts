@@ -248,16 +248,36 @@ export class GeneralistAgent extends BaseAgent {
                 });
 
                 let buffer = "";
-                const reader = stream.getReader();
+                
+                // Helper to consume stream (handles both ReadableStream and AsyncIterable)
+                const streamIterator = {
+                    [Symbol.asyncIterator]: async function* () {
+                        if (typeof stream.getReader === 'function') {
+                            const reader = stream.getReader();
+                            try {
+                                while (true) {
+                                    const { done, value } = await reader.read();
+                                    if (done) return;
+                                    yield value;
+                                }
+                            } finally {
+                                reader.releaseLock();
+                            }
+                        } else if (Symbol.asyncIterator in stream) {
+                            // @ts-ignore
+                            yield* stream;
+                        } else {
+                            throw new Error('Stream is not iterable or readable');
+                        }
+                    }
+                };
 
                 // Track execution state within this generation
                 let stepActionTaken = false;
 
-                while (true) {
-                    const { done, value } = await reader.read();
-
+                for await (const value of streamIterator) {
                     if (value) {
-                        const chunk = value.text();
+                        const chunk = typeof value.text === 'function' ? value.text() : '';
                         buffer += chunk;
 
                         // Emit token for UI typing effect
@@ -304,7 +324,6 @@ export class GeneralistAgent extends BaseAgent {
                         }
                     }
 
-                    if (done) break;
                     if (stepActionTaken && finalResponseText) break; // Optimization: Stop stream if done
                 }
 

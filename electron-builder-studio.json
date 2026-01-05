@@ -1,0 +1,183 @@
+{
+  "appId": "com.indii.os.studio",
+  "productName": "indiiOS Studio",
+  "copyright": "Copyright © 2025 IndiiOS LLC",
+  "description": "The Operating System for Independent Artists - Studio Edition with AI-powered creativity tools",
+  "directories": {
+    "output": "dist-electron-studio",
+    "buildResources": "build",
+    "output": "dist"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron-studio/**/*",
+    "node_modules/**/*",
+    "package.json"
+  ],
+  "exclude": [
+    "**/test/**/*",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.md",
+    "docs/**/*",
+    ".github/**/*",
+    "**/.env.example",
+    "**/.env.*",
+    "!node_modules/@rollup/rollup-linux-x64-gnu/**"
+  ],
+  "protocols": [
+    {
+      "name": "indiiOS Studio Auth Protocol",
+      "schemes": ["indii-os-studio"]
+    }
+  ],
+  "publish": {
+    "provider": "github",
+    "owner": "the-walking-agency-det",
+    "repo": "indiiOS-Alpha-Electron",
+    "releaseType": "draft",
+    "publishAutoUpdate": true,
+    "UpdaterCacheDirName": "indiios-studio-updater",
+    "generateUpdatesFiles": false
+  },
+  "buildVersion": "1.0.0",
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "portable"
+      }
+    ],
+    "icon": "assets/icon-studio.ico",
+    "artifacts": [
+      {
+        "path": "build/installer.nsis",
+        "target": "nsis",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "path": "build/installer-portable.exe",
+        "target": "portable"
+      }
+    ],
+    "installerIcon": "assets/icon-studio.ico",
+    "uninstallDisplayName": "indiiOS Studio",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "createUninstallShortcut": true,
+    "runAfterFinish": false,
+    "verifyUpdateCodeSignature": true,
+    "signDlls": true,
+    "setShortcutRunAsAdmin": false,
+    "requestedExecutionLevel": "asInvoker",
+    "nsis": {
+      "deleteAppDataOnUninstall": false,
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "installerLanguages": ["en_US", "en_GB", "en_AU"],
+      "displayLanguageSelector": true,
+      "include": [
+        "build/installer.nsh"
+      ]
+    }
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"],
+        "type": "distribution"
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"],
+        "type": "archive"
+      }
+    ],
+    "icon": "assets/icon-studio.icns",
+    "category": "public.app-category.productivity",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": true,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+    "extendInfo": {
+      "CFBundleIdentifier": "com.indii.os.studio",
+      "NSAppTransportSecurity": true,
+      "apple_event_scanner": "true"
+    },
+    "darkModeSupport": true,
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file",
+          "path": "dist-electron-studio/indiiOS Studio.app"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "file",
+          "path": "Applications"
+        }
+      ],
+      "icon": "assets/icon-studio.icns",
+      "background-color": "#0d1117",
+      "window": {
+        "title": "indiiOS Studio"
+      },
+      "iconText": "",
+      "sign": {
+        "identity": "Developer ID: M9M2T3W5T3"
+      }
+    },
+    "zip": {
+      "target": "mac-x64",
+      "icon": "assets/icon-studio.icns"
+    }
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb",
+      "rpm",
+      "tar.gz"
+    ],
+    "icon": "assets/icon-studio.png",
+    "category": "AudioVideo",
+    "desktop": {
+      "startupNotify": true,
+      "icon": "assets/icon-studio.png",
+      "Keywords": "indiiOS Studio;creative;AI;music;art"
+    },
+    "AppImage": {
+      "icon": "assets/icon-studio.png",
+      "keywords": ["indiiOS", "studio", "creative", "AI", "music", "art"]
+    },
+    "deb": {
+      "depends": [
+        "ffmpeg",
+        "libgconf-2-4",
+        "libnotify4"
+      ],
+      "synopsis": "indiiOS Studio - Desktop creative studio for independent artists",
+      "priority": "optional",
+      "afterInstall": [
+        "ln -sf /opt/indiios-studio/resources ~/Desktop/indiiOS-Studio-Resources"
+      ]
+    },
+    "rpm": {
+      "category": "AudioVideo",
+      "icon": "assets/icon-studio.png"
+    }
+  },
+  "afterAllArtifactBuild": "build/postinstall.sh",
+  "afterSign": "build/notarize.js",
+  "asarUnpack": [],
+  "npmRebuild": false
+}

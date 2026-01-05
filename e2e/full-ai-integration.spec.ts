@@ -26,6 +26,39 @@ test.describe('Full AI Integration E2E', () => {
 
         // Check where we are.
         try {
+            // Robust Auth Bypass: Wait for store and inject user immediately
+            await page.waitForFunction(() => !!(window as any).useStore);
+            await page.evaluate(() => {
+                const mockUser = {
+                    uid: 'test-user',
+                    email: 'test@example.com',
+                    displayName: 'Test User',
+                    emailVerified: true,
+                    isAnonymous: false,
+                    metadata: {},
+                    providerData: [],
+                    refreshToken: '',
+                    tenantId: null,
+                    delete: async () => {},
+                    getIdToken: async () => 'mock-token',
+                    getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+                    reload: async () => {},
+                    toJSON: () => ({}),
+                    phoneNumber: null,
+                    photoURL: null
+                };
+                
+                // Override listener to prevent Firebase from clearing our mock
+                // And inject user
+                // @ts-ignore
+                window.useStore.setState({ 
+                    initializeAuthListener: () => () => {}, // No-op
+                    user: mockUser, 
+                    authLoading: false 
+                });
+            });
+            await page.waitForTimeout(1000); // Allow React to re-render
+
             const selectOrg = page.getByText('Select Organization');
             try {
                 await selectOrg.waitFor({ state: 'visible', timeout: 5000 });
@@ -37,14 +70,16 @@ test.describe('Full AI Integration E2E', () => {
                 // Ignore timeout
             }
         } catch (e) {
-            console.log('Select Organization check failed.', e);
+            console.log('Auth check failed.', e);
         }
 
         // Verify Sidebar is present (Dashboard loaded)
         try {
-            await expect(page.getByRole('heading', { name: "Departments" })).toBeVisible({ timeout: 10000 });
+            // Check for a key navigation element instead of the collapsible header
+            const navItem = page.locator('button[title="Creative Director"]').or(page.getByRole('button', { name: "Creative Director" }));
+            await expect(navItem.first()).toBeVisible({ timeout: 10000 });
         } catch (e) {
-            console.log('Dashboard sidebar not found. Dumping content:', await page.content());
+            console.log('Dashboard navigation not found. Dumping content:', await page.content());
             throw e;
         }
     });
