@@ -22,7 +22,7 @@ export class BrowserAgentService {
 
         try {
             this.isInitializing = true;
-            console.log('[BrowserAgent] Starting Native/Electron session...');
+            console.info('[BrowserAgent] Starting Native/Electron session...');
 
             this.window = new BrowserWindow({
                 show: false, // Hidden
@@ -45,7 +45,7 @@ export class BrowserAgentService {
                 this.window = null;
             });
 
-            console.log('[BrowserAgent] Session started.');
+            console.info('[BrowserAgent] Session started.');
 
         } catch (error) {
             console.error('[BrowserAgent] Failed to start session:', error);
@@ -61,7 +61,7 @@ export class BrowserAgentService {
     async navigateTo(url: string): Promise<void> {
         if (!this.window) throw new Error('Session not started');
 
-        console.log(`[BrowserAgent] Navigating to: ${url}`);
+        console.info(`[BrowserAgent] Navigating to: ${url}`);
 
         // Setup one-time fail handler
         const failParams = { url, errorCode: 0, errorDescription: '' };
@@ -223,12 +223,17 @@ export class BrowserAgentService {
                 await this.click(selector);
             } else if (action === 'type') {
                 if (text === undefined) throw new Error('Text is required for type action');
-                await this.page.waitForSelector(selector, { timeout: 10000 });
-                await this.page.type(selector, text, { delay: 50 });
-            } else if (action === 'press') {
-                const key = selector.toLowerCase(); // Electron expects lowercase keys
-                await this.page.keyboard.press(key);
+                // Use robust typeInto which handles waitForSelector internally
                 await this.typeInto(selector, text);
+            } else if (action === 'press') {
+                const key = selector; // In Electron sendInputEvent, we usually pass the key code directly
+                // Using pressKey helper
+                await this.pressKey(key);
+                if (text) {
+                    // If text is provided with press, we assume typing after press? 
+                    // Or maybe it was a specific sequence. Keeping legacy behavior of typing afterwards.
+                    await this.typeInto(selector, text);
+                }
             } else if (action === 'scroll') {
                 const direction = selector || 'down';
                 const amount = text ? parseInt(text, 10) : 500;
@@ -250,7 +255,7 @@ export class BrowserAgentService {
      */
     async closeSession(): Promise<void> {
         if (this.window) {
-            console.log('[BrowserAgent] Closing session...');
+            console.info('[BrowserAgent] Closing session...');
             this.window.close(); // Close the window
             this.window = null;
         }

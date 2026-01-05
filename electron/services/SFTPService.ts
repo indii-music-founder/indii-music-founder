@@ -19,7 +19,7 @@ class SFTPService {
 
     async connect(config: SFTPConfig): Promise<void> {
         try {
-            console.log(`[SFTPService] Connecting to ${config.host}:${config.port || 22}...`);
+            console.info(`[SFTPService] Connecting to ${config.host}:${config.port || 22}...`);
             await this.client.connect({
                 host: config.host,
                 port: config.port || 22,
@@ -28,7 +28,7 @@ class SFTPService {
                 privateKey: config.privateKey,
             });
             this.connected = true;
-            console.log('[SFTPService] Connected.');
+            console.info('[SFTPService] Connected.');
         } catch (error) {
             console.error('[SFTPService] Connection failed:', error);
             throw error;
@@ -38,7 +38,7 @@ class SFTPService {
     async uploadDirectory(localPath: string, remotePath: string): Promise<string[]> {
         if (!this.connected) throw new Error('SFTP client not connected');
 
-        console.log(`[SFTPService] Uploading directory: ${localPath} -> ${remotePath}`);
+        console.info(`[SFTPService] Uploading directory: ${localPath} -> ${remotePath}`);
         const uploadedFiles: string[] = [];
 
         try {
@@ -57,7 +57,7 @@ class SFTPService {
             const list = await this.client.list(remotePath);
             uploadedFiles.push(...list.map(item => item.name));
 
-            console.log(`[SFTPService] Upload complete: ${remotePath}`);
+            console.info(`[SFTPService] Upload complete: ${remotePath}`);
             return uploadedFiles;
         } catch (error) {
             console.error(`[SFTPService] Upload failed:`, error);
@@ -69,7 +69,7 @@ class SFTPService {
         if (this.connected) {
             await this.client.end();
             this.connected = false;
-            console.log('[SFTPService] Disconnected.');
+            console.info('[SFTPService] Disconnected.');
         }
     }
 

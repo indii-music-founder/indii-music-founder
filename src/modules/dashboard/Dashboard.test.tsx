@@ -1,41 +1,52 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import Dashboard from './Dashboard';
 
-// Mock child components to isolate Dashboard testing
-vi.mock('./components/ProjectHub', () => ({
-    default: () => <div data-testid="project-hub">Project Hub</div>,
+// Mock child components
+vi.mock('@/components/studio/ModeSelector', () => ({
+    default: ({ mode, onChange }: any) => (
+        <div data-testid="mode-selector">
+            <button onClick={() => onChange('agent')}>Agent Mode</button>
+            <button onClick={() => onChange('studio')}>Studio Mode</button>
+        </div>
+    ),
 }));
 
-vi.mock('./components/DataStorageManager', () => ({
-    default: () => <div data-testid="data-storage-manager">Data Storage Manager</div>,
+vi.mock('./components/AgentWorkspace', () => ({
+    default: () => <div data-testid="agent-workspace">Agent Workspace</div>,
 }));
 
-vi.mock('./components/AnalyticsView', () => ({
-    default: () => <div data-testid="analytics-view">Analytics View</div>,
-}));
-
-vi.mock('./components/GlobalSettings', () => ({
-    default: () => <div data-testid="global-settings">Global Settings</div>,
+vi.mock('./components/DepartmentGrid', () => ({
+    default: () => <div data-testid="department-grid">Department Grid</div>,
 }));
 
 vi.mock('./components/ReferenceImageManager', () => ({
     default: () => <div data-testid="reference-image-manager">Reference Image Manager</div>,
 }));
 
+vi.mock('./components/AnalyticsView', () => ({
+    default: () => <div data-testid="analytics-view">Analytics View</div>,
+}));
+
 describe('Dashboard', () => {
-    it('renders the dashboard header', () => {
+    it('defaults to Agent Mode', () => {
         render(<Dashboard />);
-        expect(screen.getByText('Studio Headquarters')).toBeInTheDocument();
-        expect(screen.getByText('Manage your projects, data, and global configuration.')).toBeInTheDocument();
+        expect(screen.getByTestId('agent-workspace')).toBeInTheDocument();
+        expect(screen.queryByTestId('department-grid')).not.toBeInTheDocument();
     });
 
-    it('renders all child components', () => {
+    it('switches to Studio Mode', async () => {
         render(<Dashboard />);
-        expect(screen.getByTestId('project-hub')).toBeInTheDocument();
-        expect(screen.getByTestId('data-storage-manager')).toBeInTheDocument();
-        expect(screen.getByTestId('analytics-view')).toBeInTheDocument();
-        expect(screen.getByTestId('global-settings')).toBeInTheDocument();
+
+        // Find the button in our mock ModeSelector
+        fireEvent.click(screen.getByText('Studio Mode'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Studio Headquarters')).toBeInTheDocument();
+            expect(screen.getByTestId('department-grid')).toBeInTheDocument();
+        });
+
         expect(screen.getByTestId('reference-image-manager')).toBeInTheDocument();
+        expect(screen.getByTestId('analytics-view')).toBeInTheDocument();
     });
 });

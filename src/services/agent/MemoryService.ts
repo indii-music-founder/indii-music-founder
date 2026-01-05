@@ -2,6 +2,7 @@
 import { FirestoreService } from '../FirestoreService';
 import { AI } from '../ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { RequestBatcher } from '@/utils/RequestBatcher';
 
 export interface MemoryItem {
     id: string;
@@ -34,6 +35,27 @@ function cosineSimilarity(a: number[], b: number[]): number {
 class MemoryService {
     private embeddingModel = 'text-embedding-004';
 
+    // Batcher for embedding requests to save tokens and improve performance
+    private embeddingBatcher = new RequestBatcher<string, number[]>(
+        async (texts) => {
+            try {
+                // Map texts to Content objects
+                const contents = texts.map(text => ({
+                    role: 'user',
+                    parts: [{ text }]
+                }));
+
+                // Call batch API
+                // Note: AI.batchEmbedContents returns number[][] (array of vector arrays)
+                return await AI.batchEmbedContents(contents as any, this.embeddingModel);
+            } catch (error) {
+                console.error('[MemoryService] Batch embedding failed:', error);
+                throw error;
+            }
+        },
+        { maxBatchSize: 20, maxWaitMs: 50 }
+    );
+
     private getCollectionPath(projectId: string): string {
         return `projects/${projectId}/memories`;
     }
@@ -44,12 +66,8 @@ class MemoryService {
 
     private async getEmbedding(text: string): Promise<number[]> {
         try {
-            const result = await AI.embedContent({
-                model: this.embeddingModel,
-                content: { role: 'user', parts: [{ text }] }
-            });
-            // AIService.embedContent returns { values: number[] } directly
-            return result?.values || [];
+            // Use the batcher instead of direct call
+            return await this.embeddingBatcher.add(text);
         } catch (error) {
             console.warn('[MemoryService] Failed to get embedding, falling back to keyword search:', error);
             return [];

@@ -238,7 +238,7 @@ export class GeneralistAgent extends BaseAgent {
             parts.push({ text: nextStepPrompt });
 
             try {
-                const stream = await AI.generateContentStream({
+                const { stream } = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{ role: 'user', parts }],
                     config: {
@@ -247,96 +247,96 @@ export class GeneralistAgent extends BaseAgent {
                     }
                 });
 
-            let buffer = "";
-            const reader = stream.getReader();
+                let buffer = "";
+                const reader = stream.getReader();
 
-            // Track execution state within this generation
-            let stepActionTaken = false;
+                // Track execution state within this generation
+                let stepActionTaken = false;
 
-            while (true) {
-                const { done, value } = await reader.read();
+                while (true) {
+                    const { done, value } = await reader.read();
 
-                if (value) {
-                    const chunk = value.text();
-                    buffer += chunk;
+                    if (value) {
+                        const chunk = value.text();
+                        buffer += chunk;
 
-                    // Emit token for UI typing effect
-                    onProgress?.({ type: 'token', content: chunk });
+                        // Emit token for UI typing effect
+                        onProgress?.({ type: 'token', content: chunk });
 
-                    // Attempt to parse objects from the growing buffer
-                    const { objects, remaining } = this.extractJsonObjects(buffer);
-                    buffer = remaining;
+                        // Attempt to parse objects from the growing buffer
+                        const { objects, remaining } = this.extractJsonObjects(buffer);
+                        buffer = remaining;
 
-                    for (const result of objects) {
-                        if (result.thought) {
-                            onProgress?.({ type: 'thought', content: result.thought });
-                        }
-
-                        if (result.final_response) {
-                            finalResponseText = result.final_response;
-                            stepActionTaken = true;
-                            // We can break inner loop if we have final response
-                        }
-
-                        if (result.tool) {
-                            stepActionTaken = true;
-                            // Report tool usage
-                            onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
-
-                            const toolFunc = TOOL_REGISTRY[result.tool];
-                            let output = "Unknown tool";
-                            if (toolFunc) {
-                                try {
-                                    output = await toolFunc(result.args);
-                                } catch (err: any) {
-                                    output = `Error: ${err.message}`;
-                                }
+                        for (const result of objects) {
+                            if (result.thought) {
+                                onProgress?.({ type: 'thought', content: result.thought });
                             }
 
-                            onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
+                            if (result.final_response) {
+                                finalResponseText = result.final_response;
+                                stepActionTaken = true;
+                                // We can break inner loop if we have final response
+                            }
 
-                            if (output.toLowerCase().includes('successfully')) {
-                                currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
-                            } else {
-                                currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                            if (result.tool) {
+                                stepActionTaken = true;
+                                // Report tool usage
+                                onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
+
+                                const toolFunc = TOOL_REGISTRY[result.tool];
+                                let output = "Unknown tool";
+                                if (toolFunc) {
+                                    try {
+                                        output = await toolFunc(result.args);
+                                    } catch (err: any) {
+                                        output = `Error: ${err.message}`;
+                                    }
+                                }
+
+                                onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
+
+                                if (output.toLowerCase().includes('successfully')) {
+                                    currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
+                                } else {
+                                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                                }
                             }
                         }
                     }
+
+                    if (done) break;
+                    if (stepActionTaken && finalResponseText) break; // Optimization: Stop stream if done
                 }
 
-                if (done) break;
-                if (stepActionTaken && finalResponseText) break; // Optimization: Stop stream if done
-            }
+                if (finalResponseText) break; // Break outer loop
 
-            if (finalResponseText) break; // Break outer loop
+                if (stepActionTaken) {
+                    consecutiveNoProgress = 0; // Reset on progress
+                } else {
+                    consecutiveNoProgress++;
+                    // If buffer still has data, it might be malformed JSON
+                    if (buffer.trim().length > 0) {
+                        console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
+                    }
+                    // Bail out if we're stuck
+                    if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
+                        console.error(`[GeneralistAgent] No progress after ${MAX_NO_PROGRESS} iterations, bailing out`);
+                        return { text: 'Agent unable to complete task - no actionable response generated.' };
+                    }
+                }
 
-            if (stepActionTaken) {
-                consecutiveNoProgress = 0; // Reset on progress
-            } else {
+            } catch (err: any) {
+                console.error("Generalist Loop Error:", err);
+                onProgress?.({ type: 'thought', content: `Error: ${err.message || 'Unknown error'}` });
                 consecutiveNoProgress++;
-                // If buffer still has data, it might be malformed JSON
-                if (buffer.trim().length > 0) {
-                    console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
-                }
-                // Bail out if we're stuck
+
+                // After too many consecutive errors, give up
                 if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
-                    console.error(`[GeneralistAgent] No progress after ${MAX_NO_PROGRESS} iterations, bailing out`);
-                    return { text: 'Agent unable to complete task - no actionable response generated.' };
+                    return { text: `Error after ${consecutiveNoProgress} failed attempts: ${err.message || 'Unknown error'}` };
                 }
+                // Otherwise continue to retry
             }
-
-        } catch (err: any) {
-            console.error("Generalist Loop Error:", err);
-            onProgress?.({ type: 'thought', content: `Error: ${err.message || 'Unknown error'}` });
-            consecutiveNoProgress++;
-
-            // After too many consecutive errors, give up
-            if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
-                return { text: `Error after ${consecutiveNoProgress} failed attempts: ${err.message || 'Unknown error'}` };
-            }
-            // Otherwise continue to retry
         }
-    }
 
         return { text: finalResponseText || "Task completed (no final text)." };
     }

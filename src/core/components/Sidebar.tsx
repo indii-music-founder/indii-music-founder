@@ -39,6 +39,7 @@ export default function Sidebar() {
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'banana-preview', icon: Palette, label: 'Banana Preview' },
+        { id: 'observability', icon: Globe, label: 'System Observability' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {

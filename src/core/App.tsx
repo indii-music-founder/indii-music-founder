@@ -42,6 +42,7 @@ const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
+const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -78,6 +79,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
     'banana-preview': BananaThemePreview,
+    'observability': ObservabilityDashboard,
 };
 
 // ============================================================================

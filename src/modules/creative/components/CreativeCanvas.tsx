@@ -60,7 +60,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                 if (!item) return;
                 const savedState = await getCanvasStateFromStorage(item.id);
                 if (savedState) {
-                    console.log(`[CreativeCanvas] Loading saved state for ${item.id}`);
+                    console.info(`[CreativeCanvas] Loading saved state for ${item.id}`);
                     await canvasOps.loadFromJSON(savedState);
                 }
             });
@@ -161,14 +161,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
             const blob = await canvasOps.getBlob();
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
-                console.log(`[CreativeCanvas] Saved asset ${assetId} to project`);
+                console.info(`[CreativeCanvas] Saved asset ${assetId} to project`);
             }
 
             // Save the editable project state
             const json = await canvasOps.toJSON();
             if (json) {
                 await saveCanvasStateToStorage(item.id, json);
-                console.log(`[CreativeCanvas] Saved project state for ${item.id}`);
+                console.info(`[CreativeCanvas] Saved project state for ${item.id}`);
             }
 
             toast.success('Canvas & Project State stored!');

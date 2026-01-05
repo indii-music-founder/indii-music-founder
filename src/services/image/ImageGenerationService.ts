@@ -104,7 +104,13 @@ export class ImageGenerationService {
                 apiKey: env.apiKey
             });
 
-            const data = result.data as any;
+            interface GenerateImageResponse {
+                images: Array<{
+                    bytesBase64Encoded?: string;
+                    mimeType?: string;
+                }>;
+            }
+            const data = result.data as GenerateImageResponse;
 
             // Cloud Function returns { images: [{ bytesBase64Encoded, mimeType }] }
             if (!data.images || data.images.length === 0) {

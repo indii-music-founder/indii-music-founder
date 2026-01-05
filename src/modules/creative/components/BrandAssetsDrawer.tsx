@@ -84,11 +84,24 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 aspectRatio: '1:1'
             });
 
-            const data = response.data as any;
+            interface CloudFunctionResponse {
+                candidates?: Array<{
+                    content?: {
+                        parts?: Array<{
+                            inlineData?: {
+                                mimeType: string;
+                                data: string;
+                            };
+                            text?: string;
+                        }>;
+                    };
+                }>;
+            }
+            const data = response.data as CloudFunctionResponse;
 
             // Parse Gemini response for images
             const candidate = data.candidates?.[0];
-            const part = candidate?.content?.parts?.find((p: any) => p.inlineData);
+            const part = candidate?.content?.parts?.find((p) => p.inlineData);
 
             if (part && part.inlineData) {
                 const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;

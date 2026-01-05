@@ -21,7 +21,7 @@ export class CredentialService {
         try {
             const secretSerialized = JSON.stringify(credentials);
             await keytar.setPassword(SERVICE_NAME, distributorId, secretSerialized);
-            console.log(`[CredentialService] Saved credentials for ${distributorId}`);
+            console.info(`[CredentialService] Saved credentials for ${distributorId}`);
         } catch (error) {
             console.error(`[CredentialService] Failed to save credentials for ${distributorId}`, error);
             throw error;

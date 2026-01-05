@@ -1,71 +1,83 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Database, ImageIcon, Activity, Settings } from 'lucide-react';
-import QuickActions from './components/QuickActions';
-import ProjectHub from './components/ProjectHub';
-import DataStorageManager from './components/DataStorageManager';
-import AnalyticsView from './components/AnalyticsView';
-import RevenueView from './components/RevenueView';
-import GlobalSettings from './components/GlobalSettings';
+import { AnimatePresence, motion } from 'framer-motion';
+import ModeSelector from '@/components/studio/ModeSelector';
+import AgentWorkspace from './components/AgentWorkspace';
+import DepartmentGrid from './components/DepartmentGrid';
 import ReferenceImageManager from './components/ReferenceImageManager';
+import AnalyticsView from './components/AnalyticsView';
 
 export default function Dashboard() {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [viewMode, setViewMode] = useState<'agent' | 'studio'>('agent');
 
     return (
         <div className="min-h-screen bg-[#0d1117] p-8 overflow-y-auto">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-white tracking-tight">Studio Headquarters</h1>
-                <p className="text-gray-400 mt-1">Manage your projects, data, and global configuration.</p>
+            {/* Header Area */}
+            <header className="mb-8 text-center">
+                {/* Only show Title in Studio Mode, keep clean in Agent Mode or minimal */}
+                {viewMode === 'studio' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8"
+                    >
+                        <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Studio Headquarters</h1>
+                        <p className="text-gray-400">Visual command center for all departments.</p>
+                    </motion.div>
+                )}
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Main Content: Quick Actions & Projects */}
-                <div className={`${sidebarOpen ? 'lg:col-span-8' : 'lg:col-span-11'} space-y-8 transition-all`}>
-                    <QuickActions />
-                    <ProjectHub />
-                </div>
+            {/* Top Level Mode Switcher */}
+            <ModeSelector mode={viewMode} onChange={setViewMode} />
 
-                {/* Sidebar: Utilities (collapsible) */}
-                <div className={`${sidebarOpen ? 'lg:col-span-4' : 'lg:col-span-1'} transition-all`}>
-                    <button
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="w-full flex items-center justify-center gap-2 mb-4 py-2 bg-[#161b22]/50 border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all"
-                    >
-                        {sidebarOpen ? (
-                            <>
-                                <ChevronRight size={16} />
-                                <span className="text-xs font-medium">Collapse</span>
-                            </>
-                        ) : (
-                            <ChevronLeft size={16} />
-                        )}
-                    </button>
-
-                    {sidebarOpen ? (
-                        <div className="space-y-6">
-                            <DataStorageManager />
-                            <ReferenceImageManager />
-                            <AnalyticsView />
-                            <RevenueView />
-                            <GlobalSettings />
-                        </div>
+            {/* Main Content Area with Transitions */}
+            <div className="max-w-7xl mx-auto">
+                <AnimatePresence mode="wait">
+                    {viewMode === 'agent' ? (
+                        <motion.div
+                            key="agent-view"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <AgentWorkspace />
+                        </motion.div>
                     ) : (
-                        <div className="space-y-3">
-                            <button className="w-full p-3 bg-[#161b22]/50 border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all flex items-center justify-center" title="Storage">
-                                <Database size={18} />
-                            </button>
-                            <button className="w-full p-3 bg-[#161b22]/50 border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all flex items-center justify-center" title="References">
-                                <ImageIcon size={18} />
-                            </button>
-                            <button className="w-full p-3 bg-[#161b22]/50 border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all flex items-center justify-center" title="Analytics">
-                                <Activity size={18} />
-                            </button>
-                            <button className="w-full p-3 bg-[#161b22]/50 border border-gray-800 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all flex items-center justify-center" title="Settings">
-                                <Settings size={18} />
-                            </button>
-                        </div>
+                        <motion.div
+                            key="studio-view"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-12"
+                        >
+                            <section>
+                                <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                                    <span className="w-1 h-6 bg-blue-500 rounded-full" />
+                                    Departments
+                                </h2>
+                                <DepartmentGrid />
+                            </section>
+
+                            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div>
+                                    <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                                        <span className="w-1 h-6 bg-purple-500 rounded-full" />
+                                        Reference Assets
+                                    </h2>
+                                    <ReferenceImageManager />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                                        <span className="w-1 h-6 bg-green-500 rounded-full" />
+                                        Quick Analytics
+                                    </h2>
+                                    <AnalyticsView />
+                                </div>
+                            </section>
+                        </motion.div>
                     )}
-                </div>
+                </AnimatePresence>
             </div>
         </div>
     );

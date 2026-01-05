@@ -171,9 +171,6 @@ export default function OnboardingPage() {
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
 
-                console.log('[Onboarding] Function Calls:', functionCalls.map(f => f.name));
-                console.log('[Onboarding] Updates:', updates);
-                console.log('[Onboarding] New Profile State:', updatedProfile);
                 setUserProfile(updatedProfile);
 
                 if (isFinished) {
@@ -185,8 +182,8 @@ export default function OnboardingPage() {
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
                 // Dedupe insights: Check if this insight is semantically similar to one already shown
-                if (uiToolCall?.name === 'shareInsight' && (uiToolCall.args as any)?.insight) {
-                    const currentInsight = (uiToolCall.args as any).insight;
+                if (uiToolCall?.name === 'shareInsight' && (uiToolCall.args as Record<string, any>)?.insight) {
+                    const currentInsight = (uiToolCall.args as Record<string, any>).insight;
                     const alreadyShown = newHistory.some(
                         msg => msg.toolCall?.name === 'shareInsight' &&
                             (msg.toolCall?.args as any)?.insight &&
@@ -298,7 +295,6 @@ export default function OnboardingPage() {
     };
 
     const { coreProgress, releaseProgress, coreMissing, releaseMissing } = calculateProfileStatus(userProfile);
-    console.log('[Onboarding] Progress:', { coreProgress, isReady: coreProgress > 50, missing: coreMissing });
     const isReadyForDashboard = coreProgress > 50; // Threshold for allowing skip/complete
 
     // --- SHARED PROGRESS COMPONENT ---
@@ -475,8 +471,8 @@ export default function OnboardingPage() {
                                                     }}
                                                     disabled={hasBeenAnswered}
                                                     className={`px-4 py-2 rounded-lg text-sm transition-all ${hasBeenAnswered
-                                                            ? 'bg-black/10 border border-white/5 text-gray-600 cursor-not-allowed opacity-50'
-                                                            : 'bg-black/20 hover:bg-white hover:text-black border border-white/10 transform hover:scale-105'
+                                                        ? 'bg-black/10 border border-white/5 text-gray-600 cursor-not-allowed opacity-50'
+                                                        : 'bg-black/20 hover:bg-white hover:text-black border border-white/10 transform hover:scale-105'
                                                         }`}
                                                 >
                                                     {option}

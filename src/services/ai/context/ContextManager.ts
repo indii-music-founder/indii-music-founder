@@ -27,10 +27,11 @@ export class ContextManager {
 
     /**
      * Truncates conversation history to fit within maxTokens.
-     * Strategy:
-     * 1. ALWAYS keep system instructions (if identifiable, usually first or explicitly passed).
-     * 2. ALWAYS keep the most recent N messages (context window tail).
-     * 3. Drop from the middle/start of the conversation history.
+     * Strategy: Smart Sliding Window
+     * 1. Reserve tokens for System Instructions (highest priority).
+     * 2. Reserve tokens for the last 2 turns (User + Model) to ensure continuity.
+     * 3. If still over budget, drop messages from the *middle* of the conversation, 
+     *    preserving the *first* message (often sets the stage) if possible.
      */
     static truncateContext(history: Content[], maxTokens: number, systemInstruction?: string): Content[] {
         const systemTokens = systemInstruction ? this.estimateTokens(systemInstruction) : 0;
@@ -41,24 +42,38 @@ export class ContextManager {
         // If we are over budget:
         const truncated = [...history];
 
-        // We want to keep at least the last 2 turns (User + Assistant) if possible
-        const minItemsToKeep = 2;
+        // Preservation Rules
+        const MIN_RECENT_MESSAGES = 2; // Keep at least last user/model exchange
+        const KEEP_FIRST_MESSAGE = true; // Try to keep the very first message (context anchor)
 
-        // While we are over budget and have more than min items
-        while (currentTokens > maxTokens && truncated.length > minItemsToKeep) {
-            // Remove the oldest message (index 0)
-            // In a real chat, index 0 might be the first user message after system prompt.
-            // If strict system prompt content object is used, be careful not to remove it if it's mixed in.
-            // Assuming history is just the conversation flow here.
+        // While over budget and we have more than the absolute minimum partial context
+        // We stop if we are down to just the recent messages
+        while (currentTokens > maxTokens && truncated.length > MIN_RECENT_MESSAGES) {
 
-            const removed = truncated.shift();
+            // Determine which index to remove
+            // If we want to keep the first message, and we have enough messages to drop from middle...
+            // Indices: 0 (First), 1 (Second)... N-2, N-1 (Recent)
+            // If length > MIN_RECENT + 1 (and KEEP_FIRST), we can drop index 1.
+            // Otherwise we fallback to dropping index 0.
+
+            let removeIndex = 0;
+
+            if (KEEP_FIRST_MESSAGE && truncated.length > (MIN_RECENT_MESSAGES + 1)) {
+                // Remove from the "middle" (second oldest message)
+                removeIndex = 1;
+            } else {
+                // Drop the oldest message
+                removeIndex = 0;
+            }
+
+            const [removed] = truncated.splice(removeIndex, 1);
             if (removed) {
                 currentTokens -= this.estimateContextTokens(removed);
             }
         }
 
         if (currentTokens > maxTokens) {
-            console.warn('[ContextManager] Context is still over limit after truncation. Request implies massive single message.');
+            console.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) even after aggressive truncation. Recent messages are too large.`);
         }
 
         return truncated;

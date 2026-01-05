@@ -11,7 +11,7 @@ export class VoiceService {
 
     constructor() {
         if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            const SpeechRecognition = (window as unknown as { SpeechRecognition: new () => any }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition: new () => any }).webkitSpeechRecognition;
             this.recognition = new SpeechRecognition();
             this.recognition.continuous = false;
             this.recognition.interimResults = false;

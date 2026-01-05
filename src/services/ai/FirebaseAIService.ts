@@ -37,6 +37,7 @@ import { BREAKER_CONFIGS } from './config/breaker-configs';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
+import { aiCache } from './AIResponseCache';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
@@ -150,6 +151,7 @@ export class FirebaseAIService {
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
                         : { contents: [{ role: 'user', parts: sanitizedPrompt }] } as any, // Cast to any until SDK types update
+                    // @ts-ignore - options param not in typed definition but supported by underlying implementation
                     options
                 );
 
@@ -207,6 +209,7 @@ export class FirebaseAIService {
                 // @ts-ignore - Signal supported in SDK
                 const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
                     typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
+                    // @ts-ignore - options param not in typed definition but supported
                     options
                 );
 
@@ -320,6 +323,13 @@ export class FirebaseAIService {
                 systemInstruction = config.systemInstruction;
             }
 
+            const modelName = model || this.model!.model;
+
+            // CACHE CHECK
+            const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+            const cached = await aiCache.get(cacheKey, modelName, config);
+            if (cached) return cached;
+
             const modelCallback = getGenerativeModel(ai, {
                 model: model,
                 generationConfig: config,
@@ -329,7 +339,12 @@ export class FirebaseAIService {
             const result = await modelCallback.generateContent(
                 typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] }
             );
-            return result.response.text();
+            const text = result.response.text();
+
+            // CACHE SET
+            await aiCache.set(cacheKey, text, modelName, config);
+
+            return text;
         });
     }
 
@@ -352,8 +367,23 @@ export class FirebaseAIService {
                 config.thinkingConfig = { thinkingBudget };
             }
 
+            // CACHE CHECK
+            const modelName = this.model!.model;
+            // For structured data, prompt + schema is the key
+            const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema);
+            const cached = await aiCache.get(cacheKeyString, modelName, config);
+
+            if (cached) {
+                try {
+                    return JSON.parse(cached) as T;
+                } catch (e) {
+                    // If cache is corrupt, ignore and regenerate
+                    console.warn('[FirebaseAIService] Cached JSON parse failed, regenerating');
+                }
+            }
+
             const modelCallback = getGenerativeModel(ai, {
-                model: this.model!.model,
+                model: modelName,
                 generationConfig: config,
                 systemInstruction
             });
@@ -362,6 +392,10 @@ export class FirebaseAIService {
                 typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] }
             );
             const text = result.response.text();
+
+            // CACHE SET
+            await aiCache.set(cacheKeyString, text, modelName, config);
+
             try {
                 return JSON.parse(text) as T;
             } catch (e) {

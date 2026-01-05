@@ -21,7 +21,7 @@ export class VideoDirector {
             const url = uri;
 
             if (enableDirectorsCut && !isRetry) {
-                console.log("🎬 Director QA Started...");
+                console.info("🎬 Director QA Started...");
 
                 // 2. Extract Frame for Critique
                 const frameBase64 = await this.extractFrame(url);
@@ -32,29 +32,41 @@ export class VideoDirector {
 
                 // 3. Critique
                 const critiquePrompt = `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it.`;
+                import { SchemaType } from 'firebase/ai';
+
+                // ... existing code ...
+
                 const schema = {
-                    type: 'object',
+                    type: SchemaType.OBJECT,
                     properties: {
-                        score: { type: 'number' },
-                        refined_prompt: { type: 'string' }
+                        score: { type: SchemaType.NUMBER, nullable: false },
+                        refined_prompt: { type: SchemaType.STRING, nullable: false }
                     },
-                    required: ['score', 'refined_prompt']
+                    required: ['score', 'refined_prompt'],
+                    nullable: false
                 };
 
-                const feedback = await firebaseAI.generateStructuredData<any>(
+                interface DirectorFeedback {
+                    score: number;
+                    refined_prompt: string;
+                }
+
+                // Cast schema to unknown then specific Schema type if needed, or rely on loose matching if allowed.
+                // FirebaseAIService expects Record<string, any> or Schema.
+                const feedback = await firebaseAI.generateStructuredData<DirectorFeedback>(
                     [
                         { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
                         { text: critiquePrompt }
                     ],
-                    schema as any,
+                    schema,
                     undefined,
                     `You are a master cinematographer. Analyze the provided image.`
                 );
 
-                console.log("🎬 Director Feedback:", feedback);
+                console.info("🎬 Director Feedback:", feedback);
 
                 if (typeof feedback.score === 'number' && feedback.score < 8) {
-                    console.log("🎬 Director Rejected. Reshooting...");
+                    console.info("🎬 Director Rejected. Reshooting...");
                     // 4. Reshoot
                     // Note: We need to call the generation service again. 
                     // Since this is a service, we might need to pass the generator function or import it.

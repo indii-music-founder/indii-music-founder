@@ -73,10 +73,10 @@ Only return valid JSON.
                 systemInstruction: systemPrompt,
                 config: {
                     response_mime_type: 'application/json'
-                } as any // Cast to any if shared types are outdated but backend supports it
+                }
             });
 
-            const data = AI.parseJSON(response.text()) as any;
+            const data = JSON.parse(response.text());
 
             setAnalysisResult({
                 score: data.score || 0,
@@ -102,7 +102,6 @@ Only return valid JSON.
 
             // For Alpha, we just show a success toast and could potentially download it
             // In a real app, we'd probably open a modal with the result
-            console.log("Generated NDA:", nda);
             toast.success("NDA Template generated! Check console for output.");
         } catch (error) {
             toast.error("Failed to generate NDA.");
@@ -119,7 +118,6 @@ Only return valid JSON.
                 parties: ['[ASSIGNOR NAME]', '[ASSIGNEE NAME]'],
                 terms: 'Transfer of all rights, title, and interest in and to the specified creative works.'
             });
-            console.log("Generated IP Assignment:", assignment);
             toast.success("IP Assignment generated! Check console for output.");
         } catch (error) {
             toast.error("Failed to generate IP Assignment.");

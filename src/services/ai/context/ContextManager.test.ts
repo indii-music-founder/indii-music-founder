@@ -47,6 +47,7 @@ describe('ContextManager', () => {
         expect(result.length).toBeLessThan(4);
         expect(result).toContain(history[2]); // verify we kept new stuff
         expect(result).toContain(history[3]);
-        expect(result).not.toContain(history[0]); // verify we dropped old stuff
+        expect(result).toContain(history[0]); // verify we KEPT first message (anchor)
+        expect(result).not.toContain(history[1]); // verify we dropped middle message
     });
 });

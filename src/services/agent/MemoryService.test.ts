@@ -10,6 +10,19 @@ import { AI } from '../ai/AIService';
 vi.mock('../FirestoreService');
 vi.mock('../ai/AIService');
 
+// Mock RequestBatcher to bypass async queue
+vi.mock('@/utils/RequestBatcher', () => {
+    return {
+        RequestBatcher: class <T, R> {
+            constructor(private processor: (items: T[]) => Promise<R[]>) { }
+            async add(item: T): Promise<R> {
+                const results = await this.processor([item]);
+                return results[0];
+            }
+        }
+    };
+});
+
 describe('MemoryService', () => {
     let mockList: any;
     let mockAdd: any;
@@ -38,6 +51,7 @@ describe('MemoryService', () => {
 
         // Mock AI embedding
         (AI.embedContent as any).mockResolvedValue({ values: [0.1, 0.2, 0.3] });
+        (AI.batchEmbedContents as any).mockResolvedValue([[0.1, 0.2, 0.3]]);
     });
 
     describe('saveMemory', () => {
