@@ -10,6 +10,10 @@ interface AssetRackProps {
     productType: ProductType;
     onAssetUpload: (base64: string) => void;
     onTypeChange: (type: ProductType) => void;
+    placement: 'Front' | 'Back' | 'Sleeve';
+    onPlacementChange: (val: 'Front' | 'Back' | 'Sleeve') => void;
+    scale: number;
+    onScaleChange: (val: number) => void;
     theme?: BananaTheme;
 }
 
@@ -72,45 +76,17 @@ const ProductSelector = React.memo(({ productType, onTypeChange }: ProductSelect
 });
 ProductSelector.displayName = 'ProductSelector';
 
-// ... (imports remain)
-
-interface AssetRackProps {
+interface AssetDropzoneProps {
     productAsset: string | null;
-    productType: ProductType;
     onAssetUpload: (base64: string) => void;
-    onTypeChange: (type: ProductType) => void;
-    placement: 'Front' | 'Back' | 'Sleeve';
-    onPlacementChange: (val: 'Front' | 'Back' | 'Sleeve') => void;
-    scale: number;
-    onScaleChange: (val: number) => void;
     theme?: BananaTheme;
 }
 
-// ... (ProductSelector remains same)
-
-export default function AssetRack({
-    productAsset,
-    productType,
-    onAssetUpload,
-    onTypeChange,
-    placement,
-    onPlacementChange,
-    scale,
-    onScaleChange,
-    theme
-}: AssetRackProps) {
+// Optimization: Extract AssetDropzone to isolate drag state and animations from parent re-renders
+const AssetDropzone = React.memo(({ productAsset, onAssetUpload, theme }: AssetDropzoneProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    // Removed local state for placement/scale
-
-    const accentColorClass = theme?.colors.accent.replace('text', 'bg') || 'bg-blue-500';
-
-    const containerClass = theme
-        ? `${theme.colors.surface} ${theme.effects.glass} border-r ${theme.colors.border}`
-        : "bg-[#0a0a0a] border-r border-white/5 backdrop-blur-2xl";
-
-    const textClass = theme ? theme.colors.text : "text-white";
     const subTextClass = theme ? theme.colors.textSecondary : "text-gray-400";
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,6 +122,103 @@ export default function AssetRack({
     };
 
     return (
+        <div className="flex-1 flex flex-col min-h-0 mb-6">
+            <label className={`text-xs font-medium uppercase tracking-wider ml-1 mb-3 ${subTextClass}`}>
+                Source Graphic
+            </label>
+            <motion.div
+                className={`
+                    flex-1 relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden
+                    ${isDragging
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : productAsset
+                            ? 'border-white/10 bg-black/20'
+                            : `${theme ? theme.colors.border : 'border-white/10'} hover:border-white/20 hover:bg-white/5`}
+                `}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                whileHover="hover"
+                initial="idle"
+                animate={isDragging ? "dragging" : "idle"}
+            >
+                <AnimatePresence mode="wait">
+                    {productAsset ? (
+                        <motion.div
+                            key="asset"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute inset-0 p-4 flex items-center justify-center"
+                        >
+                            <div className="relative w-full h-full flex items-center justify-center">
+                                <img
+                                    src={productAsset}
+                                    alt="Asset"
+                                    className="max-w-full max-h-full object-contain drop-shadow-2xl"
+                                />
+                                <div className="absolute bottom-0 right-0 p-2 bg-black/50 backdrop-blur-md rounded-lg border border-white/10">
+                                    <Upload className="w-4 h-4 text-white" />
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="empty"
+                            className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center"
+                            variants={{
+                                hover: { scale: 1.02 },
+                                dragging: { scale: 1.05 }
+                            }}
+                        >
+                            <div className={`
+                                w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors duration-300
+                                ${isDragging ? 'bg-blue-500/20 text-blue-400' : `${theme ? theme.colors.surfaceHighlight : 'bg-white/5'} ${theme ? theme.colors.textSecondary : 'text-gray-500'}`}
+                            `}>
+                                <Upload className="w-8 h-8" />
+                            </div>
+                            <p className={`text-sm font-medium ${theme ? theme.colors.text : 'text-gray-300'}`}>Drop Design File</p>
+                            <p className={`text-xs mt-2 ${subTextClass}`}>
+                                Supports PNG, JPG (Max 5MB)<br />
+                                Transparency Recommended
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png,image/jpeg"
+                    onChange={handleFileChange}
+                />
+            </motion.div>
+        </div>
+    );
+});
+AssetDropzone.displayName = 'AssetDropzone';
+
+export default function AssetRack({
+    productAsset,
+    productType,
+    onAssetUpload,
+    onTypeChange,
+    placement,
+    onPlacementChange,
+    scale,
+    onScaleChange,
+    theme
+}: AssetRackProps) {
+    const containerClass = theme
+        ? `${theme.colors.surface} ${theme.effects.glass} border-r ${theme.colors.border}`
+        : "bg-[#0a0a0a] border-r border-white/5 backdrop-blur-2xl";
+
+    const textClass = theme ? theme.colors.text : "text-white";
+    const subTextClass = theme ? theme.colors.textSecondary : "text-gray-400";
+
+    return (
         <div className={`flex flex-col h-full p-6 transition-colors duration-500 ${containerClass}`}>
 
             <div className="flex items-center gap-3 mb-8">
@@ -157,82 +230,13 @@ export default function AssetRack({
             <ProductSelector productType={productType} onTypeChange={onTypeChange} />
 
             {/* Asset Dropzone */}
-            <div className="flex-1 flex flex-col min-h-0 mb-6">
-                <label className={`text-xs font-medium uppercase tracking-wider ml-1 mb-3 ${subTextClass}`}>
-                    Source Graphic
-                </label>
-                <motion.div
-                    className={`
-                        flex-1 relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden
-                        ${isDragging
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : productAsset
-                                ? 'border-white/10 bg-black/20'
-                                : `${theme ? theme.colors.border : 'border-white/10'} hover:border-white/20 hover:bg-white/5`}
-                    `}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    whileHover="hover"
-                    initial="idle"
-                    animate={isDragging ? "dragging" : "idle"}
-                >
-                    <AnimatePresence mode="wait">
-                        {productAsset ? (
-                            <motion.div
-                                key="asset"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="absolute inset-0 p-4 flex items-center justify-center"
-                            >
-                                <div className="relative w-full h-full flex items-center justify-center">
-                                    <img
-                                        src={productAsset}
-                                        alt="Asset"
-                                        className="max-w-full max-h-full object-contain drop-shadow-2xl"
-                                    />
-                                    <div className="absolute bottom-0 right-0 p-2 bg-black/50 backdrop-blur-md rounded-lg border border-white/10">
-                                        <Upload className="w-4 h-4 text-white" />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="empty"
-                                className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center"
-                                variants={{
-                                    hover: { scale: 1.02 },
-                                    dragging: { scale: 1.05 }
-                                }}
-                            >
-                                <div className={`
-                                    w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors duration-300
-                                    ${isDragging ? 'bg-blue-500/20 text-blue-400' : `${theme ? theme.colors.surfaceHighlight : 'bg-white/5'} ${theme ? theme.colors.textSecondary : 'text-gray-500'}`}
-                                `}>
-                                    <Upload className="w-8 h-8" />
-                                </div>
-                                <p className={`text-sm font-medium ${theme ? theme.colors.text : 'text-gray-300'}`}>Drop Design File</p>
-                                <p className={`text-xs mt-2 ${subTextClass}`}>
-                                    Supports PNG, JPG (Max 5MB)<br />
-                                    Transparency Recommended
-                                </p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+            <AssetDropzone
+                productAsset={productAsset}
+                onAssetUpload={onAssetUpload}
+                theme={theme}
+            />
 
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/png,image/jpeg"
-                        onChange={handleFileChange}
-                    />
-                </motion.div>
-            </div>
-
-            {/* Placement Controls (NEW) */}
+            {/* Placement Controls */}
             <div className={`space-y-4 pt-4 border-t ${theme ? theme.colors.border : 'border-white/5'}`}>
                 <div className="flex justify-between items-center mb-2">
                     <label className={`text-xs font-medium uppercase tracking-wider ml-1 ${subTextClass}`}>
