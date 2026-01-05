@@ -8,7 +8,7 @@ import {
     Content,
     Part,
     Schema,
-    GenerationConfig,
+    GenerationConfig as FirebaseGenerationConfig,
     Tool
 } from 'firebase/ai';
 import { ai, remoteConfig, functions } from '@/services/firebase';
@@ -19,13 +19,17 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import {
     Candidate,
     TextPart,
+    InlineDataPart,
     FunctionCallPart,
     GenerateContentResponse,
     WrappedResponse,
+    StreamChunk,
     GenerateVideoRequest,
     GenerateVideoResponse,
     GenerateImageRequest,
-    GenerateImageResponse
+    GenerateImageResponse,
+    GenerateSpeechResponse,
+    GenerationConfig
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -75,11 +79,17 @@ export class FirebaseAIService {
                 model: modelName
             });
 
+            if (!this.model) {
+                throw new Error('Failed to create generative model instance');
+            }
+
             this.isInitialized = true;
             console.info(`[FirebaseAIService] Initialized with model: ${modelName}`);
 
         } catch (error) {
             console.error('[FirebaseAIService] Bootstrap failed:', error);
+            // Re-throw so that ensureInitialized() callers know it failed
+            throw this.handleError(error);
         }
     }
 
@@ -144,11 +154,9 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[]
-    ): Promise<ReadableStream<string>> {
+    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
-
-
 
             // Rate Limit Check
             const userId = auth.currentUser?.uid;
@@ -161,24 +169,22 @@ export class FirebaseAIService {
 
             const modelCallback = getGenerativeModel(ai, {
                 model: modelName,
+                generationConfig: config,
                 systemInstruction: systemInstruction ? {
                     role: 'system',
                     parts: [{ text: systemInstruction }] as TextPart[]
-                } : undefined
+                } : undefined,
+                tools
             });
-
-            if (tools && tools.length > 0) {
-                // (modelCallback as any).tools = tools; // This depends on SDK version
-            }
 
             try {
                 const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
                     typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt } as any
                 );
 
-                // Track usage when stream completes
-                // The 'response' promise resolves to the aggregated result including usage
-                result.response.then(async (aggResult) => {
+                // Wrap the final response promise
+                const wrappedResponsePromise = result.response.then(async (aggResult) => {
+                    // Track usage
                     if (userId && aggResult.usageMetadata) {
                         try {
                             await TokenUsageService.trackUsage(
@@ -191,16 +197,30 @@ export class FirebaseAIService {
                             console.error('[FirebaseAIService] Failed to track stream usage:', e);
                         }
                     }
-                }).catch(() => { /* Ignore errors here, main loop handles them */ });
 
-                return new ReadableStream({
+                    return {
+                        response: aggResult as any,
+                        text: () => aggResult.text?.() ?? '',
+                        functionCalls: () => {
+                            const part = aggResult.candidates?.[0]?.content?.parts?.find(p => 'functionCall' in p);
+                            return (part && 'functionCall' in part ? [part.functionCall] : []) as any[];
+                        }
+                    };
+                });
+
+                const stream = new ReadableStream<StreamChunk>({
                     async start(controller) {
                         try {
                             for await (const chunk of result.stream) {
-                                const text = chunk.text();
-                                if (text) {
-                                    controller.enqueue(text);
-                                }
+                                controller.enqueue({
+                                    text: () => {
+                                        try { return chunk.text(); } catch { return ''; }
+                                    },
+                                    functionCalls: () => {
+                                        const part = chunk.candidates?.[0]?.content?.parts?.find(p => 'functionCall' in p);
+                                        return (part && 'functionCall' in part ? [part.functionCall] : []) as any[];
+                                    }
+                                });
                             }
                             controller.close();
                         } catch (streamError) {
@@ -209,6 +229,8 @@ export class FirebaseAIService {
                         }
                     }
                 });
+
+                return { stream, response: wrappedResponsePromise };
             } catch (error) {
                 throw this.handleError(error);
             }
@@ -237,7 +259,7 @@ export class FirebaseAIService {
         config?: any,
         systemInstruction?: string,
         tools?: any[]
-    ): Promise<ReadableStream<string>> {
+    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools);
     }
 
@@ -465,6 +487,63 @@ export class FirebaseAIService {
     }
 
     /**
+     * TTS: Generate speech from text using gemini-2.5-pro-tts
+     */
+    async generateSpeech(
+        text: string,
+        voice: string = 'Kore',
+        modelOverride?: string
+    ): Promise<GenerateSpeechResponse> {
+        return this.mediaBreaker.execute(async () => {
+            await this.ensureInitialized();
+
+            const modelName = modelOverride || AI_MODELS.AUDIO.PRO;
+
+            const config: GenerationConfig = {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: voice
+                        }
+                    }
+                }
+            };
+
+            const modelCallback = getGenerativeModel(ai, {
+                model: modelName,
+                generationConfig: config as any
+            });
+
+            try {
+                const result = await modelCallback.generateContent(text);
+                const candidates = result.response.candidates;
+
+                if (!candidates || candidates.length === 0) {
+                    throw new Error('No candidates returned from TTS model');
+                }
+
+                const audioPart = candidates[0].content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/')) as InlineDataPart | undefined;
+
+                if (!audioPart || !audioPart.inlineData) {
+                    throw new Error('No audio data found in response parts');
+                }
+
+                return {
+                    audio: {
+                        inlineData: {
+                            mimeType: audioPart.inlineData.mimeType,
+                            data: audioPart.inlineData.data
+                        }
+                    }
+                };
+            } catch (error) {
+                throw this.handleError(error);
+            }
+        });
+    }
+
+    /**
      * CORE: Embed content
      */
     async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
@@ -498,6 +577,9 @@ export class FirebaseAIService {
     private async ensureInitialized() {
         if (!this.isInitialized) {
             await this.bootstrap();
+        }
+        if (!this.model) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service not properly initialized');
         }
     }
 

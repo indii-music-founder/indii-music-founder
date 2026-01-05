@@ -71,7 +71,8 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('./billing/TokenUsageService', () => ({
     TokenUsageService: {
-        checkQuota: vi.fn().mockResolvedValue(true)
+        checkQuota: vi.fn().mockResolvedValue(true),
+        trackUsage: vi.fn().mockResolvedValue(undefined)
     }
 }));
 
@@ -207,10 +208,24 @@ describe('FirebaseAIService', () => {
     });
 
     it('should handle content streams', async () => {
-        const stream = await service.generateContentStream('Stream me');
+        const { stream } = await service.generateContentStream('Stream me');
         const reader = stream.getReader();
         const { value } = await reader.read();
-        expect(value).toBe('Stream');
+        expect(value.text()).toBe('Stream');
+    });
+
+    it('should throw AppException if bootstrap fails', async () => {
+        const { fetchAndActivate } = await import('firebase/remote-config');
+        (fetchAndActivate as any).mockRejectedValueOnce(new Error('API key not valid'));
+
+        await expect(service.bootstrap()).rejects.toThrow('AI Service Failure: API key not valid');
+    });
+
+    it('should throw if called without successful initialization', async () => {
+        const { fetchAndActivate } = await import('firebase/remote-config');
+        (fetchAndActivate as any).mockRejectedValue(new Error('Fail'));
+
+        await expect(service.generateText('test')).rejects.toThrow('AI Service Failure: Fail');
     });
 
     it('should handle generateVideo with polling', async () => {

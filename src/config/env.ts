@@ -116,14 +116,14 @@ export const env = {
 // NOTE: Firebase API keys are PUBLIC by design (security is enforced via Firestore rules).
 // These fallbacks are required for Firebase Hosting where env vars aren't available at runtime.
 export const firebaseDefaultConfig = {
-    apiKey: "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w", // Public Firebase API Key
-    authDomain: "indiios-studio.web.app", // Keep domain for hosting context but not for auth
+    apiKey: "AIzaSyBWCig_kA7j_3Xm5IphpAq4WqGLwpwEzvA", // Updated Public Firebase API Key (indiiOS)
+    authDomain: "indiios-v-1-1.firebaseapp.com",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",
     storageBucket: "indiios-v-1-1.firebasestorage.app",
     messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:3af738739465ea4095e9bd", // Primary Web App ID
-    measurementId: "G-T6V8WPE7Z7" // Matching Analytics ID
+    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd", // Main Studio Web App ID
+    measurementId: "G-KNWPRGE5JK" // Updated for main indiiOS app
 };
 
 // Resolved Firebase configuration that never falls back to unrelated API keys
