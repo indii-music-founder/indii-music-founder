@@ -51,7 +51,7 @@ This is the single source of truth for pending tasks. Completed plans have been 
 
 ### Gemini 3.0 Migration (Final Steps)
 
-- [ ] **Enterprise**: Migrate `generateImageV3` from AI Studio (API Key) to Vertex AI (IAM) once `gemini-3-pro-image-preview` is available on Vertex endpoints.
+- [x] **Enterprise**: Migrate `generateImageV3` from AI Studio (API Key) to Vertex AI (IAM) once `gemini-3-pro-image-preview` is available on Vertex endpoints.
 
 ### Mobile Experience Polish
 
@@ -65,6 +65,13 @@ This is the single source of truth for pending tasks. Completed plans have been 
 ---
 
 ## Recently Completed (Jan 2026)
+
+### Image Generation Migration (Fix)
+
+- [x] **Gemini 3 Pro Image IAM**: Migrated `generateImageV3` from API Key to Vertex AI IAM authentication.
+  - Resolves 403 Permission Denied errors with `gemini-3-pro-image-preview`
+  - Updated `functions/src/index.ts` to use `GoogleAuth` with Bearer token
+  - Aligned with video generation architecture (Veo)
 
 ### AI Service Refactoring
 

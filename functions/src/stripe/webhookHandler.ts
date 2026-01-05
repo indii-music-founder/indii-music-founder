@@ -16,7 +16,7 @@ function verifyStripeWebhook(
   payload: string,
   signature: string,
   secret: string
-  Stripe.Event {
+): Stripe.Event {
   return stripe.webhooks.constructEvent(payload, signature, secret);
 }
 

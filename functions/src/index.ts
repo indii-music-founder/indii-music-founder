@@ -517,12 +517,28 @@ interface GenerateImageRequestData {
 }
 
 export const generateImageV3 = functions
-    .runWith({ secrets: [geminiApiKey] })
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 120,
+        memory: "512MB"
+    })
     .https.onCall(async (data: GenerateImageRequestData, context) => {
         try {
             const { prompt, aspectRatio, count, images } = data;
             const modelId = "gemini-3-pro-image-preview";
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
+
+            // Use Vertex AI IAM authentication instead of API key
+            // This resolves 403 Permission Denied errors with Gemini 3 Pro Image
+            const auth = new GoogleAuth({
+                scopes: ['https://www.googleapis.com/auth/cloud-platform']
+            });
+
+            const client = await auth.getClient();
+            const projectId = await auth.getProjectId();
+            const accessToken = await client.getAccessToken();
+            const location = 'us-central1';
+
+            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
             const parts: any[] = [{ text: prompt }];
             if (images) {
@@ -538,26 +554,35 @@ export const generateImageV3 = functions
 
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    'Authorization': `Bearer ${accessToken.token}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     contents: [{ role: "user", parts: parts }],
                     generationConfig: {
                         responseModalities: ["TEXT", "IMAGE"],
                         candidateCount: count || 1,
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {})
+                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                        temperature: 1.0,
+                        topK: 64,
+                        topP: 0.95
                     }
                 }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new functions.https.HttpsError('internal', errorText);
+                console.error("Vertex AI Error:", response.status, errorText);
+                throw new functions.https.HttpsError('internal', `Vertex AI Error: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-            const candidates = result.candidates || [];
+
+            // Vertex AI response format differs slightly, handle both formats
+            const candidates = result.predictions || result.candidates || [];
             const processedImages = candidates.flatMap((c: any) =>
-                (c.content?.parts || [])
+                (c.content?.parts || c.candidates?.[0]?.content?.parts || [])
                     .filter((p: any) => p.inlineData)
                     .map((p: any) => ({
                         bytesBase64Encoded: p.inlineData.data,
@@ -567,7 +592,7 @@ export const generateImageV3 = functions
 
             return { images: processedImages };
         } catch (error: any) {
-            console.error("Function Error:", error);
+            console.error("[generateImageV3] Error:", error);
             throw new functions.https.HttpsError('internal', error.message || "Unknown error");
         }
     });
