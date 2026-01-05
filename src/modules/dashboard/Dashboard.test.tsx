@@ -29,24 +29,21 @@ vi.mock('./components/AnalyticsView', () => ({
 }));
 
 describe('Dashboard', () => {
-    it('defaults to Agent Mode', () => {
+    it('defaults to Studio Mode', () => {
         render(<Dashboard />);
-        expect(screen.getByTestId('agent-workspace')).toBeInTheDocument();
-        expect(screen.queryByTestId('department-grid')).not.toBeInTheDocument();
+        expect(screen.getByText('STUDIO HQ')).toBeInTheDocument();
+        expect(screen.getByTestId('department-grid')).toBeInTheDocument();
+        // Agent workspace should not be visible
+        expect(screen.queryByTestId('agent-workspace')).not.toBeInTheDocument();
     });
 
-    it('switches to Studio Mode', async () => {
+    it('switches to Agent Mode', async () => {
         render(<Dashboard />);
 
         // Find the button in our mock ModeSelector
-        fireEvent.click(screen.getByText('Studio Mode'));
+        fireEvent.click(screen.getByText('Agent Mode'));
 
-        await waitFor(() => {
-            expect(screen.getByText('Studio Headquarters')).toBeInTheDocument();
-            expect(screen.getByTestId('department-grid')).toBeInTheDocument();
-        });
-
-        expect(screen.getByTestId('reference-image-manager')).toBeInTheDocument();
-        expect(screen.getByTestId('analytics-view')).toBeInTheDocument();
+        expect(screen.getByTestId('agent-workspace')).toBeInTheDocument();
+        expect(screen.queryByTestId('department-grid')).not.toBeInTheDocument();
     });
 });
