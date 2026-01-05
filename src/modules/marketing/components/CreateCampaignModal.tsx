@@ -18,6 +18,15 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const [endDate, setEndDate] = useState('');
     const [platform, setPlatform] = useState('Instagram');
 
+    // UX: Close on Escape key
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [onClose]);
+
     // Close on Escape key
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
