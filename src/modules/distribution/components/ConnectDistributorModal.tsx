@@ -256,6 +256,22 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
                                             </div>
 
                                             <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">SFTP Password</label>
+                                                <div className="relative group">
+                                                    <input
+                                                        type="password"
+                                                        value={sftp.password}
+                                                        onChange={e => setSftp({ ...sftp, password: e.target.value })}
+                                                        placeholder="••••••••••••"
+                                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-coral-500/50 transition-all placeholder:text-gray-800"
+                                                    />
+                                                    <div className="absolute right-4 top-4 text-gray-600">
+                                                        <Lock size={18} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Private Key (OpenSSH Format)</label>
                                                 <textarea
                                                     value={sftp.privateKey}

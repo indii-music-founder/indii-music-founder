@@ -39,7 +39,7 @@ export class MarketingService {
     }
 
     private static async seedDatabase(userId: string) {
-        console.log("Seeding Marketing Database...");
+        // console.log("Seeding Marketing Database...");
         const initialStats = {
             totalReach: 15400,
             engagementRate: 4.2,
@@ -94,7 +94,7 @@ export class MarketingService {
             return {
                 id: doc.id,
                 ...cleanData,
-            } as unknown as CampaignAsset;
+            } as CampaignAsset;
         });
     }
 
@@ -111,11 +111,11 @@ export class MarketingService {
                 return {
                     id: snapshot.id,
                     ...data,
-                } as unknown as CampaignAsset;
+                } as CampaignAsset;
             }
             return null;
         } catch (error) {
-            console.error('Error fetching campaign:', error);
+            // console.error('Error fetching campaign:', error);
             return null;
         }
     }

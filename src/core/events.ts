@@ -44,7 +44,7 @@ class EventBus {
         this.listeners[event]?.forEach(callback => callback(data));
 
         // Log all events for debugging (optional, can be removed in prod)
-        console.log(`[EventBus] ${event}:`, data);
+        // console.log(`[EventBus] ${event}:`, data);
     }
 }
 

@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
+import LoginForm from './components/auth/LoginForm';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
@@ -116,7 +117,7 @@ function useAppInitialization() {
 
     // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
-        console.log('[App] Initializing Auth Listener...');
+        // Log removed (Platinum Polish)
         const unsubscribe = initializeAuthListener();
         return () => unsubscribe();
     }, [initializeAuthListener]);
@@ -132,7 +133,7 @@ function useAppInitialization() {
     // We assume if user exists and profile is loaded (we don't have isProfileReady yet, but let's assume loose coupling)
     useEffect(() => {
         if (user) {
-            console.log('[App] Auth confirmed, loading app data...');
+            // Log removed (Platinum Polish)
             initializeHistory();
             loadProjects();
 
@@ -191,9 +192,7 @@ export default function App() {
 
     // Log module changes in dev
     useEffect(() => {
-        if (import.meta.env.DEV) {
-            console.log(`[App] Current Module: ${currentModule}`);
-        }
+        // Log removed (Platinum Polish)
     }, [currentModule]);
 
     // Handle Theme Switching
@@ -220,25 +219,13 @@ export default function App() {
         [currentModule]
     );
 
-    // if (authLoading) {
-    //     return <LoadingFallback />;
-    // }
+    if (authLoading) {
+        return <LoadingFallback />;
+    }
 
-    // if (!user) {
-    //     return (
-    //         <div className="flex flex-col items-center justify-center h-screen w-screen bg-black text-white relative overflow-hidden">
-    //             <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-black pointer-events-none" />
-    //             <h1 className="text-4xl font-black mb-2 tracking-tighter">indii<span className="text-purple-500">OS</span></h1>
-    //             <p className="text-gray-400 mb-8 font-mono text-sm">Alpha Build • Electron Studio</p>
-    //             <button
-    //                 onClick={loginWithGoogle}
-    //                 className="relative z-10 px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
-    //             >
-    //                 Login with Google
-    //             </button>
-    //         </div>
-    //     );
-    // }
+    if (!user) {
+        return <LoginForm />;
+    }
 
     // console.log('[App] Rendering JSX...');
     return (

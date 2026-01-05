@@ -1,3 +1,4 @@
+import { Schema } from 'firebase/ai';
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Shield, Upload, CheckCircle, AlertTriangle, FileText, Loader2, RefreshCw } from 'lucide-react';
@@ -71,22 +72,23 @@ const BrandManager: React.FC = () => {
         setAnalysisResult(null);
 
         try {
-            const schema = {
+            const schema: Schema = {
                 type: 'object',
                 properties: {
                     score: { type: 'number' },
                     isConsistent: { type: 'boolean' },
                     issues: { type: 'array', items: { type: 'string' } },
                     suggestions: { type: 'array', items: { type: 'string' } }
-                },
-                required: ['score', 'isConsistent', 'issues', 'suggestions']
+                } as any,
+                required: ['score', 'isConsistent', 'issues', 'suggestions'],
+                nullable: false
             };
 
             const result = await AI.generateStructuredData<AnalysisResult>(
                 `Analyze the following marketing content for brand consistency:
                 Brand Guidelines: ${guidelines}
                 Content to Analyze: ${contentToCheck}`,
-                schema as any,
+                schema,
                 undefined,
                 `You are a brand consistency expert. Analyze marketing content based on guidelines and return structured feedback.`
             );
@@ -94,7 +96,7 @@ const BrandManager: React.FC = () => {
             setAnalysisResult(result);
             toast.success("Analysis complete");
         } catch (error) {
-            console.error("Brand Analysis Failed:", error);
+            // console.error("Brand Analysis Failed:", error);
             toast.error("Failed to analyze brand consistency");
         } finally {
             setIsAnalyzing(false);

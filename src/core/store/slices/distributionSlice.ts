@@ -1,7 +1,9 @@
 import { StateCreator } from 'zustand';
 import { DistributorConnection, DistributorId, DashboardRelease } from '@/services/distribution/types/distributor';
 import { DistributorService } from '@/services/distribution/DistributorService';
+
 import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
+import type { StoreState } from '../index';
 
 export interface DistributionSlice {
     distribution: {
@@ -84,7 +86,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         }
     },
     fetchReleases: async () => {
-        const { currentOrganizationId } = get() as any;
+        const { currentOrganizationId } = get() as StoreState;
 
         if (!currentOrganizationId) {
             return;
@@ -123,7 +125,7 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         }));
     },
     subscribeToReleases: () => {
-        const { currentOrganizationId } = get() as any;
+        const { currentOrganizationId } = get() as StoreState;
 
         if (!currentOrganizationId) {
             return () => { };

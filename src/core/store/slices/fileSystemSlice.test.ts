@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createFileSystemSlice, FileSystemSlice } from './fileSystemSlice';
-import { fileSystemService } from '@/services/FileSystemService';
+import { FileNode, fileSystemService } from '@/services/FileSystemService';
 
 // Mock Service
 vi.mock('@/services/FileSystemService', () => ({
@@ -31,9 +31,9 @@ describe('FileSystemSlice', () => {
     });
 
     it('createFileNode calls service and updates state', async () => {
-        const slice = createFileSystemSlice(mockSet, mockGet, {} as any);
+        const slice = createFileSystemSlice(mockSet, mockGet, {} as unknown as import('zustand').StoreApi<import('../index').StoreState>);
 
-        const mockNewNode = {
+        const mockNewNode: FileNode = {
             id: 'new-file-id',
             name: 'test.html',
             type: 'file',
@@ -41,10 +41,12 @@ describe('FileSystemSlice', () => {
             parentId: null,
             projectId: 'p1',
             userId: 'u1',
-            data: { url: 'http://test.com' }
+            data: { url: 'http://test.com' },
+            createdAt: Date.now(),
+            updatedAt: Date.now()
         };
 
-        (fileSystemService.createNode as any).mockResolvedValue(mockNewNode);
+        vi.mocked(fileSystemService.createNode).mockResolvedValue(mockNewNode);
 
         await slice.createFileNode('test.html', null, 'p1', 'u1', 'document', { url: 'http://test.com' });
 

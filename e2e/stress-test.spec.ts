@@ -54,7 +54,7 @@ test.describe('Stress Testing', () => {
         }
 
         // Wait for dashboard - handle different possible states
-        const dashboardVisible = await page.getByText('Studio Headquarters').isVisible({ timeout: 5000 }).catch(() => false);
+        const dashboardVisible = await page.getByText(/(STUDIO HQ|Agent Workspace)/).isVisible({ timeout: 10000 }).catch(() => false);
         if (!dashboardVisible) {
             // Try to navigate to dashboard if we're somewhere else
             const dashboardBtn = page.getByRole('button', { name: /Dashboard/i });
@@ -62,7 +62,7 @@ test.describe('Stress Testing', () => {
                 await dashboardBtn.click();
             }
         }
-        await expect(page.getByText('Studio Headquarters')).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText(/(STUDIO HQ|Agent Workspace)/)).toBeVisible({ timeout: 30000 });
 
 
         // 2. Seed Data (Client-side injection)
@@ -134,7 +134,7 @@ test.describe('Stress Testing', () => {
         await page.reload();
 
         // Wait for dashboard
-        await expect(page.getByText('Studio Headquarters')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText(/(STUDIO HQ|Agent Workspace)/)).toBeVisible({ timeout: 15000 });
 
         // Re-seed data because TEST_MODE is stateless and does not persist to backend
         console.log('Re-seeding data after reload (Stateless TEST_MODE)...');

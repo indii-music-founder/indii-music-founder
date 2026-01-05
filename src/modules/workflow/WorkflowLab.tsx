@@ -90,7 +90,7 @@ export default function WorkflowLab() {
                 // Mock viewport for now, ideally get from ReactFlow instance
                 const viewport = { x: 0, y: 0, zoom: 1 };
                 await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
-                console.log("Auto-saved workflow");
+                // console.log("Auto-saved workflow");
                 setSaveStatus('saved');
             } catch (error) {
                 console.error("Auto-save failed:", error);

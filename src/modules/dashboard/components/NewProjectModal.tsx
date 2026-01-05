@@ -56,7 +56,7 @@ export default function NewProjectModal({ isOpen, onClose, onCreate, error, init
                             {['creative', 'music', 'marketing', 'legal'].map((t) => (
                                 <button
                                     key={t}
-                                    onClick={() => setType(t as any)}
+                                    onClick={() => setType(t as 'creative' | 'music' | 'marketing' | 'legal')}
                                     className={`p-3 min-h-11 rounded-lg border text-sm font-medium capitalize transition-all ${type === t
                                         ? 'bg-neon-purple/20 border-neon-purple text-neon-purple'
                                         : 'bg-black/50 border-white/10 text-white/50 hover:border-white/30'

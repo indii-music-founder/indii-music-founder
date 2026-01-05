@@ -103,7 +103,10 @@ export default function VideoWorkflow() {
                 // Check current status to avoid unnecessary updates
                 const currentStatus = useVideoEditorStore.getState().status;
                 if (newStatus && newStatus !== currentStatus) {
-                    setJobStatus(newStatus as any);
+                    // Start of type guard
+                    if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
+                        setJobStatus(newStatus as 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching');
+                    }
                 }
 
                 if (data.progress !== undefined) {
@@ -162,7 +165,7 @@ export default function VideoWorkflow() {
                     firstFrame: videoInputs.firstFrame?.url,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
-                        console.log(`Segment ${current}/${total}`);
+                        console.info(`Segment ${current}/${total}`);
                     }
                 });
             } else {

@@ -83,7 +83,7 @@ const RoadManager: React.FC = () => {
 
             toast.success("Itinerary generated and saved");
         } catch (error) {
-            console.error("Itinerary Generation Failed:", error);
+            // console.error("Itinerary Generation Failed:", error);
             toast.error("Failed to generate itinerary");
         } finally {
             setIsGenerating(false);
@@ -101,7 +101,7 @@ const RoadManager: React.FC = () => {
             setLogisticsReport(result);
             toast.success("Logistics check complete");
         } catch (error) {
-            console.error("Logistics Check Failed:", error);
+            // console.error("Logistics Check Failed:", error);
             toast.error("Failed to check logistics");
         } finally {
             setIsCheckingLogistics(false);
@@ -121,7 +121,7 @@ const RoadManager: React.FC = () => {
             setNearbyPlaces(result.places);
             toast.success("Found gas stations nearby");
         } catch (error) {
-            console.error("Find Places Failed:", error);
+            // console.error("Find Places Failed:", error);
             toast.error("Failed to find gas stations");
         } finally {
             setIsFindingPlaces(false);
@@ -137,7 +137,7 @@ const RoadManager: React.FC = () => {
             setFuelLogistics(result);
             toast.success("Fuel logistics calculated");
         } catch (error) {
-            console.error("Fuel Calc Failed:", error);
+            // console.error("Fuel Calc Failed:", error);
             toast.error("Failed to calculate fuel logistics");
         } finally {
             setIsCalculatingFuel(false);

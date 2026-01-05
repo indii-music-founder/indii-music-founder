@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
+import type { ModuleId } from '@/core/constants';
 import { getColorForModule } from '../theme/moduleColors';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -149,7 +150,7 @@ function CommandBar() {
 
     const handleDelegate = useCallback((moduleId: string) => {
         if (moduleId !== 'dashboard') {
-            setModule(moduleId as any);
+            setModule(moduleId as ModuleId);
         }
         if (!isAgentOpen) {
             toggleAgentWindow();
@@ -200,8 +201,8 @@ function CommandBar() {
         ));
     }, []);
 
-    const handleSubmit = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!input.trim() && attachments.length === 0) return;
 
         setIsProcessing(true);
@@ -259,7 +260,7 @@ function CommandBar() {
                     <PromptInput
                         value={input}
                         onValueChange={setInput}
-                        onSubmit={() => handleSubmit({ preventDefault: () => { } } as any)}
+                        onSubmit={() => handleSubmit()}
                         className={cn(
                             "bg-transparent border-none shadow-none",
                             isDragging && "opacity-50"
@@ -350,7 +351,7 @@ function CommandBar() {
                                 </PromptInputAction>
                                 <button
                                     type="button"
-                                    onClick={(e) => handleSubmit(e as any)}
+                                    onClick={(e) => handleSubmit(e)}
                                     disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
                                 >

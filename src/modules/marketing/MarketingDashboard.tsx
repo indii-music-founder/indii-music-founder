@@ -113,7 +113,7 @@ export default function MarketingDashboard() {
                 { label: 'Brand Manager', value: 'brand' }
             ]}
             activeTab={activeTab}
-            onTabChange={(val) => setActiveTab(val as any)}
+            onTabChange={(val) => setActiveTab(val as 'overview' | 'generator' | 'brand')}
         >
             {activeTab === 'overview' ? (
                 <div className="animate-in fade-in duration-500">

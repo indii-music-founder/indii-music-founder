@@ -75,7 +75,7 @@ describe('AuthSlice', () => {
 
         let authCallback: (user: any) => void = () => { };
         vi.mocked(onAuthStateChanged).mockImplementation((auth, cb) => {
-            authCallback = cb as any;
+            authCallback = cb as (user: any) => void;
             return () => { };
         });
 

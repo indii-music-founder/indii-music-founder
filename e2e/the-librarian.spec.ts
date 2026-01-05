@@ -38,19 +38,19 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
 
     test('Ingest, Index, and Retrieve Real Data', async ({ page }) => {
         // 1. Load App and Login Real User (Anonymous)
-        await page.goto(BASE_URL);
+        await page.goto(STUDIO_URL);
         console.log(`[Librarian] Target Secret: ${SECRET_CODE}`);
 
         // Handle Login Flow
         // Check for "Get Started" or similar to trigger anonymous auth
         // Handle Login Flow (Using Provided Test Credentials)
         console.log('[Librarian] Attempting Login with Test Credentials...');
-        await page.getByLabel(/email/i).fill('the.walking.agency.det@gmail.com');
-        await page.getByLabel(/password/i).fill('qwertyuiop');
+        await page.getByLabel(/email/i).fill('automator@indiios.com');
+        await page.getByLabel(/password/i).fill('AutomatorPass123!');
         await page.getByRole('button', { name: /sign in/i }).click();
 
         // Wait for Dashboard (Real Auth Success)
-        await expect(page.getByRole('heading', { name: /Studio Headquarters/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('heading', { name: /STUDIO HQ/i })).toBeVisible({ timeout: 30000 });
         console.log('[Librarian] Dashboard Loaded. Auth Successful.');
 
         // 2. Navigate to Knowledge Base

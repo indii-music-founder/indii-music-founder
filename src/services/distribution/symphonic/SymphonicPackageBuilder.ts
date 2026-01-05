@@ -80,7 +80,7 @@ export class SymphonicPackageBuilder {
             packagedFiles.push(destCoverPath);
         }
 
-        console.log(`[SymphonicBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
+        console.info(`[SymphonicBuilder] Built package at ${packagePath} with ${packagedFiles.length} files.`);
 
         return { packagePath, files: packagedFiles };
     }

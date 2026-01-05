@@ -67,7 +67,7 @@ export default function ReferenceImageManager() {
     };
 
     return (
-        <div className="bg-[#161b22]/50 backdrop-blur-md border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+        <div className="bg-black/30 backdrop-blur-xl border border-white/5 rounded-xl p-6 relative overflow-hidden group hover:border-white/10 transition-all">
             {/* Background pattern */}
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <ImageIcon size={120} />
@@ -87,7 +87,7 @@ export default function ReferenceImageManager() {
                     <button
                         onClick={() => setShowCamera(true)}
                         disabled={isUploading}
-                        className="flex items-center gap-2 bg-[#0d1117] hover:bg-gray-800 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-bold transition-all border border-gray-700 active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 bg-black/40 hover:bg-black/60 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-bold transition-all border border-white/10 active:scale-95 disabled:opacity-50"
                     >
                         <Camera size={16} />
                         Use Camera
@@ -122,7 +122,7 @@ export default function ReferenceImageManager() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 relative z-10">
                 {referenceImages.map((img, idx) => (
-                    <div key={idx} className="group relative aspect-square bg-[#0d1117] rounded-xl overflow-hidden border border-gray-800/50 hover:border-blue-500/50 transition-all shadow-xl">
+                    <div key={idx} className="group relative aspect-square bg-black/50 rounded-xl overflow-hidden border border-white/5 hover:border-blue-500/50 transition-all shadow-xl">
                         <img
                             src={img.url}
                             alt={img.description}

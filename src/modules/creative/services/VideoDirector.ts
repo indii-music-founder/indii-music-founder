@@ -1,4 +1,5 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { SchemaType } from 'firebase/ai';
 import { AI } from '@/services/ai/AIService';
 import { useStore, HistoryItem } from '@/core/store';
 import { functions } from '@/services/firebase';
@@ -32,9 +33,7 @@ export class VideoDirector {
 
                 // 3. Critique
                 const critiquePrompt = `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it.`;
-                import { SchemaType } from 'firebase/ai';
 
-                // ... existing code ...
 
                 const schema = {
                     type: SchemaType.OBJECT,

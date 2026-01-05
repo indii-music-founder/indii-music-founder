@@ -7,7 +7,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 
-type HistoryItem = { role: string; parts: { text: string }[]; toolCall?: any };
+interface HistoryItem {
+    role: string;
+    parts: { text: string; inlineData?: { mimeType: string; data: string } }[];
+    toolCall?: {
+        name: string;
+        args: any;
+    } | null;
+}
 
 // Client-side option validation - ensures AI-provided options match the question type's whitelist
 const validateOptions = (questionType: string, options: string[]): string[] => {
@@ -73,30 +80,13 @@ export default function OnboardingPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history]);
 
-    // Debug Backdoor for E2E Verification
+    // Lifecycle log cleanup
     useEffect(() => {
-        (window as any).__TEST_INJECT_ASSET = (assetDetails: any) => {
-            console.log("INJECTING ASSET via Backdoor:", assetDetails);
-
-            // 1. Update Profile State
-            const updatedProfile = { ...userProfile };
-            if (!updatedProfile.brandKit) updatedProfile.brandKit = {} as any;
-            if (!updatedProfile.brandKit.brandAssets) updatedProfile.brandKit.brandAssets = [];
-
-            updatedProfile.brandKit.brandAssets.push(assetDetails.url);
-            setUserProfile(updatedProfile);
-
-            // 2. Mock Chat Interaction
-            const userMsg = { role: 'user', parts: [{ text: `[System Injection] Uploaded ${assetDetails.type}: ${assetDetails.url}` }] };
-            const aiMsg = { role: 'model', parts: [{ text: "Got it! I've added that to your brand kit. Looking good!" }] };
-
-            setHistory(prev => [...prev, userMsg, aiMsg]);
-        };
-
+        // console.log("[Onboarding] Component mounted");
         return () => {
-            delete (window as any).__TEST_INJECT_ASSET;
-        }
-    }, [userProfile, setUserProfile]);
+            // console.log("[Onboarding] Component unmounted");
+        };
+    }, []);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -190,7 +180,7 @@ export default function OnboardingPage() {
                             isSemanticallySimilar((msg.toolCall.args as any).insight, currentInsight)
                     );
                     if (alreadyShown) {
-                        console.log('[Onboarding] Deduped similar insight:', typeof currentInsight === 'string' ? currentInsight.substring(0, 50) : 'Non-string insight');
+                        // console.log('[Onboarding] Deduped similar insight:', typeof currentInsight === 'string' ? currentInsight.substring(0, 50) : 'Non-string insight');
                         uiToolCall = null; // Don't show duplicate insight
                     }
                 }
@@ -201,10 +191,10 @@ export default function OnboardingPage() {
                     const validatedOptions = validateOptions(args.question_type, args.options);
                     if (validatedOptions.length === 0) {
                         // All options invalid - fall back to whitelist
-                        console.log('[Onboarding] All options invalid, using whitelist for:', args.question_type);
+                        // console.log('[Onboarding] All options invalid, using whitelist for:', args.question_type);
                         args.options = OPTION_WHITELISTS[args.question_type] || args.options;
                     } else if (validatedOptions.length !== args.options.length) {
-                        console.log('[Onboarding] Filtered invalid options:', args.options.length - validatedOptions.length);
+                        // console.log('[Onboarding] Filtered invalid options:', args.options.length - validatedOptions.length);
                         args.options = validatedOptions;
                     }
                 }
@@ -236,9 +226,9 @@ export default function OnboardingPage() {
 
             setHistory(nextHistory);
 
-        } catch (error: any) {
-            console.error("Full Onboarding Error:", error);
-            const errorMessage = error.message || JSON.stringify(error);
+        } catch (error: unknown) {
+            // console.error("Full Onboarding Error:", error);
+            const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
             const errorResponses = [
                 `Hmm, something went sideways on my end. Mind trying that again?`,
                 `Tech hiccup — my bad. Hit me with that one more time?`,
@@ -288,7 +278,7 @@ export default function OnboardingPage() {
                 setUserProfile({ ...userProfile, bio: newBio });
             }
         } catch (error) {
-            console.error('[Onboarding] Failed to regenerate bio:', error);
+            // console.error('[Onboarding] Failed to regenerate bio:', error);
         } finally {
             setIsRegenerating(false);
         }

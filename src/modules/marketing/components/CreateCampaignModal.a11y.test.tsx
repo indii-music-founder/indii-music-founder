@@ -17,9 +17,16 @@ vi.mock('@/services/marketing/MarketingService', () => ({
 
 describe('CreateCampaignModal Accessibility', () => {
     beforeEach(() => {
-        (useToast as any).mockReturnValue({
+        vi.mocked(useToast).mockReturnValue({
             success: vi.fn(),
-            error: vi.fn()
+            error: vi.fn(),
+            showToast: vi.fn(),
+            info: vi.fn(),
+            warning: vi.fn(),
+            loading: vi.fn(),
+            dismiss: vi.fn(),
+            updateProgress: vi.fn(),
+            promise: vi.fn()
         });
     });
 

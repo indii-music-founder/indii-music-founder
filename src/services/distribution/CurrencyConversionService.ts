@@ -19,7 +19,7 @@ export class CurrencyConversionService {
     ['MXN', 17.0],
   ]);
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Convert an amount from one currency to another
@@ -60,7 +60,7 @@ export class CurrencyConversionService {
    */
   async updateRates(): Promise<void> {
     // TODO: Fetch live rates from an API
-    console.log('[CurrencyConversionService] updating rates (mock)');
+    console.info('[CurrencyConversionService] updating rates (mock)');
   }
 }
 

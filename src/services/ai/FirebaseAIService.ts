@@ -150,7 +150,7 @@ export class FirebaseAIService {
                 const result = await modelCallback.generateContent(
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
-                        : { contents: [{ role: 'user', parts: sanitizedPrompt }] } as any, // Cast to any until SDK types update
+                        : { role: 'user', parts: sanitizedPrompt } as unknown as Content,
                     // @ts-ignore - options param not in typed definition but supported by underlying implementation
                     options
                 );
@@ -555,7 +555,7 @@ export class FirebaseAIService {
             const modelCallback = getGenerativeModel(ai, { model: modelName });
 
             try {
-                // If batchEmbedContents is available, use it (need to cast modelCallback as any if types are missing)
+                // If batchEmbedContents is available, use it
                 // Otherwise fall back to Promise.all
                 const modelExtended = modelCallback as ExtendedGenerativeModel;
 
@@ -565,19 +565,13 @@ export class FirebaseAIService {
                     return result.embeddings.map((e) => e.values);
                 } else {
                     // Polyfill: Run in parallel
-                    // console.warn('[FirebaseAIService] batchEmbedContents not supported, falling back to parallel');
-                    if (typeof modelExtended.embedContent !== 'function') {
-                        const modelAny = modelCallback as any;
-                        if (typeof modelAny.embedContent === 'function') {
-                            const promises = contents.map(c => modelAny.embedContent({ content: c }));
-                            const results = await Promise.all(promises);
-                            return results.map((r: any) => r.embedding.values);
-                        }
-                        throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
+                    const modelWithEmbed = modelCallback as unknown as { embedContent: (req: any) => Promise<any> };
+                    if (typeof modelWithEmbed.embedContent === 'function') {
+                        const promises = contents.map(c => modelWithEmbed.embedContent({ content: c }));
+                        const results = await Promise.all(promises);
+                        return results.map(r => r.embedding.values);
                     }
-                    const promises = contents.map(c => modelExtended.embedContent!({ content: c }));
-                    const results = await Promise.all(promises);
-                    return results.map(r => r.embedding.values);
+                    throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
                 }
             } catch (error) {
                 throw this.handleError(error);

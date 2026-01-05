@@ -16,7 +16,7 @@ export default function AnalyticsView() {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return (
-        <div className="bg-[#161b22]/50 backdrop-blur-md border border-gray-800 rounded-xl p-6 relative overflow-hidden group">
+        <div className="bg-black/30 backdrop-blur-xl border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-all">
             {/* Animated focus gradient */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700" />
 
@@ -37,7 +37,7 @@ export default function AnalyticsView() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 relative z-10">
-                <div className="bg-[#0d1117]/80 p-4 rounded-lg border border-gray-800 hover:border-blue-500/50 transition-all group/stat">
+                <div className="bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all group/stat">
                     <div className="flex items-center gap-2 text-gray-500 mb-2">
                         <Zap size={14} className="group-hover/stat:text-blue-400" />
                         <span className="text-xs uppercase tracking-wider">Generations</span>
@@ -47,7 +47,7 @@ export default function AnalyticsView() {
                     </div>
                 </div>
 
-                <div className="bg-[#0d1117]/80 p-4 rounded-lg border border-gray-800 hover:border-purple-500/50 transition-all group/stat">
+                <div className="bg-black/40 p-4 rounded-xl border border-white/5 hover:border-purple-500/50 transition-all group/stat">
                     <div className="flex items-center gap-2 text-gray-500 mb-2">
                         <MessageSquare size={14} className="group-hover/stat:text-purple-400" />
                         <span className="text-xs uppercase tracking-wider">Messages</span>
@@ -57,7 +57,7 @@ export default function AnalyticsView() {
                     </div>
                 </div>
 
-                <div className="bg-[#0d1117]/80 p-4 rounded-lg border border-gray-800 hover:border-green-500/50 transition-all group/stat">
+                <div className="bg-black/40 p-4 rounded-xl border border-white/5 hover:border-green-500/50 transition-all group/stat">
                     <div className="flex items-center gap-2 text-gray-500 mb-2">
                         <Film size={14} className="group-hover/stat:text-green-400" />
                         <span className="text-xs uppercase tracking-wider">Video Secs</span>
@@ -67,7 +67,7 @@ export default function AnalyticsView() {
                     </div>
                 </div>
 
-                <div className="bg-[#0d1117]/80 p-4 rounded-lg border border-gray-800 hover:border-orange-500/50 transition-all group/stat">
+                <div className="bg-black/40 p-4 rounded-xl border border-white/5 hover:border-orange-500/50 transition-all group/stat">
                     <div className="flex items-center gap-2 text-gray-500 mb-2">
                         <TrendingUp size={14} className="group-hover/stat:text-orange-400" />
                         <span className="text-xs uppercase tracking-wider">Projects</span>

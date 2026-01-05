@@ -43,7 +43,26 @@ vi.mock('./hooks/usePublicist', () => ({
         setSearchQuery: vi.fn(),
         filterType: 'all',
         setFilterType: vi.fn(),
-        userProfile: { id: 'test-user' } as any
+        userProfile: {
+            id: 'test-user',
+            uid: 'test-user',
+            displayName: 'Test User',
+            email: 'test@example.com',
+            bio: 'Creative Director',
+            brandKit: {
+                colors: [],
+                fonts: '',
+                brandDescription: '',
+                negativePrompt: '',
+                socials: {},
+                brandAssets: [],
+                referenceImages: [],
+                releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
+            },
+            analyzedTrackIds: [],
+            knowledgeBase: [],
+            savedWorkflows: []
+        } as unknown as import('@/modules/workflow/types').UserProfile
     }))
 }));
 
@@ -96,7 +115,26 @@ describe('PublicistDashboard', () => {
             setSearchQuery: vi.fn(),
             filterType: 'all',
             setFilterType: vi.fn(),
-            userProfile: { id: 'test-user' } as any
+            userProfile: {
+                id: 'test-user',
+                uid: 'test-user',
+                displayName: 'Test User',
+                email: 'test@example.com',
+                bio: 'Creative Director',
+                brandKit: {
+                    colors: [],
+                    fonts: '',
+                    brandDescription: '',
+                    negativePrompt: '',
+                    socials: {},
+                    brandAssets: [],
+                    referenceImages: [],
+                    releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
+                },
+                analyzedTrackIds: [],
+                knowledgeBase: [],
+                savedWorkflows: []
+            } as unknown as import('@/modules/workflow/types').UserProfile
         });
 
         render(<PublicistDashboard />);

@@ -36,18 +36,28 @@ describe('useFinance', () => {
         loading: false,
         error: null,
     };
-    const mockToast = { error: vi.fn(), success: vi.fn() };
+    const mockToast = {
+        error: vi.fn(),
+        success: vi.fn(),
+        showToast: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        loading: vi.fn(),
+        dismiss: vi.fn(),
+        updateProgress: vi.fn(),
+        promise: vi.fn()
+    };
 
     beforeEach(() => {
         vi.clearAllMocks();
 
-        (useStore as any).mockReturnValue({
+        vi.mocked(useStore).mockReturnValue({
             finance: mockFinanceState,
             fetchEarnings: mockFetchEarnings,
             userProfile: mockUserProfile,
-        });
+        } as any);
 
-        (useToast as any).mockReturnValue(mockToast);
+        vi.mocked(useToast).mockReturnValue(mockToast);
     });
 
     it('should initialize with default states', () => {
@@ -67,8 +77,8 @@ describe('useFinance', () => {
     });
 
     it('should load expenses successfully', async () => {
-        const mockExpenses = [{ id: '1', amount: 100 } as any];
-        (financeService.getExpenses as any).mockResolvedValue(mockExpenses);
+        const mockExpenses = [{ id: '1', amount: 100 }];
+        vi.mocked(financeService.getExpenses).mockResolvedValue(mockExpenses as any);
 
         const { result } = renderHook(() => useFinance());
 
@@ -82,7 +92,7 @@ describe('useFinance', () => {
 
     it('should handle errors when loading expenses', async () => {
         const error = new Error('Fetch failed');
-        (financeService.getExpenses as any).mockRejectedValue(error);
+        vi.mocked(financeService.getExpenses).mockRejectedValue(error);
 
         const { result } = renderHook(() => useFinance());
 
@@ -96,11 +106,18 @@ describe('useFinance', () => {
     });
 
     it('should add expense successfully', async () => {
-        (financeService.addExpense as any).mockResolvedValue('new-id');
-        (financeService.getExpenses as any).mockResolvedValue([]);
+        vi.mocked(financeService.addExpense).mockResolvedValue('new-id');
+        vi.mocked(financeService.getExpenses).mockResolvedValue([]);
 
         const { result } = renderHook(() => useFinance());
-        const newExpense = { amount: 50, vendor: 'Test' } as any;
+        const newExpense = {
+            amount: 50,
+            vendor: 'Test',
+            userId: 'user-123',
+            category: 'general',
+            date: new Date().toISOString(),
+            description: 'Test expense'
+        };
 
         await act(async () => {
             const success = await result.current.actions.addExpense(newExpense);

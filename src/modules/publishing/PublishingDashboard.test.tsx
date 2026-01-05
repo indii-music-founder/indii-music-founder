@@ -80,19 +80,22 @@ describe('PublishingDashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Mock the granular selector pattern: useStore(state => state.foo)
-        (useStore as any).mockImplementation((selector: any) => {
+        // Mock the granular selector pattern: useStore(state => state.foo)
+        vi.mocked(useStore).mockImplementation(((selector: any) => {
             if (selector) {
                 return selector(mockStore);
             }
             return mockStore;
-        });
+        }) as any);
     });
 
     it('renders the dashboard title and stats', () => {
-        (useReleases as any).mockReturnValue({
+        vi.mocked(useReleases).mockReturnValue({
             releases: [],
             loading: false,
-            deleteRelease: mockDeleteRelease
+            deleteRelease: mockDeleteRelease,
+            error: null,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
@@ -106,11 +109,13 @@ describe('PublishingDashboard', () => {
     });
 
     it('shows skeleton loading state', () => {
-        (useReleases as any).mockImplementation(() => ({
+        vi.mocked(useReleases).mockReturnValue({
             releases: [],
             loading: true,
-            deleteRelease: mockDeleteRelease
-        }));
+            deleteRelease: mockDeleteRelease,
+            error: null,
+            archiveRelease: mockArchiveRelease
+        });
 
         render(<PublishingDashboard />);
 
@@ -119,10 +124,12 @@ describe('PublishingDashboard', () => {
     });
 
     it('renders empty state when no releases exist', () => {
-        (useReleases as any).mockReturnValue({
+        vi.mocked(useReleases).mockReturnValue({
             releases: [],
             loading: false,
-            deleteRelease: mockDeleteRelease
+            deleteRelease: mockDeleteRelease,
+            error: null,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
@@ -147,7 +154,7 @@ describe('PublishingDashboard', () => {
                 status: 'draft',
                 createdAt: new Date().toISOString()
             }
-        ];
+        ] as any[];
 
         (useReleases as any).mockReturnValue({
             releases: mockReleases,
@@ -183,11 +190,14 @@ describe('PublishingDashboard', () => {
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Apple', artistName: 'A', releaseType: 'Single' }, status: 'live', assets: {} },
             { id: '2', metadata: { trackTitle: 'Banana', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
-        ];
+        ] as any[];
 
-        (useReleases as any).mockReturnValue({
+        vi.mocked(useReleases).mockReturnValue({
             releases: mockReleases,
-            loading: false
+            loading: false,
+            deleteRelease: mockDeleteRelease,
+            error: null,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
@@ -212,7 +222,7 @@ describe('PublishingDashboard', () => {
 
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Delete Me' }, status: 'draft', assets: {} }
-        ];
+        ] as any[];
 
         (useReleases as any).mockReturnValue({
             releases: mockReleases,
@@ -253,13 +263,14 @@ describe('PublishingDashboard', () => {
 
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Archive Me' }, status: 'live', assets: {} }
-        ];
+        ] as any[];
 
-        (useReleases as any).mockReturnValue({
+        vi.mocked(useReleases).mockReturnValue({
             releases: mockReleases,
             loading: false,
             deleteRelease: mockDeleteRelease,
-            archiveRelease: mockArchiveRelease
+            archiveRelease: mockArchiveRelease,
+            error: null
         });
 
         render(<PublishingDashboard />);
@@ -279,9 +290,12 @@ describe('PublishingDashboard', () => {
     });
 
     it('navigates to distribution module via Manage Distributors', () => {
-        (useReleases as any).mockReturnValue({
+        vi.mocked(useReleases).mockReturnValue({
             releases: [],
-            loading: false
+            loading: false,
+            deleteRelease: mockDeleteRelease,
+            error: null,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);

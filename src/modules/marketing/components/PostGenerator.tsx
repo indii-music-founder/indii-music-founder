@@ -1,3 +1,4 @@
+import { Schema } from 'firebase/ai';
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Megaphone, Copy, Image as ImageIcon, Loader2, Wand2, Upload } from 'lucide-react';
@@ -52,11 +53,10 @@ export default function PostGenerator() {
 
         // Build Context from Brand Kit
         const brand = userProfile?.brandKit;
-        const profileAny = userProfile as unknown as Record<string, unknown>;
-        const brandAny = brand as unknown as Record<string, unknown>;
-        const artistName = (profileAny?.displayName as string) ?? 'Unknown';
-        const targetDemo = (brandAny?.targetAudience as string) ?? 'General';
-        const brandMood = (brandAny?.visualIdentity as string) ?? 'Neutral';
+        const artistName = userProfile?.displayName ?? 'Unknown';
+        // Use loose access for potentially non-typed brand fields if they exist in runtime
+        const targetDemo = (brand as any)?.targetAudience ?? 'General';
+        const brandMood = (brand as any)?.visualIdentity ?? 'Neutral';
         const brandContext = brand ? `
             Brand Name: ${artistName}
             Brand Description: ${brand.brandDescription || ''}
@@ -87,17 +87,18 @@ export default function PostGenerator() {
 
         try {
             // Using Gemini 3 for high-throughput generation with native structured output
-            const postSchema = {
+            const postSchema: Schema = {
                 type: 'object',
                 properties: {
                     caption: { type: 'string' },
                     hashtags: { type: 'array', items: { type: 'string' } },
                     imagePrompt: { type: 'string' }
-                },
-                required: ['caption', 'hashtags', 'imagePrompt']
+                } as any,
+                required: ['caption', 'hashtags', 'imagePrompt'],
+                nullable: false
             };
 
-            const data = await AI.generateStructuredData<any>(prompt, postSchema as any);
+            const data = await AI.generateStructuredData<any>(prompt, postSchema);
 
             const caption = data.caption || '';
             const hashtags = Array.isArray(data.hashtags) ? data.hashtags : [];
@@ -119,7 +120,7 @@ export default function PostGenerator() {
             }
 
         } catch (error) {
-            console.error("Text Gen Error:", error);
+            // console.error("Text Gen Error:", error);
             toast.error("Failed to generate post text.");
         } finally {
             setIsGenerating(false);
@@ -137,7 +138,7 @@ export default function PostGenerator() {
 
             setResult((prev: PostContent | null) => prev ? { ...prev, generatedImageBase64: base64 } : null);
         } catch (error) {
-            console.error("Image Gen Error:", error);
+            // console.error("Image Gen Error:", error);
             toast.error("Failed to generate image. Using text only.");
         } finally {
             setIsGeneratingImage(false);
@@ -170,7 +171,7 @@ export default function PostGenerator() {
             toast.success("Post scheduled for tomorrow!");
             // Optional: reset or redirect
         } catch (error) {
-            console.error("Schedule Error:", error);
+            // console.error("Schedule Error:", error);
             toast.error("Failed to schedule post.");
         } finally {
             setIsScheduling(false);

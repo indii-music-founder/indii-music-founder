@@ -49,8 +49,29 @@ describe('ragService', () => {
             id: 'user-123',
             displayName: 'Test User',
             email: 'test@example.com',
-            createdAt: Date.now(),
-            onboarding: { completed: true }
+            bio: 'Test Bio',
+            preferences: {},
+            analyzedTrackIds: [],
+            knowledgeBase: [],
+            savedWorkflows: [],
+            brandKit: {
+                colors: [],
+                fonts: '',
+                brandDescription: '',
+                negativePrompt: '',
+                socials: {},
+                brandAssets: [],
+                referenceImages: [],
+                releaseDetails: {
+                    title: '',
+                    type: '',
+                    artists: '',
+                    genre: '',
+                    mood: '',
+                    themes: '',
+                    lyrics: ''
+                }
+            }
         };
 
         const mockAudioTrack: AudioAnalysisJob | null = null;
@@ -59,15 +80,17 @@ describe('ragService', () => {
 
         it('should initialize corpus and query successfully', async () => {
             const mockAnswer = {
-                answer: {
-                    content: { parts: [{ text: 'This is the answer from RAG.' }] },
-                    groundingAttributions: [
-                        {
-                            sourceId: 'corpora/test-corpus/documents/doc1',
-                            content: { parts: [{ text: 'Source passage' }] }
-                        }
-                    ]
-                }
+                candidates: [
+                    {
+                        content: { parts: [{ text: 'This is the answer from RAG.' }] },
+                        groundingAttributions: [
+                            {
+                                sourceId: 'corpora/test-corpus/documents/doc1',
+                                content: { parts: [{ text: 'Source passage' }] }
+                            }
+                        ]
+                    }
+                ]
             };
 
             const mockFiles = [{ name: 'files/123', uri: 'gs://...', mimeType: 'text/plain' }];
@@ -86,7 +109,7 @@ describe('ragService', () => {
             expect(result.asset).toBeDefined();
             expect(result.asset.assetType).toBe('knowledge');
             expect(result.asset.content).toBe('This is the answer from RAG.');
-            expect(result.asset.tags).toContain('gemini-rag');
+            expect(result.asset.tags).toContain('rag');
             expect(mockOnUpdate).toHaveBeenCalledWith('Initializing Gemini Knowledge Base...');
         });
 

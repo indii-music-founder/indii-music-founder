@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Sequence, Video, Img, Audio, useCurrentFrame, interpolate, Easing } from 'remotion';
+import { AbsoluteFill, Sequence, Video, Img, Audio, useCurrentFrame, interpolate, Easing, EasingFunction } from 'remotion';
 import { VideoProject, VideoClip } from '../store/videoEditorStore';
 
 const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
@@ -85,7 +85,7 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             const value = interpolate(frame, inputRange, outputRange, {
                 extrapolateLeft: 'clamp',
                 extrapolateRight: 'clamp',
-                easing: easingFunctions as any
+                easing: easingFunctions as unknown as EasingFunction
             });
 
             switch (property) {

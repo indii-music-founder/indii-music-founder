@@ -14,6 +14,10 @@ export interface PersistedTrackAnalysis {
     updatedAt: any;
 }
 
+interface ElectronFile extends File {
+    path?: string;
+}
+
 export class MusicLibraryService {
     private static COLLECTION_NAME = 'music_library';
 
@@ -51,7 +55,7 @@ export class MusicLibraryService {
         const hash = this.generateTrackHash(file);
         const data: PersistedTrackAnalysis = {
             id: hash,
-            filePath: (file as any).path || file.name, // Electron 'path' vs Web 'name'
+            filePath: (file as ElectronFile).path || file.name, // Electron 'path' vs Web 'name'
             fileName: file.name,
             features,
             fingerprint,
@@ -62,7 +66,7 @@ export class MusicLibraryService {
         try {
             const docRef = doc(this.getUserCollection(), hash);
             await setDoc(docRef, data, { merge: true });
-            console.log(`[MusicLibrary] Saved analysis and metadata for ${file.name}`);
+            console.info(`[MusicLibrary] Saved analysis and metadata for ${file.name}`);
         } catch (error) {
             console.error("Failed to save track analysis:", error);
         }

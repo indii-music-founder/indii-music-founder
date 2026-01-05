@@ -126,7 +126,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
 
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(enrichedItem)
-                    .then(() => console.log("Saved to Firestore"))
+                    .then(() => { /* Saved to Firestore */ })
                     .catch(e => console.error("Save failed", e));
             });
         });

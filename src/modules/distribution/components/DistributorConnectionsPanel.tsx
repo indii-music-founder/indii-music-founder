@@ -17,7 +17,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
     }, []);
 
     const handleConnect = (id: string) => {
-        const adapter = DistributorService.getAdapter(id as any);
+        const adapter = DistributorService.getAdapter(id as import('@/services/distribution/types/distributor').DistributorId);
         if (adapter) {
             setSelectedAdapter(adapter);
             setIsModalOpen(true);

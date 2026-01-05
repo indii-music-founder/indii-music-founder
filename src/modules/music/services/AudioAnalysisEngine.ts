@@ -3,7 +3,9 @@ export class AudioAnalysisEngine {
     private audioContext: AudioContext;
 
     constructor() {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Safe access for webkit fallback
+        const win = window as unknown as { AudioContext: typeof AudioContext; webkitAudioContext: typeof AudioContext };
+        this.audioContext = new (win.AudioContext || win.webkitAudioContext)();
     }
 
     async analyze(input: File | ArrayBuffer) {

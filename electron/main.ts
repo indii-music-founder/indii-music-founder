@@ -7,11 +7,13 @@ import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
 import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
+import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { configureSecurity } from './security';
 
 // Configure logging
 log.transports.file.level = 'info';
 log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs/main.log');
+
 
 log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
 
@@ -200,6 +202,7 @@ if (!gotTheLock) {
         registerNetworkHandlers();
         registerCredentialHandlers();
         registerSFTPHandlers();
+        registerDistributionHandlers();
 
 
         setupIpcHandlers();

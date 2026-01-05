@@ -140,7 +140,7 @@ export default function MusicStudio() {
                 let features, fingerprint;
 
                 if (existingAnalysis) {
-                    console.log(`[MusicStudio] Cache Hit for ${result.file.name}`);
+                    // console.log(`[MusicStudio] Cache Hit for ${result.file.name}`);
                     features = existingAnalysis.features;
                     fingerprint = existingAnalysis.fingerprint;
 
@@ -168,7 +168,7 @@ export default function MusicStudio() {
                     } : t
                 ));
             } catch (err) {
-                console.error('Analysis failed:', err);
+                // console.error('Analysis failed:', err);
                 toast.error('Deep analysis failed, basic playback only.');
             } finally {
                 setIsAnalyzing(false);
@@ -234,7 +234,7 @@ export default function MusicStudio() {
                         } : t
                     ));
                 } catch (e) {
-                    console.error('Batch analysis failed for', track.name);
+                    // console.error('Batch analysis failed for', track.name);
                 }
             }
             toast.dismiss(batchToastId);

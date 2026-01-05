@@ -211,7 +211,7 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                 className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none mb-2"
                                 value={selectedClip.filter?.type || 'none'}
                                 onChange={(e) => {
-                                    const type = e.target.value as any;
+                                    const type = e.target.value as 'none' | 'blur' | 'grayscale' | 'sepia' | 'contrast' | 'brightness';
                                     if (type === 'none') {
                                         updateClip(selectedClip.id, { filter: undefined });
                                     } else {
@@ -248,7 +248,7 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                     className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
                                     value={selectedClip.transitionIn?.type || 'none'}
                                     onChange={(e) => {
-                                        const type = e.target.value as any;
+                                        const type = e.target.value as 'none' | 'fade' | 'slide' | 'wipe' | 'zoom';
                                         if (type === 'none') {
                                             updateClip(selectedClip.id, { transitionIn: undefined });
                                         } else {
@@ -279,7 +279,7 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                                     className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm focus:border-purple-500 outline-none"
                                     value={selectedClip.transitionOut?.type || 'none'}
                                     onChange={(e) => {
-                                        const type = e.target.value as any;
+                                        const type = e.target.value as 'none' | 'fade' | 'slide' | 'wipe' | 'zoom';
                                         if (type === 'none') {
                                             updateClip(selectedClip.id, { transitionOut: undefined });
                                         } else {

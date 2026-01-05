@@ -72,6 +72,39 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
     this.credentials = undefined;
   }
 
+  /**
+   * Uploads a directory of files to the connected SFTP server.
+   * @param localPath The absolute path to the local directory containing the bundle.
+   * @param remotePath The destination directory on the SFTP server.
+   */
+  protected async uploadBundle(localPath: string, remotePath: string): Promise<void> {
+    if (!this.connected || !this.credentials) {
+      throw new Error('Distributor not connected');
+    }
+
+    if (typeof window === 'undefined' || !window.electronAPI?.sftp) {
+      console.warn('[BaseDistributorAdapter] SFTP upload skipped (not running in Electron)');
+      return;
+    }
+
+    console.info(`[${this.name}] Starting SFTP upload: ${localPath} -> ${remotePath}`);
+
+    try {
+      // ensure remote directory exists (naive approach, assumes implementation handles mkdir -p)
+      // In a real implementation we might need a specifically exposed mkdir command, 
+      // but usually uploadDirectory handles it or we assume root.
+
+      const result = await window.electronAPI.sftp.uploadDirectory(localPath, remotePath);
+      if (!result.success) {
+        throw new Error(`SFTP Upload Failed: ${result.error}`);
+      }
+      console.info(`[${this.name}] Upload complete.`);
+    } catch (error) {
+      console.error(`[${this.name}] Upload error:`, error);
+      throw error;
+    }
+  }
+
   abstract createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult>;
   abstract updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult>;
   abstract getReleaseStatus(releaseId: string): Promise<ReleaseStatus>;

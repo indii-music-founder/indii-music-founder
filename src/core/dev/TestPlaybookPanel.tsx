@@ -153,7 +153,7 @@ export default function TestPlaybookPanel() {
                     onClick={async () => {
                         if (confirm('NUCLEAR RESET: This will clear all local storage, session storage, and sign out of Firebase. Continue?')) {
                             // Skip firebase logout
-                            console.log("Resetting local state...");
+                            console.info("Resetting local state...");
 
                             localStorage.clear();
                             sessionStorage.clear();

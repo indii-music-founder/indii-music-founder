@@ -37,6 +37,7 @@ describe('AI Caching (Browser Environment)', () => {
     // Force window to exist (although JSDOM usually handles this, explicit check helps)
     beforeEach(async () => {
         vi.clearAllMocks();
+        mockGenerateContent.mockReset(); // Use reset to clear 'Once' implementations
         await aiCache.clear(); // Start with empty cache
 
         // Setup default mock response

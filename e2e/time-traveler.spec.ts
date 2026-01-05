@@ -70,14 +70,12 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
 
 
         // 2. Open Project Creator (via Command Bar or Navigation)
-        // We'll use the Command Bar tool for speed as checking UI buttons can be flaky if ID changed.
-        const input = page.locator('input[type="text"][placeholder*="Describe"]');
-
-
+        const agentInput = page.getByPlaceholder(/Describe your task/i);
+        await expect(agentInput).toBeVisible();
 
         // 3. Command: Create Project
-        await input.fill(`Create a new marketing project called "${projectName}"`);
-        await page.locator('button[type="submit"]').click();
+        await agentInput.fill(`Create a new marketing project called "${projectName}"`);
+        await page.getByRole('button', { name: /run/i }).click();
 
         // 4. Wait for confirmation (Project Name should appear in UI/Header)
         await expect(page.locator(`text=${projectName}`)).toBeVisible({ timeout: 15000 });

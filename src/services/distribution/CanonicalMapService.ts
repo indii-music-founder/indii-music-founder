@@ -51,7 +51,7 @@ export class CanonicalMapService {
         const tracks = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks : [metadata];
 
         tracks.forEach(track => {
-            console.log(`[CanonicalMap] Linked: ISWC[${track.iswc}] -> ISRC[${track.isrc}] -> UPC[${metadata.upc}]`);
+            console.debug(`[CanonicalMap] Linked: ISWC[${track.iswc}] -> ISRC[${track.isrc}] -> UPC[${metadata.upc}]`);
         });
     }
 }

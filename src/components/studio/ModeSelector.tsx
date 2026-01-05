@@ -9,8 +9,8 @@ interface ModeSelectorProps {
 
 export default function ModeSelector({ mode, onChange }: ModeSelectorProps) {
     return (
-        <div className="flex justify-center mb-8">
-            <div className="bg-[#161b22] p-1 rounded-full border border-gray-800 flex relative">
+        <div className="flex justify-center">
+            <div className="bg-black/20 backdrop-blur-xl p-1 rounded-full border border-white/10 flex relative shadow-2xl">
                 {/* Active Background Pill */}
                 <motion.div
                     className="absolute top-1 bottom-1 bg-stone-700 rounded-full"

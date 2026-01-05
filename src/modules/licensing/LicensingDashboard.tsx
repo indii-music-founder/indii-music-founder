@@ -19,7 +19,8 @@ export default function LicensingDashboard() {
     // Global exposed service for agent interaction (Development Only)
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
-            (window as any).licensingService = licensingService;
+            const win = window as unknown as Window & { licensingService: typeof licensingService };
+            win.licensingService = licensingService;
         }
     }, []);
 
@@ -92,7 +93,7 @@ export default function LicensingDashboard() {
                                     title="No Pending Clearances"
                                     description="Start a new licensing deal to track its progress here. All drafted agreements will appear in this timeline."
                                     actionLabel="Draft New Deal"
-                                    onAction={() => console.log('Open draft modal')} // Placeholder for now
+                                    onAction={() => console.info('Open draft modal')} // Placeholder for now
                                     gradient="from-yellow-500/20 to-orange-500/20"
                                 />
                             ) : (
@@ -153,7 +154,7 @@ export default function LicensingDashboard() {
                                         title="Portfolio Empty"
                                         description="You haven't registered any active licenses yet. Import existing agreements or scan your catalog for potential sync opportunities."
                                         actionLabel="Import Agreement"
-                                        onAction={() => console.log('Import modal')}
+                                        onAction={() => console.info('Import modal')}
                                         secondaryLabel="Scan Catalog"
                                         onSecondary={() => toast.info("Beta: Semantic Deal Scanner initiated.")}
                                         gradient="from-emerald-500/20 to-teal-500/20"

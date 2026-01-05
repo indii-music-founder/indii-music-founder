@@ -7,13 +7,13 @@ import DistributionDashboard from './DistributionDashboard';
 // This verifies imports, syntax, and basic runtime integrity.
 
 try {
-    console.log('🧪 Verifying Distribution UI Components...');
+    console.info('🧪 Verifying Distribution UI Components...');
 
     // 1. Verify Exports
     if (!DistributionDashboard) throw new Error('DistributionDashboard export missing');
-    console.log('✅ DistributionDashboard imported successfully');
+    console.info('✅ DistributionDashboard imported successfully');
 
-    console.log('✨ UI Component Verification Passed (Static Analysis)');
+    console.info('✨ UI Component Verification Passed (Static Analysis)');
 } catch (error) {
     console.error('❌ Verification Failed:', error);
     process.exit(1);

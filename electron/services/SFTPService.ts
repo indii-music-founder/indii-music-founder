@@ -9,6 +9,14 @@ export interface SFTPConfig {
     privateKey?: string;
 }
 
+// Local definition to avoid cross-project import issues in Electron main process
+export class SFTPError extends Error {
+    constructor(public code: string, message: string, public originalError?: any) {
+        super(message);
+        this.name = 'SFTPError';
+    }
+}
+
 class SFTPService {
     private client: Client;
     private connected = false;
@@ -29,14 +37,14 @@ class SFTPService {
             });
             this.connected = true;
             console.info('[SFTPService] Connected.');
-        } catch (error) {
+        } catch (error: any) {
             console.error('[SFTPService] Connection failed:', error);
-            throw error;
+            throw new SFTPError('CONNECTION_FAILED', `Failed to connect to SFTP: ${error.message}`, error);
         }
     }
 
     async uploadDirectory(localPath: string, remotePath: string): Promise<string[]> {
-        if (!this.connected) throw new Error('SFTP client not connected');
+        if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
 
         console.info(`[SFTPService] Uploading directory: ${localPath} -> ${remotePath}`);
         const uploadedFiles: string[] = [];
@@ -59,9 +67,9 @@ class SFTPService {
 
             console.info(`[SFTPService] Upload complete: ${remotePath}`);
             return uploadedFiles;
-        } catch (error) {
+        } catch (error: any) {
             console.error(`[SFTPService] Upload failed:`, error);
-            throw error;
+            throw new SFTPError('UPLOAD_FAILED', `Failed to upload directory: ${error.message}`, error);
         }
     }
 

@@ -53,14 +53,14 @@ describe('MarketingDashboard', () => {
     };
 
     it('renders the dashboard title', () => {
-        (useMarketing as any).mockReturnValue(mockDefaultData);
+        vi.mocked(useMarketing).mockReturnValue(mockDefaultData as any);
         render(<MarketingDashboard />);
         expect(screen.getByText('Marketing Dashboard')).toBeInTheDocument();
         expect(screen.getByText('Plan, execute, and track your campaigns.')).toBeInTheDocument();
     });
 
     it('renders stats from hook', () => {
-        (useMarketing as any).mockReturnValue(mockDefaultData);
+        vi.mocked(useMarketing).mockReturnValue(mockDefaultData as any);
         render(<MarketingDashboard />);
         expect(screen.getByText('124,500')).toBeInTheDocument();
         expect(screen.getByText('4.8%')).toBeInTheDocument();
@@ -71,20 +71,21 @@ describe('MarketingDashboard', () => {
     });
 
     it('renders calendar grid with campaigns', () => {
-        (useMarketing as any).mockReturnValue(mockDefaultData);
+        vi.mocked(useMarketing).mockReturnValue(mockDefaultData as any);
         render(<MarketingDashboard />);
         expect(screen.getByText(/Campaign Calendar/)).toBeInTheDocument();
         expect(screen.getByText('Product Launch Teaser')).toBeInTheDocument();
     });
 
     it('shows loading state correctly', () => {
-        (useMarketing as any).mockReturnValue({
+        vi.mocked(useMarketing).mockReturnValue({
             stats: null,
             campaigns: [],
             isLoading: true,
             error: null,
             actions: { createCampaign: vi.fn(), refreshDashboard: vi.fn() }
-        });
+        } as any);
+
 
         render(<MarketingDashboard />);
         expect(screen.getAllByText('...')[0]).toBeInTheDocument();

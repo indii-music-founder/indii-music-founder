@@ -56,7 +56,7 @@ export class WorkflowEngine {
         }
 
         this.isRunning = false;
-        console.log("Workflow Execution Complete");
+        // console.log("Workflow Execution Complete");
     }
 
     private async executeNode(task: ExecutionTask) {
@@ -86,7 +86,7 @@ export class WorkflowEngine {
 
                 case 'outputNode':
                     output = task.inputs.data; // Just pass through
-                    console.log("Workflow Output:", output);
+                    // console.log("Workflow Output:", output);
                     break;
             }
 
@@ -144,8 +144,8 @@ export class WorkflowEngine {
                 prompt,
                 userProfile,
                 null,
-                (status) => console.log(`[Research]: ${status}`),
-                (id, status) => console.log(`[Doc ${id}]: ${status}`),
+                (_status) => { /* console.log(`[Research]: ${status}`) */ },
+                (_id, _status) => { /* console.log(`[Doc ${id}]: ${status}`) */ },
                 undefined // No fileContent currently available in workflow engine
             );
             return result.asset.content;
@@ -175,7 +175,7 @@ export class WorkflowEngine {
         };
 
         await saveWorkflowToStorage(workflowData);
-        console.log(`Workflow ${id} saved.`);
+        // console.log(`Workflow ${id} saved.`);
     }
 
     public async loadWorkflow(id: string): Promise<any | null> {

@@ -63,5 +63,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         performAction: (action: string, selector: string, text?: string) => ipcRenderer.invoke('agent:perform-action', action, selector, text),
         captureState: () => ipcRenderer.invoke('agent:capture-state'),
     },
+
+    // Distribution
+    distribution: {
+        stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),
+    },
+
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
 });

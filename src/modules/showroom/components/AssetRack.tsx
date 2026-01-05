@@ -259,7 +259,7 @@ export default function AssetRack({
                     {['Front', 'Back', 'Sleeve'].map((place) => (
                         <button
                             key={place}
-                            onClick={() => onPlacementChange(place as any)}
+                            onClick={() => onPlacementChange(place as 'Front' | 'Back' | 'Sleeve')}
                             className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors 
                                 ${placement === place
                                     ? 'bg-blue-500 text-white border-blue-400'

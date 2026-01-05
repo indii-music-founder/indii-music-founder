@@ -1,6 +1,6 @@
 
 import { StateCreator } from 'zustand';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -12,6 +12,7 @@ export interface AuthSlice {
 
     // Actions
     loginWithGoogle: () => Promise<void>;
+    loginWithEmail: (email: string, pass: string) => Promise<void>;
     logout: () => Promise<void>;
     initializeAuthListener: () => () => void;
 }
@@ -29,8 +30,20 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             await signInWithPopup(auth, provider);
             // State update handled by listener
         } catch (error: any) {
-            console.error("Login failed:", error);
+            // console.error("Login failed:", error);
             set({ authError: error.message, authLoading: false });
+        }
+    },
+
+    loginWithEmail: async (email: string, pass: string) => {
+        try {
+            set({ authLoading: true, authError: null });
+            await signInWithEmailAndPassword(auth, email, pass);
+            // State update handled by listener
+        } catch (error: any) {
+            // console.error("Email login failed:", error);
+            set({ authError: error.message, authLoading: false });
+            throw error;
         }
     },
 
@@ -41,7 +54,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             // Profile clearing should be handled by ProfileSlice reacting to user=null
             // or we can invoke it here if we had access to the store actions
         } catch (error: any) {
-            console.error("Logout failed:", error);
+            // console.error("Logout failed:", error);
             set({ authError: error.message });
         }
     },
@@ -49,7 +62,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     initializeAuthListener: () => {
         // Return unsubscribe function
         return onAuthStateChanged(auth, async (user) => {
-            console.log("[Auth] Auth state changed:", user ? user.uid : "No User");
+            // Log removed (Platinum Polish)
             set({ user, authLoading: false });
 
             if (user) {
@@ -61,7 +74,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     const userSnap = await getDoc(userRef);
 
                     if (!userSnap.exists()) {
-                        console.log("[Auth] Creating new user profile for", user.uid);
+                        // console.info("[Auth] Creating new user profile for", user.uid);
                         await setDoc(userRef, {
                             email: user.email,
                             displayName: user.displayName,
@@ -76,7 +89,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                         }, { merge: true });
                     }
                 } catch (e) {
-                    console.error("[Auth] Failed to sync user to Firestore", e);
+                    // console.error("[Auth] Failed to sync user to Firestore", e);
                 }
             }
         });

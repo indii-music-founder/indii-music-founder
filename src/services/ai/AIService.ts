@@ -1,3 +1,4 @@
+import { Schema } from 'firebase/ai';
 import {
     Content,
     ContentPart,
@@ -125,7 +126,7 @@ export class AIService {
     /**
      * HIGH LEVEL: Generate structured data using client-side SDK
      */
-    async generateStructuredData<T>(prompt: string | any[], schema: any, thinkingBudget?: number, systemInstruction?: string): Promise<T> {
+    async generateStructuredData<T>(prompt: string | any[], schema: Schema, thinkingBudget?: number, systemInstruction?: string): Promise<T> {
         return this.withRetry(() => firebaseAI.generateStructuredData<T>(prompt, schema, thinkingBudget, systemInstruction));
     }
 
@@ -205,13 +206,13 @@ export class AIService {
                                     return { text: '' } as TextPart;
                                 })
                             },
-                            finishReason: (c.finishReason as any) || 'STOP',
+                            finishReason: (c.finishReason as unknown as 'STOP' | 'MAX_TOKENS' | 'SAFETY' | 'RECITATION' | 'OTHER') || 'STOP',
                             index: c.index || 0
                         }));
 
                         if (options.cache !== false && cacheKey) {
                             // Default TTL or from options if added later
-                            this.cache.set(cacheKey, result.response as any, options.cacheTTL);
+                            this.cache.set(cacheKey, result.response, options.cacheTTL);
                         }
 
                         return wrapResponse({

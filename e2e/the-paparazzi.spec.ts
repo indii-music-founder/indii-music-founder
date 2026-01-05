@@ -162,11 +162,12 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         await expect(page.locator('text=paparazzi-test.jpg')).toBeVisible();
 
         // 6. Send Request
-        const input = page.locator('input[type="text"][placeholder*="Describe"]');
-        await input.fill('Analyze this image and generate a creative variation.');
+        const agentInput = page.getByPlaceholder(/Describe your task/i);
+        await expect(agentInput).toBeVisible();
+        await agentInput.fill('Analyze this image and generate a creative variation.');
 
         // Use explicit click regarding flaky Enter key in test environment
-        const runButton = page.locator('button[type="submit"]');
+        const runButton = page.getByRole('button', { name: /run/i });
         await expect(runButton).toBeEnabled();
         await runButton.click();
 

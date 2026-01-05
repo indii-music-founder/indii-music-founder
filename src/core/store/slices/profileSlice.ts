@@ -80,7 +80,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         return { userProfile: newProfile };
     }),
     loadUserProfile: async (uid: string) => {
-        console.log('[Profile] Loading user profile for:', uid);
+        console.info('[Profile] Loading user profile for:', uid);
+
         const storedOrgId = localStorage.getItem('currentOrgId');
         if (storedOrgId) {
             set({ currentOrganizationId: storedOrgId });
@@ -90,10 +91,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             // Try to get from Firestore first (via Service/Repo) 
             const profile = await getProfileFromStorage(uid);
             if (profile) {
-                console.log('[Profile] Loaded profile');
+                console.info('[Profile] Loaded profile for:', uid);
                 set({ userProfile: profile });
             } else {
-                console.log('[Profile] No profile found, creating default for', uid);
+                console.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user
                 const newProfile = { ...DEFAULT_USER_PROFILE, id: uid };
                 set({ userProfile: newProfile });
@@ -104,7 +105,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         }
     },
     logout: async () => {
-        console.log('[System] Logout requested - resetting session state...');
+        console.info('[System] Logout requested - resetting session state...');
         // In a no-auth world, "logout" might just reset preferences or switch to a guest profile.
         // For now, we just reload the page to clear transient state
         window.location.reload();

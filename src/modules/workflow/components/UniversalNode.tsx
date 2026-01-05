@@ -5,7 +5,13 @@ import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from 
 import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil } from 'lucide-react';
 import { useStore } from '@/core/store';
 
-const statusConfig = {
+interface StatusStyle {
+    icon: React.ElementType;
+    color: string;
+    animate?: boolean;
+}
+
+const statusConfig: Record<Status, StatusStyle> = {
     [Status.PENDING]: { icon: Hourglass, color: 'text-gray-400' },
     [Status.WORKING]: { icon: LoaderCircle, color: 'text-yellow-400', animate: true },
     [Status.DONE]: { icon: CheckCircle, color: 'text-green-400' },
@@ -21,9 +27,9 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
     // 1. Resolve Definition
     // For logic nodes, departmentName is 'Logic'.
-    // We cast data to any to access properties safely.
-    const deptName = (data as any).departmentName;
-    const jobId = (data as any).selectedJobId;
+    const isLogic = data.nodeType === 'logic';
+    const deptName = data.nodeType === 'department' ? data.departmentName : 'Logic';
+    const jobId = data.nodeType === 'department' ? data.selectedJobId : (data.nodeType === 'logic' ? data.jobId : undefined);
 
     const nodeDefinition = getNodeDefinition(deptName);
     const jobDefinition = getJobDefinition(deptName, jobId);
@@ -31,19 +37,20 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     const status = statusConfig[data.status] || statusConfig[Status.PENDING];
     const StatusIcon = status.icon;
     const Icon = nodeDefinition?.icon || Settings;
-    const isLogic = data.nodeType === 'logic';
 
     // 2. Result Rendering Logic
     const renderResultPreview = () => {
         if (data.status === Status.ERROR) {
             return <p className="text-red-400 text-[10px] p-2 break-all leading-tight">{String(data.result).substring(0, 50)}...</p>;
         }
-        if (isLogic) {
-            if (jobId === 'router') {
-                return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-indigo-300 text-[10px] px-2 text-center">Condition: {(data as any).config?.condition || "Not set"}</div>;
+
+        if (data.nodeType === 'logic') {
+            const logicData = data as LogicNodeData;
+            if (logicData.jobId === 'router') {
+                return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-indigo-300 text-[10px] px-2 text-center">Condition: {logicData.config?.condition || "Not set"}</div>;
             }
-            if (jobId === 'gatekeeper') {
-                return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-indigo-300 text-[10px] px-2 text-center">Message: {(data as any).config?.message || "Review needed"}</div>;
+            if (logicData.jobId === 'gatekeeper') {
+                return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-indigo-300 text-[10px] px-2 text-center">Message: {logicData.config?.message || "Review needed"}</div>;
             }
         }
 
@@ -68,7 +75,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
         // Placeholder for openPromptEditor action
-        console.log("Edit node:", id);
+        // console.log("Edit node:", id);
     };
 
     // 3. Dynamic Handle Calculation
@@ -91,18 +98,18 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                         <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div className="overflow-hidden">
-                        <p className="text-xs font-bold text-gray-200 truncate">{jobDefinition?.label || (data as any).label}</p>
-                        <p className="text-[10px] text-gray-500 truncate">{isLogic ? 'Control Flow' : (data as any).departmentName}</p>
+                        <p className="text-xs font-bold text-gray-200 truncate">{jobDefinition?.label || ('label' in data ? data.label : 'Node')}</p>
+                        <p className="text-[10px] text-gray-500 truncate">{isLogic ? 'Control Flow' : ('departmentName' in data ? data.departmentName : 'Department')}</p>
                     </div>
                 </div>
-                <StatusIcon className={`w-3.5 h-3.5 ${status.color} ${(status as any).animate ? 'animate-spin' : ''}`} />
+                <StatusIcon className={`w-3.5 h-3.5 ${status.color} ${status.animate ? 'animate-spin' : ''}`} />
             </div>
 
             {/* Body */}
             <div className="flex">
                 {/* Input Handles Column */}
                 <div className="flex flex-col justify-center py-3 gap-3 border-r border-gray-700/50 bg-gray-900/30 w-8 relative">
-                    {inputs.map((input, i) => (
+                    {inputs.map((input, _i) => (
                         <div key={input.id} className="relative group flex items-center justify-center h-3">
                             <Handle
                                 type="target"
@@ -130,7 +137,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     {/* Prompt/Config Preview Overlay */}
                     <div className="absolute top-0 left-0 right-0 p-2 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <p className="text-[10px] text-gray-300 line-clamp-2">
-                            {isLogic ? 'Configure Node' : (data as any).prompt}
+                            {isLogic ? 'Configure Node' : ('prompt' in data ? data.prompt : 'No prompt')}
                         </p>
                         <button
                             onClick={handleEdit}

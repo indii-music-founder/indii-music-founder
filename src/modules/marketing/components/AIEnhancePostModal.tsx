@@ -37,7 +37,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
             setEnhancement(result);
             toast.success('Post enhanced!');
         } catch (error) {
-            console.error('Enhancement failed:', error);
+            // console.error('Enhancement failed:', error);
             toast.error('Failed to enhance post. Please try again.');
         } finally {
             setIsEnhancing(false);

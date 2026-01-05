@@ -120,7 +120,7 @@ function validateModels(): void {
 
     // Log successful validation in development
     if (import.meta.env?.DEV) {
-        console.log('[AI_MODELS] Model policy validation passed. All models are approved.');
+        // console.log('[AI_MODELS] Model policy validation passed. All models are approved.');
     }
 }
 

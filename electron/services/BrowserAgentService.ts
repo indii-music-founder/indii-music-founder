@@ -1,5 +1,5 @@
 
-import { BrowserWindow, session } from 'electron';
+import { BrowserWindow, session, Event } from 'electron';
 
 /**
  * BrowserAgentService
@@ -65,7 +65,7 @@ export class BrowserAgentService {
 
         // Setup one-time fail handler
         const failParams = { url, errorCode: 0, errorDescription: '' };
-        const failHandler = (event: any, code: number, desc: string, failingUrl: string) => {
+        const failHandler = (event: Event, code: number, desc: string, failingUrl: string) => {
             if (failingUrl === url) {
                 failParams.errorCode = code;
                 failParams.errorDescription = desc;

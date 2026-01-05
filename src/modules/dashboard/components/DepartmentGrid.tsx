@@ -84,7 +84,7 @@ export default function DepartmentGrid() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => navigate(dept.path)}
-                    className="group relative bg-[#161b22] border border-gray-800 rounded-xl p-6 cursor-pointer hover:border-gray-600 transition-all hover:shadow-xl hover:shadow-black/50 overflow-hidden"
+                    className="group relative bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-6 cursor-pointer hover:border-white/20 transition-all hover:bg-black/60 hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
                 >
                     {/* Hover Gradient Background */}
                     <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 bg-gradient-to-br ${dept.color} transition-opacity duration-500`} />

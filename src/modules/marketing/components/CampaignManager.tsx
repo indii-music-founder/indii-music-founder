@@ -35,14 +35,17 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         try {
             const executeCampaign = httpsCallable(functions, 'executeCampaign');
             const response = await executeCampaign({ posts: selectedCampaign.posts });
-            const data = response.data as any;
+            interface ResponseData {
+                posts?: ScheduledPost[];
+            }
+            const data = response.data as ResponseData;
 
             if (data.posts) {
                 onUpdateCampaign({ ...selectedCampaign, posts: data.posts });
                 toast.success("Campaign execution completed!");
             }
         } catch (error) {
-            console.error("Campaign Execution Failed:", error);
+            // console.error("Campaign Execution Failed:", error);
             toast.error("Campaign execution failed");
         } finally {
             setIsExecuting(false);

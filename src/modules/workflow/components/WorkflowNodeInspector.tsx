@@ -15,7 +15,7 @@ export default function WorkflowNodeInspector() {
 
     useEffect(() => {
         if (selectedNode) {
-            setPrompt((selectedNode.data as any).prompt || '');
+            setPrompt(('prompt' in selectedNode.data ? selectedNode.data.prompt : '') || '');
         }
     }, [selectedNodeId, selectedNode]);
 
@@ -43,7 +43,7 @@ export default function WorkflowNodeInspector() {
             setPrompt(newPrompt);
             setAiInstruction('');
         } catch (e) {
-            console.error("AI Refinement Error", e);
+            // console.error("AI Refinement Error", e);
         } finally {
             setIsGenerating(false);
         }

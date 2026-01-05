@@ -5,19 +5,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import AIPredictionPanel from './AIPredictionPanel';
 
-// Fix for React 19 type mismatch
-const ArrowLeftIcon = ArrowLeft as any;
-const CalendarIcon = Calendar as any;
-const LayoutGridIcon = LayoutGrid as any;
-const ListIcon = List as any;
-const PlayIcon = Play as any;
-const CheckCircleIcon = CheckCircle as any;
-const AlertCircleIcon = AlertCircle as any;
-const ClockIcon = Clock as any;
-const MoreVerticalIcon = MoreVertical as any;
-const Edit3Icon = Edit3 as any;
-const ImageIconComponent = ImageIcon as any;
-const SparklesIcon = Sparkles as any;
+import { LucideIcon } from 'lucide-react';
+
+const ArrowLeftIcon = ArrowLeft as LucideIcon;
+const CalendarIcon = Calendar as LucideIcon;
+const LayoutGridIcon = LayoutGrid as LucideIcon;
+const ListIcon = List as LucideIcon;
+const PlayIcon = Play as LucideIcon;
+const CheckCircleIcon = CheckCircle as LucideIcon;
+const AlertCircleIcon = AlertCircle as LucideIcon;
+const ClockIcon = Clock as LucideIcon;
+const MoreVerticalIcon = MoreVertical as LucideIcon;
+const Edit3Icon = Edit3 as LucideIcon;
+const ImageIconComponent = ImageIcon as LucideIcon;
+const SparklesIcon = Sparkles as LucideIcon;
 
 interface CampaignDetailProps {
     campaign: CampaignAsset;
@@ -130,7 +131,14 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
     );
 };
 
-const StatCard = ({ label, value, subtext, icon }: any) => (
+interface StatCardProps {
+    label: string;
+    value: string | number;
+    subtext?: string;
+    icon: React.ReactNode;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, subtext, icon }) => (
     <div className="bg-gray-900/40 backdrop-blur-sm border border-white/5 rounded-xl p-4 flex flex-col gap-1">
         <div className="flex items-center gap-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
             {icon} {label}

@@ -182,7 +182,7 @@ export class VenueScoutService {
                 ];
             }
         } catch (e) {
-            console.error("Autonomous search failed", e);
+            // console.error("Autonomous search failed", e);
         }
         return [];
     }
@@ -246,7 +246,7 @@ export class VenueScoutService {
 
             if (!snapshot.empty) return;
 
-            console.log("Seeding Venues Database...");
+            // console.log("Seeding Venues Database...");
             const batch = writeBatch(db);
 
             SEED_VENUES.forEach(v => {
@@ -258,10 +258,10 @@ export class VenueScoutService {
             });
 
             await batch.commit();
-            console.log("Venues seeded successfully.");
+            // console.log("Venues seeded successfully.");
 
         } catch (e) {
-            console.error("Error seeding venues:", e);
+            // console.error("Error seeding venues:", e);
         }
     }
 }

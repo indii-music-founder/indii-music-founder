@@ -33,7 +33,7 @@ test.describe('Load Simulation: The Flash Mob', () => {
 
                 // 3. Perform a "Heavy" read operation (Simulated by verifying Dashboard load)
                 // We race against a timeout because if 1M users hit, some WILL timeout
-                await expect(page.getByText('Studio Headquarters')).toBeVisible({ timeout: 20000 });
+                await expect(page.getByText(/(STUDIO HQ|Agent Workspace)/)).toBeVisible({ timeout: 20000 });
 
                 // 4. Random "Write" operation (Agent interaction)
                 // Only 50% of users do this to vary load

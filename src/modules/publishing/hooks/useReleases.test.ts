@@ -23,7 +23,7 @@ describe('useReleases', () => {
 
     it('subscribes to Firestore on mount', () => {
         const mockUnsubscribe = vi.fn();
-        (onSnapshot as any).mockReturnValue(mockUnsubscribe);
+        vi.mocked(onSnapshot).mockReturnValue(mockUnsubscribe);
 
         const { unmount } = renderHook(() => useReleases('test-org-id'));
 
@@ -35,10 +35,10 @@ describe('useReleases', () => {
 
     it('updates releases when data is received', async () => {
         let snapshotCallback: (snapshot: any) => void;
-        (onSnapshot as any).mockImplementation((q: any, cb: any) => {
+        vi.mocked(onSnapshot).mockImplementation(((q: any, cb: any) => {
             snapshotCallback = cb;
             return vi.fn();
-        });
+        }) as any);
 
         const { result } = renderHook(() => useReleases('test-org-id'));
 
@@ -53,7 +53,10 @@ describe('useReleases', () => {
             ]
         };
 
-        snapshotCallback!(mockSnapshot);
+        // Ensure callback is assigned
+        if (snapshotCallback!) {
+            snapshotCallback(mockSnapshot);
+        }
 
         await waitFor(() => {
             expect(result.current.loading).toBe(false);
@@ -65,10 +68,10 @@ describe('useReleases', () => {
 
     it('handles errors from Firestore', async () => {
         let errorCallback: (err: any) => void;
-        (onSnapshot as any).mockImplementation((q: any, cb: any, errCb: any) => {
+        vi.mocked(onSnapshot).mockImplementation(((q: any, cb: any, errCb: any) => {
             errorCallback = errCb;
             return vi.fn();
-        });
+        }) as any);
 
         const { result } = renderHook(() => useReleases('test-org-id'));
 

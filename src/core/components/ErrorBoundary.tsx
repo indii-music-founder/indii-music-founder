@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             // If we haven't reloaded recently (within 10s), reload the page
             if (!lastReload || now - parseInt(lastReload) > RELOAD_THRESHOLD_MS) {
-                console.log('[ErrorBoundary] Detected chunk load error, reloading...');
+                console.warn('[ErrorBoundary] Detected chunk load error, reloading...');
                 sessionStorage.setItem(CHUNK_RELOAD_KEY, now.toString());
                 window.location.reload();
                 return;

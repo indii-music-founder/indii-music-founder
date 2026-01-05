@@ -77,30 +77,91 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             }
 
             // 2. Real Transmission (If SFTP is connected)
-            if (this.credentials?.sftpHost && window.electronAPI?.sftp) {
+            if (this.credentials?.sftpHost && window.electronAPI?.distribution?.stageRelease) {
                 console.info('[DistroKid] Executing real SFTP delivery...');
-                // In a real scenario, we'd save the XML to a temp file and upload the whole directory
-                // For Alpha, we're verifying the connection works.
+
+                const files: { type: 'content' | 'path'; data: string; name: string }[] = [
+                    { type: 'content', data: ernResult.xml!, name: 'batch.xml' }
+                ];
+
+                let resourceCounter = 1;
+
+                // 2a. Map Audio Files
+                const tracks = (metadata.tracks && metadata.tracks.length > 0)
+                    ? metadata.tracks
+                    : [metadata];
+
+                tracks.forEach((track, index) => {
+                    const ref = `A${resourceCounter++}`;
+                    let assetObj = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
+
+                    if (!assetObj && index === 0 && assets.audioFile) {
+                        assetObj = { ...assets.audioFile, trackIndex: 0 };
+                    }
+
+                    if (assetObj) {
+                        const ext = assetObj.format || 'wav';
+                        files.push({
+                            type: 'path',
+                            data: assetObj.url,
+                            name: `${ref}.${ext}`
+                        });
+                    }
+                });
+
+                // 2b. Map Cover Art
+                if (assets.coverArt) {
+                    const ref = `IMG${resourceCounter++}`;
+                    const ext = assets.coverArt.url.split('.').pop() || 'jpg';
+                    files.push({
+                        type: 'path',
+                        data: assets.coverArt.url,
+                        name: `${ref}.${ext}`
+                    });
+                }
+
+                // 3. Stage and Upload
+                const releaseId = metadata.id || `DK-${Date.now()}`;
+                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files);
+
+                if (!stagingValues.success || !stagingValues.packagePath) {
+                    throw new Error(stagingValues.error || 'Failed to stage release files locally');
+                }
+
+                console.info(`[DistroKid] Files staged at ${stagingValues.packagePath}. Starting upload...`);
+
+                // Using BaseDistributorAdapter's protected uploadBundle method
+                await this.uploadBundle(stagingValues.packagePath!, `/incoming/${metadata.upc || releaseId}`);
+
+                return {
+                    success: true,
+                    status: 'in_review',
+                    releaseId: releaseId,
+                    distributorReleaseId: `DK-${releaseId}`,
+                    metadata: {
+                        reviewRequired: true,
+                        estimatedLiveDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                    }
+                };
             }
 
-            // 3. Return Pending Status
+            // 4. Mock Fallback (Browser / No Creds)
+            console.warn('[DistroKid] SFTP unavailable or credentials missing. Returning MOCK success.');
             return {
                 success: true,
-                releaseId: metadata.id, // Internal ID
-                distributorReleaseId: `DK-${Date.now()}`,
-                status: 'processing',
+                status: 'validating',
+                releaseId: metadata.id,
+                distributorReleaseId: 'MOCK-DK-ID',
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    reviewRequired: false,
-                    isrcAssigned: 'US-DK1-25-00001', // Mock assignment until live
-                    upcAssigned: '123456789012', // Mock
+                    reviewRequired: true
                 }
             };
         } catch (e) {
+            console.error('[DistroKid] Create Release Error:', e);
             return {
                 success: false,
                 status: 'failed',
-                errors: [{ code: 'SUBMISSION_FAILED', message: e instanceof Error ? e.message : 'Unknown error' }]
+                errors: [{ code: 'SUBMISSION_FAILED', message: e instanceof Error ? e.message : String(e) }]
             };
         }
     }

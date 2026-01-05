@@ -149,7 +149,7 @@ export default function PublicistDashboard() {
                                 <div className="flex items-center gap-4">
                                     <select
                                         value={filterType}
-                                        onChange={(e) => setFilterType(e.target.value as any)}
+                                        onChange={(e) => setFilterType(e.target.value as 'all' | 'Live' | 'Scheduled' | 'Draft')}
                                         className="bg-white/5 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-sonic-purple/20 transition-all"
                                     >
                                         <option value="all" className="bg-slate-900">All Status</option>
