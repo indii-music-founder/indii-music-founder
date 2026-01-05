@@ -2,8 +2,9 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus } from 'lucide-react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { TimelineTrack } from './TimelineTrack';
+import { TimeRuler } from './TimeRuler';
 import { PIXELS_PER_FRAME } from '../constants';
-import { groupClipsByTrack, generateTimeRulerMarks } from '../utils/timelineUtils';
+import { groupClipsByTrack } from '../utils/timelineUtils';
 
 interface VideoTimelineProps {
     project: VideoProject;
@@ -67,12 +68,7 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
         updateKeyframe(clipId, property, frame, { easing: nextEasing });
     }, [removeKeyframe, updateKeyframe]);
 
-    // 1. Memoize time ruler marks
-    const timeRulerMarks = useMemo(() => {
-        return generateTimeRulerMarks(project.durationInFrames, project.fps);
-    }, [project.durationInFrames, project.fps]);
-
-    // 2. Pre-group clips by track ID
+    // 1. Pre-group clips by track ID
     const clipsByTrack = useMemo(() => {
         return groupClipsByTrack(project.clips);
     }, [project.clips]);
@@ -98,23 +94,12 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
 
             {/* Tracks Container */}
             <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-[--background] relative">
-                {/* Time Ruler */}
-                <div
-                    className="h-6 w-full border-b border-gray-800 mb-2 relative cursor-pointer hover:bg-gray-900"
-                    onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const frame = Math.round(x / PIXELS_PER_FRAME);
-                        handleSeek(Math.max(0, Math.min(frame, project.durationInFrames)));
-                    }}
-                >
-                    {timeRulerMarks.map((mark) => (
-                        <div key={mark.second} className="absolute top-0 bottom-0 border-l border-gray-800 text-[10px] text-gray-600 pl-1 pointer-events-none"
-                            style={{ left: mark.position }}>
-                            {mark.second}s
-                        </div>
-                    ))}
-                </div>
+                {/* Time Ruler (Optimized) */}
+                <TimeRuler
+                    durationInFrames={project.durationInFrames}
+                    fps={project.fps}
+                    onSeek={handleSeek}
+                />
 
                 {/* Playhead */}
                 <div
