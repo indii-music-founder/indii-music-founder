@@ -71,8 +71,8 @@ describe('AIService Integration (Client SDK)', () => {
     it('should delegate generateContentStream to firebaseAI', async () => {
         const mockStream = new ReadableStream({
             start(controller) {
-                // Return string, as FirebaseAIService does (so AIService wraps it in {text})
-                controller.enqueue('Chunk 1');
+                // Enqueue objects with text() method, as FirebaseAIService does
+                controller.enqueue({ text: () => 'Chunk 1' });
                 controller.close();
             }
         });

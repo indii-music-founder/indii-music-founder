@@ -9,12 +9,36 @@ interface CachedResponse {
     expiresAt: number;
 }
 
+/**
+ * Mock database interface for server-side/test environments
+ * where IndexedDB is not available.
+ */
+interface MockDatabase {
+    get: (storeName: string, key: string) => Promise<CachedResponse | null>;
+    put: (storeName: string, value: CachedResponse) => Promise<void>;
+    delete: (storeName: string, key: string) => Promise<void>;
+    clear: (storeName: string) => Promise<void>;
+}
+
 const DB_NAME = 'indiiOS-AI-Cache';
 const STORE_NAME = 'responses';
 const DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
 
+/**
+ * Creates a no-op mock database for server-side/test environments.
+ * All methods resolve successfully with null/void to avoid breaking code paths.
+ */
+function createMockDatabase(): MockDatabase {
+    return {
+        get: async () => null,
+        put: async () => {},
+        delete: async () => {},
+        clear: async () => {}
+    };
+}
+
 export class AIResponseCache {
-    private dbPromise: Promise<IDBPDatabase>;
+    private dbPromise: Promise<IDBPDatabase | MockDatabase>;
 
     constructor() {
         if (typeof window !== 'undefined') {
@@ -27,7 +51,7 @@ export class AIResponseCache {
             });
         } else {
             // No-op for server-side/test envs
-            this.dbPromise = Promise.resolve({} as any);
+            this.dbPromise = Promise.resolve(createMockDatabase());
         }
     }
 
