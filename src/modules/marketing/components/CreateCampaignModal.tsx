@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, Plus, Loader2 } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from '../types';
@@ -17,6 +17,24 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState('');
     const [platform, setPlatform] = useState('Instagram');
+
+    // Close on Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    // Close on backdrop click
+    const handleBackdropClick = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,10 +67,16 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={handleBackdropClick}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+        >
             <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
+                    <h2 id="modal-title" className="text-xl font-bold flex items-center gap-2">
                         <Plus className="text-blue-500" />
                         New Campaign
                     </h2>
@@ -76,6 +100,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             placeholder="e.g., Summer Single Release"
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
                             required
+                            autoFocus
                         />
                     </div>
 
