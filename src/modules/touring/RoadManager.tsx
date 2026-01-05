@@ -144,47 +144,30 @@ const RoadManager: React.FC = () => {
         }
     };
 
-    const handleUpdateStop = (updatedStop: any) => {
+    const handleUpdateStop = async (updatedStop: any) => {
         if (!itinerary) return;
 
-        // This should use the hook or service, but for now we fix the toast logic
-        // assuming an async update might happen here or in the future refactor.
-        // If we switch to useTouring, we'd call that.
-        // For this task, we ensure the toast is logically placed if it were async.
-
+        // Optimistic UI Update
         const newStops = itinerary.stops.map(s => {
             if (s.date === updatedStop.date) {
                 return updatedStop;
             }
             return s;
         });
+        setCurrentItinerary({ ...itinerary, stops: newStops });
 
-        // Simulate async save or actually call one if available
-        // setItinerary({ ...itinerary, stops: newStops });
-        // toast.success("Day sheet updated");
-
-        // Since we are in a refactor step, let's fix the immediate issue requested:
-        // "Success toast shown before async operation completes"
-
-        // Assuming updateItineraryStop is available or we mock it for now to satisfy the pattern
-        const updatePromise = Promise.resolve(); // Replace with actual API call
-
-        updatePromise.then(() => {
-             setCurrentItinerary({ ...itinerary, stops: newStops });
-             toast.success("Day sheet updated");
-        }).catch(err => {
+        try {
+             // Find index of stop
+            const index = itinerary.stops.findIndex(s => s.date === updatedStop.date);
+            if (index !== -1) {
+                await updateItineraryStop(index, updatedStop);
+                toast.success("Day sheet updated");
+            }
+        } catch (err) {
              console.error("Failed to update stop", err);
              toast.error("Failed to update stop");
-        });
-
-        // Find index of stop
-        const index = itinerary.stops.findIndex(s => s.date === updatedStop.date);
-        if (index !== -1) {
-            updateItineraryStop(index, updatedStop).catch(err => {
-                console.error("Failed to update stop", err);
-                toast.error("Failed to update stop");
-            });
-            toast.success("Day sheet updated");
+             // Revert or fetch latest state could be added here if needed,
+             // but strictly speaking, we are just connecting the API cleanly now.
         }
     };
 

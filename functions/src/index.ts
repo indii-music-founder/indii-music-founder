@@ -821,6 +821,7 @@ export const ragProxy = functions
 import * as gkeService from './devops/gkeService';
 import * as gceService from './devops/gceService';
 import * as bigqueryService from './analytics/bigqueryService';
+import * as touringService from './lib/touring';
 
 /**
  * List GKE Clusters
@@ -843,6 +844,15 @@ export const listGKEClusters = functions
             throw new functions.https.HttpsError('internal', error.message);
         }
     });
+
+// ----------------------------------------------------------------------------
+// Road Manager (Touring)
+// ----------------------------------------------------------------------------
+
+export const generateItinerary = touringService.generateItinerary;
+export const checkLogistics = touringService.checkLogistics;
+export const findPlaces = touringService.findPlaces;
+export const calculateFuelLogistics = touringService.calculateFuelLogistics;
 
 /**
  * Get GKE Cluster Status
