@@ -199,13 +199,14 @@ export default function PostGenerator() {
                     </h2>
 
                     {/* Platform Select */}
-                    <div className="mb-4">
+                    <div className="mb-4" role="group" aria-label="Select Platform">
                         <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">Platform</label>
                         <div className="grid grid-cols-2 gap-2">
                             {PLATFORMS.map(p => (
                                 <button
                                     key={p.id}
                                     onClick={() => setPlatform(p.id)}
+                                    aria-pressed={platform === p.id}
                                     className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${platform === p.id
                                         ? 'bg-pink-900/30 border border-pink-500/50 text-pink-200'
                                         : 'bg-[#0d1117] border border-gray-800 text-gray-400 hover:border-gray-600'
@@ -218,13 +219,14 @@ export default function PostGenerator() {
                     </div>
 
                     {/* Vibe Select */}
-                    <div className="mb-4">
+                    <div className="mb-4" role="group" aria-label="Select Vibe">
                         <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">Vibe</label>
                         <div className="flex flex-wrap gap-2">
                             {VIBES.map(v => (
                                 <button
                                     key={v}
                                     onClick={() => setVibe(v)}
+                                    aria-pressed={vibe === v}
                                     className={`px-3 py-1 rounded-full text-xs border transition-all ${vibe === v
                                         ? 'bg-white text-black border-white'
                                         : 'bg-transparent text-gray-400 border-gray-700 hover:border-gray-500'
@@ -238,8 +240,9 @@ export default function PostGenerator() {
 
                     {/* Topic Input */}
                     <div className="mb-6">
-                        <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">Concept / Topic</label>
+                        <label htmlFor="post-topic" className="block text-xs text-gray-500 uppercase font-semibold mb-2">Concept / Topic</label>
                         <textarea
+                            id="post-topic"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="e.g., Announcing my new single 'Void Ocean' dropping this Friday..."
@@ -289,7 +292,10 @@ export default function PostGenerator() {
                                             className="w-full h-full object-cover"
                                         />
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                            <button className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform">
+                                            <button
+                                                className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform"
+                                                aria-label="Use generated image"
+                                            >
                                                 <Upload size={20} />
                                             </button>
                                         </div>
@@ -309,6 +315,7 @@ export default function PostGenerator() {
                                     <button
                                         onClick={() => copyToClipboard(result.caption)}
                                         className="flex items-center gap-1 hover:text-white transition-colors"
+                                        aria-label="Copy caption to clipboard"
                                     >
                                         <Copy size={12} /> Copy
                                     </button>
@@ -317,6 +324,7 @@ export default function PostGenerator() {
                                     <button
                                         onClick={() => setIsEnhanceModalOpen(true)}
                                         className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                                        aria-label="Enhance caption with AI"
                                     >
                                         <Wand2 size={12} /> Enhance with AI
                                     </button>

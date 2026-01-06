@@ -14,3 +14,11 @@
 ## 2024-05-23 - [Modal Accessibility Pattern]
 **Learning:** This project lacks a shared `Modal` or `Dialog` component in `src/components/ui`. Developers are creating custom modals (like `CreateCampaignModal`) that often miss standard accessibility features (Escape key, backdrop click, focus management).
 **Action:** When working on modals in this repo, always manually verify and implement: 1. `useEffect` for 'Escape' key. 2. `onClick` handler for backdrop closing (checking `e.target === e.currentTarget`). 3. `role="dialog"` and `aria-modal="true"`. 4. `autoFocus` on the first interactive element.
+
+## 2025-05-24 - [Drag and Drop Accessibility]
+**Learning:** Drag-and-drop zones (like `AssetDropzone`) are often implemented as purely pointer-based `div`s, completely excluding keyboard users.
+**Action:** Transform these zones into "dual-mode" controls:
+1. Add `role="button"` and `tabIndex={0}` to the container.
+2. Implement `onKeyDown` (Enter/Space) to trigger the hidden file input's `click()`.
+3. Add visible focus indicators (`focus-visible:ring-2`) to guide keyboard users.
+4. Provide clear instructions via `aria-label` or helper text.

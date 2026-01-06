@@ -20,3 +20,10 @@
 **Prevention:**
 1.  Visually verify indentation and braces when merging rules.
 2.  Combine conditions for the same resource into a single match block using logical OR (`||`) operators.
+## 2025-05-26 - [CRITICAL] Unrestricted Administrative Functions
+**Vulnerability:** The `functions/src/index.ts` file exposed sensitive DevOps and Analytics functions (`listGKEClusters`, `restartGCEInstance`, `executeBigQueryQuery`, etc.) via `onCall` triggers that only checked for authentication (`!context.auth`), but not for administrative privileges. This would allow any authenticated user to restart production instances, scale clusters, or execute arbitrary SQL.
+**Learning:** Checking `context.auth` is insufficient for administrative tools. Cloud Functions do not have inherent Role-Based Access Control (RBAC) unless explicitly implemented.
+**Prevention:**
+1.  Implemented `requireAdmin` helper function that enforces a strict check for `context.auth.token.admin === true` (Firebase Custom Claim).
+2.  Applied this check to all sensitive functions.
+3.  Default behavior is now "Deny All" for these functions until an admin script explicitly grants the claim.

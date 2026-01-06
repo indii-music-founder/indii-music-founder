@@ -48,8 +48,10 @@ const ProductSelector = React.memo(({ productType, onTypeChange }: ProductSelect
                             onClick={() => onTypeChange(type)}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
+                            aria-pressed={isSelected}
+                            aria-label={`Select product type: ${type}`}
                             className={`
-                                relative p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300
+                                relative p-3 rounded-xl flex flex-col items-center gap-2 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                                 ${isSelected
                                     ? 'bg-white/10 border-white/20 shadow-lg shadow-blue-500/10'
                                     : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}
@@ -134,8 +136,12 @@ const AssetDropzone = React.memo(({ productAsset, onAssetUpload, theme }: AssetD
                 Source Graphic
             </label>
             <motion.div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload source graphic"
+                onKeyDown={handleKeyDown}
                 className={`
-                    flex-1 relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden
+                    flex-1 relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                     ${isDragging
                         ? 'border-blue-500 bg-blue-500/10'
                         : productAsset
@@ -271,7 +277,8 @@ export default function AssetRack({
                         <button
                             key={place}
                             onClick={() => onPlacementChange(place as 'Front' | 'Back' | 'Sleeve')}
-                            className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors 
+                            aria-pressed={placement === place}
+                            className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                                 ${placement === place
                                     ? 'bg-blue-500 text-white border-blue-400'
                                     : `bg-transparent ${subTextClass} ${theme ? theme.colors.border : 'border-white/5'} hover:bg-white/10`
@@ -293,8 +300,9 @@ export default function AssetRack({
                         max="200"
                         value={scale}
                         aria-label="Product scale"
+                        aria-label="Adjust product scale"
                         onChange={(e) => onScaleChange(Number(e.target.value))}
-                        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full"
+                        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                     />
                 </div>
             </div>
