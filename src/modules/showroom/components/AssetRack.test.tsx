@@ -42,6 +42,18 @@ describe('AssetRack', () => {
         expect(mockOnTypeChange).toHaveBeenCalledWith('Hoodie');
     });
 
+    it('has accessible dropzone', () => {
+        render(<AssetRack {...defaultProps} />);
+        const dropzone = screen.getByLabelText('Upload design file');
+        expect(dropzone).toHaveAttribute('role', 'button');
+        expect(dropzone).toHaveAttribute('tabIndex', '0');
+    });
+
+    it('has accessible scale slider', () => {
+        render(<AssetRack {...defaultProps} />);
+        const slider = screen.getByLabelText('Product scale');
+        expect(slider).toBeInTheDocument();
+        expect(slider).toHaveAttribute('type', 'range');
     it('has accessible attributes', () => {
         render(<AssetRack {...defaultProps} />);
 
