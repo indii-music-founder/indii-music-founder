@@ -30,30 +30,8 @@ export class AgentRegistry {
     }
 
     private initializeAgents() {
-        // Register Config-based Agents
-        // For now, we wrap the instantiation in a loader to defer BaseAgent overhead
-        AGENT_CONFIGS.forEach(config => {
-            // We register the config as metadata immediately so Orchestrator can see it
-            // We use the config itself as the "SpecializedAgent" shape for metadata purposes
-            // (BaseAgent config satisfies most of SpecializedAgent, but execute() is missing in config)
-
-            // Allow metadata to be just the config properties
-            const meta = {
-                id: config.id,
-                name: config.name,
-                description: config.description,
-                color: config.color,
-                category: config.category,
-                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
-            } as SpecializedAgent;
-
-            this.registerLazy(meta, async () => {
-                const { BaseAgent } = await import('./BaseAgent');
-                return new BaseAgent(config);
-            });
-        });
-
         // Register Complex Agents (Agent Zero)
+        // CRITICAL: Generalist MUST be registered first to ensure fallback availability
         try {
             const generalistKey = 'generalist';
             // Generalist metadata
@@ -70,10 +48,31 @@ export class AgentRegistry {
                 const { GeneralistAgent } = await import('./specialists/GeneralistAgent');
                 return new GeneralistAgent();
             });
-
+            // Log removed (Platinum Polish) - but we could use a silent internal flag if needed for debugging
         } catch (e) {
-            console.warn("Failed to register GeneralistAgent:", e);
+            console.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
         }
+
+        // Register Config-based Agents
+        AGENT_CONFIGS.forEach(config => {
+            try {
+                const meta = {
+                    id: config.id,
+                    name: config.name,
+                    description: config.description,
+                    color: config.color,
+                    category: config.category,
+                    execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+                } as SpecializedAgent;
+
+                this.registerLazy(meta, async () => {
+                    const { BaseAgent } = await import('./BaseAgent');
+                    return new BaseAgent(config);
+                });
+            } catch (e) {
+                console.warn(`[AgentRegistry] Failed to register agent '${config.id}':`, e);
+            }
+        });
     }
 
     register(agent: SpecializedAgent) {

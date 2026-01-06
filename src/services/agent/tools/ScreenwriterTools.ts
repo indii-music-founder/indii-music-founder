@@ -15,7 +15,7 @@ Your task is to convert raw text into a structured JSON screenplay format.
 Return ONLY valid JSON with the following structure:
 {
   "title": "Scene Title",
-  "author": "IndiiOS AI",
+  "author": "indii",
   "elements": [
     { "type": "slugline", "text": "INT. OFFICE - DAY" },
     { "type": "action", "text": "A busy newsroom..." },

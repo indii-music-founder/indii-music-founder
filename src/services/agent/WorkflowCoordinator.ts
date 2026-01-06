@@ -114,7 +114,7 @@ export class WorkflowCoordinator {
         // Direct call to FirebaseAI (Gemini) for fast response
         try {
             // Prepare a simple system prompt
-            const systemPrompt = `You are Indii, a creative assistant. 
+            const systemPrompt = `You are indii, a creative assistant. 
             The user has asked for a quick content generation. 
             Be direct, creative, and concise. Do not use tools.`;
 

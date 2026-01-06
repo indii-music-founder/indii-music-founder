@@ -45,7 +45,7 @@ export class GeneralistAgent extends BaseAgent {
     `;
 
     // Override the raw system prompt with our specialized protocol
-    systemPrompt = `You are Indii, the Autonomous Studio Manager (Agent Zero).
+    systemPrompt = `You are indii, the Autonomous Studio Manager (Agent Zero).
     ${this.AGENT0_PROTOCOL}
     
     RULES:
@@ -53,12 +53,7 @@ export class GeneralistAgent extends BaseAgent {
     2. When the task is complete, you MUST use "final_response" to finish.
     `;
 
-    // Base tools are usually handled by the agent superclass or passed in context, 
-    // but in AgentZero they were manually handled.
-    // Ideally, we replicate the BaseAgent's tool handling OR adapt AgentZero's manual loop.
-    // Since BaseAgent likely runs a loop, we should check if we can just define `tools` here.
-    // However, AgentZero logic had a specific 8-iteration loop. 
-    // BaseAgent probably has its own loop. Let's inspect BaseAgent next to ensure compatibility.
+    // Base tools are usually handled by the agent superclass or passed in context.
     // For now, I'm defining the necessary properties.
 
     tools = []; // Generalist uses the global TOOL_REGISTRY for now.
@@ -70,7 +65,7 @@ export class GeneralistAgent extends BaseAgent {
             description: 'General assistance, complex reasoning, fallback.',
             color: 'bg-stone-500',
             category: 'manager',
-            systemPrompt: 'You are Indii, the Autonomous Studio Manager (Agent Zero).',
+            systemPrompt: 'You are indii, the Autonomous Studio Manager (Agent Zero).',
             tools: []
         });
         this.functions = TOOL_REGISTRY;
@@ -134,7 +129,7 @@ export class GeneralistAgent extends BaseAgent {
                     remaining = remaining.substring(end + 1);
                 } catch (e) {
                     // Invalid JSON in this chunk (maybe falsely identified braces?), skip past this opening brace
-                    console.warn(`[GeneralistAgent] Failed to parse chunk: ${jsonStr.substring(0, 20)}...`);
+                    console.info(`[GeneralistAgent] Failed to parse chunk, attempting recovery: ${jsonStr.substring(0, 20)}...`);
                     remaining = remaining.substring(start + 1);
                 }
             } else {
@@ -146,6 +141,15 @@ export class GeneralistAgent extends BaseAgent {
         return { objects, remaining };
     }
 
+    /**
+     * Executes a task using the Agent Zero strategy.
+     * Implements the Curriculum (Mode A) and Executor (Mode B) internal modes.
+     * 
+     * @param task The task or prompt to execute
+     * @param context Optional execution context
+     * @param onProgress Optional callback for progress updates
+     * @returns The generated response text and any associated data
+     */
     async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<{ text: string; data?: any }> {
 
 
@@ -257,8 +261,9 @@ export class GeneralistAgent extends BaseAgent {
                 const streamIterator = {
                     [Symbol.asyncIterator]: async function* () {
                         // Check for getReader (Browser/Standard)
-                        if (stream && typeof (stream as any).getReader === 'function') {
-                            const reader = (stream as any).getReader();
+                        const rawStream = stream as unknown;
+                        if (rawStream && typeof (rawStream as { getReader?: Function }).getReader === 'function') {
+                            const reader = (rawStream as { getReader: Function }).getReader();
                             try {
                                 while (true) {
                                     const { done, value } = await reader.read();
@@ -270,8 +275,8 @@ export class GeneralistAgent extends BaseAgent {
                             }
                         }
                         // Check for AsyncIterability (Node/Polyfill)
-                        else if (stream && Symbol.asyncIterator in stream) {
-                            yield* (stream as any);
+                        else if (rawStream && typeof rawStream === 'object' && Symbol.asyncIterator in rawStream) {
+                            yield* rawStream as AsyncIterable<any>;
                         }
                         else {
                             // Fallback to the promise if stream is missing but supported (some environments)
@@ -352,7 +357,7 @@ export class GeneralistAgent extends BaseAgent {
                     }
                     // Bail out if we're stuck
                     if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
-                        console.error(`[GeneralistAgent] No progress after ${MAX_NO_PROGRESS} iterations, bailing out`);
+                        console.error('[GeneralistAgent] No progress after multiple iterations, terminating loop.');
                         return { text: 'Agent unable to complete task - no actionable response generated.' };
                     }
                 }

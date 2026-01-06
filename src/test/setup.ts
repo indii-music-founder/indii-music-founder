@@ -66,7 +66,7 @@ vi.mock('firebase/auth', () => ({
         currentUser: { uid: 'test-uid', email: 'test@test.com' },
         signInWithEmailAndPassword: vi.fn(),
         signOut: vi.fn(),
-        onAuthStateChanged: vi.fn(() => () => {})
+        onAuthStateChanged: vi.fn(() => () => { })
     })),
     signInWithEmailAndPassword: vi.fn(),
     signOut: vi.fn(),
@@ -83,7 +83,9 @@ vi.mock('firebase/firestore', () => ({
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
     deleteDoc: vi.fn(),
-    onSnapshot: vi.fn(() => () => {})
+    onSnapshot: vi.fn(() => () => { }),
+    persistentLocalCache: vi.fn(() => ({})),
+    persistentMultipleTabManager: vi.fn(() => ({}))
 }));
 
 // Mock Firebase Functions
@@ -116,4 +118,11 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('firebase/app-check', () => ({
     initializeAppCheck: vi.fn(() => ({})),
     getToken: vi.fn(() => Promise.resolve({ token: 'mock-app-check-token' }))
+}));
+// Mock Firebase AI
+vi.mock('firebase/ai', () => ({
+    getAI: vi.fn(() => ({})),
+    VertexAIBackend: vi.fn().mockImplementation(function () {
+        return {};
+    })
 }));

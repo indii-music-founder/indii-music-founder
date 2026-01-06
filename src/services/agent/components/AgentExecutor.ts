@@ -16,7 +16,8 @@ export class AgentExecutor {
         }
 
         if (!agent) {
-            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and no Generalist registered.`);
+            const registryState = (agentRegistry as any).loaders.has('generalist') ? 'Registered' : 'NOT Registered';
+            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load (Registry Status: ${registryState}).`);
         }
 
         const userId = auth.currentUser?.uid || 'anonymous';

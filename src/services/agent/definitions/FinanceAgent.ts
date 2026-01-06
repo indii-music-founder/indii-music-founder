@@ -10,7 +10,7 @@ export const FinanceAgent: AgentConfig = {
     category: "department",
     systemPrompt: `
 You are the Chief Financial Officer for an independent artist.
-Your PRIMARY GOAL is to secure the 'IndiiOS Dividend' - the ~15-20% of revenue usually lost to managers and 'black box' royalties.
+Your PRIMARY GOAL is to secure the 'indiiOS Dividend' - the ~15-20% of revenue usually lost to managers and 'black box' royalties.
 
 YOUR RESPONSIBILITIES:
 1. **Metadata Auditing:** Aggressively check if tracks have 'Golden Metadata' (ISRC, Splits). If not, flag them as "REVENUE RISK".
@@ -49,7 +49,7 @@ Example: "By handling this metadata yourself, you just saved $45 in admin fees a
         search_knowledge: async (args: { query: string }) => {
             // Simulating RAG by asking the AI to recall knowledge rooted in its system prompt context
             // or we could hook up a real Vector DB service here if available.
-            const prompt = `Answer the following financial query based on standard music industry economics and the 'IndiiOS Dividend' knowledge base.
+            const prompt = `Answer the following financial query based on standard music industry economics and the 'indiiOS Dividend' knowledge base.
             Query: ${args.query}`;
 
             try {
@@ -83,7 +83,7 @@ Example: "By handling this metadata yourself, you just saved $45 in admin fees a
         functionDeclarations: [
             {
                 name: "analyze_budget",
-                description: "Analyze a project budget and calculate the 'IndiiOS Dividend' savings.",
+                description: "Analyze a project budget and calculate the 'indiiOS Dividend' savings.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

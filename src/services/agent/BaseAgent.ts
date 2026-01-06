@@ -257,7 +257,8 @@ export class BaseAgent implements SpecializedAgent {
                     return toolError(`Consultation failed: ${error.message}`, 'EXECUTION_ERROR');
                 }
             },
-            schedule_task: async ({ targetAgentId, task, delayMinutes }: { targetAgentId: string; task: string; delayMinutes: number }) => {
+            schedule_task: async (args: Record<string, unknown>) => {
+                const { targetAgentId, task, delayMinutes } = args as { targetAgentId: string; task: string; delayMinutes: number };
                 const { proactiveService } = await import('./ProactiveService');
                 const executeAt = Date.now() + (delayMinutes * 60000);
                 const taskId = await proactiveService.scheduleTask(targetAgentId, task, executeAt);
@@ -267,7 +268,8 @@ export class BaseAgent implements SpecializedAgent {
                     message: `Task scheduled for ${new Date(executeAt).toLocaleString()}`
                 };
             },
-            subscribe_to_event: async ({ eventType, task }: { eventType: string; task: string }) => {
+            subscribe_to_event: async (args: Record<string, unknown>) => {
+                const { eventType, task } = args as { eventType: string; task: string };
                 const { proactiveService } = await import('./ProactiveService');
                 const taskId = await proactiveService.subscribeToEvent(this.id, eventType as any, task);
                 return {
@@ -276,7 +278,8 @@ export class BaseAgent implements SpecializedAgent {
                     message: `Agent ${this.name} subscribed to ${eventType}`
                 };
             },
-            send_notification: async ({ type, message }: { type: 'info' | 'success' | 'warning' | 'error'; message: string }) => {
+            send_notification: async (args: Record<string, unknown>) => {
+                const { type, message } = args as { type: 'info' | 'success' | 'warning' | 'error'; message: string };
                 const { events } = await import('@/core/events');
                 events.emit('SYSTEM_ALERT', { level: type, message });
                 return {
@@ -284,7 +287,8 @@ export class BaseAgent implements SpecializedAgent {
                     message: 'Notification sent'
                 };
             },
-            speak: async ({ text, voice }: { text: string; voice?: string }) => {
+            speak: async (args: Record<string, unknown>) => {
+                const { text, voice } = args as { text: string; voice?: string };
                 const { AI } = await import('@/services/ai/AIService');
                 const { audioService } = await import('@/services/audio/AudioService');
 
@@ -313,10 +317,21 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 }
             },
-            ...(config.functions || {} as any)
+            ...(config.functions || {} as Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>)
         };
     }
 
+    /**
+     * Common method to execute a task using the agent's capabilities.
+     * This method handles the AI interaction loop, tool calls, and progress reporting.
+     * 
+     * @param task The mission or objective to achieve
+     * @param context Execution context (org, project, brand, etc.)
+     * @param onProgress Callback for granular progress events (thought, tool use, tokens)
+     * @param signal AbortSignal for cancellation
+     * @param attachments Optional multimodal inputs (images, base64)
+     * @returns Standardized AgentResponse
+     */
     async execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import AI Service to prevent circular deps during registry loading
         const { AI } = await import('@/services/ai/AIService');
@@ -422,15 +437,16 @@ ${task}
                 config: {
                     ...AI_CONFIG.THINKING.LOW
                 },
-                tools: allTools as any,
+                tools: allTools as unknown as any[],
                 signal
             });
 
             // Consume stream for tokens (Robust handling)
             const streamIterator = {
                 [Symbol.asyncIterator]: async function* () {
-                    if (typeof stream.getReader === 'function') {
-                        const reader = stream.getReader();
+                    const rawStream = stream as unknown;
+                    if (rawStream && typeof (rawStream as { getReader?: Function }).getReader === 'function') {
+                        const reader = (rawStream as { getReader: Function }).getReader();
                         try {
                             while (true) {
                                 const { done, value } = await reader.read();
@@ -440,12 +456,11 @@ ${task}
                         } finally {
                             reader.releaseLock();
                         }
-                    } else if (Symbol.asyncIterator in stream) {
-                        // @ts-ignore
-                        yield* stream;
+                    } else if (rawStream && typeof rawStream === 'object' && Symbol.asyncIterator in (rawStream as object)) {
+                        yield* rawStream as AsyncIterable<any>;
                     } else {
                         // Not iterable, warn but don't crash
-                        console.warn('[BaseAgent] Stream is not iterable');
+                        console.info('[BaseAgent] Stream is not iterable, waiting for full response');
                     }
                 }
             };

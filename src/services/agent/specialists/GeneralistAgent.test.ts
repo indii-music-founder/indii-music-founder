@@ -51,10 +51,17 @@ describe('GeneralistAgent', () => {
 
         // Mock AI response to avoid actual call
         (AI.generateContentStream as any).mockResolvedValue({
-            getReader: () => ({
-                read: vi.fn()
-                    .mockResolvedValueOnce({ done: false, value: { text: () => JSON.stringify({ final_response: 'Understood.' }) } })
-                    .mockResolvedValueOnce({ done: true })
+            stream: {
+                getReader: () => ({
+                    read: vi.fn()
+                        .mockResolvedValueOnce({ done: false, value: { text: () => JSON.stringify({ final_response: 'Understood.' }) } })
+                        .mockResolvedValueOnce({ done: true }),
+                    releaseLock: vi.fn()
+                })
+            },
+            response: Promise.resolve({
+                text: () => JSON.stringify({ final_response: 'Understood.' }),
+                functionCalls: () => []
             })
         });
 

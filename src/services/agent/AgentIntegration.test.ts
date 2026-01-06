@@ -241,7 +241,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
                 text: () => 'super-mega-agent-9000'
             });
 
-            const generalistSpy = vi.spyOn(agentRegistry, 'get');
+            const generalistSpy = vi.spyOn(agentRegistry, 'getAsync');
 
             await service.sendMessage('Do something crazy');
 
@@ -252,7 +252,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
             (AI.generateContent as any).mockResolvedValueOnce({ text: () => 'brand' });
 
             // Make brand agent crash inside BaseAgent logic
-            (AI.generateContent as any).mockRejectedValueOnce(new Error('Simulated API Outage'));
+            (AI.generateContentStream as any).mockRejectedValueOnce(new Error('Simulated API Outage'));
 
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
@@ -260,7 +260,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
 
             // AgentService should receive the error text from BaseAgent's catch block
             const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
-            expect(lastMsg.role).toBe('model'); // Not system, because BaseAgent handled it
+            expect(lastMsg.role).toBe('model');
             expect(lastMsg.text).toContain('Error executing task');
             expect(lastMsg.text).toContain('Simulated API Outage');
 

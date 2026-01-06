@@ -509,6 +509,14 @@ export default function ChatOverlay() {
                                         {!isVoiceEnabled ? <VolumeX size={18} strokeWidth={1.5} /> : <Volume2 size={18} strokeWidth={1.5} />}
                                     </div>
                                 </button>
+
+                                <button
+                                    onClick={() => useStore.getState().toggleAgentWindow()}
+                                    className="p-2 rounded-xl transition-all duration-300 border border-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
+                                    title="Close"
+                                >
+                                    <X size={18} strokeWidth={1.5} />
+                                </button>
                             </div>
                         </div>
 
