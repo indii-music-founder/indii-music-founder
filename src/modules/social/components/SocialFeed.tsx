@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { SocialService } from '@/services/social/SocialService';
 import { SocialPost } from '@/services/social/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
@@ -11,6 +10,24 @@ import { useSocial } from '../hooks/useSocial';
 interface SocialFeedProps {
     userId?: string;
 }
+
+// ⚡ Bolt Optimization: Move constants outside component to prevent recreation on every render
+const SHORTCUTS = [
+    { label: "Announce Drop", icon: "🚀", text: "New Drop Alert! 🚨 [Product Name] is now live. Cop it before it's gone!" },
+    { label: "Behind the Scenes", icon: "🎬", text: "In the lab cooking up something special... 🧪 #StudioFlow" },
+    { label: "Thank You", icon: "🙏", text: "Big love to everyone showing support on the latest track! Y'all are the best. ❤️" }
+];
+
+// ⚡ Bolt Optimization: Move helper function outside to maintain stable reference for React.memo children
+// This prevents FeedItem from re-rendering when the parent re-renders (e.g. while typing in the textarea)
+const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
 
 // Memoized to prevent re-renders when parent state changes but props don't
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
@@ -24,13 +41,6 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
-
-    // Quick Post Shortcuts
-    const shortcuts = [
-        { label: "Announce Drop", icon: "🚀", text: "New Drop Alert! 🚨 [Product Name] is now live. Cop it before it's gone!" },
-        { label: "Behind the Scenes", icon: "🎬", text: "In the lab cooking up something special... 🧪 #StudioFlow" },
-        { label: "Thank You", icon: "🙏", text: "Big love to everyone showing support on the latest track! Y'all are the best. ❤️" }
-    ];
 
     // Drop State
     const [artistProducts, setArtistProducts] = useState<Product[]>([]);
@@ -64,10 +74,6 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
         setIsPosting(true);
         // Pass the selectedProductId to the createPost action
-        // Note: The useSocial hook's createPost might need to support this argument.
-        // We assume it passes ...args or we updated it.
-        // If not, we rely on the backend accepting it if we could pass it.
-        // For now, we assume strict signature: createPost(content, mediaUrls, productId?)
         const success = await createPost(
             newPostContent,
             [],
@@ -82,15 +88,6 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
         setIsPosting(false);
     };
 
-    const formatDate = (timestamp: number) => {
-        return new Date(timestamp).toLocaleDateString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
     return (
         <div className="flex flex-col h-full bg-[#0d1117] text-white">
             {/* Post Input */}
@@ -98,7 +95,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                 <div className="p-4 border-b border-gray-800">
                     {/* Shortcuts */}
                     <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                        {shortcuts.map(s => (
+                        {SHORTCUTS.map(s => (
                             <button
                                 key={s.label}
                                 onClick={() => setNewPostContent(s.text)}
