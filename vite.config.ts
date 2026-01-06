@@ -38,20 +38,43 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Indii OS',
+        name: 'Indii OS - Creative Studio',
         short_name: 'Indii',
-        description: 'AI-Native Creative Studio for Music Business',
+        description: 'AI-Native music business studio',
         theme_color: '#0f0f0f',
         background_color: '#0f0f0f',
         display: 'standalone',
         start_url: '/',
         scope: '/',
+        orientation: 'any',
         icons: [
           {
             src: 'favicon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable'
+          },
+          {
+            src: '/icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: '/icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ],
+        categories: ['productivity', 'music', 'creative'],
+        shortcuts: [
+          {
+            name: 'Quick Image',
+            short_name: 'Image',
+            description: 'Generate AI images instantly',
+            url: '/?module=creative',
+            icons: [{ src: 'favicon.svg', sizes: 'any' }]
           }
         ]
       },

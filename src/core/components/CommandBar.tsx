@@ -109,6 +109,9 @@ const AttachmentList = memo(({ attachments, onRemove }: { attachments: File[], o
 });
 
 function CommandBar() {
+    // Check if device is mobile
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [openDelegate, setOpenDelegate] = useState(false);
@@ -278,7 +281,10 @@ function CommandBar() {
                         {/* Toolbar */}
                         <PromptInputActions className="px-2 pb-2">
                             <div className="flex items-center gap-1">
-                                <input
+                                {/* Attachment Buttons - Hidden on mobile */}
+                                {!isMobile && (
+                                    <>
+                                        <input
                                     type="file"
                                     ref={fileInputRef}
                                     onChange={handleFileSelect}
@@ -317,8 +323,12 @@ function CommandBar() {
                                         <span className="text-xs font-medium">Camera</span>
                                     </button>
                                 </PromptInputAction>
+                                    </>
+                                )}
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
-                                <div className="relative">
+                                {/* Delegate Button - Hidden on mobile (available via "More" menu in MobileNav) */}
+                                {!isMobile && (
+                                    <div className="relative">
                                     <button
                                         type="button"
                                         onClick={() => setOpenDelegate(!openDelegate)}
@@ -336,7 +346,8 @@ function CommandBar() {
                                         onSelect={handleDelegate}
                                         onClose={handleCloseDelegate}
                                     />
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-2">

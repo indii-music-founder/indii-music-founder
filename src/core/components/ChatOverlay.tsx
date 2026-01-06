@@ -11,7 +11,7 @@ import ScreenplayRenderer from './ScreenplayRenderer';
 import CallSheetRenderer from './CallSheetRenderer';
 import ContractRenderer from './ContractRenderer';
 import { voiceService } from '@/services/ai/VoiceService';
-import { Volume2, VolumeX, ChevronDown, ChevronRight, FileJson } from 'lucide-react';
+import { Volume2, VolumeX, ChevronDown, ChevronRight, FileJson, X, Bot, Sparkles } from 'lucide-react';
 
 const CollapsibleJson = ({ data }: { data: any }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -228,6 +228,8 @@ export default function ChatOverlay() {
     const userProfile = useStore(state => state.userProfile);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
 
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
     const { isVoiceEnabled, setVoiceEnabled } = useVoice();
     const lastSpokenIdRef = useRef<string | null>(null);
 
@@ -261,31 +263,42 @@ export default function ChatOverlay() {
 
     if (!isAgentOpen) return null;
 
-    return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                // Restrict width to avoid covering the right sidebar (approx 300-350px)
-                // Use mr-[350px] or max-w with margin right
-                className="absolute bottom-full left-0 right-[350px] h-[60vh] bg-gradient-to-t from-[#0d1117] via-[#0d1117]/95 to-transparent p-4 pb-2 z-40 pointer-events-none"
-            >
-                <div className="pointer-events-auto h-full flex flex-col">
-                    {/* Voice Toggle */}
-                    <button
-                        onClick={() => setVoiceEnabled(!isVoiceEnabled)}
-                        className={`absolute top-4 right-8 p-2 rounded-full transition-all z-50 backdrop-blur-sm border ${isVoiceEnabled
-                                ? 'bg-purple-600/20 text-purple-400 border-purple-500/30'
-                                : 'bg-black/50 text-gray-500 border-white/10'
-                            }`}
-                        title={!isVoiceEnabled ? "Enable Voice Interface" : "Disable Voice Interface"}
-                    >
-                        {!isVoiceEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                    </button>
+    // Mobile: Full-screen modal
+    if (isMobile) {
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[70] flex flex-col bg-[#0d1117]"
+                >
+                    {/* Mobile Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-white/10 mobile-safe-top">
+                        <div className="flex items-center gap-2">
+                            {avatarUrl ? (
+                                <img
+                                    src={avatarUrl}
+                                    className="w-8 h-8 rounded-full object-cover border border-purple-500/30"
+                                    alt="AI"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold">
+                                    AI
+                                </div>
+                            )}
+                            <h2 className="text-white font-semibold">AI Assistant</h2>
+                        </div>
+                        <button
+                            onClick={() => useStore.getState().toggleAgentWindow()}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
 
-                    {/* Virtualized Container */}
-                    <div className="w-full h-full max-w-4xl mx-auto relative">
+                    {/* Mobile Content */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
                         <Virtuoso
                             ref={virtuosoRef}
                             style={{ height: '100%' }}
@@ -293,8 +306,95 @@ export default function ChatOverlay() {
                             itemContent={(index, msg) => <MessageItem msg={msg} avatarUrl={avatarUrl} />}
                             followOutput="smooth"
                             initialTopMostItemIndex={agentHistory.length > 0 ? agentHistory.length - 1 : 0}
-                            className="custom-scrollbar"
                         />
+                    </div>
+
+                    {/* Mobile Footer with Voice Toggle */}
+                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-[#0d1117] mobile-safe-bottom">
+                        <span className="text-xs text-gray-500">
+                            {agentHistory.length} messages
+                        </span>
+                        <button
+                            onClick={() => setVoiceEnabled(!isVoiceEnabled)}
+                            className={`p-2 rounded-full transition-all border ${isVoiceEnabled
+                                    ? 'bg-purple-600/20 text-purple-400 border-purple-500/30'
+                                    : 'bg-black/50 text-gray-500 border-white/10'
+                                }`}
+                        >
+                            {!isVoiceEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                        </button>
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+        );
+    }
+
+    // Desktop: Bottom overlay
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                // Restrict width to avoid covering the right sidebar (approx 300-350px)
+                className="absolute bottom-full left-4 right-[350px] mb-2 h-[60vh] rounded-xl border border-white/10 shadow-2xl overflow-hidden z-40 pointer-events-none origin-bottom"
+                style={{
+                    background: 'rgba(13, 17, 23, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 -10px 40px rgba(0,0,0,0.5)'
+                }}
+            >
+                <div className="pointer-events-auto h-full flex flex-col">
+                    {/* Desktop Header */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5 backdrop-blur-md">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-900/40 border border-white/10">
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Indii" className="w-full h-full rounded-full object-cover" />
+                                ) : (
+                                    <Sparkles size={16} className="text-white" />
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-white leading-none flex items-center gap-2">
+                                    Talk to Indii
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                        BETA
+                                    </span>
+                                </h3>
+                                <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
+                                    AI Orchestrator & Studio Assistant
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setVoiceEnabled(!isVoiceEnabled)}
+                                className={`p-2 rounded-lg transition-all border ${isVoiceEnabled
+                                    ? 'bg-purple-600/20 text-purple-400 border-purple-500/30 shadow-[0_0_10px_rgba(147,51,234,0.3)]'
+                                    : 'bg-black/20 text-gray-500 border-white/5 hover:bg-white/5 hover:text-gray-300'
+                                    }`}
+                                title={!isVoiceEnabled ? "Enable Voice Interface" : "Disable Voice Interface"}
+                            >
+                                {!isVoiceEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Virtualized Container */}
+                    <div className="flex-1 min-h-0 bg-transparent">
+                        <div className="w-full h-full max-w-4xl mx-auto relative px-2">
+                            <Virtuoso
+                                ref={virtuosoRef}
+                                style={{ height: '100%' }}
+                                data={agentHistory}
+                                itemContent={(index, msg) => <MessageItem msg={msg} avatarUrl={avatarUrl} />}
+                                followOutput="smooth"
+                                initialTopMostItemIndex={agentHistory.length > 0 ? agentHistory.length - 1 : 0}
+                                className="custom-scrollbar"
+                            />
+                        </div>
                     </div>
                 </div>
             </motion.div>

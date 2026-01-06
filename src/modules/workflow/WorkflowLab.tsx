@@ -12,8 +12,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 
 export default function WorkflowLab() {
+    // Hooks must be called unconditionally before early returns
     const { nodes, edges, setNodes, setEdges, user } = useStore();
     const [isRunning, setIsRunning] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
@@ -21,6 +23,54 @@ export default function WorkflowLab() {
 
     // Alias user for compatibility
     const currentUser = user;
+
+    const [showGenerator, setShowGenerator] = useState(false);
+    const [showTemplates, setShowTemplates] = useState(false);
+    const [showLoadModal, setShowLoadModal] = useState(false);
+    const [generatorPrompt, setGeneratorPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+    // Auto-save logic (must be called before early return)
+    useEffect(() => {
+        if (!currentWorkflowId || !currentUser || nodes.length === 0) return;
+
+        setSaveStatus('unsaved');
+
+        const saveTimer = setTimeout(async () => {
+            setSaveStatus('saving');
+            try {
+                const engine = new WorkflowEngine(nodes, edges, setNodes);
+                // Mock viewport for now, ideally get from ReactFlow instance
+                const viewport = { x: 0, y: 0, zoom: 1 };
+                await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
+                // console.log("Auto-saved workflow");
+                setSaveStatus('saved');
+            } catch (error) {
+                console.error("Auto-save failed:", error);
+                setSaveStatus('unsaved'); // Revert to unsaved on error
+            }
+        }, 2000); // Debounce 2s
+
+        return () => clearTimeout(saveTimer);
+    }, [nodes, edges, workflowName, currentWorkflowId, currentUser, setNodes]);
+
+    // Check if device is mobile AFTER hooks are called
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    if (isMobile) {
+        return (
+            <ModuleErrorBoundary moduleName="Workflow Lab">
+                <MobileOnlyWarning
+                    featureName="Workflow Lab"
+                    reason="The node-based workflow editor requires a larger screen with mouse controls. Try our simplified Creative Studio or Marketing features on mobile."
+                    suggestedModule="creative"
+                />
+            </ModuleErrorBoundary>
+        );
+    }
 
     const handleRunWorkflow = async () => {
         if (nodes.length === 0) return;
@@ -34,14 +84,6 @@ export default function WorkflowLab() {
             setIsRunning(false);
         }
     };
-
-    const [showGenerator, setShowGenerator] = useState(false);
-    const [showTemplates, setShowTemplates] = useState(false);
-    const [showLoadModal, setShowLoadModal] = useState(false);
-    const [generatorPrompt, setGeneratorPrompt] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
-    const [isSaving, setIsSaving] = useState(false);
 
     const handleGenerateWorkflow = async () => {
         if (!generatorPrompt.trim()) return;
@@ -74,32 +116,6 @@ export default function WorkflowLab() {
             setShowTemplates(false);
         }
     };
-
-    const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-
-    // Auto-save logic
-    useEffect(() => {
-        if (!currentWorkflowId || !currentUser || nodes.length === 0) return;
-
-        setSaveStatus('unsaved');
-
-        const saveTimer = setTimeout(async () => {
-            setSaveStatus('saving');
-            try {
-                const engine = new WorkflowEngine(nodes, edges, setNodes);
-                // Mock viewport for now, ideally get from ReactFlow instance
-                const viewport = { x: 0, y: 0, zoom: 1 };
-                await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
-                // console.log("Auto-saved workflow");
-                setSaveStatus('saved');
-            } catch (error) {
-                console.error("Auto-save failed:", error);
-                setSaveStatus('unsaved'); // Revert to unsaved on error
-            }
-        }, 2000); // Debounce 2s
-
-        return () => clearTimeout(saveTimer);
-    }, [nodes, edges, workflowName, currentWorkflowId, currentUser]);
 
     const handleSaveWorkflow = async () => {
         if (!currentUser) {

@@ -261,8 +261,8 @@ export default function App() {
                         )}
                     </main>
 
-                    {/* Right Panel - Hidden for standalone modules */}
-                    {showChrome && (
+                    {/* Right Panel - Hidden for standalone modules and mobile */}
+                    {showChrome && typeof window !== 'undefined' && window.innerWidth >= 768 && (
                         <ErrorBoundary>
                             <RightPanel />
                         </ErrorBoundary>

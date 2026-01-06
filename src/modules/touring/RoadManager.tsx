@@ -9,6 +9,7 @@ import { OnTheRoadTab } from './components/OnTheRoadTab';
 
 import { useTouring } from './hooks/useTouring';
 import { Itinerary, ItineraryStop } from './types';
+import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 
 interface LogisticsReport {
     isFeasible: boolean;
@@ -17,6 +18,7 @@ interface LogisticsReport {
 }
 
 const RoadManager: React.FC = () => {
+    // Hooks must be called unconditionally before early returns
     const toast = useToast();
     const {
         currentItinerary: itinerary,
@@ -49,6 +51,19 @@ const RoadManager: React.FC = () => {
 
     const [fuelLogistics, setFuelLogistics] = useState<any>(null);
     const [isCalculatingFuel, setIsCalculatingFuel] = useState(false);
+
+    // Check if device is mobile AFTER hooks are called
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    if (isMobile) {
+        return (
+            <MobileOnlyWarning
+                featureName="Road Manager"
+                reason="The calendar view and itinerary planning features require a larger screen for optimal tour scheduling and logistics management."
+                suggestedModule="marketing"
+            />
+        );
+    }
 
     const handleAddLocation = () => {
         if (newLocation.trim()) {

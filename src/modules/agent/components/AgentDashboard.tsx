@@ -7,14 +7,29 @@ import { Venue } from '../types';
 import BrowserAgentTester from './BrowserAgentTester';
 import { VenueCard } from './VenueCard';
 import { ScoutMapVisualization } from './ScoutMapVisualization';
+import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 
 const AgentDashboard: React.FC = () => {
+    // Hooks must be called unconditionally before early returns
     const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser'>('scout');
     const { venues, isScanning, setScanning, addVenue } = useAgentStore();
     const [city, setCity] = useState('Nashville');
     const [genre, setGenre] = useState('Rock');
     const [isAutonomous, setIsAutonomous] = useState(false);
     const [scanStatus, setScanStatus] = useState<string>('Ready to deploy');
+
+    // Check if device is mobile AFTER hooks are called
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    if (isMobile) {
+        return (
+            <MobileOnlyWarning
+                featureName="Agent Dashboard"
+                reason="The venue scout and map visualization features require a larger screen for optimal map interaction and venue analysis."
+                suggestedModule="touring"
+            />
+        );
+    }
 
     const handleScan = async () => {
         setScanning(true);
