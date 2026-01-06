@@ -1,23 +1,16 @@
-/**
- * Firebase Cloud Function: Get User Subscription
- *
- * Retrieves the current subscription for a user.
- * If no subscription exists, creates a free tier subscription.
- */
-
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { Subscription, SubscriptionTier } from '../../../src/services/subscription/types';
 
-export const getSubscription = onCall(async (request) => {
+export const getSubscription = onCall({ cors: true }, async (request) => {
   const { userId } = request.data;
 
   if (!userId) {
-    throw new Error('User ID is required');
+    throw new HttpsError('invalid-argument', 'User ID is required');
   }
 
   if (userId !== request.auth?.uid) {
-    throw new Error('Unauthorized: User ID does not match authenticated user');
+    throw new HttpsError('unauthenticated', 'Unauthorized: User ID does not match authenticated user');
   }
 
   try {
@@ -46,6 +39,6 @@ export const getSubscription = onCall(async (request) => {
     return subscriptionDoc.data() as Subscription;
   } catch (error) {
     console.error('[getSubscription] Error:', error);
-    throw new Error('Failed to retrieve subscription');
+    throw new HttpsError('internal', 'Failed to retrieve subscription');
   }
 });

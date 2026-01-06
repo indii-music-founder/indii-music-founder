@@ -99,6 +99,10 @@ class UsageTracker {
         timestamp: Date.now()
       });
     } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[UsageTracker] DEV MODE: Usage tracking bypassed due to error:', error);
+        return;
+      }
       console.error('[UsageTracker] Failed to track usage:', error);
       // Non-blocking error - don't throw to avoid disrupting user experience
     }

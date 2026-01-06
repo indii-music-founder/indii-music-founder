@@ -248,7 +248,7 @@ export class GeneralistAgent extends BaseAgent {
                 });
 
                 let buffer = "";
-                
+
                 // Helper to consume stream (handles both ReadableStream and AsyncIterable)
                 const streamIterator = {
                     [Symbol.asyncIterator]: async function* () {
@@ -315,7 +315,7 @@ export class GeneralistAgent extends BaseAgent {
 
                                 onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
 
-                                if (output.toLowerCase().includes('successfully')) {
+                                if (String(output).toLowerCase().includes('successfully')) {
                                     currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
                                 } else {
                                     currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;

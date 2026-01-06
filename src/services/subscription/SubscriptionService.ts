@@ -66,6 +66,25 @@ class SubscriptionService {
       return subscription;
     } catch (error) {
       console.error('[SubscriptionService] Failed to fetch subscription:', error);
+
+      // FALLBACK FOR DEV: Bypass CORS/Function errors in local development
+      if (import.meta.env.DEV) {
+        console.warn('[SubscriptionService] DEV MODE: Returning mock subscription due to error');
+        const mockSub: Subscription = {
+          id: 'mock_sub_' + userId,
+          userId,
+          tier: SubscriptionTier.STUDIO, // Give unlimited access for dev
+          status: 'active',
+          currentPeriodStart: Date.now(),
+          currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          cancelAtPeriodEnd: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        this.subscriptionCache.set(userId, mockSub);
+        return mockSub;
+      }
+
       throw new Error('Failed to fetch subscription. Please try again.');
     }
   }
@@ -105,6 +124,33 @@ class SubscriptionService {
       return stats;
     } catch (error) {
       console.error('[SubscriptionService] Failed to fetch usage stats:', error);
+
+      // FALLBACK FOR DEV: Bypass CORS/Function errors in local development
+      if (import.meta.env.DEV) {
+        console.warn('[SubscriptionService] DEV MODE: Returning mock usage stats due to error');
+        const mockStats: UsageStats = {
+          userId,
+          tier: SubscriptionTier.STUDIO,
+          imagesGenerated: 0,
+          imagesRemaining: 9999,
+          videoDurationMinutes: 0,
+          videoRemainingMinutes: 9999,
+          aiChatTokensUsed: 0,
+          aiChatTokensRemaining: 999999,
+          storageUsedGB: 0,
+          storageTotalGB: 1000,
+          storageRemainingGB: 1000,
+          projectsCreated: 0,
+          projectsRemaining: 999,
+          teamMembersUsed: 0,
+          teamMembersRemaining: 999,
+          periodStart: Date.now(),
+          periodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000
+        };
+        this.usageCache.set(userId, { stats: mockStats, timestamp: Date.now() });
+        return mockStats;
+      }
+
       throw new Error('Failed to fetch usage statistics. Please try again.');
     }
   }

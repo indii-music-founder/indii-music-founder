@@ -75,9 +75,15 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
 
             // If it's a base64 data URL, upload to Storage
             if (item.url.startsWith('data:')) {
-                const storageRef = ref(storage, `generated/${item.id}`);
-                await uploadString(storageRef, item.url, 'data_url');
-                imageUrl = await getDownloadURL(storageRef);
+                // FALLBACK FOR DEV: Bypass Storage upload to avoid CORS/Auth issues locally
+                if (import.meta.env.DEV) {
+                    console.warn('[StorageService] DEV MODE: Skipping Storage upload, using data URI locally');
+                    // We keep the data URI as the 'imageUrl'
+                } else {
+                    const storageRef = ref(storage, `generated/${item.id}`);
+                    await uploadString(storageRef, item.url, 'data_url');
+                    imageUrl = await getDownloadURL(storageRef);
+                }
             }
 
             // Get Current Org ID
