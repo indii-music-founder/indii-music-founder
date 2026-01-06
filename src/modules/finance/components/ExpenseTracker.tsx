@@ -1,12 +1,13 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { DollarSign, Camera, Loader2, Plus, X } from 'lucide-react';
+import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';
 import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
 import { ExpenseItem } from './ExpenseItem';
+import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
     const { userProfile } = useStore();
@@ -21,10 +22,6 @@ export const ExpenseTracker: React.FC = React.memo(() => {
 
     // Manual Entry State
     const [showManualEntry, setShowManualEntry] = useState(false);
-    const [manualForm, setManualForm] = useState<Partial<Expense>>({
-        date: new Date().toISOString().split('T')[0],
-        category: 'Equipment'
-    });
 
     const toast = useToast();
 
@@ -110,39 +107,21 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         }
     }, [userProfile?.id, toast, addExpense]);
 
-    const handleManualSubmit = useCallback(async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAddExpense = useCallback(async (data: Partial<Expense>) => {
         if (!userProfile?.id) return;
-        if (!manualForm.vendor || !manualForm.amount) {
-            toast.error("Vendor and Amount are required.");
-            return;
-        }
 
-        try {
-            const expenseData = {
-                userId: userProfile.id as string,
-                vendor: manualForm.vendor,
-                date: manualForm.date || new Date().toISOString().split('T')[0],
-                amount: Number(manualForm.amount),
-                category: manualForm.category || 'Other',
-                description: manualForm.description || 'Manual Entry',
-            };
+        const expenseData = {
+            userId: userProfile.id as string,
+            vendor: data.vendor || 'Unknown Vendor',
+            date: data.date || new Date().toISOString().split('T')[0],
+            amount: Number(data.amount),
+            category: data.category || 'Other',
+            description: data.description || 'Manual Entry',
+        };
 
-            await addExpense(expenseData);
-            toast.success("Expense added manually.");
-            setShowManualEntry(false);
-            setManualForm({
-                date: new Date().toISOString().split('T')[0],
-                category: 'Equipment',
-                vendor: '',
-                amount: 0,
-                description: ''
-            });
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to add expense.");
-        }
-    }, [userProfile?.id, manualForm, toast, addExpense]);
+        await addExpense(expenseData);
+        toast.success("Expense added manually.");
+    }, [userProfile?.id, addExpense, toast]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         acceptedFiles.forEach(processFile);
@@ -177,87 +156,10 @@ export const ExpenseTracker: React.FC = React.memo(() => {
 
             {/* Manual Entry Modal */}
             {showManualEntry && (
-                <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-[#161b22] border border-gray-700 rounded-xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-white">Add Manual Expense</h3>
-                            <button onClick={() => setShowManualEntry(false)} className="text-gray-400 hover:text-white">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleManualSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">Vendor / Merchant</label>
-                                <input
-                                    autoFocus
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-teal-500 outline-none"
-                                    placeholder="e.g. Sweetwater"
-                                    value={manualForm.vendor || ''}
-                                    onChange={e => setManualForm({ ...manualForm, vendor: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Date</label>
-                                    <input
-                                        type="date"
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-teal-500 outline-none"
-                                        value={manualForm.date || ''}
-                                        onChange={e => setManualForm({ ...manualForm, date: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs text-gray-400 mb-1">Amount ($)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-teal-500 outline-none"
-                                        placeholder="0.00"
-                                        value={manualForm.amount || ''}
-                                        onChange={e => setManualForm({ ...manualForm, amount: parseFloat(e.target.value) })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">Category</label>
-                                <select
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-teal-500 outline-none"
-                                    value={manualForm.category || 'Other'}
-                                    onChange={e => setManualForm({ ...manualForm, category: e.target.value })}
-                                >
-                                    <option>Equipment</option>
-                                    <option>Software / Plugins</option>
-                                    <option>Marketing</option>
-                                    <option>Travel</option>
-                                    <option>Services</option>
-                                    <option>Other</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs text-gray-400 mb-1">Description (Optional)</label>
-                                <textarea
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-teal-500 outline-none h-20 resize-none"
-                                    placeholder="Details..."
-                                    value={manualForm.description || ''}
-                                    onChange={e => setManualForm({ ...manualForm, description: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="pt-2">
-                                <button
-                                    type="submit"
-                                    className="w-full bg-teal-600 hover:bg-teal-500 text-white font-medium py-2 rounded-lg transition-colors"
-                                >
-                                    Add Expense
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <ExpenseManualEntryModal
+                    onClose={() => setShowManualEntry(false)}
+                    onAdd={handleAddExpense}
+                />
             )}
 
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
