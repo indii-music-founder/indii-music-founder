@@ -27,8 +27,6 @@ export const ShowroomService = {
      * Submits a design to the production line (Firestore).
      */
     async submitToProduction(request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> {
-        console.info("[ShowroomService] Submitting to production:", request);
-
         try {
             // Get current user from store (or auth)
             // Ideally we'd pass userId in, but let's grab it if missing
@@ -57,7 +55,7 @@ export const ShowroomService = {
                 try {
                     await updateDoc(docRef, { status: 'completed' });
                 } catch (e) {
-                    console.error("Failed to update manufacture status", e);
+                    // Status update failed - not critical
                 }
             });
 
@@ -66,7 +64,6 @@ export const ShowroomService = {
                 orderId
             };
         } catch (error) {
-            console.error("Error submitting to production:", error);
             throw error;
         }
     },
@@ -96,8 +93,6 @@ export const ShowroomService = {
             createdAt: serverTimestamp()
         });
 
-        console.info(`[ShowroomService] Generating ${type} mockup with scene: ${scene}`);
-
         try {
             const { useStore } = await import('@/core/store');
             const userId = useStore.getState().userProfile?.id;
@@ -126,8 +121,7 @@ export const ShowroomService = {
 
             return resultUrl;
         } catch (error) {
-            console.error("Error generating mockup:", error);
-            // Fallback
+            // Fallback for errors
             return "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80";
         }
     },
@@ -155,8 +149,6 @@ export const ShowroomService = {
             createdAt: serverTimestamp()
         });
 
-        console.info(`[ShowroomService] Animating mockup ${mockupUrl} with motion: ${motion}`);
-
         try {
             const { useStore } = await import('@/core/store');
             const userId = useStore.getState().userProfile?.id;
@@ -180,7 +172,7 @@ export const ShowroomService = {
 
             return resultUrl;
         } catch (error) {
-            console.error("Error generating video:", error);
+            // Fallback for errors
             return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ254Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxxXmD3v6Te/giphy.gif";
         }
     }

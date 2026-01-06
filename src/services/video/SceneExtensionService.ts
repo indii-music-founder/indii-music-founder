@@ -236,7 +236,7 @@ class SceneExtensionServiceImpl {
             image: config.firstFrame
                 ? { imageBytes: config.firstFrame.data, mimeType: config.firstFrame.mimeType }
                 : undefined,
-            config: generationConfig as any,
+            config: generationConfig as unknown as Record<string, unknown>,
         });
 
         return uri;
@@ -361,7 +361,7 @@ class SceneExtensionServiceImpl {
                 await MembershipService.incrementUsage(userId, 'video', numSegments, totalDurationSeconds);
             }
         } catch (e) {
-            console.warn('[SceneExtension] Failed to track usage:', e);
+            // Usage tracking failure should not block generation
         }
     }
 

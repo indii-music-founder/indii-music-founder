@@ -97,7 +97,7 @@ export const loadSamplePlatforms = async (): Promise<SamplePlatform[]> => {
             }
         }
     } catch (error) {
-        console.warn('[SamplePlatforms] Failed to load from Firestore, using fallback:', error);
+        // Firestore load failed - will use fallback
     }
 
     // Use fallback if Firestore unavailable or empty

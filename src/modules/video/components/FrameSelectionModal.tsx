@@ -63,7 +63,6 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                 onClose();
             }
         } catch (e: unknown) {
-            console.error("Frame Generation Error:", e);
             if (e instanceof Error) {
                 toast.error(`Failed to generate frame: ${e.message}`);
             } else {

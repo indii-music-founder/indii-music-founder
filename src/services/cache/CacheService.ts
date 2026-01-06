@@ -11,7 +11,7 @@ interface CacheEntry<T> {
   ttl: number;
 }
 
-class CacheService {
+export class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private defaultTTL = 5 * 60 * 1000; // 5 minutes default TTL
 

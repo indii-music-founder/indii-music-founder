@@ -21,7 +21,6 @@ async function extractFrameFromGrid(imageUrl: string, gridIndex: number): Promis
                 const ctx = canvas.getContext('2d');
 
                 if (!ctx) {
-                    console.error('[extractFrameFromGrid] Failed to get canvas context');
                     resolve(null);
                     return;
                 }
@@ -53,13 +52,11 @@ async function extractFrameFromGrid(imageUrl: string, gridIndex: number): Promis
                 resolve(dataUrl);
 
             } catch (error) {
-                console.error('[extractFrameFromGrid] Error extracting frame:', error);
                 resolve(null);
             }
         };
 
         img.onerror = () => {
-            console.error('[extractFrameFromGrid] Failed to load image');
             resolve(null);
         };
 
@@ -108,7 +105,6 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 const match = refImg.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
                     sourceImages = [{ mimeType: match[1], data: match[2] }];
-                    console.info(`[DirectorTools] Using reference image: ${refImg.description || 'Untitled'}`);
                 }
             }
         } else if (args.referenceAssetIndex !== undefined) {
@@ -119,7 +115,6 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 const match = asset.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
                     sourceImages = [{ mimeType: match[1], data: match[2] }];
-                    console.info(`[DirectorTools] Using brand asset: ${asset.description || 'Untitled'}`);
                 }
             }
         } else if (args.uploadedImageIndex !== undefined) {
@@ -130,7 +125,6 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 const match = upload.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
                     sourceImages = [{ mimeType: match[1], data: match[2] }];
-                    console.info(`[DirectorTools] Using upload: ${upload.prompt || 'Untitled'}`);
                 }
             }
         }
@@ -140,7 +134,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             prompt: args.prompt,
             count: args.count || 1,
             resolution: args.resolution || studioControls.resolution,
-            aspectRatio: (args.aspectRatio || studioControls.aspectRatio) as any,
+            aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
             negativePrompt: args.negativePrompt || studioControls.negativePrompt,
             seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
             sourceImages,

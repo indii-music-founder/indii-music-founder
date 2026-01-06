@@ -225,7 +225,6 @@ export default function App() {
         return <LoginForm />;
     }
 
-    // console.log('[App] Rendering JSX...');
     return (
         <VoiceProvider>
             <ToastProvider>

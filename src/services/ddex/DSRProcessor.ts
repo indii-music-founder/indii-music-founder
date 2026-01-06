@@ -33,7 +33,7 @@ export class DSRProcessor {
 
             const metadata = catalog.get(isrc);
             if (!metadata) {
-                console.warn(`[DSR] Warning: No metadata found for ISRC ${isrc}`);
+                // Skip transactions without matching metadata
                 continue;
             }
 

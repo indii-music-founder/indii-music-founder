@@ -138,13 +138,11 @@ export class DDEXValidator {
                 default:
                     // For unknown profiles, we enforce basic structural integrity (ReleaseList exists)
                     // but do not enforce specific resource types as we don't know the rules.
-                    console.warn(`Profile validation: Unknown profile type '${profile}', skipping specific checks.`);
                     break;
             }
 
             return true;
         } catch (e) {
-            console.error('Profile validation error:', e);
             return false;
         }
     }

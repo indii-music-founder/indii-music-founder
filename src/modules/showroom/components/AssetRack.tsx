@@ -152,10 +152,6 @@ const AssetDropzone = React.memo(({ productAsset, onAssetUpload, theme }: AssetD
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                onKeyDown={handleKeyDown}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload design file"
                 whileHover="hover"
                 initial="idle"
                 animate={isDragging ? "dragging" : "idle"}
@@ -300,7 +296,6 @@ export default function AssetRack({
                         max="200"
                         value={scale}
                         aria-label="Product scale"
-                        aria-label="Adjust product scale"
                         onChange={(e) => onScaleChange(Number(e.target.value))}
                         className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                     />

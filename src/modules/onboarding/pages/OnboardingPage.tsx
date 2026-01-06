@@ -234,7 +234,6 @@ export default function OnboardingPage() {
             setHistory(nextHistory);
 
         } catch (error: unknown) {
-            // console.error("Full Onboarding Error:", error);
             const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
             const errorResponses = [
                 `Hmm, something went sideways on my end. Mind trying that again?`,
@@ -285,7 +284,6 @@ export default function OnboardingPage() {
                 setUserProfile({ ...userProfile, bio: newBio });
             }
         } catch (error) {
-            // console.error('[Onboarding] Failed to regenerate bio:', error);
         } finally {
             setIsRegenerating(false);
         }

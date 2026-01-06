@@ -114,7 +114,6 @@ export class MarketingService {
             }
             return null;
         } catch (error) {
-            // console.error('Error fetching campaign:', error);
             return null;
         }
     }

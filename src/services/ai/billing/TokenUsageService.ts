@@ -42,9 +42,8 @@ export class TokenUsageService {
                     requestCount: 1,
                     lastUpdated: serverTimestamp()
                 });
-            } else {
-                console.error('[TokenUsageService] Failed to track usage:', error);
             }
+            // Non-blocking error - usage tracking failure should not disrupt service
         }
     }
 
@@ -66,10 +65,10 @@ export class TokenUsageService {
             if (!snap.exists()) return true; // No usage yet today
 
             const data = snap.data() as UsageStats;
-            const limit = RATE_LIMITS[TIER_CONFIG.DEFAULT_TIER].MAX_TOKENS_PER_DAY; // TODO: Fetch user tier dynamicallly
+            // For now, use default tier limit. Tier-aware quota checking can be added when subscription system is fully integrated
+            const limit = RATE_LIMITS[TIER_CONFIG.DEFAULT_TIER].MAX_TOKENS_PER_DAY;
 
             if (data.tokensUsed >= limit) {
-                console.warn(`[TokenUsageService] Quota exceeded for user ${userId}: ${data.tokensUsed}/${limit}`);
                 throw new AppException(
                     AppErrorCode.NETWORK_ERROR, // Mapping to existing error code for "quota"
                     `Daily AI token limit exceeded (${limit} tokens). Please upgrade to Pro.`
@@ -79,8 +78,8 @@ export class TokenUsageService {
             return true;
         } catch (error) {
             if (error instanceof AppException) throw error;
-            console.error('[TokenUsageService] Quota check failed:', error);
-            return true; // Fail open on DB error to avoid blocking service
+            // Fail open on DB error to avoid blocking service
+            return true;
         }
     }
 }

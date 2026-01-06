@@ -34,7 +34,7 @@ export class RoyaltyService {
             const trackData = metadataMap[item.isrc];
 
             if (!trackData) {
-                console.warn(`[RoyaltyService] No metadata found for ISRC ${item.isrc}. Revenue unallocated.`);
+                // Skip items without metadata - revenue will remain unallocated
                 continue;
             }
 

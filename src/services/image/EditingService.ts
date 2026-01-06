@@ -28,8 +28,7 @@ export class EditingService {
                 prompt: options.prompt + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '')
             });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data = result.data as any;
+            const data = result.data as unknown as { candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[] };
             const part = data.candidates?.[0]?.content?.parts?.[0];
 
             if (part && part.inlineData) {
@@ -42,7 +41,6 @@ export class EditingService {
             }
             return null;
         } catch (e) {
-            console.error("Edit Image Error:", e);
             throw e;
         }
     }
@@ -57,9 +55,7 @@ export class EditingService {
         const count = options.variationCount || 4;
 
         try {
-            console.info("Starting Multi-Mask Edit with", options.masks.length, "masks. Generating", count, "variations.");
-
-            // We generate 'count' variations. 
+            // We generate 'count' variations.
             // For each variation, we strip the 'composite' image through the mask pipeline.
             // Note: Parallelizing variations is possible but heavy on rate limits. Sequential for safety now.
 
@@ -103,7 +99,6 @@ export class EditingService {
 
             return results;
         } catch (e) {
-            console.error("Multi Mask Edit Error:", e);
             throw e;
         }
     }
@@ -134,7 +129,6 @@ export class EditingService {
                 }
             }
         } catch (e) {
-            console.error("Batch Edit Error:", e);
             throw e;
         }
         return results;
@@ -176,7 +170,6 @@ export class EditingService {
 
             return null;
         } catch (e) {
-            console.error("Edit Video Error:", e);
             throw e;
         }
     }
@@ -206,7 +199,6 @@ export class EditingService {
                 }
             }
         } catch (e) {
-            console.error("Batch Video Edit Error:", e);
             throw e;
         }
         return results;
@@ -239,7 +231,6 @@ export class EditingService {
             }
             return null;
         } catch (e) {
-            console.error("Composite Error:", e);
             throw e;
         }
     }
@@ -265,7 +256,9 @@ export class EditingService {
                 required: ['scenes']
             };
 
-            const plan = await firebaseAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema as any);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore - Schema typing mismatch
+            const plan = await firebaseAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
             const scenes = plan.scenes || [];
             while (scenes.length < options.count) scenes.push(`${options.prompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -307,7 +300,6 @@ export class EditingService {
                 }
             }
         } catch (e) {
-            console.error("Story Chain Error:", e);
             throw e;
         }
         return results;

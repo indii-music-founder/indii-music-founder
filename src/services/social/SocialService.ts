@@ -331,8 +331,6 @@ export class SocialService {
       return;
     }
 
-    console.info('[SocialService] Seeding database...');
-
     // 1. Initial Social Stats
     const initialStats: SocialStats = {
       followers: 1250,
@@ -369,6 +367,5 @@ export class SocialService {
     ];
 
     await Promise.all(posts.map(post => addDoc(collection(db, "posts"), post)));
-    console.info('[SocialService] Database seeded successfully.');
   }
 }
