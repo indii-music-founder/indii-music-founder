@@ -58,5 +58,6 @@ credentials/
 *_staging/
 distribution-store.json
 scripts/verify-dpid-config.ts
-tsconfig.verify.jsonfunctions/lib/
+tsconfig.verify.json
+functions/lib/
 dist-electron-studio/
