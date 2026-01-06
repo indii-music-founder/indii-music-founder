@@ -147,6 +147,7 @@
     "firebase-functions": "^7.0.2",
     "globals": "^16.5.0",
     "google-auth-library": "^10.5.0",
+    "idb": "^8.0.3",
     "javascript-obfuscator": "^4.2.2",
     "jsdom": "^26.1.0",
     "lightningcss": "^1.30.2",
