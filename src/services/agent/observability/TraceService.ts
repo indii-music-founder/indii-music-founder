@@ -21,7 +21,8 @@ export class TraceService {
         }
 
         try {
-            const traceId = doc(collection(db, this.COLLECTION)).id;
+            // Use a more resilient way to get ID that works with both real Firebase and common mocks
+            const traceId = doc(collection(db, this.COLLECTION)).id || crypto.randomUUID();
             const ref = doc(db, this.COLLECTION, traceId);
 
             const trace: Partial<AgentTrace> = {

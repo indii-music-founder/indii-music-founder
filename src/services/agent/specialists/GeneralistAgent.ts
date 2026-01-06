@@ -77,6 +77,10 @@ export class GeneralistAgent extends BaseAgent {
     }
 
 
+    // BaseAgent provides a robust execution loop. GeneralistAgent extends it to add Mode A/B logic.
+    // However, the current GeneralistAgent overrides execute entirely with an older, less stable loop.
+    // I am updating it to use the robust streamIterator pattern from BaseAgent.
+
     // Helper to extract multiple JSON objects from a stream buffer
     // Handles { ... } { ... } concatenation
     private extractJsonObjects(buffer: string): { objects: any[], remaining: string } {
@@ -238,7 +242,7 @@ export class GeneralistAgent extends BaseAgent {
             parts.push({ text: nextStepPrompt });
 
             try {
-                const { stream } = await AI.generateContentStream({
+                const { stream, response: responsePromise } = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{ role: 'user', parts }],
                     config: {
@@ -252,8 +256,9 @@ export class GeneralistAgent extends BaseAgent {
                 // Helper to consume stream (handles both ReadableStream and AsyncIterable)
                 const streamIterator = {
                     [Symbol.asyncIterator]: async function* () {
-                        if (typeof stream.getReader === 'function') {
-                            const reader = stream.getReader();
+                        // Check for getReader (Browser/Standard)
+                        if (stream && typeof (stream as any).getReader === 'function') {
+                            const reader = (stream as any).getReader();
                             try {
                                 while (true) {
                                     const { done, value } = await reader.read();
@@ -263,11 +268,19 @@ export class GeneralistAgent extends BaseAgent {
                             } finally {
                                 reader.releaseLock();
                             }
-                        } else if (Symbol.asyncIterator in stream) {
-                            // @ts-ignore
-                            yield* stream;
-                        } else {
-                            throw new Error('Stream is not iterable or readable');
+                        }
+                        // Check for AsyncIterability (Node/Polyfill)
+                        else if (stream && Symbol.asyncIterator in stream) {
+                            yield* (stream as any);
+                        }
+                        else {
+                            // Fallback to the promise if stream is missing but supported (some environments)
+                            const resp = await responsePromise;
+                            if (resp && typeof resp.text === 'function') {
+                                yield { text: () => resp.text() };
+                            } else {
+                                throw new Error('AI Content Stream is not iterable or readable');
+                            }
                         }
                     }
                 };

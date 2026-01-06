@@ -3,6 +3,16 @@ import { test, expect } from '@playwright/test';
 test.describe('Temporal Session Management', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
+
+        // Handle Login (Auth state is required for CommandBar/Chat)
+        const emailInput = page.getByLabel(/email/i);
+        if (await emailInput.isVisible({ timeout: 5000 })) {
+            await emailInput.fill('automator@indiios.com');
+            await page.getByLabel(/password/i).fill('AutomatorPass123!');
+            await page.getByRole('button', { name: /sign in/i }).click();
+            // Wait for dashboard or main app to load
+            await expect(page.getByTestId('app-container')).toBeVisible({ timeout: 15000 });
+        }
     });
 
     test('Create, Switch, and Verify Session State', async ({ page }) => {

@@ -181,7 +181,7 @@ export default function MerchDashboard() {
                                     <div className="flex-1">
                                         <h5 className="text-sm font-medium text-white group-hover:text-[#FFE135]">{product.title}</h5>
                                         <p className="text-xs text-neutral-500">
-                                            {product.createdAt?.toDate ?
+                                            {product.createdAt && 'toDate' in product.createdAt ?
                                                 `Added ${product.createdAt.toDate().toLocaleDateString()}` :
                                                 'Just now'
                                             }

@@ -37,7 +37,13 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     storage: {},
     auth: {},
-    functions: {}
+    functions: {},
+    remoteConfig: {
+        settings: {},
+        defaultConfig: {},
+        getValue: vi.fn(),
+        getAll: vi.fn()
+    }
 }));
 
 // Mock MemoryService to bypass Firestore and embedding calls
@@ -90,14 +96,22 @@ describe('Agent Architecture Integration (Hardened)', () => {
 
         // Provide a default streaming response for the Generalist agent
         (AI.generateContentStream as any).mockImplementation(() => {
-            const stream = new ReadableStream({
-                start(controller) {
-                    controller.enqueue({ text: () => '{"final_response":"Generalist fallback response"}' });
-                    controller.close();
-                }
-            });
+            const stream = {
+                getReader: vi.fn().mockReturnValue({
+                    read: vi.fn()
+                        .mockResolvedValueOnce({ done: false, value: { text: () => '{"final_response":"Generalist fallback response"}' } })
+                        .mockResolvedValueOnce({ done: true, value: undefined }),
+                    releaseLock: vi.fn()
+                })
+            };
 
-            return Promise.resolve(stream);
+            return Promise.resolve({
+                stream,
+                response: Promise.resolve({
+                    text: () => '{"final_response":"Generalist fallback response"}',
+                    functionCalls: () => []
+                })
+            });
         });
 
         service = new AgentService();
