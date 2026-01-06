@@ -2,9 +2,6 @@ import { auth, db, storage } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { initDB } from './repository';
-// import { auth } from '../firebase'; // Removed
-
-const STORE_NAME = 'assets';
 const WORKFLOWS_STORE = 'workflows';
 
 export class StorageMigrationService {
@@ -23,12 +20,12 @@ export class StorageMigrationService {
         const user = auth.currentUser;
         if (!user) throw new Error("User must be logged in to migrate data");
 
-        console.info("[StorageMigrationService] Starting migration for user:", user.uid);
+        // Starting migration for user: user.uid
 
         await this.migrateAssets(user.uid);
         await this.migrateWorkflows(user.uid);
 
-        console.info("[StorageMigrationService] Migration complete");
+        // Migration complete
     }
 
     private async migrateAssets(userId: string): Promise<void> {
@@ -49,9 +46,9 @@ export class StorageMigrationService {
             try {
                 const storageRef = ref(storage, `users/${userId}/assets/${assetId}`);
                 await uploadBytes(storageRef, blob);
-                console.log(`Migrated asset: ${assetId}`);
-            } catch (e) {
-                console.error(`Failed to migrate asset ${assetId}:`, e);
+                // Migrated asset: ${assetId}
+            } catch (_e) {
+                // Failed to migrate asset ${assetId}
             }
 
             cursor = await cursor.continue();
@@ -76,9 +73,9 @@ export class StorageMigrationService {
                     updatedAt: new Date().toISOString(),
                     synced: true
                 }, { merge: true });
-                console.log(`Migrated workflow: ${workflowId}`);
-            } catch (e) {
-                console.error(`Failed to migrate workflow ${workflowId}:`, e);
+                // Migrated workflow: ${workflowId}
+            } catch (_e) {
+                // Failed to migrate workflow
             }
 
             cursor = await cursor.continue();

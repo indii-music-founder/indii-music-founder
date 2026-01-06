@@ -1,6 +1,6 @@
+import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { useStore } from '@/core/store';
 import { delay } from '@/utils/async';
 
 export interface ManufactureRequest {
@@ -38,7 +38,9 @@ export const ShowroomService = {
                 userId = useStore.getState().userProfile?.id;
             }
 
-            if (!userId) throw new Error("User must be logged in to submit to production.");
+            if (!userId) {
+                throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
+            }
 
             const orderId = `BANA-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -78,7 +80,7 @@ export const ShowroomService = {
         const userId = useStore.getState().userProfile?.id;
 
         if (!userId) {
-            throw new Error("User must be logged in to generate mockups.");
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to generate mockups.');
         }
 
         const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
@@ -139,7 +141,7 @@ export const ShowroomService = {
         const userId = useStore.getState().userProfile?.id;
 
         if (!userId) {
-            throw new Error("User must be logged in to generate videos.");
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to generate videos.');
         }
 
         const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');

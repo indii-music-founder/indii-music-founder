@@ -33,8 +33,8 @@ export class FingerprintService {
                 // We use Math.round for BPM/Duration to allow slight variations in "similar" files if we ever fuzzy match
                 featureTag = `${features.bpm}BPM_${features.key}${features.scale}_${Math.round(duration)}s`;
 
-            } catch (err) {
-                console.warn('FingerprintService: Could not extract features for ID', err);
+            } catch (_err) {
+                // FingerprintService: Could not extract features for ID
             }
 
             // Composite ID: hash-features
@@ -43,8 +43,8 @@ export class FingerprintService {
 
             return `SONIC-${shortHash}-${featureTag.replace(/\s+/g, '')}`;
 
-        } catch (error) {
-            console.error('Fingerprint generation failed:', error);
+        } catch (_error) {
+            // Fingerprint generation failed
             return null;
         }
     }

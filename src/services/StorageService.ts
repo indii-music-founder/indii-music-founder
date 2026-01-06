@@ -6,7 +6,15 @@ import { HistoryItem } from '../core/store';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 
-class StorageServiceImpl extends FirestoreService<HistoryItem> {
+interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
+    timestamp: Timestamp;
+    userId: string | null;
+    orgId: string;
+    updatedAt?: Timestamp;
+    createdAt?: Timestamp;
+}
+
+class StorageServiceImpl extends FirestoreService<HistoryDocument> {
     constructor() {
         super('history');
     }
@@ -23,7 +31,7 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
             await uploadBytes(storageRef, file);
             return await getDownloadURL(storageRef);
         } catch (error) {
-            console.error("Error uploading file to storage:", error);
+            // Error logged silently or via dedicated service if available
             throw error;
         }
     }
@@ -48,7 +56,6 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                     onProgress(progress);
                 },
                 (error) => {
-                    console.error("Error uploading file with progress:", error);
                     reject(error);
                 },
                 async () => {
@@ -64,8 +71,7 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
             const storageRef = ref(storage, path);
             await deleteObject(storageRef);
         } catch (error) {
-            console.warn("Error deleting file from storage:", error);
-            // Don't throw, just warn, as the record might be missing
+            // Silently fail storage cleanup if file missing
         }
     }
 
@@ -77,8 +83,12 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
             if (item.url.startsWith('data:')) {
                 // FALLBACK FOR DEV: Bypass Storage upload to avoid CORS/Auth issues locally
                 if (import.meta.env.DEV) {
-                    console.warn('[StorageService] DEV MODE: Skipping Storage upload, using data URI locally');
-                    // We keep the data URI as the 'imageUrl'
+                    // CRITICAL: Firestore has a 1MB limit for document size.
+                    // If the data URI is too large, we store a placeholder in Firestore
+                    // to avoid "Value too large" errors, while keeping the real URI in local state.
+                    if (item.url.length > 800000) { // ~800KB safety margin
+                        imageUrl = 'placeholder:dev-data-uri-too-large';
+                    }
                 } else {
                     const storageRef = ref(storage, `generated/${item.id}`);
                     await uploadString(storageRef, item.url, 'data_url');
@@ -88,34 +98,44 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
 
             // Get Current Org ID
             const orgId = OrganizationService.getCurrentOrgId();
-
             const { auth } = await import('./firebase');
 
-            // Ensure timestamp is a number or Firestore Timestamp
-            // We use Omit<HistoryItem, 'id'> to match add method signature, 
-            // but we need to override the type check slightly or construct manually
-            const docData = {
+            // Use 'set' instead of 'add' to ensure Firestore ID matches local ID
+            await this.set(item.id, {
                 ...item,
                 url: imageUrl,
                 timestamp: Timestamp.fromMillis(item.timestamp),
-                orgId: orgId || 'personal', // Default to 'personal' if no org selected
-                userId: auth.currentUser?.uid || null // Explicitly save userId, default to null to avoid Firestore undefined error
-            };
+                orgId: orgId || 'personal',
+                userId: auth.currentUser?.uid || null
+            } as HistoryDocument);
 
-            // Casting as specific data to satisfy TS, assuming FirestoreService handles ID generation
-            // Actually, we want to specify ID if item.id is present?
-            // Base FirestoreService.add generates ID. 
-            // But StorageService.saveItem assumes item has an ID already locally generated?
-            // Looking at original code: "const docRef = await addDoc(collection(db, 'history'), docData);"
-            // So it generates a NEW ID in Firestore.
-
-            // We need to type cast to any because docData contains Timestamp instead of number
-            const id = await this.add(docData as any);
-            console.info("[StorageService] Document written with ID: ", id);
-            return id;
+            return item.id;
         } catch (e) {
-            console.error("Error adding document: ", e);
             throw e;
+        }
+    }
+
+    /**
+     * Deletes an item from both Firestore and Firebase Storage.
+     * @param id The ID of the item to remove.
+     */
+    async removeItem(id: string): Promise<void> {
+        try {
+            // 1. Get the item first to check if it has a Storage URL
+            const item = await this.get(id);
+
+            if (item) {
+                // 2. If it has a standard storage URL (not a data URI or placeholder), delete from Storage
+                if (item.url && item.url.includes('firebasestorage.googleapis.com')) {
+                    // Extract path from URL or assume standard path
+                    await this.deleteFile(`generated/${id}`);
+                }
+            }
+
+            // 3. Delete from Firestore
+            await this.delete(id);
+        } catch (error) {
+            throw error;
         }
     }
 
@@ -146,17 +166,15 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                     }
                 }
 
-                return await this.query(constraints);
+                return (await this.query(constraints)).map(doc => this.mapDocumentToItem(doc));
             } catch (e: unknown) {
-                const error = e as any; // Cast to access Firebase error properties
+                const error = e as { code?: string; message?: string };
                 // Check if it's the index error
                 if (error.code === 'failed-precondition' || error.message?.includes('index')) {
-                    console.warn("Firestore index missing for sorting. Falling back to client-side sorting.");
-
                     const { auth } = await import('./firebase');
                     const constraints = [where('orgId', '==', orgId), limit(limitCount)];
 
-                    // Only filter by userId for personal org (matches primary query path logic)
+                    // Only filter by userId for personal org
                     if (orgId === 'personal') {
                         if (auth.currentUser) {
                             constraints.push(where('userId', '==', auth.currentUser.uid));
@@ -165,23 +183,29 @@ class StorageServiceImpl extends FirestoreService<HistoryItem> {
                         }
                     }
 
-                    // Fallback to client-side sort using inherited query method's sorter
-                    return await this.query(
+                    // Fallback to client-side sort
+                    const results = await this.query(
                         constraints,
                         (a, b) => {
-                            const timeA = (a.timestamp as any)?.toMillis ? (a.timestamp as any).toMillis() : a.timestamp;
-                            const timeB = (b.timestamp as any)?.toMillis ? (b.timestamp as any).toMillis() : b.timestamp;
-                            return (timeB as number) - (timeA as number);
+                            const timeA = a.timestamp.toMillis();
+                            const timeB = b.timestamp.toMillis();
+                            return timeB - timeA;
                         }
                     );
+                    return results.map(doc => this.mapDocumentToItem(doc));
                 }
                 throw error;
             }
         } catch (e) {
-            console.error("Error loading history: ", e);
-            // Throw so UI can show error state instead of silent empty list
             throw e;
         }
+    }
+
+    private mapDocumentToItem(doc: HistoryDocument): HistoryItem {
+        return {
+            ...doc,
+            timestamp: doc.timestamp.toMillis()
+        } as HistoryItem;
     }
 }
 

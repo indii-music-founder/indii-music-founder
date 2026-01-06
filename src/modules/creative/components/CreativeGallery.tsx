@@ -5,9 +5,11 @@ import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToL
 
 import { useToast } from '@/core/context/ToastContext';
 
+import { HistoryItem } from '@/core/store';
+
 interface CreativeGalleryProps {
     compact?: boolean;
-    onSelect?: (item: any) => void;
+    onSelect?: (item: HistoryItem) => void;
     className?: string;
     searchQuery?: string;
 }
@@ -42,7 +44,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         url: e.target.result as string,
                         prompt: file.name,
                         timestamp: Date.now(),
-                        projectId: currentProjectId
+                        projectId: currentProjectId,
+                        origin: 'uploaded'
                     });
                 }
             };
@@ -65,7 +68,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         );
     }
 
-    const renderGridItem = (item: any, onDelete: (id: string) => void) => (
+    const renderGridItem = (item: HistoryItem, onDelete: (id: string) => void) => (
         <div
             key={item.id}
             draggable
@@ -85,7 +88,14 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                     <video src={item.url} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
                 )
             ) : (
-                <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
+                item.url === 'placeholder:dev-data-uri-too-large' ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-500 p-4 text-center">
+                        <ImageIcon size={24} className="mb-2 opacity-20" />
+                        <span className="text-[10px] font-mono leading-tight">DEV PREVIEW<br />(Size Limit)</span>
+                    </div>
+                ) : (
+                    <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
+                )
             )}
 
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
@@ -184,7 +194,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                         url: ev.target.result as string,
                                         prompt: file.name,
                                         timestamp: Date.now(),
-                                        projectId: currentProjectId
+                                        projectId: currentProjectId,
+                                        origin: 'uploaded'
                                     });
                                 }
                             };

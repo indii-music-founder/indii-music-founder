@@ -63,7 +63,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 prompt: res.prompt,
                                 type: 'image',
                                 timestamp: Date.now(),
-                                projectId: currentProjectId
+                                projectId: currentProjectId,
+                                origin: 'generated'
                             });
                         });
                         toast.success("Image generated!");
@@ -71,7 +72,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         toast.error("Generation returned no images. Please try again.");
                     }
                 } catch (e) {
-                    console.error("Image generation failed:", e);
                     toast.error("Image generation failed.");
                 }
             };

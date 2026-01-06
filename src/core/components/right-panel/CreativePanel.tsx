@@ -47,7 +47,8 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                         prompt: res.prompt,
                         type: 'image',
                         timestamp: Date.now(),
-                        projectId: currentProjectId
+                        projectId: currentProjectId,
+                        origin: 'generated'
                     });
                 });
                 toast.success("Image generated!");
@@ -55,7 +56,6 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                 toast.error("Generation returned no images. Please try again.");
             }
         } catch (e) {
-            console.error("Generation failed:", e);
             toast.error("Generation failed");
         } finally {
             setIsGenerating(false);
@@ -84,7 +84,6 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                 toast.error("Failed to enhance prompt");
             }
         } catch (e) {
-            console.error("Enhance failed:", e);
             toast.error("Enhance failed");
         }
     };

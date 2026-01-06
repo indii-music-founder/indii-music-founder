@@ -93,7 +93,8 @@ if (!parsed.success) {
     console.warn("Environment validation failed, but critical keys might be present. Proceeding with caution.");
 } else {
     // Validation successful
-    // console.log("Environment configuration valid.");
+    // Environment validation passed
+// (console.log removed - Platinum Polish)
 }
 
 const runtimeEnv = parsed.success ? parsed.data : (processEnv as typeof processEnv);

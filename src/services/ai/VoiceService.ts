@@ -6,7 +6,9 @@ export class VoiceService {
     private isListening: boolean = false;
 
     private get synthesis(): SpeechSynthesis | null {
-        return typeof window !== 'undefined' ? (window.speechSynthesis || (global as any).speechSynthesis) : null;
+        if (typeof window === 'undefined') return null;
+        const globalSynthesis = (global as unknown as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
+        return window.speechSynthesis || globalSynthesis || null;
     }
 
     constructor() {
@@ -17,7 +19,7 @@ export class VoiceService {
             this.recognition.interimResults = false;
             this.recognition.lang = 'en-US';
         } else {
-            console.warn('Speech Recognition API not supported in this browser.');
+            // Speech Recognition API not supported in this browser
         }
     }
 
@@ -37,7 +39,6 @@ export class VoiceService {
         };
 
         this.recognition.onerror = (event: any) => {
-            console.error('Speech recognition error', event.error);
             if (onError) onError(event.error);
             this.isListening = false;
         };
@@ -49,7 +50,6 @@ export class VoiceService {
         try {
             this.recognition.start();
         } catch (e) {
-            console.error("Failed to start speech recognition", e);
             if (onError) onError(e);
             this.isListening = false;
         }
@@ -67,11 +67,9 @@ export class VoiceService {
         audioService.stop();
 
         try {
-            console.log(`[VoiceService] Generating high-quality speech for: "${text.substring(0, 30)}..." with voice: ${voiceName || 'Kore'}`);
             const response = await AI.generateSpeech(text, voiceName || 'Kore');
             await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
-        } catch (error) {
-            console.error('[VoiceService] Gemini TTS failed, falling back to browser:', error);
+        } catch {
             this.fallbackSpeak(text);
         }
     }

@@ -94,10 +94,7 @@ export default function OnboardingPage() {
 
     // Lifecycle log cleanup
     useEffect(() => {
-        // console.log("[Onboarding] Component mounted");
-        return () => {
-            // console.log("[Onboarding] Component unmounted");
-        };
+        return () => {};
     }, []);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,7 +190,6 @@ export default function OnboardingPage() {
                             isSemanticallySimilar((msg.toolCall.args as ShareInsightArgs).insight, currentInsight)
                     );
                     if (alreadyShown) {
-                        // console.log('[Onboarding] Deduped similar insight:', typeof currentInsight === 'string' ? currentInsight.substring(0, 50) : 'Non-string insight');
                         uiToolCall = null; // Don't show duplicate insight
                     }
                 }
@@ -204,10 +200,8 @@ export default function OnboardingPage() {
                     const validatedOptions = validateOptions(args.question_type, args.options);
                     if (validatedOptions.length === 0) {
                         // All options invalid - fall back to whitelist
-                        // console.log('[Onboarding] All options invalid, using whitelist for:', args.question_type);
                         args.options = OPTION_WHITELISTS[args.question_type] || args.options;
                     } else if (validatedOptions.length !== args.options.length) {
-                        // console.log('[Onboarding] Filtered invalid options:', args.options.length - validatedOptions.length);
                         args.options = validatedOptions;
                     }
                 }

@@ -1,4 +1,3 @@
-// import { db, auth } from '@/services/firebase'; // Removed auth
 import { db } from "@/services/firebase";
 import {
   collection,
@@ -15,7 +14,6 @@ import {
   runTransaction,
   increment,
   Timestamp,
-  deleteDoc,
   setDoc,
 } from "firebase/firestore";
 import {

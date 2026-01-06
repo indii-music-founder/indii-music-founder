@@ -26,9 +26,8 @@ export class CircuitBreaker {
         if (this.state === CircuitState.OPEN) {
             if (Date.now() - this.lastFailureTime > this.config.resetTimeoutMs) {
                 this.state = CircuitState.HALF_OPEN;
-                console.info('CircuitBreaker: Custom State changed to HALF_OPEN. Testing service...');
+                // Testing service...
             } else {
-                console.warn('CircuitBreaker: Circuit is OPEN. Returning fallback or throwing.');
                 if (fallback !== undefined) return fallback;
                 if (this.config.fallbackResponse !== undefined) return this.config.fallbackResponse;
                 throw new Error('CircuitBreaker: Service is currently unavailable (Circuit OPEN).');
@@ -51,7 +50,7 @@ export class CircuitBreaker {
         if (this.state === CircuitState.HALF_OPEN) {
             this.state = CircuitState.CLOSED;
             this.failureCount = 0;
-            console.info('CircuitBreaker: Service recovered. State changed to CLOSED.');
+            // Service recovered. State changed to CLOSED.
         } else {
             // Reset failure count on success in CLOSED state if we want strict consecutive counting
             // Alternatively, some breakers use a time window. We'll stick to consecutive for simplicity as per plan.
@@ -59,17 +58,16 @@ export class CircuitBreaker {
         }
     }
 
-    private onFailure(error: any) {
+    private onFailure(_error: any) {
         this.failureCount++;
         this.lastFailureTime = Date.now();
-        console.error(`CircuitBreaker: Action failed. Count: ${this.failureCount}/${this.config.failureThreshold}`, error);
 
         if (this.state === CircuitState.HALF_OPEN) {
             this.state = CircuitState.OPEN;
-            console.warn('CircuitBreaker: Custom Recovery failed. State changed back to OPEN.');
+            // Recovery failed. State changed back to OPEN.
         } else if (this.failureCount >= this.config.failureThreshold) {
             this.state = CircuitState.OPEN;
-            console.error('CircuitBreaker: Failure threshold reached. State changed to OPEN.');
+            // Failure threshold reached. State changed to OPEN.
         }
     }
 

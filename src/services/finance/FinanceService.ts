@@ -1,4 +1,5 @@
 
+import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { revenueService } from '@/services/RevenueService';
 import { db, auth } from '@/services/firebase';
 import * as Sentry from '@sentry/react';
@@ -145,7 +146,9 @@ export class FinanceService {
 
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<string> {
     try {
-      if (!auth.currentUser || auth.currentUser.uid !== expense.userId) throw new Error('Unauthorized');
+      if (!auth.currentUser || auth.currentUser.uid !== expense.userId) {
+        throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized add expense operation');
+      }
       const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), {
         ...expense,
         createdAt: Timestamp.now()
@@ -163,7 +166,9 @@ export class FinanceService {
    */
   async getExpenses(userId: string): Promise<Expense[]> {
     try {
-      if (!auth.currentUser || auth.currentUser.uid !== userId) throw new Error('Unauthorized');
+      if (!auth.currentUser || auth.currentUser.uid !== userId) {
+        throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized get expenses operation');
+      }
       const q = query(
         collection(db, this.EXPENSES_COLLECTION),
         where('userId', '==', userId),

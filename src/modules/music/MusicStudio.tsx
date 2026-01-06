@@ -140,7 +140,6 @@ export default function MusicStudio() {
                 let features, fingerprint;
 
                 if (existingAnalysis) {
-                    // console.log(`[MusicStudio] Cache Hit for ${result.file.name}`);
                     features = existingAnalysis.features;
                     fingerprint = existingAnalysis.fingerprint;
 

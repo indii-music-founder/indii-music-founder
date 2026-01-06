@@ -192,9 +192,6 @@ export default function App() {
     useOnboardingRedirect();
 
     // Log module changes in dev
-    useEffect(() => {
-        // Log removed (Platinum Polish)
-    }, [currentModule]);
 
     // Handle Theme Switching
     const { userProfile } = useStore();

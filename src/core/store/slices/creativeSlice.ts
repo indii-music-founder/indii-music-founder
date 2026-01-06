@@ -13,6 +13,7 @@ export interface HistoryItem {
     category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
     tags?: string[];
     subject?: string;
+    origin?: 'generated' | 'uploaded';
 }
 
 export interface CanvasImage {
@@ -127,7 +128,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(enrichedItem)
                     .then(() => { /* Saved to Firestore */ })
-                    .catch(e => console.error("Save failed", e));
+                    .catch(() => { /* Error handled silently */ });
             });
         });
     },
@@ -138,11 +139,15 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             // bypass auth check for Ground Zero
             StorageService.loadHistory()
                 .then(history => {
-                    set({ generatedHistory: history });
+                    const generated = history.filter(item => item.origin !== 'uploaded');
+                    const uploaded = history.filter(item => item.origin === 'uploaded');
+                    set({
+                        generatedHistory: generated,
+                        uploadedImages: uploaded
+                    });
                     resolve();
                 })
-                .catch(error => {
-                    console.error("Error loading history:", error);
+                .catch(() => {
                     resolve();
                 });
         });
@@ -150,7 +155,12 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
         generatedHistory: state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item)
     })),
-    removeFromHistory: (id: string) => set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) })),
+    removeFromHistory: (id: string) => {
+        set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+        });
+    },
 
     canvasImages: [],
     selectedCanvasImageId: null,
@@ -162,11 +172,21 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     selectCanvasImage: (id: string | null) => set({ selectedCanvasImageId: id }),
 
     uploadedImages: [],
-    addUploadedImage: (img: HistoryItem) => set((state) => ({ uploadedImages: [img, ...state.uploadedImages] })),
+    addUploadedImage: (img: HistoryItem) => {
+        set((state) => ({ uploadedImages: [img, ...state.uploadedImages] }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.saveItem(img).catch(() => { /* Error handled silently */ });
+        });
+    },
     updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
         uploadedImages: state.uploadedImages.map(img => img.id === id ? { ...img, ...updates } : img)
     })),
-    removeUploadedImage: (id: string) => set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) })),
+    removeUploadedImage: (id: string) => {
+        set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+        });
+    },
 
     studioControls: {
         aspectRatio: '16:9',

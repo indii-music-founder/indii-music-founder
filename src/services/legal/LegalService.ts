@@ -1,3 +1,4 @@
+import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { db } from '@/services/firebase';
 import {
     collection,
@@ -6,11 +7,9 @@ import {
     getDoc,
     getDocs,
     query,
-    where,
     orderBy,
     serverTimestamp,
-    updateDoc,
-    Timestamp
+    updateDoc
 } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { LegalContract, ContractStatus } from '@/modules/legal/types';
@@ -22,7 +21,12 @@ export class LegalService {
      */
     static async saveContract(data: Omit<LegalContract, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
         const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) throw new Error("User not authenticated");
+        if (!userProfile?.id) {
+            throw new AppException(
+                AppErrorCode.AUTH_ERROR,
+                'User not authenticated'
+            );
+        }
 
         const contractData = {
             ...data,
@@ -41,15 +45,17 @@ export class LegalService {
      */
     static async updateContract(id: string, updates: Partial<LegalContract>): Promise<void> {
         const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) throw new Error("User not authenticated");
+        if (!userProfile?.id) {
+            throw new AppException(
+                AppErrorCode.AUTH_ERROR,
+                'User not authenticated'
+            );
+        }
 
         const docRef = doc(db, 'users', userProfile.id, 'contracts', id);
 
-        // Sanitize updates
-        const { id: _id, userId: _userId, createdAt: _createdAt, ...cleanUpdates } = updates;
-
         await updateDoc(docRef, {
-            ...cleanUpdates,
+            ...updates,
             updatedAt: serverTimestamp()
         });
     }

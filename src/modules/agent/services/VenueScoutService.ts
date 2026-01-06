@@ -246,7 +246,7 @@ export class VenueScoutService {
 
             if (!snapshot.empty) return;
 
-            // console.log("Seeding Venues Database...");
+            // Lifecycle log: Seed venues into local database
             const batch = writeBatch(db);
 
             SEED_VENUES.forEach(v => {
@@ -258,10 +258,10 @@ export class VenueScoutService {
             });
 
             await batch.commit();
-            // console.log("Venues seeded successfully.");
+            // Lifecycle log: Venues seeded successfully
 
         } catch (e) {
-            // console.error("Error seeding venues:", e);
+            console.error('[VenueScoutService] Error seeding venues:', e);
         }
     }
 }

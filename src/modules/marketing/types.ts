@@ -35,6 +35,7 @@ export interface CampaignAsset {
     endDate?: string;
     posts: ScheduledPost[];
     status: CampaignStatus;
+    attachedAssets?: string[];
 }
 
 export interface MarketingStats {

@@ -81,10 +81,8 @@ export class AIResponseCache {
                 return null;
             }
 
-            console.debug('[AIResponseCache] Cache Hit:', key);
             return entry.response;
-        } catch (e) {
-            console.warn('[AIResponseCache] Get failed:', e);
+        } catch {
             return null;
         }
     }
@@ -103,8 +101,8 @@ export class AIResponseCache {
                 timestamp: Date.now(),
                 expiresAt: Date.now() + ttl
             });
-        } catch (e) {
-            console.warn('[AIResponseCache] Set failed:', e);
+        } catch {
+            // Silent failure - cache is optional
         }
     }
 

@@ -218,7 +218,7 @@ export interface ValidationResult {
  */
 export interface CostEstimate {
   /** Estimated cost in tokens/credits */
- .amount: number;
+  amount: number;
 
   /** Currency (if applicable) */
   currency?: string;

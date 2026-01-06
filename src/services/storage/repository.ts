@@ -31,7 +31,7 @@ function queueAssetForSync(id: string, blob: Blob): void {
         timestamp: Date.now(),
         retryCount: 0
     });
-    console.info(`[Repository] Asset ${id} queued for sync (${syncQueue.size} items in queue)`);
+    // Asset ${id} queued for sync (${syncQueue.size} items in queue)
 }
 
 /**
@@ -103,8 +103,8 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
         try {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
             await uploadBytes(storageRef, blob);
-        } catch (error) {
-            console.warn(`[Repository] Failed to sync asset ${id} to cloud:`, error);
+        } catch (_error) {
+            // Failed to sync asset ${id} to cloud
             // Queue for retry on next sync
             queueAssetForSync(id, blob);
         }
@@ -165,15 +165,15 @@ export async function saveProfileToStorage(profile: UserProfile): Promise<void> 
     if (user) {
         // Validation: Ensure we are only saving the profile for the current user
         if (profile.id !== user.uid) {
-            console.warn(`[Repository] Profile ID mismatch ignoring cloud sync. Profile: ${profile.id}, Auth: ${user.uid}`);
+            // Profile ID mismatch ignoring cloud sync. Profile: ${profile.id}, Auth: ${user.uid}
             return;
         }
 
         try {
             const docRef = doc(db, 'users', user.uid);
             await setDoc(docRef, profile, { merge: true });
-        } catch (error) {
-            console.warn(`Failed to sync profile to cloud:`, error);
+        } catch (_error) {
+            // Failed to sync profile to cloud
         }
     }
 }
@@ -201,8 +201,8 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
                 await dbLocal.put(PROFILE_STORE, profile);
                 return profile;
             }
-        } catch (error) {
-            console.warn("Failed to fetch profile from cloud", error);
+        } catch (_error) {
+            // Failed to fetch profile from cloud
         }
     }
 
@@ -225,8 +225,8 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', workflowId);
             await setDoc(docRef, { ...workflowWithId, synced: true }, { merge: true });
-        } catch (error) {
-            console.warn(`Failed to sync workflow ${workflowId} to cloud:`, error);
+        } catch (_error) {
+            // Failed to sync workflow ${workflowId} to cloud
         }
     }
 }
@@ -248,8 +248,8 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
                 await dbLocal.put(WORKFLOWS_STORE, workflow);
                 return workflow;
             }
-        } catch (error) {
-            console.warn("Failed to fetch workflow from cloud", error);
+        } catch (_error) {
+            // Failed to fetch workflow from cloud
         }
     }
 
@@ -270,9 +270,9 @@ export async function saveCanvasStateToStorage(id: string, json: string): Promis
             json,
             updatedAt: new Date().toISOString()
         }, { merge: true });
-        console.info(`[Repository] Saved canvas state for ${id}`);
-    } catch (error) {
-        console.warn(`Failed to sync canvas state ${id} to cloud:`, error);
+        // Saved canvas state for ${id}
+    } catch (_error) {
+        // Failed to sync canvas state ${id} to cloud
     }
 }
 
@@ -286,8 +286,8 @@ export async function getCanvasStateFromStorage(id: string): Promise<string | un
         if (snap.exists()) {
             return (snap.data() as CanvasState).json;
         }
-    } catch (error) {
-        console.warn("Failed to fetch canvas state from cloud", error);
+    } catch (_error) {
+        // Failed to fetch canvas state from cloud
     }
 
     return undefined;
@@ -314,8 +314,8 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
             }
 
             return await dbLocal.getAll(WORKFLOWS_STORE); // Return updated local
-        } catch (error) {
-            console.warn("Failed to fetch workflows from cloud", error);
+        } catch (_error) {
+            // Failed to fetch workflows from cloud
         }
     }
 
@@ -329,17 +329,17 @@ export async function syncWorkflows(): Promise<void> {
     const dbLocal = await initDB();
     const localWorkflows = await dbLocal.getAll(WORKFLOWS_STORE);
 
-    console.info(`Syncing ${localWorkflows.length} workflows to cloud...`);
+    // Syncing ${localWorkflows.length} workflows to cloud...
 
     const batchPromises = localWorkflows.map(async (wf) => {
         try {
             const docRef = doc(db, 'users', user.uid, 'workflows', wf.id);
             await setDoc(docRef, { ...wf, synced: true }, { merge: true });
-        } catch (e) {
-            console.warn(`Failed to sync workflow ${wf.id}`, e);
+        } catch (_e) {
+            // Failed to sync workflow ${wf.id}
         }
     });
 
     await Promise.all(batchPromises);
-    console.info("Workflow sync complete.");
+    // Workflow sync complete.
 }

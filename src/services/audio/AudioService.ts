@@ -79,7 +79,7 @@ export class AudioService {
             };
 
             audio.onerror = (e) => {
-                console.error('[AudioService] Playback error:', e);
+                // AudioService Playback error
                 this.currentAudio = null;
                 this.isProcessing = false;
                 item.reject(e);
@@ -88,7 +88,7 @@ export class AudioService {
 
             await audio.play();
         } catch (error) {
-            console.error('[AudioService] Failed to play audio:', error);
+            // AudioService Failed to play audio
             this.isProcessing = false;
             item.reject(error);
             this.processQueue();

@@ -13,7 +13,8 @@ import {
     Timestamp,
     DocumentData,
     onSnapshot,
-    Unsubscribe
+    Unsubscribe,
+    setDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -33,7 +34,18 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             });
             return docRef.id;
         } catch (error) {
-            console.error(`Error adding document to ${this.collectionPath}:`, error);
+            throw error;
+        }
+    }
+
+    async set(id: string, data: T): Promise<void> {
+        try {
+            const docRef = doc(db, this.collectionPath, id);
+            await setDoc(docRef, {
+                ...data,
+                updatedAt: Timestamp.now()
+            }, { merge: true });
+        } catch (error) {
             throw error;
         }
     }
@@ -46,7 +58,6 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
                 updatedAt: Timestamp.now()
             });
         } catch (error) {
-            console.error(`Error updating document ${this.collectionPath}/${id}:`, error);
             throw error;
         }
     }
@@ -56,7 +67,6 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             const docRef = doc(db, this.collectionPath, id);
             await deleteDoc(docRef);
         } catch (error) {
-            console.error(`Error deleting document ${this.collectionPath}/${id}:`, error);
             throw error;
         }
     }
@@ -70,7 +80,6 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             }
             return null;
         } catch (error) {
-            console.error(`Error getting document ${this.collectionPath}/${id}:`, error);
             throw error;
         }
     }
@@ -84,7 +93,6 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
                 ...doc.data()
             } as unknown as T));
         } catch (error) {
-            console.error(`Error listing documents in ${this.collectionPath}:`, error);
             throw error;
         }
     }
@@ -110,7 +118,6 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             } as unknown as T));
             callback(data);
         }, (error) => {
-            console.error(`Error in subscription to ${this.collectionPath}:`, error);
             if (onError) onError(error as Error);
         });
     }

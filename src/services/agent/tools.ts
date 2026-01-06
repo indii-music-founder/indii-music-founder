@@ -1,4 +1,5 @@
 import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
+import { CREATIVE_TOOLS } from '@/modules/creative/tools';
 import { DirectorTools } from './tools/DirectorTools';
 import { VideoTools } from './tools/VideoTools';
 import { MemoryTools } from './tools/MemoryTools';
@@ -23,6 +24,7 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...CoreTools,
     ...DirectorTools,
     ...VideoTools,
+    ...CREATIVE_TOOLS,
     ...MemoryTools,
     ...AnalysisTools,
     ...SocialTools,
@@ -58,6 +60,7 @@ AVAILABLE TOOLS:
 13. generate_video(prompt: string, image?: string, duration?: number) - Generate video.
 14. generate_motion_brush(image: string, mask: string, prompt?: string) - Motion brush animation.
 15. analyze_audio(audio: string) - Analyze audio file.
+16. get_studio_assets(query?: string, limit?: number, type?: 'image'|'video') - Search and retrieve specific assets from the Creative Studio history.
 16. analyze_contract(file_data: string, mime_type: string) - Analyze contract.
 17. generate_social_post(platform: string, topic: string, tone: string) - Generate social post.
 18. save_memory(content: string, type: string, confidence: number) - Save a fact or rule to long-term memory.

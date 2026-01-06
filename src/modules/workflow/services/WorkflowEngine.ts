@@ -56,7 +56,7 @@ export class WorkflowEngine {
         }
 
         this.isRunning = false;
-        // console.log("Workflow Execution Complete");
+        
     }
 
     private async executeNode(task: ExecutionTask) {
@@ -86,7 +86,7 @@ export class WorkflowEngine {
 
                 case 'outputNode':
                     output = task.inputs.data; // Just pass through
-                    // console.log("Workflow Output:", output);
+                    
                     break;
             }
 
@@ -175,7 +175,7 @@ export class WorkflowEngine {
         };
 
         await saveWorkflowToStorage(workflowData);
-        // console.log(`Workflow ${id} saved.`);
+        
     }
 
     public async loadWorkflow(id: string): Promise<any | null> {

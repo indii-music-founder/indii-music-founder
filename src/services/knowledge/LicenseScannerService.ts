@@ -1,6 +1,7 @@
 
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 
 export interface LicenseAnalysis {
     licenseType: 'Royalty-Free' | 'Rights-Managed' | 'Public Domain' | 'Unknown';
@@ -64,9 +65,9 @@ export class LicenseScannerService {
                     platformName: { type: 'string' }
                 },
                 required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
-            };
+            } satisfies JSONSchemaObject;
 
-            const analysis = await AI.generateStructuredData<LicenseAnalysis>(prompt, schema as any);
+            const analysis = await AI.generateStructuredData<LicenseAnalysis>(prompt, schema);
             return analysis;
 
         } catch (error) {

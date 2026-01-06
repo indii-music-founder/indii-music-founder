@@ -110,11 +110,9 @@ export class FirebaseAIService {
             }
 
             this.isInitialized = true;
-            console.info(`[FirebaseAIService] Initialized with model: ${modelName}`);
+            // Initialized with model: ${modelName}
 
         } catch (error) {
-            console.error('[FirebaseAIService] Bootstrap failed:', error);
-            // Re-throw so that ensureInitialized() callers know it failed
             throw this.handleError(error);
         }
     }
@@ -229,8 +227,8 @@ export class FirebaseAIService {
                                 aggResult.usageMetadata.promptTokenCount || 0,
                                 aggResult.usageMetadata.candidatesTokenCount || 0
                             );
-                        } catch (e) {
-                            console.error('[FirebaseAIService] Failed to track stream usage:', e);
+                        } catch {
+                            // Failed to track stream usage (non-critical)
                         }
                     }
 
@@ -260,7 +258,6 @@ export class FirebaseAIService {
                             }
                             controller.close();
                         } catch (streamError) {
-                            console.error('[FirebaseAIService] Stream read error:', streamError);
                             controller.error(streamError);
                         }
                     }
@@ -382,8 +379,7 @@ export class FirebaseAIService {
                 try {
                     return JSON.parse(cached) as T;
                 } catch (e) {
-                    // If cache is corrupt, ignore and regenerate
-                    console.warn('[FirebaseAIService] Cached JSON parse failed, regenerating');
+                    // Cached JSON parse failed, regenerating
                 }
             }
 
@@ -404,7 +400,6 @@ export class FirebaseAIService {
             try {
                 return JSON.parse(text) as T;
             } catch (e) {
-                console.error('[FirebaseAIService] JSON parse failed:', text, e);
                 throw e;
             }
         });
@@ -511,7 +506,6 @@ export class FirebaseAIService {
             const maxAttempts = Math.ceil(timeoutMs / pollInterval);
 
             let attempts = 0;
-            console.warn(`[FirebaseAIService] Video generation timeout: ${timeoutMs}ms (${maxAttempts} attempts)`);
 
             while (attempts < maxAttempts) {
                 const jobRef = doc(db, 'videoJobs', jobId);
@@ -699,7 +693,6 @@ export class FirebaseAIService {
     }
 
     private handleError(error: unknown): AppException {
-        console.error('[FirebaseAIService] Generation Error:', error);
 
         const msg = error instanceof Error ? error.message : String(error);
 
@@ -741,7 +734,7 @@ export class FirebaseAIService {
     private sanitizePrompt(prompt: string | Content[]): string | Content[] {
         if (typeof prompt === 'string') {
             if (InputSanitizer.containsInjectionPatterns(prompt)) {
-                console.warn('[FirebaseAIService] Potential Prompt Injection detected:', prompt.substring(0, 50));
+                // Potential Prompt Injection detected
             }
             return InputSanitizer.sanitize(prompt);
         }
@@ -753,7 +746,7 @@ export class FirebaseAIService {
                     if (part.text) {
                         const cleanText = InputSanitizer.sanitize(part.text);
                         if (InputSanitizer.containsInjectionPatterns(part.text)) {
-                            console.warn('[FirebaseAIService] Potential Prompt Injection detected in content part');
+                            // Potential Prompt Injection detected in content part
                         }
                         return { ...part, text: cleanText };
                     }

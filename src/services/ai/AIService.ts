@@ -320,12 +320,15 @@ export class AIService {
         try {
             await this.rateLimiter.acquire();
 
+            const contents = options.contents ?? [];
+            const tools = options.tools ?? [];
+
             return await firebaseAI.generateContentStream(
-                (options.contents as any) || [],
+                contents as Content[],
                 options.model,
                 options.config,
                 options.systemInstruction,
-                options.tools as any
+                tools
             );
         } catch (error) {
             console.error('[AIService] Stream Response Error:', error);

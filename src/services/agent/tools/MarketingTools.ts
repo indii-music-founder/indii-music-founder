@@ -12,7 +12,8 @@ const CreateCampaignBriefSchema = z.object({
     targetAudience: z.string(),
     budget: z.string(),
     channels: z.array(z.string()),
-    kpis: z.array(z.string())
+    kpis: z.array(z.string()),
+    assets: z.array(z.string()).optional()
 });
 
 const AnalyzeAudienceSchema = z.object({
@@ -38,13 +39,14 @@ const TrackPerformanceSchema = z.object({
 // --- Tools Implementation ---
 
 export const MarketingTools: Record<string, AnyToolFunction> = {
-    create_campaign_brief: wrapTool('create_campaign_brief', async ({ product, goal, budget, duration }: { product: string; goal: string; budget?: string; duration?: string }) => {
+    create_campaign_brief: wrapTool('create_campaign_brief', async ({ product, goal, budget, duration, assetIds }: { product: string; goal: string; budget?: string; duration?: string; assetIds?: string[] }) => {
         const schema = zodToJsonSchema(CreateCampaignBriefSchema);
         const prompt = `
         You are a Marketing Strategist. Create a campaign brief for: ${product}.
         Goal: ${goal}.
         ${budget ? `Budget: ${budget}` : ''}
         ${duration ? `Duration: ${duration}` : ''}
+        ${assetIds ? `Attached Asset IDs: ${assetIds.join(', ')} (Incorporate these into the strategy)` : ''}
         `;
 
         const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
@@ -61,6 +63,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
                 budget: parseFloat(parsed.budget.replace(/[^0-9.]/g, '')) || 0,
                 spent: 0,
                 performance: { reach: 0, clicks: 0 },
+                attachedAssets: assetIds || [],
                 ...briefData
             } as any);
             console.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);

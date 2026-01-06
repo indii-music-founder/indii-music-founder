@@ -13,6 +13,7 @@ import {
     EnhancementType,
     Platform
 } from '@/modules/marketing/types';
+import { AppException, AppErrorCode } from '@/shared/types/errors';
 
 /**
  * CampaignAIService - AI-powered campaign features
@@ -104,7 +105,11 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
             };
         } catch (error) {
             console.error('[CampaignAI] Failed to generate campaign:', error);
-            throw new Error('Failed to generate campaign. Please try again.');
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Failed to generate campaign. Please try again.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
         }
     }
 
@@ -220,7 +225,11 @@ Ensure all versions respect the platform's character limit.
             };
         } catch (error) {
             console.error('[CampaignAI] Failed to enhance post:', error);
-            throw new Error('Failed to enhance post copy. Please try again.');
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Failed to enhance post copy. Please try again.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
         }
     }
 
@@ -278,7 +287,7 @@ Ensure all versions respect the platform's character limit.
                 });
 
             } catch (error) {
-                console.error(`[CampaignAI] Failed to generate image for post ${post.id}:`, error);
+                console.warn(`[CampaignAI] Failed to generate image for post ${post.id}:`, error);
                 // Continue with other posts, don't fail the whole batch
             }
         }
@@ -343,6 +352,7 @@ Return ONLY the image prompt, no explanation or formatting.
             return await AI.generateText(prompt);
         } catch (error) {
             console.error('[CampaignAI] Failed to generate image prompt:', error);
+            console.warn('[CampaignAI] Using fallback prompt for', platform);
             return `Modern, visually striking social media graphic for ${platform}`;
         }
     }
@@ -482,7 +492,11 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
             };
         } catch (error) {
             console.error('[CampaignAI] Failed to predict engagement:', error);
-            throw new Error('Failed to predict engagement. Please try again.');
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Failed to predict engagement. Please try again.',
+                { originalError: error instanceof Error ? error.message : String(error) }
+            );
         }
     }
 

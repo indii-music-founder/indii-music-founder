@@ -26,13 +26,13 @@ export class AudioAnalysisService {
 
         this.initPromise = (async () => {
             try {
-                console.info('Loading Essentia.js audio analysis engine...');
+                // Loading Essentia.js audio analysis engine...
 
                 // HACK: Polyfill/Config for Essentia WASM path in production builds
                 // Essentia's UMD module looks for a global 'EssentiaWASM' object to use as the Module config.
                 // We provide 'locateFile' to point it to the correct location of the .wasm file.
                 // The .wasm file is in 'public/', so it's served at root '/'.
-                (window as any).EssentiaWASM = {
+                (window as unknown as { EssentiaWASM: any }).EssentiaWASM = {
                     locateFile: (path: string, prefix: string) => {
                         if (path.endsWith('.wasm')) {
                             const baseUrl = import.meta.env.BASE_URL || '/';
@@ -66,10 +66,10 @@ export class AudioAnalysisService {
                 }
 
                 this.essentia = new Essentia(moduleInstance);
-                console.info('Essentia Audio Analysis Engine initialized.');
+                // Essentia Audio Analysis Engine initialized.
             } catch (error) {
                 this.initPromise = null; // Allow retry on failure
-                console.error('Failed to initialize Essentia:', error);
+                // Failed to initialize Essentia
                 throw error;
             }
         })();

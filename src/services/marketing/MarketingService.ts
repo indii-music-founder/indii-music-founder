@@ -39,7 +39,6 @@ export class MarketingService {
     }
 
     private static async seedDatabase(userId: string) {
-        // console.log("Seeding Marketing Database...");
         const initialStats = {
             totalReach: 15400,
             engagementRate: 4.2,
