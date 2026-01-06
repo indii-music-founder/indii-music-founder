@@ -285,72 +285,88 @@ function CommandBar() {
                                 {!isMobile && (
                                     <>
                                         <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                    multiple
-                                />
-                                <input
-                                    type="file"
-                                    ref={cameraInputRef}
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                    accept="image/*"
-                                    capture="environment"
-                                />
-                                <PromptInputAction tooltip="Attach files">
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        title="Attach files"
-                                        aria-label="Attach files"
-                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
-                                    >
-                                        <Paperclip size={14} />
-                                        <span className="hidden sm:inline">Attach</span>
-                                    </button>
-                                </PromptInputAction>
-                                <PromptInputAction tooltip="Take a picture">
-                                    <button
-                                        type="button"
-                                        onClick={() => cameraInputRef.current?.click()}
-                                        title="Take a picture"
-                                        aria-label="Take a picture"
-                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 transition-all shadow-sm"
-                                    >
-                                        <Camera size={14} />
-                                        <span className="text-xs font-medium">Camera</span>
-                                    </button>
-                                </PromptInputAction>
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileSelect}
+                                            className="hidden"
+                                            multiple
+                                        />
+                                        <input
+                                            type="file"
+                                            ref={cameraInputRef}
+                                            onChange={handleFileSelect}
+                                            className="hidden"
+                                            accept="image/*"
+                                            capture="environment"
+                                        />
+                                        <PromptInputAction tooltip="Attach files">
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                title="Attach files"
+                                                aria-label="Attach files"
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                            >
+                                                <Paperclip size={14} />
+                                                <span className="hidden sm:inline">Attach</span>
+                                            </button>
+                                        </PromptInputAction>
+                                        <PromptInputAction tooltip="Take a picture">
+                                            <button
+                                                type="button"
+                                                onClick={() => cameraInputRef.current?.click()}
+                                                title="Take a picture"
+                                                aria-label="Take a picture"
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300 transition-all shadow-sm"
+                                            >
+                                                <Camera size={14} />
+                                                <span className="text-xs font-medium">Camera</span>
+                                            </button>
+                                        </PromptInputAction>
                                     </>
                                 )}
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
                                 {/* Delegate Button - Hidden on mobile (available via "More" menu in MobileNav) */}
                                 {!isMobile && (
                                     <div className="relative">
-                                    <button
-                                        type="button"
-                                        onClick={() => setOpenDelegate(!openDelegate)}
-                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
-                                    >
-                                        <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'Indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
-                                        <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
-                                    </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setOpenDelegate(!openDelegate)}
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                        >
+                                            <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'Indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
+                                            <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
+                                        </button>
 
-                                    <DelegateMenu
-                                        isOpen={openDelegate}
-                                        currentModule={currentModule}
-                                        managerAgents={managerAgents}
-                                        departmentAgents={departmentAgents}
-                                        onSelect={handleDelegate}
-                                        onClose={handleCloseDelegate}
-                                    />
+                                        <DelegateMenu
+                                            isOpen={openDelegate}
+                                            currentModule={currentModule}
+                                            managerAgents={managerAgents}
+                                            departmentAgents={departmentAgents}
+                                            onSelect={handleDelegate}
+                                            onClose={handleCloseDelegate}
+                                        />
                                     </div>
                                 )}
                             </div>
 
                             <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => toggleAgentWindow()}
+                                    className={cn(
+                                        "p-1.5 rounded-lg transition-all border flex items-center gap-2 px-3 group",
+                                        isAgentOpen
+                                            ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
+                                            : "bg-black/20 border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10"
+                                    )}
+                                    title="Open Chat"
+                                    aria-label="Open Chat"
+                                >
+                                    <div className={cn("w-2 h-2 rounded-full transition-colors", isAgentOpen ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest group-hover:tracking-[0.15em] transition-all">indii</span>
+                                </button>
+                                <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
                                 <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice input"}>
                                     <button
                                         type="button"

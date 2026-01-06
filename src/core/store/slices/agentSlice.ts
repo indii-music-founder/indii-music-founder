@@ -29,33 +29,184 @@ export interface ApprovalRequest {
 
 export type AgentMode = 'assistant' | 'autonomous' | 'creative' | 'research';
 
+export interface ConversationSession {
+    id: string;
+    title: string;
+    createdAt: number;
+    updatedAt: number;
+    messages: AgentMessage[];
+    participants: string[]; // Agent IDs
+    isArchived?: boolean;
+}
+
 export interface AgentSlice {
+    // Legacy mapping (computed/synced from activeSession)
     agentHistory: AgentMessage[];
+
+    // Session State
+    sessions: Record<string, ConversationSession>;
+    activeSessionId: string | null;
+
     isAgentOpen: boolean;
     agentMode: AgentMode;
     pendingApproval: ApprovalRequest | null;
+
+    // Actions
+    createSession: (title?: string, initialAgents?: string[]) => string;
+    setActiveSession: (sessionId: string) => void;
+    deleteSession: (sessionId: string) => void;
+    updateSessionTitle: (sessionId: string, title: string) => void;
+
     addAgentMessage: (msg: AgentMessage) => void;
     updateAgentMessage: (id: string, updates: Partial<AgentMessage>) => void;
-    clearAgentHistory: () => void;
+    clearAgentHistory: () => void; // Clears ACTIVE session history
+
     toggleAgentWindow: () => void;
     setAgentMode: (mode: AgentMode) => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
+
+    addParticipant: (sessionId: string, agentId: string) => void;
+    loadSessions: () => Promise<void>;
 }
 
 export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
+    // Initial State
     agentHistory: [],
+    sessions: {},
+    activeSessionId: null,
+
     isAgentOpen: false,
     agentMode: 'assistant',
     pendingApproval: null,
 
-    addAgentMessage: (msg) => set((state) => ({ agentHistory: [...state.agentHistory, msg] })),
+    createSession: (title = 'New Conversation', initialAgents = ['indii']) => {
+        const id = crypto.randomUUID();
+        const newSession: ConversationSession = {
+            id,
+            title,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            messages: [],
+            participants: initialAgents
+        };
 
-    updateAgentMessage: (id, updates) => set((state) => ({
-        agentHistory: state.agentHistory.map(msg => msg.id === id ? { ...msg, ...updates } : msg)
+        set(state => ({
+            sessions: { ...state.sessions, [id]: newSession },
+            activeSessionId: id,
+            agentHistory: []
+        }));
+
+        return id;
+    },
+
+    setActiveSession: (sessionId) => {
+        const { sessions } = get();
+        if (sessions[sessionId]) {
+            set({
+                activeSessionId: sessionId,
+                agentHistory: sessions[sessionId].messages
+            });
+        }
+    },
+
+    deleteSession: (sessionId) => set(state => {
+        const newSessions = { ...state.sessions };
+        delete newSessions[sessionId];
+
+        // If deleting active session, fallback to another or null
+        let newActiveId = state.activeSessionId;
+        let newHistory = state.agentHistory;
+
+        if (state.activeSessionId === sessionId) {
+            const remainingIds = Object.keys(newSessions);
+            if (remainingIds.length > 0) {
+                newActiveId = remainingIds[0];
+                newHistory = newSessions[newActiveId].messages;
+            } else {
+                newActiveId = null;
+                newHistory = [];
+            }
+        }
+
+        return {
+            sessions: newSessions,
+            activeSessionId: newActiveId,
+            agentHistory: newHistory
+        };
+    }),
+
+    updateSessionTitle: (sessionId, title) => set(state => ({
+        sessions: {
+            ...state.sessions,
+            [sessionId]: { ...state.sessions[sessionId], title }
+        }
     })),
 
-    clearAgentHistory: () => set({ agentHistory: [] }),
+    addAgentMessage: (msg) => set((state) => {
+        // If no session exists, create one implicitly (safety net)
+        let currentSessionId = state.activeSessionId;
+        let sessions = { ...state.sessions };
+
+        if (!currentSessionId) {
+            currentSessionId = crypto.randomUUID();
+            sessions[currentSessionId] = {
+                id: currentSessionId,
+                title: 'New Conversation',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                messages: [],
+                participants: ['indii']
+            };
+        }
+
+        const updatedSession = {
+            ...sessions[currentSessionId],
+            messages: [...sessions[currentSessionId].messages, msg],
+            updatedAt: Date.now()
+        };
+
+        return {
+            sessions: { ...sessions, [currentSessionId]: updatedSession },
+            activeSessionId: currentSessionId,
+            agentHistory: updatedSession.messages
+        };
+    }),
+
+    updateAgentMessage: (id, updates) => set((state) => {
+        if (!state.activeSessionId) return {};
+
+        const session = state.sessions[state.activeSessionId];
+        const updatedMessages = session.messages.map(msg =>
+            msg.id === id ? { ...msg, ...updates } : msg
+        );
+
+        return {
+            sessions: {
+                ...state.sessions,
+                [state.activeSessionId]: {
+                    ...session,
+                    messages: updatedMessages
+                }
+            },
+            agentHistory: updatedMessages
+        };
+    }),
+
+    clearAgentHistory: () => set(state => {
+        if (!state.activeSessionId) return {};
+
+        return {
+            sessions: {
+                ...state.sessions,
+                [state.activeSessionId]: {
+                    ...state.sessions[state.activeSessionId],
+                    messages: []
+                }
+            },
+            agentHistory: []
+        };
+    }),
 
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
 
@@ -81,4 +232,51 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             set({ pendingApproval: null });
         }
     },
+
+    addParticipant: (sessionId, agentId) => set(state => {
+        const session = state.sessions[sessionId];
+        if (!session || session.participants.includes(agentId)) return {};
+
+        const newParticipants = [...session.participants, agentId];
+
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.updateSession(sessionId, { participants: newParticipants }).catch(console.error);
+        });
+
+        return {
+            sessions: {
+                ...state.sessions,
+                [sessionId]: {
+                    ...session,
+                    participants: newParticipants
+                }
+            }
+        };
+    }),
+
+    loadSessions: async () => {
+        const { sessionService } = await import('@/services/agent/SessionService');
+        const sessions = await sessionService.getSessionsForUser();
+        const sessionMap: Record<string, ConversationSession> = {};
+        sessions.forEach(s => sessionMap[s.id] = s);
+
+        // Fix: ensure messages is always an array
+        sessions.forEach(s => {
+            if (!s.messages) s.messages = [];
+        });
+
+        set(state => {
+            // If we already have an active session, keep it, otherwise set latest
+            let activeId = state.activeSessionId;
+            if (!activeId && sessions.length > 0) {
+                activeId = sessions[0].id; // Most recent due to sort
+            }
+
+            return {
+                sessions: sessionMap,
+                activeSessionId: activeId,
+                agentHistory: activeId ? sessionMap[activeId].messages : []
+            };
+        });
+    }
 });

@@ -75,9 +75,9 @@ export class RevenueService {
         startDate.setDate(endDate.getDate() - 90);
         previousStartDate.setDate(startDate.getDate() - 90);
       } else if (period === '12y') {
-          // Treat as 1 Year (12 months)
-          startDate.setFullYear(endDate.getFullYear() - 1);
-          previousStartDate.setFullYear(startDate.getFullYear() - 1);
+        // Treat as 1 Year (12 months)
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        previousStartDate.setFullYear(startDate.getFullYear() - 1);
       } else {
         // 'all' - start from epoch
         startDate = new Date(0);
@@ -90,32 +90,32 @@ export class RevenueService {
 
       // Fetch Current Period Data
       const qCurrent = query(
-          revenueRef,
-          where('userId', '==', userId),
-          where('createdAt', '>=', startTimestamp),
-          where('createdAt', '<=', endTimestamp)
+        revenueRef,
+        where('userId', '==', userId),
+        where('createdAt', '>=', startTimestamp),
+        where('createdAt', '<=', endTimestamp)
       );
 
       // Fetch Previous Period Data (for change calculation)
       const qPrevious = query(
-          revenueRef,
-          where('userId', '==', userId),
-          where('createdAt', '>=', previousStartTimestamp),
-          where('createdAt', '<', startTimestamp)
+        revenueRef,
+        where('userId', '==', userId),
+        where('createdAt', '>=', previousStartTimestamp),
+        where('createdAt', '<', startTimestamp)
       );
 
       const [snapshotCurrent, snapshotPrevious] = await Promise.all([
-          getDocs(qCurrent),
-          getDocs(qPrevious)
+        getDocs(qCurrent),
+        getDocs(qPrevious)
       ]);
 
       // Seeding check: if current snapshot is empty and period is 'all', check if any data exists to decide on seeding
       if (snapshotCurrent.empty && period === 'all') {
-         const checkAll = await getDocs(query(revenueRef, where('userId', '==', userId), limit(1)));
-         if (checkAll.empty) {
-             await this.seedDatabase(userId);
-             return this.getUserRevenueStats(userId, period);
-         }
+        const checkAll = await getDocs(query(revenueRef, where('userId', '==', userId), limit(1)));
+        if (checkAll.empty) {
+          await this.seedDatabase(userId);
+          return this.getUserRevenueStats(userId, period);
+        }
       }
 
       // Process Current Period
@@ -172,13 +172,13 @@ export class RevenueService {
       // Calculate Previous Revenue for Change %
       let previousRevenue = 0;
       snapshotPrevious.docs.forEach(doc => {
-          const data = doc.data() as RevenueEntry;
-          previousRevenue += (data.amount || 0);
+        const data = doc.data() as RevenueEntry;
+        previousRevenue += (data.amount || 0);
       });
 
       const revenueChange = previousRevenue === 0
-          ? (totalRevenue > 0 ? 100 : 0)
-          : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
+        ? (totalRevenue > 0 ? 100 : 0)
+        : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
 
       // Convert history map to array and sort
       const history = Array.from(historyMap.entries())
@@ -199,7 +199,7 @@ export class RevenueService {
       };
 
     } catch (error) {
-      console.error('Error fetching revenue stats:', error);
+      // Caught at boundary
       throw error;
     }
   }
@@ -236,7 +236,6 @@ export class RevenueService {
       });
       console.info('[RevenueService] Sale recorded successfully');
     } catch (error) {
-      console.error('[RevenueService] Failed to record sale:', error);
       throw error;
     }
   }
@@ -245,6 +244,7 @@ export class RevenueService {
    * Seed initial transactions for a new user/org
    */
   private async seedDatabase(userId: string) {
+    // Lifecycle event for database seeding is fine as console.info
     console.info(`[RevenueService] Seeding database for ${userId}...`);
 
     const initialSales: RevenueEntry[] = [

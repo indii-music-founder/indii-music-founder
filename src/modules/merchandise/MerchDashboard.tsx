@@ -44,7 +44,7 @@ export default function MerchDashboard() {
 
     return (
         <MerchLayout>
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="max-w-7xl mx-auto space-y-8" data-testid="merch-dashboard-content">
 
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -87,7 +87,7 @@ export default function MerchDashboard() {
                             <span className="text-6xl">🍌</span>
                         </div>
                         <div className="relative z-10">
-                            <h3 className="text-lg font-bold text-white mb-2">Ripeness Score</h3>
+                            <h3 className="text-lg font-bold text-white mb-2" data-testid="ripeness-score-title">Ripeness Score</h3>
                             <div className="flex items-end gap-2 mb-2">
                                 <span className="text-4xl font-black text-[#FFE135]">94</span>
                                 <span className="text-sm text-neutral-400 mb-1">/ 100</span>
@@ -104,7 +104,7 @@ export default function MerchDashboard() {
                             <span className="text-6xl">⚡️</span>
                         </div>
                         <div className="relative z-10">
-                            <h3 className="text-lg font-bold text-white mb-2">Peel Performance</h3>
+                            <h3 className="text-lg font-bold text-white mb-2" data-testid="peel-performance-title">Peel Performance</h3>
                             <div className="flex items-end gap-2 mb-2">
                                 <span className="text-4xl font-black text-green-400">+12%</span>
                                 <span className="text-sm text-neutral-400 mb-1">vs last week</span>

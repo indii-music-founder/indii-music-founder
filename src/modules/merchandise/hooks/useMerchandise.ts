@@ -43,14 +43,22 @@ export const useMerchandise = () => {
             })
             .catch((err) => {
                 if (mounted) {
-                    console.error("Failed to load catalog:", err);
-                    setError(err instanceof Error ? err.message : 'Failed to load catalog');
+                    console.warn("[Merchandise] Failed to load catalog:", err);
                     setIsCatalogLoading(false);
                 }
             });
 
+        // Defensive timeout
+        const timer = setTimeout(() => {
+            if (mounted && isCatalogLoading) {
+                console.warn("[Merchandise] Catalog load timed out, proceeding...");
+                setIsCatalogLoading(false);
+            }
+        }, 5000);
+
         return () => {
             mounted = false;
+            clearTimeout(timer);
         };
     }, []);
 
@@ -75,40 +83,50 @@ export const useMerchandise = () => {
 
     // Fetch Revenue Stats and Compute Top Sellers
     useEffect(() => {
-        if (!userProfile?.id || isProductsLoading) return; // Wait for products to load first
+        if (!userProfile?.id) {
+            setIsProductsLoading(false);
+            setIsStatsLoading(false);
+            return;
+        }
+
+        if (isProductsLoading) return; // Wait for products to load first
+
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Stats timeout')), 4000)
+        );
 
         const fetchStats = async () => {
             setIsStatsLoading(true);
             try {
-                // Fetch real stats using new period filtering
-                const revenueStats = await revenueService.getUserRevenueStats(userProfile.id, '30d');
+                // Race stats against a timeout
+                const revenueStats = await Promise.race([
+                    revenueService.getUserRevenueStats(userProfile.id, '30d'),
+                    timeoutPromise
+                ]) as any; // Cast as we know the shape if it wins
 
-                // 1. Update Aggregate Stats with real data
-                setStats({
-                    totalRevenue: revenueStats.sources.merch || 0,
-                    unitsSold: revenueStats.sourceCounts.merch || 0,
-                    conversionRate: null, // Still no visitor tracking, explicitly null
-                    revenueChange: revenueStats.revenueChange, // Real calculated change
-                    unitsChange: 0 // Placeholder: requires similar diff logic for units if needed, keeping 0 for now to avoid "fake" number
-                });
+                if (revenueStats) {
+                    setStats({
+                        totalRevenue: revenueStats.sources.merch || 0,
+                        unitsSold: revenueStats.sourceCounts.merch || 0,
+                        conversionRate: null,
+                        revenueChange: revenueStats.revenueChange,
+                        unitsChange: 0
+                    });
 
-                // 2. Compute Top Sellers
-                // Map revenueByProduct to actual product details
-                const topSellers = products
-                    .map(product => ({
-                        ...product,
-                        revenue: revenueStats.revenueByProduct[product.id] || 0,
-                        units: revenueStats.salesByProduct[product.id] || 0
-                    }))
-                    .filter(p => p.revenue > 0)
-                    .sort((a, b) => b.revenue - a.revenue)
-                    .slice(0, 4); // Top 4
+                    const topSellers = products
+                        .map(product => ({
+                            ...product,
+                            revenue: revenueStats.revenueByProduct[product.id] || 0,
+                            units: revenueStats.salesByProduct[product.id] || 0
+                        }))
+                        .filter(p => p.revenue > 0)
+                        .sort((a, b) => b.revenue - a.revenue)
+                        .slice(0, 4);
 
-                setTopSellingProducts(topSellers);
-
+                    setTopSellingProducts(topSellers);
+                }
             } catch (err) {
-                console.error("Failed to load merch stats:", err);
-                // Don't set main error, just log it, stats will be 0
+                console.warn("[Merchandise] Failed to load merch stats or timed out:", err);
             } finally {
                 setIsStatsLoading(false);
             }

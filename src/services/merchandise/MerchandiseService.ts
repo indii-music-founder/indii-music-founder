@@ -69,7 +69,7 @@ export const MerchandiseService = {
                 ...docSnap.data()
             } as CatalogProduct));
         } catch (error) {
-            console.error('[MerchandiseService] Failed to load catalog:', error);
+            console.warn('[MerchandiseService] Failed to load catalog:', error);
             return [];
         }
     },
