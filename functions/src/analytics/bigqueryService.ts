@@ -71,7 +71,7 @@ export async function executeQuery(
             /\/\*/,                  // Block comments
             /xp_/i,                  // SQL Server extended procedures
             /EXEC(\s|\()/i,          // Execute statements
-            /UNION\s+ALL\s+SELECT/i, // Union injection
+            /UNION(\s+ALL|\s+DISTINCT)?\s+SELECT/i, // Union injection (ALL, DISTINCT, or implicit)
         ];
 
         for (const pattern of dangerousPatterns) {
