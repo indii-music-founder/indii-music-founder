@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, Camera, Loader2, Sparkles, Monitor } from 'lucide-react';
+import { Play, Camera, Loader2, Sparkles } from 'lucide-react';
 
 interface ShowroomStageProps {
     mockupImage: string | null;

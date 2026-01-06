@@ -24,10 +24,10 @@ export default function MerchDashboard() {
 
     if (error) {
         return (
-             <MerchLayout>
+            <MerchLayout>
                 <div className="flex items-center justify-center h-[calc(100vh-100px)] flex-col gap-4">
-                     <p className="text-red-500 font-bold">Failed to load dashboard data.</p>
-                     <p className="text-neutral-400">{error}</p>
+                    <p className="text-red-500 font-bold">Failed to load dashboard data.</p>
+                    <p className="text-neutral-400">{error}</p>
                 </div>
             </MerchLayout>
         );
@@ -78,6 +78,45 @@ export default function MerchDashboard() {
                         change="+1.1%"
                         icon={<TrendingUp className="text-[#FFE135]" />}
                     />
+                </div>
+
+                {/* Creative Health (Banana Metrics) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <MerchCard className="p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <span className="text-6xl">🍌</span>
+                        </div>
+                        <div className="relative z-10">
+                            <h3 className="text-lg font-bold text-white mb-2">Ripeness Score</h3>
+                            <div className="flex items-end gap-2 mb-2">
+                                <span className="text-4xl font-black text-[#FFE135]">94</span>
+                                <span className="text-sm text-neutral-400 mb-1">/ 100</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-2 mb-2">
+                                <div className="bg-[#FFE135] h-2 rounded-full" style={{ width: '94%' }} />
+                            </div>
+                            <p className="text-xs text-neutral-500">Your designs are trending fresh. 2 new viral signals detected.</p>
+                        </div>
+                    </MerchCard>
+
+                    <MerchCard className="p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <span className="text-6xl">⚡️</span>
+                        </div>
+                        <div className="relative z-10">
+                            <h3 className="text-lg font-bold text-white mb-2">Peel Performance</h3>
+                            <div className="flex items-end gap-2 mb-2">
+                                <span className="text-4xl font-black text-green-400">+12%</span>
+                                <span className="text-sm text-neutral-400 mb-1">vs last week</span>
+                            </div>
+                            <div className="flex gap-1 h-2 mb-2">
+                                <div className="flex-1 bg-green-500/20 rounded-full overflow-hidden">
+                                    <div className="h-full bg-green-500 w-[70%]" />
+                                </div>
+                            </div>
+                            <p className="text-xs text-neutral-500">Production efficiency is up. Global logistics optimal.</p>
+                        </div>
+                    </MerchCard>
                 </div>
 
                 {/* Main Sections */}
@@ -133,7 +172,7 @@ export default function MerchDashboard() {
                             {products.slice(0, 3).map((product) => (
                                 <div key={product.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
                                     <div className="w-12 h-12 bg-neutral-800 rounded-md border border-white/10 flex items-center justify-center overflow-hidden">
-                                         {product.image ? (
+                                        {product.image ? (
                                             <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
                                         ) : (
                                             <span className="text-lg">🎨</span>
@@ -151,7 +190,7 @@ export default function MerchDashboard() {
                                     <ArrowRight size={14} className="text-neutral-600 group-hover:text-white" />
                                 </div>
                             ))}
-                             {products.length === 0 && (
+                            {products.length === 0 && (
                                 <p className="text-neutral-500 text-sm">No products created yet.</p>
                             )}
                         </div>

@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator } from 'lucide-react';
-import { BananaTheme } from '../themes';
-import { ShowroomService } from '@/services/showroom/ShowroomService';
+import { BananaTheme } from '@/modules/merchandise/themes';
+import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { useToast } from '@/core/context/ToastContext';
-import { ProductType } from './AssetRack';
+import { ProductType } from '../types';
 
 interface ManufacturingPanelProps {
     theme: BananaTheme;
@@ -26,7 +26,7 @@ const BASE_COSTS: Record<ProductType, number> = {
     'Mug': 6.50,
     'Bottle': 8.00,
     'Poster': 4.00,
-    'Phone Screen': 2.00 // Assuming case? or digital?
+    'Phone Screen': 2.00
 };
 
 const RETAIL_MULTIPLIER = 2.2;
@@ -183,7 +183,8 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
                     onClick={async () => {
                         try {
                             toast.info("Initializing production line...");
-                            const result = await ShowroomService.submitToProduction({
+                            // Updated to use MerchandiseService
+                            const result = await MerchandiseService.submitToProduction({
                                 productId: 'BETA-DESIGN-001',
                                 variantId: `${selectedSize}-${selectedColor.name}`,
                                 quantity: quantity

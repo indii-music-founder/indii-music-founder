@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Camera, Image as ImageIcon } from 'lucide-react';
-import { BananaTheme } from '../themes';
+import { BananaTheme } from '@/modules/merchandise/themes';
 
 interface ScenarioBuilderProps {
     scenePrompt: string;

@@ -36,7 +36,7 @@ const PublishingDashboard = lazy(() => import('../modules/publishing/PublishingD
 const FinanceDashboard = lazy(() => import('../modules/finance/FinanceDashboard'));
 const LicensingDashboard = lazy(() => import('../modules/licensing/LicensingDashboard'));
 const OnboardingPage = lazy(() => import('../modules/onboarding/pages/OnboardingPage'));
-const Showroom = lazy(() => import('../modules/showroom/BananaStudio'));
+// Showroom integrated into Merchandise
 const AgentDashboard = lazy(() => import('../modules/agent/components/AgentDashboard'));
 const DistributionDashboard = lazy(() => import('../modules/distribution/DistributionDashboard'));
 
@@ -73,7 +73,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'publishing': PublishingDashboard,
     'finance': FinanceDashboard,
     'licensing': LicensingDashboard,
-    'showroom': Showroom,
+    // 'showroom': Showroom, // Removed
     'onboarding': OnboardingPage,
     'agent': AgentDashboard,
     'files': FilePreview,
@@ -284,7 +284,7 @@ export default function App() {
 
                     {/* Agent Approval Modal - Shows when agent requests user approval */}
                     <ApprovalModal />
-                    
+
                     {/* Instrument Approval Manager - Shows for instrument execution approvals */}
                     <ApprovalManager />
                 </div>

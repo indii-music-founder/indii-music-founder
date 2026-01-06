@@ -1,11 +1,11 @@
-export interface MerchProduct {
-    id: string; // Firestore ID
-    title: string;
-    price: string; // Keep as string for display like "$24.99", or number if we want math
-    image: string;
-    tags?: string[]; // For standard
-    features?: string[]; // For pro
-    category: 'standard' | 'pro';
-    userId: string;
-    createdAt?: any; // Firestore Timestamp
+export type ProductType = 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
+
+export interface MerchandiseStats {
+    totalRevenue: number;
+    revenueChange: number;
+    unitsSold: number;
+    unitsChange: number;
+    conversionRate: number;
+    ripenessScore: number; // New metric
+    peelPerformance: number; // New metric
 }
