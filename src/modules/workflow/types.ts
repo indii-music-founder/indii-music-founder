@@ -141,6 +141,8 @@ export interface BrandKit {
     referenceImages: BrandAsset[];
     releaseDetails: ReleaseDetails;
     visualsAcknowledged?: boolean; // True if user confirmed they have no visual assets yet
+    targetAudience?: string; // Target demographic for marketing
+    visualIdentity?: string; // Brand visual style/vibe
 }
 
 export interface UserProfile {

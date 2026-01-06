@@ -45,6 +45,18 @@ const isSemanticallySimilar = (a: string, b: string): boolean => {
 };
 
 export default function OnboardingPage() {
+    // Type definitions for tool call arguments (Platinum Polish compliance)
+    interface ShareInsightArgs {
+        insight: string;
+        [key: string]: unknown;
+    }
+
+    interface AskMultipleChoiceArgs {
+        options: string[];
+        question_type: string;
+        [key: string]: unknown;
+    }
+
     const { userProfile, setUserProfile, setModule } = useStore();
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -172,12 +184,13 @@ export default function OnboardingPage() {
                 uiToolCall = functionCalls.find(fc => uiToolNames.includes(fc.name));
 
                 // Dedupe insights: Check if this insight is semantically similar to one already shown
-                if (uiToolCall?.name === 'shareInsight' && (uiToolCall.args as Record<string, any>)?.insight) {
-                    const currentInsight = (uiToolCall.args as Record<string, any>).insight;
+                if (uiToolCall?.name === 'shareInsight' && 'insight' in uiToolCall.args) {
+                    const args = uiToolCall.args as ShareInsightArgs;
+                    const currentInsight = args.insight;
                     const alreadyShown = newHistory.some(
                         msg => msg.toolCall?.name === 'shareInsight' &&
-                            (msg.toolCall?.args as any)?.insight &&
-                            isSemanticallySimilar((msg.toolCall.args as any).insight, currentInsight)
+                            'insight' in msg.toolCall.args &&
+                            isSemanticallySimilar((msg.toolCall.args as ShareInsightArgs).insight, currentInsight)
                     );
                     if (alreadyShown) {
                         // console.log('[Onboarding] Deduped similar insight:', typeof currentInsight === 'string' ? currentInsight.substring(0, 50) : 'Non-string insight');
@@ -186,8 +199,8 @@ export default function OnboardingPage() {
                 }
 
                 // Validate options for askMultipleChoice
-                if (uiToolCall?.name === 'askMultipleChoice' && (uiToolCall.args as any)?.options && (uiToolCall.args as any)?.question_type) {
-                    const args = uiToolCall.args as any;
+                if (uiToolCall?.name === 'askMultipleChoice' && 'options' in uiToolCall.args && 'question_type' in uiToolCall.args) {
+                    const args = uiToolCall.args as AskMultipleChoiceArgs;
                     const validatedOptions = validateOptions(args.question_type, args.options);
                     if (validatedOptions.length === 0) {
                         // All options invalid - fall back to whitelist
@@ -206,9 +219,9 @@ export default function OnboardingPage() {
 
                     // Determine the next topic to ask about (prioritize core identity, then release)
                     const nextMissing = coreMissing.length > 0
-                        ? coreMissing[0] as any
+                        ? coreMissing[0]
                         : releaseMissing.length > 0
-                            ? releaseMissing[0] as any
+                            ? releaseMissing[0]
                             : null;
 
                     const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;

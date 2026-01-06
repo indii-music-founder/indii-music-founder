@@ -54,9 +54,8 @@ export default function PostGenerator() {
         // Build Context from Brand Kit
         const brand = userProfile?.brandKit;
         const artistName = userProfile?.displayName ?? 'Unknown';
-        // Use loose access for potentially non-typed brand fields if they exist in runtime
-        const targetDemo = (brand as any)?.targetAudience ?? 'General';
-        const brandMood = (brand as any)?.visualIdentity ?? 'Neutral';
+        const targetDemo = brand?.targetAudience ?? 'General';
+        const brandMood = brand?.visualIdentity ?? 'Neutral';
         const brandContext = brand ? `
             Brand Name: ${artistName}
             Brand Description: ${brand.brandDescription || ''}
@@ -91,12 +90,15 @@ export default function PostGenerator() {
                 type: 'object',
                 properties: {
                     caption: { type: 'string' },
-                    hashtags: { type: 'array', items: { type: 'string' } },
+                    hashtags: {
+                        type: 'array',
+                        items: { type: 'string' }
+                    },
                     imagePrompt: { type: 'string' }
-                } as any,
+                },
                 required: ['caption', 'hashtags', 'imagePrompt'],
                 nullable: false
-            };
+            } as Schema;
 
             const data = await AI.generateStructuredData<any>(prompt, postSchema);
 

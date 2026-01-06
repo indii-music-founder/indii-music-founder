@@ -60,6 +60,11 @@ interface ExtendedGenerativeModel extends GenerativeModel {
     embedContent?(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
 }
 
+// Interface for Aggregated Stream Response (SDK internal type)
+interface AggregatedStreamResponse extends GenerateContentResponse {
+    text?: () => string;
+}
+
 // Duplicates removed
 
 export interface ChatMessage {
@@ -150,7 +155,7 @@ export class FirebaseAIService {
                 const result = await modelCallback.generateContent(
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
-                        : { contents: sanitizedPrompt } as any,
+                        : sanitizedPrompt as Content,
                     // @ts-ignore - options param not in typed definition but supported by underlying implementation
                     options
                 );
@@ -230,11 +235,11 @@ export class FirebaseAIService {
                     }
 
                     return {
-                        response: aggResult as any,
+                        response: aggResult as AggregatedStreamResponse,
                         text: () => aggResult.text?.() ?? '',
                         functionCalls: () => {
-                            const part = aggResult.candidates?.[0]?.content?.parts?.find(p => 'functionCall' in p);
-                            return (part && 'functionCall' in part ? [part.functionCall] : []) as any[];
+                            const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
+                            return part ? [part.functionCall] : [];
                         }
                     };
                 });
@@ -248,8 +253,8 @@ export class FirebaseAIService {
                                         try { return chunk.text(); } catch { return ''; }
                                     },
                                     functionCalls: () => {
-                                        const part = chunk.candidates?.[0]?.content?.parts?.find(p => 'functionCall' in p);
-                                        return (part && 'functionCall' in part ? [part.functionCall] : []) as any[];
+                                        const part = chunk.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
+                                        return part ? [part.functionCall] : [];
                                     }
                                 });
                             }
@@ -622,7 +627,7 @@ export class FirebaseAIService {
 
             const modelCallback = getGenerativeModel(ai, {
                 model: modelName,
-                generationConfig: config as any
+                generationConfig: config as unknown as Record<string, unknown>
             });
 
             try {
