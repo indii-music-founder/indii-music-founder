@@ -55,7 +55,6 @@ export const ShowroomService = {
 
         console.info("[ShowroomService] Submitting to production:", request);
 
-    async submitToProduction(request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> {
         try {
             // Get current user from store if not provided
             let userId = request.userId;
@@ -150,8 +149,6 @@ export const ShowroomService = {
             console.error("Error generating mockup:", error);
             await updateDoc(docRef, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' });
             throw error;
-            // Fallback for errors
-            return "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80";
         }
     },
 
@@ -203,7 +200,7 @@ export const ShowroomService = {
             const resultUrl = completedJob.outputUrl || completedJob.url;
 
             if (!resultUrl) {
-                 throw new Error("Job completed but no URL returned.");
+                throw new Error("Job completed but no URL returned.");
             }
 
             // Update the local Showroom record
@@ -217,10 +214,8 @@ export const ShowroomService = {
 
         } catch (error) {
             console.error("Error generating video:", error);
-             await updateDoc(docRef, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' });
+            await updateDoc(docRef, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' });
             throw error;
-            // Fallback for errors
-            return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ254Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxxXmD3v6Te/giphy.gif";
         }
     }
 };
