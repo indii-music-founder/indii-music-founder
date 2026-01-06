@@ -31,7 +31,7 @@ export class RenderService {
             await renderMedia({
                 composition: {
                     id: config.compositionId,
-                    props: config.inputProps as any,
+                    props: config.inputProps as unknown as Record<string, unknown>,
                     width: 1920,
                     height: 1080,
                     fps: 30,

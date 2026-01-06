@@ -137,7 +137,7 @@ export class VideoService {
                 model,
                 prompt: options.prompt,
                 image: inputImage,
-                config: config as any // Cast to any only at the boundaries of the external library if types mismatch
+                config: config as unknown as Record<string, unknown>
             });
 
             // Increment usage counter after successful generation

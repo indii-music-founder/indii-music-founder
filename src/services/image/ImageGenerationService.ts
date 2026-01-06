@@ -114,7 +114,6 @@ export class ImageGenerationService {
 
             // Cloud Function returns { images: [{ bytesBase64Encoded, mimeType }] }
             if (!data.images || data.images.length === 0) {
-                console.warn("No images in response");
                 return [];
             }
 
@@ -130,7 +129,6 @@ export class ImageGenerationService {
                 }
             }
         } catch (err) {
-            console.error("Image Generation Error:", err);
             throw err;
         }
 
@@ -147,7 +145,7 @@ export class ImageGenerationService {
                     });
                 }
             } catch (e) {
-                console.warn('[ImageGenerationService] Failed to track usage:', e);
+                // Usage tracking failure should not block generation
             }
         }
 

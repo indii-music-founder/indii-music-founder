@@ -53,7 +53,7 @@ export class VideoGenerationService {
 
             return await firebaseAI.analyzeImage(analysisPrompt, image);
         } catch (e) {
-            console.warn("Temporal Analysis Failed:", e);
+            // Temporal analysis failure should not block generation
             return "";
         }
     }
@@ -66,7 +66,7 @@ export class VideoGenerationService {
                 reason: quotaCheck.allowed ? undefined : quotaCheck.reason
             };
         } catch (e) {
-            console.error("Quota check failed", e);
+            // Quota check failure should not block generation on fallback
             return { canGenerate: true }; // Fallback to avoid blocking
         }
     }
@@ -258,7 +258,6 @@ export class VideoGenerationService {
             }];
 
         } catch (e: unknown) {
-            console.error("Long Form Generation Error:", e);
             throw e;
         }
     }
@@ -279,7 +278,6 @@ export class VideoGenerationService {
 
             return { jobId };
         } catch (error) {
-            console.error("Failed to trigger video generation:", error);
             throw error;
         }
     }

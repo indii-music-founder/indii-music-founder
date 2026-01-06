@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage } from '@/core/store';
-import { ContextPipeline } from './components/ContextPipeline';
+import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
+
+import { coordinator } from './WorkflowCoordinator';
 
 export class AgentService {
     private isProcessing = false;
@@ -36,12 +38,8 @@ export class AgentService {
             // 1. Resolve Context
             const context = await this.contextPipeline.buildContext();
 
-            // 2. Determine Agent
-            let agentId = forcedAgentId;
-            if (!agentId) {
-                agentId = await this.orchestrator.determineAgent(context, text);
-            }
-            // 3. Execute Agent
+            // 2. Workflow Coordination (The Brain)
+            // Decide if this is a simple generation or complex orchestration
             const responseId = uuidv4();
             const { addAgentMessage, updateAgentMessage } = useStore.getState();
 
@@ -53,8 +51,48 @@ export class AgentService {
                 timestamp: Date.now(),
                 isStreaming: true,
                 thoughts: [],
-                agentId
+                agentId: 'generalist' // Default initially
             });
+
+            // Use Coordinator
+            let coordinatorResult: string;
+
+            if (forcedAgentId) {
+                coordinatorResult = 'DELEGATED_TO_AGENT';
+            } else {
+                coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk) => {
+                    // For direct generation, we might get chunks if we enhanced it to support streaming.
+                    // Currently handleUserRequest handles generation atomically but accepts a callback.
+                    // We update the UI optimistically if chunks arrive.
+                    updateAgentMessage(responseId, { text: chunk });
+                });
+            }
+
+            if (coordinatorResult !== 'DELEGATED_TO_AGENT') {
+                // Direct Response from GenAI
+                updateAgentMessage(responseId, {
+                    text: coordinatorResult,
+                    isStreaming: false,
+                    thoughts: [{
+                        id: uuidv4(),
+                        text: "Executed via Fast Path (Workflow Coordinator)",
+                        timestamp: Date.now(),
+                        type: 'logic',
+                        toolName: 'Direct Generation'
+                    }]
+                });
+                return;
+            }
+
+            // 3. Fallback to Agent Orchestration
+            let agentId = forcedAgentId;
+            if (!agentId) {
+                // If coordinator delegated, we determine the best agent
+                agentId = await this.orchestrator.determineAgent(context, text);
+            }
+
+            // Update agent ID in the placeholder
+            updateAgentMessage(responseId, { agentId });
 
             let currentStreamedText = '';
 
@@ -92,7 +130,6 @@ export class AgentService {
 
         } catch (e: unknown) {
             const error = e as Error;
-            console.error('[AgentService] Execution Failed:', error);
             this.addSystemMessage(`❌ **Error:** ${error.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
@@ -111,7 +148,7 @@ export class AgentService {
         return await this.executor.execute(
             agentId,
             task,
-            context as any,
+            context as PipelineContext,
             undefined,
             undefined,
             parentTraceId,

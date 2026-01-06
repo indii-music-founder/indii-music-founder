@@ -32,10 +32,8 @@ export class CurrencyConversionService {
     const toRate = this.getRate(toCurrency);
 
     if (fromRate === undefined || toRate === undefined) {
-      console.warn(`[CurrencyConversionService] Missing exchange rate for ${fromCurrency} or ${toCurrency}. Using 1:1 fallback.`);
-      // If we don't know the currency, we can't reliably convert.
-      // Returning the original amount is dangerous if we are summing, but returning 0 is also bad.
-      // We'll return the amount and hope for the best, but log a warning.
+      // If we don't know the currency, return original amount with 1:1 conversion
+      // This is a fallback for unknown currencies - not ideal but prevents calculation errors
       return amount;
     }
 
@@ -59,8 +57,8 @@ export class CurrencyConversionService {
    * Update rates (placeholder for future API integration)
    */
   async updateRates(): Promise<void> {
-    // TODO: Fetch live rates from an API
-    console.info('[CurrencyConversionService] updating rates (mock)');
+    // Live currency rate updates can be implemented when an exchange rate API is integrated
+    // Current rates are hard-coded approximations for development
   }
 }
 

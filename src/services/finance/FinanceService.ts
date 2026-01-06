@@ -76,7 +76,6 @@ export class FinanceService {
         ]
       };
     } catch (error) {
-      console.error('Error fetching earnings summary:', error);
       throw error;
     }
   }
@@ -105,8 +104,6 @@ export class FinanceService {
       }
 
       // If no data, seed with simulated persistent data
-      console.info("[FinanceService] No persistent earnings report found, seeding initial report for user:", userId);
-
       const initialData: DSREarningsSummary & { userId: string, createdAt: any } = {
         userId,
         createdAt: serverTimestamp(),
@@ -139,7 +136,6 @@ export class FinanceService {
 
     } catch (error) {
       Sentry.captureException(error);
-      console.error("Error fetching earnings reports:", error);
       throw error;
     }
   }
@@ -156,7 +152,6 @@ export class FinanceService {
       return docRef.id;
     } catch (error) {
       Sentry.captureException(error);
-      console.error('Error adding expense:', error);
       throw error;
     }
   }
@@ -187,7 +182,6 @@ export class FinanceService {
       });
     } catch (error) {
       Sentry.captureException(error);
-      console.error('[FinanceService] Failed to get expenses', error);
       throw error;
     }
   }

@@ -8,8 +8,8 @@ import '@testing-library/jest-dom'; // Ensure jest-dom matchers are available
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-        button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+        div: ({ children, layoutId, whileHover, whileTap, initial, animate, exit, variants, transition, ...props }: any) => <div {...props}>{children}</div>,
+        button: ({ children, layoutId, whileHover, whileTap, initial, animate, exit, variants, transition, ...props }: any) => <button {...props}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
@@ -44,7 +44,7 @@ describe('AssetRack', () => {
 
     it('has accessible dropzone', () => {
         render(<AssetRack {...defaultProps} />);
-        const dropzone = screen.getByLabelText('Upload design file');
+        const dropzone = screen.getByLabelText('Upload source graphic');
         expect(dropzone).toHaveAttribute('role', 'button');
         expect(dropzone).toHaveAttribute('tabIndex', '0');
     });
@@ -54,6 +54,7 @@ describe('AssetRack', () => {
         const slider = screen.getByLabelText('Product scale');
         expect(slider).toBeInTheDocument();
         expect(slider).toHaveAttribute('type', 'range');
+    });
     it('has accessible attributes', () => {
         render(<AssetRack {...defaultProps} />);
 
@@ -75,19 +76,19 @@ describe('AssetRack', () => {
     });
 
     it('supports keyboard interaction on dropzone', () => {
-         // Create a ref mock if needed, but since we mock motion.div as div, standard events apply
-         render(<AssetRack {...defaultProps} />);
-         const dropzone = screen.getByLabelText('Upload source graphic');
+        // Create a ref mock if needed, but since we mock motion.div as div, standard events apply
+        render(<AssetRack {...defaultProps} />);
+        const dropzone = screen.getByLabelText('Upload source graphic');
 
-         // Mock the file input click
-         const fileInput = dropzone.querySelector('input[type="file"]') as HTMLInputElement;
-         const clickSpy = vi.spyOn(fileInput, 'click');
+        // Mock the file input click
+        const fileInput = dropzone.querySelector('input[type="file"]') as HTMLInputElement;
+        const clickSpy = vi.spyOn(fileInput, 'click');
 
-         fireEvent.keyDown(dropzone, { key: 'Enter', code: 'Enter' });
-         expect(clickSpy).toHaveBeenCalled();
+        fireEvent.keyDown(dropzone, { key: 'Enter', code: 'Enter' });
+        expect(clickSpy).toHaveBeenCalled();
 
-         clickSpy.mockClear();
-         fireEvent.keyDown(dropzone, { key: ' ', code: 'Space' });
-         expect(clickSpy).toHaveBeenCalled();
+        clickSpy.mockClear();
+        fireEvent.keyDown(dropzone, { key: ' ', code: 'Space' });
+        expect(clickSpy).toHaveBeenCalled();
     });
 });

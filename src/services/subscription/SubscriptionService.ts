@@ -65,11 +65,8 @@ class SubscriptionService {
 
       return subscription;
     } catch (error) {
-      console.error('[SubscriptionService] Failed to fetch subscription:', error);
-
       // FALLBACK FOR DEV: Bypass CORS/Function errors in local development
       if (import.meta.env.DEV) {
-        console.warn('[SubscriptionService] DEV MODE: Returning mock subscription due to error');
         const mockSub: Subscription = {
           id: 'mock_sub_' + userId,
           userId,
@@ -123,11 +120,8 @@ class SubscriptionService {
 
       return stats;
     } catch (error) {
-      console.error('[SubscriptionService] Failed to fetch usage stats:', error);
-
       // FALLBACK FOR DEV: Bypass CORS/Function errors in local development
       if (import.meta.env.DEV) {
-        console.warn('[SubscriptionService] DEV MODE: Returning mock usage stats due to error');
         const mockStats: UsageStats = {
           userId,
           tier: SubscriptionTier.STUDIO,
@@ -296,7 +290,6 @@ class SubscriptionService {
           };
       }
     } catch (error) {
-      console.error('[SubscriptionService] Quota check failed:', error);
       return {
         allowed: false,
         reason: 'Failed to check quota. Please try again.'
@@ -321,7 +314,6 @@ class SubscriptionService {
       const result = await createSessionFn(params);
       return result.data as CheckoutSessionResponse;
     } catch (error) {
-      console.error('[SubscriptionService] Failed to create checkout session:', error);
       throw new Error('Failed to create checkout session. Please try again.');
     }
   }
@@ -344,7 +336,6 @@ class SubscriptionService {
       });
       return result.data as { url: string };
     } catch (error) {
-      console.error('[SubscriptionService] Failed to get customer portal URL:', error);
       throw new Error('Failed to access customer portal. Please try again.');
     }
   }
@@ -368,7 +359,6 @@ class SubscriptionService {
       this.subscriptionCache.delete(targetUserId);
       cacheService.invalidate(`subscription:${targetUserId}`);
     } catch (error) {
-      console.error('[SubscriptionService] Failed to cancel subscription:', error);
       throw new Error('Failed to cancel subscription. Please try again.');
     }
   }
@@ -392,7 +382,6 @@ class SubscriptionService {
       this.subscriptionCache.delete(targetUserId);
       cacheService.invalidate(`subscription:${targetUserId}`);
     } catch (error) {
-      console.error('[SubscriptionService] Failed to resume subscription:', error);
       throw new Error('Failed to resume subscription. Please try again.');
     }
   }
