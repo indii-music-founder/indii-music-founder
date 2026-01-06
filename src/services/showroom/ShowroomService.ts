@@ -2,6 +2,29 @@ import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { delay } from '@/utils/async';
+import { z } from 'zod';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { useStore } from '@/core/store';
+
+// Define Schemas for Validation
+const ManufactureRequestSchema = z.object({
+    productId: z.string().min(1, "Product ID is required"),
+    variantId: z.string().min(1, "Variant ID is required"),
+    quantity: z.number().int().positive("Quantity must be a positive integer"),
+    userId: z.string().optional(),
+});
+
+const MockupGenerationSchema = z.object({
+    asset: z.string().url("Asset must be a valid URL").or(z.string().min(1, "Asset path is required")), // Accommodate paths or URLs
+    type: z.string().min(1, "Type is required"),
+    scene: z.string().min(1, "Scene is required"),
+});
+
+const VideoGenerationSchema = z.object({
+    mockupUrl: z.string().url("Mockup URL must be valid"),
+    motion: z.string().min(1, "Motion prompt is required"),
+});
 
 export interface ManufactureRequest {
     productId: string;
@@ -26,13 +49,17 @@ export const ShowroomService = {
     /**
      * Submits a design to the production line (Firestore).
      */
+    async submitToProduction(input: ManufactureRequest): Promise<{ success: boolean; orderId: string }> {
+        // Validate Input
+        const request = ManufactureRequestSchema.parse(input);
+
+        console.info("[ShowroomService] Submitting to production:", request);
+
     async submitToProduction(request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> {
         try {
-            // Get current user from store (or auth)
-            // Ideally we'd pass userId in, but let's grab it if missing
+            // Get current user from store if not provided
             let userId = request.userId;
             if (!userId) {
-                const { useStore } = await import('@/core/store');
                 userId = useStore.getState().userProfile?.id;
             }
 
@@ -51,6 +78,7 @@ export const ShowroomService = {
             });
 
             // Simulate processing delay then update status
+            // In a real scenario, this would be handled by a backend trigger
             delay(2000).then(async () => {
                 try {
                     await updateDoc(docRef, { status: 'completed' });
@@ -70,21 +98,22 @@ export const ShowroomService = {
 
     /**
      * Generates a mockup request and saves to Firestore.
-     * persistent AI generation of photorealistic mockups.
+     * Uses ImageGenerationService for persistent AI generation.
      */
     async generateMockup(asset: string, type: string, scene: string): Promise<string> {
-        const { useStore } = await import('@/core/store');
-        const userId = useStore.getState().userProfile?.id;
+        // Validate Input
+        MockupGenerationSchema.parse({ asset, type, scene });
 
+        const userId = useStore.getState().userProfile?.id;
         if (!userId) {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to generate mockups.');
         }
 
-        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('@/services/firebase');
+        console.info(`[ShowroomService] Generating ${type} mockup with scene: ${scene}`);
 
-        // Record the generation request
-        await addDoc(collection(db, 'mockup_generations'), {
+        // Record the generation request locally for Showroom history
+        // Note: ImageGenerationService also tracks usage, but this is for the specific "Showroom" context
+        const docRef = await addDoc(collection(db, 'mockup_generations'), {
             userId,
             asset,
             type,
@@ -94,26 +123,23 @@ export const ShowroomService = {
         });
 
         try {
-            const { useStore } = await import('@/core/store');
-            const userId = useStore.getState().userProfile?.id;
+            const prompt = `Professional product photography of a ${type} (${scene}) featuring the design from ${asset}. High resolution, studio lighting, commercial quality.`;
 
-            // Record the generation request
-            const docRef = await addDoc(collection(db, 'mockup_generations'), {
-                asset,
-                type,
-                scene,
-                userId,
-                createdAt: serverTimestamp(),
-                status: 'processing'
+            // Call the real Image Generation Service
+            const results = await ImageGeneration.generateImages({
+                prompt,
+                count: 1,
+                aspectRatio: '1:1', // Standard mockup square
+                resolution: '1024x1024'
             });
 
-            // Beta delay
-            await delay(3000);
+            if (!results || results.length === 0) {
+                throw new Error("No image generated.");
+            }
 
-            // Mock result for now, but persistent record exists
-            const resultUrl = "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80";
+            const resultUrl = results[0].url;
 
-            // Update the record with the result
+            // Update the local Showroom record
             await updateDoc(docRef, {
                 resultUrl,
                 status: 'completed'
@@ -121,6 +147,9 @@ export const ShowroomService = {
 
             return resultUrl;
         } catch (error) {
+            console.error("Error generating mockup:", error);
+            await updateDoc(docRef, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' });
+            throw error;
             // Fallback for errors
             return "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80";
         }
@@ -128,20 +157,21 @@ export const ShowroomService = {
 
     /**
      * Generates a video request and saves to Firestore.
-     * Simulates AI generation of product animations (Persistent).
+     * Uses VideoGenerationService for AI generation.
      */
     async generateVideo(mockupUrl: string, motion: string): Promise<string> {
-        const { useStore } = await import('@/core/store');
-        const userId = useStore.getState().userProfile?.id;
+        // Validate Input
+        VideoGenerationSchema.parse({ mockupUrl, motion });
 
+        const userId = useStore.getState().userProfile?.id;
         if (!userId) {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to generate videos.');
         }
 
-        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('@/services/firebase');
+        console.info(`[ShowroomService] Animating mockup ${mockupUrl} with motion: ${motion}`);
 
-        await addDoc(collection(db, 'video_generations'), {
+        // Record the generation request locally for Showroom history
+        const docRef = await addDoc(collection(db, 'video_generations'), {
             userId,
             mockupUrl,
             motion,
@@ -150,28 +180,45 @@ export const ShowroomService = {
         });
 
         try {
-            const { useStore } = await import('@/core/store');
-            const userId = useStore.getState().userProfile?.id;
-
-            const docRef = await addDoc(collection(db, 'video_generations'), {
-                mockupUrl,
-                motion,
-                userId,
-                createdAt: serverTimestamp(),
-                status: 'processing'
+            // Trigger the real Video Generation Job
+            // We use the mockup image as the first frame
+            const jobs = await VideoGeneration.generateVideo({
+                prompt: motion,
+                firstFrame: mockupUrl,
+                motionStrength: 0.5, // Default for showroom animations
+                duration: 4 // Standard short loop
             });
 
-            await delay(3500);
+            if (!jobs || jobs.length === 0) {
+                throw new Error("Failed to start video job.");
+            }
 
-            const resultUrl = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ254Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxxXmD3v6Te/giphy.gif";
+            const jobId = jobs[0].id;
 
+            // Wait for the job to complete (bridging the async gap for the UI)
+            // In a more advanced UI, we would return the Job ID and let the UI poll,
+            // but we are preserving the existing Promise<string> contract for now.
+            const completedJob = await VideoGeneration.waitForJob(jobId);
+
+            const resultUrl = completedJob.outputUrl || completedJob.url;
+
+            if (!resultUrl) {
+                 throw new Error("Job completed but no URL returned.");
+            }
+
+            // Update the local Showroom record
             await updateDoc(docRef, {
                 resultUrl,
-                status: 'completed'
+                status: 'completed',
+                videoJobId: jobId
             });
 
             return resultUrl;
+
         } catch (error) {
+            console.error("Error generating video:", error);
+             await updateDoc(docRef, { status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' });
+            throw error;
             // Fallback for errors
             return "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ254Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4Z3V4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxxXmD3v6Te/giphy.gif";
         }

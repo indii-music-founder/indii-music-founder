@@ -14,7 +14,7 @@ export const BananaMerch: React.FC = () => {
             <div className="relative rounded-3xl overflow-hidden h-72 border border-primary/20 group shadow-2xl transition-all duration-500 hover:shadow-primary/10">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 z-10" />
                 <img
-                    src="file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/34958d54-a9d0-4ced-a8bb-687671d31774/banana_standard_tshirt_mockup_1767126973658.png"
+                    src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=80"
                     alt="Standard Collection Hero"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms] ease-out"
                 />
