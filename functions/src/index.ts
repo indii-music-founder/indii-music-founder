@@ -27,6 +27,33 @@ export const getInngestClient = () => {
     });
 };
 
+/**
+ * Security Helper: Enforce Admin Access
+ *
+ * Checks if the user has the 'admin' custom claim.
+ * If not, logs a warning and throws Permission Denied.
+ */
+const requireAdmin = (context: functions.https.CallableContext) => {
+    // 1. Must be authenticated
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            "unauthenticated",
+            "User must be authenticated."
+        );
+    }
+
+    // 2. Must have 'admin' custom claim
+    // Note: If no admins exist yet, this securely defaults to deny-all.
+    // Use the Firebase Admin SDK or a script to set `admin: true` on specific UIDs.
+    if (!context.auth.token.admin) {
+        console.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
+        throw new functions.https.HttpsError(
+            "permission-denied",
+            "Access denied: Admin privileges required."
+        );
+    }
+};
+
 const corsHandler = corsLib({ origin: true });
 
 // ----------------------------------------------------------------------------
@@ -854,9 +881,7 @@ import * as touringService from './lib/touring';
 export const listGKEClusters = functions
     .runWith({ timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -885,9 +910,7 @@ export const calculateFuelLogistics = touringService.calculateFuelLogistics;
 export const getGKEClusterStatus = functions
     .runWith({ timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -907,9 +930,7 @@ export const getGKEClusterStatus = functions
 export const scaleGKENodePool = functions
     .runWith({ timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -929,9 +950,7 @@ export const scaleGKENodePool = functions
 export const listGCEInstances = functions
     .runWith({ timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -951,9 +970,7 @@ export const listGCEInstances = functions
 export const restartGCEInstance = functions
     .runWith({ timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -977,9 +994,7 @@ export const restartGCEInstance = functions
 export const executeBigQueryQuery = functions
     .runWith({ timeoutSeconds: 120, memory: '512MB' })
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -999,9 +1014,7 @@ export const executeBigQueryQuery = functions
 export const getBigQueryTableSchema = functions
     .runWith({ timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1021,9 +1034,7 @@ export const getBigQueryTableSchema = functions
 export const listBigQueryDatasets = functions
     .runWith({ timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
-        }
+        requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
