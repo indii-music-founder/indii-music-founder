@@ -31,7 +31,8 @@ vi.mock('firebase/firestore', () => ({
         fromDate: vi.fn(d => ({ toDate: () => d }))
     },
     orderBy: vi.fn(),
-    limit: vi.fn()
+    limit: vi.fn(),
+    serverTimestamp: vi.fn()
 }));
 
 // Use current directory import since the test is co-located with the service
@@ -43,10 +44,10 @@ describe('RevenueService (Production Logic)', () => {
     });
 
     it('getTotalRevenue should query Firestore with correct filter', async () => {
-        // Setup mock response
+        // Setup mock response with valid Zod data (requires userId)
         const mockDocs = [
-            { data: () => ({ amount: 100 }) },
-            { data: () => ({ amount: 50.50 }) }
+            { data: () => ({ amount: 100, userId: 'user-123', source: 'direct' }) },
+            { data: () => ({ amount: 50.50, userId: 'user-123', source: 'direct' }) }
         ];
         mocks.getDocs.mockResolvedValue({
             docs: mockDocs,
@@ -63,9 +64,9 @@ describe('RevenueService (Production Logic)', () => {
 
     it('getRevenueBySource should aggregate correctly', async () => {
         const mockDocs = [
-            { data: () => ({ amount: 100, source: 'direct' }) },
-            { data: () => ({ amount: 50, source: 'social_drop' }) },
-            { data: () => ({ amount: 25, source: 'direct' }) }
+            { data: () => ({ amount: 100, source: 'direct', userId: 'user-123' }) },
+            { data: () => ({ amount: 50, source: 'social_drop', userId: 'user-123' }) },
+            { data: () => ({ amount: 25, source: 'direct', userId: 'user-123' }) }
         ];
         mocks.getDocs.mockResolvedValue({
             docs: mockDocs,

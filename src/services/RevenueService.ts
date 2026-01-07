@@ -1,46 +1,10 @@
 
 import { db, auth } from '@/services/firebase';
-import { collection, query, where, getDocs, Timestamp, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
+import { RevenueEntrySchema, RevenueStatsSchema, type RevenueEntry, type RevenueStats } from '@/services/revenue/schema';
 
-export interface RevenueStats {
-  totalRevenue: number;
-  revenueChange: number; // percentage
-  pendingPayouts: number;
-  lastPayoutAmount: number;
-  lastPayoutDate?: Date;
-  sources: {
-    streaming: number;
-    merch: number;
-    licensing: number;
-    social: number;
-  };
-  sourceCounts: {
-    streaming: number;
-    merch: number;
-    licensing: number;
-    social: number;
-  };
-  revenueByProduct: Record<string, number>;
-  salesByProduct: Record<string, number>;
-  history: {
-    date: string;
-    amount: number;
-  }[];
-}
-
-export interface RevenueEntry {
-  id?: string;
-  productId?: string;
-  productName?: string;
-  amount: number;
-  currency?: string;
-  source: string; // 'streaming', 'merch', 'licensing', 'social', 'social_drop', etc.
-  customerId?: string;
-  userId: string;
-  status?: 'completed' | 'pending' | 'failed';
-  timestamp?: number;
-  createdAt?: any;
-}
+// Re-export types for backward compatibility or direct use
+export type { RevenueEntry, RevenueStats } from '@/services/revenue/schema';
 
 export class RevenueService {
   private readonly COLLECTION = 'revenue';
@@ -50,11 +14,6 @@ export class RevenueService {
    */
   async getUserRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
     try {
-      // Mock for guest
-      if (userId === 'guest') {
-        return this.getMockRevenueStats(period);
-      }
-
       const currentUser = auth.currentUser;
       // Allow 'superuser' stub for development/testing
       if (userId !== 'superuser' && (!currentUser || currentUser.uid !== userId)) {
@@ -109,15 +68,6 @@ export class RevenueService {
         getDocs(qPrevious)
       ]);
 
-      // Seeding check: if current snapshot is empty and period is 'all', check if any data exists to decide on seeding
-      if (snapshotCurrent.empty && period === 'all') {
-        const checkAll = await getDocs(query(revenueRef, where('userId', '==', userId), limit(1)));
-        if (checkAll.empty) {
-          await this.seedDatabase(userId);
-          return this.getUserRevenueStats(userId, period);
-        }
-      }
-
       // Process Current Period
       let totalRevenue = 0;
       const sources = {
@@ -137,11 +87,21 @@ export class RevenueService {
       const historyMap = new Map<string, number>();
 
       snapshotCurrent.docs.forEach(doc => {
-        const data = doc.data() as RevenueEntry;
+        const rawData = doc.data();
+
+        // Zod Validation with graceful fallback for partial data
+        const parseResult = RevenueEntrySchema.safeParse(rawData);
+
+        if (!parseResult.success) {
+          console.warn(`[RevenueService] Invalid document ${doc.id}:`, parseResult.error);
+          return; // Skip invalid documents
+        }
+
+        const data = parseResult.data;
         const amount = data.amount || 0;
         totalRevenue += amount;
 
-        // Agreggate Sources
+        // Aggregate Sources
         const source = data.source || 'other';
         if (['streaming', 'royalties', 'direct'].includes(source)) {
           sources.streaming += amount;
@@ -164,16 +124,25 @@ export class RevenueService {
         }
 
         // Aggregate History
-        const date = data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date();
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        // Handle Firestore Timestamp or standard Date/Number
+        let dateObj = new Date();
+        if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+           dateObj = data.createdAt.toDate();
+        } else if (data.timestamp) {
+           dateObj = new Date(data.timestamp);
+        }
+
+        const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
         historyMap.set(dateKey, (historyMap.get(dateKey) || 0) + amount);
       });
 
       // Calculate Previous Revenue for Change %
       let previousRevenue = 0;
       snapshotPrevious.docs.forEach(doc => {
-        const data = doc.data() as RevenueEntry;
-        previousRevenue += (data.amount || 0);
+        const parseResult = RevenueEntrySchema.safeParse(doc.data());
+        if (parseResult.success) {
+            previousRevenue += (parseResult.data.amount || 0);
+        }
       });
 
       const revenueChange = previousRevenue === 0
@@ -185,12 +154,12 @@ export class RevenueService {
         .map(([date, amount]) => ({ date, amount }))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      return {
+      const result: RevenueStats = {
         totalRevenue,
         revenueChange,
-        pendingPayouts: totalRevenue * 0.1, // Still using heuristic for now as payouts aren't tracked
-        lastPayoutAmount: 5000, // Placeholder - requires Payouts collection
-        lastPayoutDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // Placeholder
+        pendingPayouts: totalRevenue * 0.1, // Still using heuristic for now
+        lastPayoutAmount: 0, // No hardcoded placeholder
+        lastPayoutDate: undefined,
         sources,
         sourceCounts,
         revenueByProduct,
@@ -198,8 +167,10 @@ export class RevenueService {
         history
       };
 
+      return result;
+
     } catch (error) {
-      // Caught at boundary
+      console.error("[RevenueService] Failed to fetch stats:", error);
       throw error;
     }
   }
@@ -230,84 +201,18 @@ export class RevenueService {
 
   async recordSale(entry: RevenueEntry) {
     try {
+      // Validate before writing
+      const validatedEntry = RevenueEntrySchema.parse(entry);
+
       await addDoc(collection(db, this.COLLECTION), {
-        ...entry,
+        ...validatedEntry,
         createdAt: entry.timestamp ? Timestamp.fromMillis(entry.timestamp) : serverTimestamp()
       });
       console.info('[RevenueService] Sale recorded successfully');
     } catch (error) {
+      console.error("[RevenueService] Failed to record sale:", error);
       throw error;
     }
-  }
-
-  /**
-   * Seed initial transactions for a new user/org
-   */
-  private async seedDatabase(userId: string) {
-    // Lifecycle event for database seeding is fine as console.info
-    console.info(`[RevenueService] Seeding database for ${userId}...`);
-
-    const initialSales: RevenueEntry[] = [
-      {
-        productId: 'prod-1',
-        productName: 'Neon Genesis (Digital Vinyl)',
-        amount: 25.00,
-        currency: 'USD',
-        source: 'merch',
-        customerId: 'cust-mock-1',
-        status: 'completed',
-        userId: userId
-      },
-      {
-        productId: 'prod-2',
-        productName: 'Lofi Link (Sample Pack)',
-        amount: 15.00,
-        currency: 'USD',
-        source: 'social_drop',
-        customerId: 'cust-mock-2',
-        status: 'completed',
-        userId: userId
-      },
-      {
-        productId: 'prod-3',
-        productName: 'Streaming Royalty (Spotify)',
-        amount: 124.50,
-        currency: 'USD',
-        source: 'streaming',
-        customerId: 'spotify-aggregator',
-        status: 'completed',
-        userId: userId
-      }
-    ];
-
-    for (const sale of initialSales) {
-      await this.recordSale(sale);
-    }
-  }
-
-  private getMockRevenueStats(period: string): RevenueStats {
-    return {
-      totalRevenue: 50000,
-      revenueChange: 15,
-      pendingPayouts: 5000,
-      lastPayoutAmount: 12000,
-      lastPayoutDate: new Date(),
-      sources: {
-        streaming: 20000,
-        merch: 15000,
-        licensing: 10000,
-        social: 5000
-      },
-      sourceCounts: {
-        streaming: 100,
-        merch: 50,
-        licensing: 20,
-        social: 10
-      },
-      revenueByProduct: {},
-      salesByProduct: {},
-      history: []
-    };
   }
 }
 
