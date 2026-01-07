@@ -114,6 +114,10 @@ service cloud.firestore {
 
       // Only members can update (DELETION RESTRICTED to admins via backend)
       allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
+      // Only members can update
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
+
+      // Prevent deletion (only admins via backend should delete orgs)
       allow delete: if false;
     }
 

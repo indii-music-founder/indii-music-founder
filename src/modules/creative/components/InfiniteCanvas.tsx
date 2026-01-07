@@ -65,6 +65,14 @@ export default function InfiniteCanvas() {
         ctx.fillStyle = '#151515';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Calculate visible viewport in world coordinates
+        // ⚡ Bolt Optimization: Viewport Culling
+        // Only draw images that intersect with the current view
+        const viewportLeft = -offset.x / scale;
+        const viewportTop = -offset.y / scale;
+        const viewportRight = (canvas.width - offset.x) / scale;
+        const viewportBottom = (canvas.height - offset.y) / scale;
+
         ctx.save();
         ctx.translate(offset.x, offset.y);
         ctx.scale(scale, scale);
@@ -94,6 +102,12 @@ export default function InfiniteCanvas() {
                 if (img.id === dragImageId.current) {
                     drawX += dragAccumulator.current.x;
                     drawY += dragAccumulator.current.y;
+                }
+
+                // ⚡ Bolt Optimization: Skip drawing if off-screen (Viewport Culling)
+                if (drawX + w < viewportLeft || drawX > viewportRight ||
+                    drawY + h < viewportTop || drawY > viewportBottom) {
+                    return;
                 }
 
                 ctx.drawImage(image, drawX, drawY, w, h);
