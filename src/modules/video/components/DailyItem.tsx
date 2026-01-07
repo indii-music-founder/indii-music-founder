@@ -27,6 +27,7 @@ export const DailyItem = React.memo<DailyItemProps>(({
             role="button"
             tabIndex={0}
             aria-label={`Select video: ${video.prompt || 'Untitled video'}`}
+            aria-pressed={isSelected}
             onKeyDown={handleKeyDown}
             onClick={() => onSelect(video)}
             draggable
