@@ -187,6 +187,10 @@
         "private": true
       }
     ],
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**",
+      "**/node_modules/ffprobe-static/**"
+    ],
     "win": {
       "verifyUpdateCodeSignature": true
     },

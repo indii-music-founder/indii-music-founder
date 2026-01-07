@@ -9,11 +9,25 @@ import { apiService } from '../services/APIService';
 // Fix for packing in Electron (files in asar)
 const getBinaryPath = (binaryPath: string | null) => {
     if (!binaryPath) return '';
-    return binaryPath.replace('app.asar', 'app.asar.unpacked');
+    const fixedPath = binaryPath.replace('app.asar', 'app.asar.unpacked');
+    // Log path for debugging production builds
+    if (fixedPath !== binaryPath) {
+        console.log(`[AudioHandler] Adjusted binary path from ${binaryPath} to ${fixedPath}`);
+    }
+    return fixedPath;
 }
 
-if (ffmpegPath) ffmpeg.setFfmpegPath(getBinaryPath(ffmpegPath));
-if (ffprobePath.path) ffmpeg.setFfprobePath(getBinaryPath(ffprobePath.path));
+if (ffmpegPath) {
+    const fixedFfmpegPath = getBinaryPath(ffmpegPath);
+    ffmpeg.setFfmpegPath(fixedFfmpegPath);
+    console.log(`[AudioHandler] FFmpeg path set to: ${fixedFfmpegPath}`);
+}
+
+if (ffprobePath.path) {
+    const fixedFfprobePath = getBinaryPath(ffprobePath.path);
+    ffmpeg.setFfprobePath(fixedFfprobePath);
+    console.log(`[AudioHandler] FFprobe path set to: ${fixedFfprobePath}`);
+}
 
 const calculateFileHash = (filePath: string): Promise<string> => {
     return new Promise((resolve, reject) => {
