@@ -258,11 +258,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         const { sessionService } = await import('@/services/agent/SessionService');
         const sessions = await sessionService.getSessionsForUser();
         const sessionMap: Record<string, ConversationSession> = {};
-        sessions.forEach(s => sessionMap[s.id] = s);
 
-        // Fix: ensure messages is always an array
         sessions.forEach(s => {
+            // Ensure messages is always an array
             if (!s.messages) s.messages = [];
+            sessionMap[s.id] = s;
         });
 
         set(state => {
