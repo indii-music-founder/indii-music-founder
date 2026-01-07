@@ -44,7 +44,8 @@ const metaEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined
 
 const processEnv = {
     // Use environment variables when available - with fallbacks for Web/Public hosting
-    apiKey: readEnv('VITE_API_KEY') || "AIzaSyDahlGblu9DJFLZf2DpiZXrKJVb3luD40w",
+    // 🛡️ Sentinel: Removed hardcoded fallback API key for security.
+    apiKey: readEnv('VITE_API_KEY') || "",
     projectId: readEnv('VITE_VERTEX_PROJECT_ID') || "indiios-v-1-1",
     location: readEnv('VITE_VERTEX_LOCATION') || "us-central1",
     useVertex: toBoolean(readEnv('VITE_USE_VERTEX') || "false"),
