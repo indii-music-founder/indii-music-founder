@@ -4,7 +4,7 @@ import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
 import { TimelineClip } from './TimelineClip';
 import { PIXELS_PER_FRAME } from '../constants';
 
-interface TimelineTrackProps {
+export interface TimelineTrackProps {
     track: VideoTrack;
     clips: VideoClip[];
     selectedClipId: string | null;
