@@ -78,11 +78,11 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
             {/* Timeline Controls */}
             <div className="h-12 border-b border-[--border] flex items-center px-4 gap-4 bg-[--card] z-10">
                 <div className="flex items-center gap-2">
-                    <button onClick={() => handleSeek(0)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white"><SkipBack size={16} /></button>
-                    <button onClick={handlePlayPause} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white">
+                    <button onClick={() => handleSeek(0)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to start"><SkipBack size={16} /></button>
+                    <button onClick={handlePlayPause} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label={isPlaying ? "Pause" : "Play"}>
                         {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                     </button>
-                    <button onClick={() => handleSeek(project.durationInFrames)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white"><SkipForward size={16} /></button>
+                    <button onClick={() => handleSeek(project.durationInFrames)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to end"><SkipForward size={16} /></button>
                 </div>
                 <div className="h-6 w-px bg-gray-700 mx-2"></div>
                 <span className="text-xs text-[--primary] font-mono font-bold">{formatTime(0)}</span>
@@ -127,7 +127,14 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                 ))}
 
                 {/* Add Track Button (Bottom) */}
-                <div className="h-10 flex items-center justify-center border-2 border-dashed border-[--border] rounded hover:border-[--primary]/50 hover:bg-[--muted]/50 cursor-pointer transition-all m-4" onClick={handleAddTrack} role="button">
+                <div
+                    className="h-10 flex items-center justify-center border-2 border-dashed border-[--border] rounded hover:border-[--primary]/50 hover:bg-[--muted]/50 cursor-pointer transition-all m-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--ring]"
+                    onClick={handleAddTrack}
+                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleAddTrack()}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Add new track"
+                >
                     <span className="text-xs text-gray-500 flex items-center gap-2"><Plus size={14} /> Add Track</span>
                 </div>
             </div>
