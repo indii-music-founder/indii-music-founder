@@ -47,6 +47,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!title || !startDate) {
             toast.error('Please fill in required fields');
             return;
@@ -82,6 +83,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
+            data-testid="create-campaign-modal-backdrop"
         >
             <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b border-gray-800 flex items-center justify-between">
@@ -93,12 +95,13 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         onClick={onClose}
                         className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none rounded-md p-1"
                         aria-label="Close modal"
+                        data-testid="close-modal-btn"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSave} className="p-6 space-y-4">
+                <form onSubmit={handleSave} className="p-6 space-y-4" noValidate>
                     <div>
                         <label htmlFor="campaign-title" className="block text-sm font-medium text-gray-400 mb-1">Campaign Name *</label>
                         <input
@@ -110,6 +113,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
                             required
                             autoFocus
+                            data-testid="campaign-title-input"
                         />
                     </div>
 
@@ -121,6 +125,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief overview of the campaign..."
                             className="w-full h-24 bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none resize-none"
+                            data-testid="campaign-description-input"
                         />
                     </div>
 
@@ -136,6 +141,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     onChange={(e) => setStartDate(e.target.value)}
                                     className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
                                     required
+                                    data-testid="campaign-start-date-input"
                                 />
                             </div>
                         </div>
@@ -149,6 +155,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
                                     className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
+                                    data-testid="campaign-end-date-input"
                                 />
                             </div>
                         </div>
@@ -161,6 +168,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             value={platform}
                             onChange={(e) => setPlatform(e.target.value)}
                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
+                            data-testid="campaign-platform-select"
                         >
                             <option>Instagram</option>
                             <option>Twitter</option>
@@ -175,6 +183,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             type="button"
                             onClick={onClose}
                             className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors border border-gray-700"
+                            data-testid="cancel-campaign-btn"
                         >
                             Cancel
                         </button>
@@ -182,10 +191,11 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             type="submit"
                             disabled={isLoading}
                             className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            data-testid="create-campaign-submit-btn"
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="animate-spin" size={20} />
+                                    <Loader2 className="animate-spin" size={20} data-testid="loading-spinner" />
                                     <span>Creating...</span>
                                 </>
                             ) : (
