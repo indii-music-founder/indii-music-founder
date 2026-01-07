@@ -22,3 +22,7 @@
 2. Implement `onKeyDown` (Enter/Space) to trigger the hidden file input's `click()`.
 3. Add visible focus indicators (`focus-visible:ring-2`) to guide keyboard users.
 4. Provide clear instructions via `aria-label` or helper text.
+
+## 2025-05-24 - [Hover-Revealed Actions]
+**Learning:** Actions hidden by opacity (e.g., "Add to Cart" on hover) create invisible focus traps for keyboard users. They can tab to it but see no change.
+**Action:** Use `group-focus-within:opacity-100` on the container and `focus-visible` styles on the button to ensure visibility during keyboard navigation.
