@@ -333,7 +333,7 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
 
             while (jobStatus !== "SUCCEEDED" && jobStatus !== "FAILED" && retries < 60) {
                 // Wait for 10 seconds between checks
-                await step.sleep("wait-for-transcoder", "10s");
+                await step.sleep(`wait-for-transcoder-${retries}`, "10s");
 
                 jobStatus = await step.run(`check-status-${retries}`, async () => {
                     const [job] = await transcoder.getJob({ name: jobName });
