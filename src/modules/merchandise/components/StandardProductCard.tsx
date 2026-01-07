@@ -21,8 +21,8 @@ export const StandardProductCard = React.memo(({ product }: StandardProductCardP
                         Best Seller
                     </div>
                 </div>
-                <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                    <button className="w-full bg-background text-foreground font-bold py-3 rounded-xl shadow-2xl flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-all translate-y-4 group-hover:translate-y-0 duration-300">
+                <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-end p-6">
+                    <button className="w-full bg-background text-foreground font-bold py-3 rounded-xl shadow-2xl flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-all translate-y-4 group-hover:translate-y-0 group-focus-within:translate-y-0 duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
                         <ShoppingCart size={18} />
                         ADD TO CART
                     </button>
