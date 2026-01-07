@@ -136,6 +136,11 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                     remarkPlugins={[remarkGfm]}
                     components={{
                         img: ImageRenderer,
+                        table: ({ node, ...props }: any) => (
+                            <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
+                                <table {...props} className="min-w-full" />
+                            </div>
+                        ),
                         code({ node, inline, className, children, ...props }: any) {
                             const match = /language-(\w+)/.exec(className || '')
                             const isJson = match && match[1] === 'json';
