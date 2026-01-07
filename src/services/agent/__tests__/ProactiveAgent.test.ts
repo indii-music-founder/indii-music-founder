@@ -2,11 +2,19 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { proactiveService } from '../ProactiveService';
 import { agentService } from '../AgentService';
 import { events } from '@/core/events';
+import { agentRegistry } from '../registry';
+import { type ValidAgentId } from '../types';
 
 // Mock dependencies
 vi.mock('../AgentService', () => ({
     agentService: {
         runAgent: vi.fn().mockResolvedValue({ role: 'model', text: 'Task executing', timestamp: Date.now() })
+    }
+}));
+
+vi.mock('../registry', () => ({
+    agentRegistry: {
+        getAsync: vi.fn()
     }
 }));
 
@@ -62,6 +70,22 @@ describe('ProactiveService', () => {
             ]
         });
 
+        // Mock the agent registry to return a specific agent config for 'marketing'
+        (agentRegistry.getAsync as any).mockImplementation(async (agentId: string) => {
+            if (agentId === 'marketing') {
+                return {
+                    id: 'marketing',
+                    name: 'Marketing Agent',
+                    description: 'Agent for marketing tasks',
+                    systemPrompt: 'You are a marketing agent.',
+                    category: 'specialist',
+                    color: 'bg-blue-500',
+                    tools: []
+                };
+            }
+            return undefined;
+        });
+
         // Trigger polling manually for testing instead of relying on intervals
         // @ts-ignore - reaching into private method for test
         await proactiveService.checkScheduledTasks();
@@ -88,6 +112,23 @@ describe('ProactiveService', () => {
                     })
                 }
             ]
+        });
+
+        // Mock the agent registry to return a specific agent config for 'researcher'
+        (agentRegistry.getAsync as any).mockImplementation(async (agentId: string) => {
+            if (agentId === 'researcher') {
+                return {
+                    id: 'researcher',
+                    name: 'Researcher Agent',
+                    description: 'Can analyze results',
+                    systemPrompt: 'You are a researcher.',
+                    category: 'specialist',
+                    color: 'bg-green-500',
+                    tools: [],
+                    functions: {}
+                };
+            }
+            return undefined;
         });
 
         // Emit event

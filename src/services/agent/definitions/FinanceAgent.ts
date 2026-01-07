@@ -1,6 +1,7 @@
 import { AgentConfig } from "../types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { Schema } from 'firebase/ai';
 
 export const FinanceAgent: AgentConfig = {
     id: "finance",
@@ -47,35 +48,45 @@ Example: "By handling this metadata yourself, you just saved $45 in admin fees a
             };
         },
         search_knowledge: async (args: { query: string }) => {
-            // Simulating RAG by asking the AI to recall knowledge rooted in its system prompt context
-            // or we could hook up a real Vector DB service here if available.
+            /**
+             * Answer financial queries based on industry economics.
+             * Simulating RAG by asking the AI to recall knowledge rooted in its system prompt context.
+             */
             const prompt = `Answer the following financial query based on standard music industry economics and the 'indiiOS Dividend' knowledge base.
             Query: ${args.query}`;
 
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { answer: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                return { success: false, error: message };
             }
         },
         analyze_receipt: async (args: { image_data: string, mime_type: string }) => {
+            /**
+             * Extract details from a receipt image using structured data generation.
+             */
             const prompt = `Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals). Return as JSON.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object', nullable: false } as Schema);
                 return { success: true, data: { receipt_data: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                return { success: false, error: message };
             }
         },
         audit_distribution: async (args: { trackTitle: string; distributor: string }) => {
-            // Simplified logic check, could be AI enhanced for partner specific rules
+            /**
+             * Audit track metadata for distribution readiness to a specific partner.
+             */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
                 const advice = await firebaseAI.generateText(prompt);
                 return { success: true, data: { status: "Audited", advice } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                return { success: false, error: message };
             }
         }
     },

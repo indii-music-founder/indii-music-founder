@@ -42,6 +42,22 @@ export interface ShotItem {
     cameraMovement?: string;
 }
 
+export interface WhiskItem {
+    id: string;
+    type: 'text' | 'image';
+    content: string; // user text or original image data/url
+    aiCaption?: string; // Generated caption for images
+    checked: boolean;
+    category: 'subject' | 'scene' | 'style';
+}
+
+export interface WhiskState {
+    subjects: WhiskItem[];
+    scenes: WhiskItem[];
+    styles: WhiskItem[];
+    preciseReference: boolean;
+}
+
 export interface CreativeSlice {
     // History
     generatedHistory: HistoryItem[];
@@ -113,6 +129,14 @@ export interface CreativeSlice {
     savedPrompts: SavedPrompt[];
     savePrompt: (prompt: SavedPrompt) => void;
     deletePrompt: (id: string) => void;
+
+    // Whisk
+    whiskState: WhiskState;
+    addWhiskItem: (category: 'subject' | 'scene' | 'style', type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
+    updateWhiskItem: (category: 'subject' | 'scene' | 'style', id: string, updates: Partial<WhiskItem>) => void;
+    removeWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
+    toggleWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
+    setPreciseReference: (precise: boolean) => void;
 }
 
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
@@ -248,4 +272,58 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     savedPrompts: [],
     savePrompt: (prompt) => set((state) => ({ savedPrompts: [prompt, ...state.savedPrompts] })),
     deletePrompt: (id) => set((state) => ({ savedPrompts: state.savedPrompts.filter(p => p.id !== id) })),
+
+    whiskState: {
+        subjects: [],
+        scenes: [],
+        styles: [],
+        preciseReference: false
+    },
+    addWhiskItem: (category, type, content, aiCaption, explicitId) => set((state) => {
+        const newItem: WhiskItem = {
+            id: explicitId || crypto.randomUUID(),
+            type,
+            content,
+            aiCaption,
+            checked: true,
+            category
+        };
+        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        return {
+            whiskState: {
+                ...state.whiskState,
+                [key]: [...state.whiskState[key], newItem]
+            }
+        };
+    }),
+    updateWhiskItem: (category, id, updates) => set((state) => {
+        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        return {
+            whiskState: {
+                ...state.whiskState,
+                [key]: state.whiskState[key].map(item => item.id === id ? { ...item, ...updates } : item)
+            }
+        };
+    }),
+    removeWhiskItem: (category, id) => set((state) => {
+        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        return {
+            whiskState: {
+                ...state.whiskState,
+                [key]: state.whiskState[key].filter(item => item.id !== id)
+            }
+        };
+    }),
+    toggleWhiskItem: (category, id) => set((state) => {
+        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        return {
+            whiskState: {
+                ...state.whiskState,
+                [key]: state.whiskState[key].map(item => item.id === id ? { ...item, checked: !item.checked } : item)
+            }
+        };
+    }),
+    setPreciseReference: (precise) => set((state) => ({
+        whiskState: { ...state.whiskState, preciseReference: precise }
+    })),
 });

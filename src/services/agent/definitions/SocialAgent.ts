@@ -1,6 +1,7 @@
 import { AgentConfig } from "../types";
 import systemPrompt from '@agents/social/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { Schema } from 'firebase/ai';
 
 export const SocialAgent: AgentConfig = {
     id: 'social',
@@ -13,7 +14,7 @@ export const SocialAgent: AgentConfig = {
         analyze_trends: async (args: { topic: string }) => {
             const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
                 return { success: true, data: response };
             } catch (e) {
                 return { success: false, error: (e as Error).message };

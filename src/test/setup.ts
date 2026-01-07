@@ -77,15 +77,39 @@ vi.mock('firebase/auth', () => ({
 vi.mock('firebase/firestore', () => ({
     initializeFirestore: vi.fn(),
     getFirestore: vi.fn(() => ({})),
-    collection: vi.fn(),
-    doc: vi.fn(),
+    collection: vi.fn(() => ({ id: 'mock-coll-id' })),
+    doc: vi.fn(() => ({ id: crypto.randomUUID() })),
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
     getDoc: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
-    setDoc: vi.fn(),
-    updateDoc: vi.fn(),
-    deleteDoc: vi.fn(),
+    getDocs: vi.fn(() => Promise.resolve({ docs: [], empty: true })),
+    setDoc: vi.fn(() => Promise.resolve()),
+    updateDoc: vi.fn(() => Promise.resolve()),
+    deleteDoc: vi.fn(() => Promise.resolve()),
     onSnapshot: vi.fn(() => () => { }),
+    onSnapshots: vi.fn(() => () => { }),
+    query: vi.fn(() => ({})),
+    where: vi.fn(() => ({})),
+    limit: vi.fn(() => ({})),
+    orderBy: vi.fn(() => ({})),
+    startAfter: vi.fn(() => ({})),
+    arrayUnion: vi.fn((...args) => args),
+    arrayRemove: vi.fn((...args) => args),
+    increment: vi.fn((n) => n),
+    serverTimestamp: vi.fn(() => new Date()),
     persistentLocalCache: vi.fn(() => ({})),
-    persistentMultipleTabManager: vi.fn(() => ({}))
+    persistentMultipleTabManager: vi.fn(() => ({})),
+    runTransaction: vi.fn((cb) => cb({
+        get: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
+        set: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn()
+    })),
+    writeBatch: vi.fn(() => ({
+        set: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        commit: vi.fn(() => Promise.resolve())
+    }))
 }));
 
 // Mock Firebase Functions
@@ -122,6 +146,30 @@ vi.mock('firebase/app-check', () => ({
 // Mock Firebase AI
 vi.mock('firebase/ai', () => ({
     getAI: vi.fn(() => ({})),
+    getGenerativeModel: vi.fn(() => ({
+        generateContent: vi.fn().mockResolvedValue({
+            response: {
+                text: () => "{}",
+                functionCalls: () => []
+            }
+        }),
+        generateContentStream: vi.fn().mockResolvedValue({
+            stream: (async function* () { yield { text: () => "{}" }; })(),
+            response: Promise.resolve({
+                text: () => "{}",
+                functionCalls: () => []
+            })
+        }),
+        startChat: vi.fn(() => ({
+            sendMessage: vi.fn().mockResolvedValue({
+                response: {
+                    text: () => "{}",
+                    functionCalls: () => []
+                }
+            })
+        }))
+    })),
+    getLiveGenerativeModel: vi.fn(() => ({})),
     VertexAIBackend: vi.fn().mockImplementation(function () {
         return {};
     })

@@ -64,20 +64,18 @@ describe('Agent SDK Integration', () => {
 
         const harness = new AgentTestHarness(agentConfig);
 
-        // Mock sequence: 
-        // 1. AI calls tool
-        // 2. AI summarizes result
-        const aiSpy = vi.mocked(AI.generateContent);
+        // Mock sequence for generateContentStream
+        const aiSpy = vi.mocked(AI.generateContentStream);
 
-        aiSpy
-            .mockResolvedValueOnce({
+        aiSpy.mockResolvedValueOnce({
+            stream: (async function* () {
+                yield { text: () => 'Thinking...' };
+            })(),
+            response: Promise.resolve({
                 text: () => 'Thinking...',
                 functionCalls: () => [{ name: 'testTool', args: {} }]
-            } as any)
-            .mockResolvedValueOnce({
-                text: () => 'Final Answer',
-                functionCalls: () => []
-            } as any);
+            })
+        } as any);
 
         const result = await harness.run('Do work');
 

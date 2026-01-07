@@ -76,10 +76,12 @@ export class GeneralistAgent extends BaseAgent {
     // However, the current GeneralistAgent overrides execute entirely with an older, less stable loop.
     // I am updating it to use the robust streamIterator pattern from BaseAgent.
 
-    // Helper to extract multiple JSON objects from a stream buffer
-    // Handles { ... } { ... } concatenation
-    private extractJsonObjects(buffer: string): { objects: any[], remaining: string } {
-        const objects: any[] = [];
+    /**
+     * Extracts multiple JSON objects from a stream buffer.
+     * Handles { ... } { ... } concatenation.
+     */
+    private extractJsonObjects(buffer: string): { objects: Record<string, unknown>[], remaining: string } {
+        const objects: Record<string, unknown>[] = [];
         let remaining = buffer;
 
         while (true) {
@@ -150,7 +152,7 @@ export class GeneralistAgent extends BaseAgent {
      * @param onProgress Optional callback for progress updates
      * @returns The generated response text and any associated data
      */
-    async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<{ text: string; data?: any }> {
+    async execute(task: string, context?: any, onProgress?: (event: any) => void): Promise<{ text: string; data?: unknown }> {
 
 
         // Report thinking start
@@ -246,7 +248,7 @@ export class GeneralistAgent extends BaseAgent {
             parts.push({ text: nextStepPrompt });
 
             try {
-                const { stream, response: responsePromise } = await AI.generateContentStream({
+                const responseStream = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{ role: 'user', parts }],
                     config: {
@@ -255,38 +257,46 @@ export class GeneralistAgent extends BaseAgent {
                     }
                 });
 
+                const { stream, response: responsePromise } = responseStream;
+
                 let buffer = "";
 
-                // Helper to consume stream (handles both ReadableStream and AsyncIterable)
+                // Helper to consume stream (handles Arrays, ReadableStream, and AsyncIterable)
                 const streamIterator = {
                     [Symbol.asyncIterator]: async function* () {
-                        // Check for getReader (Browser/Standard)
                         const rawStream = stream as unknown;
-                        if (rawStream && typeof (rawStream as { getReader?: Function }).getReader === 'function') {
-                            const reader = (rawStream as { getReader: Function }).getReader();
+                        if (!rawStream) {
+                            const resp = await responsePromise;
+                            if (resp?.text) yield { text: () => resp.text() };
+                            return;
+                        }
+
+                        if (Array.isArray(rawStream)) {
+                            for (const item of rawStream) yield item;
+                            return;
+                        }
+
+                        if (rawStream && typeof (rawStream as { getReader?: () => { read: () => Promise<{ done: boolean; value: any }>; releaseLock: () => void } }).getReader === 'function') {
+                            const reader = (rawStream as { getReader: () => { read: () => Promise<{ done: boolean; value: any }>; releaseLock: () => void } }).getReader();
                             try {
                                 while (true) {
                                     const { done, value } = await reader.read();
-                                    if (done) return;
+                                    if (done) break;
                                     yield value;
                                 }
                             } finally {
                                 reader.releaseLock();
                             }
+                            return;
                         }
-                        // Check for AsyncIterability (Node/Polyfill)
-                        else if (rawStream && typeof rawStream === 'object' && Symbol.asyncIterator in rawStream) {
-                            yield* rawStream as AsyncIterable<any>;
+
+                        if (rawStream && typeof rawStream === 'object' && Symbol.asyncIterator in (rawStream as object)) {
+                            yield* rawStream as AsyncIterable<{ text: () => string }>;
+                            return;
                         }
-                        else {
-                            // Fallback to the promise if stream is missing but supported (some environments)
-                            const resp = await responsePromise;
-                            if (resp && typeof resp.text === 'function') {
-                                yield { text: () => resp.text() };
-                            } else {
-                                throw new Error('AI Content Stream is not iterable or readable');
-                            }
-                        }
+
+                        const resp = await responsePromise;
+                        if (resp?.text) yield { text: () => resp.text() };
                     }
                 };
 
@@ -307,11 +317,11 @@ export class GeneralistAgent extends BaseAgent {
 
                         for (const result of objects) {
                             if (result.thought) {
-                                onProgress?.({ type: 'thought', content: result.thought });
+                                onProgress?.({ type: 'thought', content: result.thought as string });
                             }
 
                             if (result.final_response) {
-                                finalResponseText = result.final_response;
+                                finalResponseText = result.final_response as string;
                                 stepActionTaken = true;
                                 // We can break inner loop if we have final response
                             }
@@ -319,15 +329,20 @@ export class GeneralistAgent extends BaseAgent {
                             if (result.tool) {
                                 stepActionTaken = true;
                                 // Report tool usage
-                                onProgress?.({ type: 'tool', toolName: result.tool, content: `Executing ${result.tool}...` });
+                                onProgress?.({ type: 'tool', toolName: result.tool as string, content: `Executing ${result.tool}...` });
 
-                                const toolFunc = TOOL_REGISTRY[result.tool];
-                                let output = "Unknown tool";
+                                const toolFunc = TOOL_REGISTRY[result.tool as string];
+                                let output: string = "Unknown tool";
                                 if (toolFunc) {
                                     try {
-                                        output = await toolFunc(result.args);
-                                    } catch (err: any) {
-                                        output = `Error: ${err.message}`;
+                                        const toolResult = await toolFunc(result.args as Record<string, unknown>);
+                                        output = typeof toolResult === 'string'
+                                            ? toolResult
+                                            : (typeof toolResult === 'object' && toolResult !== null && 'message' in toolResult
+                                                ? (toolResult as any).message
+                                                : JSON.stringify(toolResult));
+                                    } catch (err: unknown) {
+                                        output = `Error: ${err instanceof Error ? err.message : String(err)}`;
                                     }
                                 }
 
@@ -351,27 +366,24 @@ export class GeneralistAgent extends BaseAgent {
                     consecutiveNoProgress = 0; // Reset on progress
                 } else {
                     consecutiveNoProgress++;
-                    // If buffer still has data, it might be malformed JSON
                     if (buffer.trim().length > 0) {
-                        console.warn(`[GeneralistAgent] Leftover unparsed buffer: ${buffer}`);
+                        console.info(`[GeneralistAgent] Leftover buffer: ${buffer.substring(0, 50)}...`);
                     }
-                    // Bail out if we're stuck
                     if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
                         console.error('[GeneralistAgent] No progress after multiple iterations, terminating loop.');
                         return { text: 'Agent unable to complete task - no actionable response generated.' };
                     }
                 }
 
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
                 console.error("Generalist Loop Error:", err);
-                onProgress?.({ type: 'thought', content: `Error: ${err.message || 'Unknown error'}` });
+                onProgress?.({ type: 'thought', content: `Error: ${message}` });
                 consecutiveNoProgress++;
 
-                // After too many consecutive errors, give up
                 if (consecutiveNoProgress >= MAX_NO_PROGRESS) {
-                    return { text: `Error after ${consecutiveNoProgress} failed attempts: ${err.message || 'Unknown error'}` };
+                    return { text: `Error after ${consecutiveNoProgress} failed attempts: ${message}` };
                 }
-                // Otherwise continue to retry
             }
         }
 

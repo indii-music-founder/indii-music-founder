@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DirectorTools } from '../DirectorTools';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
-import { Editing } from '@/services/image/EditingService';
+import { ImageGeneration } from '../services/image/ImageGenerationService';
+import { Editing } from '../services/image/EditingService';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
@@ -114,8 +114,8 @@ describe('DirectorTools', () => {
 
             const result = await DirectorTools.generate_image({ prompt: 'test' });
 
-            expect(result).toContain('Image generation failed');
-            expect(result).toContain('API Error');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('API Error');
         });
     });
 
@@ -213,7 +213,7 @@ describe('DirectorTools', () => {
                     prompt: 'Make it brighter'
                 })
             );
-            expect(result).toContain('Successfully edited 2 images');
+            expect(result.message).toContain('Successfully edited 2 images');
         });
 
         it('returns error when no images uploaded', async () => {
@@ -221,7 +221,8 @@ describe('DirectorTools', () => {
 
             const result = await DirectorTools.batch_edit_images({ prompt: 'Edit' });
 
-            expect(result).toContain('No images found');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('No images found');
         });
     });
 
@@ -263,7 +264,8 @@ describe('DirectorTools', () => {
 
             const result = await DirectorTools.extract_grid_frame({ gridIndex: 0 });
 
-            expect(result).toContain('No grid image found');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('No grid image found');
         });
 
         it('returns error for invalid grid index when grid exists', async () => {
@@ -280,7 +282,8 @@ describe('DirectorTools', () => {
 
             const result = await DirectorTools.extract_grid_frame({ gridIndex: 5 });
 
-            expect(result).toContain('Invalid grid index');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Invalid grid index');
         });
     });
 
@@ -288,7 +291,8 @@ describe('DirectorTools', () => {
         it('validates base64 data URI format', async () => {
             const result = await DirectorTools.set_entity_anchor({ image: 'invalid-data' });
 
-            expect(result).toContain('Invalid image data');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Invalid image data');
         });
 
         it('sets entity anchor and adds to history', async () => {
@@ -310,7 +314,7 @@ describe('DirectorTools', () => {
                     prompt: 'Entity Anchor (Global Reference)'
                 })
             );
-            expect(result).toContain('Entity Anchor set successfully');
+            expect(result.message).toContain('Entity Anchor set successfully');
         });
     });
 

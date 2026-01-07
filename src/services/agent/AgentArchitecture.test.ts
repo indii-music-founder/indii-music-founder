@@ -15,14 +15,18 @@ vi.mock('@/services/ai/AIService', () => ({
             functionCalls: () => []
         }),
         generateContentStream: vi.fn().mockResolvedValue({
-            stream: (async function* () {
-                yield {
-                    text: () => JSON.stringify({
-                        thought: "Mocking stream thought",
-                        final_response: "Mock Stream Response"
-                    })
-                };
-            })()
+            stream: {
+                getReader: () => ({
+                    read: vi.fn()
+                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Mocking stream thought' } })
+                        .mockResolvedValueOnce({ done: true }),
+                    releaseLock: vi.fn()
+                })
+            },
+            response: Promise.resolve({
+                text: () => "Mock Stream Response",
+                functionCalls: () => []
+            })
         })
     }
 }));
@@ -37,7 +41,7 @@ vi.mock('@/core/store', () => ({
 describe('Multi-Agent Architecture Tests', () => {
     let agentService: any; // Access private members for testing
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         // Reset store state mock
         (useStore.getState as any).mockReturnValue({
@@ -52,6 +56,12 @@ describe('Multi-Agent Architecture Tests', () => {
 
         // Instantiate AgentService to trigger agent registration
         new AgentService();
+
+        // Pre-load agents for synchronous tests
+        const agents = [
+            'legal', 'marketing', 'music', 'publicist', 'brand', 'road', 'director', 'video', 'finance', 'generalist'
+        ];
+        await Promise.all(agents.map(id => agentRegistry.getAsync(id)));
     });
 
     describe('1. Context Pipeline & History', () => {
@@ -175,7 +185,7 @@ describe('Multi-Agent Architecture Tests', () => {
             const agent = agentRegistry.get('marketing');
             await agent?.execute('Research market trends');
 
-            expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
+            expect(AI.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
                 tools: expect.arrayContaining([
                     expect.objectContaining({
                         functionDeclarations: expect.arrayContaining([

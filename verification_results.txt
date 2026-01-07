@@ -1,0 +1,292 @@
+
+> indii-os@0.1.0-beta.2 test
+> vitest src/services/agent/specialists/verification.test.ts
+
+
+[1m[44m DEV [49m[22m [34mv4.0.16 [39m[90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron[39m
+
+ [31m❯[39m src/services/agent/specialists/verification.test.ts [2m([22m[2m33 tests[22m[2m | [22m[31m33 failed[39m[2m)[22m[32m 5[2mms[22m[39m
+[31m     [31m×[31m should have registered Marketing Department (marketing)[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m Marketing Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Legal Department (legal)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Legal Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Finance Department (finance)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Finance Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Producer (producer)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Producer should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Music Supervisor (music)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Music Supervisor should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Creative Director (director)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Creative Director should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Screenwriter (screenwriter)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Screenwriter should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Video Department (video)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Video Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Social Media Department (social)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Social Media Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Publicist (publicist)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Publicist should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Road Manager (road)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Road Manager should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Publishing Department (publishing)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Publishing Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Licensing Department (licensing)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Licensing Department should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Brand Manager (brand)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Brand Manager should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered DevOps / SRE (devops)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m DevOps / SRE should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should have registered Security Guardian (security)[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m Security Guardian should be executable[39m[32m 0[2mms[22m[39m
+[31m     [31m×[31m should verify GeneralistAgent (Agent Zero)[39m[32m 0[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 33 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Marketing Department (marketing)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Legal Department (legal)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Finance Department (finance)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Producer (producer)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Music Supervisor (music)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Creative Director (director)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Screenwriter (screenwriter)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Video Department (video)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Social Media Department (social)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Publicist (publicist)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Road Manager (road)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Publishing Department (publishing)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Licensing Department (licensing)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Brand Manager (brand)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered DevOps / SRE (devops)
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould have registered Security Guardian (security)
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m src/services/agent/specialists/verification.test.ts:[2m51:27[22m[39m
+    [90m 49| [39m        it(`should have registered ${config.name} (${config.id})`, () …
+    [90m 50| [39m            [35mconst[39m agent [33m=[39m agentRegistry[33m.[39m[35mget[39m(config[33m.[39mid)[33m;[39m
+    [90m 51| [39m            [34mexpect[39m(agent)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m 52| [39m            [34mexpect[39m(agent[33m?.[39mname)[33m.[39m[34mtoBe[39m(config[33m.[39mname)[33m;[39m
+    [90m 53| [39m            [34mexpect[39m(agent[33m?.[39mid)[33m.[39m[34mtoBe[39m(config[33m.[39mid)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/33]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mMarketing Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mLegal Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mFinance Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mProducer should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mMusic Supervisor should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mCreative Director should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mScreenwriter should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mVideo Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mSocial Media Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mPublicist should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mRoad Manager should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mPublishing Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mLicensing Department should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mBrand Manager should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mDevOps / SRE should be executable
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mSecurity Guardian should be executable
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m src/services/agent/specialists/verification.test.ts:[2m58:27[22m[39m
+    [90m 56| [39m        [34mit[39m([32m`[39m[36m${[39mconfig[33m.[39mname[36m}[39m[32m should be executable`[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 57| [39m            [35mconst[39m agent [33m=[39m agentRegistry[33m.[39m[35mget[39m(config[33m.[39mid)[33m;[39m
+    [90m 58| [39m            [34mexpect[39m(agent)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m 59| [39m            [35mif[39m ([33m![39magent) [35mreturn[39m[33m;[39m
+    [90m 60| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/33]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/services/agent/specialists/verification.test.ts[2m > [22mSpecialist Agent Fleet Verification[2m > [22mshould verify GeneralistAgent (Agent Zero)
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m src/services/agent/specialists/verification.test.ts:[2m81:23[22m[39m
+    [90m 79| [39m    [34mit[39m([32m'should verify GeneralistAgent (Agent Zero)'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m 80| [39m        [35mconst[39m agent [33m=[39m agentRegistry[33m.[39m[35mget[39m([32m'generalist'[39m)[33m;[39m
+    [90m 81| [39m        [34mexpect[39m(agent)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 82| [39m        // We know generalist mock stream behaves differently in its o…
+    [90m 83| [39m        // but here we just want to ensure it doesn't crash on instant…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/33]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m33 failed[39m[22m[90m (33)[39m
+[2m   Start at [22m 15:13:44
+[2m   Duration [22m 601ms[2m (transform 172ms, setup 63ms, import 197ms, tests 5ms, environment 232ms)[22m
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2msrc/services/agent/specialists/verification.test.ts [22m[34mx1 [34m[39m
+       [2m Filename pattern: [22m[34msrc/services/agent/specialists/verification.test.ts[39m
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mMarketing Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mMarketing Department should be executable
+[22m[39m[Marketing Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mLegal Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mLegal Department should be executable
+[22m[39m[Legal Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mFinance Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mFinance Department should be executable
+[22m[39m[Finance Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mProducer should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mProducer should be executable
+[22m[39m[Producer] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mMusic Supervisor should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mMusic Supervisor should be executable
+[22m[39m[Music Supervisor] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mCreative Director should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mCreative Director should be executable
+[22m[39m[Creative Director] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mScreenwriter should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mScreenwriter should be executable
+[22m[39m[Screenwriter] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mVideo Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mVideo Department should be executable
+[22m[39m[Video Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mSocial Media Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mSocial Media Department should be executable
+[22m[39m[Social Media Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublicist should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublicist should be executable
+[22m[39m[Publicist] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mRoad Manager should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mRoad Manager should be executable
+[22m[39m[Road Manager] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublishing Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublishing Department should be executable
+[22m[39m[Publishing Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mLicensing Department should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mLicensing Department should be executable
+[22m[39m[Licensing Department] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mBrand Manager should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mBrand Manager should be executable
+[22m[39m[Brand Manager] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mDevOps / SRE should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mDevOps / SRE should be executable
+[22m[39m[DevOps / SRE] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstdout[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mSecurity Guardian should be executable
+[22m[39m[BaseAgent] Stream is not iterable, waiting for full response
+
+[90mstderr[2m | src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mSecurity Guardian should be executable
+[22m[39m[Security Guardian] Error executing task: TypeError: Cannot read properties of undefined (reading 'functionCalls')
+    at BaseAgent.execute [90m(/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/BaseAgent.ts:480:43[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/specialists/verification.test.ts:62:30
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+ [32m✓[39m src/services/agent/specialists/verification.test.ts [2m([22m[2m33 tests[22m[2m)[22m[32m 219[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m33 passed[39m[22m[90m (33)[39m
+[2m   Start at [22m 15:14:35
+[2m   Duration [22m 385ms
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+[31mCancelling test run. Press CTRL+c again to exit forcefully.
+[39m

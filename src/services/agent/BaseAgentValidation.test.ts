@@ -50,17 +50,27 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should execute tool when args are valid', async () => {
-        // Setup AI mock to call the tool
+        // Setup AI mock to call the tool via generateContentStream
         const aiMock = await import('@/services/ai/AIService');
-        vi.mocked(aiMock.AI.generateContent).mockResolvedValue({
-            text: () => 'Response',
-            functionCalls: () => [{
-                name: 'test_tool',
-                args: {
-                    requiredString: 'valid',
-                    positiveNumber: 10
-                }
-            }]
+        vi.mocked(aiMock.AI.generateContentStream).mockResolvedValue({
+            stream: {
+                getReader: () => ({
+                    read: vi.fn()
+                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Calling tool...' } })
+                        .mockResolvedValueOnce({ done: true }),
+                    releaseLock: vi.fn()
+                })
+            },
+            response: Promise.resolve({
+                text: () => 'Response Text',
+                functionCalls: () => [{
+                    name: 'test_tool',
+                    args: {
+                        requiredString: 'valid',
+                        positiveNumber: 10
+                    }
+                }]
+            })
         } as any);
 
         const response = await agent.execute('Task');
@@ -70,17 +80,27 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should block tool execution when args are invalid', async () => {
-        // Setup AI mock to call the tool with INVALID args
+        // Setup AI mock to call the tool with INVALID args via generateContentStream
         const aiMock = await import('@/services/ai/AIService');
-        vi.mocked(aiMock.AI.generateContent).mockResolvedValue({
-            text: () => 'Response',
-            functionCalls: () => [{
-                name: 'test_tool',
-                args: {
-                    requiredString: 'valid',
-                    positiveNumber: -5 // Invalid: must be positive
-                }
-            }]
+        vi.mocked(aiMock.AI.generateContentStream).mockResolvedValue({
+            stream: {
+                getReader: () => ({
+                    read: vi.fn()
+                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Calling tool...' } })
+                        .mockResolvedValueOnce({ done: true }),
+                    releaseLock: vi.fn()
+                })
+            },
+            response: Promise.resolve({
+                text: () => 'Response Text',
+                functionCalls: () => [{
+                    name: 'test_tool',
+                    args: {
+                        requiredString: 'valid',
+                        positiveNumber: -5 // Invalid: must be positive
+                    }
+                }]
+            })
         } as any);
 
         const response = await agent.execute('Task');

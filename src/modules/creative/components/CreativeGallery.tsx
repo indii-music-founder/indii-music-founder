@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
-import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor } from 'lucide-react';
+import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -128,12 +128,22 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         >
                             <Anchor size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 transition-colors">
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 transition-colors" title="View Fullsize">
                             <Maximize2 size={14} />
+                        </button>
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 transition-colors" title="Like">
+                            <ThumbsUp size={14} />
+                        </button>
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 transition-colors" title="Dislike">
+                            <ThumbsDown size={14} />
+                        </button>
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors" title="Flag">
+                            <Flag size={14} />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                             className="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"
+                            title="Delete"
                         >
                             <Trash2 size={14} />
                         </button>

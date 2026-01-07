@@ -7,7 +7,7 @@ import {
     check_core_dump_policy,
     audit_workload_isolation,
     audit_permissions
-} from './SecurityTools';
+} from '../SecurityTools';
 import { AI } from '@/services/ai/AIService';
 import { getDoc } from 'firebase/firestore';
 

@@ -11,7 +11,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 import { httpsCallable } from 'firebase/functions';
-import { execute_bigquery_query, get_table_schema, list_datasets } from './BigQueryTools';
+import { BigQueryTools } from '../BigQueryTools';
 
 const mockHttpsCallable = httpsCallable as ReturnType<typeof vi.fn>;
 
@@ -30,8 +30,7 @@ describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
         const mockCallable = vi.fn().mockResolvedValue({ data: mockResult });
         mockHttpsCallable.mockReturnValue(mockCallable);
 
-        const result = await execute_bigquery_query({ query: 'SELECT * FROM sales WHERE year = 2025' });
-        const parsed = JSON.parse(result);
+        const result = await BigQueryTools.execute_bigquery_query({ query: 'SELECT * FROM sales WHERE year = 2025' });
 
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'executeBigQueryQuery');
         expect(mockCallable).toHaveBeenCalledWith({
@@ -40,8 +39,9 @@ describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
             maxResults: 1000,
             useLegacySql: false
         });
-        expect(parsed.rows).toHaveLength(1);
-        expect(parsed.jobId).toBe('job_abc123');
+        expect(result.success).toBe(true);
+        expect(result.data.rows).toEqual(mockResult.rows);
+        expect(result.data.jobId).toBe('job_abc123');
     });
 
     it('execute_bigquery_query accepts custom maxResults', async () => {
@@ -49,7 +49,7 @@ describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
         const mockCallable = vi.fn().mockResolvedValue({ data: mockResult });
         mockHttpsCallable.mockReturnValue(mockCallable);
 
-        await execute_bigquery_query({
+        await BigQueryTools.execute_bigquery_query({
             query: 'SELECT * FROM large_table',
             maxResults: 100,
             projectId: 'custom-project'
@@ -74,11 +74,10 @@ describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
         const mockCallable = vi.fn().mockResolvedValue({ data: mockSchema });
         mockHttpsCallable.mockReturnValue(mockCallable);
 
-        const result = await get_table_schema({
+        const result = await BigQueryTools.get_table_schema({
             table_id: 'sales_data',
             dataset_id: 'analytics'
         });
-        const parsed = JSON.parse(result);
 
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'getBigQueryTableSchema');
         expect(mockCallable).toHaveBeenCalledWith({
@@ -86,8 +85,8 @@ describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
             datasetId: 'analytics',
             projectId: undefined
         });
-        expect(parsed.fields).toHaveLength(2);
-        expect(parsed.fields[0].name).toBe('date');
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockSchema);
     });
 
     it('list_datasets calls listBigQueryDatasets function', async () => {
@@ -98,36 +97,33 @@ describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {
         const mockCallable = vi.fn().mockResolvedValue({ data: { datasets: mockDatasets } });
         mockHttpsCallable.mockReturnValue(mockCallable);
 
-        const result = await list_datasets({ projectId: 'test-project' });
-        const parsed = JSON.parse(result);
+        const result = await BigQueryTools.list_datasets({ projectId: 'test-project' });
 
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'listBigQueryDatasets');
-        expect(parsed).toHaveLength(2);
-        expect(parsed[0].datasetId).toBe('analytics');
+        expect(result.success).toBe(true);
+        expect(result.data.datasets).toEqual(mockDatasets);
     });
 
     it('handles query errors gracefully', async () => {
         const mockCallable = vi.fn().mockRejectedValue(new Error('Invalid SQL syntax'));
         mockHttpsCallable.mockReturnValue(mockCallable);
 
-        const result = await execute_bigquery_query({ query: 'INVALID SQL' });
-        const parsed = JSON.parse(result);
+        const result = await BigQueryTools.execute_bigquery_query({ query: 'INVALID SQL' });
 
-        expect(parsed).toHaveProperty('error', 'Invalid SQL syntax');
-        expect(parsed).toHaveProperty('hint');
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Invalid SQL syntax');
     });
 
     it('handles schema errors for unknown tables', async () => {
         const mockCallable = vi.fn().mockRejectedValue(new Error('Table not found'));
         mockHttpsCallable.mockReturnValue(mockCallable);
 
-        const result = await get_table_schema({
+        const result = await BigQueryTools.get_table_schema({
             table_id: 'unknown_table',
             dataset_id: 'analytics'
         });
-        const parsed = JSON.parse(result);
 
-        expect(parsed).toHaveProperty('error', 'Table not found');
-        expect(parsed).toHaveProperty('message');
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Table not found');
     });
 });

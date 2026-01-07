@@ -56,8 +56,21 @@ describe('CreativeStudio', () => {
                 negativePrompt: '',
                 seed: ''
             },
+            prompt: '',
             addToHistory: mockAddToHistory,
-            currentProjectId: 'test-project'
+            currentProjectId: 'test-project',
+            // Whisk Mocks
+            whiskState: {
+                subjects: [],
+                scenes: [],
+                styles: [],
+                preciseReference: false
+            },
+            addWhiskItem: vi.fn(),
+            removeWhiskItem: vi.fn(),
+            toggleWhiskItem: vi.fn(),
+            updateWhiskItem: vi.fn(),
+            setPreciseReference: vi.fn()
         });
     });
 

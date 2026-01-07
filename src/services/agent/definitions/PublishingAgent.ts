@@ -2,6 +2,7 @@ import { AgentConfig } from "../types";
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { Schema } from 'firebase/ai';
 
 export const PublishingAgent: AgentConfig = {
     id: 'publishing',
@@ -15,7 +16,7 @@ export const PublishingAgent: AgentConfig = {
             const prompt = `Validate this music work registration. Title: "${args.title}", Contributors: ${args.writers.join(', ')}. Generate a valid ISWC format (T-XXX.XXX.XXX-X) and a registration status.`;
             try {
                 // Using "object" schema type
-                const response = await firebaseAI.generateStructuredData<any>(prompt, { type: 'object' } as any);
+                const response = await firebaseAI.generateStructuredData<any>(prompt, { type: 'object' } as Schema);
                 return { success: true, data: { status: "Submitted", ...response } };
             } catch (e) {
                 return { success: true, data: { status: "Submitted", iswc: "T-000.000.001-1" } };

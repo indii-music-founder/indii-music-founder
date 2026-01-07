@@ -1,6 +1,7 @@
 import { AgentConfig } from "../types";
 import systemPrompt from '@agents/road/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { Schema } from 'firebase/ai';
 
 export const RoadAgent: AgentConfig = {
     id: 'road',
@@ -11,6 +12,9 @@ export const RoadAgent: AgentConfig = {
     systemPrompt,
     functions: {
         plan_tour_route: async (args: { start_location: string, end_location: string, stops: string[] }) => {
+            /**
+             * Plan an optimized music tour route with estimated drive times.
+             */
             const prompt = `Plan a music tour route.
             Start: ${args.start_location}
             End: ${args.end_location}
@@ -24,17 +28,22 @@ export const RoadAgent: AgentConfig = {
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { route_plan: response } };
-            } catch (e: any) {
-                return { success: false, error: e.message };
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                return { success: false, error: message };
             }
         },
         calculate_tour_budget: async (args: { duration_days: number, crew_size: number }) => {
+            /**
+             * Calculate a detailed tour budget using structured AI generation.
+             */
             const prompt = `Calculate a detailed tour budget. Duration: ${args.duration_days} days, Crew: ${args.crew_size}. Return a JSON with total_estimated_budget and breakdown (accommodation, travel, per_diem, contingency).`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object', nullable: false } as Schema);
                 return { success: true, data: response };
-            } catch (e) {
-                return { success: false, error: (e as Error).message };
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : String(error);
+                return { success: false, error: message };
             }
         },
         search_places: async (args: { query: string }) => {

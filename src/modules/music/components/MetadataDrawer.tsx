@@ -416,7 +416,7 @@ export const MetadataDrawer: React.FC<MetadataDrawerProps> = ({ isOpen, onClose,
                                 className="w-full bg-secondary/50 border border-border rounded-lg p-2 text-sm text-foreground focus:border-primary outline-none transition-colors"
                                 value={localData.labelName}
                                 onChange={(e) => setLocalData({ ...localData, labelName: e.target.value })}
-                                placeholder="e.g. IndiiOS Records"
+                                placeholder="e.g. indiiOS Records"
                             />
                         </div>
                         <div>

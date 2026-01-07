@@ -96,7 +96,10 @@ export class AgentOrchestrator {
                 return 'generalist';
             }
 
-            const { targetAgentId, confidence, reasoning } = parsedResponse;
+            const targetAgentId = parsedResponse.targetAgentId?.trim().toLowerCase();
+            const confidence = parsedResponse.confidence;
+            const reasoning = parsedResponse.reasoning;
+
             const validRoutes = AGENTS.map(a => a.id);
             let finalRoute = validRoutes.includes(targetAgentId) ? targetAgentId : 'generalist';
 

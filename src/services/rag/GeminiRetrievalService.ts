@@ -204,7 +204,7 @@ export class GeminiRetrievalService {
         try {
             const createRes = await this.fetch('fileSearchStores', {
                 method: 'POST',
-                body: JSON.stringify({ displayName: "IndiiOS Default Store" })
+                body: JSON.stringify({ displayName: "indiiOS Default Store" })
             });
             this.defaultStoreName = createRes.name;
             console.info("Created new FileSearchStore:", this.defaultStoreName);

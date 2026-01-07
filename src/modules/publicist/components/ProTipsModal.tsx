@@ -72,7 +72,7 @@ export const ProTipsModal: React.FC<ProTipsModalProps> = ({ isOpen, onClose }) =
                         </div>
 
                         <div className="p-4 bg-sonic-purple/10 border-t border-sonic-purple/20 text-center">
-                            <p className="text-xs text-sonic-purple font-medium">Powered by IndiiOS Agent Intelligence</p>
+                            <p className="text-xs text-sonic-purple font-medium">Powered by indiiOS Agent Intelligence</p>
                         </div>
                     </motion.div>
                 </>

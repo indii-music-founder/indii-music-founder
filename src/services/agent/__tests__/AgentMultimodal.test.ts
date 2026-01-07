@@ -10,6 +10,12 @@ vi.mock('../../ai/AIService', () => ({
     }
 }));
 
+vi.mock('../registry', () => ({
+    agentRegistry: {
+        getAsync: vi.fn()
+    }
+}));
+
 // Mock Firebase Auth
 vi.mock('@/services/firebase', () => ({
     auth: {
@@ -21,7 +27,7 @@ vi.mock('@/services/firebase', () => ({
 class VisionAgent extends BaseAgent {
     constructor() {
         super({
-            id: 'vision-specialist',
+            id: 'video',
             name: 'Vision Expert',
             description: 'Can see images',
             systemPrompt: 'You are a vision expert.',

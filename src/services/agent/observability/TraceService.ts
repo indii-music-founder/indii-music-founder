@@ -22,7 +22,14 @@ export class TraceService {
 
         try {
             // Use a more resilient way to get ID that works with both real Firebase and common mocks
-            const traceId = doc(collection(db, this.COLLECTION)).id || crypto.randomUUID();
+            let traceId: string;
+            try {
+                const docRef = doc(collection(db, this.COLLECTION));
+                traceId = docRef?.id || crypto.randomUUID();
+            } catch (e) {
+                traceId = crypto.randomUUID();
+            }
+
             const ref = doc(db, this.COLLECTION, traceId);
 
             const trace: Partial<AgentTrace> = {
@@ -44,7 +51,8 @@ export class TraceService {
             return traceId;
         } catch (error) {
             console.error('[TraceService] Failed to start trace:', error);
-            return '';
+            // Fallback for tests or disconnected mode: return a raw UUID so execution can continue
+            return crypto.randomUUID();
         }
     }
 

@@ -27,6 +27,9 @@ export const PublicistAgent = createAgent('publicist')
             }
         }]
     }, async (args: { userId: string, title: string, artist: string, type: 'Album' | 'Single' | 'Tour', focus: string }) => {
+        /**
+         * Create a new publicity campaign in the database.
+         */
         try {
             const startDate = new Date().toISOString().split('T')[0];
             await PublicistService.addCampaign(args.userId, {
@@ -45,8 +48,9 @@ export const PublicistAgent = createAgent('publicist')
                     status: "Draft"
                 }
             };
-        } catch (error: any) {
-            return { success: false, error: `Failed to create campaign: ${error.message}` };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            return { success: false, error: `Failed to create campaign: ${message}` };
         }
     })
     .withTool({
@@ -65,6 +69,9 @@ export const PublicistAgent = createAgent('publicist')
             }
         }]
     }, async (args: { headline: string, company_name: string, key_points?: string[], contact_info?: string }) => {
+        /**
+         * Write a formal press release using AI.
+         */
         const missing = [];
         if (!args.key_points || args.key_points.length === 0) missing.push("Key Points");
         if (!args.contact_info) missing.push("Contact Info");
@@ -89,8 +96,9 @@ export const PublicistAgent = createAgent('publicist')
                     }
                 }
             };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            return { success: false, error: message };
         }
     })
     .withTool({
@@ -108,6 +116,9 @@ export const PublicistAgent = createAgent('publicist')
             }
         }]
     }, async (args: { issue: string, sentiment?: string, platform?: string }) => {
+        /**
+         * Generate a strategic response to a PR crisis.
+         */
         const prompt = `Generate a crisis response for a public relations issue.
         Issue: ${args.issue}
         Sentiment: ${args.sentiment || 'Negative'}
@@ -124,8 +135,9 @@ export const PublicistAgent = createAgent('publicist')
                     draft_response: response
                 }
             };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            return { success: false, error: message };
         }
     })
     .withTool({
@@ -143,6 +155,9 @@ export const PublicistAgent = createAgent('publicist')
             }
         }]
     }, async (args: { platform: string, topic: string, tone?: string }) => {
+        /**
+         * Generate a social media post with hashtags.
+         */
         const prompt = `Write a social media post for ${args.platform}.
         Topic: ${args.topic}
         Tone: ${args.tone || 'Excited'}
@@ -156,8 +171,9 @@ export const PublicistAgent = createAgent('publicist')
                     post_text: post
                 }
             };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            return { success: false, error: message };
         }
     })
     .build();

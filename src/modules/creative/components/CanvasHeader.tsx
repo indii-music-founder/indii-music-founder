@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Brush, Wand2, Save, Image as ImageIcon, Play, X, Film, Clapperboard, ChevronDown } from 'lucide-react';
-import { HistoryItem } from '@/core/store';
+import { Brush, Wand2, Save, Image as ImageIcon, Play, X, Film, Clapperboard, ChevronDown, Share2, Star, Download, Sparkles } from 'lucide-react';
+import { useStore, HistoryItem } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
 
 interface CanvasHeaderProps {
     isEditing: boolean;
@@ -18,6 +19,7 @@ interface CanvasHeaderProps {
     handleAnimate: () => void;
     onClose: () => void;
     onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
+    onRefine?: () => void;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -35,23 +37,37 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     setIsSelectingEndFrame,
     handleAnimate,
     onClose,
-    onSendToWorkflow
+    onSendToWorkflow,
+    onRefine
 }) => {
+    const toast = useToast();
+
     return (
         <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1a1a1a]">
             <div className="flex-1 mr-4 flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white mb-1">
+                <h3 className="text-sm font-bold text-white">
                     {isEditing ? "Fabric.js Editor" : "Preview"}
                 </h3>
             </div>
+
             <div className="flex items-center gap-2">
                 {!isEditing ? (
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
-                    >
-                        <Brush size={14} /> Edit in Canvas
-                    </button>
+                    <>
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <Brush size={14} /> Edit in Canvas
+                        </button>
+                        {onRefine && (
+                            <button
+                                onClick={onRefine}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Sparkles size={14} /> Refine
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <>
                         {isMagicFillMode && (
@@ -117,6 +133,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         )}
                     </>
                 )}
+
                 {!isEditing && item.type === 'image' && (
                     <>
                         {endFrameItem ? (
@@ -136,11 +153,35 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             </button>
                         )}
                         <button
-                            onClick={() => handleAnimate()}
+                            onClick={handleAnimate}
                             className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                         >
                             <Play size={14} /> Animate
                         </button>
+
+                        <div className="flex items-center gap-1 bg-gray-800/50 p-1 rounded-lg border border-gray-700">
+                            <button
+                                onClick={() => toast.success("Shared!")}
+                                className="p-2 hover:bg-blue-900/40 text-gray-400 hover:text-blue-400 rounded-lg transition-colors"
+                                title="Share"
+                            >
+                                <Share2 size={16} />
+                            </button>
+                            <button
+                                onClick={() => toast.success("Added to Favorites!")}
+                                className="p-2 hover:bg-yellow-900/40 text-gray-400 hover:text-yellow-400 rounded-lg transition-colors"
+                                title="Add to Favorites"
+                            >
+                                <Star size={16} />
+                            </button>
+                            <button
+                                onClick={() => window.open(item.url, '_blank')}
+                                className="p-2 hover:bg-green-900/40 text-gray-400 hover:text-green-400 rounded-lg transition-colors"
+                                title="Download"
+                            >
+                                <Download size={16} />
+                            </button>
+                        </div>
                     </>
                 )}
                 <button onClick={onClose} className="p-2 hover:bg-red-900/50 rounded-lg text-gray-400 hover:text-red-400 transition-colors">

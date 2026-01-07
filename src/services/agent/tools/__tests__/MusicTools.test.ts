@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MusicTools } from './MusicTools';
+import { MusicTools } from '../MusicTools';
 
 describe('MusicTools', () => {
     const originalElectronAPI = window.electronAPI;
@@ -26,7 +26,8 @@ describe('MusicTools', () => {
 
         window.electronAPI = undefined;
         const result = await MusicTools.analyze_audio({ filePath: '/test/audio.mp3' });
-        expect(result).toContain('Error: Audio Engine not available');
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Audio Engine not available via Electron API.');
     });
 
     it('analyze_audio calls electronAPI.audio.analyze', async () => {
@@ -36,16 +37,22 @@ describe('MusicTools', () => {
         const result = await MusicTools.analyze_audio({ filePath: '/test/audio.mp3' });
 
         expect(mockAnalyze).toHaveBeenCalledWith('/test/audio.mp3');
-        expect(JSON.parse(result)).toEqual({ bpm: 120, key: 'C Major' });
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({ bpm: 120, key: 'C Major' });
     });
 
     it('get_audio_metadata calls electronAPI.audio.getMetadata', async () => {
         const mockGetMetadata = vi.fn().mockResolvedValue({ title: 'Test Song', artist: 'Test Artist' });
-        window.electronAPI!.audio.getMetadata = mockGetMetadata;
+        (global as any).window = {
+            electronAPI: {
+                audio: { getMetadata: mockGetMetadata }
+            }
+        };
 
         const result = await MusicTools.get_audio_metadata({ hash: 'abc-123' });
 
         expect(mockGetMetadata).toHaveBeenCalledWith('abc-123');
-        expect(JSON.parse(result)).toEqual({ title: 'Test Song', artist: 'Test Artist' });
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({ title: 'Test Song', artist: 'Test Artist' });
     });
 });

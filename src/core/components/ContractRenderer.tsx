@@ -28,7 +28,7 @@ export default function ContractRenderer({ markdown }: ContractRendererProps) {
             {/* Header */}
             <div className="bg-[#1a1a1a] text-[#fdfbf7] p-4 text-center border-b-4 border-[#c0b4a0]">
                 <h2 className="text-xl font-serif tracking-widest uppercase">Legal Agreement</h2>
-                <div className="text-[10px] opacity-70 mt-1 font-mono uppercase">Drafted by IndiiOS Legal Agent</div>
+                <div className="text-[10px] opacity-70 mt-1 font-mono uppercase">Drafted by indiiOS Legal Agent</div>
             </div>
 
             {/* Content */}

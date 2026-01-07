@@ -119,7 +119,7 @@ export default function CallSheetRenderer({ data }: CallSheetRendererProps) {
 
             {/* Footer */}
             <div className="p-2 text-center text-[10px] text-gray-400 uppercase tracking-widest bg-gray-50 border-t border-gray-300">
-                Produced by IndiiOS Studio
+                Produced by indiiOS Studio
             </div>
         </div>
     );

@@ -1,9 +1,9 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrandTools } from './BrandTools';
-import { MarketingTools } from './MarketingTools';
-import { RoadTools } from './RoadTools';
-import { AI } from '@/services/ai/AIService';
+import { BrandTools } from '../BrandTools';
+import { MarketingTools } from '../MarketingTools';
+import { RoadTools } from '../RoadTools';
+import { AI } from '../services/ai/AIService';
 
 // Mock the AI service (for Marketing/RoadTools)
 vi.mock('@/services/ai/AIService', () => ({
@@ -30,7 +30,7 @@ vi.mock('@/services/marketing/MarketingService', () => ({
     }
 }));
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { firebaseAI } from '../services/ai/FirebaseAIService';
 
 describe('Agent Tools Validation', () => {
 

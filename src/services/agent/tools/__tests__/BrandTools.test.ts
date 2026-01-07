@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrandTools } from './BrandTools';
-import { AI } from '@/services/ai/AIService';
+import { BrandTools } from '../BrandTools';
+import { AI } from '../services/ai/AIService';
 
 // Mock the Firebase AI service
 vi.mock('@/services/ai/FirebaseAIService', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/services/ai/FirebaseAIService', () => ({
     }
 }));
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { firebaseAI } from '../services/ai/FirebaseAIService';
 
 describe('BrandTools', () => {
     beforeEach(() => {

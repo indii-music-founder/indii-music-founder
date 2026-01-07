@@ -11,14 +11,30 @@ vi.mock('../../ai/AIService', () => ({
     }
 }));
 
+// Mock dependencies
+vi.mock('../AgentService', () => ({
+    agentService: {
+        runAgent: vi.fn().mockResolvedValue({ role: 'model', text: 'Task executing', timestamp: Date.now() })
+    }
+}));
+
+vi.mock('../registry', () => ({
+    agentRegistry: {
+        getAsync: vi.fn()
+    }
+}));
+
 // A dummy agent for testing
 class TestAgent extends BaseAgent {
     constructor() {
         super({
-            id: 'test-agent',
+            id: 'generalist',
             name: 'Test Agent',
             description: 'Agent for testing streaming',
-            systemPrompt: 'You are a test agent.'
+            systemPrompt: 'You are a test agent.',
+            color: 'bg-blue-500',
+            category: 'specialist',
+            tools: []
         });
     }
 }

@@ -1,9 +1,9 @@
 
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { NarrativeTools } from './NarrativeTools';
-import { DirectorTools } from './DirectorTools';
-import { VideoTools } from './VideoTools';
-import { AI } from '@/services/ai/AIService';
+import { NarrativeTools } from '../NarrativeTools';
+import { DirectorTools } from '../DirectorTools';
+import { VideoTools } from '../VideoTools';
+import { AI } from '../services/ai/AIService';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
@@ -40,9 +40,9 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { firebaseAI } from '../services/ai/FirebaseAIService';
+import { ImageGeneration } from '../services/image/ImageGenerationService';
+import { VideoGeneration } from '../services/video/VideoGenerationService';
 
 describe('Filmmaking Grammar Tools', () => {
 

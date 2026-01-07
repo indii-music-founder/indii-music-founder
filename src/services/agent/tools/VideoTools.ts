@@ -43,7 +43,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
                 prompt: args.prompt
             }, `Video generated successfully: ${finalUrl}`);
         }
-        return toolError('GENERATION_FAILED', 'Video generation failed (no result returned).');
+        return toolError('Video generation failed (no result returned).', 'GENERATION_FAILED');
     }),
 
     generate_motion_brush: wrapTool('generate_motion_brush', async (args: { image: string, mask: string, prompt?: string }) => {
@@ -53,7 +53,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
 
         if (!imgMatch || !maskMatch) {
-            return toolError('INVALID_INPUT', "Invalid image or mask data. Must be base64 data URIs.");
+            return toolError("Invalid image or mask data. Must be base64 data URIs.", 'INVALID_INPUT');
         }
 
         const image = { mimeType: imgMatch[1], data: imgMatch[2] };
@@ -75,7 +75,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
                 url: uri
             }, `Motion Brush video generated successfully: ${uri}`);
         }
-        return toolError('GENERATION_FAILED', "Motion Brush generation failed.");
+        return toolError("Motion Brush generation failed.", 'GENERATION_FAILED');
     }),
 
     batch_edit_videos: wrapTool('batch_edit_videos', async (args: { prompt: string, videoIndices?: number[] }) => {
@@ -83,7 +83,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         const allVideos = uploadedImages.filter(img => img.type === 'video');
 
         if (allVideos.length === 0) {
-            return toolError('NOT_FOUND', "No videos found in uploads to edit. Please upload videos first.");
+            return toolError("No videos found in uploads to edit. Please upload videos first.", 'NOT_FOUND');
         }
 
         const targetVideos = args.videoIndices
@@ -103,7 +103,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         }).filter(vid => vid !== null) as { mimeType: string; data: string }[];
 
         if (videoDataList.length === 0) {
-            return toolError('PROCESSING_FAILED', "Could not process video data from uploads. Ensure they are valid data URIs.");
+            return toolError("Could not process video data from uploads. Ensure they are valid data URIs.", 'PROCESSING_FAILED');
         }
 
         const results = await Editing.batchEditVideo({
@@ -135,7 +135,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
                 results
             }, `Successfully processed ${results.length} videos based on instruction: "${args.prompt}".`);
         }
-        return toolError('PROCESSING_FAILED', "Batch video processing completed but no videos were returned.");
+        return toolError("Batch video processing completed but no videos were returned.", 'PROCESSING_FAILED');
     }),
 
     extend_video: wrapTool('extend_video', async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
@@ -143,7 +143,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         const frameData = await extractVideoFrame(args.videoUrl);
 
         if (!frameData) {
-            return toolError('EXTRACTION_FAILED', "Failed to extract frame from the provided video URL.");
+            return toolError("Failed to extract frame from the provided video URL.", 'EXTRACTION_FAILED');
         }
 
         const options: VideoGenerationOptions = {
@@ -185,7 +185,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
                 url: finalUrl
             }, `Video extended successfully: ${finalUrl}`);
         }
-        return toolError('GENERATION_FAILED', "Video extension failed (no result returned).");
+        return toolError("Video extension failed (no result returned).", 'GENERATION_FAILED');
     }),
 
     update_keyframe: wrapTool('update_keyframe', async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
@@ -194,7 +194,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         const clip = project.clips.find(c => c.id === args.clipId);
 
         if (!clip) {
-            return toolError('NOT_FOUND', `Clip with ID ${args.clipId} not found.`);
+            return toolError(`Clip with ID ${args.clipId} not found.`, 'NOT_FOUND');
         }
 
         addKeyframe(args.clipId, args.property, args.frame, args.value);

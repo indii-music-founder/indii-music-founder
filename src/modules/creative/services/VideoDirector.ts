@@ -22,12 +22,9 @@ export class VideoDirector {
             const url = uri;
 
             if (enableDirectorsCut && !isRetry) {
-                console.info("🎬 Director QA Started...");
-
                 // 2. Extract Frame for Critique
                 const frameBase64 = await this.extractFrame(url);
                 if (!frameBase64) {
-                    console.warn("Could not extract frame for QA.");
                     return this.saveVideo(url, prompt, isRetry);
                 }
 
@@ -62,10 +59,8 @@ export class VideoDirector {
                     `You are a master cinematographer. Analyze the provided image.`
                 );
 
-                console.info("🎬 Director Feedback:", feedback);
 
                 if (typeof feedback.score === 'number' && feedback.score < 8) {
-                    console.info("🎬 Director Rejected. Reshooting...");
                     // 4. Reshoot
                     // Note: We need to call the generation service again. 
                     // Since this is a service, we might need to pass the generator function or import it.
@@ -81,7 +76,6 @@ export class VideoDirector {
 
         } catch (e: any) {
             if (e.retry) throw e; // Propagate retry signal
-            console.error("Video Processing Error:", e);
             return null;
         }
     }

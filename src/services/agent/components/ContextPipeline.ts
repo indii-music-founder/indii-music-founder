@@ -7,6 +7,9 @@ export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
     relevantMemories: string[];
     memoryContext: string;
+    swarmId?: string | null;
+    traceId?: string;
+    attachments?: { mimeType: string; base64: string }[];
 }
 
 export class ContextPipeline {

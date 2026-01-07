@@ -46,15 +46,15 @@ describe('Specialist Agent Fleet Verification', () => {
 
     // Verify every agent defined in config is actually registered
     AGENT_CONFIGS.forEach(config => {
-        it(`should have registered ${config.name} (${config.id})`, () => {
-            const agent = agentRegistry.get(config.id);
+        it(`should have registered ${config.name} (${config.id})`, async () => {
+            const agent = await agentRegistry.getAsync(config.id);
             expect(agent).toBeDefined();
             expect(agent?.name).toBe(config.name);
             expect(agent?.id).toBe(config.id);
         });
 
         it(`${config.name} should be executable`, async () => {
-            const agent = agentRegistry.get(config.id);
+            const agent = await agentRegistry.getAsync(config.id);
             expect(agent).toBeDefined();
             if (!agent) return;
 
@@ -64,9 +64,7 @@ describe('Specialist Agent Fleet Verification', () => {
             // Should return valid structure
             expect(response).toBeDefined();
             expect(response.text).toBeDefined();
-            // Since we mocked AI, we expect the mock response
-            // Note: BaseAgents returning plain text directly from AI might just return the text
-            // or the object depending on implementation. BaseAgent.ts usually returns { text: ... }
+
             if (typeof response === 'string') {
                 expect(response).toBeTruthy();
             } else {
@@ -77,10 +75,8 @@ describe('Specialist Agent Fleet Verification', () => {
 
     // Special check for Generalist (Agent Zero) since it's custom
     it('should verify GeneralistAgent (Agent Zero)', async () => {
-        const agent = agentRegistry.get('generalist');
+        const agent = await agentRegistry.getAsync('generalist');
         expect(agent).toBeDefined();
-        // We know generalist mock stream behaves differently in its own test, 
-        // but here we just want to ensure it doesn't crash on instantiation.
         expect(agent?.name).toBe('Agent Zero');
     });
 });

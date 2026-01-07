@@ -90,7 +90,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
 
 function LoadingFallback() {
     return (
-        <div className="flex items-center justify-center h-full text-gray-500" style={{ backgroundColor: '#111', color: '#ccc', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="flex items-center justify-center h-screen w-screen bg-background text-muted-foreground animate-pulse">
             Loading Module...
         </div>
     );
@@ -228,7 +228,7 @@ export default function App() {
     return (
         <VoiceProvider>
             <ToastProvider>
-                <div className="flex h-screen w-screen bg-background text-white overflow-hidden font-sans" data-testid="app-container">
+                <div className="flex h-screen w-screen bg-background text-white overflow-hidden" data-testid="app-container">
                     {/* Left Sidebar - Hidden for standalone modules */}
                     {showChrome && (
                         <div className="hidden md:block h-full">

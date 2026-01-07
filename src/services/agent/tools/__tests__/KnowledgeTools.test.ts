@@ -14,9 +14,9 @@ vi.mock('@/services/rag/ragService', () => ({
     runAgenticWorkflow: vi.fn()
 }));
 
-import { KnowledgeTools } from './KnowledgeTools';
+import { KnowledgeTools } from '../KnowledgeTools';
 import { useStore } from '@/core/store';
-import { runAgenticWorkflow } from '@/services/rag/ragService';
+import { runAgenticWorkflow } from '../services/rag/ragService';
 
 describe('KnowledgeTools', () => {
     const mockUserProfile = {

@@ -1,12 +1,13 @@
+```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VideoTools } from '../VideoTools';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { Editing } from '@/services/image/EditingService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
+import { EditingService } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
 vi.mock('@/services/video/VideoGenerationService', () => ({
-    VideoGeneration: {
+    VideoGenerationService: {
         generateVideo: vi.fn(),
         generateLongFormVideo: vi.fn(),
         waitForJob: vi.fn()
@@ -87,7 +88,7 @@ describe('VideoTools', () => {
             const result = await VideoTools.generate_video({ prompt: 'A scene' });
 
             expect(VideoGeneration.waitForJob).toHaveBeenCalledWith('vid-1');
-            expect(result).toContain('https://example.com/completed.mp4');
+            expect(result.data.url).toBe('https://example.com/completed.mp4');
         });
 
         it('adds result to history', async () => {
@@ -111,7 +112,10 @@ describe('VideoTools', () => {
         it('returns error message on failure', async () => {
             vi.mocked(VideoGeneration.generateVideo).mockRejectedValue(new Error('API Error'));
 
-            await expect(VideoTools.generate_video({ prompt: 'test' })).rejects.toThrow('Video generation failed');
+            const result = await VideoTools.generate_video({ prompt: 'test' });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.toLowerCase()).toContain('api error');
         });
     });
 
@@ -122,7 +126,8 @@ describe('VideoTools', () => {
                 mask: 'invalid-mask'
             });
 
-            expect(result).toContain('Invalid image or mask data');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Invalid image or mask data');
         });
 
         it('returns success message on valid input', async () => {
@@ -135,7 +140,7 @@ describe('VideoTools', () => {
                 prompt: 'Animate the water'
             });
 
-            expect(result).toContain('Motion Brush video generated successfully');
+            expect(result.message).toContain('Motion Brush video generated successfully');
         });
     });
 
@@ -169,8 +174,9 @@ describe('VideoTools', () => {
                 totalDuration: 60
             });
 
-            expect(result).toContain('long-job-123');
-            expect(result).toContain('Long-form generation job started');
+            expect(result.data.jobId).toBe('long-job-123'); // Adjust based on toolSuccess output if needed, or check message
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('Long-form generation job started. Job ID: long-job-123');
         });
     });
 
@@ -237,7 +243,7 @@ describe('VideoTools', () => {
 
         it('returns error when frame extraction fails', async () => {
             const { extractVideoFrame } = await import('@/utils/video');
-            vi.mocked(extractVideoFrame).mockResolvedValue(null);
+            vi.mocked(extractVideoFrame).mockResolvedValue(null as any);
 
             const result = await VideoTools.extend_video({
                 videoUrl: 'https://example.com/video.mp4',
@@ -245,118 +251,121 @@ describe('VideoTools', () => {
                 direction: 'end'
             });
 
-            expect(result).toContain('Failed to extract frame');
+            expect(result.success).toBe(false);
+            expect(result.error?.toLowerCase()).toContain('failed to extract frame');
         });
     });
+});
 
-    describe('batch_edit_videos', () => {
-        it('processes uploaded videos with prompt', async () => {
-            const uploads = [
-                { id: 'vid-1', url: 'data:video/mp4;base64,video1', type: 'video' },
-                { id: 'vid-2', url: 'data:video/mp4;base64,video2', type: 'video' }
-            ];
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: uploads }));
+describe('batch_edit_videos', () => {
+    it('processes uploaded videos with prompt', async () => {
+        const uploads = [
+            { id: 'vid-1', url: 'data:video/mp4;base64,video1', type: 'video' },
+            { id: 'vid-2', url: 'data:video/mp4;base64,video2', type: 'video' }
+        ];
+        (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: uploads }));
 
-            const mockResults = [
-                { id: 'ed-1', url: 'data:video/mp4;base64,edited1', prompt: 'edited' }
-            ];
-            vi.mocked(Editing.batchEditVideo).mockResolvedValue(mockResults);
+        const mockResults = [
+            { id: 'ed-1', url: 'data:video/mp4;base64,edited1', prompt: 'edited' }
+        ];
+        vi.mocked(Editing.batchEditVideo).mockResolvedValue(mockResults);
 
-            const result = await VideoTools.batch_edit_videos({ prompt: 'Add color grade' });
+        const result = await VideoTools.batch_edit_videos({ prompt: 'Add color grade' });
 
-            expect(Editing.batchEditVideo).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    prompt: 'Add color grade'
-                })
-            );
-            expect(result).toContain('Successfully processed');
-        });
-
-        it('returns error when no videos uploaded', async () => {
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: [] }));
-
-            const result = await VideoTools.batch_edit_videos({ prompt: 'Edit' });
-
-            expect(result).toContain('No videos found');
-        });
+        expect(Editing.batchEditVideo).toHaveBeenCalledWith(
+            expect.objectContaining({
+                prompt: 'Add color grade'
+            })
+        );
+        expect(result.message).toContain('Successfully processed');
     });
 
-    describe('interpolate_sequence', () => {
-        it('passes both firstFrame and lastFrame', async () => {
-            const mockResults = [{ id: 'interp-1', url: 'https://example.com/interp.mp4', prompt: 'test' }];
-            vi.mocked(VideoGeneration.generateVideo).mockResolvedValue(mockResults);
+    it('returns error when no videos uploaded', async () => {
+        (useStore.getState as any).mockReturnValue(createMockStoreState({ uploadedImages: [] }));
 
-            await VideoTools.interpolate_sequence({
-                firstFrame: 'data:image/png;base64,frame1',
-                lastFrame: 'data:image/png;base64,frame2',
-                prompt: 'Smooth transition'
-            });
+        const result = await VideoTools.batch_edit_videos({ prompt: 'Edit' });
 
-            expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    firstFrame: 'data:image/png;base64,frame1',
-                    lastFrame: 'data:image/png;base64,frame2'
-                })
-            );
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('No videos found');
+    });
+});
+
+describe('interpolate_sequence', () => {
+    it('passes both firstFrame and lastFrame', async () => {
+        const mockResults = [{ id: 'interp-1', url: 'https://example.com/interp.mp4', prompt: 'test' }];
+        vi.mocked(VideoGeneration.generateVideo).mockResolvedValue(mockResults);
+
+        await VideoTools.interpolate_sequence({
+            firstFrame: 'data:image/png;base64,frame1',
+            lastFrame: 'data:image/png;base64,frame2',
+            prompt: 'Smooth transition'
         });
 
-        it('passes userProfile for distributor context', async () => {
-            const mockResults = [{ id: 'interp-1', url: 'https://example.com/interp.mp4', prompt: 'test' }];
-            vi.mocked(VideoGeneration.generateVideo).mockResolvedValue(mockResults);
-
-            await VideoTools.interpolate_sequence({
+        expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
+            expect.objectContaining({
                 firstFrame: 'data:image/png;base64,frame1',
                 lastFrame: 'data:image/png;base64,frame2'
-            });
-
-            expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    userProfile: expect.objectContaining({ uid: 'test-user' })
-                })
-            );
-        });
+            })
+        );
     });
 
-    describe('update_keyframe', () => {
-        it('updates keyframe in video editor store', async () => {
-            const mockAddKeyframe = vi.fn();
-            const mockUpdateKeyframe = vi.fn();
-            const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
-            vi.mocked(useVideoEditorStore.getState).mockReturnValue({
-                addKeyframe: mockAddKeyframe,
-                updateKeyframe: mockUpdateKeyframe,
-                project: {
-                    clips: [{ id: 'clip-1', keyframes: {} }]
-                }
-            } as any);
+    it('passes userProfile for distributor context', async () => {
+        const mockResults = [{ id: 'interp-1', url: 'https://example.com/interp.mp4', prompt: 'test' }];
+        vi.mocked(VideoGeneration.generateVideo).mockResolvedValue(mockResults);
 
-            const result = await VideoTools.update_keyframe({
-                clipId: 'clip-1',
-                property: 'opacity',
-                frame: 30,
-                value: 0.5,
-                easing: 'easeInOut'
-            });
-
-            expect(mockAddKeyframe).toHaveBeenCalledWith('clip-1', 'opacity', 30, 0.5);
-            expect(mockUpdateKeyframe).toHaveBeenCalledWith('clip-1', 'opacity', 30, { easing: 'easeInOut' });
-            expect(result).toContain('Keyframe updated');
+        await VideoTools.interpolate_sequence({
+            firstFrame: 'data:image/png;base64,frame1',
+            lastFrame: 'data:image/png;base64,frame2'
         });
 
-        it('returns error for non-existent clip', async () => {
-            const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
-            vi.mocked(useVideoEditorStore.getState).mockReturnValue({
-                project: { clips: [] }
-            } as any);
+        expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userProfile: expect.objectContaining({ uid: 'test-user' })
+            })
+        );
+    });
+});
 
-            const result = await VideoTools.update_keyframe({
-                clipId: 'non-existent',
-                property: 'opacity',
-                frame: 30,
-                value: 0.5
-            });
+describe('update_keyframe', () => {
+    it('updates keyframe in video editor store', async () => {
+        const mockAddKeyframe = vi.fn();
+        const mockUpdateKeyframe = vi.fn();
+        const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
+        vi.mocked(useVideoEditorStore.getState).mockReturnValue({
+            addKeyframe: mockAddKeyframe,
+            updateKeyframe: mockUpdateKeyframe,
+            project: {
+                clips: [{ id: 'clip-1', keyframes: {} }]
+            }
+        } as any);
 
-            expect(result).toContain('not found');
+        const result = await VideoTools.update_keyframe({
+            clipId: 'clip-1',
+            property: 'opacity',
+            frame: 30,
+            value: 0.5,
+            easing: 'easeInOut'
         });
+
+        expect(mockAddKeyframe).toHaveBeenCalledWith('clip-1', 'opacity', 30, 0.5);
+        expect(mockUpdateKeyframe).toHaveBeenCalledWith('clip-1', 'opacity', 30, { easing: 'easeInOut' });
+        expect(result.message).toContain('Keyframe updated');
+    });
+
+    it('returns error for non-existent clip', async () => {
+        const { useVideoEditorStore } = await import('@/modules/video/store/videoEditorStore');
+        vi.mocked(useVideoEditorStore.getState).mockReturnValue({
+            project: { clips: [] }
+        } as any);
+
+        const result = await VideoTools.update_keyframe({
+            clipId: 'non-existent',
+            property: 'opacity',
+            frame: 30,
+            value: 0.5
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.metadata?.errorCode).toBe('NOT_FOUND');
     });
 });

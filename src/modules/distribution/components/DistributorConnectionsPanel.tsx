@@ -47,7 +47,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
             <div className="mb-12">
                 <h2 className="text-3xl font-black tracking-tighter text-white mb-2 uppercase italic">Management Console</h2>
                 <p className="text-gray-500 font-medium max-w-2xl">
-                    Bridge your existing distribution accounts with IndiiOS. Real-time sync for metadata, deliveries, and high-fidelity reporting.
+                    Bridge your existing distribution accounts with indiiOS. Real-time sync for metadata, deliveries, and high-fidelity reporting.
                 </p>
             </div>
 
@@ -77,7 +77,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
                     <div>
                         <h3 className="text-2xl font-black text-white mb-3 uppercase italic">Scale Up Your Reach</h3>
                         <p className="text-gray-500 mb-0 font-medium max-w-xl">
-                            Looking for better metadata handling or higher royalty splits? IndiiOS power partners offer exclusive terms for our users.
+                            Looking for better metadata handling or higher royalty splits? indiiOS power partners offer exclusive terms for our users.
                         </p>
                     </div>
                     <button className="px-8 py-3 bg-white text-black rounded-xl font-black text-[12px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/5">

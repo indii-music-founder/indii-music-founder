@@ -35,6 +35,31 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         };
     }),
 
+    verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
+        const { AI } = await import('@/services/ai/AIService'); // Lazy load to avoid cycle
+        const prompt = `
+        Verify if the following content meets the goal:
+        Goal: ${args.goal}
+        Content: ${args.content}
+        
+        Return JSON: { score: number (1-10), pass: boolean, reason: string }
+        `;
+
+        const response = await AI.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: [{ parts: [{ text: prompt }] }],
+            config: { responseMimeType: 'application/json' }
+        });
+
+        const text = response.text();
+        const verification = JSON.parse(text);
+
+        return {
+            verification,
+            message: `Verification complete. Score: ${verification.score}. Pass: ${verification.pass}`
+        };
+    }),
+
     read_history: wrapTool('read_history', async () => {
         const history = useStore.getState().agentHistory;
         const recentHistory = history.slice(-10); // Show a bit more than 5

@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MarketingTools } from './MarketingTools';
-import { AI } from '@/services/ai/AIService';
-import { MarketingService } from '@/services/marketing/MarketingService';
+import { MarketingTools } from '../MarketingTools';
+import { AI } from '../services/ai/AIService';
+import { MarketingService } from '../services/marketing/MarketingService';
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {

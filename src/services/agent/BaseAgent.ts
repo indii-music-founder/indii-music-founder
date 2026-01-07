@@ -239,7 +239,7 @@ export class BaseAgent implements SpecializedAgent {
 
                 try {
                     const results = await Promise.all(
-                        consultations.map(async (c: any) => {
+                        consultations.map(async (c: { targetAgentId: string; task: string }) => {
                             if (!VALID_AGENT_IDS.includes(c.targetAgentId as ValidAgentId)) {
                                 return { agentId: c.targetAgentId, error: `Invalid agent ID: ${c.targetAgentId}` };
                             }
@@ -253,8 +253,9 @@ export class BaseAgent implements SpecializedAgent {
                         data: { results },
                         message: `Consulted ${consultations.length} experts`
                     };
-                } catch (error: any) {
-                    return toolError(`Consultation failed: ${error.message}`, 'EXECUTION_ERROR');
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    return toolError(`Consultation failed: ${message}`, 'EXECUTION_ERROR');
                 }
             },
             schedule_task: async (args: Record<string, unknown>) => {
@@ -271,7 +272,8 @@ export class BaseAgent implements SpecializedAgent {
             subscribe_to_event: async (args: Record<string, unknown>) => {
                 const { eventType, task } = args as { eventType: string; task: string };
                 const { proactiveService } = await import('./ProactiveService');
-                const taskId = await proactiveService.subscribeToEvent(this.id, eventType as any, task);
+                // @ts-expect-error - eventType is dynamically checked in proactiveService
+                const taskId = await proactiveService.subscribeToEvent(this.id, eventType, task);
                 return {
                     success: true,
                     data: { taskId },
@@ -309,11 +311,12 @@ export class BaseAgent implements SpecializedAgent {
                         success: true,
                         message: 'Speech generated and played'
                     };
-                } catch (error: any) {
-                    console.error('[BaseAgent] Speak failure:', error);
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    console.error('[BaseAgent] Speak failure:', err);
                     return {
                         success: false,
-                        message: `Failed to speak: ${error.message}`
+                        message: `Failed to speak: ${message}`
                     };
                 }
             },
@@ -437,7 +440,7 @@ ${task}
                 config: {
                     ...AI_CONFIG.THINKING.LOW
                 },
-                tools: allTools as unknown as any[],
+                tools: allTools as any, // casting to any due to complex tool schema mapping
                 signal
             });
 
@@ -445,8 +448,8 @@ ${task}
             const streamIterator = {
                 [Symbol.asyncIterator]: async function* () {
                     const rawStream = stream as unknown;
-                    if (rawStream && typeof (rawStream as { getReader?: Function }).getReader === 'function') {
-                        const reader = (rawStream as { getReader: Function }).getReader();
+                    if (rawStream && typeof (rawStream as { getReader?: () => { read: () => Promise<{ done: boolean; value: any }>; releaseLock: () => void } }).getReader === 'function') {
+                        const reader = (rawStream as { getReader: () => { read: () => Promise<{ done: boolean; value: any }>; releaseLock: () => void } }).getReader();
                         try {
                             while (true) {
                                 const { done, value } = await reader.read();
@@ -457,7 +460,7 @@ ${task}
                             reader.releaseLock();
                         }
                     } else if (rawStream && typeof rawStream === 'object' && Symbol.asyncIterator in (rawStream as object)) {
-                        yield* rawStream as AsyncIterable<any>;
+                        yield* rawStream as AsyncIterable<{ text: () => string }>;
                     } else {
                         // Not iterable, warn but don't crash
                         console.info('[BaseAgent] Stream is not iterable, waiting for full response');

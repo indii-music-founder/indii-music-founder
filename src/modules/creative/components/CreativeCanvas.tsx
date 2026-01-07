@@ -120,7 +120,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                 toast.error('Generation failed to produce candidates.');
             }
         } catch (error) {
-            console.error('Multi Edit Error:', error);
             toast.error('Failed to process edits');
         } finally {
             setIsProcessing(false);
@@ -139,7 +138,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                 throw new Error(result.error || 'Unknown error');
             }
         } catch (error: unknown) {
-            console.error('Animation Error:', error);
             const message = error instanceof Error ? error.message : 'Unknown error';
             toast.error(`Animation failed: ${message}`);
         }
@@ -173,9 +171,70 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
 
             toast.success('Canvas & Project State stored!');
         } catch (error) {
-            console.error('Failed to save asset or project state to storage', error);
             // Don't block the user, just warn
             toast.warning('Saved to disk, but cloud sync failed.');
+        }
+    };
+
+    const handleRefine = async () => {
+        if (!item) return;
+
+        // 1. Close the canvas (this logic is handled by the caller usually, but we can do it here if needed)
+        // Actually, we want to transition view.
+        onClose();
+
+        const {
+            addWhiskItem,
+            setPendingPrompt,
+            setViewMode,
+            setGenerationMode // Ensure we are in image mode
+        } = useStore.getState();
+
+        // 2. Set up UI state for refinement
+        // We'll optimistically add it to Whisk even before caption is ready? 
+        // Better to get caption first, or use a placeholder?
+        // Let's use a "Thinking..." or reuse original prompt as temporary caption.
+
+        toast.info("Refining... Analyzing image essence.");
+
+        // Ensure we are in the right mode
+        setGenerationMode('image');
+        setViewMode('gallery'); // Or keep same view? Gallery seems standard.
+
+        // 3. Add to Whisk
+        // We need an ID for the whisk item.
+        const whiskId = crypto.randomUUID();
+
+        // Use original prompt as fallback initial caption
+        const initialCaption = item.prompt || "Image Reference";
+
+        // Store signature: addWhiskItem: (category, type, content, aiCaption, explicitId)
+        addWhiskItem('subject', 'image', item.url, initialCaption, whiskId);
+
+        // 4. Set pending prompt to original prompt so user can iterate
+        setPendingPrompt(item.prompt);
+
+        // 5. Async: Get the real caption
+        try {
+            // Dynamic import to avoid circular deps if any, or just good practice for heavy services
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+
+            // Parse data URL (assuming base64 for generated items)
+            const [mimeType, b64] = item.url.split(',');
+            const pureMime = mimeType.split(':')[1].split(';')[0];
+
+            const caption = await ImageGeneration.captionImage(
+                { mimeType: pureMime, data: b64 },
+                'subject'
+            );
+
+            // Update the item with the real caption
+            // Store signature: updateWhiskItem: (category, id, updates)
+            const { updateWhiskItem } = useStore.getState();
+            updateWhiskItem('subject', whiskId, { aiCaption: caption });
+            toast.success("Image essence extracted and locked!");
+        } catch (e) {
+            toast.warning("Could not auto-caption. Using original prompt.");
         }
     };
 
@@ -211,6 +270,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                         handleAnimate={handleAnimate}
                         onClose={onClose}
                         onSendToWorkflow={onSendToWorkflow}
+                        onRefine={handleRefine}
                     />
 
                     <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">

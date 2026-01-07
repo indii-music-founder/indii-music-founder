@@ -8,9 +8,20 @@ import VideoWorkflow from '../video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
+import WhiskSidebar from './components/whisk/WhiskSidebar';
+import MainPromptBar from './components/whisk/MainPromptBar';
+import { WhiskService } from '@/services/WhiskService';
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
-    const { viewMode, setViewMode, selectedItem, setSelectedItem, generationMode, setGenerationMode, pendingPrompt, setPendingPrompt, setPrompt, studioControls, addToHistory, currentProjectId, userProfile } = useStore();
+    const {
+        viewMode, setViewMode,
+        selectedItem, setSelectedItem,
+        generationMode, setGenerationMode,
+        pendingPrompt, setPendingPrompt,
+        setPrompt, studioControls,
+        addToHistory, currentProjectId,
+        userProfile, whiskState
+    } = useStore();
     // const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
     const toast = useToast();
 
@@ -41,15 +52,22 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             const generateImage = async () => {
                 const isCoverArt = studioControls.isCoverArtMode;
                 toast.info(isCoverArt ? "Generating cover art..." : "Generating image...");
+
                 try {
                     const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+
+                    // Synthesize prompt and get source images for Whisk
+                    const finalPrompt = WhiskService.synthesizeWhiskPrompt(pendingPrompt, whiskState);
+                    const sourceImages = WhiskService.getSourceImages(whiskState);
+
                     const results = await ImageGeneration.generateImages({
-                        prompt: pendingPrompt,
+                        prompt: finalPrompt,
                         count: 1,
                         resolution: studioControls.resolution,
                         aspectRatio: isCoverArt ? '1:1' : studioControls.aspectRatio,
                         negativePrompt: studioControls.negativePrompt,
                         seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                        sourceImages: sourceImages,
                         // Pass distributor context for cover art mode
                         userProfile: isCoverArt ? userProfile : undefined,
                         isCoverArt
@@ -60,7 +78,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             addToHistory({
                                 id: res.id,
                                 url: res.url,
-                                prompt: res.prompt,
+                                prompt: pendingPrompt, // Store user's original prompt in history for clarity
                                 type: 'image',
                                 timestamp: Date.now(),
                                 projectId: currentProjectId,
@@ -77,13 +95,16 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             };
             generateImage();
         }
-    }, [pendingPrompt, generationMode]);
+    }, [pendingPrompt, generationMode, whiskState]);
 
     return (
         <ModuleErrorBoundary moduleName="Creative Studio">
             <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
                 <CreativeNavbar />
                 <div className="flex-1 flex overflow-hidden relative">
+                    {/* Whisk Sidebar */}
+                    <WhiskSidebar />
+
                     {/* Main Workspace */}
                     <div className="flex-1 flex flex-col relative min-w-0 bg-[#0f0f0f]">
                         {viewMode === 'gallery' && <CreativeGallery />}
@@ -91,6 +112,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'showroom' && <Showroom />}
                     </div>
                 </div>
+
+                {/* Main Prompt Bar at Bottom */}
+                <MainPromptBar />
 
                 {/* Global Overlay */}
                 {selectedItem && (

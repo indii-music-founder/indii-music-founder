@@ -204,3 +204,5 @@ export interface AgentExecutionResult {
     thoughts?: string[];
     error?: string;
 }
+
+export type AgentResponse = AgentExecutionResult;

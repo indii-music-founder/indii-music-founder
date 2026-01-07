@@ -7,6 +7,10 @@ import { AgentContext } from './types';
 
 import { coordinator } from './WorkflowCoordinator';
 
+/**
+ * AgentService is the primary entry point for agent-related operations.
+ * It manages the lifecycle of user messages, context resolution, orchestration, and execution.
+ */
 export class AgentService {
     private isProcessing = false;
     private contextPipeline: ContextPipeline;
@@ -20,7 +24,13 @@ export class AgentService {
         this.executor = new AgentExecutor();
     }
 
-    async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[], forcedAgentId?: string) {
+    /**
+     * Sends a message to the agent system, handling context resolution and orchestration.
+     * @param text The user's input text.
+     * @param attachments Optional file attachments (images/PDFs).
+     * @param forcedAgentId Optional specific agent to use, bypassing orchestration.
+     */
+    async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[], forcedAgentId?: string): Promise<void> {
         if (this.isProcessing) return;
         this.isProcessing = true;
 
@@ -61,9 +71,7 @@ export class AgentService {
                 coordinatorResult = 'DELEGATED_TO_AGENT';
             } else {
                 coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk) => {
-                    // For direct generation, we might get chunks if we enhanced it to support streaming.
-                    // Currently handleUserRequest handles generation atomically but accepts a callback.
-                    // We update the UI optimistically if chunks arrive.
+                    // Update the UI optimistically if chunks arrive from fast path
                     updateAgentMessage(responseId, { text: chunk });
                 });
             }
@@ -129,15 +137,22 @@ export class AgentService {
             }
 
         } catch (e: unknown) {
-            const error = e as Error;
+            const error = e instanceof Error ? e : new Error(String(e));
             this.addSystemMessage(`❌ **Error:** ${error.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
         }
     }
 
-
-    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<unknown> {
+    /**
+     * Programmatically runs an agent for internal tasks.
+     * @param agentId The ID of the agent to execute.
+     * @param task The task description.
+     * @param parentContext Optional parent context to inherit.
+     * @param parentTraceId Optional trace ID for observability chaining.
+     * @param attachments Optional file attachments.
+     */
+    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<any> {
         // Build a pipeline context from the parent context or fresh
         const context = parentContext || await this.contextPipeline.buildContext();
 
@@ -156,7 +171,7 @@ export class AgentService {
         );
     }
 
-    private addSystemMessage(text: string) {
+    private addSystemMessage(text: string): void {
         useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
     }
 }

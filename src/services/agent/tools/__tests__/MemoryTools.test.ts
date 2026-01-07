@@ -23,10 +23,10 @@ vi.mock('@/services/ai/AIService', () => ({
     }
 }));
 
-import { MemoryTools } from './MemoryTools';
+import { MemoryTools } from '../MemoryTools';
 import { useStore } from '@/core/store';
-import { memoryService } from '@/services/agent/MemoryService';
-import { AI } from '@/services/ai/AIService';
+import { memoryService } from '../services/agent/MemoryService';
+import { AI } from '../services/ai/AIService';
 
 describe('MemoryTools', () => {
     const mockStoreState = {
@@ -53,8 +53,9 @@ describe('MemoryTools', () => {
                 content: 'User prefers dark themes'
             });
 
-            expect(result).toContain('Memory saved');
-            expect(result).toContain('User prefers dark themes');
+            expect(result.success).toBe(true);
+            expect(result.data.message).toContain('Memory saved');
+            expect(result.data.content).toBe('User prefers dark themes');
             expect(memoryService.saveMemory).toHaveBeenCalledWith(
                 'project-123',
                 'User prefers dark themes',
@@ -84,7 +85,8 @@ describe('MemoryTools', () => {
                 content: 'Test memory'
             });
 
-            expect(result).toContain('Failed to save memory: Storage full');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Storage full');
         });
 
         it('should default to fact type', async () => {
@@ -111,9 +113,10 @@ describe('MemoryTools', () => {
 
             const result = await MemoryTools.recall_memories({ query: 'user preferences' });
 
-            expect(result).toContain('Relevant Memories');
-            expect(result).toContain('User likes blue color');
-            expect(result).toContain('Previous project was about music');
+            expect(result.success).toBe(true);
+            expect(result.data.memories).toEqual(mockMemories);
+            expect(result.data.message).toContain('Retrieved 3 relevant memories');
+
             expect(memoryService.retrieveRelevantMemories).toHaveBeenCalledWith(
                 'project-123',
                 'user preferences'
@@ -125,7 +128,9 @@ describe('MemoryTools', () => {
 
             const result = await MemoryTools.recall_memories({ query: 'obscure topic' });
 
-            expect(result).toContain('No relevant memories found');
+            expect(result.success).toBe(true);
+            expect(result.data.memories).toEqual([]);
+            expect(result.data.message).toContain('No relevant memories found');
         });
 
         it('should handle recall errors', async () => {
@@ -135,19 +140,19 @@ describe('MemoryTools', () => {
 
             const result = await MemoryTools.recall_memories({ query: 'test' });
 
-            expect(result).toContain('Failed to recall memories: Database unavailable');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Database unavailable');
         });
     });
 
     describe('read_history', () => {
         it('should return last 5 messages', async () => {
-            const result = await MemoryTools.read_history();
+            const result = await MemoryTools.read_history({});
 
-            expect(result).toContain('user:');
-            expect(result).toContain('model:');
-            // Should have 5 entries (all from mockStoreState)
-            const lines = result.split('\n');
-            expect(lines.length).toBe(5);
+            expect(result.success).toBe(true);
+            expect(result.data.history).toHaveLength(5);
+            expect(result.data.history[0]).toHaveProperty('role');
+            expect(result.data.history[0]).toHaveProperty('text');
         });
 
         it('should truncate long messages', async () => {
@@ -160,18 +165,19 @@ describe('MemoryTools', () => {
                 ]
             });
 
-            const result = await MemoryTools.read_history();
+            const result = await MemoryTools.read_history({});
 
-            expect(result).toContain('...');
-            expect(result.length).toBeLessThan(100);
+            expect(result.data.history[0].text).toContain('...');
+            expect(result.data.history[0].text.length).toBeLessThan(100);
         });
 
         it('should handle empty history', async () => {
             (useStore.getState as any).mockReturnValue({ agentHistory: [] });
 
-            const result = await MemoryTools.read_history();
+            const result = await MemoryTools.read_history({});
 
-            expect(result).toBe('');
+            expect(result.success).toBe(true);
+            expect(result.data.history).toHaveLength(0);
         });
     });
 
@@ -191,8 +197,8 @@ describe('MemoryTools', () => {
                 content: 'Revolutionary AI Changes Everything'
             });
 
-            expect(result).toContain('Verification Result');
-            expect(result).toContain('score');
+            expect(result.success).toBe(true);
+            expect(result.data.verification.score).toBe(8);
             expect(AI.generateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
                     model: 'gemini-3-pro-preview',
@@ -227,7 +233,8 @@ describe('MemoryTools', () => {
                 content: 'Content'
             });
 
-            expect(result).toContain('Verification failed: API unavailable');
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('API unavailable');
         });
 
         it('should handle unknown errors', async () => {
@@ -238,7 +245,8 @@ describe('MemoryTools', () => {
                 content: 'Content'
             });
 
-            expect(result).toContain('Verification failed');
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Unknown error type');
         });
     });
 });

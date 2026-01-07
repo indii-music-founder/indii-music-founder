@@ -15,7 +15,8 @@ vi.mock('../../observability/TraceService', () => ({
 
 vi.mock('../../registry', () => ({
     agentRegistry: {
-        get: vi.fn()
+        get: vi.fn(),
+        getAsync: vi.fn()
     }
 }));
 
@@ -40,7 +41,7 @@ describe('AgentExecutor', () => {
             execute: vi.fn().mockResolvedValue('Agent Output')
         };
 
-        vi.mocked(agentRegistry.get).mockReturnValue(mockAgent as any);
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as any);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
 
         const context: any = { activeModule: 'test', projectHandle: { name: 'p1' } };
@@ -50,7 +51,7 @@ describe('AgentExecutor', () => {
 
         // Verify Trace Flow
         expect(TraceService.startTrace).toHaveBeenCalledWith(
-            'test-uid', 'mock-agent', 'Do something', expect.anything()
+            'test-uid', 'mock-agent', 'Do something', expect.anything(), undefined
         );
         expect(mockAgent.execute).toHaveBeenCalled();
         expect(TraceService.completeTrace).toHaveBeenCalledWith('mock-trace-id', 'Agent Output');
@@ -68,7 +69,7 @@ describe('AgentExecutor', () => {
             })
         };
 
-        vi.mocked(agentRegistry.get).mockReturnValue(mockAgent as any);
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as any);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
 
         await executor.execute('mock-agent', 'Do something', {} as any);
@@ -84,7 +85,7 @@ describe('AgentExecutor', () => {
             execute: vi.fn().mockRejectedValue(new Error('Agent Failed'))
         };
 
-        vi.mocked(agentRegistry.get).mockReturnValue(mockAgent as any);
+        vi.mocked(agentRegistry.getAsync).mockResolvedValue(mockAgent as any);
         vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
 
         await expect(executor.execute('mock-agent', 'Fail', {} as any))

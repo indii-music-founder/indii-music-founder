@@ -22,10 +22,10 @@ vi.mock('@/services/image/EditingService', () => ({
     }
 }));
 
-import { ImageTools } from './ImageTools';
+import { ImageTools } from '../ImageTools';
 import { useStore } from '@/core/store';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
-import { Editing } from '@/services/image/EditingService';
+import { ImageGeneration } from '../services/image/ImageGenerationService';
+import { Editing } from '../services/image/EditingService';
 
 describe('ImageTools', () => {
     const mockStoreState = {

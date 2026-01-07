@@ -1,5 +1,6 @@
 import { AgentConfig } from '../types';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { Schema } from 'firebase/ai';
 
 export const SecurityAgent: AgentConfig = {
     id: 'security',
@@ -25,7 +26,7 @@ Behavior:
         audit_permissions: async (args: { userId: string }) => {
             const prompt = `Audit permissions for user "${args.userId}". Identify risky roles and generate a compliance report. Return as JSON.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
                 return { success: true, data: response };
             } catch (e) {
                 return { success: false, error: (e as Error).message };
@@ -45,7 +46,7 @@ Behavior:
         },
         check_api_status: async (args: { api_name: string }) => {
             const prompt = `Check status for API "${args.api_name}". Generate latency metrics, error rates, and overall health.`;
-            const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
+            const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as Schema);
             return { success: true, data: response };
         },
         rotate_credentials: async (args: { service_name: string }) => {

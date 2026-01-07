@@ -71,7 +71,7 @@ export class DSRProcessor {
             calc.netRevenue = calc.grossRevenue - distFeeAmount;
 
             // 2. Calculate Splits
-            // IndiiOS model: Splits applied to Net Revenue
+            // indiiOS model: Splits applied to Net Revenue
             calc.contributorPayments = this.calculateSplits(calc.netRevenue, metadata.splits);
         }
 

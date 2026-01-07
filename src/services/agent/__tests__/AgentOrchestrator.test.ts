@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AgentOrchestrator } from '../components/AgentOrchestrator';
 import { AI } from '@/services/ai/AIService';
 import { agentRegistry } from '../registry';
+import { TraceService } from '../observability/TraceService';
 import type { AgentContext } from '../types';
 
 // Mock dependencies
@@ -14,6 +15,21 @@ vi.mock('@/services/ai/AIService', () => ({
 vi.mock('../registry', () => ({
     agentRegistry: {
         getAll: vi.fn()
+    }
+}));
+
+vi.mock('../observability/TraceService', () => ({
+    TraceService: {
+        startTrace: vi.fn(),
+        addStep: vi.fn(),
+        completeTrace: vi.fn(),
+        failTrace: vi.fn()
+    }
+}));
+
+vi.mock('@/services/firebase', () => ({
+    auth: {
+        currentUser: { uid: 'test-user' }
     }
 }));
 
@@ -39,14 +55,23 @@ describe('AgentOrchestrator', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(agentRegistry.getAll).mockReturnValue(mockAgents as any);
+        vi.mocked(TraceService.startTrace).mockResolvedValue('mock-trace-id');
         orchestrator = new AgentOrchestrator();
     });
 
     describe('determineAgent', () => {
-        it('routes legal queries to LegalAgent', async () => {
+        const mockRouting = (agentId: string, confidence = 1.0) => {
             vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'legal'
+                text: () => JSON.stringify({
+                    targetAgentId: agentId,
+                    confidence,
+                    reasoning: `Routing to ${agentId}`
+                })
             } as any);
+        };
+
+        it('routes legal queries to LegalAgent', async () => {
+            mockRouting('legal');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -57,9 +82,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('routes video queries to VideoAgent', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'video'
-            } as any);
+            mockRouting('video');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -70,9 +93,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('routes music queries to MusicAgent', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'music'
-            } as any);
+            mockRouting('music');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -83,9 +104,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('routes marketing queries to MarketingAgent', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'marketing'
-            } as any);
+            mockRouting('marketing');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -96,9 +115,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('falls back to GeneralistAgent for ambiguous queries', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'generalist'
-            } as any);
+            mockRouting('generalist');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -120,9 +137,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('falls back to generalist for invalid agent ID', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'invalid_agent_that_does_not_exist'
-            } as any);
+            mockRouting('invalid_agent_that_does_not_exist');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -146,9 +161,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('normalizes case in agent ID', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'LEGAL'
-            } as any);
+            mockRouting('LEGAL');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -159,9 +172,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('trims whitespace from agent ID', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => '  video  '
-            } as any);
+            mockRouting('  video  ');
 
             const result = await orchestrator.determineAgent(
                 createMockContext(),
@@ -171,10 +182,19 @@ describe('AgentOrchestrator', () => {
             expect(result).toBe('video');
         });
 
+        it('falls back to generalist on low confidence', async () => {
+            mockRouting('legal', 0.5);
+
+            const result = await orchestrator.determineAgent(
+                createMockContext(),
+                'Draft a contract maybe?'
+            );
+
+            expect(result).toBe('generalist');
+        });
+
         it('passes context to AI prompt', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'music'
-            } as any);
+            mockRouting('music');
 
             await orchestrator.determineAgent(
                 createMockContext({ activeModule: 'music', projectHandle: { name: 'My Album', type: 'album' } }),
@@ -195,9 +215,7 @@ describe('AgentOrchestrator', () => {
         });
 
         it('includes user query in AI prompt', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => 'legal'
-            } as any);
+            mockRouting('legal');
 
             await orchestrator.determineAgent(
                 createMockContext(),
@@ -213,6 +231,24 @@ describe('AgentOrchestrator', () => {
                             })
                         ])
                     })
+                })
+            );
+        });
+
+        it('logs routing decision to trace', async () => {
+            mockRouting('legal', 0.95);
+
+            await orchestrator.determineAgent(
+                createMockContext(),
+                'Draft a contract'
+            );
+
+            expect(TraceService.addStep).toHaveBeenCalledWith(
+                'mock-trace-id',
+                'routing',
+                expect.objectContaining({
+                    selectedAgent: 'legal',
+                    confidence: 0.95
                 })
             );
         });

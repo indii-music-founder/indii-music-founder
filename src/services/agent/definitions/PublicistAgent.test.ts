@@ -36,7 +36,7 @@ describe('PublicistAgent', () => {
                 focus: 'Global Reach'
             };
 
-            const result = await (PublicistAgent.functions!.create_campaign as any)(args);
+            const result = await (PublicistAgent.functions!.create_campaign as Function)(args);
 
             expect(PublicistService.addCampaign).toHaveBeenCalledWith('user-123', expect.objectContaining({
                 title: 'New Album Launch',
@@ -62,7 +62,7 @@ describe('PublicistAgent', () => {
                 focus: 'Test'
             };
 
-            const result = await (PublicistAgent.functions!.create_campaign as any)(args);
+            const result = await (PublicistAgent.functions!.create_campaign as Function)(args);
 
         });
     });
@@ -76,7 +76,7 @@ describe('PublicistAgent', () => {
                 tone: 'Professional' as const
             };
 
-            const result = await (PublicistAgent.functions!.write_press_release as any)(args);
+            const result = await (PublicistAgent.functions!.write_press_release as Function)(args);
 
             expect(result.success).toBe(true);
             expect(result.data.generated_content).toBe('Mocked AI Content Response');
@@ -91,7 +91,7 @@ describe('PublicistAgent', () => {
                 audience: 'Customers'
             };
 
-            const result = await (PublicistAgent.functions!.generate_crisis_response as any)(args);
+            const result = await (PublicistAgent.functions!.generate_crisis_response as Function)(args);
 
             expect(result.success).toBe(true);
             expect(result.data.draft_response).toBe('Mocked AI Content Response');
@@ -106,7 +106,7 @@ describe('PublicistAgent', () => {
                 tone: 'Excited' as const
             };
 
-            const result = await (PublicistAgent.functions!.generate_social_post as any)(args);
+            const result = await (PublicistAgent.functions!.generate_social_post as Function)(args);
 
             expect(result.success).toBe(true);
             expect(result.data.post_text).toBe('Mocked AI Content Response');

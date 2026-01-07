@@ -83,7 +83,7 @@ export class ImageGenerationService {
         if (!quotaCheck.allowed) {
             throw new QuotaExceededError(
                 'images',
-                await subscriptionService.getCurrentSubscription().then(s => s.tier),
+                (await subscriptionService.getCurrentSubscription().then(s => s.tier)),
                 quotaCheck.reason || 'Quota exceeded',
                 quotaCheck.currentUsage?.used || 0,
                 quotaCheck.currentUsage?.limit || count
@@ -263,6 +263,37 @@ export class ImageGenerationService {
             throw e;
         }
         return results;
+    }
+
+    /**
+     * Extracts the "essence" of an image using a Vision LLM.
+     * Used by the Whisk pipeline for Subject, Scene, and Style locking.
+     */
+    async captionImage(image: { mimeType: string, data: string }, category: 'subject' | 'scene' | 'style'): Promise<string> {
+        try {
+            const promptMap = {
+                subject: "Describe the primary subject of this image in detail. Focus on appearance, clothing, ethnicity, hair, and notable features. Keep it descriptive for an AI image generator.",
+                scene: "Describe the setting, environment, and background of this image. Focus on location, objects, architecture, and spatial arrangement.",
+                style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
+            };
+
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.AGENT, // Use Pro model for detailed analysis
+                contents: {
+                    role: 'user',
+                    parts: [
+                        { inlineData: { mimeType: image.mimeType, data: image.data } },
+                        { text: promptMap[category] }
+                    ]
+                },
+                config: AI_CONFIG.THINKING.HIGH
+            });
+
+            return response.text().trim();
+        } catch (e) {
+            console.error(`Captioning Error (${category}):`, e);
+            return "Visual reference"; // Fallback
+        }
     }
 }
 
