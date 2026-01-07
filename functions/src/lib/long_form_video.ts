@@ -109,9 +109,8 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
 
                     const result = await response.json();
 
-                    // Fix: Check for predictions
                     if (!result.predictions || result.predictions.length === 0) {
-                        throw new Error(`Veo Segment ${i}: No predictions returned`);
+                        throw new Error(`Veo Segment ${i}: No predictions returned. Response: ${JSON.stringify(result)}`);
                     }
 
                     const prediction = result.predictions[0];
