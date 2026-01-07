@@ -5,8 +5,7 @@
   "description": "The Operating System for Independent Artists - Studio Edition with AI-powered creativity tools",
   "directories": {
     "output": "dist-electron-studio",
-    "buildResources": "build",
-    "output": "dist"
+    "buildResources": "build"
   },
   "files": [
     "dist/**/*",
@@ -178,6 +177,9 @@
   },
   "afterAllArtifactBuild": "build/postinstall.sh",
   "afterSign": "build/notarize.js",
-  "asarUnpack": [],
+  "asarUnpack": [
+    "**/node_modules/ffmpeg-static/**",
+    "**/node_modules/ffprobe-static/**"
+  ],
   "npmRebuild": false
 }
