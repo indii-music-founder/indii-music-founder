@@ -3,6 +3,33 @@ import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 
+/**
+ * Robustly converts a Google Storage URL to a gs:// URI
+ */
+export function toGcsUri(url: string): string {
+    const uri = url;
+    try {
+        if (uri.startsWith('gs://')) {
+            return uri;
+        }
+        if (uri.startsWith('http')) {
+            const u = new URL(uri);
+            if (u.hostname === 'storage.googleapis.com' || u.hostname === 'storage.cloud.google.com') {
+                // Remove leading slash from pathname and decode to handle spaces/special chars
+                const path = decodeURIComponent(u.pathname.substring(1));
+                return `gs://${path}`;
+            }
+        }
+    } catch (e) {
+        console.warn(`[toGcsUri] Failed to parse URL ${url}:`, e);
+    }
+    // Fallback for simple cases or failures
+    if (uri.startsWith('https://storage.googleapis.com/')) {
+        return uri.replace('https://storage.googleapis.com/', 'gs://');
+    }
+    return uri;
+}
+
 // ----------------------------------------------------------------------------
 // Types & Schemas
 // ----------------------------------------------------------------------------
@@ -158,11 +185,7 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                                 const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
                                 // 1. Normalize Input URI
-                                let inputUri = segmentUrl;
-                                if (inputUri.startsWith('https://storage.googleapis.com/')) {
-                                    const path = inputUri.replace(`https://storage.googleapis.com/${bucket.name}/`, '');
-                                    inputUri = `gs://${bucket.name}/${path}`;
-                                }
+                                const inputUri = toGcsUri(segmentUrl);
 
                                 // 2. Create Sprite Job (acting as frame extractor)
                                 const [job] = await transcoder.createJob({
@@ -277,13 +300,7 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                         outputUri: outputDir,
                         config: {
                             inputs: segmentUrls.map((url: string, index: number) => {
-                                // Fix: Robust URL replacement
-                                let uri = url;
-                                if (uri.startsWith('https://storage.googleapis.com/')) {
-                                    const path = uri.replace('https://storage.googleapis.com/', '');
-                                    uri = `gs://${path}`;
-                                }
-                                return { key: `input${index}`, uri };
+                                return { key: `input${index}`, uri: toGcsUri(url) };
                             }),
                             editList: [
                                 {
