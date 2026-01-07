@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus } from 'lucide-react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
-import { TimelineTrack } from './TimelineTrack';
 import { TimeRuler } from './TimeRuler';
+import { TrackList } from './TrackList';
 import { PIXELS_PER_FRAME } from '../constants';
 import { groupClipsByTrack } from '../utils/timelineUtils';
 
@@ -109,22 +109,20 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     <div className="absolute -top-1 -left-1.5 w-3 h-3 bg-red-500 transform rotate-45"></div>
                 </div>
 
-                {project.tracks.map(track => (
-                    <TimelineTrack
-                        key={track.id}
-                        track={track}
-                        clips={clipsByTrack[track.id] || []}
-                        selectedClipId={selectedClipId}
-                        expandedClipIds={expandedClipIds}
-                        onRemoveTrack={removeTrack}
-                        onAddSampleClip={handleAddSampleClip}
-                        onToggleExpand={toggleExpand}
-                        onRemoveClip={removeClip}
-                        onDragStart={handleDragStart}
-                        onAddKeyframe={handleAddKeyframe}
-                        onKeyframeClick={handleKeyframeClick}
-                    />
-                ))}
+                {/* Optimized Track List */}
+                <TrackList
+                    tracks={project.tracks}
+                    clipsByTrack={clipsByTrack}
+                    selectedClipId={selectedClipId}
+                    expandedClipIds={expandedClipIds}
+                    onRemoveTrack={removeTrack}
+                    onAddSampleClip={handleAddSampleClip}
+                    onToggleExpand={toggleExpand}
+                    onRemoveClip={removeClip}
+                    onDragStart={handleDragStart}
+                    onAddKeyframe={handleAddKeyframe}
+                    onKeyframeClick={handleKeyframeClick}
+                />
 
                 {/* Add Track Button (Bottom) */}
                 <div
