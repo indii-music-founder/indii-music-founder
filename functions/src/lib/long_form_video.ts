@@ -24,6 +24,45 @@ export const LongFormVideoJobSchema = z.object({
 
 export type LongFormVideoJobInput = z.infer<typeof LongFormVideoJobSchema>;
 
+/**
+ * Validates and extracts Base64 string from a startImage input.
+ * Supports Data URLs and raw Base64 strings.
+ * Rejects remote URLs (http/https).
+ */
+export function validateStartImage(input: string): string {
+    const trimmed = input.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        throw new Error("Invalid startImage: Remote URLs are not supported. Please provide a Base64 string or Data URL.");
+    }
+
+    let base64 = trimmed;
+    if (trimmed.startsWith('data:')) {
+        const commaIndex = trimmed.indexOf(',');
+        if (commaIndex === -1) {
+            throw new Error("Invalid startImage: Malformed Data URL (missing comma).");
+        }
+        base64 = trimmed.slice(commaIndex + 1);
+    } else if (trimmed.includes(',')) {
+        // Reject comma in raw base64
+        throw new Error("Invalid startImage: Raw Base64 string cannot contain commas.");
+    }
+
+    // Validate Base64 characters (allowing whitespace which we strip)
+    const cleanBase64 = base64.replace(/\s/g, '');
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+
+    // Ensure it is not empty
+    if (cleanBase64.length === 0) {
+        throw new Error("Invalid startImage: Empty Base64 string.");
+    }
+
+    if (!base64Regex.test(cleanBase64)) {
+        throw new Error("Invalid startImage: String contains invalid Base64 characters.");
+    }
+
+    return cleanBase64;
+}
+
 // ----------------------------------------------------------------------------
 // Inngest Functions
 // ----------------------------------------------------------------------------
@@ -70,12 +109,10 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
 
                     const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
-                    // Fix: Validate startImage format (Base64 vs Data URL)
+                    // Validate startImage format (Base64 vs Data URL)
                     let imagePayload = undefined;
                     if (currentStartImage) {
-                        const base64 = currentStartImage.includes(',')
-                            ? currentStartImage.split(',')[1]
-                            : currentStartImage;
+                        const base64 = validateStartImage(currentStartImage);
                         imagePayload = { image: { bytesBase64Encoded: base64 } };
                     }
 
