@@ -164,13 +164,6 @@ describe('EditingService', () => {
             };
             mockHttpsCallable.mockResolvedValue(mockResponse);
 
-            // Fix: Mock parseJSON for the result parsing if used in multiMaskEdit?
-            // multiMaskEdit uses `Editing.editImage` which calls httpsCallable directly.
-            // The test mocks `httpsCallable` just above.
-            // But `editImage` returns `{ id, url, prompt }`
-            // Wait, multiMaskEdit implementation iterates and calls `editImage`.
-            // So relying on `editImage` is correct.
-
             const result = await Editing.multiMaskEdit({
                 image: { mimeType: 'image/png', data: 'base' },
                 masks: [
