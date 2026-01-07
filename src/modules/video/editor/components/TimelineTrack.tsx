@@ -33,21 +33,21 @@ export const TimelineTrack = memo(({
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-gray-300 truncate" title={track.name}>{track.name}</span>
                         <div className="flex gap-1">
-                            <button className="text-gray-600 hover:text-gray-400"><Eye size={12} /></button>
-                            <button className="text-gray-600 hover:text-gray-400"><Volume2 size={12} /></button>
+                            <button className="text-gray-600 hover:text-gray-400" aria-label={`Toggle visibility for track ${track.name}`}><Eye size={12} /></button>
+                            <button className="text-gray-600 hover:text-gray-400" aria-label={`Toggle mute for track ${track.name}`}><Volume2 size={12} /></button>
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => onAddSampleClip(track.id, 'text')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Text">
+                        <button onClick={() => onAddSampleClip(track.id, 'text')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Text" aria-label="Add text clip">
                             <Plus size={10} /> Txt
                         </button>
-                        <button onClick={() => onAddSampleClip(track.id, 'video')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Video">
+                        <button onClick={() => onAddSampleClip(track.id, 'video')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Video" aria-label="Add video clip">
                             <Plus size={10} /> Vid
                         </button>
-                        <button onClick={() => onAddSampleClip(track.id, 'audio')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Audio">
+                        <button onClick={() => onAddSampleClip(track.id, 'audio')} className="text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-400 flex items-center gap-1" title="Add Audio" aria-label="Add audio clip">
                             <Plus size={10} /> Aud
                         </button>
-                        <button onClick={() => onRemoveTrack(track.id)} className="text-gray-600 hover:text-red-400 ml-auto">
+                        <button onClick={() => onRemoveTrack(track.id)} className="text-gray-600 hover:text-red-400 ml-auto" aria-label={`Delete track ${track.name}`}>
                             <Trash2 size={12} />
                         </button>
                     </div>
