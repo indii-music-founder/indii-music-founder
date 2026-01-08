@@ -74,6 +74,20 @@ describe('Security: Path Traversal Prevention', () => {
     // 4. Execute the handler
     const result = await stageReleaseHandler({}, releaseId, maliciousFiles);
 
+    // 5. Assert "Protection"
+
+    // The handler should have caught the traversal and skipped the file.
+    // So fs.writeFile should NOT have been called.
+    expect(mockWriteFile).not.toHaveBeenCalled();
+
+    // The returned result should indicate success (or failure depending on implementation),
+    // but crucially, the malicious file should NOT be in the 'files' list if we modified it to return written files.
+    // The current implementation returns { success: true, packagePath: ..., files: [...] }
+
+    // Since we continue loop on blocking, the 'files' array in result should be empty.
+    expect(result.files).toHaveLength(0);
+
+    console.log('Test Passed: Malicious file write was blocked.');
     // 5. Assert that the write was blocked
     // The handler should catch the error and return { success: false, error: ... }
 

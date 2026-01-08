@@ -58,6 +58,16 @@ export const setupDistributionHandlers = () => {
                     throw new Error(`Security Error: Invalid file path ${file.name}`);
                 }
 
+                // Security Check: Prevent Path Traversal
+                const resolvedDest = path.resolve(destPath);
+                const resolvedStaging = path.resolve(stagingPath);
+
+                // Ensure strict containment within the staging directory (prevents partial path matching)
+                if (!resolvedDest.startsWith(resolvedStaging + path.sep)) {
+                    console.warn(`[Security] Blocked path traversal attempt: ${file.name}`);
+                    continue; // Skip malicious file
+                }
+
                 if (file.type === 'content') {
                     // Ensure subdirectories exist if filename implies them (e.g. "subdir/file.txt")
                     const dirName = path.dirname(destPath);
