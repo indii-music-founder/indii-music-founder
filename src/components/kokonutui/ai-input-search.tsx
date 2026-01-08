@@ -10,7 +10,7 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { Globe, Paperclip, Send } from "lucide-react";
+import { Globe, Paperclip, Send, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "motion/react";
@@ -25,6 +25,7 @@ interface AI_Input_Search_Props {
     placeholder?: string;
     className?: string;
     showSearchToggle?: boolean;
+    isLoading?: boolean;
 }
 
 export default function AI_Input_Search({
@@ -34,7 +35,8 @@ export default function AI_Input_Search({
     onFileSelect,
     placeholder = "Search the web...",
     className,
-    showSearchToggle = true
+    showSearchToggle = true,
+    isLoading = false
 }: AI_Input_Search_Props) {
     const [internalValue, setInternalValue] = useState("");
     const value = externalValue !== undefined ? externalValue : internalValue;
@@ -49,7 +51,7 @@ export default function AI_Input_Search({
 
     const handleSubmit = () => {
         const finalValue = value.trim();
-        if (!finalValue) return;
+        if (!finalValue || isLoading) return;
 
         if (onSubmit) {
             onSubmit(finalValue);
@@ -80,6 +82,8 @@ export default function AI_Input_Search({
             onFileSelect(file);
         }
     };
+
+    const isSendDisabled = !value.trim() || isLoading;
 
     return (
         <div className={cn("w-full py-4", className)}>
@@ -128,7 +132,19 @@ export default function AI_Input_Search({
 
                     <div className="h-12 bg-black/5 dark:bg-white/5 rounded-b-xl">
                         <div className="absolute left-3 bottom-3 flex items-center gap-2">
-                            <label className="cursor-pointer rounded-lg p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                            <label
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Attach file"
+                                className="cursor-pointer rounded-lg p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
+                            >
                                 <input
                                     type="file"
                                     className="hidden"
@@ -137,19 +153,23 @@ export default function AI_Input_Search({
                                 />
                                 <Paperclip
                                     className="w-4 h-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
-                                    onClick={() => fileInputRef.current?.click()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        fileInputRef.current?.click();
+                                    }}
                                 />
                             </label>
 
                             {showSearchToggle && (
                                 <button
                                     type="button"
+                                    aria-label={showSearch ? "Hide search options" : "Show search options"}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setShowSearch(!showSearch);
                                     }}
                                     className={cn(
-                                        "rounded-full transition-all flex items-center gap-2 px-1.5 py-1 border h-8 cursor-pointer",
+                                        "rounded-full transition-all flex items-center gap-2 px-1.5 py-1 border h-8 cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none",
                                         showSearch
                                             ? "bg-sky-500/15 border-sky-400 text-sky-500"
                                             : "bg-black/5 dark:bg-white/5 border-transparent text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white "
@@ -208,18 +228,24 @@ export default function AI_Input_Search({
                         <div className="absolute right-3 bottom-3">
                             <button
                                 type="button"
+                                disabled={isSendDisabled}
+                                aria-label={isLoading ? "Sending prompt..." : "Send prompt"}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleSubmit();
                                 }}
                                 className={cn(
-                                    "rounded-lg p-2 transition-colors",
-                                    value.trim()
-                                        ? "bg-sky-500/15 text-sky-500 hover:bg-sky-500/20"
-                                        : "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white cursor-pointer"
+                                    "rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none",
+                                    isSendDisabled
+                                        ? "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 cursor-not-allowed opacity-50"
+                                        : "bg-sky-500/15 text-sky-500 hover:bg-sky-500/20 cursor-pointer"
                                 )}
                             >
-                                <Send className="w-4 h-4" />
+                                {isLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Send className="w-4 h-4" />
+                                )}
                             </button>
                         </div>
                     </div>
