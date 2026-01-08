@@ -27,7 +27,14 @@ export const setupDistributionHandlers = () => {
             const writtenFiles: string[] = [];
 
             for (const file of files) {
-                const destPath = path.join(stagingPath, file.name);
+                const destPath = path.resolve(stagingPath, file.name);
+
+                // Security Check: Path Traversal
+                // Ensure we include the separator to prevent partial path matching (e.g. /tmp/dir matching /tmp/dir-fake)
+                const safePath = path.resolve(stagingPath) + path.sep;
+                if (!destPath.startsWith(safePath)) {
+                    throw new Error(`Security Error: Path Traversal Detected for file ${file.name}`);
+                }
 
                 if (file.type === 'content') {
                     await fs.writeFile(destPath, file.data, 'utf-8');
