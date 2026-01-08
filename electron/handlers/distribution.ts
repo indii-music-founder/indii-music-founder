@@ -27,7 +27,13 @@ export const setupDistributionHandlers = () => {
             const writtenFiles: string[] = [];
 
             for (const file of files) {
-                const destPath = path.join(stagingPath, file.name);
+                const destPath = path.resolve(stagingPath, file.name);
+
+                // Security Check: Path Traversal Prevention
+                if (!destPath.startsWith(path.resolve(stagingPath))) {
+                    console.error(`[Distribution] Path traversal attempt detected: ${file.name}`);
+                    throw new Error(`Security Error: Invalid file path ${file.name}`);
+                }
 
                 if (file.type === 'content') {
                     await fs.writeFile(destPath, file.data, 'utf-8');
