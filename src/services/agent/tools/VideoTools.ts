@@ -213,6 +213,23 @@ export const VideoTools: Record<string, AnyToolFunction> = {
     }),
 
     generate_video_chain: wrapTool('generate_video_chain', async (args: { prompt: string, startImage: string, totalDuration: number }) => {
+        if (!args.prompt || args.prompt.trim().length === 0) {
+            return toolError("Prompt cannot be empty.", 'INVALID_INPUT');
+        }
+
+        if (!args.totalDuration || args.totalDuration <= 0) {
+            return toolError("Duration must be a positive number.", 'INVALID_INPUT');
+        }
+
+        if (args.totalDuration > 300) {
+            return toolError("Duration cannot exceed 300 seconds (5 minutes) for a single chain.", 'INVALID_INPUT');
+        }
+
+        const imgMatch = args.startImage.match(/^data:(.+);base64,(.+)$/);
+        if (!imgMatch) {
+            return toolError("Invalid startImage data. Must be a base64 data URI.", 'INVALID_INPUT');
+        }
+
         useStore.getState().addAgentMessage({
             id: crypto.randomUUID(),
             role: 'system',
