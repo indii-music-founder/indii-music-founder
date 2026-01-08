@@ -26,8 +26,16 @@ export const setupDistributionHandlers = () => {
             await fs.mkdir(stagingPath, { recursive: true });
 
             const writtenFiles: string[] = [];
+            const safeStagingPath = path.resolve(stagingPath) + path.sep;
 
             for (const file of files) {
+                const destPath = path.resolve(stagingPath, file.name);
+
+                // Security Check: Prevent Path Traversal
+                // Ensure the resolved destination path starts with the safe staging directory
+                if (!destPath.startsWith(safeStagingPath)) {
+                    console.error(`[Distribution] Security Alert: Blocked path traversal attempt to ${destPath}`);
+                    throw new Error(`Security Error: Invalid file path "${file.name}" (Path Traversal Detected)`);
                 // Security: Prevent Path Traversal
                 // Resolve the destination path relative to the current working directory?
                 // No, path.join resolves relative to stagingPath, but ".." components are processed.
@@ -46,8 +54,19 @@ export const setupDistributionHandlers = () => {
                 }
 
                 if (file.type === 'content') {
+                    // Ensure subdirectories exist if filename implies them (e.g. "subdir/file.txt")
+                    const dirName = path.dirname(destPath);
+                    if (dirName !== stagingPath) {
+                        await fs.mkdir(dirName, { recursive: true });
+                    }
                     await fs.writeFile(destPath, file.data, 'utf-8');
                 } else if (file.type === 'path') {
+                    // Ensure subdirectories exist
+                    const dirName = path.dirname(destPath);
+                    if (dirName !== stagingPath) {
+                        await fs.mkdir(dirName, { recursive: true });
+                    }
+
                     // Handle file:// protocol if present
                     const sourcePath = file.data.startsWith('file://') ? new URL(file.data).pathname : file.data;
                     await fs.copyFile(decodeURIComponent(sourcePath), destPath);

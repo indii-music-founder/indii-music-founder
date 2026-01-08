@@ -72,6 +72,17 @@ describe('Security: Path Traversal Prevention', () => {
     ];
 
     // 4. Execute the handler
+    const result = await stageReleaseHandler({}, releaseId, maliciousFiles);
+
+    // 5. Assertions
+    // The operation should fail gracefully
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Path Traversal Detected');
+
+    // Key Security Assertion: fs.writeFile should NEVER have been called for this file
+    expect(mockWriteFile).not.toHaveBeenCalled();
+
+    console.log('Security Test Passed: Path Traversal Attempt Blocked.');
     // It should log an error and return { success: false } or throw
     // The implementation catches errors and returns { success: false, error: ... }
 
