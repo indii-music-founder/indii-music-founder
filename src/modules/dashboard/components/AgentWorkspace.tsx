@@ -7,24 +7,26 @@ import QuickActions from './QuickActions';
 // Import AI service for error checking (optional here if handled in agent layer)
 // But we want to show strict status
 
+import { agentService } from '@/services/agent/AgentService';
+
+// ... (existing imports)
+
 export default function AgentWorkspace() {
     const [input, setInput] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
+    // Remove local isGenerating/thinkingSteps state in favor of store
     const { agentOverview, agentHistory } = useStore();
 
-    // Mock thinking steps for visual feedback if agent triggers them
-    // Real implementation would sync with agent events
-    const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
+    // Derive state from the latest message in history
+    const lastMessage = agentHistory[agentHistory.length - 1];
+    const isGenerating = lastMessage?.role === 'model' && lastMessage?.isStreaming;
+    const thinkingSteps = lastMessage?.thoughts?.map(t => t.text) || [];
 
     const handleSend = () => {
         if (!input.trim()) return;
-        // Logic to dispatch to agent would go here, usually via a Store action or Service
-        // For now, we simulate the UI state
-        setIsGenerating(true);
-        setThinkingSteps(['Analyzing request...', 'Accessing tools...', 'Generating response...']);
 
-        // This is a UI-only representation for the refactor
-        setTimeout(() => setIsGenerating(false), 2000);
+        // Dispatch to real AgentService
+        agentService.sendMessage(input);
+
         setInput('');
     };
 
@@ -122,8 +124,8 @@ export default function AgentWorkspace() {
                             onClick={handleSend}
                             disabled={!input.trim() || isGenerating}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${input.trim() && !isGenerating
-                                    ? 'bg-stone-100 text-black hover:bg-white hover:shadow-lg hover:shadow-stone-500/20'
-                                    : 'bg-stone-800 text-stone-500 cursor-not-allowed'
+                                ? 'bg-stone-100 text-black hover:bg-white hover:shadow-lg hover:shadow-stone-500/20'
+                                : 'bg-stone-800 text-stone-500 cursor-not-allowed'
                                 }`}
                         >
                             <span>Run</span>
