@@ -166,6 +166,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             updatedAt: Date.now()
         };
 
+        // Persist the updated session messages
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.updateSession(currentSessionId, { messages: updatedSession.messages }).catch(console.error);
+        });
+
         return {
             sessions: { ...sessions, [currentSessionId]: updatedSession },
             activeSessionId: currentSessionId,
@@ -181,6 +186,13 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             msg.id === id ? { ...msg, ...updates } : msg
         );
 
+        // Persist the updated messages
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            if (state.activeSessionId) {
+                sessionService.updateSession(state.activeSessionId, { messages: updatedMessages }).catch(console.error);
+            }
+        });
+
         return {
             sessions: {
                 ...state.sessions,
@@ -195,6 +207,13 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     clearAgentHistory: () => set(state => {
         if (!state.activeSessionId) return {};
+
+        // Persist the cleared history
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            if (state.activeSessionId) {
+                sessionService.updateSession(state.activeSessionId, { messages: [] }).catch(console.error);
+            }
+        });
 
         return {
             sessions: {
