@@ -28,7 +28,7 @@ export const createCheckoutSession = onCall(async (request) => {
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
     let stripeCustomerId: string;
 
-    if (subscriptionDoc.exists()) {
+    if (subscriptionDoc.exists) {
       const subscription = subscriptionDoc.data() as Subscription;
       if (subscription.stripeCustomerId) {
         stripeCustomerId = subscription.stripeCustomerId;
