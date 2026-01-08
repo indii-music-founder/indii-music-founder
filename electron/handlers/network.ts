@@ -1,10 +1,17 @@
 import { ipcMain } from 'electron';
+import { FetchUrlSchema, validateSender } from '../validation';
 
 export function registerNetworkHandlers() {
-    ipcMain.handle('net:fetch-url', async (_event, url: string) => {
+    ipcMain.handle('net:fetch-url', async (event, url: string) => {
         try {
-            console.log(`[Network] Fetching: ${url}`);
-            const response = await fetch(url);
+            // 1. Validate Sender (Anti-Hijack)
+            validateSender(event);
+
+            // 2. Defense in Depth: Validate URL (Anti-SSRF)
+            const validUrl = FetchUrlSchema.parse(url);
+
+            console.log(`[Network] Fetching: ${validUrl}`);
+            const response = await fetch(validUrl);
 
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
