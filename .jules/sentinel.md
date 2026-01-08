@@ -27,3 +27,10 @@
 1.  Implemented `requireAdmin` helper function that enforces a strict check for `context.auth.token.admin === true` (Firebase Custom Claim).
 2.  Applied this check to all sensitive functions.
 3.  Default behavior is now "Deny All" for these functions until an admin script explicitly grants the claim.
+## 2025-05-27 - [HIGH] Unrestricted IPC Network Proxy (SSRF)
+**Vulnerability:** The `net:fetch-url` IPC handler in `electron/handlers/network.ts` accepted any URL from the renderer and executed a `fetch` request from the Main process. This bypassed the Renderer's CORS policies and allowed a compromised renderer (e.g., via XSS) to scan the user's local network (localhost, 192.168.x.x) or access cloud metadata services (169.254.169.254).
+**Learning:** Electron's Main process acts as a privileged proxy. Blindly forwarding requests from the UI breaks the "Untrusted UI" security model.
+**Prevention:**
+1.  Implemented strict `Zod` validation for all IPC payloads.
+2.  Blocked private IP ranges (RFC1918) and localhost in `net:fetch-url`.
+3.  Enforced strict protocol checks (HTTP/HTTPS only).
