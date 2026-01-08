@@ -2,6 +2,8 @@ import { ipcMain } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
+import { DistributionStageReleaseSchema } from '../utils/validation';
+import { z } from 'zod';
 
 interface StagedFile {
     type: 'content' | 'path';
@@ -12,8 +14,11 @@ interface StagedFile {
 export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:stage-release', async (_, releaseId: string, files: StagedFile[]) => {
         try {
+            // Validate inputs
+            const validated = DistributionStageReleaseSchema.parse({ releaseId, files });
+
             const tempDir = os.tmpdir();
-            const stagingPath = path.join(tempDir, 'indiiOS-releases', releaseId);
+            const stagingPath = path.join(tempDir, 'indiiOS-releases', validated.releaseId);
             const resolvedStagingPath = path.resolve(stagingPath) + path.sep; // Ensure trailing slash for security check
 
             // cleaned up previous staging if exists
@@ -28,44 +33,14 @@ export const setupDistributionHandlers = () => {
             const writtenFiles: string[] = [];
             const safeStagingPath = path.resolve(stagingPath) + path.sep;
 
-            for (const file of files) {
+            for (const file of validated.files) {
                 const destPath = path.resolve(stagingPath, file.name);
 
                 // Security Check: Path Traversal
-                // Ensure we include the separator to prevent partial path matching (e.g. /tmp/dir matching /tmp/dir-fake)
-                const safePath = path.resolve(stagingPath) + path.sep;
-                if (!destPath.startsWith(safePath)) {
-                    throw new Error(`Security Error: Path Traversal Detected for file ${file.name}`);
-                // Security Check: Prevent Path Traversal
                 // Ensure the resolved destination path starts with the safe staging directory
                 if (!destPath.startsWith(safeStagingPath)) {
                     console.error(`[Distribution] Security Alert: Blocked path traversal attempt to ${destPath}`);
                     throw new Error(`Security Error: Invalid file path "${file.name}" (Path Traversal Detected)`);
-                // Security: Prevent Path Traversal
-                // Resolve the destination path relative to the current working directory?
-                // No, path.join resolves relative to stagingPath, but ".." components are processed.
-                // We must check the final resolved path.
-                const destPath = path.resolve(stagingPath, file.name);
-
-                if (!destPath.startsWith(resolvedStagingPath)) {
-                    console.error(`[Security] Blocked path traversal attempt: ${file.name} -> ${destPath}`);
-                    throw new Error(`Security Violation: Invalid file path ${file.name}`);
-                const destPath = path.resolve(stagingPath, file.name);
-
-                // Security Check: Path Traversal Prevention
-                if (!destPath.startsWith(path.resolve(stagingPath))) {
-                    console.error(`[Distribution] Path traversal attempt detected: ${file.name}`);
-                    throw new Error(`Security Error: Invalid file path ${file.name}`);
-                }
-
-                // Security Check: Prevent Path Traversal
-                const resolvedDest = path.resolve(destPath);
-                const resolvedStaging = path.resolve(stagingPath);
-
-                // Ensure strict containment within the staging directory (prevents partial path matching)
-                if (!resolvedDest.startsWith(resolvedStaging + path.sep)) {
-                    console.warn(`[Security] Blocked path traversal attempt: ${file.name}`);
-                    continue; // Skip malicious file
                 }
 
                 if (file.type === 'content') {
@@ -89,11 +64,14 @@ export const setupDistributionHandlers = () => {
                 writtenFiles.push(file.name);
             }
 
-            console.info(`[Distribution] Staged release ${releaseId} at ${stagingPath}`);
+            console.info(`[Distribution] Staged release ${validated.releaseId} at ${stagingPath}`);
             return { success: true, packagePath: stagingPath, files: writtenFiles };
 
         } catch (error) {
             console.error('[Distribution] Stage release failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });

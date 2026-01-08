@@ -5,6 +5,8 @@ import ffprobePath from 'ffprobe-static';
 import crypto from 'crypto';
 import fs from 'fs';
 import { apiService } from '../services/APIService';
+import { AudioAnalyzeSchema } from '../utils/validation';
+import { z } from 'zod';
 
 // Fix for packing in Electron (files in asar)
 const getBinaryPath = (binaryPath: string | null) => {
@@ -45,11 +47,14 @@ export function registerAudioHandlers() {
         console.log('Audio analysis requested for:', filePath);
 
         try {
+            // Validation
+            const validatedPath = AudioAnalyzeSchema.parse(filePath);
+
             // Parallel execution: Hash + Metadata
             const [hash, metadata] = await Promise.all([
-                calculateFileHash(filePath),
+                calculateFileHash(validatedPath),
                 new Promise<any>((resolve, reject) => {
-                    ffmpeg.ffprobe(filePath, (err, metadata) => {
+                    ffmpeg.ffprobe(validatedPath, (err, metadata) => {
                         if (err) reject(err);
                         else resolve(metadata.format);
                     });
@@ -70,6 +75,9 @@ export function registerAudioHandlers() {
             };
         } catch (error) {
             console.error("Audio analysis failed:", error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
             throw error;
         }
     });
@@ -77,6 +85,11 @@ export function registerAudioHandlers() {
     ipcMain.handle('audio:lookup-metadata', async (_, hash) => {
         console.log('[Main] Metadata lookup requested for hash:', hash);
         try {
+             // Basic hash validation (e.g., allow hex/base64 strings)
+             if (typeof hash !== 'string' || hash.length < 8) {
+                 throw new Error("Invalid hash format");
+             }
+
             // In a real app, you might pass the user's auth token here if needed
             // const token = await authService.getToken(); 
             return await apiService.getSongMetadata(hash);

@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
-import { credentialService } from '../services/CredentialService';
-import { DistributorId } from '../../src/services/distribution/types/distributor';
+import { CredentialSchema } from '../utils/validation';
+import { z } from 'zod';
 
 interface Credentials {
     apiKey?: string;
@@ -10,38 +10,46 @@ interface Credentials {
     [key: string]: string | undefined;
 }
 
-export const registerCredentialHandlers = () => {
-
-    // Save Credentials
+export function registerCredentialHandlers() {
     ipcMain.handle('credentials:save', async (_event, id: string, creds: Credentials) => {
         try {
-            await credentialService.saveCredentials(id as DistributorId, creds);
+            // Validate
+            CredentialSchema.parse({ id, creds });
+
+            const { credentialService } = await import('../services/CredentialService');
+            await credentialService.saveCredentials(id, creds);
             return { success: true };
         } catch (error) {
-            console.error(`[Main] Failed to save credentials for ${id}:`, error);
-            throw error;
+            console.error('Credential Save Failed:', error);
+             if (error instanceof z.ZodError) {
+                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
         }
     });
 
-    // Get Credentials
     ipcMain.handle('credentials:get', async (_event, id: string) => {
         try {
-            return await credentialService.getCredentials(id as DistributorId);
+            if (typeof id !== 'string' || !id) throw new Error("Invalid ID");
+
+            const { credentialService } = await import('../services/CredentialService');
+            return await credentialService.getCredentials(id);
         } catch (error) {
-            console.error(`[Main] Failed to get credentials for ${id}:`, error);
-            throw error;
+            console.error('Credential Get Failed:', error);
+            return null;
         }
     });
 
-    // Delete Credentials
     ipcMain.handle('credentials:delete', async (_event, id: string) => {
         try {
-            return await credentialService.deleteCredentials(id as DistributorId);
+            if (typeof id !== 'string' || !id) throw new Error("Invalid ID");
+
+            const { credentialService } = await import('../services/CredentialService');
+            await credentialService.deleteCredentials(id);
+            return { success: true };
         } catch (error) {
-            console.error(`[Main] Failed to delete credentials for ${id}:`, error);
-            throw error;
+            console.error('Credential Delete Failed:', error);
+            return { success: false, error: String(error) };
         }
     });
-
-    console.log('[Main] Credential handlers registered');
-};
+}
