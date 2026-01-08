@@ -371,6 +371,7 @@ function CommandBar() {
                                     <button
                                         type="button"
                                         onClick={handleMicClick}
+                                        aria-label={isListening ? "Stop listening" : "Voice input"}
                                         className={`p-1.5 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
                                     >
                                         <Mic size={14} />
