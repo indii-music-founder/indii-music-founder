@@ -1,3 +1,3 @@
-## 2024-05-23 - Video Generation Quota Service Mismatch
-**Learning:** `VideoGenerationService` relies on `subscriptionService` (SubscriptionService) for quota checks, not `MembershipService`. Tests must mock `subscriptionService.canPerformAction` to simulate quota failures.
-**Action:** Updated unit tests to mock `subscriptionService` instead of `MembershipService`. Verified imports in source code to prevent regression.
+## 2024-05-23 - Veo 3.1 Metadata & Safety Validation
+**Learning:** `VideoGenerationService` validation for Veo 3.1 must explicitly assert `duration_seconds`, `fps` (24/30/60), and `mime_type` on the job output, as the service itself does not parse these fields.
+**Action:** Implemented `VideoGenerationService.test.ts` with strict metadata assertions and safety violation checks to ensure the app handles Veo's "completed" and "failed" states correctly without manual retries.
