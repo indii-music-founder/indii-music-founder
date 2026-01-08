@@ -9,6 +9,8 @@ import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { configureSecurity } from './security';
+import { AgentActionSchema, AgentNavigateSchema } from './utils/validation';
+import { z } from 'zod';
 
 // Configure logging
 log.transports.file.level = 'info';
@@ -26,6 +28,11 @@ function setupIpcHandlers() {
         ipcMain.handle('test:browser-agent', async (_event: any, query?: string) => {
             const { browserAgentService } = await import('./services/BrowserAgentService');
             try {
+                // Input validation (query is optional but if present should be safe)
+                if (query && typeof query !== 'string') {
+                    throw new Error('Invalid query format');
+                }
+
                 await browserAgentService.startSession();
                 if (query) {
                     await browserAgentService.navigateTo('https://www.google.com');
@@ -46,23 +53,42 @@ function setupIpcHandlers() {
     }
 
     ipcMain.handle('agent:navigate-and-extract', async (_event: any, url: string) => {
-        const { browserAgentService } = await import('./services/BrowserAgentService');
         try {
+            const validated = AgentNavigateSchema.parse({ url });
+            const { browserAgentService } = await import('./services/BrowserAgentService');
+
             await browserAgentService.startSession();
-            await browserAgentService.navigateTo(url);
+            await browserAgentService.navigateTo(validated.url);
             const snapshot = await browserAgentService.captureSnapshot();
             await browserAgentService.closeSession();
             return { success: true, ...snapshot };
         } catch (error) {
             console.error('Agent Navigate Failed:', error);
+            const { browserAgentService } = await import('./services/BrowserAgentService');
             await browserAgentService.closeSession();
+
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
             return { success: false, error: String(error) };
         }
     });
 
     ipcMain.handle('agent:perform-action', async (_event: any, action: string, selector: string, text?: string) => {
-        const { browserAgentService } = await import('./services/BrowserAgentService');
-        return await browserAgentService.performAction(action, selector, text);
+        try {
+            // Validate inputs against schema (allows text to be optional)
+            // Casting to specific enum type for the service call if needed, but schema guarantees 'action' is one of the allowed strings
+            const validated = AgentActionSchema.parse({ action, selector, text });
+
+            const { browserAgentService } = await import('./services/BrowserAgentService');
+            return await browserAgentService.performAction(validated.action as any, validated.selector, validated.text);
+        } catch (error) {
+            console.error('Agent Action Failed:', error);
+            if (error instanceof z.ZodError) {
+                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
     });
 
     ipcMain.handle('agent:capture-state', async () => {
@@ -117,7 +143,12 @@ const createWindow = () => {
     // Handle Window Open Requests
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
-        shell.openExternal(url);
+
+        // Use logic similar to will-navigate for consistency
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+             shell.openExternal(url);
+        }
         return { action: 'deny' };
     });
 

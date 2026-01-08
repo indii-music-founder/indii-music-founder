@@ -27,3 +27,10 @@
 1.  Implemented `requireAdmin` helper function that enforces a strict check for `context.auth.token.admin === true` (Firebase Custom Claim).
 2.  Applied this check to all sensitive functions.
 3.  Default behavior is now "Deny All" for these functions until an admin script explicitly grants the claim.
+## 2025-05-27 - [HIGH] Electron IPC SSRF & Unchecked Payloads
+**Vulnerability:** The `net:fetch-url` IPC handler blindly proxied requests from the renderer to `fetch()`, allowing potential SSRF (e.g., accessing internal metadata services or `file://` if the fetch implementation allowed it). Additionally, handlers like `agent:perform-action` and `distribution:stage-release` accepted raw inputs without type validation, risking path traversal or arbitrary code execution via compromised renderers.
+**Learning:** Never trust the renderer process. Main process handlers must validate all inputs using strict schemas (Zod) before execution. `fetch` proxies must whitelist protocols (`http`/`https`) to prevent local file system access.
+**Prevention:**
+1.  Created `electron/utils/validation.ts` with strict Zod schemas.
+2.  Wrapped all critical IPC handlers in `try/catch` blocks with schema validation steps.
+3.  Implemented explicit protocol whitelisting for network requests.
