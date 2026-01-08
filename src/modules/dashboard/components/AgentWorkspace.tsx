@@ -14,7 +14,7 @@ import { agentService } from '@/services/agent/AgentService';
 export default function AgentWorkspace() {
     const [input, setInput] = useState('');
     // Remove local isGenerating/thinkingSteps state in favor of store
-    const { agentOverview, agentHistory } = useStore();
+    const { agentHistory } = useStore();
 
     // Derive state from the latest message in history
     const lastMessage = agentHistory[agentHistory.length - 1];
@@ -31,19 +31,24 @@ export default function AgentWorkspace() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
-            {/* Context Header */}
-            <div className="text-center space-y-2">
+        <div className="max-w-5xl mx-auto space-y-6">
+            {/* Header Area - Compact */}
+            <div className="flex items-end justify-between px-2">
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
                 >
-                    <h2 className="text-2xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-stone-200 to-stone-500">
-                        What are we building today?
-                    </h2>
-                    <p className="text-stone-400">Indi is ready to assist with Marketing, Publishing, or Creative tasks.</p>
+                    <h1 className="text-xl font-bold text-white mb-1">Agent Workspace</h1>
+                    <p className="text-xs text-stone-400">Indi is ready to assist.</p>
                 </motion.div>
+
+                {/* Stats / Status Pill */}
+                <div className="flex gap-3">
+                    <div className="text-xs text-stone-500 flex items-center gap-1.5 bg-[#161b22] px-3 py-1.5 rounded-full border border-white/5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                        System Active
+                    </div>
+                </div>
             </div>
 
             {/* Quick Actions Integration */}
@@ -51,10 +56,10 @@ export default function AgentWorkspace() {
 
             {/* Main Chat/Input Area */}
             <motion.div
-                className="bg-[#161b22] border border-gray-800 rounded-2xl p-4 shadow-2xl relative overflow-hidden"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
+                className="bg-[#161b22] border border-gray-800 rounded-xl shadow-2xl relative overflow-hidden flex flex-col"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
             >
                 {/* "Active Thinking" Overlay */}
                 <AnimatePresence>
@@ -63,22 +68,21 @@ export default function AgentWorkspace() {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="bg-stone-900/50 backdrop-blur-sm border-b border-gray-800 p-3 mb-4 rounded-lg"
+                            className="bg-stone-900/50 backdrop-blur-sm border-b border-gray-800 p-2"
                         >
-                            <div className="flex items-center gap-3 text-sm text-stone-300">
-                                <RefreshCw className="animate-spin text-stone-500" size={16} />
-                                <span className="font-mono">Indi is thinking...</span>
+                            <div className="flex items-center gap-3 text-xs text-stone-300 px-2">
+                                <RefreshCw className="animate-spin text-stone-500" size={14} />
+                                <span className="font-mono text-stone-400">Processing...</span>
                             </div>
-                            <div className="pl-7 mt-2 space-y-1">
+                            <div className="pl-8 mt-1 space-y-0.5">
                                 {thinkingSteps.map((step, idx) => (
                                     <motion.div
                                         key={idx}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.2 }}
-                                        className="text-xs text-stone-500 flex items-center gap-2"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="text-[10px] text-stone-500 flex items-center gap-2 truncate"
                                     >
-                                        <div className="w-1 h-1 rounded-full bg-stone-600" />
+                                        <div className="w-0.5 h-0.5 rounded-full bg-stone-600" />
                                         {step}
                                     </motion.div>
                                 ))}
@@ -92,8 +96,8 @@ export default function AgentWorkspace() {
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Describe your task, drop files, or ask for updates..."
-                        className="w-full bg-[#0d1117] text-white rounded-xl p-4 pr-32 min-h-[120px] focus:ring-2 focus:ring-stone-500/50 outline-none resize-none border border-transparent focus:border-stone-700 transition-all placeholder:text-gray-600"
+                        placeholder="Describe your task, update context, or assign a mission..."
+                        className="w-full bg-[#0d1117] text-white p-4 pb-14 min-h-[140px] focus:outline-none resize-none text-base placeholder:text-gray-600"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -103,56 +107,55 @@ export default function AgentWorkspace() {
                     />
 
                     {/* Toolbar */}
-                    <div className="absolute bottom-3 left-3 flex gap-2">
-                        <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Attach File">
-                            <Paperclip size={18} />
-                        </button>
-                        <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Use Camera">
-                            <ImageIcon size={18} />
-                        </button>
-                        <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Voice Input">
-                            <Mic size={18} />
-                        </button>
-                        <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Browse Web">
-                            <Globe size={18} />
-                        </button>
-                    </div>
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                        <div className="flex gap-1 pointer-events-auto">
+                            <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Attach File">
+                                <Paperclip size={16} />
+                            </button>
+                            <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Use Camera">
+                                <ImageIcon size={16} />
+                            </button>
+                            <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Voice Input">
+                                <Mic size={16} />
+                            </button>
+                            <button className="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" title="Browse Web">
+                                <Globe size={16} />
+                            </button>
+                        </div>
 
-                    {/* Send Button */}
-                    <div className="absolute bottom-3 right-3">
                         <button
                             onClick={handleSend}
                             disabled={!input.trim() || isGenerating}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${input.trim() && !isGenerating
-                                ? 'bg-stone-100 text-black hover:bg-white hover:shadow-lg hover:shadow-stone-500/20'
+                            className={`pointer-events-auto flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${input.trim() && !isGenerating
+                                ? 'bg-stone-100 text-black hover:bg-white hover:shadow-lg'
                                 : 'bg-stone-800 text-stone-500 cursor-not-allowed'
                                 }`}
                         >
                             <span>Run</span>
-                            <Send size={16} />
+                            <Send size={14} />
                         </button>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Recent History / Context (Simplified for Workspace) */}
+            {/* Context Footer */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-gray-800 bg-[#161b22]/50 hover:border-gray-700 transition-colors">
-                    <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                        <CheckCircle size={14} className="text-green-500" /> Completed Tasks
-                    </h3>
-                    <div className="text-xs text-gray-500 space-y-2">
-                        {/* Placeholder for history list */}
-                        <p>No recent tasks completed in this session.</p>
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-[#161b22]/50">
+                    <div className="p-2 rounded bg-green-500/10 text-green-500">
+                        <CheckCircle size={14} />
+                    </div>
+                    <div>
+                        <div className="text-xs font-medium text-gray-300">Last Completed</div>
+                        <div className="text-[10px] text-gray-500">No recent tasks</div>
                     </div>
                 </div>
-                <div className="p-4 rounded-xl border border-gray-800 bg-[#161b22]/50 hover:border-gray-700 transition-colors">
-                    <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                        <AlertCircle size={14} className="text-yellow-500" /> Active Context
-                    </h3>
-                    <div className="text-xs text-gray-500 space-y-2">
-                        <p>Project: <span className="text-gray-300">Untitled</span></p>
-                        <p>Brand Kit: <span className="text-gray-300">Default</span></p>
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-[#161b22]/50">
+                    <div className="p-2 rounded bg-amber-500/10 text-amber-500">
+                        <AlertCircle size={14} />
+                    </div>
+                    <div>
+                        <div className="text-xs font-medium text-gray-300">Active Context</div>
+                        <div className="text-[10px] text-gray-500">Untitled Project • Default Brand Kit</div>
                     </div>
                 </div>
             </div>

@@ -58,9 +58,9 @@ export default function QuickActions() {
     const setModule = useStore((state) => state.setModule);
 
     return (
-        <div className="mb-8">
-            <h2 className="text-xl font-bold text-white tracking-tight mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mb-6">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Quick Launch</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
                 {MODULES.map((module) => {
                     const Icon = module.icon;
                     const colors = getColorForModule(module.id);
@@ -71,19 +71,21 @@ export default function QuickActions() {
                             onClick={() => setModule(module.id)}
                             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
                             className={`
-                                bg-[#161b22]/50 backdrop-blur-md border border-gray-800 rounded-xl p-5 text-left
-                                bolt-interactive dept-border-top
-                                hover:border-[--dept-color]/50 hover:bg-[#1c2128]/70 group
+                                flex items-center gap-3
+                                bg-[#161b22]/80 backdrop-blur-md border border-white/5 rounded-lg p-3 text-left
+                                transition-all hover:bg-[#1c2128] hover:shadow-lg hover:-translate-y-0.5
+                                group border-l-2 border-l-transparent hover:border-l-[--dept-color]
                             `}
                         >
                             <div className={`
-                                w-10 h-10 rounded-lg flex items-center justify-center mb-3
-                                ${colors.bg} group-hover:scale-110 transition-transform
+                                w-8 h-8 rounded-md flex items-center justify-center
+                                ${colors.bg} bg-opacity-20
                             `}>
-                                <Icon className={colors.text} size={20} />
+                                <Icon className={colors.text} size={16} />
                             </div>
-                            <h3 className="text-white font-semibold text-sm mb-1">{module.name}</h3>
-                            <p className="text-gray-500 text-xs leading-relaxed">{module.description}</p>
+                            <span className="text-gray-300 font-medium text-xs group-hover:text-white truncate">
+                                {module.name}
+                            </span>
                         </button>
                     );
                 })}

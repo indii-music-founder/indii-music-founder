@@ -76,34 +76,37 @@ export default function DepartmentGrid() {
     const navigate = useNavigate();
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {DEPARTMENTS.map((dept, index) => (
                 <motion.div
                     key={dept.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.03 }}
                     onClick={() => navigate(dept.path)}
-                    className="group relative bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-6 cursor-pointer hover:border-white/20 transition-all hover:bg-black/60 hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
+                    className="group relative bg-[#161b22]/80 backdrop-blur-md border border-white/5 rounded-xl p-4 cursor-pointer hover:border-white/20 transition-all hover:bg-[#1c2128] hover:shadow-lg overflow-hidden flex items-center gap-4"
                 >
-                    {/* Hover Gradient Background */}
-                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 bg-gradient-to-br ${dept.color} transition-opacity duration-500`} />
+                    {/* Hover Gradient Background (Subtle) */}
+                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 bg-gradient-to-r ${dept.color} transition-opacity duration-300`} />
 
-                    <div className="flex items-start justify-between mb-4">
-                        <div className={`p-3 rounded-lg bg-gradient-to-br ${dept.color} bg-opacity-10 text-white shadow-lg`}>
-                            <dept.icon size={24} />
-                        </div>
+                    {/* Icon */}
+                    <div className={`p-2.5 rounded-lg bg-gradient-to-br ${dept.color} bg-opacity-10 text-white shadow-sm shrink-0`}>
+                        <dept.icon size={18} />
                     </div>
 
-                    <h3 className="text-lg font-bold text-white mb-1 group-hover:text-stone-200 transition-colors">
-                        {dept.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
-                        {dept.description}
-                    </p>
-
-                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                        <span className="text-xs font-mono text-gray-400">OPEN &rarr;</span>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors truncate">
+                                {dept.name}
+                            </h3>
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500 -mr-1">
+                                &rarr;
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors truncate">
+                            {dept.description}
+                        </p>
                     </div>
                 </motion.div>
             ))}
