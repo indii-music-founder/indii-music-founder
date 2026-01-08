@@ -35,3 +35,10 @@
 2.  Enforced strict protocol allowing (`http:`, `https:` only).
 3.  Blocked access to `localhost`, loopback addresses, and private RFC1918 IP ranges (10.x, 192.168.x, 172.16.x).
 4.  Blocked access to Cloud Metadata IP (169.254.169.254).
+## 2025-05-27 - [HIGH] Unrestricted IPC Network Proxy (SSRF)
+**Vulnerability:** The `net:fetch-url` IPC handler in `electron/handlers/network.ts` accepted any URL from the renderer and executed a `fetch` request from the Main process. This bypassed the Renderer's CORS policies and allowed a compromised renderer (e.g., via XSS) to scan the user's local network (localhost, 192.168.x.x) or access cloud metadata services (169.254.169.254).
+**Learning:** Electron's Main process acts as a privileged proxy. Blindly forwarding requests from the UI breaks the "Untrusted UI" security model.
+**Prevention:**
+1.  Implemented strict `Zod` validation for all IPC payloads.
+2.  Blocked private IP ranges (RFC1918) and localhost in `net:fetch-url`.
+3.  Enforced strict protocol checks (HTTP/HTTPS only).

@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron';
+import { FetchUrlSchema, validateSender } from '../validation';
 
 /**
  * Validates that a URL is safe to fetch.
@@ -71,7 +72,7 @@ export function validateSafeUrl(urlString: string): void {
 }
 
 export function registerNetworkHandlers() {
-    ipcMain.handle('net:fetch-url', async (_event, url: string) => {
+    ipcMain.handle('net:fetch-url', async (event, url: string) => {
         try {
             console.log(`[Network] Validating Request: ${url}`);
 
@@ -82,6 +83,14 @@ export function registerNetworkHandlers() {
 
             // Fetch with redirect: 'error' to prevent open redirect bypasses to internal IPs
             const response = await fetch(url, { redirect: 'error' });
+            // 1. Validate Sender (Anti-Hijack)
+            validateSender(event);
+
+            // 2. Defense in Depth: Validate URL (Anti-SSRF)
+            const validUrl = FetchUrlSchema.parse(url);
+
+            console.log(`[Network] Fetching: ${validUrl}`);
+            const response = await fetch(validUrl);
 
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
