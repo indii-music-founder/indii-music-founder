@@ -29,6 +29,16 @@ export const setupDistributionHandlers = () => {
             for (const file of files) {
                 const destPath = path.join(stagingPath, file.name);
 
+                // Security Check: Prevent Path Traversal
+                const resolvedDest = path.resolve(destPath);
+                const resolvedStaging = path.resolve(stagingPath);
+
+                // Ensure strict containment within the staging directory (prevents partial path matching)
+                if (!resolvedDest.startsWith(resolvedStaging + path.sep)) {
+                    console.warn(`[Security] Blocked path traversal attempt: ${file.name}`);
+                    continue; // Skip malicious file
+                }
+
                 if (file.type === 'content') {
                     await fs.writeFile(destPath, file.data, 'utf-8');
                 } else if (file.type === 'path') {
