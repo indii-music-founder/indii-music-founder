@@ -11,7 +11,6 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
             window.electronAPI = {
                 getPlatform: async () => 'darwin',
                 getAppVersion: async () => '0.0.0',
-                // @ts-expect-error - testing utility
                 auth: {
                     login: async () => { },
                     logout: async () => { },
@@ -35,30 +34,49 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         // 1. Mock AI Network Responses (Generalist Agent LLM)
         const mockStreamHandler = async (route: any) => {
             console.log('[Mock] Intercepted AI Stream Request');
-            const requestBody = JSON.parse(route.request().postData() || '{}');
-            const contents = requestBody.contents || [];
-            const lastContent = contents[contents.length - 1];
+            const requestBodyStr = route.request().postData() || '{}';
+            console.log('[Mock LLM] Checking content for signals...');
 
             // Check if deeper parts have text or functionResponse
-            // GeneralistAgent sends: { role: 'function', parts: [{ functionResponse: ... }] }
-            const isFunctionResponse = lastContent?.role === 'function' || lastContent?.parts?.some((p: any) => p.functionResponse);
+            // GeneralistAgent sends: text part with "Tool <name> Output: ..."
+            const isFunctionResponse = requestBodyStr.includes('Tool generate_image Output');
 
             let mockResponseChunks = '';
 
             // Logic: Check if we are in turn 1 (User asks) or turn 2 (Tool Output returned)
+            // Helper to format SSE chunk
+            const toSSE = (data: any) => `data: ${JSON.stringify(data)}\r\n\r\n`;
+
             if (isFunctionResponse) {
                 // TURN 2: Agent confirms success
                 console.log('[Mock LLM] Returning Final Response');
-                mockResponseChunks = JSON.stringify({ text: JSON.stringify({ final_response: "I have generated the image for you." }) }) + '\n';
+                const finalResponse = {
+                    candidates: [{
+                        content: {
+                            role: 'model',
+                            parts: [{ text: JSON.stringify({ final_response: "I have generated the image for you." }) }]
+                        }
+                    }]
+                };
+                mockResponseChunks = toSSE(finalResponse);
             } else {
                 // TURN 1: Agent decides to use tool
                 console.log('[Mock LLM] Returning Tool Call');
-                const toolCall = {
-                    thought: "I will generate an image based on your request.",
-                    tool: "generate_image",
-                    args: { prompt: "A creative variation of the test image", count: 1 }
+                const toolCallResponse = {
+                    candidates: [{
+                        content: {
+                            role: 'model',
+                            parts: [{
+                                text: JSON.stringify({
+                                    thought: "I will generate an image based on your request.",
+                                    tool: "generate_image",
+                                    args: { prompt: "A creative variation of the test image", count: 1 }
+                                })
+                            }]
+                        }
+                    }]
                 };
-                mockResponseChunks = JSON.stringify({ text: JSON.stringify(toolCall) }) + '\n';
+                mockResponseChunks = toSSE(toolCallResponse);
             }
 
             await route.fulfill({
@@ -68,7 +86,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
             });
         };
 
-        await page.route('**/*generateContentStream*', mockStreamHandler);
+        await page.route(/streamGenerateContent/, mockStreamHandler);
 
         // Mock Non-Streaming generateContent (needed if AgentService tries to Route or use non-streaming fallback)
         await page.route('**/generateContent', async route => {
@@ -93,18 +111,10 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
                 contentType: 'application/json',
                 body: JSON.stringify({
                     data: {
-                        candidates: [
+                        images: [
                             {
-                                content: {
-                                    parts: [
-                                        {
-                                            inlineData: {
-                                                mimeType: 'image/png',
-                                                data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
-                                            }
-                                        }
-                                    ]
-                                }
+                                bytesBase64Encoded: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+                                mimeType: 'image/png'
                             }
                         ]
                     }
@@ -140,19 +150,47 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
             window.useStore.setState({
                 isAuthenticated: true,
                 isAuthReady: true,
+                authLoading: false, // Ensure loading screen is dismissed
                 user: { uid: 'test-user', email: 'test@example.com', displayName: 'Test User' },
                 userProfile: { bio: 'Verified Tester', role: 'admin' }, // Prevent onboarding redirect
                 currentModule: 'generalist', // Force Generalist to bypass Router
+                viewMode: 'agent', // Ensure Agent View is active
                 organizations: [{ id: 'org-1', name: 'Test Org', members: ['me'] }],
                 currentOrganizationId: 'org-1',
                 uploadedImages: [], // Reset uploads
                 agentHistory: [],
-                isAgentOpen: true
+                isAgentOpen: true,
+                // Override auth listener to prevent it from resetting the user to null
+                initializeAuthListener: () => () => { }
             });
+
+            // Mock Subscription Service to bypass Auth checks
+            // @ts-expect-error - testing global
+            if (window.subscriptionService) {
+                // @ts-expect-error - testing override
+                window.subscriptionService.getCurrentSubscription = async () => ({
+                    userId: 'test-user',
+                    tier: 'studio',
+                    status: 'active',
+                    currentPeriodStart: Date.now(),
+                    currentPeriodEnd: Date.now() + 10000000,
+                    cancelAtPeriodEnd: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                });
+                // @ts-expect-error - testing override
+                window.subscriptionService.canPerformAction = async () => ({ allowed: true });
+                // @ts-expect-error - testing override
+                window.subscriptionService.checkQuota = async () => ({
+                    allowed: true,
+                    currentUsage: { used: 0, limit: 1000, remaining: 1000 }
+                });
+            }
         });
 
         // 5. Upload Image
         const fileInput = page.locator('input[type="file"]').first();
+        await fileInput.waitFor({ state: 'attached', timeout: 10000 });
         const buffer = Buffer.from('fake-image-content');
         await fileInput.setInputFiles({
             name: 'paparazzi-test.jpg',
@@ -167,7 +205,7 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         await agentInput.fill('Analyze this image and generate a creative variation.');
 
         // Use explicit click regarding flaky Enter key in test environment
-        const runButton = page.getByRole('button', { name: /run/i });
+        const runButton = page.getByRole('button', { name: 'Run', exact: true });
         await expect(runButton).toBeEnabled();
         await runButton.click();
 
@@ -220,28 +258,22 @@ test.describe('The Paparazzi: Media Pipeline Verification', () => {
         await page.evaluate(async () => {
             // @ts-expect-error - testing utility
             const { Editing } = await import('./src/services/image/EditingService'); // Dynamic import if possible, else we rely on global
-            // In a real E2E, we'd drive the UI. Here, to be robust against UI flux, 
-            // we can try to call the Service method if exposed, OR drive the UI if we trust the selectors.
-            // Given the complexity of Canvas (Fabric.js), mocking the Service call from the browser context 
-            // or verifying the UI "Generate" button logic is best.
-
-            // Let's assume we can control the Store/Component state or we just verify the network call 
-            // if we can trigger the function.
         });
 
-        // Alternative: Pure UI Drive
-        // 1. Open Canvas (if feasible)
-        // 2. Set Reference Image in Store (if state exposed)
-
-        // Since driving Fabric.js canvas via Playwright is flaky, we will focus on verifying 
-        // that IF the service is called, it sends the right data.
-        // We'll simulate a manual Service call from the browser console to verify the network implementation.
-
-        const result = await page.evaluate(async () => {
+        // 4. Trigger via Exposed Globals
+        // 4. Trigger via Exposed Globals
+        await page.evaluate(async () => {
             // @ts-expect-error - testing utility
-            const { functions } = window.firebase; // Access exposed firebase instance
+            const functions = window.functions;
             // @ts-expect-error - testing utility
-            const { httpsCallable } = window.firebaseFunctions;
+            const httpsCallable = window.httpsCallable;
+
+            console.log('Using Functions:', functions);
+            console.log('Using Callable:', httpsCallable);
+
+            if (!functions || !httpsCallable) {
+                throw new Error('Firebase Functions internals not found on window');
+            }
 
             // Simulate what CreativeCanvas.tsx does:
             const multiMaskEdit = httpsCallable(functions, 'multiMaskEdit');

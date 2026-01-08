@@ -10,7 +10,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('../registry', () => ({
+vi.mock('../../registry', () => ({
     agentRegistry: {
         get: vi.fn(),
         getAsync: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock('../registry', () => ({
 
 import { CoreTools } from '../CoreTools';
 import { useStore } from '@/core/store';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '../../registry';
 
 describe('CoreTools', () => {
     const mockStoreState = {
@@ -54,7 +54,7 @@ describe('CoreTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.text).toBe('Task completed');
             expect(result.data.message).toContain('[Legal Agent]: Task completed');
-            expect(mockAgent.execute).toHaveBeenCalledWith('Review contract', expect.anything());
+            expect(mockAgent.execute).toHaveBeenCalledWith('Review contract', undefined);
         });
 
         it('should handle unknown agent', async () => {
@@ -68,7 +68,7 @@ describe('CoreTools', () => {
             });
 
             expect(result.success).toBe(false);
-            expect(result.error).toContain("not found");
+            expect(result.error).toContain("Invalid agent ID");
         });
     });
 

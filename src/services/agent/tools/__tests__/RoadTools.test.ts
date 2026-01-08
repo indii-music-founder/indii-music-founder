@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RoadTools } from '../RoadTools';
-import { firebaseAI } from '../services/ai/FirebaseAIService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 vi.mock('@/services/ai/FirebaseAIService', () => ({
     firebaseAI: {

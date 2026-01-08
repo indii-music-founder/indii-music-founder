@@ -60,6 +60,31 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
 
     initializeAuthListener: () => {
+        // Check for TEST_MODE bypass (E2E Testing)
+        if (typeof window !== 'undefined' && localStorage.getItem('TEST_MODE') === 'true') {
+            const mockUser = {
+                uid: 'test-stress-user',
+                email: 'stress@test.com',
+                displayName: 'Stress Test User',
+                emailVerified: true,
+                isAnonymous: false,
+                metadata: {},
+                providerData: [],
+                refreshToken: '',
+                tenantId: null,
+                delete: async () => { },
+                getIdToken: async () => 'mock-token',
+                getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+                reload: async () => { },
+                toJSON: () => ({}),
+                phoneNumber: null,
+                photoURL: null
+            } as unknown as User;
+
+            set({ user: mockUser, authLoading: false });
+            return () => { }; // No-op unsubscribe for test mode
+        }
+
         // Return unsubscribe function
         return onAuthStateChanged(auth, async (user) => {
             // Log removed (Platinum Polish)

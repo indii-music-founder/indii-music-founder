@@ -21,6 +21,12 @@ export class TraceService {
         }
 
         try {
+            // Safety check for test environments where db might be undefined
+            if (!db) {
+                console.warn('[TraceService] DB not initialized (likely test env), returning mock ID');
+                return crypto.randomUUID();
+            }
+
             // Use a more resilient way to get ID that works with both real Firebase and common mocks
             let traceId: string;
             try {

@@ -235,7 +235,7 @@ export class GeneralistAgent extends BaseAgent {
             history.forEach(msg => {
                 if (msg.id && msg.role !== 'system') {
                     if (msg.role === 'user' && msg.attachments) {
-                        msg.attachments.forEach(att => parts.push({ inlineData: { mimeType: att.mimeType, data: att.base64.split(',')[1] } }));
+                        msg.attachments.forEach(att => parts.push({ inlineData: { mimeType: att.mimeType, data: att.base64 } }));
                     }
                     if (msg.text) {
                         parts.push({ text: `${msg.role.toUpperCase()}: ${msg.text}` });
