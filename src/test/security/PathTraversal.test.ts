@@ -72,6 +72,20 @@ describe('Security: Path Traversal Prevention', () => {
     ];
 
     // 4. Execute the handler
+    // It should log an error and return { success: false } or throw
+    // The implementation catches errors and returns { success: false, error: ... }
+
+    const result = await stageReleaseHandler({}, releaseId, maliciousFiles);
+
+    // 5. Assertions
+
+    // The write should NOT have happened
+    expect(mockWriteFile).not.toHaveBeenCalled();
+
+    // The operation should fail
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Security Violation');
+    expect(result.error).toContain('Invalid file path');
     // In a real scenario, this would write to /tmp/indiiOS-releases/test-release/../../../../etc/passwd_overwrite
     // Which resolves to /etc/passwd_overwrite (if permissions allowed)
 
