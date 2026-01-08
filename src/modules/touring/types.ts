@@ -26,3 +26,13 @@ export interface VehicleStats {
     gasPricePerGallon: number;
     updatedAt?: any;
 }
+
+export interface RiderItem {
+    id: string;
+    userId: string;
+    label: string;
+    completed: boolean;
+    category: 'food' | 'drink' | 'essential';
+    createdAt?: any;
+    updatedAt?: any;
+}
