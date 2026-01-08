@@ -7,6 +7,7 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { UsageRecord } from '../../../src/services/subscription/types';
+import * as crypto from 'crypto';
 
 export const trackUsage = onCall(async (request) => {
   const { userId, type, amount, project, metadata } = request.data;
@@ -20,11 +21,15 @@ export const trackUsage = onCall(async (request) => {
 
     // Get current subscription
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
-    if (!subscriptionDoc.exists()) {
+    if (!subscriptionDoc.exists) {
       throw new Error('Subscription not found');
     }
 
     const subscription = subscriptionDoc.data();
+
+    if (!subscription) {
+      throw new Error('Subscription data not found');
+    }
 
     // Create usage record
     const usageRecord: UsageRecord = {

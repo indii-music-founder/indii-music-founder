@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { Subscription, SubscriptionTier } from '../../../src/services/subscription/types';
+import * as crypto from 'crypto';
 
 export const getSubscription = onCall({ cors: true }, async (request) => {
   const { userId } = request.data;

@@ -19,11 +19,16 @@ export const getCustomerPortal = onCall(async (request) => {
     const db = getFirestore();
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
 
-    if (!subscriptionDoc.exists()) {
+    if (!subscriptionDoc.exists) {
       throw new Error('Subscription not found');
     }
 
     const subscription = subscriptionDoc.data();
+
+    if (!subscription) {
+      throw new Error('Subscription data not found');
+    }
+
     const stripeCustomerId = subscription.stripeCustomerId;
 
     if (!stripeCustomerId) {
