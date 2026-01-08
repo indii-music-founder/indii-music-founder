@@ -1,5 +1,4 @@
 import { ipcMain } from 'electron';
-import { FetchUrlSchema } from '../utils/validation';
 import { z } from 'zod';
 import { FetchUrlSchema, validateSender } from '../validation';
 
@@ -76,28 +75,22 @@ export function validateSafeUrl(urlString: string): void {
 export function registerNetworkHandlers() {
     ipcMain.handle('net:fetch-url', async (event, url: string) => {
         try {
-            // Validate Input
-            const validatedUrl = FetchUrlSchema.parse(url);
-
-            console.log(`[Network] Fetching: ${validatedUrl}`);
-            const response = await fetch(validatedUrl);
-            console.log(`[Network] Validating Request: ${url}`);
-
-            // Validate URL before fetching
-            validateSafeUrl(url);
-
-            console.log(`[Network] Fetching Safe URL: ${url}`);
-
-            // Fetch with redirect: 'error' to prevent open redirect bypasses to internal IPs
-            const response = await fetch(url, { redirect: 'error' });
             // 1. Validate Sender (Anti-Hijack)
             validateSender(event);
 
-            // 2. Defense in Depth: Validate URL (Anti-SSRF)
-            const validUrl = FetchUrlSchema.parse(url);
+            // 2. Validate Input Schema (Defense in Depth)
+            const validatedUrl = FetchUrlSchema.parse(url);
 
-            console.log(`[Network] Fetching: ${validUrl}`);
-            const response = await fetch(validUrl);
+            console.log(`[Network] Validating Request: ${url}`);
+
+            // 3. SSRF Protection: Validate URL before fetching
+            // Checks protocol, localhost, and private IP ranges
+            validateSafeUrl(validatedUrl);
+
+            console.log(`[Network] Fetching Safe URL: ${validatedUrl}`);
+
+            // 4. Fetch with redirect: 'error' to prevent open redirect bypasses to internal IPs
+            const response = await fetch(validatedUrl, { redirect: 'error' });
 
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);

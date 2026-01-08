@@ -6,6 +6,7 @@ import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
+import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image";
 
 import { GoogleAuth } from "google-auth-library";
 
@@ -549,9 +550,25 @@ export const generateImageV3 = functions
         timeoutSeconds: 120,
         memory: "512MB"
     })
-    .https.onCall(async (data: GenerateImageRequestData, context) => {
+    .https.onCall(async (data: unknown, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
+                "unauthenticated",
+                "User must be authenticated to generate images."
+            );
+        }
+
+        // Zod Validation
+        const validation = GenerateImageRequestSchema.safeParse(data);
+        if (!validation.success) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+            );
+        }
+        const { prompt, aspectRatio, count, images } = validation.data;
+
         try {
-            const { prompt, aspectRatio, count, images } = data;
             const modelId = "gemini-3-pro-image-preview";
 
             // Use Vertex AI IAM authentication instead of API key
@@ -620,22 +637,34 @@ export const generateImageV3 = functions
             return { images: processedImages };
         } catch (error: any) {
             console.error("[generateImageV3] Error:", error);
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
             throw new functions.https.HttpsError('internal', error.message || "Unknown error");
         }
     });
 
-interface EditImageRequestData {
-    image: string;
-    mask?: string;
-    prompt: string;
-    referenceImage?: string;
-}
-
 export const editImage = functions
     .runWith({ secrets: [geminiApiKey] })
-    .https.onCall(async (data: EditImageRequestData, context) => {
+    .https.onCall(async (data: unknown, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
+                "unauthenticated",
+                "User must be authenticated to edit images."
+            );
+        }
+
+        // Zod Validation
+        const validation = EditImageRequestSchema.safeParse(data);
+        if (!validation.success) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+            );
+        }
+        const { image, mask, prompt, referenceImage } = validation.data;
+
         try {
-            const { image, mask, prompt, referenceImage } = data;
             const modelId = "gemini-3-pro-image-preview";
 
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
@@ -697,6 +726,9 @@ export const editImage = functions
 
         } catch (error: unknown) {
             console.error("Function Error:", error);
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
             if (error instanceof Error) {
                 throw new functions.https.HttpsError('internal', error.message);
             }

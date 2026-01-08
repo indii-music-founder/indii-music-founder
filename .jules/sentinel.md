@@ -1,6 +1,6 @@
-## 2025-05-23 - Firestore Rules Syntax Error & High Risk Defaults
-**Vulnerability:** The `firestore.rules` file contained a syntax error in the `file_nodes` match block (truncated `allow read` statement and redundant, misplaced function definition). Additionally, `licenses` and `license_requests` allowed any authenticated user to read/write any document.
-**Learning:** Syntax errors in security rules can silent-fail deployments or lead to default-deny behavior that breaks the app. Incomplete data models (missing `userId` on sensitive records) force developers into insecure "allow all authenticated" patterns.
+## 2026-01-08 - [CRITICAL] Race Condition in SSRF Protection
+**Vulnerability:** The `electron/handlers/network.ts` file contained a critical race condition where a `fetch(url)` call was executed *before* the `validateSafeUrl(url)` check. This rendered the SSRF protection mechanism useless, allowing potential access to internal network resources or local files if a malicious URL was passed. The file also contained syntax errors (variable redeclaration) indicating a bad merge.
+**Learning:** Security controls must be placed *before* the sensitive operation they protect. Automated linting and syntax checking are crucial to catch bad merges that duplicate code blocks.
 **Prevention:**
 1. Use VS Code extensions for Firestore Rules or the Firebase Emulator to validate syntax.
 2. Ensure data models always include ownership metadata (`userId`, `orgId`) from day one to enable row-level security.
@@ -56,3 +56,6 @@
 1.  Enforced Strict Path Containment: `localPath` must now be within `os.tmpdir()` or `app.getPath('userData')`.
 2.  Implemented `validateSender` to ensure IPC calls originate from the trusted application frame.
 3.  Added `SftpUploadSchema` to validate input types before processing.
+1.  Fixed the order of operations in `net:fetch-url` to ensure `validateSafeUrl` runs before `fetch`.
+2.  Ensured `validateSender` (Anti-Hijack) is the very first check.
+3.  Removed duplicate code and syntax errors.
