@@ -3,6 +3,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { initDB } from './repository';
 const WORKFLOWS_STORE = 'workflows';
+const STORE_NAME = 'assets';
 
 export class StorageMigrationService {
     private static instance: StorageMigrationService;

@@ -37,6 +37,12 @@ export const setupDistributionHandlers = () => {
                 if (!destPath.startsWith(resolvedStagingPath)) {
                     console.error(`[Security] Blocked path traversal attempt: ${file.name} -> ${destPath}`);
                     throw new Error(`Security Violation: Invalid file path ${file.name}`);
+                const destPath = path.resolve(stagingPath, file.name);
+
+                // Security Check: Path Traversal Prevention
+                if (!destPath.startsWith(path.resolve(stagingPath))) {
+                    console.error(`[Distribution] Path traversal attempt detected: ${file.name}`);
+                    throw new Error(`Security Error: Invalid file path ${file.name}`);
                 }
 
                 if (file.type === 'content') {

@@ -5,6 +5,10 @@ import path from 'path';
 // Mock the ipcRenderer invoke function
 const mockInvoke = vi.fn();
 
+// We need to verify that handlers validate paths.
+// Since we are running in a test environment, we can't easily spin up the full Electron Main process.
+// However, we can import the handler logic if we mock the Electron dependencies.
+
 // Mock electron module for the handler imports
 vi.mock('electron', () => ({
   ipcMain: {
@@ -39,6 +43,10 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
+// Import the handler under test
+// Note: We use dynamic import to ensure mocks are applied first
+// We are testing 'distribution:stage-release' from electron/handlers/distribution.ts
+
 describe('Security: Path Traversal Prevention', () => {
 
   it('should block attempts to write files outside of the staging directory during release staging', async () => {
@@ -53,6 +61,7 @@ describe('Security: Path Traversal Prevention', () => {
     expect(stageReleaseHandler).toBeDefined();
 
     // 3. Define malicious payload
+    // Trying to break out of the staging directory using "../"
     const releaseId = 'test-release';
     const maliciousFiles = [
       {
@@ -77,5 +86,35 @@ describe('Security: Path Traversal Prevention', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('Security Violation');
     expect(result.error).toContain('Invalid file path');
+    // In a real scenario, this would write to /tmp/indiiOS-releases/test-release/../../../../etc/passwd_overwrite
+    // Which resolves to /etc/passwd_overwrite (if permissions allowed)
+
+    // We expect the handler to throw an error or NOT call writeFile with the malicious path.
+
+    try {
+        await stageReleaseHandler({}, releaseId, maliciousFiles);
+    } catch (e) {
+        // Expected error
+    }
+
+    // 5. Assert "Vulnerability" or "Protection"
+    // Since I have fixed the vulnerability, I expect:
+    // 1. mockWriteFile to NOT have been called with the bad path.
+    // 2. The handler probably threw an error (which I caught).
+
+    const lastCallArgs = mockWriteFile.mock.lastCall;
+    const writtenPath = lastCallArgs ? lastCallArgs[0] : '';
+
+    // We want to assert that IF a write occurred, it was safe.
+    // Or simpler: assert that no unsafe write occurred.
+
+    const expectedSafeStart = path.normalize('/tmp/indiiOS-releases/test-release/');
+
+    const isSafe = !writtenPath || writtenPath.startsWith(expectedSafeStart);
+
+    console.log('Written Path:', writtenPath);
+    console.log('Safe Start:', expectedSafeStart);
+
+    expect(isSafe).toBe(true);
   });
 });
