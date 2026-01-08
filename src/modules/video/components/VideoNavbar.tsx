@@ -27,9 +27,14 @@ export default function VideoNavbar() {
                     </div>
                 }
             >
-                <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 mx-auto">
+                <div
+                    className="flex bg-white/5 p-1 rounded-lg border border-white/5 mx-auto"
+                    role="group"
+                    aria-label="View Mode"
+                >
                     <button
                         onClick={() => setViewMode('director')}
+                        aria-pressed={viewMode === 'director'}
                         className={`px-4 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all ${viewMode === 'director'
                                 ? 'bg-blue-500/20 text-blue-400 shadow-sm'
                                 : 'text-gray-500 hover:text-white hover:bg-white/5'
@@ -39,6 +44,7 @@ export default function VideoNavbar() {
                     </button>
                     <button
                         onClick={() => setViewMode('editor')}
+                        aria-pressed={viewMode === 'editor'}
                         className={`px-4 py-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-all ${viewMode === 'editor'
                                 ? 'bg-blue-500/20 text-blue-400 shadow-sm'
                                 : 'text-gray-500 hover:text-white hover:bg-white/5'
