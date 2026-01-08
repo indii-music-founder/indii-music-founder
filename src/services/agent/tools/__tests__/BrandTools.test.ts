@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrandTools } from '../BrandTools';
-import { AI } from '../services/ai/AIService';
+import { AI } from '@/services/ai/AIService';
 
 // Mock the Firebase AI service
 vi.mock('@/services/ai/FirebaseAIService', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/services/ai/FirebaseAIService', () => ({
     }
 }));
 
-import { firebaseAI } from '../services/ai/FirebaseAIService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 describe('BrandTools', () => {
     beforeEach(() => {
@@ -28,7 +28,8 @@ describe('BrandTools', () => {
         (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.verify_output({ goal: 'Be bold', content: 'BOLD CONTENT' });
-        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(expect.objectContaining(mockResponse));
         expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
@@ -41,7 +42,8 @@ describe('BrandTools', () => {
         (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.analyze_brand_consistency({ content: 'test content' });
-        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(expect.objectContaining(mockResponse));
         expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
@@ -54,7 +56,8 @@ describe('BrandTools', () => {
         (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.generate_brand_guidelines({ name: 'TestBrand', values: ['Trust'] });
-        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(expect.objectContaining(mockResponse));
         expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
@@ -67,7 +70,8 @@ describe('BrandTools', () => {
         (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await BrandTools.audit_visual_assets({ assets: ['image1.jpg'] });
-        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(expect.objectContaining(mockResponse));
         expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 });

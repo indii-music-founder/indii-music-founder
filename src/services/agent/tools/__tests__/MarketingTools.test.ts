@@ -1,14 +1,17 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MarketingTools } from '../MarketingTools';
-import { AI } from '../services/ai/AIService';
-import { MarketingService } from '../services/marketing/MarketingService';
+import { AI } from '@/services/ai/AIService';
+import { MarketingService } from '@/services/marketing/MarketingService';
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
+
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
         generateStructuredData: vi.fn(),
     }
 }));
+
 
 vi.mock('@/services/marketing/MarketingService', () => ({
     MarketingService: {
@@ -33,7 +36,8 @@ describe('MarketingTools', () => {
             frequency: "weekly"
         });
 
-        const parsed = JSON.parse(result);
+        expect(result.success).toBe(true);
+        const parsed = result.data;
         expect(parsed.status).toBe("scheduled");
         expect(parsed.schedule).toHaveLength(4);
 
@@ -55,10 +59,11 @@ describe('MarketingTools', () => {
             channels: [],
             kpis: []
         };
-        (AI.generateStructuredData as any).mockResolvedValue(mockResponse);
+        (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
-        expect(JSON.parse(result)).toEqual(mockResponse);
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual(mockResponse);
         expect(MarketingService.createCampaign).toHaveBeenCalled();
     });
 });

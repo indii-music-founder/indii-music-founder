@@ -43,6 +43,13 @@ export class AgentTestHarness {
         if (!vi.isMockFunction(AI.generateContent)) {
             vi.spyOn(AI, 'generateContent');
         }
+        if (!vi.isMockFunction(AI.generateContentStream)) {
+            try {
+                vi.spyOn(AI, 'generateContentStream');
+            } catch (e) {
+                // Ignore if it fails (already mocked or property descriptor issue)
+            }
+        }
     }
 
     /**
@@ -50,10 +57,21 @@ export class AgentTestHarness {
      * @param text The text response to return.
      */
     public mockAIResponse(text: string) {
-        (AI.generateContent as unknown as MockInstance).mockResolvedValue({
+        const responseCtx = {
             text: () => text,
             functionCalls: () => []
-        } as any);
+        };
+
+        (AI.generateContent as unknown as MockInstance).mockResolvedValue(responseCtx as any);
+
+        if (AI.generateContentStream) {
+            (AI.generateContentStream as unknown as MockInstance).mockResolvedValue({
+                stream: (async function* () {
+                    yield { text: () => text };
+                })(),
+                response: Promise.resolve(responseCtx)
+            } as any);
+        }
     }
 
     /**

@@ -89,9 +89,8 @@ export default function AI_Input_Search({
         <div className={cn("w-full py-4", className)}>
             <div className="relative max-w-xl w-full mx-auto">
                 <div
-                    role="textbox"
-                    tabIndex={0}
-                    aria-label="Search input container"
+                    role="group"
+                    aria-label="Search input group"
                     className={cn(
                         "relative flex flex-col rounded-xl transition-all duration-200 w-full text-left cursor-text",
                         "ring-1 ring-black/10 dark:ring-white/10",
@@ -99,6 +98,8 @@ export default function AI_Input_Search({
                     )}
                     onClick={handleContainerClick}
                     onKeyDown={(e) => {
+                        // Allow tabbing through without triggering click
+                        if (e.key === "Tab") return;
                         if (e.key === "Enter" || e.key === " ") {
                             handleContainerClick();
                         }

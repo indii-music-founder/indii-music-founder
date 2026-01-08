@@ -31,7 +31,7 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.write_press_release({ topic: 'New Album' });
 
         expect(result.success).toBe(true);
-        expect(result.data.data).toEqual(mockResponse); // result.data is the ToolFunctionResult.data
+        expect(result.data).toEqual(mockResponse); // result.data is the ToolFunctionResult.data
         expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
     });
 
@@ -53,7 +53,7 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.generate_crisis_response({ situation: 'Leak' });
 
         expect(result.success).toBe(true);
-        expect(result.data.data).toEqual(mockResponse);
+        expect(result.data).toEqual(mockResponse);
     });
 
     it('pitch_story returns valid schema', async () => {
@@ -70,7 +70,7 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.pitch_story({ story_summary: 'We cool', outlet_type: 'blog' });
 
         expect(result.success).toBe(true);
-        expect(result.data.data).toEqual(mockResponse);
+        expect(result.data).toEqual(mockResponse);
     });
 
     it('handles AI failure gracefully', async () => {

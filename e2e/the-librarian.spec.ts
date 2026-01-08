@@ -114,7 +114,7 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
 
             // Wait for response
             const responseSelector = page.getByTestId('agent-message').last();
-            await expect(responseSelector).toBeVisible({ timeout: 30000 }); // Real AI takes time
+            await expect(responseSelector).toBeVisible({ timeout: 120000 }); // Real AI takes time (up to 2m)
 
             // Wait for streaming to finish (stable text)
             await page.waitForTimeout(5000);

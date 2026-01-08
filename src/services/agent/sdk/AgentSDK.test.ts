@@ -13,7 +13,8 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContent: vi.fn(),
-        embedContent: vi.fn()
+        embedContent: vi.fn(),
+        generateContentStream: vi.fn()
     }
 }));
 

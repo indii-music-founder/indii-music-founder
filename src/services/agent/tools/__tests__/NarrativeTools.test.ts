@@ -40,9 +40,9 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
-import { firebaseAI } from '../services/ai/FirebaseAIService';
-import { ImageGeneration } from '../services/image/ImageGenerationService';
-import { VideoGeneration } from '../services/video/VideoGenerationService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
 describe('Filmmaking Grammar Tools', () => {
 

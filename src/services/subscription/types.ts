@@ -27,11 +27,13 @@ export interface Subscription {
  * Usage statistics for current billing period
  */
 export interface UsageStats {
+  userId?: string;
   /** Current subscription tier */
   tier: SubscriptionTier;
 
   /** Reset date (timestamp) */
   resetDate: number;
+
 
   /** Image generation usage */
   imagesGenerated: number;
@@ -183,6 +185,7 @@ export interface UsageWarning {
   message: string;
   percentage: number;
   actionUrl?: string;
+  upgradeUrl?: string;
   dismissible: boolean;
 }
 

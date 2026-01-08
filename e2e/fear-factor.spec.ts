@@ -1,13 +1,31 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://architexture-ai-studio.web.app';
+const BASE_URL = '/'; // Use relative path to Playwright config
 
 test.describe('Fear Factor: Extreme Chaos Testing', () => {
 
     test.beforeEach(async ({ page }) => {
         // Console listener for debugging chaos
         page.on('console', msg => console.log('CHAOS:', msg.text()));
+
+        // 1. Enforce Clean State and Login
+        await page.context().clearCookies();
         await page.goto(BASE_URL);
+        await page.evaluate(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        });
+        await page.reload();
+
+        const emailInput = page.getByLabel(/email/i);
+        await expect(emailInput).toBeVisible({ timeout: 15000 });
+
+        await emailInput.fill('automator@indiios.com');
+        await page.getByLabel(/password/i).fill('AutomatorPass123!');
+        await page.getByRole('button', { name: /sign in/i }).click();
+
+        // Wait for dashboard
+        await expect(page.getByText(/(STUDIO HQ|Agent Workspace)/)).toBeVisible({ timeout: 30000 });
         await page.waitForLoadState('domcontentloaded');
     });
 

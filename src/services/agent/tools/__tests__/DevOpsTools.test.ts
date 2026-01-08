@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const mockHttpsCallable = vi.fn();
+
 // Mock firebase/functions
 vi.mock('firebase/functions', () => ({
-    httpsCallable: vi.fn()
+    getFunctions: vi.fn(),
+    httpsCallable: (...args: any[]) => mockHttpsCallable(...args)
 }));
 
 // Mock @/services/firebase
@@ -13,7 +16,8 @@ vi.mock('@/services/firebase', () => ({
 import { httpsCallable } from 'firebase/functions';
 import { DevOpsTools } from '../DevOpsTools';
 
-const mockHttpsCallable = httpsCallable as ReturnType<typeof vi.fn>;
+// No need to cast again since we defined mockHttpsCallable above
+// const mockHttpsCallable = httpsCallable as ReturnType<typeof vi.fn>;
 
 describe('DevOpsTools (Real GCP via Cloud Functions)', () => {
     beforeEach(() => {

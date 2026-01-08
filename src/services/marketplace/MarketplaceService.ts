@@ -17,6 +17,12 @@ export class MarketplaceService {
     private static PRODUCTS_COLLECTION = 'products';
     private static PURCHASES_COLLECTION = 'purchases';
 
+    // ⚡ Bolt Optimization: Simple in-memory cache to prevent N+1 reads in feeds
+    // Using a Map with a size limit to prevent memory leaks
+    private static productCache = new Map<string, { product: Product | null, timestamp: number }>();
+    private static CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
+    private static MAX_CACHE_SIZE = 100;
+
     /**
      * Create a new product listing.
      */
@@ -28,27 +34,50 @@ export class MarketplaceService {
         };
 
         const docRef = await addDoc(collection(db, this.PRODUCTS_COLLECTION), productData);
+
+        // No need to cache immediately as it might not be fully consistent yet
         return docRef.id;
     }
 
     /**
      * Get a single product by ID.
      * ⚡ Bolt Optimization: Direct document lookup is O(1) vs O(N) collection scan.
+     * ⚡ Bolt Optimization: Added caching with size limit to deduplicate requests.
      */
     static async getProductById(productId: string): Promise<Product | null> {
+        // Check cache
+        const cached = this.productCache.get(productId);
+        if (cached) {
+            if (Date.now() - cached.timestamp < this.CACHE_DURATION) {
+                return cached.product;
+            } else {
+                this.productCache.delete(productId);
+            }
+        }
+
         try {
             const docRef = doc(db, this.PRODUCTS_COLLECTION, productId);
             const docSnap = await getDoc(docRef);
 
+            let product: Product | null = null;
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                return {
+                product = {
                     id: docSnap.id,
                     ...data,
                     createdAt: (data.createdAt as Timestamp)?.toDate().toISOString()
                 } as Product;
             }
-            return null;
+
+            // Update cache (Simple LRU: delete if full to make space)
+            if (this.productCache.size >= this.MAX_CACHE_SIZE) {
+                // Remove the oldest inserted item (first key)
+                const firstKey = this.productCache.keys().next().value;
+                if (firstKey) this.productCache.delete(firstKey);
+            }
+
+            this.productCache.set(productId, { product, timestamp: Date.now() });
+            return product;
         } catch (error) {
             console.error(`Failed to fetch product ${productId}:`, error);
             return null;

@@ -127,19 +127,24 @@ class SubscriptionService {
           tier: SubscriptionTier.STUDIO,
           imagesGenerated: 0,
           imagesRemaining: 9999,
+          imagesPerMonth: 9999,
+          videoDurationSeconds: 0,
           videoDurationMinutes: 0,
           videoRemainingMinutes: 9999,
+          videoTotalMinutes: 9999,
           aiChatTokensUsed: 0,
           aiChatTokensRemaining: 999999,
+          aiChatTokensPerMonth: 999999,
           storageUsedGB: 0,
           storageTotalGB: 1000,
           storageRemainingGB: 1000,
           projectsCreated: 0,
           projectsRemaining: 999,
+          maxProjects: 999,
           teamMembersUsed: 0,
           teamMembersRemaining: 999,
-          periodStart: Date.now(),
-          periodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000
+          maxTeamMembers: 999,
+          resetDate: Date.now() + 30 * 24 * 60 * 60 * 1000
         };
         this.usageCache.set(userId, { stats: mockStats, timestamp: Date.now() });
         return mockStats;
@@ -528,3 +533,7 @@ class SubscriptionService {
 }
 
 export const subscriptionService = new SubscriptionService();
+
+if (import.meta.env.DEV) {
+  (window as any).subscriptionService = subscriptionService;
+}
