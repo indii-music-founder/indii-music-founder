@@ -238,12 +238,14 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 export default SocialFeed;
 
 // Sub-component for individual items to handle async product fetching if needed
+// ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
+// We use default shallow comparison here. It relies on the parent passing stable objects.
 const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         if (post.productId) {
-            // ⚡ Bolt Optimization: Use direct document lookup (O(1)) instead of fetching entire catalog (O(N))
+            // ⚡ Bolt Optimization: MarketplaceService now uses caching to prevent redundant requests
             MarketplaceService.getProductById(post.productId).then(product => {
                 if (product) setEmbeddedProduct(product);
             });
