@@ -54,11 +54,6 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
       { ...mockGene, id: 'a3', name: 'A3', fitness: 0.5 }
     ];
 
-    // Mock specific fitness outcomes if needed (already set in population for this test step)
-    // The engine re-evaluates fitness if undefined, but we provided it.
-    // Wait, the engine checks `if (gene.fitness === undefined)`.
-    // So if we provide fitness, it skips evaluation. Perfect for testing selection.
-
     // Force Mutation to happen for the test
     const testConfig = { ...config, mutationRate: 1.0, eliteCount: 1, populationSize: 2 };
     engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
@@ -102,20 +97,26 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
     expect(nextGen).toHaveLength(4); // Config pop size
   });
 
-  it('Mutation Safety: Should handle mutation returning invalid structure (mocked rejection)', async () => {
-    // Force mutation to 100% to ensure the mock is hit
-    const testConfig = { ...config, mutationRate: 1.0 };
+  it('Resilience: Should discard offspring that fail mutation and continue evolution', async () => {
+    // Force mutation to 100%
+    const testConfig = { ...config, mutationRate: 1.0, populationSize: 2, eliteCount: 1 };
     engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
 
-    mockMutationFn.mockRejectedValueOnce(new Error("Invalid JSON"));
+    // First mutation call fails, second succeeds
+    mockMutationFn
+      .mockRejectedValueOnce(new Error("Invalid JSON"))
+      .mockResolvedValueOnce({ ...mockGene, id: 'valid-offspring', systemPrompt: 'valid' });
 
     const population: AgentGene[] = [
         { ...mockGene, id: 'p1', fitness: 0.8 },
         { ...mockGene, id: 'p2', fitness: 0.8 }
     ];
 
-    // We expect the evolve function to fail or handle it.
-    // If it fails, that's "guardrail" behavior (evolution stops on error).
-    await expect(engine.evolve(population)).rejects.toThrow("Invalid JSON");
+    const nextGen = await engine.evolve(population);
+
+    expect(nextGen).toHaveLength(2);
+    expect(nextGen[0].id).toBe('p1'); // Elite (or p2 depending on sort, but both 0.8)
+    expect(nextGen[1].id).not.toBe('p1'); // New offspring
+    expect(mockMutationFn).toHaveBeenCalledTimes(2); // One fail, one success
   });
 });
