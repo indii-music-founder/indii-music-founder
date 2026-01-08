@@ -1,11 +1,3 @@
-# Palette's Journal
-
-This journal records critical UX and accessibility learnings for the IndiiOS project.
-
-## 2024-05-24 - [Initialization]
-**Learning:** UX consistency relies on shared design tokens and semantic HTML.
-**Action:** Always verify changes against `tailwind.config.js` and ARIA standards.
-
-## 2024-05-24 - [Focus Management]
-**Learning:** Custom input containers must use `focus-within` to simulate native focus rings.
-**Action:** Apply `focus-within:ring-2` to wrapper divs when inner inputs have `outline-none`.
+## 2024-05-23 - [Post Generator Accessibility Polish]
+**Learning:** `aria-labelledby` is essential for custom radio groups (like the Platform/Vibe selectors) where the visual label isn't a direct parent of the group container. Using `role="group"` without a clear label makes navigation confusing for screen readers.
+**Action:** When creating custom selector groups, always ensure the group container references its label via ID, and ensure the decorative icons inside buttons are hidden (`aria-hidden="true"`) to reduce noise.

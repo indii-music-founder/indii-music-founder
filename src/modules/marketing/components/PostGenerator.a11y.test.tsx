@@ -46,7 +46,7 @@ describe('PostGenerator Accessibility', () => {
         render(<PostGenerator />);
 
         // Check Platform Group
-        const platformGroup = screen.getByRole('group', { name: /select platform/i });
+        const platformGroup = screen.getByRole('group', { name: /^platform$/i });
         expect(platformGroup).toBeInTheDocument();
 
         // Check Platform Buttons
@@ -54,7 +54,7 @@ describe('PostGenerator Accessibility', () => {
         expect(instagramButton).toHaveAttribute('aria-pressed');
 
         // Check Vibe Group
-        const vibeGroup = screen.getByRole('group', { name: /select vibe/i });
+        const vibeGroup = screen.getByRole('group', { name: /^vibe$/i });
         expect(vibeGroup).toBeInTheDocument();
 
         // Check Vibe Buttons
