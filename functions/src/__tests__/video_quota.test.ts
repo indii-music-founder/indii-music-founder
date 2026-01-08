@@ -116,6 +116,14 @@ vi.mock('../stripe/config', () => ({
         'pro_monthly': { monthly: 'price_mock' }
     }
 }));
+// Mock Subscription functions to avoid Stripe/Type import issues
+vi.mock('../subscription/getSubscription', () => ({ getSubscription: vi.fn() }));
+vi.mock('../subscription/createCheckoutSession', () => ({ createCheckoutSession: vi.fn() }));
+vi.mock('../subscription/getCustomerPortal', () => ({ getCustomerPortal: vi.fn() }));
+vi.mock('../subscription/cancelSubscription', () => ({ cancelSubscription: vi.fn() }));
+vi.mock('../subscription/resumeSubscription', () => ({ resumeSubscription: vi.fn() }));
+vi.mock('../subscription/getUsageStats', () => ({ getUsageStats: vi.fn() }));
+vi.mock('../subscription/trackUsage', () => ({ trackUsage: vi.fn() }));
 
 // Import functions AFTER mocks
 import { triggerLongFormVideoJob } from '../index';
@@ -132,6 +140,8 @@ describe('Video Quota & Circuit Breaker Tests', () => {
             prompts: ['A cinematic shot of a robot accountant'],
             orgId: 'personal', // Defaults to 'free' tier
             totalDuration: "10",
+            orgId: 'personal',
+            totalDuration: '10', // Passed as string to satisfy Zod
             startImage: 'data:image/png;base64,mockbase64'
         };
 
@@ -159,6 +169,7 @@ describe('Video Quota & Circuit Breaker Tests', () => {
             prompts: ['A 20 hour movie'],
             orgId: 'personal',
             totalDuration: "600", // 10 minutes (600s). Free limit is 8 minutes (480s).
+            totalDuration: '600', // Passed as string (600s = 10 mins > 8 mins limit)
             startImage: 'data:image/png;base64,mockbase64'
         };
 
@@ -173,6 +184,7 @@ describe('Video Quota & Circuit Breaker Tests', () => {
             prompts: ['A short clip'],
             orgId: 'personal',
             totalDuration: "10",
+            totalDuration: '10', // Passed as string
             startImage: 'data:image/png;base64,mockbase64'
         };
 
