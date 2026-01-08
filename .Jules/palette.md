@@ -26,3 +26,7 @@
 ## 2025-05-24 - [Hover-Revealed Actions]
 **Learning:** Actions hidden by opacity (e.g., "Add to Cart" on hover) create invisible focus traps for keyboard users. They can tab to it but see no change.
 **Action:** Use `group-focus-within:opacity-100` on the container and `focus-visible` styles on the button to ensure visibility during keyboard navigation.
+
+## 2025-05-25 - [Interactive Card Patterns]
+**Learning:** Large clickable cards (like "Add New Placeholder") are often implemented as `div`s with `cursor-pointer`, failing accessibility standards.
+**Action:** Convert these to actual `<button type="button">` elements. If the design includes a nested "fake" button for visual emphasis, convert the inner element to a `div` or `span` to avoid illegal HTML (button inside button) while maintaining the visual affordance.
