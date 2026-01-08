@@ -51,3 +51,8 @@ export const DistributionStageReleaseSchema = z.object({
         })
     }))
 });
+
+export const SftpUploadSchema = z.object({
+    localPath: z.string().min(1),
+    remotePath: z.string().min(1)
+});
