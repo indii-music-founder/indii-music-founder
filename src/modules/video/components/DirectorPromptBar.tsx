@@ -31,6 +31,7 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
                     onChange={(e) => onPromptChange(e.target.value)}
                     placeholder="Describe your scene (e.g. 'Cyberpunk street styling, rain, neon lights')..."
                     className="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 text-sm font-medium h-10 px-2"
+                    aria-label="Scene description"
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && prompt.trim()) {
                             onGenerate();
@@ -42,6 +43,7 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
                 <button
                     className="p-2 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/5"
                     title="Voice Input (Coming Soon)"
+                    aria-label="Voice Input (Coming Soon)"
                 >
                     <Mic size={16} />
                 </button>
