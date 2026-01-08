@@ -14,6 +14,7 @@ export const setupDistributionHandlers = () => {
         try {
             const tempDir = os.tmpdir();
             const stagingPath = path.join(tempDir, 'indiiOS-releases', releaseId);
+            const resolvedStagingPath = path.resolve(stagingPath) + path.sep; // Ensure trailing slash for security check
 
             // cleaned up previous staging if exists
             try {
@@ -35,6 +36,21 @@ export const setupDistributionHandlers = () => {
                 if (!destPath.startsWith(safeStagingPath)) {
                     console.error(`[Distribution] Security Alert: Blocked path traversal attempt to ${destPath}`);
                     throw new Error(`Security Error: Invalid file path "${file.name}" (Path Traversal Detected)`);
+                // Security: Prevent Path Traversal
+                // Resolve the destination path relative to the current working directory?
+                // No, path.join resolves relative to stagingPath, but ".." components are processed.
+                // We must check the final resolved path.
+                const destPath = path.resolve(stagingPath, file.name);
+
+                if (!destPath.startsWith(resolvedStagingPath)) {
+                    console.error(`[Security] Blocked path traversal attempt: ${file.name} -> ${destPath}`);
+                    throw new Error(`Security Violation: Invalid file path ${file.name}`);
+                const destPath = path.resolve(stagingPath, file.name);
+
+                // Security Check: Path Traversal Prevention
+                if (!destPath.startsWith(path.resolve(stagingPath))) {
+                    console.error(`[Distribution] Path traversal attempt detected: ${file.name}`);
+                    throw new Error(`Security Error: Invalid file path ${file.name}`);
                 }
 
                 if (file.type === 'content') {
