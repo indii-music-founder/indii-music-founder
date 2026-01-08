@@ -49,3 +49,10 @@
 1.  Implemented strict `Zod` validation for all IPC payloads.
 2.  Blocked private IP ranges (RFC1918) and localhost in `net:fetch-url`.
 3.  Enforced strict protocol checks (HTTP/HTTPS only).
+## 2025-05-27 - [CRITICAL] Arbitrary File Read via SFTP IPC
+**Vulnerability:** The `sftp:upload-directory` IPC handler accepted any `localPath` from the renderer without validation. A compromised renderer could instruct the Main process to upload sensitive system files (e.g., `/etc/passwd`, `~/.ssh`) to a remote server.
+**Learning:** IPC handlers that access the filesystem must enforce strict containment (Sandboxing). Never trust paths provided by the renderer.
+**Prevention:**
+1.  Enforced Strict Path Containment: `localPath` must now be within `os.tmpdir()` or `app.getPath('userData')`.
+2.  Implemented `validateSender` to ensure IPC calls originate from the trusted application frame.
+3.  Added `SftpUploadSchema` to validate input types before processing.
