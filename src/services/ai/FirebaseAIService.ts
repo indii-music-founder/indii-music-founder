@@ -414,6 +414,13 @@ export class FirebaseAIService {
         systemInstruction?: string
     ): Promise<string> {
         await this.ensureInitialized();
+
+        // Rate Limit Check
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+            await TokenUsageService.checkQuota(userId);
+        }
+
         const modelCallback = getGenerativeModel(ai, {
             model: this.model!.model,
             systemInstruction
@@ -421,6 +428,21 @@ export class FirebaseAIService {
 
         const chatSession = modelCallback.startChat({ history });
         const result = await chatSession.sendMessage(newMessage);
+
+        // Track usage (approximated for chat as explicit tokens aren't always returned in the same structure)
+        if (userId && result.response.usageMetadata) {
+            try {
+                await TokenUsageService.trackUsage(
+                    userId,
+                    this.model!.model,
+                    result.response.usageMetadata.promptTokenCount || 0,
+                    result.response.usageMetadata.candidatesTokenCount || 0
+                );
+            } catch {
+                // Ignore tracking errors
+            }
+        }
+
         return result.response.text();
     }
 

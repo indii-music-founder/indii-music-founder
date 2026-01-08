@@ -29,8 +29,8 @@ const VIBES = ['Professional', 'Witty', 'Edgy', 'Wholesome', 'Minimalist', 'Hype
 
 // Optimized Sub-Components
 const PlatformSelector = memo(({ selectedId, onSelect }: { selectedId: string, onSelect: (id: string) => void }) => (
-    <div className="mb-4" role="group" aria-label="Select Platform">
-        <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">Platform</label>
+    <div className="mb-4" role="group" aria-labelledby="platform-label">
+        <label id="platform-label" className="block text-xs text-gray-500 uppercase font-semibold mb-2">Platform</label>
         <div className="grid grid-cols-2 gap-2">
             {PLATFORMS.map(p => (
                 <button
@@ -42,7 +42,7 @@ const PlatformSelector = memo(({ selectedId, onSelect }: { selectedId: string, o
                         : 'bg-[#0d1117] border border-gray-800 text-gray-400 hover:border-gray-600'
                         }`}
                 >
-                    <span>{p.icon}</span> {p.name}
+                    <span aria-hidden="true">{p.icon}</span> {p.name}
                 </button>
             ))}
         </div>
@@ -52,8 +52,8 @@ const PlatformSelector = memo(({ selectedId, onSelect }: { selectedId: string, o
 PlatformSelector.displayName = 'PlatformSelector';
 
 const VibeSelector = memo(({ selectedVibe, onSelect }: { selectedVibe: string, onSelect: (vibe: string) => void }) => (
-    <div className="mb-4" role="group" aria-label="Select Vibe">
-        <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">Vibe</label>
+    <div className="mb-4" role="group" aria-labelledby="vibe-label">
+        <label id="vibe-label" className="block text-xs text-gray-500 uppercase font-semibold mb-2">Vibe</label>
         <div className="flex flex-wrap gap-2">
             {VIBES.map(v => (
                 <button
@@ -103,14 +103,14 @@ const PreviewPanel = memo(({
                     <div className="aspect-video bg-[#0d1117] rounded-lg border border-gray-800 flex items-center justify-center overflow-hidden relative group">
                         {isGeneratingImage ? (
                             <div className="text-center text-pink-400">
-                                <Loader2 size={32} className="animate-spin mx-auto mb-2" />
+                                <Loader2 size={32} className="animate-spin mx-auto mb-2" aria-hidden="true" />
                                 <span className="text-xs animate-pulse">Designing visual asset...</span>
                             </div>
                         ) : result.generatedImageBase64 ? (
                             <>
                                 <img
                                     src={`data:image/png;base64,${result.generatedImageBase64}`}
-                                    alt="Generated"
+                                    alt={`Generated image for: ${result.topic}`}
                                     className="w-full h-full object-cover"
                                 />
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -118,13 +118,13 @@ const PreviewPanel = memo(({
                                         className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform"
                                         aria-label="Use generated image"
                                     >
-                                        <Upload size={20} />
+                                        <Upload size={20} aria-hidden="true" />
                                     </button>
                                 </div>
                             </>
                         ) : (
                             <div className="text-gray-600 flex flex-col items-center">
-                                <ImageIcon size={48} className="mb-2 opacity-20" />
+                                <ImageIcon size={48} className="mb-2 opacity-20" aria-hidden="true" />
                                 <span className="text-xs">No image generated</span>
                             </div>
                         )}
@@ -133,13 +133,13 @@ const PreviewPanel = memo(({
                     {/* Caption Editor */}
                     <div className="flex-1 space-y-2">
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Caption</span>
+                            <label htmlFor="caption-preview">Caption</label>
                             <button
                                 onClick={() => onCopyToClipboard(result.caption)}
                                 className="flex items-center gap-1 hover:text-white transition-colors"
                                 aria-label="Copy caption to clipboard"
                             >
-                                <Copy size={12} /> Copy
+                                <Copy size={12} aria-hidden="true" /> Copy
                             </button>
                         </div>
                         <div className="flex justify-end mb-2">
@@ -148,10 +148,11 @@ const PreviewPanel = memo(({
                                 className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
                                 aria-label="Enhance caption with AI"
                             >
-                                <Wand2 size={12} /> Enhance with AI
+                                <Wand2 size={12} aria-hidden="true" /> Enhance with AI
                             </button>
                         </div>
                         <textarea
+                            id="caption-preview"
                             value={result.caption}
                             onChange={(e) => onCaptionChange(e.target.value)}
                             className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
@@ -172,14 +173,14 @@ const PreviewPanel = memo(({
                             disabled={isScheduling}
                             className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                         >
-                            {isScheduling && <Loader2 className="animate-spin" size={16} />}
+                            {isScheduling && <Loader2 className="animate-spin" size={16} aria-hidden="true" />}
                             Schedule Post
                         </button>
                     </div>
                 </div>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-600 border-2 border-dashed border-gray-800 rounded-lg">
-                    <Megaphone size={48} className="mb-4 opacity-20" />
+                    <Megaphone size={48} className="mb-4 opacity-20" aria-hidden="true" />
                     <p className="max-w-xs text-center text-sm">
                         Enter your topic and vibe on the left to generate a tailored social media post with AI.
                     </p>
@@ -366,7 +367,7 @@ export default function PostGenerator() {
             <div className="lg:col-span-4 space-y-6">
                 <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
                     <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <Wand2 className="text-pink-500" size={20} />
+                        <Wand2 className="text-pink-500" size={20} aria-hidden="true" />
                         Content Wizard
                     </h2>
 
@@ -393,12 +394,12 @@ export default function PostGenerator() {
                     >
                         {isGenerating ? (
                             <>
-                                <Loader2 className="animate-spin" size={18} />
+                                <Loader2 className="animate-spin" size={18} aria-hidden="true" />
                                 Creating Magic...
                             </>
                         ) : (
                             <>
-                                <Megaphone size={18} />
+                                <Megaphone size={18} aria-hidden="true" />
                                 Generate Post
                             </>
                         )}

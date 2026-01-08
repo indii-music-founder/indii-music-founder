@@ -1,3 +1,3 @@
-## 2024-05-23 - [Form Submission Validation Conflict]
-**Learning:** Browser native validation (`required`) often preempts React `onSubmit` handlers in testing environments (like JSDOM), causing "dead clicks" where no event handler runs. This makes verifying custom feedback (like Toasts) difficult without bypassing browser validation.
-**Action:** Use `noValidate` on `<form>` elements during tests (or conditionally in code) when verifying custom validation logic, ensuring the `onSubmit` handler is reachable for assertions.
+## 2024-05-23 - [Nested Textbox Roles]
+**Learning:** The `AI_Input_Search` component has a container with `role="textbox"` wrapping the actual `<textarea>` (which also has an implicit `textbox` role). This causes `getByRole('textbox')` to return multiple elements, breaking tests that assume a single input.
+**Action:** Use specific selectors like `getByPlaceholderText` or `getByRole('textbox', { name: ... })` to disambiguate nested interactive elements. Always check if container wrappers have ARIA roles that might shadow or duplicate internal element roles.

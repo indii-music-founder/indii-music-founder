@@ -1,12 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 import { getAI, VertexAIBackend } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
-import { getFunctions } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -78,18 +78,23 @@ export { appCheck };
 
 
 // Expose for e2e testing
-import { doc, setDoc } from 'firebase/firestore';
+// Expose for e2e testing
 
 declare global {
     interface Window {
         db: typeof db;
-        firestore: { doc: typeof doc; setDoc: typeof setDoc };
+        firebaseInternals: { doc: typeof doc; setDoc: typeof setDoc };
         functions: typeof functions;
+        auth: typeof auth;
     }
 }
 
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+if ((import.meta.env.DEV || window.location.hostname === 'localhost') && typeof window !== 'undefined') {
+    console.log("[App] Exposing Firebase Internals for E2E");
     window.db = db;
-    window.firestore = { doc, setDoc };
+    window.firebaseInternals = { doc, setDoc };
     window.functions = functions;
+    // @ts-expect-error - exposing for testing
+    window.httpsCallable = httpsCallable;
+    window.auth = auth;
 }

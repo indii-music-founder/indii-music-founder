@@ -30,11 +30,11 @@ export const BananaMerch: React.FC = () => {
                         Premium streetwear engineered for the modern digital creator.
                     </p>
                     <div className="flex gap-4 mt-8">
-                        <button className="bg-primary text-primary-foreground font-black px-8 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 uppercase text-sm tracking-wider">
+                        <button type="button" className="bg-primary text-primary-foreground font-black px-8 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 uppercase text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">
                             <Star size={20} fill="currentColor" />
                             Explore Catalog
                         </button>
-                        <button className="bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold px-8 py-4 rounded-full hover:bg-white/20 transition-all text-sm tracking-wider">
+                        <button type="button" className="bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold px-8 py-4 rounded-full hover:bg-white/20 transition-all text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none">
                             Our Story
                         </button>
                     </div>
@@ -50,9 +50,14 @@ export const BananaMerch: React.FC = () => {
                         </div>
                         LATEST DROPS
                     </h3>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" role="group" aria-label="Filter products">
                         {['All', 'Tees', 'Hoodies', 'Accessories'].map((cat, i) => (
-                            <button key={cat} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary border border-border/50'}`}>
+                            <button
+                                key={cat}
+                                type="button"
+                                aria-pressed={i === 0}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary border border-border/50'}`}
+                            >
                                 {cat}
                             </button>
                         ))}
@@ -64,16 +69,20 @@ export const BananaMerch: React.FC = () => {
                     ))}
 
                     {/* Add New Placeholder */}
-                    <div className="border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group min-h-[400px]">
+                    <button
+                        type="button"
+                        aria-label="Design new asset"
+                        className="w-full h-full text-left border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group min-h-[400px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                    >
                         <div className="w-20 h-20 bg-secondary/50 rounded-2xl flex items-center justify-center mb-6 border border-border/50 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
                             <Tag className="text-primary" size={32} />
                         </div>
                         <h4 className="text-foreground font-black text-lg tracking-tight">DESIGN NEW ASSET</h4>
                         <p className="text-muted-foreground text-sm text-center mt-2 max-w-[200px]">Launch a new merch drop in minutes with AI.</p>
-                        <button className="mt-8 text-primary font-black text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-primary/70 hover:border-primary/70 transition-all">
+                        <div className="mt-8 text-primary font-black text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-primary/70 hover:border-primary/70 transition-all">
                             Open Designer
-                        </button>
-                    </div>
+                        </div>
+                    </button>
                 </div>
             </div>
 

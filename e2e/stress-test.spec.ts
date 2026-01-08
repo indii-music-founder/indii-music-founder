@@ -5,10 +5,13 @@ test.describe('Stress Testing', () => {
         test.setTimeout(90000); // Increase timeout for stress test
 
         // Bypass onboarding and auth gates for testing
+        // Bypass removed to ensure real auth testing
+        /*
         await page.addInitScript(() => {
-            (window as any).__TEST_MODE__ = true;
-            localStorage.setItem('TEST_MODE', 'true');
+            // (window as any).__TEST_MODE__ = true;
+            // localStorage.setItem('TEST_MODE', 'true');
         });
+        */
 
         // Enable console logs early
         page.on('console', msg => {
@@ -18,50 +21,25 @@ test.describe('Stress Testing', () => {
             }
         });
 
-        // 1. Login/Setup
-        await page.goto('/?testMode=true');
+        // 1. Enforce Clean State
+        await page.context().clearCookies();
+        await page.goto('/');
+        await page.evaluate(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        });
+        await page.reload();
 
-        // Wait for app to load
-        await page.waitForLoadState('domcontentloaded');
+        // 2. Perform Login (Deterministic)
+        console.log('Waiting for Login Form...');
+        const emailInput = page.getByLabel(/email/i);
+        await expect(emailInput).toBeVisible({ timeout: 15000 });
 
-        // Wait for auth to initialize (anonymous sign-in)
-        await page.waitForTimeout(3000);
+        await emailInput.fill('automator@indiios.com');
+        await page.getByLabel(/password/i).fill('AutomatorPass123!');
+        await page.getByRole('button', { name: /sign in/i }).click();
 
-        // Handle Loading state
-        const loader = page.getByText('Loading Module...');
-        if (await loader.isVisible()) {
-            await loader.waitFor({ state: 'hidden', timeout: 15000 });
-        }
-
-        // Handle Auth/Login skip
-        const guestBtn = page.getByRole('button', { name: /Continue as Guest/i });
-        if (await guestBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await guestBtn.click();
-            await page.waitForTimeout(2000);
-        }
-
-        // Check if we are on Select Org page
-        const selectOrgHeader = page.getByText('Select Organization');
-        if (await selectOrgHeader.isVisible({ timeout: 5000 }).catch(() => false)) {
-            const createBtn = page.getByRole('button', { name: 'Create New Organization' });
-            if (await createBtn.isVisible()) {
-                await createBtn.click();
-                await page.getByPlaceholder('Organization Name').fill('Stress Test Org');
-                await page.getByRole('button', { name: 'Create', exact: true }).click();
-                // Wait for redirect
-                await page.waitForTimeout(2000);
-            }
-        }
-
-        // Wait for dashboard - handle different possible states
-        const dashboardVisible = await page.getByText(/(STUDIO HQ|Agent Workspace)/).isVisible({ timeout: 10000 }).catch(() => false);
-        if (!dashboardVisible) {
-            // Try to navigate to dashboard if we're somewhere else
-            const dashboardBtn = page.getByRole('button', { name: /Dashboard/i });
-            if (await dashboardBtn.isVisible().catch(() => false)) {
-                await dashboardBtn.click();
-            }
-        }
+        // 3. Wait for Dashboard
         await expect(page.getByText(/(STUDIO HQ|Agent Workspace)/)).toBeVisible({ timeout: 30000 });
 
 
@@ -76,9 +54,20 @@ test.describe('Stress Testing', () => {
             // 2. Create Unique Org to bypass rule issues
             const auth = (window as any).auth;
             const db = (window as any).db;
-            const { doc, setDoc } = (window as any).firestore;
+            const { doc, setDoc } = (window as any).firebaseInternals || {};
 
-            if (!auth?.currentUser || !db || !setDoc) throw new Error("Firebase internals missing");
+            console.log("[App] DEBUG: Hostname:", window.location.hostname);
+
+            if (!auth.currentUser) {
+                console.log("[App] Auth not ready, waiting...");
+                await auth.authStateReady();
+            }
+
+            console.log("[App] DEBUG: auth.currentUser:", auth?.currentUser ? auth.currentUser.uid : 'NULL');
+
+            if (!auth?.currentUser) throw new Error("Firebase Auth: Current User Missing");
+            if (!db) throw new Error("Firebase DB Missing");
+            if (!setDoc) throw new Error("Firebase setDoc Missing");
 
             const uid = auth.currentUser.uid;
             const orgId = 'stress-' + Math.random().toString(36).slice(2, 9);

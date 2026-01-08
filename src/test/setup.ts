@@ -75,7 +75,7 @@ vi.mock('firebase/auth', () => ({
 
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => ({
-    initializeFirestore: vi.fn(),
+    initializeFirestore: vi.fn(() => ({})),
     getFirestore: vi.fn(() => ({})),
     collection: vi.fn(() => ({ id: 'mock-coll-id' })),
     doc: vi.fn(() => ({ id: crypto.randomUUID() })),

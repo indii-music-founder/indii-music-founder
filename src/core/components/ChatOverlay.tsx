@@ -272,6 +272,38 @@ export default function ChatOverlay() {
     const { isVoiceEnabled, setVoiceEnabled } = useVoice();
     const lastSpokenIdRef = useRef<string | null>(null);
 
+    // Desktop: Bottom overlay state
+    const [showHistory, setShowHistory] = useState(false);
+    const [showInvite, setShowInvite] = useState(false);
+    const activeSessionId = useStore(state => state.activeSessionId);
+    const sessions = useStore(state => state.sessions);
+    const createSession = useStore(state => state.createSession);
+    const currentSession = activeSessionId ? sessions[activeSessionId] : null;
+
+    // Load sessions on mount if open
+    const loadSessions = useStore(state => state.loadSessions);
+    useEffect(() => {
+        if (isAgentOpen) {
+            loadSessions();
+        }
+    }, [isAgentOpen, loadSessions]);
+
+    // Lazy load UI components
+    const [ConversationHistoryList, setConversationHistoryList] = useState<any>(null);
+    const [AgentSelector, setAgentSelector] = useState<any>(null);
+
+    useEffect(() => {
+        if (showHistory && !ConversationHistoryList) {
+            import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
+        }
+    }, [showHistory]);
+
+    useEffect(() => {
+        if (showInvite && !AgentSelector) {
+            import('./AgentSelector').then(m => setAgentSelector(() => m.AgentSelector));
+        }
+    }, [showInvite]);
+
     // Get the first available reference image to use as avatar
     const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;
 
@@ -367,39 +399,6 @@ export default function ChatOverlay() {
             </AnimatePresence>
         );
     }
-
-    // Desktop: Bottom overlay
-    const [showHistory, setShowHistory] = useState(false);
-    const [showInvite, setShowInvite] = useState(false);
-    const activeSessionId = useStore(state => state.activeSessionId);
-    const sessions = useStore(state => state.sessions);
-    const createSession = useStore(state => state.createSession);
-    const currentSession = activeSessionId ? sessions[activeSessionId] : null;
-
-    // Load sessions on mount if open
-    const loadSessions = useStore(state => state.loadSessions);
-    useEffect(() => {
-        if (isAgentOpen) {
-            loadSessions();
-        }
-    }, [isAgentOpen, loadSessions]);
-
-    // Lazy load UI components
-    const [ConversationHistoryList, setConversationHistoryList] = useState<any>(null);
-    const [AgentSelector, setAgentSelector] = useState<any>(null);
-
-    useEffect(() => {
-        if (showHistory && !ConversationHistoryList) {
-            import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
-        }
-    }, [showHistory]);
-
-    useEffect(() => {
-        if (showInvite && !AgentSelector) {
-            import('./AgentSelector').then(m => setAgentSelector(() => m.AgentSelector));
-        }
-    }, [showInvite]);
-
 
     return (
         <AnimatePresence>

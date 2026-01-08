@@ -4,9 +4,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before imports
+const mockGetState = vi.fn();
+
 vi.mock('@/core/store', () => ({
     useStore: {
-        getState: vi.fn()
+        getState: () => mockGetState()
     }
 }));
 
@@ -30,7 +32,7 @@ describe('ProjectTools', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
-        (useStore.getState as any).mockReturnValue(mockStoreState);
+        mockGetState.mockReturnValue(mockStoreState);
     });
 
     describe('create_project', () => {
@@ -74,7 +76,7 @@ describe('ProjectTools', () => {
         });
 
         it('should handle no projects', async () => {
-            (useStore.getState as any).mockReturnValue({
+            mockGetState.mockReturnValue({
                 ...mockStoreState,
                 projects: [],
                 loadProjects: vi.fn().mockResolvedValue(undefined)
