@@ -20,6 +20,8 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const [platform, setPlatform] = useState('Instagram');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+
+
     // Refs for focus management
     const titleRef = useRef<HTMLInputElement>(null);
     const startDateRef = useRef<HTMLInputElement>(null);
@@ -83,7 +85,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                 description,
                 startDate,
                 endDate,
-                durationDays: 30,
+                durationDays: 30, // Default for now
                 status: CampaignStatus.PENDING,
                 posts: []
             });
@@ -91,6 +93,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
             onSave(id);
             onClose();
         } catch (error) {
+            // console.error(error);
             toast.error('Failed to create campaign');
         } finally {
             setIsLoading(false);
@@ -236,7 +239,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             </select>
                             <div className="absolute right-3 top-3 pointer-events-none text-gray-500">
                                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </div>
                         </div>

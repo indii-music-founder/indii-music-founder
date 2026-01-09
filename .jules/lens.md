@@ -1,8 +1,0 @@
-# Lens's Journal - Critical Learnings
-
-## 2024-05-22 - [Veo 3.1 Integration]
-**Learning:** Veo 3.1 generation must be validated via metadata contract (`duration_seconds`, `fps`, `mime_type`) and not just URL presence.
-**Action:** Enforce strict metadata checks in all video generation pipelines to catch codec failures early.
-## 2025-05-20 - [Veo 3.1 Long-Form Segmentation]
-**Learning:** Veo 3.1's long-form generation relies on a fixed `BLOCK_DURATION` of 8 seconds. The frontend (`VideoGenerationService`) pre-calculates the number of blocks and appends `(Part X/Y)` to prompts, while the backend (`long_form_video.ts`) handles the daisy-chaining by extracting the last frame of segment N to use as the `startImage` for segment N+1.
-**Action:** When debugging continuity issues, verify that `totalDuration` matches the expected block count (Duration / 8) and that `startImage` is correctly passed for the first segment. Ensure prompt suffixes `(Part X/Y)` are present to guide the model context.
