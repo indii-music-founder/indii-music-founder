@@ -24,6 +24,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     } = useStore();
     // const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
     const toast = useToast();
+    const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
 
     useEffect(() => {
         if (initialMode) {
@@ -101,12 +102,31 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         <ModuleErrorBoundary moduleName="Creative Director">
             <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
                 <CreativeNavbar />
-                <div className="flex-1 flex overflow-hidden relative">
-                    {/* Whisk Sidebar */}
-                    <WhiskSidebar />
 
-                    {/* Main Workspace */}
-                    <div className="flex-1 flex flex-col relative min-w-0 bg-[#0f0f0f]">
+                {/* Mobile Tab Switcher */}
+                <div className="md:hidden flex border-b border-white/10 bg-[#0f0f0f] flex-shrink-0">
+                    <button
+                        onClick={() => setActiveMobileTab('controls')}
+                        className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileTab === 'controls' ? 'text-purple-400 border-b-2 border-purple-400 bg-white/5' : 'text-gray-500'}`}
+                    >
+                        Controls
+                    </button>
+                    <button
+                        onClick={() => setActiveMobileTab('studio')}
+                        className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileTab === 'studio' ? 'text-purple-400 border-b-2 border-purple-400 bg-white/5' : 'text-gray-500'}`}
+                    >
+                        Studio
+                    </button>
+                </div>
+
+                <div className="flex-1 flex overflow-hidden relative">
+                    {/* Whisk Sidebar - Controls Tab on Mobile */}
+                    <div className={`${activeMobileTab === 'controls' ? 'flex w-full' : 'hidden'} md:flex md:w-auto h-full z-10`}>
+                        <WhiskSidebar />
+                    </div>
+
+                    {/* Main Workspace - Studio Tab on Mobile */}
+                    <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>
                         {viewMode === 'gallery' && <CreativeGallery />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'showroom' && <Showroom />}
