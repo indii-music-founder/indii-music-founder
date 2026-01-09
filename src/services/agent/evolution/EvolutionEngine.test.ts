@@ -119,4 +119,50 @@ describe('EvolutionEngine (Helix Guardrails)', () => {
     expect(nextGen[1].id).not.toBe('p1'); // New offspring
     expect(mockMutationFn).toHaveBeenCalledTimes(2); // One fail, one success
   });
+
+  it('Full Evolutionary Loop: Should evaluate fitness, select, breed, and mutate', async () => {
+    // Setup Micro-Universe (3 agents) with NO fitness scores
+    const population: AgentGene[] = [
+      { ...mockGene, id: 'a1', name: 'A1', fitness: undefined },
+      { ...mockGene, id: 'a2', name: 'A2', fitness: undefined },
+      { ...mockGene, id: 'a3', name: 'A3', fitness: undefined }
+    ];
+
+    // Mock Fitness Function to return distinct values based on ID
+    mockFitnessFn.mockImplementation(async (gene) => {
+      if (gene.id === 'a1') return 0.1;
+      if (gene.id === 'a2') return 0.9;
+      if (gene.id === 'a3') return 0.5;
+      return 0;
+    });
+
+    // Force Mutation to happen for the test
+    const testConfig = { ...config, mutationRate: 1.0, eliteCount: 1, populationSize: 2 };
+    engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const nextGen = await engine.evolve(population);
+
+    // 1. Verify Fitness Evaluation happened
+    expect(mockFitnessFn).toHaveBeenCalledTimes(3); // Once for each initial agent
+    expect(mockFitnessFn).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
+
+    // 2. Verify Elitism based on the calculated fitness
+    // A2 should be the elite (0.9)
+    expect(nextGen[0].id).toBe('a2');
+    expect(nextGen[0].fitness).toBe(0.9);
+
+    // 3. Verify Offspring creation (Selection + Crossover + Mutation)
+    const offspring = nextGen[1];
+    expect(offspring.generation).toBe(1);
+    expect(offspring.fitness).toBeUndefined(); // Offspring should be unscored
+    expect(offspring.systemPrompt).toContain('(mutated)');
+
+    // 4. Verify Selection used the scored population
+    expect(mockCrossoverFn).toHaveBeenCalled();
+    const crossoverCall = mockCrossoverFn.mock.calls[0];
+    const p1 = crossoverCall[0] as AgentGene;
+    const p2 = crossoverCall[1] as AgentGene;
+    expect(p1.fitness).toBeDefined();
+    expect(p2.fitness).toBeDefined();
+  });
 });
