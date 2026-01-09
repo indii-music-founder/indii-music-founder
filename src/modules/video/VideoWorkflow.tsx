@@ -324,19 +324,7 @@ export default function VideoWorkflow() {
                     <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
                             <div className="h-full flex flex-col">
-                                {/* Editor Header */}
-                                <div className="h-10 bg-black border-b border-white/10 flex items-center px-4 justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setViewMode('director')}
-                                            className="text-gray-400 hover:text-white flex items-center gap-1 text-xs"
-                                        >
-                                            <Layout size={14} /> Back to Director
-                                        </button>
-                                    </div>
-                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">The Cutting Room</span>
-                                    <div className="w-20"></div>
-                                </div>
+                                {/* Editor Header Removed - using Global Navbar */}
                                 <div className="flex-1 relative">
                                     <VideoEditor initialVideo={activeVideo || undefined} />
                                 </div>

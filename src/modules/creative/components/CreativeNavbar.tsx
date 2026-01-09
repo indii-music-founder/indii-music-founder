@@ -1,146 +1,113 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
-import { Sparkles, ChevronDown, Image as ImageIcon, Video, MonitorPlay } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare, Palette, PanelLeftClose, PanelRightClose, Maximize2 } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
-// import StudioNavControls from './StudioNavControls'; // Removed
 import ImageSubMenu from './ImageSubMenu';
 import DaisyChainControls from './DaisyChainControls';
-import { StudioToolbar } from '@/components/studio/StudioToolbar';
-
 import { useToast } from '@/core/context/ToastContext';
-// import { PromptInput, PromptInputTextarea } from '@/components/ui/prompt-input'; // Removed
-
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
-import AI_Input_Search from '@/components/kokonutui/ai-input-search';
 
 export default function CreativeNavbar() {
-    const { setVideoInput, prompt, setPrompt, generationMode, setGenerationMode } = useStore();
+    const { setVideoInput, prompt, setPrompt, generationMode, viewMode, setViewMode } = useStore();
     const toast = useToast();
-    // const [prompt, setPrompt] = useState(''); // Removed local state
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
-    const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     return (
-        <div className="flex flex-col z-20 relative">
-            <StudioToolbar
-                className="bg-[#1a1a1a]"
-                left={
-                    <div className="flex items-center gap-4">
-                        {/* Branding */}
-                        <h1 className="text-sm font-bold text-yellow-500 tracking-widest uppercase whitespace-nowrap">indiiOS</h1>
-                        <div className="h-4 w-px bg-gray-700"></div>
-                        <span className="text-[10px] text-gray-500 font-mono" id="debug-uid">
-                            {'Superuser'}
-                        </span>
+        <div className="flex flex-col z-20 relative bg-[#0a0a0a] border-b border-white/5 select-none">
+            {/* Single Compact Header Row */}
+            <div className="flex items-center justify-between px-4 py-2 h-14">
+                {/* Left: Branding & Title */}
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-gray-400">
+                        <Palette size={16} className="text-purple-400" />
+                        <h1 className="text-sm font-bold text-gray-200 tracking-tight">Creative Director</h1>
+                    </div>
+                    {/* Divider */}
+                    <div className="h-4 w-px bg-white/10 mx-1"></div>
 
-                        {/* Static Label instead of Dropdown */}
-                        <div className="flex items-center gap-2 bg-[#0f0f0f] border border-gray-700 text-xs rounded px-3 py-1.5 text-gray-300">
-                            <ImageIcon size={12} /> <span>Creative Studio</span>
-                        </div>
-
-                        {/* Mobile: Agent Toggle in top row */}
+                    {/* View Mode Switcher (Compact Segmented Control) */}
+                    <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
-                            onClick={() => useStore.getState().toggleAgentWindow()}
-                            className="md:hidden bg-purple-900/50 hover:bg-purple-800 text-purple-200 text-xs py-1.5 px-3 rounded border border-purple-700 transition-all flex items-center gap-2"
+                            onClick={() => setViewMode('gallery')}
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'gallery' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                }`}
                         >
-                            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            Agent
+                            Gallery
+                        </button>
+                        <button
+                            onClick={() => setViewMode('canvas')}
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'canvas' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                        >
+                            Canvas
+                        </button>
+                        <button
+                            onClick={() => setViewMode('showroom')}
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'showroom' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                        >
+                            Showroom
                         </button>
                     </div>
-                }
-                right={
-                    <div className="hidden md:flex gap-2">
-                        <button
-                            onClick={async () => {
-                                const granted = await ScreenControl.requestPermission();
-                                if (granted) {
-                                    ScreenControl.openProjectorWindow(window.location.href);
-                                } else {
-                                    alert("Screen Control API not supported or permission denied.");
-                                }
-                            }}
-                            className="bg-blue-900/50 hover:bg-blue-800 text-blue-200 text-xs py-1.5 px-3 rounded border border-blue-700 transition-all flex items-center gap-2"
-                        >
-                            <MonitorPlay size={12} />
-                            Projector
-                        </button>
-                        <button
-                            onClick={() => useStore.getState().toggleAgentWindow()}
-                            className="bg-purple-900/50 hover:bg-purple-800 text-purple-200 text-xs py-1.5 px-3 rounded border border-purple-700 transition-all flex items-center gap-2"
-                        >
-                            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            indii
-                        </button>
-                    </div>
-                }
-            >
-                {/* Center is now empty for minimalism */}
-            </StudioToolbar>
+                </div>
 
-            {/* Sub-Menu Bar */}
-            <div className="bg-[#111] border-b border-gray-800 py-1 px-4">
-                {generationMode === 'image' ? (
-                    <ImageSubMenu
-                        onShowBrandAssets={() => setShowBrandAssets(!showBrandAssets)}
-                        showBrandAssets={showBrandAssets}
-                        onTogglePromptBuilder={() => setShowPromptBuilder(!showPromptBuilder)}
-                        showPromptBuilder={showPromptBuilder}
-                    />
-                ) : (
-                    <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
-                        <DaisyChainControls
-                            onOpenFrameModal={(target) => {
-                                setFrameModalTarget(target);
-                                setShowFrameModal(true);
-                            }}
-                        />
-
-                        <div className="h-4 w-px bg-gray-700 flex-shrink-0"></div>
-
-                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors flex items-center gap-1 hover:bg-gray-800 rounded">
-                            Motion Brush
-                        </button>
-                        <button className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors flex items-center gap-1 hover:bg-gray-800 rounded">
-                            Director's Cut
-                        </button>
-
-                        {/* Brand Palette Section */}
-                        <div className="h-4 w-px bg-gray-700 mx-2 flex-shrink-0"></div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Right: Context Controls & Utilities */}
+                <div className="flex items-center gap-3">
+                    {generationMode === 'image' ? (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowPromptBuilder(!showPromptBuilder)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded border transition-all text-[10px] font-medium uppercase tracking-wide
+                                    ${showPromptBuilder
+                                        ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                                        : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}`}
+                            >
+                                <MessageSquare size={12} /> Builder
+                            </button>
                             <button
                                 onClick={() => setShowBrandAssets(!showBrandAssets)}
-                                data-testid="brand-assets-toggle"
-                                className={`text-[10px] uppercase font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${showBrandAssets ? 'bg-yellow-900/30 text-yellow-500' : 'text-gray-500 hover:text-gray-300'}`}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded border transition-all text-[10px] font-medium uppercase tracking-wide
+                                    ${showBrandAssets
+                                        ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300'
+                                        : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}`}
                             >
-                                <Sparkles size={10} className={showBrandAssets ? "text-yellow-500" : "text-gray-500"} /> Brand
+                                <Sparkles size={12} /> Brand
                             </button>
-                            {useStore.getState().userProfile.brandKit?.colors?.length > 0 && !showBrandAssets && (
-                                <div className="flex gap-1">
-                                    {useStore.getState().userProfile.brandKit.colors.map((color, i) => (
-                                        <div
-                                            key={i}
-                                            className="w-4 h-4 rounded-full border border-gray-600 cursor-pointer hover:scale-110 transition-transform relative group"
-                                            style={{ backgroundColor: color }}
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(color);
-                                                toast.success(`Copied ${color}`);
-                                            }}
-                                        >
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                                                {color}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <DaisyChainControls
+                                onOpenFrameModal={(target) => {
+                                    setFrameModalTarget(target);
+                                    setShowFrameModal(true);
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    <div className="h-4 w-px bg-white/10 mx-1"></div>
+
+                    {/* Projector */}
+                    <button
+                        onClick={async () => {
+                            const granted = await ScreenControl.requestPermission();
+                            if (granted) {
+                                ScreenControl.openProjectorWindow(window.location.href);
+                            } else {
+                                alert("Screen Control API not supported or permission denied.");
+                            }
+                        }}
+                        title="Open Projector"
+                        className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors"
+                    >
+                        <MonitorPlay size={14} />
+                    </button>
+                </div>
             </div>
 
             {/* Prompt Builder Drawer */}
