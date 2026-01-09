@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { CredentialSchema } from '../utils/validation';
+import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
 interface Credentials {
@@ -11,8 +12,9 @@ interface Credentials {
 }
 
 export function registerCredentialHandlers() {
-    ipcMain.handle('credentials:save', async (_event, id: string, creds: Credentials) => {
+    ipcMain.handle('credentials:save', async (event, id: string, creds: Credentials) => {
         try {
+            validateSender(event);
             // Validate
             CredentialSchema.parse({ id, creds });
 
@@ -28,8 +30,9 @@ export function registerCredentialHandlers() {
         }
     });
 
-    ipcMain.handle('credentials:get', async (_event, id: string) => {
+    ipcMain.handle('credentials:get', async (event, id: string) => {
         try {
+            validateSender(event);
             if (typeof id !== 'string' || !id) throw new Error("Invalid ID");
 
             const { credentialService } = await import('../services/CredentialService');
@@ -40,8 +43,9 @@ export function registerCredentialHandlers() {
         }
     });
 
-    ipcMain.handle('credentials:delete', async (_event, id: string) => {
+    ipcMain.handle('credentials:delete', async (event, id: string) => {
         try {
+            validateSender(event);
             if (typeof id !== 'string' || !id) throw new Error("Invalid ID");
 
             const { credentialService } = await import('../services/CredentialService');
