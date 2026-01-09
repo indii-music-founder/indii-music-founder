@@ -50,8 +50,9 @@ const CollapsibleJson = ({ data }: { data: any }) => {
 
 // --- Components ---
 
-const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
+const ThoughtChain = memo(({ thoughts, messageId }: { thoughts: AgentThought[]; messageId: string }) => {
     const [isOpen, setIsOpen] = useState(true);
+    const contentId = `thought-chain-${messageId}`;
 
     if (!thoughts || thoughts.length === 0) return null;
 
@@ -61,7 +62,7 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
-                aria-controls="thought-chain-content"
+                aria-controls={contentId}
                 className="group flex items-center gap-3 mb-3 h-8 px-3 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all"
             >
                 <div className={`w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)] ${isOpen ? 'animate-pulse' : ''}`} />
@@ -76,10 +77,11 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        id="thought-chain-content"
                         initial={{ height: 0, opacity: 0, x: -5 }}
                         animate={{ height: 'auto', opacity: 1, x: 0 }}
                         exit={{ height: 0, opacity: 0, x: -5 }}
+                        id={contentId}
+                        role="region"
                         className="space-y-3 pl-6 overflow-hidden"
                     >
                         {thoughts.map(thought => (
@@ -132,23 +134,36 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                     : 'bg-gradient-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
                 }`}>
 
-            {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} />}
+            {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} />}
 
             <div className="prose prose-invert prose-sm max-w-none break-words leading-[1.6] font-medium tracking-tight">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                         img: ImageRenderer,
+                        pre: ({ children, ...props }: any) => {
+                            if (React.isValidElement(children)) {
+                                const { className, children: codeChildren } = children.props as any;
+                                const content = String(codeChildren || '');
+                                const match = /language-(\w+)/.exec(className || '');
+                                const isJson = match && match[1] === 'json';
+
+                                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) {
+                                    return <>{children}</>;
+                                }
+
+                                if (isJson) {
+                                    try {
+                                        JSON.parse(content.replace(/\n$/, ''));
+                                        return <>{children}</>;
+                                    } catch (e) { }
+                                }
+                            }
+                            return <pre {...props}>{children}</pre>;
+                        },
                         table: ({ node, ...props }: any) => (
                             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
                                 <table {...props} className="min-w-full" />
-                            </div>
-                        ),
-                        pre: ({ node, children, ...props }: any) => (
-                            <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/40">
-                                <pre {...props} className="p-3 m-0 min-w-full">
-                                    {children}
-                                </pre>
                             </div>
                         ),
                         code({ node, inline, className, children, ...props }: any) {
@@ -486,7 +501,6 @@ export default function ChatOverlay() {
                                         : 'bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                     title="Invite"
-                                    aria-label="Invite"
                                 >
                                     <UserPlus size={18} strokeWidth={1.5} />
                                 </button>
@@ -498,7 +512,6 @@ export default function ChatOverlay() {
                                         : 'bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                     title="History"
-                                    aria-label="History"
                                 >
                                     <HistoryIcon size={18} strokeWidth={1.5} />
                                 </button>
@@ -507,7 +520,6 @@ export default function ChatOverlay() {
                                     onClick={() => createSession()}
                                     className="p-2 rounded-xl transition-all duration-300 border bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white"
                                     title="New"
-                                    aria-label="New Session"
                                 >
                                     <Plus size={18} strokeWidth={1.5} />
                                 </button>
@@ -520,8 +532,6 @@ export default function ChatOverlay() {
                                         ? 'text-white shadow-[0_0_15px_rgba(147,51,234,0.4)] border border-purple-500/50'
                                         : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                                         }`}
-                                    title={isVoiceEnabled ? 'Mute Text-to-Speech' : 'Unmute Text-to-Speech'}
-                                    aria-label={isVoiceEnabled ? 'Mute Text-to-Speech' : 'Unmute Text-to-Speech'}
                                 >
                                     <div className={`absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 transition-opacity duration-300 ${isVoiceEnabled ? 'opacity-100' : 'opacity-0'}`}></div>
                                     <div className="relative">
@@ -533,7 +543,6 @@ export default function ChatOverlay() {
                                     onClick={() => useStore.getState().toggleAgentWindow()}
                                     className="p-2 rounded-xl transition-all duration-300 border border-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
                                     title="Close"
-                                    aria-label="Close"
                                 >
                                     <X size={18} strokeWidth={1.5} />
                                 </button>
