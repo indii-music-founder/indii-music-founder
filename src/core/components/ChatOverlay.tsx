@@ -142,12 +142,24 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                     components={{
                         img: ImageRenderer,
                         pre: ({ children, ...props }: any) => {
-                            // Only wrap in <pre> if the child is a standard <code> element
-                            // Custom renderers (VisualScript, etc) return block elements like <div>
-                            if (React.isValidElement(children) && children.type === 'code') {
-                                return <pre {...props}>{children}</pre>;
+                            if (React.isValidElement(children)) {
+                                const { className, children: codeChildren } = children.props as any;
+                                const content = String(codeChildren || '');
+                                const match = /language-(\w+)/.exec(className || '');
+                                const isJson = match && match[1] === 'json';
+
+                                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) {
+                                    return <>{children}</>;
+                                }
+
+                                if (isJson) {
+                                    try {
+                                        JSON.parse(content.replace(/\n$/, ''));
+                                        return <>{children}</>;
+                                    } catch (e) { }
+                                }
                             }
-                            return <>{children}</>;
+                            return <pre {...props}>{children}</pre>;
                         },
                         table: ({ node, ...props }: any) => (
                             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
