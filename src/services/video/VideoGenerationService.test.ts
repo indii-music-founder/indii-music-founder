@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
     doc: vi.fn(),
     auth: { currentUser: { uid: 'test-user' } },
     subscriptionService: {
-        canPerformAction: vi.fn()
+        canPerformAction: vi.fn(),
+        getCurrentSubscription: vi.fn()
     },
     useStore: {
         getState: vi.fn(() => ({ currentOrganizationId: 'org-123' }))
@@ -73,6 +74,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
         service = new VideoGenerationService();
         // Default happy path for quota
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
+        mocks.subscriptionService.getCurrentSubscription.mockResolvedValue({ tier: 'pro' });
         // Default happy path for function trigger
         mocks.httpsCallable.mockReturnValue(async () => ({ data: { jobId: 'job-123' } }));
     });
@@ -165,6 +167,98 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
 
              await expect(service.waitForJob('job-123'))
                  .rejects.toThrow('Safety violation: Content blocked by safety filters.');
+        });
+    });
+
+    describe('generateLongFormVideo (Veo 3.1 Streaming)', () => {
+        it('should enforce duration-based quota for long-form video', async () => {
+            mocks.subscriptionService.canPerformAction.mockResolvedValue({
+                allowed: false,
+                reason: 'Duration limit exceeded',
+                currentUsage: { limit: 10 }
+            });
+
+            await expect(service.generateLongFormVideo({
+                prompt: 'Long video',
+                totalDuration: 60
+            })).rejects.toThrow('Duration limit exceeded');
+
+            expect(mocks.subscriptionService.canPerformAction).toHaveBeenCalledWith('generateVideo', 60);
+        });
+
+        it('should segment prompt into multiple blocks for long duration (Pro scenario)', async () => {
+            // Mock the internal httpsCallable return
+            const triggerMock = vi.fn().mockResolvedValue({ data: { success: true } });
+            // The service calls 'triggerLongFormVideoJob'
+            mocks.httpsCallable.mockImplementation((functionsInstance, name) => {
+                if (name === 'triggerLongFormVideoJob') {
+                    return triggerMock;
+                }
+                return vi.fn();
+            });
+
+            // 20s duration with 8s block size = 3 blocks (8, 8, 4)
+            await service.generateLongFormVideo({
+                prompt: 'Epic space battle',
+                totalDuration: 20
+            });
+
+            expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
+                jobId: 'long_mock-uuid',
+                totalDuration: 20,
+                prompts: expect.arrayContaining([
+                    expect.stringContaining('Epic space battle (Part 1/3)'),
+                    expect.stringContaining('Epic space battle (Part 2/3)'),
+                    expect.stringContaining('Epic space battle (Part 3/3)')
+                ])
+            }));
+        });
+
+        it('should generate single block for short duration (Flash scenario)', async () => {
+            const triggerMock = vi.fn().mockResolvedValue({ data: { success: true } });
+            mocks.httpsCallable.mockImplementation((functionsInstance, name) => {
+                if (name === 'triggerLongFormVideoJob') {
+                    return triggerMock;
+                }
+                return vi.fn();
+            });
+
+            // 5s duration with 8s block size = 1 block
+            await service.generateLongFormVideo({
+                prompt: 'Quick reaction',
+                totalDuration: 5
+            });
+
+            expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
+                jobId: 'long_mock-uuid',
+                prompts: [
+                    expect.stringContaining('Quick reaction (Part 1/1)')
+                ]
+            }));
+        });
+
+        it('should trigger backend function with correct payload including startImage', async () => {
+            const triggerMock = vi.fn().mockResolvedValue({ data: { success: true } });
+            mocks.httpsCallable.mockImplementation((functionsInstance, name) => {
+                if (name === 'triggerLongFormVideoJob') {
+                    return triggerMock;
+                }
+                return vi.fn();
+            });
+
+            const startImage = 'data:image/png;base64,abc';
+            await service.generateLongFormVideo({
+                prompt: 'continuation',
+                totalDuration: 10,
+                firstFrame: startImage,
+                aspectRatio: '9:16'
+            });
+
+            expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
+                startImage: startImage,
+                aspectRatio: '9:16',
+                prompts: expect.any(Array)
+            }));
         });
     });
 });
