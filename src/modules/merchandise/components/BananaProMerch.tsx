@@ -72,7 +72,13 @@ export const BananaProMerch: React.FC = () => {
                     {products.map((product, i) => (
                         <div key={product.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-24' : ''}`}>
                             <div className="aspect-[3/4] bg-secondary/20 relative overflow-hidden mb-8 border border-border/10 group-hover:border-primary/30 transition-all duration-700">
-                                <img src={product.image} alt={product.title} className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-[1500ms]" />
+                                {/* ⚡ Bolt Optimization: Lazy load below-fold images to save bandwidth */}
+                                <img
+                                    src={product.image}
+                                    alt={product.title}
+                                    className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-[1500ms]"
+                                    loading="lazy"
+                                />
 
                                 <div className="absolute top-0 right-0 p-8">
                                     <div className="flex flex-col items-end">
