@@ -3,6 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { DistributionStageReleaseSchema } from '../utils/validation';
+import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
 interface StagedFile {
@@ -12,8 +13,9 @@ interface StagedFile {
 }
 
 export const setupDistributionHandlers = () => {
-    ipcMain.handle('distribution:stage-release', async (_, releaseId: string, files: StagedFile[]) => {
+    ipcMain.handle('distribution:stage-release', async (event, releaseId: string, files: StagedFile[]) => {
         try {
+            validateSender(event);
             // Validate inputs
             const validated = DistributionStageReleaseSchema.parse({ releaseId, files });
 

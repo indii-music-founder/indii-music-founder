@@ -288,7 +288,13 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
 
                     {post.mediaUrls && post.mediaUrls.length > 0 && (
                         <div className="mt-3 rounded-xl overflow-hidden border border-gray-800">
-                            <img src={post.mediaUrls[0]} alt="Post content" className="w-full h-auto max-h-[400px] object-cover" />
+                            {/* ⚡ Bolt Optimization: Lazy load feed images to improve performance on long lists */}
+                            <img
+                                src={post.mediaUrls[0]}
+                                alt="Post content"
+                                className="w-full h-auto max-h-[400px] object-cover"
+                                loading="lazy"
+                            />
                         </div>
                     )}
 

@@ -10,6 +10,7 @@ import { registerSFTPHandlers } from './handlers/sftp';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { configureSecurity } from './security';
 import { AgentActionSchema, AgentNavigateSchema } from './utils/validation';
+import { validateSender } from './utils/ipc-security';
 import { z } from 'zod';
 
 // Configure logging
@@ -25,9 +26,10 @@ log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)
 function setupIpcHandlers() {
     // Test Browser Agent (Development ONLY)
     if (!app.isPackaged) {
-        ipcMain.handle('test:browser-agent', async (_event: any, query?: string) => {
+        ipcMain.handle('test:browser-agent', async (event: any, query?: string) => {
             const { browserAgentService } = await import('./services/BrowserAgentService');
             try {
+                validateSender(event);
                 // Input validation (query is optional but if present should be safe)
                 if (query && typeof query !== 'string') {
                     throw new Error('Invalid query format');
@@ -52,8 +54,9 @@ function setupIpcHandlers() {
         });
     }
 
-    ipcMain.handle('agent:navigate-and-extract', async (_event: any, url: string) => {
+    ipcMain.handle('agent:navigate-and-extract', async (event: any, url: string) => {
         try {
+            validateSender(event);
             const validated = AgentNavigateSchema.parse({ url });
             const { browserAgentService } = await import('./services/BrowserAgentService');
 
@@ -74,8 +77,9 @@ function setupIpcHandlers() {
         }
     });
 
-    ipcMain.handle('agent:perform-action', async (_event: any, action: string, selector: string, text?: string) => {
+    ipcMain.handle('agent:perform-action', async (event: any, action: string, selector: string, text?: string) => {
         try {
+            validateSender(event);
             // Validate inputs against schema (allows text to be optional)
             // Casting to specific enum type for the service call if needed, but schema guarantees 'action' is one of the allowed strings
             const validated = AgentActionSchema.parse({ action, selector, text });
@@ -91,9 +95,10 @@ function setupIpcHandlers() {
         }
     });
 
-    ipcMain.handle('agent:capture-state', async () => {
+    ipcMain.handle('agent:capture-state', async (event: any) => {
         const { browserAgentService } = await import('./services/BrowserAgentService');
         try {
+            validateSender(event);
             const snapshot = await browserAgentService.captureSnapshot();
             return { success: true, ...snapshot };
         } catch (error) {
