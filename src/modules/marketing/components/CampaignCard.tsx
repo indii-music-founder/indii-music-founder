@@ -131,4 +131,38 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
     );
 };
 
-export default React.memo(CampaignCard);
+// ⚡ Bolt Optimization: Custom comparison to prevent re-renders when parent regenerates
+// object references (e.g., from Firestore snapshot mapping) but the data hasn't changed.
+// NOTE: If you add new rendered fields to CampaignCard, you MUST update this comparator.
+function arePropsEqual(prevProps: CampaignCardProps, nextProps: CampaignCardProps) {
+    const prev = prevProps.campaign;
+    const next = nextProps.campaign;
+
+    // 1. Check strict reference equality first (fastest)
+    if (prev === next && prevProps.onSelect === nextProps.onSelect) {
+        return true;
+    }
+
+    // 2. Check function prop stability
+    if (prevProps.onSelect !== nextProps.onSelect) return false;
+
+    // 3. Check primitive fields displayed in the card
+    if (prev.id !== next.id) return false;
+    if (prev.status !== next.status) return false;
+    if (prev.title !== next.title) return false;
+    if (prev.description !== next.description) return false;
+    if (prev.startDate !== next.startDate) return false; // Assumes primitive string/number (not Date object)
+    if (prev.durationDays !== next.durationDays) return false;
+
+    // 4. Check posts length
+    if (prev.posts.length !== next.posts.length) return false;
+
+    // 5. Check completed posts count (determines progress bar)
+    // Use reduce instead of filter to avoid array allocation
+    const prevCompleted = prev.posts.reduce((count, p) => p.status === CampaignStatus.DONE ? count + 1 : count, 0);
+    const nextCompleted = next.posts.reduce((count, p) => p.status === CampaignStatus.DONE ? count + 1 : count, 0);
+
+    return prevCompleted === nextCompleted;
+}
+
+export default React.memo(CampaignCard, arePropsEqual);
