@@ -141,6 +141,13 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                 <table {...props} className="min-w-full" />
                             </div>
                         ),
+                        pre: ({ node, children, ...props }: any) => (
+                            <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/40">
+                                <pre {...props} className="p-3 m-0 min-w-full">
+                                    {children}
+                                </pre>
+                            </div>
+                        ),
                         code({ node, inline, className, children, ...props }: any) {
                             const match = /language-(\w+)/.exec(className || '')
                             const isJson = match && match[1] === 'json';
