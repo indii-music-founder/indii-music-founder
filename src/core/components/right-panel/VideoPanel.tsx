@@ -14,7 +14,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     const [activeTab, setActiveTab] = useState('create');
     const [isGenerating, setIsGenerating] = useState(false);
     // Use global prompt state instead of local
-    const { addToHistory, currentProjectId, studioControls, setStudioControls, prompt } = useStore();
+    const { addToHistory, currentProjectId, studioControls, setStudioControls, prompt, videoInputs, setVideoInput, currentOrganizationId } = useStore();
     const toast = useToast();
 
     const handleRender = async () => {
@@ -46,7 +46,13 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                    duration: studioControls.duration
+                    duration: studioControls.duration,
+                    firstFrame: videoInputs.firstFrame?.url,
+                    lastFrame: videoInputs.lastFrame?.url,
+                    fps: studioControls.fps,
+                    cameraMovement: studioControls.cameraMovement,
+                    motionStrength: studioControls.motionStrength,
+                    orgId: currentOrganizationId
                 });
             }
 
@@ -109,7 +115,44 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
-                    {/* Video Prompt Input REMOVED - Controlled via Director Bar */}
+                    {/* Video Inputs (Start/End Frame) */}
+                    {(videoInputs.firstFrame || videoInputs.lastFrame) && (
+                        <div className="bg-blue-500/5 rounded-xl border border-blue-500/20 p-3 space-y-3">
+                            <label className="text-[10px] font-bold text-blue-400 tracking-wider flex items-center gap-2">
+                                <Video size={12} /> ACTIVE WORKFLOW INPUTS
+                            </label>
+                            <div className="flex gap-2">
+                                {videoInputs.firstFrame && (
+                                    <div className="flex-1 relative group bg-black/40 rounded-lg overflow-hidden border border-white/10 aspect-video">
+                                        <img src={videoInputs.firstFrame.url} alt="Start" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-[8px] font-bold text-white uppercase tracking-tighter">START FRAME</span>
+                                        </div>
+                                        <button
+                                            onClick={() => setVideoInput('firstFrame', null)}
+                                            className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white/60 hover:text-white"
+                                        >
+                                            <Plus size={10} className="rotate-45" />
+                                        </button>
+                                    </div>
+                                )}
+                                {videoInputs.lastFrame && (
+                                    <div className="flex-1 relative group bg-black/40 rounded-lg overflow-hidden border border-white/10 aspect-video">
+                                        <img src={videoInputs.lastFrame.url} alt="End" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-[8px] font-bold text-white uppercase tracking-tighter">END FRAME</span>
+                                        </div>
+                                        <button
+                                            onClick={() => setVideoInput('lastFrame', null)}
+                                            className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white/60 hover:text-white"
+                                        >
+                                            <Plus size={10} className="rotate-45" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Negative Prompt */}
                     <div className="space-y-3">

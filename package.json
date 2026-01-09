@@ -37,6 +37,7 @@
     "check:merge": "node scripts/check-merge-integrity.js"
   },
   "dependencies": {
+    "@emotion/is-prop-valid": "^1.4.0",
     "@genkit-ai/ai": "^1.26.0",
     "@genkit-ai/express": "^1.26.0",
     "@google/genai": "^1.30.0",
@@ -127,12 +128,14 @@
     "@types/ffprobe-static": "^2.0.3",
     "@types/fluent-ffmpeg": "^2.1.28",
     "@types/google.maps": "^3.58.1",
+    "@types/jest-axe": "^3.5.9",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/ssh2-sftp-client": "^9.0.6",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.22",
+    "axe-core": "^4.11.1",
     "canvas": "^3.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -150,6 +153,7 @@
     "googleapis": "^170.0.0",
     "idb": "^8.0.3",
     "javascript-obfuscator": "^4.2.2",
+    "jest-axe": "^10.0.0",
     "jsdom": "^26.1.0",
     "lightningcss": "^1.30.2",
     "playwright": "^1.57.0",
@@ -162,6 +166,7 @@
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.16",
+    "vitest-axe": "^0.1.0",
     "webpack-obfuscator": "^3.5.1",
     "ytdl-core": "^4.11.5"
   },
