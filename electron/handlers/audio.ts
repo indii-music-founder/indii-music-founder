@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import { apiService } from '../services/APIService';
 import { AudioAnalyzeSchema } from '../utils/validation';
+import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
 // Fix for packing in Electron (files in asar)
@@ -43,10 +44,11 @@ const calculateFileHash = (filePath: string): Promise<string> => {
 };
 
 export function registerAudioHandlers() {
-    ipcMain.handle('audio:analyze', async (_, filePath) => {
+    ipcMain.handle('audio:analyze', async (event, filePath) => {
         console.log('Audio analysis requested for:', filePath);
 
         try {
+            validateSender(event);
             // Validation
             const validatedPath = AudioAnalyzeSchema.parse(filePath);
 
@@ -82,9 +84,10 @@ export function registerAudioHandlers() {
         }
     });
 
-    ipcMain.handle('audio:lookup-metadata', async (_, hash) => {
+    ipcMain.handle('audio:lookup-metadata', async (event, hash) => {
         console.log('[Main] Metadata lookup requested for hash:', hash);
         try {
+             validateSender(event);
              // Basic hash validation (e.g., allow hex/base64 strings)
              if (typeof hash !== 'string' || hash.length < 8) {
                  throw new Error("Invalid hash format");
