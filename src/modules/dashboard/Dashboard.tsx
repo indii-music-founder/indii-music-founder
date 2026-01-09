@@ -5,6 +5,7 @@ import AgentWorkspace from './components/AgentWorkspace';
 import DepartmentGrid from './components/DepartmentGrid';
 import ReferenceImageManager from './components/ReferenceImageManager';
 import AnalyticsView from './components/AnalyticsView';
+import TripStarter from './components/TripStarter';
 
 import { StudioLayout } from './components/StudioLayout';
 
@@ -35,6 +36,14 @@ export default function Dashboard() {
                             Departments
                         </h2>
                         <DepartmentGrid />
+                    </section>
+
+                    <section>
+                        <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                            Start a Trip
+                        </h2>
+                        <TripStarter />
                     </section>
 
                     <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
