@@ -60,6 +60,7 @@ export const SftpUploadSchema = z.object({
     return !hasTraversal(data.localPath) && !hasTraversal(data.remotePath);
 }, { message: "Path traversal detected in local or remote path" });
 
+
 export const validateSender = (event: any) => {
     const senderUrl = event.senderFrame?.url;
     if (!senderUrl) throw new Error("Unauthorized IPC Sender");
@@ -69,4 +70,3 @@ export const validateSender = (event: any) => {
 
     throw new Error(`Unauthorized IPC Sender: ${senderUrl}`);
 };
-});

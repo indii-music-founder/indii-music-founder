@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
-import { Send, Sparkles, Wand2, Zap, Loader2 } from 'lucide-react';
+import { Send, FlaskConical, Wand2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
@@ -58,11 +58,11 @@ export default function MainPromptBar() {
                     <div className="pl-4 flex items-center gap-2">
                         {activeCount > 0 ? (
                             <div className="flex items-center gap-1 bg-purple-900/40 border border-purple-500/30 px-2 py-0.5 rounded-full">
-                                <Sparkles size={10} className="text-purple-400" />
+                                <FlaskConical size={10} className="text-purple-400" />
                                 <span className="text-[10px] font-bold text-purple-300">{activeCount} Locked</span>
                             </div>
                         ) : (
-                            <Wand2 size={16} className="text-gray-500" />
+                            <FlaskConical size={16} className="text-gray-500" />
                         )}
                     </div>
 
@@ -87,7 +87,7 @@ export default function MainPromptBar() {
                                 className="text-purple-400 hover:text-purple-300 p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
                                 title="Enhance with AI"
                             >
-                                {isEnhancing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                                {isEnhancing ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
                             </motion.button>
                         )}
                         <button
