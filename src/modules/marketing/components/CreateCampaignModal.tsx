@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, Plus, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Calendar, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from '../types';
 import { useToast } from '@/core/context/ToastContext';
@@ -17,6 +17,10 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState('');
     const [platform, setPlatform] = useState('Instagram');
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const titleInputRef = useRef<HTMLInputElement>(null);
+    const dateInputRef = useRef<HTMLInputElement>(null);
 
     // UX: Close on Escape key
     useEffect(() => {
@@ -25,17 +29,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
-    }, [onClose]);
-
-    // Close on Escape key
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                onClose();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
 
     // Close on backdrop click
@@ -48,8 +41,27 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!title || !startDate) {
-            toast.error('Please fill in required fields');
+        // Reset errors
+        setErrors({});
+        const newErrors: Record<string, string> = {};
+
+        if (!title.trim()) {
+            newErrors.title = 'Campaign name is required';
+        }
+        if (!startDate) {
+            newErrors.startDate = 'Start date is required';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Please fix the errors below');
+
+            // Focus first invalid field
+            if (newErrors.title) {
+                titleInputRef.current?.focus();
+            } else if (newErrors.startDate) {
+                dateInputRef.current?.focus();
+            }
             return;
         }
 
@@ -85,7 +97,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
             aria-labelledby="modal-title"
             data-testid="create-campaign-modal-backdrop"
         >
-            <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 shadow-2xl">
                 <div className="p-6 border-b border-gray-800 flex items-center justify-between">
                     <h2 id="modal-title" className="text-xl font-bold flex items-center gap-2">
                         <Plus className="text-blue-500" />
@@ -103,18 +115,35 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
                 <form onSubmit={handleSave} className="p-6 space-y-4" noValidate>
                     <div>
-                        <label htmlFor="campaign-title" className="block text-sm font-medium text-gray-400 mb-1">Campaign Name *</label>
+                        <label htmlFor="campaign-title" className="block text-sm font-medium text-gray-400 mb-1">
+                            Campaign Name <span className="text-red-500" aria-hidden="true">*</span>
+                        </label>
                         <input
+                            ref={titleInputRef}
                             id="campaign-title"
                             type="text"
                             value={title}
-                            onChange={(e) => setTitle(e.target.value)}
+                            onChange={(e) => {
+                                setTitle(e.target.value);
+                                if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
+                            }}
                             placeholder="e.g., Summer Single Release"
-                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
+                            className={`w-full bg-[#0d1117] border rounded-lg p-2.5 text-white outline-none transition-all ${
+                                errors.title
+                                    ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50'
+                                    : 'border-gray-700 focus:border-blue-500'
+                            }`}
                             required
                             autoFocus
+                            aria-invalid={!!errors.title}
+                            aria-describedby={errors.title ? "title-error" : undefined}
                             data-testid="campaign-title-input"
                         />
+                        {errors.title && (
+                            <p id="title-error" className="mt-1 text-xs text-red-500 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                <AlertCircle size={12} /> {errors.title}
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -131,24 +160,41 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="campaign-start-date" className="block text-sm font-medium text-gray-400 mb-1">Start Date *</label>
+                            <label htmlFor="campaign-start-date" className="block text-sm font-medium text-gray-400 mb-1">
+                                Start Date <span className="text-red-500" aria-hidden="true">*</span>
+                            </label>
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
+                                <Calendar className="absolute left-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
                                 <input
+                                    ref={dateInputRef}
                                     id="campaign-start-date"
                                     type="date"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
+                                    onChange={(e) => {
+                                        setStartDate(e.target.value);
+                                        if (errors.startDate) setErrors(prev => ({ ...prev, startDate: '' }));
+                                    }}
+                                    className={`w-full bg-[#0d1117] border rounded-lg p-2.5 pl-10 text-white outline-none transition-all ${
+                                        errors.startDate
+                                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50'
+                                            : 'border-gray-700 focus:border-blue-500'
+                                    }`}
                                     required
+                                    aria-invalid={!!errors.startDate}
+                                    aria-describedby={errors.startDate ? "date-error" : undefined}
                                     data-testid="campaign-start-date-input"
                                 />
                             </div>
+                            {errors.startDate && (
+                                <p id="date-error" className="mt-1 text-xs text-red-500 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.startDate}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label htmlFor="campaign-end-date" className="block text-sm font-medium text-gray-400 mb-1">End Date</label>
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-gray-500" size={16} />
+                                <Calendar className="absolute left-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
                                 <input
                                     id="campaign-end-date"
                                     type="date"
@@ -190,7 +236,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                             data-testid="create-campaign-submit-btn"
                         >
                             {isLoading ? (
