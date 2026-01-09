@@ -50,8 +50,9 @@ const CollapsibleJson = ({ data }: { data: any }) => {
 
 // --- Components ---
 
-const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
+const ThoughtChain = memo(({ thoughts, messageId }: { thoughts: AgentThought[]; messageId: string }) => {
     const [isOpen, setIsOpen] = useState(true);
+    const contentId = `thought-chain-${messageId}`;
 
     if (!thoughts || thoughts.length === 0) return null;
 
@@ -60,6 +61,8 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
             <div className="absolute left-0 top-8 bottom-0 w-px bg-gradient-to-b from-purple-500/30 to-transparent" />
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                aria-controls={contentId}
                 className="group flex items-center gap-3 mb-3 h-8 px-3 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all"
             >
                 <div className={`w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)] ${isOpen ? 'animate-pulse' : ''}`} />
@@ -77,6 +80,8 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
                         initial={{ height: 0, opacity: 0, x: -5 }}
                         animate={{ height: 'auto', opacity: 1, x: 0 }}
                         exit={{ height: 0, opacity: 0, x: -5 }}
+                        id={contentId}
+                        role="region"
                         className="space-y-3 pl-6 overflow-hidden"
                     >
                         {thoughts.map(thought => (
@@ -129,13 +134,21 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                     : 'bg-gradient-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
                 }`}>
 
-            {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} />}
+            {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} />}
 
             <div className="prose prose-invert prose-sm max-w-none break-words leading-[1.6] font-medium tracking-tight">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                         img: ImageRenderer,
+                        pre: ({ children, ...props }: any) => {
+                            // Only wrap in <pre> if the child is a standard <code> element
+                            // Custom renderers (VisualScript, etc) return block elements like <div>
+                            if (React.isValidElement(children) && children.type === 'code') {
+                                return <pre {...props}>{children}</pre>;
+                            }
+                            return <>{children}</>;
+                        },
                         table: ({ node, ...props }: any) => (
                             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
                                 <table {...props} className="min-w-full" />
