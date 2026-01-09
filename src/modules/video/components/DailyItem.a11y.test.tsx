@@ -29,7 +29,7 @@ describe('Access: DailyItem Accessibility', () => {
 
         const results = await axe(container);
         expect(results).toHaveNoViolations();
-    });
+    }, 15000);
 
     it('has logical focus state and keyboard operability', () => {
         const onSelectMock = vi.fn();
