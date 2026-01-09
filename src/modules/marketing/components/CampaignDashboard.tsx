@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
@@ -42,6 +42,19 @@ const CampaignDashboard: React.FC = () => {
     // Memoize handler to prevent re-renders in child components
     const handleCreateNew = useCallback(() => {
         setIsCreateModalOpen(true);
+    }, []);
+
+    // Test Helper: Allow injecting campaign updates from E2E tests (Maestro Workflow)
+    useEffect(() => {
+        // Only enable in non-production environments or if specifically enabled
+        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+            const handleTestUpdate = (event: CustomEvent) => {
+                console.log("[Maestro] Injecting Agent Plan...", event.detail);
+                setSelectedCampaign(prev => prev ? { ...prev, ...event.detail } : null);
+            };
+            window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
+            return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
+        }
     }, []);
 
     return (
