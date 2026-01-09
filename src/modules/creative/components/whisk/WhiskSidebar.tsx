@@ -207,7 +207,7 @@ export default function WhiskSidebar() {
     const toast = useToast();
 
     return (
-        <div className="w-64 border-r border-gray-800 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
+        <div className="w-full md:w-64 border-r border-gray-800 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Sparkles className="text-purple-500" size={16} />
