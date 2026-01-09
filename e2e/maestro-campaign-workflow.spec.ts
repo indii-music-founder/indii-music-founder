@@ -13,7 +13,8 @@ test.describe('Maestro Campaign Workflow', () => {
     await page.waitForFunction(() => !!(window as any).useStore);
     await page.evaluate(() => {
       const mockUser = {
-        uid: 'test-user-maestro',
+        // Use the ID that triggers the memory store in MarketingService
+        uid: 'maestro-user-id',
         email: 'maestro@example.com',
         displayName: 'Maestro Test User',
         emailVerified: true,
@@ -50,12 +51,13 @@ test.describe('Maestro Campaign Workflow', () => {
     // internal state machine and validation logic are exercised correctly before the handoff.
 
     // Check we are on Campaign Manager
-    const createBtn = page.getByRole('button', { name: 'Create Campaign' }).first();
+    const createBtn = page.getByRole('button', { name: 'New Campaign' }).first();
     await expect(createBtn).toBeVisible();
     await createBtn.click();
 
     // Expect Modal Title "New Campaign"
-    await expect(page.getByText('New Campaign', { exact: true })).toBeVisible();
+    // Use .last() or filter to distinguish between the card title and the modal title
+    await expect(page.getByRole('heading', { name: 'New Campaign' }).last()).toBeVisible();
 
     // Fill in the "Agent's Plan"
     // Use specific song name as requested: "Dogs Having Fun"
