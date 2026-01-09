@@ -114,7 +114,7 @@ describe('CreateCampaignModal Interaction', () => {
         expect(mockOnClose).not.toHaveBeenCalled();
     });
 
-    it('should prevent submission and show error if required fields are missing', async () => {
+    it('should prevent submission and show inline error if required fields are missing', async () => {
         render(<CreateCampaignModal onClose={mockOnClose} onSave={mockOnSave} />);
 
         // 1. Clear default start date (default is today) and title (empty)
@@ -128,7 +128,14 @@ describe('CreateCampaignModal Interaction', () => {
 
         // 3. Assert Validation Feedback
         expect(MarketingService.createCampaign).not.toHaveBeenCalled();
-        expect(mockToastError).toHaveBeenCalledWith('Please fill in required fields');
+
+        // Removed generic toast expectation in favor of inline check
+        // expect(mockToastError).toHaveBeenCalledWith('Please fill in required fields');
+
+        // Check for inline error messages (which I added in the implementation)
+        expect(screen.getByText('Campaign name is required')).toBeInTheDocument();
+        expect(screen.getByText('Start date is required')).toBeInTheDocument();
+
         expect(submitBtn).not.toBeDisabled();
     });
 });
