@@ -1,3 +1,4 @@
+## Helix Journal
 # Helix Journal - Genetic Guardrails
 
 This journal records critical learnings from the evolutionary engine's development.
