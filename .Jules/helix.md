@@ -1,4 +1,13 @@
-# Helix's Journal
-## 2025-05-18 - [Evolutionary Engine Resilience]
-**Learning:** The current `EvolutionEngine` allows a single failed mutation (e.g., invalid JSON) to crash the entire generation step. This makes the evolutionary loop brittle.
-**Action:** Implement a try/catch block within the reproduction loop to discard invalid offspring and retry or proceed, ensuring the population survives individual failures.
+## 2024-05-22 - [Evolutionary Loop Integrity]
+**Learning:** The previous `EvolutionaryLoop.test.ts` was testing a hypothetical function `runEvolutionStep` inside the test file itself, rather than the actual `EvolutionEngine` service. This created a false sense of security.
+**Action:** Created `HelixEvolution.test.ts` to test the actual `EvolutionEngine.ts` class, verifying Elitism, Diversity, and Mutation Resilience against the real implementation.
+## Helix Journal
+# Helix Journal - Genetic Guardrails
+
+This journal records critical learnings from the evolutionary engine's development.
+Only log significant discoveries regarding genetic defects, convergence issues, or reward hacking.
+
+## Format
+`## YYYY-MM-DD - [Title]`
+`**Learning:** [Insight]`
+`**Action:** [How to apply next time]`

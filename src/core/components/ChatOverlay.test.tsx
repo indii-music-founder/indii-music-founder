@@ -42,6 +42,17 @@ describe('ChatOverlay', () => {
     const mockStoreState = {
         agentHistory: mockAgentHistory,
         isAgentOpen: true,
+        loadSessions: vi.fn(),
+        createSession: vi.fn(),
+        sessions: {},
+        activeSessionId: null,
+        userProfile: {},
+        currentProjectId: 'test-project',
+        setModule: vi.fn(),
+        setGenerationMode: vi.fn(),
+        setViewMode: vi.fn(),
+        setSelectedItem: vi.fn(),
+        generatedHistory: [],
     };
 
     beforeEach(() => {

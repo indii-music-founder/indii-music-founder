@@ -1,3 +1,3 @@
-## 2024-05-23 - [Post Generator Accessibility Polish]
-**Learning:** `aria-labelledby` is essential for custom radio groups (like the Platform/Vibe selectors) where the visual label isn't a direct parent of the group container. Using `role="group"` without a clear label makes navigation confusing for screen readers.
-**Action:** When creating custom selector groups, always ensure the group container references its label via ID, and ensure the decorative icons inside buttons are hidden (`aria-hidden="true"`) to reduce noise.
+## 2024-05-23 - [Improved Form Validation Pattern]
+**Learning:** Users (and developers) often default to generic "toast" errors which frustrate completion. Inline validation with focus management is a critical "micro-UX" win that is surprisingly easy to implement with standard React Refs.
+**Action:** When auditing forms, always check if `noValidate` is used without custom inline feedback. If so, implement the `errors` state pattern + `focus()` on first error.
