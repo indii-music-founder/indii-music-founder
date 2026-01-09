@@ -56,6 +56,10 @@
 1.  Enforced Strict Path Containment: `localPath` must now be within `os.tmpdir()` or `app.getPath('userData')`.
 2.  Implemented `validateSender` to ensure IPC calls originate from the trusted application frame.
 3.  Added `SftpUploadSchema` to validate input types before processing.
-1.  Fixed the order of operations in `net:fetch-url` to ensure `validateSafeUrl` runs before `fetch`.
-2.  Ensured `validateSender` (Anti-Hijack) is the very first check.
-3.  Removed duplicate code and syntax errors.
+## 2025-05-27 - [HIGH] Arbitrary Model Access in AI Proxy
+**Vulnerability:** The `generateContentStream` function in `functions/src/index.ts` accepted any `model` ID from the client and used it to construct the API endpoint. This allowed authenticated users to access any model available to the API key, potentially bypassing cost controls or accessing unapproved/experimental models.
+**Learning:** Proxy endpoints that wrap third-party APIs must strictly validate dynamic parameters against an allowlist. Do not trust client-provided resource identifiers blindly.
+**Prevention:**
+1.  Implemented `ALLOWED_MODELS` allowlist in `functions/src/index.ts`.
+2.  Added strict check: `if (!ALLOWED_MODELS.includes(modelId))`.
+3.  Added input type validation for `contents` array.

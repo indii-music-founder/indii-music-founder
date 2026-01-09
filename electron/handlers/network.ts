@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import { z } from 'zod';
-import { FetchUrlSchema, validateSender } from '../validation';
+import { FetchUrlSchema } from '../validation';
+import { validateSender } from '../utils/ipc-security';
 
 /**
  * Validates that a URL is safe to fetch.

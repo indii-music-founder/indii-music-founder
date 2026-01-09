@@ -770,6 +770,26 @@ export const generateContentStream = functions
                 const { model, contents, config } = req.body;
                 const modelId = model || "gemini-3-pro-preview";
 
+                // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
+                // Only allow approved models for streaming text generation.
+                // See src/core/config/ai-models.ts for the master list.
+                const ALLOWED_MODELS = [
+                    "gemini-3-pro-preview",
+                    "gemini-3-flash-preview",
+                    "gemini-2.0-flash-exp" // Retained for backward compatibility if needed, otherwise remove
+                ];
+
+                if (!ALLOWED_MODELS.includes(modelId)) {
+                    console.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    res.status(400).send('Invalid or unauthorized model ID.');
+                    return;
+                }
+
+                if (!Array.isArray(contents)) {
+                    res.status(400).send('Invalid input: contents must be an array.');
+                    return;
+                }
+
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
 
                 const response = await fetch(endpoint, {
