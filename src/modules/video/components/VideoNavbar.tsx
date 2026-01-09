@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
-import { Film, Clapperboard, Scissors, MonitorPlay } from 'lucide-react';
+import { Film, Clapperboard, Scissors, MonitorPlay, Loader2 } from 'lucide-react';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
+import { useToast } from '@/core/context/ToastContext';
 
 export default function VideoNavbar() {
     const { viewMode, setViewMode } = useVideoEditorStore();
+    const [isProjecting, setIsProjecting] = useState(false);
+    const toast = useToast();
+
+    const handleProjectorClick = async () => {
+        setIsProjecting(true);
+        try {
+            const granted = await ScreenControl.requestPermission();
+            if (granted) {
+                ScreenControl.openProjectorWindow(window.location.href);
+                toast.success("Projector window opened");
+            } else {
+                toast.error("Screen Control API not supported or permission denied.");
+            }
+        } catch (error) {
+            console.error("Projector error:", error);
+            toast.error("Failed to open projector window");
+        } finally {
+            setIsProjecting(false);
+        }
+    };
 
     return (
         <div className="flex flex-col z-20 relative bg-[#0a0a0a] border-b border-white/5 select-none text-gray-200">
@@ -45,18 +66,17 @@ export default function VideoNavbar() {
 
                     {/* Projector */}
                     <button
-                        onClick={async () => {
-                            const granted = await ScreenControl.requestPermission();
-                            if (granted) {
-                                ScreenControl.openProjectorWindow(window.location.href);
-                            } else {
-                                alert("Screen Control API not supported or permission denied.");
-                            }
-                        }}
-                        title="Open Projector"
-                        className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors"
+                        onClick={handleProjectorClick}
+                        disabled={isProjecting}
+                        title={isProjecting ? "Opening Projector..." : "Open Projector"}
+                        aria-label={isProjecting ? "Opening Projector..." : "Open Projector"}
+                        className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <MonitorPlay size={14} />
+                        {isProjecting ? (
+                            <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                            <MonitorPlay size={14} />
+                        )}
                     </button>
                 </div>
             </div>
