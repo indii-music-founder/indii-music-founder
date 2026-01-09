@@ -69,4 +69,3 @@ export const validateSender = (event: any) => {
 
     throw new Error(`Unauthorized IPC Sender: ${senderUrl}`);
 };
-});
