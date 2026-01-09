@@ -1,0 +1,4 @@
+## 2025-05-18 - [IPC Defense-in-Depth]
+**Vulnerability:** A logic inconsistency existed between two `validateSender` implementations. One implementation (`ipc-security.ts`) permissively allowed any `http`/`https` origin, while the other (`validation.ts`) correctly restricted access to `file://` and the development server. This could allow a compromised renderer frame or iframe to bypass sender validation checks if it could execute IPC calls.
+**Learning:** Duplicate code is a security risk. When security primitives are copied, they drift apart, and the weaker version often becomes the one used by default.
+**Prevention:** Consolidated `validateSender` into `electron/utils/ipc-security.ts` with strict origin checking (allowlist: `file://`, `indii-os://`, and `VITE_DEV_SERVER_URL`). Applied this validation to all critical IPC handlers in the main process, closing the defense-in-depth gap.
