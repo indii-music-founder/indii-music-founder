@@ -28,6 +28,10 @@ vi.mock('./components/AnalyticsView', () => ({
     default: () => <div data-testid="analytics-view">Analytics View</div>,
 }));
 
+vi.mock('./components/TripStarter', () => ({
+    default: () => <div data-testid="trip-starter">Trip Starter</div>,
+}));
+
 describe('Dashboard', () => {
     it('defaults to Studio Mode', () => {
         render(<Dashboard />);

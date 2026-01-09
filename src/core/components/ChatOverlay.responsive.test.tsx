@@ -47,19 +47,28 @@ describe('📱 Viewport: ChatOverlay Responsiveness', () => {
 | Data 1   | Data 2   | Data 3   | Data 4   | Data 5   |
 `;
 
-    const mockStoreState = {
-        agentHistory: [
-            { id: '1', role: 'model', text: WIDE_TABLE_MARKDOWN, timestamp: 1 }
-        ],
-        isAgentOpen: true,
-        userProfile: {},
-        sessions: {},
-        activeSessionId: null,
-        loadSessions: vi.fn(),
-    };
+    const LONG_CODE_MARKDOWN = `
+\`\`\`javascript
+const veryLongVariableName = "This is a very long string that would definitely break the layout on a mobile device if it was not wrapped in a scrollable container to ensure the user can read the full code without zooming out.";
+\`\`\`
+`;
+
+    let mockStoreState: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
+
+        mockStoreState = {
+            agentHistory: [
+                { id: '1', role: 'model', text: WIDE_TABLE_MARKDOWN, timestamp: 1 }
+            ],
+            isAgentOpen: true,
+            userProfile: {},
+            sessions: {},
+            activeSessionId: null,
+            loadSessions: vi.fn(),
+            toggleAgentWindow: vi.fn(),
+        };
 
         // Mock useStore selector behavior
         (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
@@ -86,11 +95,38 @@ describe('📱 Viewport: ChatOverlay Responsiveness', () => {
 
         // The "Unbreakable Table" Test:
         // Markdown tables must be wrapped in a container with overflow-x-auto
-        // to prevent them from breaking the mobile layout.
         const wrapper = table.parentElement;
         expect(wrapper).toHaveClass('overflow-x-auto');
+    });
 
-        // Bonus: Check for custom scrollbar styling if applicable
-        // expect(wrapper).toHaveClass('custom-scrollbar');
+    it('wraps code blocks in a scrollable container to prevent layout breakage', () => {
+        // Update store to use code markdown
+        mockStoreState.agentHistory = [
+            { id: '2', role: 'model', text: LONG_CODE_MARKDOWN, timestamp: 2 }
+        ];
+
+        render(<ChatOverlay />);
+
+        // Verify code block text exists
+        const codeElement = screen.getByText(/veryLongVariableName/);
+        expect(codeElement).toBeInTheDocument();
+
+        // The "Unbreakable Code" Test:
+        // Code blocks should be in a pre tag that allows horizontal scrolling
+        const preElement = codeElement.closest('pre');
+        expect(preElement).toBeInTheDocument();
+
+        // Check if the pre element OR its parent has overflow handling.
+        // Tailwind prose usually puts it on 'pre', but sometimes we wrap it.
+        // We accept either explicit class or specific style.
+        // Since we are Viewport, we prefer explicit class 'overflow-x-auto' or 'overflow-auto'.
+
+        // If the 'pre' itself doesn't have it, we check the parent.
+        const isScrollable =
+            preElement?.classList.contains('overflow-x-auto') ||
+            preElement?.classList.contains('overflow-auto') ||
+            preElement?.parentElement?.classList.contains('overflow-x-auto');
+
+        expect(isScrollable).toBe(true);
     });
 });

@@ -2,7 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import AgentDashboard from './AgentDashboard';
-import { useAgentStore } from '../store/AgentStore';
 
 // Mock dependencies
 vi.mock('../services/VenueScoutService', () => ({
@@ -32,42 +31,61 @@ vi.mock('./ScoutMapVisualization', () => ({
     ScoutMapVisualization: () => <div>Map Visualization</div>
 }));
 
+vi.mock('./VenueCard', () => ({
+    VenueCard: () => <div>VenueCard</div>
+}));
+
+// Mock the new sub-components to isolate AgentDashboard logic
+vi.mock('./AgentSidebar', () => ({
+    AgentSidebar: ({ setActiveTab }: { setActiveTab: (t: string) => void }) => (
+        <div data-testid="agent-sidebar">
+            <button onClick={() => setActiveTab('scout')} title="The Scout">The Scout Tab</button>
+            <button onClick={() => setActiveTab('browser')} title="Browser Agent">Browser Tab</button>
+            <button onClick={() => setActiveTab('campaigns')} title="Campaigns">Campaigns Tab</button>
+            <button onClick={() => setActiveTab('inbox')} title="Inbox">Inbox Tab</button>
+        </div>
+    )
+}));
+
+vi.mock('./AgentToolbar', () => ({
+    AgentToolbar: ({ left, right }: any) => (
+        <div data-testid="agent-toolbar">
+            {left}
+            {right}
+        </div>
+    )
+}));
+
+vi.mock('./ScoutControls', () => ({
+    ScoutControls: () => <div data-testid="scout-controls">Scout Controls</div>
+}));
+
 describe('AgentDashboard', () => {
-    it('renders the sidebar and default scout view', () => {
+    it('renders the sidebar, toolbar and default scout view', () => {
         render(<AgentDashboard />);
 
-        // Checklist: Sidebar buttons present
-        expect(screen.getByTitle('The Scout')).toBeDefined();
-        expect(screen.getByTitle('Browser Agent')).toBeDefined();
+        expect(screen.getByTestId('agent-sidebar')).toBeDefined();
+        expect(screen.getByTestId('agent-toolbar')).toBeDefined();
+        expect(screen.getByText('Agent Tools')).toBeDefined(); // Inside toolbar logic in dashboard
 
-        // Checklist: Scout content present
-        expect(screen.getByText('The Scout')).toBeDefined();
-        expect(screen.getByText('Deploy Scout')).toBeDefined();
-
-        // Checklist: Toolbar present
-        expect(screen.getByText('Agent Tools')).toBeDefined();
+        // Default View is Scout
+        expect(screen.getByText('The Scout')).toBeDefined(); // Header text
+        expect(screen.getByTestId('scout-controls')).toBeDefined();
     });
 
     it('switches tabs correctly', () => {
         render(<AgentDashboard />);
 
+        // Click Browser Tab (mocked sidebar)
         const browserButton = screen.getByTitle('Browser Agent');
         fireEvent.click(browserButton);
 
         expect(screen.getByText('Browser Agent Tester')).toBeDefined();
 
+        // Click Campaigns Tab
         const campaignsButton = screen.getByTitle('Campaigns');
         fireEvent.click(campaignsButton);
 
         expect(screen.getByText('Module under construction')).toBeDefined();
-    });
-
-    it('renders controls correctly', () => {
-        render(<AgentDashboard />);
-
-        // Check for inputs
-        expect(screen.getByPlaceholderText('Target City (e.g. Nashville)')).toBeDefined();
-        expect(screen.getByPlaceholderText('Focus Genre (e.g. Rock)')).toBeDefined();
-        expect(screen.getByText('Auto Mode')).toBeDefined();
     });
 });
