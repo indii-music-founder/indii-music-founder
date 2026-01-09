@@ -388,15 +388,16 @@ export default function PostGenerator() {
                     </div>
 
                     <button
+                        data-testid="generate-post-btn"
                         onClick={handleGenerate}
                         disabled={isGenerating || !topic}
                         className="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isGenerating ? (
-                            <>
+                            <span data-testid="generating-status" className="flex items-center gap-2">
                                 <Loader2 className="animate-spin" size={18} aria-hidden="true" />
                                 Creating Magic...
-                            </>
+                            </span>
                         ) : (
                             <>
                                 <Megaphone size={18} aria-hidden="true" />
