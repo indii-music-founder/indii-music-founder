@@ -32,7 +32,7 @@ const itemVars = {
 
 const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign, onCreateNew, onAIGenerate }) => {
     return (
-        <div className="space-y-8">
+        <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
             {/* Section Header */}
             <div className="flex justify-between items-end">
                 <div>
@@ -48,16 +48,16 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 variants={containerVars}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"
             >
                 {/* AI Generate Card */}
                 {onAIGenerate && (
                     <motion.div variants={itemVars}>
                         <button
                             onClick={onAIGenerate}
-                            className="w-full h-full min-h-[220px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-pink-500/30 bg-gradient-to-br from-pink-900/10 to-purple-900/10 hover:from-pink-900/20 hover:to-purple-900/20 hover:border-pink-500/50 transition-all duration-300"
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-pink-500/30 bg-pink-900/5 hover:bg-pink-900/10 hover:border-pink-500/60 transition-all duration-300"
                         >
-                            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                            <div className="h-16 w-16 rounded-full bg-pink-500/10 flex items-center justify-center group-hover:bg-pink-500/20 group-hover:scale-110 transition-all duration-300">
                                 <Sparkles size={32} className="text-pink-400 group-hover:text-pink-300" />
                             </div>
                             <div className="text-center">
@@ -67,7 +67,7 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
 
                             {/* Decorative Sparkles */}
                             <div className="absolute top-4 right-4">
-                                <Sparkles size={16} className="text-pink-400 animate-pulse" />
+                                <Sparkles size={16} className="text-pink-400/50 animate-pulse" />
                             </div>
                         </button>
                     </motion.div>
@@ -77,19 +77,19 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 <motion.div variants={itemVars}>
                     <button
                         onClick={onCreateNew}
-                        className="w-full h-full min-h-[220px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 hover:border-purple-500/50 transition-all duration-300"
+                        className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-800 bg-black/20 hover:bg-black/40 hover:border-purple-500/50 transition-all duration-300"
                     >
-                        <div className="h-16 w-16 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20 group-hover:scale-110 transition-all duration-300">
-                            <Plus size={32} className="text-gray-400 group-hover:text-purple-400" />
+                        <div className="h-16 w-16 rounded-full bg-gray-900 flex items-center justify-center group-hover:bg-purple-900/30 group-hover:scale-110 transition-all duration-300">
+                            <Plus size={32} className="text-gray-600 group-hover:text-purple-400" />
                         </div>
                         <div className="text-center">
-                            <h3 className="font-semibold text-white group-hover:text-purple-300 transition-colors">New Campaign</h3>
-                            <p className="text-sm text-gray-500 mt-1 max-w-[200px]">Create manually from scratch</p>
+                            <h3 className="font-semibold text-gray-300 group-hover:text-purple-300 transition-colors">New Campaign</h3>
+                            <p className="text-sm text-gray-600 group-hover:text-gray-500 mt-1 max-w-[200px]">Create manually from scratch</p>
                         </div>
 
                         {/* Decorative AI Sparkles */}
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <Sparkles size={16} className="text-purple-400 animate-pulse" />
+                            <Plus size={16} className="text-purple-400" />
                         </div>
                     </button>
                 </motion.div>

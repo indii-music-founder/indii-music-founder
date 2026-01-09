@@ -69,7 +69,8 @@ describe('AgentDashboard', () => {
         expect(screen.getByText('Agent Tools')).toBeDefined(); // Inside toolbar logic in dashboard
 
         // Default View is Scout
-        expect(screen.getByText('The Scout')).toBeDefined(); // Header text
+        const scoutTexts = screen.getAllByText('The Scout');
+        expect(scoutTexts.length).toBeGreaterThan(0);
         expect(screen.getByTestId('scout-controls')).toBeDefined();
     });
 

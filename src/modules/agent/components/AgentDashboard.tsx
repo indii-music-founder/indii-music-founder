@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { MapPin, Sparkles } from 'lucide-react';
+import { MapPin, Sparkles, Filter } from 'lucide-react';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
 import BrowserAgentTester from './BrowserAgentTester';
@@ -174,7 +174,7 @@ const AgentDashboard: React.FC = () => {
                     {activeTab !== 'scout' && activeTab !== 'browser' && (
                         <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                             <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
-                                <Sparkles size={32} className="opacity-50" />
+                                <Filter size={32} className="opacity-50" />
                             </div>
                             <p className="text-lg font-medium">Module under construction</p>
                         </div>
@@ -186,3 +186,4 @@ const AgentDashboard: React.FC = () => {
     );
 };
 
+export default AgentDashboard;
