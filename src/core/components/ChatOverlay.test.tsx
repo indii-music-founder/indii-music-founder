@@ -7,6 +7,12 @@ import { useVoice } from '@/core/context/VoiceContext';
 
 // Mock dependencies
 vi.mock('@/core/store');
+vi.mock('@/core/context/VoiceContext', () => ({
+    useVoice: () => ({
+        isVoiceEnabled: false,
+        setVoiceEnabled: vi.fn(),
+    })
+}));
 vi.mock('@/services/ai/VoiceService', () => ({
     voiceService: {
         speak: vi.fn(),
@@ -52,6 +58,11 @@ describe('ChatOverlay', () => {
     const mockStoreState = {
         agentHistory: mockAgentHistory,
         isAgentOpen: true,
+        loadSessions: vi.fn(),
+        createSession: vi.fn(),
+        toggleAgentWindow: vi.fn(),
+        sessions: {},
+        activeSessionId: null
         userProfile: { brandKit: { referenceImages: [] } },
         activeSessionId: 'session-1',
         sessions: {
@@ -86,6 +97,15 @@ describe('ChatOverlay', () => {
         expect(screen.getByText('Hi there')).toBeInTheDocument();
     });
 
+    // Note: Since VoiceContext is mocked with defaults (isVoiceEnabled=false, setVoiceEnabled=vi.fn()),
+    // the UI will show the "Unmute" state initially.
+    // The previous test logic assumed internal state management, but now we use context.
+    // The mocked useVoice hook returns static values, so clicking won't change the return value of useVoice unless we mock the implementation to be stateful.
+
+    it('shows mute button', () => {
+        render(<ChatOverlay />);
+        // useVoice mock returns isVoiceEnabled: false
+        expect(screen.getByTitle('Unmute Text-to-Speech')).toBeInTheDocument();
     it('shows mute button and toggles state', () => {
         // Initial state is voice disabled
         (useVoice as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
