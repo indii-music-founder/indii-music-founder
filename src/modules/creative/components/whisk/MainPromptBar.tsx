@@ -1,11 +1,44 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
-import { Send, Sparkles, Wand2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Send, Sparkles, Wand2, Zap, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AI } from '@/services/ai/AIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { useToast } from '@/core/context/ToastContext';
 
 export default function MainPromptBar() {
     const { prompt, setPrompt, whiskState, setPendingPrompt } = useStore();
     const [isFocused, setIsFocused] = useState(false);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const toast = useToast();
+
+    const handleEnhance = async () => {
+        if (!prompt.trim()) return;
+
+        setIsEnhancing(true);
+        try {
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.FAST,
+                contents: {
+                    role: 'user',
+                    parts: [{ text: `Enhance this image generation prompt to be more descriptive, artistic, and detailed. Keep it under 50 words. Return ONLY the enhanced prompt. Prompt: "${prompt}"` }]
+                },
+                config: AI_CONFIG.THINKING.LOW
+            });
+
+            const enhancedPrompt = response.text();
+            if (enhancedPrompt) {
+                setPrompt(enhancedPrompt.trim());
+                toast.success("Prompt enhanced!");
+            } else {
+                toast.error("Failed to enhance prompt");
+            }
+        } catch (e) {
+            toast.error("Enhance failed");
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
 
     const handleGenerate = () => {
         if (!prompt.trim()) return;
@@ -44,7 +77,19 @@ export default function MainPromptBar() {
                         className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-sm text-white placeholder-gray-600"
                     />
 
-                    <div className="pr-4">
+                    <div className="pr-4 flex items-center gap-2">
+                        {prompt.trim() && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                onClick={handleEnhance}
+                                disabled={isEnhancing}
+                                className="text-purple-400 hover:text-purple-300 p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
+                                title="Enhance with AI"
+                            >
+                                {isEnhancing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                            </motion.button>
+                        )}
                         <button
                             onClick={handleGenerate}
                             disabled={!prompt.trim()}

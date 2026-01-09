@@ -13,13 +13,12 @@ interface VideoPanelProps {
 export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     const [activeTab, setActiveTab] = useState('create');
     const [isGenerating, setIsGenerating] = useState(false);
-    // Use local state for video prompt since it might differ from image prompt
-    const [videoPrompt, setVideoPrompt] = useState('');
-    const { addToHistory, currentProjectId, studioControls, setStudioControls } = useStore();
+    // Use global prompt state instead of local
+    const { addToHistory, currentProjectId, studioControls, setStudioControls, prompt } = useStore();
     const toast = useToast();
 
     const handleRender = async () => {
-        if (!videoPrompt.trim()) {
+        if (!prompt.trim()) {
             toast.error("Please enter a video description");
             return;
         }
@@ -31,7 +30,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
             if (studioControls.duration > 8) {
                 // Trigger Long Form
                 results = await VideoGeneration.generateLongFormVideo({
-                    prompt: videoPrompt,
+                    prompt: prompt,
                     totalDuration: studioControls.duration,
                     aspectRatio: studioControls.aspectRatio,
                     resolution: studioControls.resolution,
@@ -42,7 +41,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
             } else {
                 // Trigger Single Shot
                 results = await VideoGeneration.generateVideo({
-                    prompt: videoPrompt,
+                    prompt: prompt,
                     aspectRatio: studioControls.aspectRatio,
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
@@ -110,16 +109,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
-                    {/* Video Prompt Input (Added) */}
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">VIDEO DESCRIPTION</label>
-                        <textarea
-                            value={videoPrompt}
-                            onChange={(e) => setVideoPrompt(e.target.value)}
-                            className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all h-24 resize-none placeholder:text-gray-600 shadow-inner"
-                            placeholder="Describe the video you want to generate..."
-                        />
-                    </div>
+                    {/* Video Prompt Input REMOVED - Controlled via Director Bar */}
 
                     {/* Negative Prompt */}
                     <div className="space-y-3">

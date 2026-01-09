@@ -74,7 +74,7 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
     }, [project.clips]);
 
     return (
-        <div className="h-72 border-t border-[--border] bg-[--card] flex flex-col">
+        <div className="h-full border-t border-[--border] bg-[--card] flex flex-col">
             {/* Timeline Controls */}
             <div className="h-12 border-b border-[--border] flex items-center px-4 gap-4 bg-[--card] z-10">
                 <div className="flex items-center gap-2">

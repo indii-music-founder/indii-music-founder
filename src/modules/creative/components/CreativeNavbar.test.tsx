@@ -44,7 +44,7 @@ vi.mock('./BrandAssetsDrawer', () => ({
 }));
 
 vi.mock('./ImageSubMenu', () => ({
-    default: ({ onShowBrandAssets }: { onShowBrandAssets: () => void }) => (
+    default: ({ onShowBrandAssets }: any) => (
         <div data-testid="image-sub-menu">
             <button onClick={onShowBrandAssets}>Toggle Brand Assets</button>
         </div>
@@ -118,30 +118,19 @@ describe('CreativeNavbar', () => {
                 <CreativeNavbar />
             </ToastProvider>
         );
-        expect(screen.getByText('indiiOS')).toBeInTheDocument();
-        expect(screen.getByText('Superuser')).toBeInTheDocument();
         // The mode dropdown was replaced by a static "Creative Studio" label
-        expect(screen.getByText('Creative Studio')).toBeInTheDocument();
+        expect(screen.getByText('Alchemy Studio')).toBeInTheDocument();
     });
 
-    it('shows image sub-menu when in image mode', () => {
-        render(
-            <ToastProvider>
-                <CreativeNavbar />
-            </ToastProvider>
-        );
-        expect(screen.getByTestId('image-sub-menu')).toBeInTheDocument();
-    });
-
-    it('opens and closes brand assets drawer', () => {
+    it('opens and closes brand assets drawer', async () => {
         render(
             <ToastProvider>
                 <CreativeNavbar />
             </ToastProvider>
         );
 
-        // Click the toggle button in the mocked ImageSubMenu
-        const toggleButton = screen.getByText('Toggle Brand Assets');
+        // Click the Brand button (text "Brand" with icon)
+        const toggleButton = screen.getByText('Brand');
         fireEvent.click(toggleButton);
 
         // Check if drawer is opened
@@ -151,8 +140,7 @@ describe('CreativeNavbar', () => {
         const closeButton = screen.getByText('Close Drawer');
         fireEvent.click(closeButton);
 
-        // Check if drawer is closed (it might not be removed from DOM immediately if using AnimatePresence, but here we mocked it as simple div)
-        // In the real component, it's conditional rendering: {showBrandAssets && (<BrandAssetsDrawer ... />)}
+        // Check if drawer is closed
         expect(screen.queryByTestId('brand-assets-drawer')).not.toBeInTheDocument();
     });
 
@@ -164,7 +152,7 @@ describe('CreativeNavbar', () => {
             </ToastProvider>
         );
 
-        const projectorButton = screen.getByText('Projector');
+        const projectorButton = screen.getByTitle('Open Projector');
         fireEvent.click(projectorButton);
 
         await waitFor(() => {

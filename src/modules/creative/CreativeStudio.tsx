@@ -98,7 +98,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     }, [pendingPrompt, generationMode, whiskState]);
 
     return (
-        <ModuleErrorBoundary moduleName="Creative Studio">
+        <ModuleErrorBoundary moduleName="Alchemy Studio">
             <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
                 <CreativeNavbar />
                 <div className="flex-1 flex overflow-hidden relative">

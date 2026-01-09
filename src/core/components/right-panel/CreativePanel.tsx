@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image as ImageIcon, Wand2, History, ChevronRight, Zap, ChevronDown, Sliders, Plus, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Wand2, History, ChevronRight, ChevronDown, Plus, Loader2, Sliders } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { motion } from 'framer-motion';
@@ -62,40 +62,16 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
         }
     };
 
-    const handleEnhance = async () => {
-        if (!prompt.trim()) return;
 
-        toast.info("Enhancing prompt...");
-        try {
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: {
-                    role: 'user',
-                    parts: [{ text: `Enhance this image generation prompt to be more descriptive, artistic, and detailed. Keep it under 50 words. Return ONLY the enhanced prompt. Prompt: "${prompt}"` }]
-                },
-                config: AI_CONFIG.THINKING.LOW
-            });
-
-            const enhancedPrompt = response.text();
-            if (enhancedPrompt) {
-                setPrompt(enhancedPrompt.trim());
-                toast.success("Prompt enhanced!");
-            } else {
-                toast.error("Failed to enhance prompt");
-            }
-        } catch (e) {
-            toast.error("Enhance failed");
-        }
-    };
 
     return (
         <div className="flex flex-col h-full bg-gradient-to-b from-[#0d1117] to-[#0d1117]/90">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-purple-500/10 rounded-lg">
-                        <ImageIcon size={14} className="text-purple-400" />
+                        <Sliders size={14} className="text-purple-400" />
                     </div>
-                    Image Studio
+                    Studio Controls
                 </h3>
                 <div className="flex items-center gap-2">
                     <div className="flex gap-1 bg-black/40 p-1 rounded-lg border border-white/5">
@@ -127,27 +103,11 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
                     {/* Prompt Section */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">POSITIVE PROMPT</label>
-                            <button
-                                onClick={handleEnhance}
-                                className="text-[10px] text-purple-400 hover:text-purple-300 flex items-center gap-1 px-2 py-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
-                            >
-                                <Zap size={10} /> Enhance
-                            </button>
-                        </div>
-                        <textarea
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all h-28 resize-none placeholder:text-gray-600 shadow-inner"
-                            placeholder="Describe your imagination..."
-                        />
-                    </div>
+
 
                     {/* Negative Prompt */}
                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">NEGATIVE PROMPT</label>
+                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">CONSTRAINTS (NEGATIVE PROMPT)</label>
                         <textarea
                             value={studioControls.negativePrompt}
                             onChange={(e) => setStudioControls({ negativePrompt: e.target.value })}

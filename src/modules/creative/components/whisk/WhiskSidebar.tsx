@@ -211,7 +211,7 @@ export default function WhiskSidebar() {
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Sparkles className="text-purple-500" size={16} />
-                    <span className="text-xs font-bold text-white tracking-widest uppercase">Whisk Studio</span>
+                    <span className="text-xs font-bold text-white tracking-widest uppercase">Alchemy Studio</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-[9px] text-gray-500 uppercase font-bold">Precise</span>
