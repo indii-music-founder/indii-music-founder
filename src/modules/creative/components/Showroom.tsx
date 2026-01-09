@@ -57,6 +57,7 @@ const motionPresets = [
 export default function Showroom() {
     const { addToHistory, currentProjectId } = useStore();
     const toast = useToast();
+    const [activeMobileSection, setActiveMobileSection] = useState<'setup' | 'stage'>('stage');
 
     // State
     const [productAsset, setProductAsset] = useState<string | null>(null);
@@ -307,11 +308,27 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                 </div>
             </div>
 
+            {/* Mobile View Toggle */}
+            <div className="lg:hidden flex border-b border-white/10 bg-[#1a1a1a]">
+                <button
+                    onClick={() => setActiveMobileSection('setup')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'setup' ? 'text-blue-400 border-b-2 border-blue-400 bg-white/5' : 'text-gray-500'}`}
+                >
+                    Setup (1 & 2)
+                </button>
+                <button
+                    onClick={() => setActiveMobileSection('stage')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'stage' ? 'text-purple-400 border-b-2 border-purple-400 bg-white/5' : 'text-gray-500'}`}
+                >
+                    The Stage (3)
+                </button>
+            </div>
+
             {/* Main Grid */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-800 overflow-hidden">
 
                 {/* Column 1: The Asset (Input) */}
-                <div className="flex flex-col p-6 overflow-y-auto custom-scrollbar bg-[#111]">
+                <div className={`${activeMobileSection === 'setup' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-[#111]`}>
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs">1</span>
                         The Asset
@@ -404,7 +421,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                 </div>
 
                 {/* Column 2: The Scenario (Context) */}
-                <div className="flex flex-col p-6 overflow-y-auto custom-scrollbar bg-[#111]">
+                <div className={`${activeMobileSection === 'setup' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-[#111]`}>
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs">2</span>
                         The Scenario
@@ -493,7 +510,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                 </div>
 
                 {/* Column 3: The Stage (Output) */}
-                <div className="flex flex-col p-6 bg-[#0a0a0a] relative">
+                <div className={`${activeMobileSection === 'stage' ? 'flex' : 'hidden'} lg:flex flex-col p-6 bg-[#0a0a0a] relative`}>
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs">3</span>
                         The Stage

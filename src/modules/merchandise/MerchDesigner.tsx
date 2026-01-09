@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MerchLayout } from './components/Layout';
 import { BananaButton } from './components/BananaButton';
 import { MerchCard } from './components/MerchCard';
@@ -20,7 +20,53 @@ export default function MerchDesigner() {
     const [mockupUrl, setMockupUrl] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [currentVideoJobId, setCurrentVideoJobId] = useState<string | null>(null);
+
     const toast = useToast();
+    const unsubscribeRef = useRef<(() => void) | null>(null);
+
+    // Clean up subscription on unmount
+    useEffect(() => {
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+        };
+    }, []);
+
+    // Monitor video job
+    useEffect(() => {
+        if (!currentVideoJobId) return;
+
+        // Clean up previous subscription
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+        }
+
+        setIsGenerating(true);
+        unsubscribeRef.current = MerchandiseService.subscribeToVideoJob(currentVideoJobId, (job) => {
+            if (!job) return;
+
+            if (job.status === 'completed' && job.videoUrl) {
+                setVideoUrl(job.videoUrl);
+                setIsGenerating(false);
+                setCurrentVideoJobId(null);
+                toast.success("Video generated successfully!");
+            } else if (job.status === 'failed') {
+                setIsGenerating(false);
+                setCurrentVideoJobId(null);
+                toast.error(`Video generation failed: ${job.error || 'Unknown error'}`);
+            }
+        });
+
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+                unsubscribeRef.current = null;
+            }
+        };
+    }, [currentVideoJobId, toast]);
 
     const handleGenerateMockup = async () => {
         if (!scenePrompt) {
@@ -31,6 +77,7 @@ export default function MerchDesigner() {
         setIsGenerating(true);
         try {
             // In a real app, passing the actual asset ID or canvas data
+            // For now using a placeholder ID as per previous logic, but connected to real AI
             const url = await MerchandiseService.generateMockup("current-design-id", "t-shirt", scenePrompt);
             setMockupUrl(url);
             toast.success("Mockup generated!");
@@ -50,13 +97,12 @@ export default function MerchDesigner() {
 
         setIsGenerating(true);
         try {
-            const url = await MerchandiseService.generateVideo(mockupUrl, motionPrompt);
-            setVideoUrl(url);
-            toast.success("Video generated!");
+            const jobId = await MerchandiseService.generateVideo(mockupUrl, motionPrompt);
+            setCurrentVideoJobId(jobId);
+            toast.success("Video generation started...");
         } catch (error) {
-            toast.error("Failed to generate video.");
+            toast.error("Failed to start video generation.");
             console.error(error);
-        } finally {
             setIsGenerating(false);
         }
     };

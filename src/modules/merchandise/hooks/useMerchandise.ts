@@ -44,6 +44,7 @@ export const useMerchandise = () => {
             .catch((err) => {
                 if (mounted) {
                     console.warn("[Merchandise] Failed to load catalog:", err);
+                    setError(err.message || "Failed to load catalog");
                     setIsCatalogLoading(false);
                 }
             });

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useMerchandise } from './useMerchandise';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
+import { revenueService } from '@/services/RevenueService';
 
 // Mock the services
 vi.mock('@/services/merchandise/MerchandiseService', () => ({
@@ -11,6 +12,12 @@ vi.mock('@/services/merchandise/MerchandiseService', () => ({
         createFromCatalog: vi.fn(),
         addProduct: vi.fn(),
         deleteProduct: vi.fn(),
+    }
+}));
+
+vi.mock('@/services/RevenueService', () => ({
+    revenueService: {
+        getUserRevenueStats: vi.fn(),
     }
 }));
 
@@ -27,6 +34,14 @@ describe('useMerchandise', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUseStore.mockReturnValue({ userProfile: { id: 'test-user-id' } });
+        // Default revenue mock
+        vi.mocked(revenueService.getUserRevenueStats).mockResolvedValue({
+            sources: { merch: 100 },
+            sourceCounts: { merch: 5 },
+            revenueByProduct: {},
+            salesByProduct: {},
+            revenueChange: 10
+        } as any);
     });
 
     afterEach(() => {
@@ -79,13 +94,6 @@ describe('useMerchandise', () => {
         await waitFor(() => {
             expect(result.current.error).toBe('Failed to fetch');
         });
-
-        // Loading should eventually be false (assuming product subscription also finishes or isn't blocking)
-        // In our implementation, loading is (isProductsLoading || isCatalogLoading).
-        // Since we mocked subscribeToProducts to just return unsub, it might still think products are loading?
-        // Let's ensure subscribeToProducts callback is called to clear product loading
-        // Or checking that catalog is done is enough for this specific test regarding error state?
-        // Actually, if products are loading, global loading is true. But error should be set.
     });
 
     it('should separate standard and pro products', async () => {
