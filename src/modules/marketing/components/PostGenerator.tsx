@@ -116,6 +116,8 @@ const PreviewPanel = memo(({
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                     <button
                                         className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black outline-none"
+                                        className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white focus-visible:outline-none"
+                                        className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                         aria-label="Use generated image"
                                     >
                                         <Upload size={20} aria-hidden="true" />
@@ -137,6 +139,8 @@ const PreviewPanel = memo(({
                             <button
                                 onClick={() => onCopyToClipboard(result.caption)}
                                 className="flex items-center gap-1 hover:text-white transition-colors rounded-sm focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none px-1"
+                                className="flex items-center gap-1 hover:text-white transition-colors rounded px-1 focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:outline-none"
+                                className="flex items-center gap-1 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1"
                                 aria-label="Copy caption to clipboard"
                             >
                                 <Copy size={12} aria-hidden="true" /> Copy
@@ -146,6 +150,8 @@ const PreviewPanel = memo(({
                             <button
                                 onClick={onEnhanceClick}
                                 className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors rounded-sm focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none px-1"
+                                className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors rounded px-1 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none"
+                                className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1"
                                 aria-label="Enhance caption with AI"
                             >
                                 <Wand2 size={12} aria-hidden="true" /> Enhance with AI
@@ -156,6 +162,8 @@ const PreviewPanel = memo(({
                             value={result.caption}
                             onChange={(e) => onCaptionChange(e.target.value)}
                             className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 resize-none outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:border-transparent"
+                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 focus-visible:ring-1 focus-visible:ring-pink-500 outline-none resize-none"
+                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none focus-visible:ring-1 focus-visible:ring-pink-500 resize-none"
                         />
                         <div className="flex flex-wrap gap-2 mt-2">
                             {result.hashtags.map((tag: string) => (
