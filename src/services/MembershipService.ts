@@ -299,7 +299,7 @@ class MembershipServiceImpl {
      * Returns true if allowed, false if quota exceeded
      */
     async checkQuota(
-        type: 'image' | 'video' | 'storage',
+        type: 'image' | 'video' | 'storage' | 'projects',
         amount: number = 1
     ): Promise<{ allowed: boolean; currentUsage: number; maxAllowed: number }> {
         const userId = await this.getCurrentUserId();
@@ -328,6 +328,10 @@ class MembershipServiceImpl {
             case 'storage':
                 currentUsage = usage.storageUsedMB;
                 maxAllowed = limits.maxStorageMB;
+                break;
+            case 'projects':
+                currentUsage = 0; // TODO: Fetch actual project count from Firestore
+                maxAllowed = limits.maxProjects;
                 break;
             default:
                 return { allowed: true, currentUsage: 0, maxAllowed: Infinity };

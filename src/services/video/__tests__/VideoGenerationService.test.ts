@@ -99,7 +99,7 @@ describe('VideoGenerationService', () => {
             };
 
             // Mock onSnapshot to simulate job progression
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 // 1. Pending
                 callback({
                     exists: () => true,
@@ -130,7 +130,7 @@ describe('VideoGenerationService', () => {
         it('should reject when job status is failed (SafetySettings)', async () => {
             const mockJobId = 'unsafe-job';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 setTimeout(() => {
                     callback({
                         exists: () => true,
@@ -152,7 +152,7 @@ describe('VideoGenerationService', () => {
             const mockJobId = 'slow-pro-job';
 
             // Simulate a job that never completes within the test timeout
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 callback({
                     exists: () => true,
                     id: mockJobId,

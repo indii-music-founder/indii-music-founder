@@ -388,6 +388,7 @@ export default function ChatOverlay() {
                         <button
                             onClick={() => useStore.getState().toggleAgentWindow()}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400"
+                            aria-label="Close Agent"
                         >
                             <X size={20} />
                         </button>
@@ -416,6 +417,7 @@ export default function ChatOverlay() {
                                 ? 'bg-purple-600/20 text-purple-400 border-purple-500/30'
                                 : 'bg-black/50 text-gray-500 border-white/10'
                                 }`}
+                            aria-label={isVoiceEnabled ? "Mute Voice" : "Enable Voice"}
                         >
                             {!isVoiceEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
@@ -501,6 +503,7 @@ export default function ChatOverlay() {
                                         : 'bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                     title="Invite"
+                                    aria-label="Invite"
                                 >
                                     <UserPlus size={18} strokeWidth={1.5} />
                                 </button>
@@ -512,6 +515,7 @@ export default function ChatOverlay() {
                                         : 'bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                     title="History"
+                                    aria-label="History"
                                 >
                                     <HistoryIcon size={18} strokeWidth={1.5} />
                                 </button>
@@ -520,6 +524,7 @@ export default function ChatOverlay() {
                                     onClick={() => createSession()}
                                     className="p-2 rounded-xl transition-all duration-300 border bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white"
                                     title="New"
+                                    aria-label="New Session"
                                 >
                                     <Plus size={18} strokeWidth={1.5} />
                                 </button>
@@ -532,6 +537,7 @@ export default function ChatOverlay() {
                                         ? 'text-white shadow-[0_0_15px_rgba(147,51,234,0.4)] border border-purple-500/50'
                                         : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                                         }`}
+                                    aria-label={isVoiceEnabled ? "Mute Voice" : "Enable Voice"}
                                 >
                                     <div className={`absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 transition-opacity duration-300 ${isVoiceEnabled ? 'opacity-100' : 'opacity-0'}`}></div>
                                     <div className="relative">
@@ -543,6 +549,7 @@ export default function ChatOverlay() {
                                     onClick={() => useStore.getState().toggleAgentWindow()}
                                     className="p-2 rounded-xl transition-all duration-300 border border-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
                                     title="Close"
+                                    aria-label="Close Agent"
                                 >
                                     <X size={18} strokeWidth={1.5} />
                                 </button>

@@ -26,7 +26,7 @@ import type {
 import { SubscriptionTier, TIER_CONFIGS, getTierConfig } from './SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
 
-class SubscriptionService {
+export class SubscriptionService {
   private subscriptionCache: Map<string, Subscription> = new Map();
   private usageCache: Map<string, { stats: UsageStats; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes

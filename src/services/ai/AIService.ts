@@ -212,7 +212,7 @@ export class AIService {
 
                         if (options.cache !== false && cacheKey) {
                             // Default TTL or from options if added later
-                            this.cache.set(cacheKey, result.response, options.cacheTTL);
+                            this.cache.set(cacheKey, result.response as any, options.cacheTTL);
                         }
 
                         return wrapResponse({

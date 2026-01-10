@@ -58,11 +58,6 @@ describe('ChatOverlay', () => {
     const mockStoreState = {
         agentHistory: mockAgentHistory,
         isAgentOpen: true,
-        loadSessions: vi.fn(),
-        createSession: vi.fn(),
-        toggleAgentWindow: vi.fn(),
-        sessions: {},
-        activeSessionId: null
         userProfile: { brandKit: { referenceImages: [] } },
         activeSessionId: 'session-1',
         sessions: {
@@ -106,6 +101,8 @@ describe('ChatOverlay', () => {
         render(<ChatOverlay />);
         // useVoice mock returns isVoiceEnabled: false
         expect(screen.getByTitle('Unmute Text-to-Speech')).toBeInTheDocument();
+    });
+
     it('shows mute button and toggles state', () => {
         // Initial state is voice disabled
         (useVoice as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -174,8 +171,8 @@ describe('ChatOverlay', () => {
         };
 
         (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
-             if (typeof selector === 'function') return selector(newState);
-             return newState;
+            if (typeof selector === 'function') return selector(newState);
+            return newState;
         });
 
         render(<ChatOverlay />);
@@ -196,8 +193,8 @@ describe('ChatOverlay', () => {
         };
 
         (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
-             if (typeof selector === 'function') return selector(streamingState);
-             return streamingState;
+            if (typeof selector === 'function') return selector(streamingState);
+            return streamingState;
         });
 
         const { container } = render(<ChatOverlay />);
@@ -218,8 +215,8 @@ describe('ChatOverlay', () => {
         };
 
         (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
-             if (typeof selector === 'function') return selector(markdownState);
-             return markdownState;
+            if (typeof selector === 'function') return selector(markdownState);
+            return markdownState;
         });
 
         const { container } = render(<ChatOverlay />);

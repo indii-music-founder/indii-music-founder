@@ -71,8 +71,8 @@ describe('GeneralistAgent', () => {
         await agent.execute('Test task', context);
 
         // Verify the prompt contains the injected data
-        const callArgs = generateSpy.mock.calls[0][0];
-        const promptText = (callArgs.contents[0].parts as any[]).find(p => p.text.includes('BRAND CONTEXT'))?.text;
+        const callArgs: any = generateSpy.mock.calls[0]?.[0];
+        const promptText = callArgs?.contents?.[0]?.parts?.find((p: any) => p.text?.includes('BRAND CONTEXT'))?.text;
 
         expect(promptText).toBeDefined();
         expect(promptText).toContain('Identity: Test Bio');

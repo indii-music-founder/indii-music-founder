@@ -8,7 +8,7 @@ describe('Finance Agent Integration', () => {
             distributor: 'distrokid'
         });
 
-        const data = JSON.parse(result);
+        const data = result.data;
         expect(data.status).toBe('READY_FOR_AUDIT');
         expect(data.distributor).toBe('DistroKid');
         expect(data.party_id).toBeDefined();
@@ -20,7 +20,12 @@ describe('Finance Agent Integration', () => {
             distributor: 'fake_distro'
         });
 
-        const data = JSON.parse(result);
+        // When toolError is returned, data might be undefined or contain error info depending on wrapTool
+        // But likely it enters the error flow? 
+        // Logic check: toolError usually returns { success: false, error: ... }
+        // Let's see expectation: status 'UNKNOWN_DISTRIBUTOR'.
+        // If toolError returns that structure in data or error.
+        const data = result.data || result;
         expect(data.status).toBe('UNKNOWN_DISTRIBUTOR');
         expect(data.risk).toBe('HIGH');
     });

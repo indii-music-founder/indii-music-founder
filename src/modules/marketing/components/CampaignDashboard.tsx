@@ -3,6 +3,7 @@ import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
 import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
+import AIGenerateCampaignModal from './AIGenerateCampaignModal';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
@@ -14,6 +15,7 @@ const CampaignDashboard: React.FC = () => {
     // UI State
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('campaigns');
 
     // Memoize handler to prevent re-renders in child components
@@ -37,9 +39,30 @@ const CampaignDashboard: React.FC = () => {
         }
     }, []);
 
+    const handleAISave = useCallback(async (campaign: CampaignAsset) => {
+        setIsAIModalOpen(false);
+        try {
+            // Remove temp ID if key exists, but createCampaign expects specific shape
+            // We assume MarketingService.createCampaign handles this map or we conform to it
+            const newId = await MarketingService.createCampaign({
+                ...campaign,
+                status: campaign.status || 'pending',
+            });
+            const savedCampaign = await MarketingService.getCampaignById(newId);
+            if (savedCampaign) setSelectedCampaign(savedCampaign);
+        } catch (error) {
+            console.error("Failed to save AI campaign", error);
+        }
+    }, []);
+
     // Memoize handler to prevent re-renders in child components
     const handleCreateNew = useCallback(() => {
         setIsCreateModalOpen(true);
+    }, []);
+
+    // Memoize handler to prevent re-renders in child components
+    const handleAIGenerate = useCallback(() => {
+        setIsAIModalOpen(true);
     }, []);
 
     // Test Helper: Allow injecting campaign updates from E2E tests (Maestro Workflow)
@@ -81,6 +104,7 @@ const CampaignDashboard: React.FC = () => {
                             onSelectCampaign={setSelectedCampaign}
                             onUpdateCampaign={handleUpdateCampaign}
                             onCreateNew={handleCreateNew}
+                            onAIGenerate={handleAIGenerate}
                         />
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500">
@@ -95,6 +119,13 @@ const CampaignDashboard: React.FC = () => {
                 <CreateCampaignModal
                     onClose={() => setIsCreateModalOpen(false)}
                     onSave={handleCreateSave}
+                />
+            )}
+
+            {isAIModalOpen && (
+                <AIGenerateCampaignModal
+                    onClose={() => setIsAIModalOpen(false)}
+                    onSave={handleAISave}
                 />
             )}
         </div>

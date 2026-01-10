@@ -6,7 +6,7 @@ import { useRider } from '../hooks/useRider';
 
 // Mock Lucide icons
 vi.mock('lucide-react', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual: any = await importOriginal();
     return {
         ...actual,
         Wine: () => <span data-testid="icon-wine" />,

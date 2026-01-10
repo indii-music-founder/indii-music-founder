@@ -108,6 +108,7 @@ export interface AgentContext {
     distributor?: DistributorInfo;
     traceId?: string;
     attachments?: { mimeType: string; base64: string }[];
+    systemPrompt?: string;
 }
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';

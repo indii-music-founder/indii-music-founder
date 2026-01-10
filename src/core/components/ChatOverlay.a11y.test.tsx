@@ -1,13 +1,12 @@
 
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as matchers from 'vitest-axe/matchers';
-import { axe } from 'vitest-axe';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import ChatOverlay from './ChatOverlay';
 import { useStore } from '@/core/store';
 
-// Extend expect with vitest-axe
-expect.extend(matchers);
+// Extend expect with jest-axe
+expect.extend(toHaveNoViolations);
 
 // Mock dependencies
 vi.mock('@/core/store');
@@ -128,6 +127,9 @@ describe('ChatOverlay Accessibility', () => {
         expect(screen.getByTitle('History')).toHaveAttribute('aria-label', 'History');
 
         // Close button
-        expect(screen.getByTitle('Close')).toHaveAttribute('aria-label', 'Close');
+        expect(screen.getByTitle('Close')).toHaveAttribute('aria-label', 'Close Agent');
+
+        // New Session button
+        expect(screen.getByTitle('New')).toHaveAttribute('aria-label', 'New Session');
     });
 });

@@ -153,7 +153,7 @@ export class FirebaseAIService {
                 const result = await modelCallback.generateContent(
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
-                        : sanitizedPrompt as Content,
+                        : { contents: sanitizedPrompt } as any,
                     // @ts-ignore - options param not in typed definition but supported by underlying implementation
                     options
                 );

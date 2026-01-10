@@ -75,7 +75,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         mime_type: file.type
                     });
 
-                    const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
+                    const jsonMatch = resultJson.data?.raw_data?.match(/\{[\s\S]*\}/);
                     if (jsonMatch && userProfile?.id) {
                         const data = JSON.parse(jsonMatch[0]);
                         const expenseData = {

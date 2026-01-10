@@ -145,7 +145,7 @@ describe('LicensingAgent', () => {
     describe('draft_license', () => {
         it('should use LegalTools to draft a contract', async () => {
             const { LegalTools } = await import('../tools/LegalTools');
-            vi.mocked(LegalTools.draft_contract).mockResolvedValue({ success: true, data: { contract: "Mocked Contract Content" } });
+            vi.mocked(LegalTools.draft_contract).mockResolvedValue({ success: true, data: { content: "Mocked Contract Content" } });
 
             const args = {
                 type: 'Sync License',

@@ -341,6 +341,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-royalties',
         hoverBg: 'hover:bg-dept-royalties/5',
         cssVar: '--color-dept-royalties',
+    },
+    observability: {
+        text: 'text-dept-distribution',
+        bg: 'bg-dept-distribution/10',
+        border: 'border-dept-distribution',
+        ring: 'focus-within:ring-dept-distribution/50',
+        hoverText: 'hover:text-dept-distribution',
+        hoverBg: 'hover:bg-dept-distribution/5',
+        cssVar: '--color-dept-distribution',
     }
 };
 

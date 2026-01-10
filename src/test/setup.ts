@@ -2,7 +2,9 @@ import { vi } from 'vitest';
 
 // Only import DOM-specific modules when running in jsdom environment
 if (typeof window !== 'undefined') {
+    // @ts-ignore
     await import('@testing-library/jest-dom');
+    // @ts-ignore
     await import('fake-indexeddb/auto');
 
     // Mock ResizeObserver

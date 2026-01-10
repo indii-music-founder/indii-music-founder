@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback, generateSection, OPTION_WHITELISTS } from '@/services/onboarding/onboardingService';
+import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback, generateSection, OPTION_WHITELISTS, type TopicKey } from '@/services/onboarding/onboardingService';
+import { useToast } from '@/core/context/ToastContext';
 import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign, Pencil, RefreshCw, Check } from 'lucide-react';
 import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -58,6 +59,7 @@ export default function OnboardingPage() {
     }
 
     const { userProfile, setUserProfile, setModule } = useStore();
+    const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -94,7 +96,7 @@ export default function OnboardingPage() {
 
     // Lifecycle log cleanup
     useEffect(() => {
-        return () => {};
+        return () => { };
     }, []);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,11 +214,11 @@ export default function OnboardingPage() {
                     const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
 
                     // Determine the next topic to ask about (prioritize core identity, then release)
-                    const nextMissing = coreMissing.length > 0
+                    const nextMissing = (coreMissing.length > 0
                         ? coreMissing[0]
                         : releaseMissing.length > 0
                             ? releaseMissing[0]
-                            : null;
+                            : null) as TopicKey | null;
 
                     const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
                     const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);

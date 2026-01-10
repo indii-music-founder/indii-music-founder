@@ -139,4 +139,14 @@ describe('CampaignManager', () => {
             ])
         }));
     });
+
+    it('executes campaign when execute button is clicked', async () => {
+        render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
+        fireEvent.click(screen.getByText('Execute Campaign'));
+
+        // Expect optimistic update
+        expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
+            status: CampaignStatus.EXECUTING
+        }));
+    });
 });

@@ -63,7 +63,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 }
             };
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 // Simulate "Processing" -> "Success"
                 callback({
                     exists: () => true,
@@ -102,7 +102,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
         it('should handle Flash generation (< 2s)', async () => {
             const mockJobId = 'flash-job';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 setTimeout(() => {
                     callback({
                         exists: () => true,
@@ -124,7 +124,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
         it('should handle Pro generation (< 30s) and timeout if too slow', async () => {
             const mockJobId = 'pro-job-slow';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
@@ -146,7 +146,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
         it('should gracefully handle Gemini/Veo safety blocks', async () => {
             const mockJobId = 'unsafe-content';
 
-            vi.mocked(onSnapshot).mockImplementation((ref, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
                 setTimeout(() => {
                     callback({
                         exists: () => true,

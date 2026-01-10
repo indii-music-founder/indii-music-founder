@@ -59,189 +59,254 @@ export default function PublicistDashboard() {
 
     return (
         <ModuleErrorBoundary moduleName="Publicist Dashboard">
-            <div className="min-h-screen bg-slate-950 text-white p-6 lg:p-10 relative overflow-hidden font-sans">
-                {/* Background Decor */}
-                <div className="fixed -top-[20%] -left-[10%] w-[50%] h-[50%] bg-sonic-purple/10 blur-[150px] pointer-events-none" />
-                <div className="fixed bottom-[10%] right-[5%] w-[30%] h-[30%] bg-sonic-blue/10 blur-[150px] pointer-events-none" />
+            <div className="flex h-screen w-full bg-[#0a0a0a] text-slate-200 font-sans overflow-hidden selection:bg-purple-500/30 relative">
+                {/* Global Background Ambience */}
+                <div className="fixed inset-0 pointer-events-none z-0">
+                    <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-900/10 blur-[150px]" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-900/10 blur-[150px]" />
+                    <div className="absolute top-[40%] left-[40%] w-[40%] h-[40%] bg-indigo-500/5 blur-[120px] animate-pulse-slow" />
+                </div>
 
-                <div className="max-w-[1600px] mx-auto relative z-10">
-                    {/* Header Section */}
-                    <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 mb-12">
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-gradient-to-br from-sonic-purple/20 to-sonic-blue/20 border border-white/10 rounded-2xl shadow-xl backdrop-blur-md">
-                                    <Mic size={32} className="text-white drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
-                                </div>
-                                <div>
-                                    <h1 className="text-5xl font-black tracking-tighter text-white mb-1">
-                                        Publicist
-                                        <span className="text-sonic-purple">.</span>
-                                    </h1>
-                                    <p className="text-slate-400 font-medium tracking-wide text-sm uppercase">
-                                        Global Press & Media Relations
-                                    </p>
-                                </div>
+                {/* Sidebar Navigation */}
+                <aside className="w-64 lg:w-72 h-full z-20 flex flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl relative">
+                    {/* Brand */}
+                    <div className="p-6 pb-2">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                                <Mic size={20} className="text-white" />
                             </div>
-                            <StatsTicker stats={stats} />
+                            <div>
+                                <h1 className="text-lg font-bold text-white leading-tight">Publicist<span className="text-purple-500">.</span></h1>
+                                <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">PR & Media</p>
+                            </div>
                         </div>
 
+                        {/* Quick Stats Mini-Ticker (Vertical) */}
+                        <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
+                            <div>
+                                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Global Reach</div>
+                                <div className="text-lg font-bold text-white">{stats.globalReach}</div>
+                            </div>
+                            <div>
+                                <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Open Rate</div>
+                                <div className="text-lg font-bold text-emerald-400">{stats.avgOpenRate}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigation Menu */}
+                    <nav className="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar">
+                        <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2 mb-2">Main Menu</div>
+
+                        <NavButton
+                            isActive={activeTab === 'campaigns'}
+                            onClick={() => setActiveTab('campaigns')}
+                            icon={Megaphone}
+                            label="Campaigns"
+                        />
+                        <NavButton
+                            isActive={activeTab === 'contacts'}
+                            onClick={() => setActiveTab('contacts')}
+                            icon={Users}
+                            label="Media Network"
+                        />
+                        {/* Reports & Identity - Future / Lower priority tabs */}
+                        <NavButton
+                            isActive={false}
+                            onClick={() => { }} // Placeholder
+                            icon={ArrowUpRight}
+                            label="Analytics & Reports"
+                            disabled
+                        />
+                        <div className="pt-6 pb-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2 mb-2">Tools</div>
+                        <button
+                            onClick={() => setIsOnboardingOpen(true)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all group text-sm font-medium"
+                        >
+                            <Sparkles size={16} className="text-purple-400 opacity-70 group-hover:opacity-100" />
+                            <span>Brand Identity</span>
+                        </button>
+                        <button
+                            onClick={() => setIsTipsOpen(true)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all group text-sm font-medium"
+                        >
+                            <Sparkles size={16} className="text-indigo-400 opacity-70 group-hover:opacity-100" />
+                            <span>Pro Tips</span>
+                        </button>
+                    </nav>
+
+                    {/* User Profile / Footer */}
+                    <div className="p-4 border-t border-white/5">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400">
+                                {userProfile?.bio ? userProfile.bio.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-white truncate">Connected</div>
+                                <div className="text-[10px] text-emerald-400 truncate">Online</div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                {/* Main Content Area */}
+                <main className="flex-1 relative flex flex-col min-w-0 z-10 h-full">
+                    {/* Top HUD Bar */}
+                    <header className="h-20 shrink-0 px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-4">
+                            <h2 className="text-2xl font-bold text-white tracking-tight">
+                                {activeTab === 'campaigns' ? 'Campaigns' : 'Media Network'}
+                            </h2>
+                            <div className="h-6 w-px bg-white/10 mx-2" />
+
+                            {/* Search Bar */}
                             <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sonic-purple transition-colors" size={18} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-purple-400 transition-colors" size={14} />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search campaigns & contacts..."
-                                    className="w-full md:w-80 bg-white/5 backdrop-blur-md border border-white/10 focus:border-sonic-purple/50 rounded-2xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-sonic-purple/10 transition-all shadow-lg"
+                                    placeholder={activeTab === 'campaigns' ? "Search campaigns..." : "Search contacts..."}
+                                    className="w-64 bg-black/20 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs font-medium text-white placeholder-slate-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all hover:border-white/20"
                                 />
                             </div>
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                                <Plus size={20} />
-                                <span className="hidden sm:inline">New Campaign</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Main Content Layout (3-Column) */}
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-
-                        {/* LEFT COLUMN: Navigation & Quick Actions (2 cols) */}
-                        <div className="xl:col-span-2 space-y-4 hidden xl:block">
-                            <div className="glass-panel rounded-3xl p-4 space-y-2 bg-slate-900/50 border-white/5">
-                                <button className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 text-white rounded-xl font-bold border border-white/10 shadow-lg">
-                                    <Megaphone size={18} className="text-sonic-purple" />
-                                    Campaigns
-                                </button>
-                                <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-all">
-                                    <Users size={18} />
-                                    Contacts
-                                </button>
-                                <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-all">
-                                    <ArrowUpRight size={18} />
-                                    Reports
-                                </button>
-                                <button
-                                    onClick={() => setIsOnboardingOpen(true)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-all"
-                                >
-                                    <Sparkles size={18} />
-                                    Brand Identity
-                                </button>
-                            </div>
-
-                            <div
-                                onClick={() => setIsTipsOpen(true)}
-                                className="p-6 bg-gradient-to-br from-sonic-purple/20 to-sonic-blue/20 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-sonic-purple/30 transition-colors cursor-pointer"
-                            >
-                                <h3 className="text-xl font-bold text-white mb-2 relative z-10">Pro Tips</h3>
-                                <p className="text-sm text-slate-300 relative z-10 mb-4">Enhance your pitch with AI-generated press kits.</p>
-                                <div className="absolute bottom-0 right-0 w-32 h-32 bg-sonic-purple/30 blur-3xl rounded-full group-hover:bg-sonic-purple/40 transition-all" />
-                            </div>
                         </div>
 
-                        {/* CENTER COLUMN: Active Workspace (7 cols) */}
-                        <div className="xl:col-span-7 space-y-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-2xl font-bold text-white tracking-tight">Active Campaigns</h2>
-                                <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
+                            {/* Filter Controls (Visible on Campaign Tab) */}
+                            {activeTab === 'campaigns' && (
+                                <>
+                                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+                                        <button
+                                            onClick={() => setViewMode('grid')}
+                                            className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                                        >
+                                            <LayoutGrid size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                                        >
+                                            <List size={14} />
+                                        </button>
+                                    </div>
                                     <select
                                         value={filterType}
-                                        onChange={(e) => setFilterType(e.target.value as 'all' | 'Live' | 'Scheduled' | 'Draft')}
-                                        className="bg-white/5 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-sonic-purple/20 transition-all"
+                                        onChange={(e) => setFilterType(e.target.value as any)}
+                                        className="bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-slate-300 focus:outline-none hover:border-white/20 transition-colors"
                                     >
                                         <option value="all" className="bg-slate-900">All Status</option>
                                         <option value="Live" className="bg-slate-900">Live</option>
                                         <option value="Scheduled" className="bg-slate-900">Scheduled</option>
                                         <option value="Draft" className="bg-slate-900">Draft</option>
                                     </select>
-                                    <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
-                                        <button
-                                            onClick={() => setViewMode('grid')}
-                                            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                                        >
-                                            <LayoutGrid size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => setViewMode('list')}
-                                            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-                                        >
-                                            <List size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                                </>
+                            )}
 
-                            <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-                                <AnimatePresence mode="popLayout">
-                                    {campaigns.map((campaign) => (
-                                        <CampaignCard
-                                            key={campaign.id}
-                                            campaign={campaign}
-                                            onClick={(c) => setSelectedCampaign(c)}
-                                        />
-                                    ))}
-                                </AnimatePresence>
+                            <button
+                                onClick={() => setIsCreateModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-2"
+                            >
+                                <Plus size={14} />
+                                <span>New Campaign</span>
+                            </button>
+                        </div>
+                    </header>
 
-                                {campaigns.length === 0 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="col-span-full py-12 flex flex-col items-center justify-center text-center space-y-4"
-                                    >
-                                        <div className="p-4 bg-slate-800/50 rounded-full">
-                                            <Megaphone size={40} className="text-slate-500 opacity-50" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-white">No Campaigns Found</h3>
-                                            <p className="text-sm text-slate-400">Adjust your search or filter to see more.</p>
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* "Add New" Placeholder Card */}
-                                <motion.button
-                                    onClick={() => setIsCreateModalOpen(true)}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="flex flex-col items-center justify-center gap-4 p-8 border-2 border-dashed border-white/5 rounded-2xl hover:border-white/20 hover:bg-white/5 transition-all group min-h-[160px]"
+                    {/* Scrollable Content Stage */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 scroll-smooth no-scrollbar">
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'campaigns' ? (
+                                <motion.div
+                                    key="campaigns-view"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    transition={{ duration: 0.2 }}
+                                    className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-1'}`}
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                                        <Plus size={24} className="text-slate-500 group-hover:text-white" />
+                                    {/* Campaign Cards */}
+                                    <AnimatePresence mode="popLayout">
+                                        {campaigns.map((campaign) => (
+                                            <CampaignCard
+                                                key={campaign.id}
+                                                campaign={campaign}
+                                                onClick={(c) => setSelectedCampaign(c)}
+                                            />
+                                        ))}
+                                    </AnimatePresence>
+
+                                    {/* Empty State */}
+                                    {campaigns.length === 0 && (
+                                        <div className="col-span-full py-32 flex flex-col items-center justify-center text-center opacity-50">
+                                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                                <Megaphone size={32} className="text-slate-500" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-white mb-2">No Campaigns Yet</h3>
+                                            <p className="text-sm text-slate-400 max-w-xs mx-auto">Start your first campaign to begin reaching out to media contacts.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Add New Ghost Card (Grid Only) */}
+                                    {viewMode === 'grid' && (
+                                        <motion.button
+                                            onClick={() => setIsCreateModalOpen(true)}
+                                            whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="group flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-white/5 rounded-2xl transition-all h-full min-h-[300px]"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-white/10 flex items-center justify-center transition-colors">
+                                                <Plus size={20} className="text-slate-500 group-hover:text-white" />
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-500 group-hover:text-white transition-colors">Create New Campaign</span>
+                                        </motion.button>
+                                    )}
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="contacts-view"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="max-w-5xl mx-auto"
+                                >
+                                    {/* Stats Summary for Contacts */}
+                                    <div className="grid grid-cols-3 gap-6 mb-8">
+                                        <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
+                                            <div className="text-3xl font-black text-white mb-1">{contacts.length}</div>
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Contacts</div>
+                                        </div>
+                                        <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
+                                            <div className="text-3xl font-black text-purple-400 mb-1">{contacts.filter(c => c.tier === 'Top').length}</div>
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Top Tier</div>
+                                        </div>
+                                        <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
+                                            <div className="text-3xl font-black text-blue-400 mb-1">{contacts.filter(c => c.influenceScore > 80).length}</div>
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Influencers</div>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-bold text-slate-500 group-hover:text-white">Start New Campaign</span>
-                                </motion.button>
-                            </div>
-                        </div>
 
-                        {/* RIGHT COLUMN: Contact Stream / Feed (3 cols) */}
-                        <div className="xl:col-span-3 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-white tracking-tight">Media Network</h2>
-                                <button className="text-xs font-bold text-purple-400 hover:text-purple-300 uppercase tracking-wide">View All</button>
-                            </div>
-
-                            <div className="bg-slate-900/40 rounded-3xl p-4 border border-white/5 h-[calc(100vh-320px)] overflow-y-auto no-scrollbar relative">
-                                {contacts.length > 0 ? (
-                                    <ContactList
-                                        contacts={contacts}
-                                        onSelectContact={(c) => setSelectedContact(c)}
-                                    />
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
-                                        <Users size={32} className="text-slate-600 opacity-30" />
-                                        <p className="text-sm text-slate-500">No media contacts found matching your query.</p>
+                                    {/* Contact List */}
+                                    <div className="glass-panel rounded-3xl p-6 border border-white/5">
+                                        <ContactList
+                                            contacts={contacts}
+                                            onSelectContact={(c) => setSelectedContact(c)}
+                                        />
+                                        {contacts.length === 0 && (
+                                            <div className="py-20 text-center text-slate-500 text-sm">
+                                                No contacts found.
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </div>
-
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
-                </div>
+                </main>
             </div>
 
+            {/* Modals */}
             <CreateCampaignModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -267,5 +332,34 @@ export default function PublicistDashboard() {
                 onClose={() => setIsOnboardingOpen(false)}
             />
         </ModuleErrorBoundary >
+    );
+}
+
+// Sub-component for Sidebar Navigation Buttons
+function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick: () => void; icon: any; label: string; disabled?: boolean }) {
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group
+                ${isActive
+                    ? 'bg-purple-600/10 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)] border border-purple-500/20'
+                    : disabled
+                        ? 'text-slate-600 cursor-not-allowed'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'}
+            `}
+        >
+            <Icon
+                size={18}
+                className={`
+                    transition-colors 
+                    ${isActive ? 'text-purple-400' : disabled ? 'text-slate-700' : 'text-slate-500 group-hover:text-slate-300'}
+                `}
+            />
+            <span>{label}</span>
+            {disabled && <span className="ml-auto text-[8px] bg-white/5 px-1.5 py-0.5 rounded text-slate-600 uppercase font-bold">Soon</span>}
+            {isActive && <motion.div layoutId="active-indicator" className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />}
+        </button>
     );
 }

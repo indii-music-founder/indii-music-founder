@@ -714,7 +714,7 @@ export function processFunctionCalls(
 // --- Natural Fallback Response Generator ---
 // These replace robotic "I processed that" messages with human, contextual responses
 
-type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor';
+export type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor';
 
 // Educational context for each topic - helps users understand WHY we need this info
 const topicContext: Record<TopicKey, { name: string; why: string; examples: string[] }> = {

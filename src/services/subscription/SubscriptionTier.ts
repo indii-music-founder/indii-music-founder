@@ -289,9 +289,11 @@ export function getBaseTier(tier: SubscriptionTier): SubscriptionTier {
  */
 export function calculateYearlySavings(monthlyTier: SubscriptionTier): number {
   const monthlyConfig = TIER_CONFIGS[monthlyTier];
-  const yearlyConfig = TIER_CONFIGS[mappingMonthToYearly(monthlyTier)];
+  const yearlyTier = mappingMonthToYearly(monthlyTier);
 
-  if (!monthlyConfig || !yearlyConfig) return 0;
+  if (!monthlyConfig || !yearlyTier) return 0;
+
+  const yearlyConfig = TIER_CONFIGS[yearlyTier];
 
   const monthlyYearlyTotal = monthlyConfig.price * 12;
   return monthlyYearlyTotal - yearlyConfig.price;

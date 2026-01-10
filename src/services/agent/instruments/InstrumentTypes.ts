@@ -51,6 +51,7 @@ export interface JSONSchemaObject {
   minLength?: number;
   maxLength?: number;
   format?: string;
+  default?: any;
 }
 
 /**
