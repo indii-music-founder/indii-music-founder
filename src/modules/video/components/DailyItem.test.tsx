@@ -44,7 +44,7 @@ describe('DailyItem', () => {
 
         // Verify accessible attributes
         expect(item).toHaveAttribute('tabIndex', '0');
-        expect(item).toHaveAttribute('aria-label', `Select video: ${mockVideo.prompt}`);
+        expect(item).toHaveAttribute('aria-label', `Select video: ${mockVideo.prompt}, Duration: 4 seconds`);
 
         // Verify keyboard interaction
         fireEvent.keyDown(item, { key: 'Enter' });

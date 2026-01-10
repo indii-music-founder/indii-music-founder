@@ -3,6 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { DistributionStageReleaseSchema } from '../utils/validation';
+import { validateSafeDistributionSource } from '../utils/security-checks';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
@@ -60,8 +61,13 @@ export const setupDistributionHandlers = () => {
                     }
 
                     // Handle file:// protocol if present
-                    const sourcePath = file.data.startsWith('file://') ? new URL(file.data).pathname : file.data;
-                    await fs.copyFile(decodeURIComponent(sourcePath), destPath);
+                    const rawPath = file.data.startsWith('file://') ? new URL(file.data).pathname : file.data;
+                    const sourcePath = decodeURIComponent(rawPath);
+
+                    // Security Check: LFI Prevention
+                    validateSafeDistributionSource(sourcePath);
+
+                    await fs.copyFile(sourcePath, destPath);
                 }
                 writtenFiles.push(file.name);
             }
