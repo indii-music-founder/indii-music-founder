@@ -35,7 +35,8 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         addTrack,
         removeTrack,
         removeClip,
-        setProject
+        setProject,
+        setCurrentTime
     } = useVideoEditor(initialVideo);
 
     const { handleDragStart } = useTimelineDrag();
@@ -73,7 +74,11 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 />
 
                 <div className="flex-1 flex items-center justify-center bg-black relative">
-                    <VideoPreview playerRef={playerRef} project={project} />
+                    <VideoPreview
+                        playerRef={playerRef}
+                        project={project}
+                        onFrameUpdate={(frame) => setCurrentTime(frame)}
+                    />
                 </div>
 
                 <VideoPropertiesPanel
