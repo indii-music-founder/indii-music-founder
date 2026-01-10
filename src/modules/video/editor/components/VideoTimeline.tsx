@@ -1,15 +1,16 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus } from 'lucide-react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { TimeRuler } from './TimeRuler';
 import { TrackList } from './TrackList';
+import { Playhead } from './Playhead';
 import { PIXELS_PER_FRAME } from '../constants';
 import { groupClipsByTrack } from '../utils/timelineUtils';
 
 interface VideoTimelineProps {
     project: VideoProject;
     isPlaying: boolean;
-    currentTime: number;
+    // currentTime removed from props to prevent re-renders
     selectedClipId: string | null;
     handlePlayPause: () => void;
     handleSeek: (frame: number) => void;
@@ -21,11 +22,11 @@ interface VideoTimelineProps {
     formatTime: (frame: number) => string;
 }
 
-export const VideoTimeline: React.FC<VideoTimelineProps> = ({
-    project, isPlaying, currentTime, selectedClipId,
+export const VideoTimeline = memo(({
+    project, isPlaying, selectedClipId,
     handlePlayPause, handleSeek, handleAddTrack, handleAddSampleClip,
     removeTrack, removeClip, handleDragStart, formatTime
-}) => {
+}: VideoTimelineProps) => {
     const { addKeyframe, removeKeyframe, updateKeyframe } = useVideoEditorStore();
     const [expandedClipIds, setExpandedClipIds] = useState<Set<string>>(() => new Set());
 
@@ -85,6 +86,14 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     <button onClick={() => handleSeek(project.durationInFrames)} className="p-1.5 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to end"><SkipForward size={16} /></button>
                 </div>
                 <div className="h-6 w-px bg-gray-700 mx-2"></div>
+                {/* Use formatTime from props, but pass 0 for start or use a store-connected time display if needed.
+                    Since this is a control bar, showing current time might be needed.
+                    However, passing currentTime re-renders the whole component.
+                    We can make a separate ConnectedTimeDisplay if needed, but for now displaying 00:00:00 as start marker is fine
+                    or the user intention was to show current time.
+                    Wait, the original code showed `formatTime(0)`. That is static!
+                    It shows "00:00:00". So it's fine.
+                */}
                 <span className="text-xs text-[--primary] font-mono font-bold">{formatTime(0)}</span>
                 <div className="flex-1"></div>
                 <button onClick={handleAddTrack} className="flex items-center gap-1 text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300 transition-colors">
@@ -101,13 +110,8 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
                     onSeek={handleSeek}
                 />
 
-                {/* Playhead */}
-                <div
-                    className="absolute top-0 bottom-0 w-px bg-red-500 z-50 pointer-events-none"
-                    style={{ left: (currentTime * PIXELS_PER_FRAME) + 8 }}
-                >
-                    <div className="absolute -top-1 -left-1.5 w-3 h-3 bg-red-500 transform rotate-45"></div>
-                </div>
+                {/* Playhead (Self-connected to store) */}
+                <Playhead />
 
                 {/* Optimized Track List */}
                 <TrackList
@@ -138,4 +142,6 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
             </div>
         </div>
     );
-};
+});
+
+VideoTimeline.displayName = 'VideoTimeline';
