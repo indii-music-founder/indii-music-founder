@@ -202,7 +202,6 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
             {msg.role === 'system' && <span>{msg.text}</span>}
 
             {msg.isStreaming && (
-                <div className="mt-2 flex items-center gap-1.5 h-4" data-testid="thinking-dots">
                 <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
                     <motion.div
                         animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
