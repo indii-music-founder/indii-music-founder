@@ -46,12 +46,14 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     // Handle Pending Prompt for Image Mode
     useEffect(() => {
         if (pendingPrompt && generationMode === 'image') {
+            const { setIsGenerating } = useStore.getState();
             setPrompt(pendingPrompt);
             setPendingPrompt(null);
 
             // Trigger Image Generation
             const generateImage = async () => {
                 const isCoverArt = studioControls.isCoverArtMode;
+                setIsGenerating(true);
                 toast.info(isCoverArt ? "Generating cover art..." : "Generating image...");
 
                 try {
@@ -92,6 +94,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     }
                 } catch (e) {
                     toast.error("Image generation failed.");
+                } finally {
+                    setIsGenerating(false);
                 }
             };
             generateImage();

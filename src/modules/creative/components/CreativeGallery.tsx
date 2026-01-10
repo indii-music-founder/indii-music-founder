@@ -107,7 +107,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', item); toast.success("Set as First Frame"); }}
-                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors"
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 transition-colors"
                                     title="Set as First Frame"
                                 >
                                     <ArrowLeftToLine size={14} />
@@ -137,12 +137,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 transition-colors" title="Dislike">
                             <ThumbsDown size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors" title="Flag">
-                            <Flag size={14} />
-                        </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                            className="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"
+                            className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
                             title="Delete"
                         >
                             <Trash2 size={14} />

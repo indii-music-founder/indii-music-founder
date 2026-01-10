@@ -137,6 +137,9 @@ export interface CreativeSlice {
     removeWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
     toggleWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
     setPreciseReference: (precise: boolean) => void;
+
+    isGenerating: boolean;
+    setIsGenerating: (isGenerating: boolean) => void;
 }
 
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
@@ -347,4 +350,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     setPreciseReference: (precise) => set((state) => ({
         whiskState: { ...state.whiskState, preciseReference: precise }
     })),
+
+    isGenerating: false,
+    setIsGenerating: (isGenerating) => set({ isGenerating }),
 });

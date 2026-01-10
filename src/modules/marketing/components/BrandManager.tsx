@@ -46,18 +46,24 @@ const BrandManager: React.FC = () => {
 
     // -- IDENTITY SECTION HANDLERS --
     const handleSaveBio = async () => {
-        if (!userProfile?.id) return;
+        if (!userProfile?.id) {
+            console.error("[BrandManager] Save failed: No userProfile.id");
+            return;
+        }
+        console.info(`[BrandManager] Saving bio for user: ${userProfile.id}`, { bioDraft });
+
         try {
             const updatedProfile = { ...userProfile, bio: bioDraft };
+
+            // This triggers ProfileSlice.setUserProfile -> saveProfileToStorage
+            // which saves to LocalDB AND Firestore (if auth ID matches).
             setUserProfile(updatedProfile);
 
-            // Persist
-            const userRef = doc(db, 'users', userProfile.id);
-            await updateDoc(userRef, { bio: bioDraft });
-
+            console.info("[BrandManager] Bio save triggered via ProfileSlice");
             setIsEditingBio(false);
             toast.success("Bio updated");
         } catch (e) {
+            console.error("[BrandManager] Bio save error:", e);
             toast.error("Failed to save bio");
         }
     };
@@ -106,7 +112,7 @@ const BrandManager: React.FC = () => {
         Object.keys(updates).forEach(key => {
             firestoreUpdates[`brandKit.${key}`] = updates[key as keyof BrandKit];
         });
-        await updateDoc(userRef, firestoreUpdates);
+        await updateDoc(userRef, firestoreUpdates as any);
     };
 
     // -- HEALTH CHECK HANDLER --

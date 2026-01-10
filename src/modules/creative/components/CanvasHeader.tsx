@@ -103,13 +103,13 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                             onClick={() => onSendToWorkflow('firstFrame', item)}
                                             className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
                                         >
-                                            <Film size={14} className="text-blue-400" /> Use as Start Frame
+                                            <Film size={14} className="text-blue-400" /> Use as First Frame
                                         </button>
                                         <button
                                             onClick={() => onSendToWorkflow('lastFrame', item)}
                                             className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
                                         >
-                                            <Clapperboard size={14} className="text-green-400" /> Use as End Frame
+                                            <Clapperboard size={14} className="text-green-400" /> Use as Last Frame
                                         </button>
                                         <div className="border-t border-gray-700 my-1"></div>
                                     </>
@@ -149,7 +149,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                 onClick={() => setIsSelectingEndFrame(true)}
                                 className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                             >
-                                <ImageIcon size={14} /> Set End Frame
+                                <ImageIcon size={14} /> Set Last Frame
                             </button>
                         )}
                         <button

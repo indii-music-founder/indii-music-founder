@@ -7,7 +7,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useToast } from '@/core/context/ToastContext';
 
 export default function MainPromptBar() {
-    const { prompt, setPrompt, whiskState, setPendingPrompt } = useStore();
+    const { prompt, setPrompt, whiskState, setPendingPrompt, isGenerating } = useStore();
     const [isFocused, setIsFocused] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const toast = useToast();
@@ -41,7 +41,10 @@ export default function MainPromptBar() {
     };
 
     const handleGenerate = () => {
-        if (!prompt.trim()) return;
+        if (!prompt.trim()) {
+            toast.error("Please enter a prompt first.");
+            return;
+        }
         setPendingPrompt(prompt);
     };
 
@@ -83,7 +86,7 @@ export default function MainPromptBar() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 onClick={handleEnhance}
-                                disabled={isEnhancing}
+                                disabled={isEnhancing || isGenerating}
                                 className="text-purple-400 hover:text-purple-300 p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
                                 title="Enhance with AI"
                             >
@@ -92,11 +95,11 @@ export default function MainPromptBar() {
                         )}
                         <button
                             onClick={handleGenerate}
-                            disabled={!prompt.trim()}
+                            disabled={isGenerating}
                             className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-600 px-4 py-2 rounded-xl text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95"
                         >
-                            <Send size={14} />
-                            Generate
+                            {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                            {isGenerating ? 'Generating...' : 'Generate'}
                         </button>
                     </div>
                 </div>

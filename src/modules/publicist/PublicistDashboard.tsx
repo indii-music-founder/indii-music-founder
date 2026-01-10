@@ -18,6 +18,7 @@ import { CampaignCard } from './components/CampaignCard';
 import { ContactList } from './components/ContactList';
 import { StatsTicker } from './components/StatsTicker';
 import { CreateCampaignModal } from './components/CreateCampaignModal';
+import { CreateContactModal } from './components/CreateContactModal';
 import { CampaignDetailsModal } from './components/CampaignDetailsModal';
 import { ContactDetailsModal } from './components/ContactDetailsModal';
 import { ProTipsModal } from './components/ProTipsModal';
@@ -40,7 +41,8 @@ export default function PublicistDashboard() {
         userProfile
     } = usePublicist();
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false);
+    const [isCreateContactModalOpen, setIsCreateContactModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [isTipsOpen, setIsTipsOpen] = useState(false);
@@ -203,13 +205,23 @@ export default function PublicistDashboard() {
                                 </>
                             )}
 
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-2"
-                            >
-                                <Plus size={14} />
-                                <span>New Campaign</span>
-                            </button>
+                            {activeTab === 'campaigns' ? (
+                                <button
+                                    onClick={() => setIsCreateCampaignModalOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-2"
+                                >
+                                    <Plus size={14} />
+                                    <span>New Campaign</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setIsCreateContactModalOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-2"
+                                >
+                                    <Plus size={14} />
+                                    <span>New Contact</span>
+                                </button>
+                            )}
                         </div>
                     </header>
 
@@ -250,7 +262,7 @@ export default function PublicistDashboard() {
                                     {/* Add New Ghost Card (Grid Only) */}
                                     {viewMode === 'grid' && (
                                         <motion.button
-                                            onClick={() => setIsCreateModalOpen(true)}
+                                            onClick={() => setIsCreateCampaignModalOpen(true)}
                                             whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" }}
                                             whileTap={{ scale: 0.98 }}
                                             className="group flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-white/5 rounded-2xl transition-all h-full min-h-[300px]"
@@ -308,8 +320,13 @@ export default function PublicistDashboard() {
 
             {/* Modals */}
             <CreateCampaignModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                isOpen={isCreateCampaignModalOpen}
+                onClose={() => setIsCreateCampaignModalOpen(false)}
+                userId={userProfile?.uid || ''}
+            />
+            <CreateContactModal
+                isOpen={isCreateContactModalOpen}
+                onClose={() => setIsCreateContactModalOpen(false)}
                 userId={userProfile?.uid || ''}
             />
             <CampaignDetailsModal
