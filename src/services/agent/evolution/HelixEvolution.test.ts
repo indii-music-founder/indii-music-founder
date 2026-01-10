@@ -179,6 +179,35 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
       expect(prompts[1]).not.toEqual(prompts[0]);
   });
 
+  it('Evolutionary Deadlock: Returns partial population when reproduction fails repeatedly', async () => {
+    // Helix Philosophy: Better to return a partial, valid population than to hang forever.
+
+    // 1. Setup: Mutation always fails (e.g. Safety Filter)
+    mockMutationFn.mockRejectedValue(new Error("Gemini Safety Filter Triggered"));
+
+    // 2. Config: High mutation rate to ensure we always hit the error
+    // Use a small population but high enough max attempts
+    const testConfig = { ...config, populationSize: 5, eliteCount: 1, mutationRate: 1.0 };
+    engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const population: AgentGene[] = [
+        { ...mockGene, id: 'elite', fitness: 1.0 },
+        { ...mockGene, id: 'weak', fitness: 0.1 }
+    ];
+
+    // 3. Evolve
+    const nextGen = await engine.evolve(population);
+
+    // 4. Assertions
+    // Should return ONLY the elite because no offspring could be created
+    expect(nextGen).toHaveLength(1);
+    expect(nextGen[0].id).toBe('elite');
+
+    // Verify we tried up to the limit (Population * 5 = 25 attempts)
+    // The engine loop breaks when attempts >= MAX_ATTEMPTS
+    // It tries to fill (5 - 1) = 4 spots.
+    // So it should have called crossover roughly 25 times.
+    expect(mockCrossoverFn).toHaveBeenCalledTimes(25);
   it('Fitness Validator: Zero fitness agents are strictly excluded from reproduction', async () => {
     // 1. Setup: 1 Fit agent, 3 Zero-fitness agents
     const population: AgentGene[] = [

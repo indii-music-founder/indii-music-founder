@@ -12,10 +12,6 @@
 ## Helix Journal
 # Helix Journal - Genetic Guardrails
 
-This journal records critical learnings from the evolutionary engine's development.
-Only log significant discoveries regarding genetic defects, convergence issues, or reward hacking.
-
-## Format
-`## YYYY-MM-DD - [Title]`
-`**Learning:** [Insight]`
-`**Action:** [How to apply next time]`
+## 2024-05-23 - [Evolutionary Deadlock Resilience]
+**Learning:** The `EvolutionEngine` correctly implements a safety break (`MAX_ATTEMPTS`) to prevent infinite loops when mutation consistently fails (e.g., due to Safety Filters). The engine prioritizes returning a partial, valid population (Elites) over hanging indefinitely.
+**Action:** Added `Evolutionary Deadlock` test to `HelixEvolution.test.ts` to strictly enforce this behavior.
