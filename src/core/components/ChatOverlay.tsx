@@ -127,6 +127,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
 
         <div
             data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
+            aria-live={msg.role === 'model' && msg.isStreaming ? 'polite' : undefined}
             className={`max-w-[85%] rounded-[1.5rem] px-5 py-4 relative group transition-all duration-300 ${msg.role === 'user'
                 ? 'bg-gradient-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
                 : msg.role === 'system'
@@ -196,7 +197,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
             {msg.role === 'system' && <span>{msg.text}</span>}
 
             {msg.isStreaming && (
-                <div className="mt-2 flex items-center gap-1.5 h-4">
+                <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
                     <motion.div
                         animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
