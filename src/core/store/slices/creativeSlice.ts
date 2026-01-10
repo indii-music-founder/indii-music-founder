@@ -163,11 +163,32 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             // bypass auth check for Ground Zero
             StorageService.loadHistory()
                 .then(history => {
-                    const generated = history.filter(item => item.origin !== 'uploaded');
-                    const uploaded = history.filter(item => item.origin === 'uploaded');
-                    set({
-                        generatedHistory: generated,
-                        uploadedImages: uploaded
+                    set((state) => {
+                        // Merge logic: If an item exists locally with a full data URI, 
+                        // and Firestore has a placeholder, keep the local one.
+                        const mergedHistory = [...state.generatedHistory];
+
+                        history.forEach(remItem => {
+                            const localIndex = mergedHistory.findIndex(loc => loc.id === remItem.id);
+                            if (localIndex !== -1) {
+                                // If local has data:uri and remote has placeholder, don't overwrite the URL
+                                if (mergedHistory[localIndex].url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                    mergedHistory[localIndex] = { ...remItem, url: mergedHistory[localIndex].url };
+                                } else {
+                                    mergedHistory[localIndex] = remItem;
+                                }
+                            } else {
+                                mergedHistory.push(remItem);
+                            }
+                        });
+
+                        const generated = mergedHistory.filter(item => item.origin !== 'uploaded');
+                        const uploaded = mergedHistory.filter(item => item.origin === 'uploaded');
+
+                        return {
+                            generatedHistory: generated,
+                            uploadedImages: uploaded
+                        };
                     });
                     resolve();
                 })

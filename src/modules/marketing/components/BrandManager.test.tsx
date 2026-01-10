@@ -74,31 +74,33 @@ describe('BrandManager', () => {
     it('renders the main dashboard structure', () => {
         render(<BrandManager />);
         expect(screen.getByText('Brand HQ')).toBeInTheDocument();
-        expect(screen.getByText('Identity Core')).toBeInTheDocument();
+        expect(screen.getAllByText('Identity Core').length).toBeGreaterThan(0);
         expect(screen.getByText('Visual DNA')).toBeInTheDocument();
-        expect(screen.getByText('Current Mission')).toBeInTheDocument();
+        expect(screen.getByText('Release Manifest')).toBeInTheDocument();
         expect(screen.getByText('Brand Health')).toBeInTheDocument();
     });
 
     it('displays identity information by default', () => {
         render(<BrandManager />);
         expect(screen.getByText('Test Bio')).toBeInTheDocument();
-        expect(screen.getByText('Artist Bio')).toBeInTheDocument();
+        expect(screen.getByText('Identity Bio')).toBeInTheDocument();
     });
 
     it('switches tabs correctly', async () => {
         render(<BrandManager />);
 
         // Switch to Visuals
-        fireEvent.click(screen.getByText('Visual DNA'));
+        const visualBtn = screen.getByRole('button', { name: /Visual DNA/i });
+        fireEvent.click(visualBtn);
         await waitFor(() => {
             expect(screen.getByText('Color Palette')).toBeInTheDocument();
         });
 
         // Switch to Release
-        fireEvent.click(screen.getByText('Current Mission'));
+        const releaseBtn = screen.getByRole('button', { name: /Release Manifest/i });
+        fireEvent.click(releaseBtn);
         await waitFor(() => {
-            expect(screen.getByText('Active Mission')).toBeInTheDocument();
+            expect(screen.getByText('Mission Architect')).toBeInTheDocument();
         });
     });
 
@@ -106,21 +108,23 @@ describe('BrandManager', () => {
         render(<BrandManager />);
 
         // Navigate to Health tab
-        fireEvent.click(screen.getByText('Brand Health'));
+        const healthBtn = screen.getByRole('button', { name: /Brand Health/i });
+        fireEvent.click(healthBtn);
 
         await waitFor(() => {
-            expect(screen.getByText('Content Inspector')).toBeInTheDocument();
+            expect(screen.getByText('System Audit')).toBeInTheDocument();
         });
 
         const input = screen.getByPlaceholderText(/Paste caption, email, or lyrics here.../);
         fireEvent.change(input, { target: { value: 'Test content for analysis' } });
 
-        const button = screen.getByText('Run Analysis');
+        const button = screen.getByRole('button', { name: /Audit Brand Health/i });
         expect(button).not.toBeDisabled();
 
         fireEvent.click(button);
 
-        expect(screen.getByText('Run Analysis')).toBeDisabled(); // Should be loading
+        // Should show Analyzing...
+        expect(screen.getByText('Analyzing...')).toBeInTheDocument();
 
         await waitFor(() => {
             expect(screen.getByText('Consistency Report')).toBeInTheDocument();

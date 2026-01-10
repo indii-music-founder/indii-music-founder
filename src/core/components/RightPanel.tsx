@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder } from 'lucide
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
+import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RightPanel() {
@@ -24,7 +25,13 @@ export default function RightPanel() {
                                 <ChevronRight size={16} />
                             </button>
                         </div>
-                        <ResourceTree className="flex-1 p-2" />
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            <ResourceTree className="flex-1 p-2 overflow-y-auto custom-scrollbar" />
+                            <div className="h-px bg-white/5 mx-2" />
+                            <div className="h-48 flex-shrink-0 bg-black/20">
+                                <FilePreview variant="compact" />
+                            </div>
+                        </div>
                     </div>
                 );
             default:
