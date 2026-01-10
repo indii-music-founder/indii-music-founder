@@ -24,8 +24,14 @@ export class EvolutionEngine {
     const scoredPopulation = await Promise.all(
       population.map(async (gene) => {
         if (gene.fitness === undefined) {
-          const fitness = await this.fitnessFn(gene);
-          return { ...gene, fitness };
+          try {
+            const fitness = await this.fitnessFn(gene);
+            return { ...gene, fitness };
+          } catch (error) {
+            // Helix: If fitness check crashes, the gene is defective.
+            // Assign 0.0 fitness (Death to the buggy).
+            return { ...gene, fitness: 0.0 };
+          }
         }
         return gene;
       })
