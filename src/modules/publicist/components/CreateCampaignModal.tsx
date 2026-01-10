@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Megaphone, Mic2, Disc, MapPin } from 'lucide-react';
+import { X, Loader2, Megaphone, Mic2, Disc, MapPin, DollarSign } from 'lucide-react';
 import { PublicistService } from '@/services/publicist/PublicistService';
 
 interface CreateCampaignModalProps {
@@ -13,6 +13,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
     const [type, setType] = useState<'Album' | 'Single' | 'Tour'>('Single');
+    const [budget, setBudget] = useState<number | ''>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -32,12 +33,14 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                 releaseDate: startDate,
                 progress: 0,
                 openRate: 0,
+                budget: Number(budget) || 0, // Ensure strictly number
                 coverUrl: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=2670&auto=format&fit=crop" // Default placeholder
             });
 
             // Reset and close
             setTitle('');
             setArtist('');
+            setBudget('');
             setType('Single');
             onClose();
         } catch (error) {
@@ -84,10 +87,11 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-6" noValidate>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Campaign Title</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1" htmlFor="campaign-title">Campaign Title</label>
                                 <input
+                                    id="campaign-title"
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
@@ -98,14 +102,31 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Artist / Project Name</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1" htmlFor="artist-name">Artist / Project Name</label>
                                 <input
+                                    id="artist-name"
                                     type="text"
                                     value={artist}
                                     onChange={(e) => setArtist(e.target.value)}
                                     placeholder="e.g. The Midnight Echo"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1" htmlFor="budget">Estimated Value / Budget</label>
+                                <div className="relative">
+                                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                                    <input
+                                        id="budget"
+                                        type="number"
+                                        min="0"
+                                        value={budget}
+                                        onChange={(e) => setBudget(Number(e.target.value))}
+                                        placeholder="0.00"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sonic-purple/50 transition-all font-medium"
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-2">
