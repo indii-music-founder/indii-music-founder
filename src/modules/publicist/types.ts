@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface Campaign {
     id: string;
     artist: string;
@@ -8,6 +10,7 @@ export interface Campaign {
     releaseDate: string;
     coverUrl?: string;
     openRate: number;
+    budget: number; // Added budget field
 }
 
 export interface Contact {
