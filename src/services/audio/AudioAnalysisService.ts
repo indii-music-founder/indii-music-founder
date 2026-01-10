@@ -75,25 +75,31 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Analyzes an audio file to extract high-level features.
+     * Analyzes an audio file/blob to extract high-level features.
      */
     async analyze(file: File | Blob): Promise<AudioFeatures> {
-        // Lazy-load essentia.js on first use
-        await this.init();
-
-        if (!this.essentia) {
-            throw new Error("Essentia not initialized");
-        }
+        await this.init(); // Ensure init
+        if (!this.essentia) throw new Error("Essentia not initialized");
 
         const audioContext = new (window.AudioContext || (window as unknown as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
+        return this.analyzeBuffer(audioBuffer);
+    }
+
+    /**
+     * Analyzes an already decoded AudioBuffer.
+     * Useful for analyzing segments/regions without re-decoding.
+     */
+    async analyzeBuffer(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
+        await this.init();
+        if (!this.essentia) throw new Error("Essentia not initialized");
+
         // We iterate through channels, but usually just taking the first channel (mono mix) is enough for feature extraction
         const signal = this.essentia.arrayToVector(audioBuffer.getChannelData(0));
 
         // 1. Rhythm (BPM)
-        // RhythmExtractor2013 is robust
         const rhythm = this.essentia.RhythmExtractor2013(signal);
         const bpm = rhythm.bpm;
 
@@ -103,33 +109,26 @@ export class AudioAnalysisService {
         const scale = keyData.scale;
 
         // 3. Energy / Loudness
-        // Simple RMS energy calculation
         const rms = this.essentia.RMS(signal);
-        const energy = rms.rms; // This returns a single value if input is frame, but signal is whole track?
-        // Wait, RMS on the whole signal returns one value? No, usually frame-wise.
-        // For whole track "Global Energy", we might just take mean of RMS frames.
-        // Let's use a simpler proxy for now or `Energy` algo if available for global.
-        // Actually, let's use the 'danceability' algo output which usually includes other metrics.
+        const energy = rms.rms;
 
-        // Danceability (often requires framed signal, let's check standard usage)
-        // For simplicity in this robust-check pass, we'll stick to BPM/Key which are the most "visible" tech tags.
-        // We'll calculate loudness using standard WebAudio or simple math if Essentia is complex for global.
-
-        // Let's assume Energy is roughly proportional to RMS for now.
-
+        // 4. Danceability
         const danceabilty = this.essentia.Danceability(signal).danceability;
 
-        // Cleanup wasm memory (vectors)
-        // this.essentia.deleteVector(signal); // If needed, depends on wrapper
+        // Cleanup isn't strictly necessary for JS-managed vectors in some wrappers, 
+        // but explicit deleteVector might be needed if using the raw C++ binding. 
+        // The essentia.js wrapper usually handles this or returns JS objects.
+        // If 'signal' is a std::vector proxy, it should be deleted.
+        // this.essentia.deleteVector(signal); 
 
         return {
             bpm: Math.round(bpm),
             key: key,
             scale: scale,
-            energy: energy, // Raw RMS value
+            energy: energy,
             duration: audioBuffer.duration,
             danceability: danceabilty,
-            loudness: -1 // Placeholder if not calc
+            loudness: -1
         };
     }
 }

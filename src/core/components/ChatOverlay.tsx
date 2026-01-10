@@ -142,6 +142,42 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                     remarkPlugins={[remarkGfm]}
                     components={{
                         img: ImageRenderer,
+                        p: ({ children }: any) => {
+                            const text = typeof children === 'string'
+                                ? children
+                                : Array.isArray(children)
+                                    ? children.map((c: any) => String(c)).join('')
+                                    : String(children || '');
+
+                            // Detect Raw AI Image Tool Output
+                            // Format: [Tool: generate_image] Output: Success: {"count":1,"urls":["data:image..."]}
+                            const toolMatch = text.match(/\[Tool: generate_image\] Output: (?:Success: )?(\{.*\})/s);
+
+                            if (toolMatch) {
+                                try {
+                                    const json = JSON.parse(toolMatch[1]);
+                                    if (json.urls && Array.isArray(json.urls)) {
+                                        return (
+                                            <div className="flex flex-col gap-4 my-4">
+                                                {json.urls.map((url: string, idx: number) => (
+                                                    <div key={idx} className="bg-black/40 rounded-xl p-4 border border-white/10">
+                                                        <div className="text-xs text-purple-300 mb-2 font-mono flex items-center gap-2">
+                                                            <Sparkles size={12} /> GENERATED ASSET {idx + 1}
+                                                        </div>
+                                                        <ImageRenderer src={url} alt={`Generated Image ${idx + 1}`} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to parse image tool output:", e);
+                                    // Fallback to text if parse fails
+                                }
+                            }
+
+                            return <p className="mb-4 last:mb-0">{children}</p>;
+                        },
                         pre: ({ children, ...props }: any) => {
                             if (React.isValidElement(children)) {
                                 const { className, children: codeChildren } = children.props as any;
