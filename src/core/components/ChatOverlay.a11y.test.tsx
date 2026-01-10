@@ -132,4 +132,31 @@ describe('ChatOverlay Accessibility', () => {
         // New Session button
         expect(screen.getByTitle('New')).toHaveAttribute('aria-label', 'New Session');
     });
+
+    it('should announce streaming messages politely', () => {
+        const streamingState = {
+            ...mockStoreState,
+            agentHistory: [{
+                id: 'streaming-1',
+                role: 'model',
+                text: 'Generating...',
+                isStreaming: true,
+                timestamp: Date.now()
+            }]
+        };
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
+            if (typeof selector === 'function') return selector(streamingState);
+            return streamingState;
+        });
+
+        render(<ChatOverlay />);
+
+        const messageContainer = screen.getByTestId('agent-message');
+        expect(messageContainer).toHaveAttribute('aria-live', 'polite');
+
+        // Also check for the thinking status
+        const statusIndicator = screen.getByRole('status');
+        expect(statusIndicator).toHaveAttribute('aria-label', 'AI is thinking');
+    });
 });
