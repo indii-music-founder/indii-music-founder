@@ -205,7 +205,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
         });
     });
 
-    describe('SafetySettings Handshake', () => {
+    describe('Error Handling & Safety Settings', () => {
         it('should propagate Gemini 3 safety filter errors correctly', async () => {
             // 🔍 Audit: Error Handling
             mocks.doc.mockReturnValue('doc-ref');
@@ -225,6 +225,27 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
             await expect(service.waitForJob('lens-veo-job-id'))
                 .rejects.toThrow(/Safety violation/);
+        });
+
+        it('should handle Copyright/Policy violations explicitly', async () => {
+            // 🔍 Audit: Copyright/Policy checks
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'failed',
+                            error: 'Policy violation: Copyrighted content detected in prompt.'
+                        })
+                    });
+                }, 10);
+                return () => {};
+            });
+
+            await expect(service.waitForJob('lens-veo-job-id'))
+                .rejects.toThrow(/Policy violation/);
         });
     });
 });
