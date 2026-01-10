@@ -91,7 +91,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             : allVideos;
 
         if (targetVideos.length === 0) {
-            return toolError('INVALID_INDEX', "No valid videos found for the provided indices.");
+            return toolError("No valid videos found for the provided indices.", 'INVALID_INDEX');
         }
 
         const videoDataList = targetVideos.map(vid => {
@@ -285,7 +285,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
                 url: finalUrl
             }, `Sequence interpolated successfully: ${finalUrl}`);
         }
-        return toolError('GENERATION_FAILED', "Interpolation failed (no result returned).");
+        return toolError("Interpolation failed (no result returned).", 'GENERATION_FAILED');
     })
 };
 
