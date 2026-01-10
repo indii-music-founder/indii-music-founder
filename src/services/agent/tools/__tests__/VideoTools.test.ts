@@ -21,7 +21,7 @@ const mockGetState = vi.fn(() => ({
 
 vi.mock('@/core/store', () => ({
     useStore: {
-        getState: (...args: any[]) => mockGetState(...args)
+        getState: () => mockGetState()
     }
 }));
 
@@ -195,8 +195,8 @@ describe('VideoTools', () => {
         });
 
         it('should fail if indices are invalid', async () => {
-             // Reset store mock (handled in beforeEach, but being explicit doesn't hurt)
-             mockGetState.mockReturnValue({
+            // Reset store mock (handled in beforeEach, but being explicit doesn't hurt)
+            mockGetState.mockReturnValue({
                 uploadedImages: mockUploadedImages,
                 addAgentMessage: mockAddAgentMessage,
                 addToHistory: mockAddToHistory,
