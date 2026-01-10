@@ -34,11 +34,10 @@ describe('Access: AI_Input_Search Accessibility', () => {
     it('has accessible buttons with aria-labels', () => {
         render(<AI_Input_Search isLoading={false} />);
 
-        // File upload label acting as button
+        // File upload button
         const fileBtn = screen.getByLabelText('Attach file');
         expect(fileBtn).toBeInTheDocument();
-        expect(fileBtn).toHaveAttribute('role', 'button');
-        expect(fileBtn).toHaveAttribute('tabIndex', '0');
+        expect(fileBtn.tagName).toBe('BUTTON');
 
         // Search toggle
         const searchBtn = screen.getByLabelText('Hide search options');
@@ -52,17 +51,16 @@ describe('Access: AI_Input_Search Accessibility', () => {
     it('manages focus order correctly', () => {
         render(<AI_Input_Search />);
 
-        const container = screen.getByLabelText('Search input container');
+        const container = screen.getByLabelText('Search input group');
         const textarea = screen.getByRole('textbox');
         const fileBtn = screen.getByLabelText('Attach file');
 
-        // Container should receive focus then delegate to textarea
-        container.focus();
-        expect(container).toHaveFocus();
+        // Clicking container should delegate focus to textarea
+        fireEvent.click(container);
+        expect(textarea).toHaveFocus();
 
-        // Tab flow check simulation (Tab key logic is browser native, but we verify tabIndex)
-        expect(container).toHaveAttribute('tabIndex', '0');
-        expect(fileBtn).toHaveAttribute('tabIndex', '0');
+        // Verify file button is reachable (implicit tab index for button)
+        expect(fileBtn).toBeEnabled();
     });
 
     it('communicates loading state to assistive technology', () => {

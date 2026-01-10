@@ -133,33 +133,24 @@ export default function AI_Input_Search({
 
                     <div className="h-12 bg-black/5 dark:bg-white/5 rounded-b-xl">
                         <div className="absolute left-3 bottom-3 flex items-center gap-2">
-                            <label
-                                role="button"
-                                tabIndex={0}
+                            <input
+                                type="file"
+                                className="hidden"
+                                aria-label="Upload file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                            />
+                            <button
+                                type="button"
                                 aria-label="Attach file"
                                 className="cursor-pointer rounded-lg p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        fileInputRef.current?.click();
-                                    }
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    fileInputRef.current?.click();
                                 }}
                             >
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
-                                />
-                                <Paperclip
-                                    className="w-4 h-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        fileInputRef.current?.click();
-                                    }}
-                                />
-                            </label>
+                                <Paperclip className="w-4 h-4 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors" />
+                            </button>
 
                             {showSearchToggle && (
                                 <button

@@ -100,7 +100,7 @@ describe('ChatOverlay', () => {
     it('shows mute button', () => {
         render(<ChatOverlay />);
         // useVoice mock returns isVoiceEnabled: false
-        expect(screen.getByTitle('Unmute Text-to-Speech')).toBeInTheDocument();
+        expect(screen.getByLabelText('Enable Voice')).toBeInTheDocument();
     });
 
     it('shows mute button and toggles state', () => {
