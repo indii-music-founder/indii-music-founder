@@ -208,5 +208,30 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
     // It tries to fill (5 - 1) = 4 spots.
     // So it should have called crossover roughly 25 times.
     expect(mockCrossoverFn).toHaveBeenCalledTimes(25);
+  it('Fitness Validator: Zero fitness agents are strictly excluded from reproduction', async () => {
+    // 1. Setup: 1 Fit agent, 3 Zero-fitness agents
+    const population: AgentGene[] = [
+      { ...mockGene, id: 'fit', fitness: 1.0 },
+      { ...mockGene, id: 'dead1', fitness: 0.0 },
+      { ...mockGene, id: 'dead2', fitness: 0.0 },
+      { ...mockGene, id: 'dead3', fitness: 0.0 }
+    ];
+
+    // 2. Config: Elite count 0 to focus purely on reproduction
+    // We want 4 offspring.
+    const testConfig = { ...config, populationSize: 4, eliteCount: 0, mutationRate: 0 };
+    engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    // 3. Evolve
+    const nextGen = await engine.evolve(population);
+
+    // 4. Assert
+    // Every offspring should have 'fit' as both parents, because 'dead' ones should not be selected.
+    nextGen.forEach(child => {
+       expect(child.lineage).not.toContain('dead1');
+       expect(child.lineage).not.toContain('dead2');
+       expect(child.lineage).not.toContain('dead3');
+       expect(child.lineage).toEqual(['fit', 'fit']);
+    });
   });
 });

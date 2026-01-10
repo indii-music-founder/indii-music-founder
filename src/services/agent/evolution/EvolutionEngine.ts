@@ -24,8 +24,14 @@ export class EvolutionEngine {
     const scoredPopulation = await Promise.all(
       population.map(async (gene) => {
         if (gene.fitness === undefined) {
-          const fitness = await this.fitnessFn(gene);
-          return { ...gene, fitness };
+          try {
+            const fitness = await this.fitnessFn(gene);
+            return { ...gene, fitness };
+          } catch (error) {
+            // Helix: If fitness check crashes, the gene is defective.
+            // Assign 0.0 fitness (Death to the buggy).
+            return { ...gene, fitness: 0.0 };
+          }
         }
         return gene;
       })
@@ -39,6 +45,16 @@ export class EvolutionEngine {
     const elites = scoredPopulation.slice(0, this.config.eliteCount);
     nextGeneration.push(...elites);
 
+    // Filter out zero-fitness agents for reproduction
+    // Helix: "Fitness Validator" - a score of 0.0 kills the agent (prevents reproduction)
+    const matingPool = scoredPopulation.filter(gene => (gene.fitness || 0) > 0);
+
+    // If the mating pool is empty (mass extinction), we can't breed.
+    // We return whatever elites survived (or empty if no elites).
+    if (matingPool.length === 0) {
+      return nextGeneration;
+    }
+
     // 3. Crossover & Mutation
     let attempts = 0;
     const MAX_ATTEMPTS = this.config.populationSize * 5; // Safety break to prevent infinite loops
@@ -47,8 +63,9 @@ export class EvolutionEngine {
       attempts++;
       try {
         // Simple Tournament Selection or Top K for parents
-        const parent1 = this.selectParent(scoredPopulation);
-        const parent2 = this.selectParent(scoredPopulation);
+        // We select strictly from the mating pool (fitness > 0)
+        const parent1 = this.selectParent(matingPool);
+        const parent2 = this.selectParent(matingPool);
 
         let offspring = await this.crossoverFn(parent1, parent2);
 
@@ -68,8 +85,6 @@ export class EvolutionEngine {
         // Helix: Survival of the fittest, but death to the buggy.
         // If mutation/crossover fails (e.g., invalid JSON), we discard this offspring
         // and loop again to try a new combination.
-        // We log implicitly by silence (or could log to console if needed),
-        // but we ensure the population count is eventually reached.
         continue;
       }
     }
