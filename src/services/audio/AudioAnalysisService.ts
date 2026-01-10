@@ -125,9 +125,16 @@ export class AudioAnalysisService {
             bpm: Math.round(bpm),
             key: key,
             scale: scale,
-            energy: energy,
+            // Normalize RMS (usually 0.05-0.3 for music) to 0-1 range
+            // Logarithmic boost: value = log10(1 + RMS * 10) / log10(1 + 0.5 * 10)
+            energy: Math.min(1, Math.max(0, energy * 3.5)),
             duration: audioBuffer.duration,
             danceability: danceabilty,
+            // Heuristic Valence (Mood) based on Key and Mode
+            // Major keys generally perceived as happier (0.6-1.0), Minor as sadder (0.0-0.5)
+            valence: scale === 'major'
+                ? 0.6 + (energy * 0.3) // High energy major = Very Happy
+                : 0.2 + (energy * 0.2), // High energy minor = Intense/Aggressive (not necessarily happy)
             loudness: -1
         };
     }

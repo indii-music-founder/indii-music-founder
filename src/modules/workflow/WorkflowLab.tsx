@@ -46,7 +46,7 @@ export default function WorkflowLab() {
                 // Mock viewport for now, ideally get from ReactFlow instance
                 const viewport = { x: 0, y: 0, zoom: 1 };
                 await engine.saveWorkflow(currentWorkflowId, workflowName, 'Auto-saved workflow', viewport);
-                
+
                 setSaveStatus('saved');
             } catch (error) {
                 console.error("Auto-save failed:", error);
@@ -59,6 +59,36 @@ export default function WorkflowLab() {
 
     // Check if device is mobile AFTER hooks are called
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    // Local Draft Auto-Save
+    useEffect(() => {
+        // Load draft on mount if no current workflow
+        if (!currentWorkflowId && nodes.length === 0) {
+            const draft = localStorage.getItem('workflow_draft');
+            if (draft) {
+                try {
+                    const { nodes: savedNodes, edges: savedEdges, name } = JSON.parse(draft);
+                    setNodes(savedNodes);
+                    setEdges(savedEdges);
+                    setWorkflowName(name);
+                    setSaveStatus('unsaved'); // It's a draft, so it's unsaved in cloud
+                } catch (e) {
+                    console.error("Failed to load draft", e);
+                }
+            }
+        }
+    }, []); // Run once on mount
+
+    // Save draft on change
+    useEffect(() => {
+        if (!currentWorkflowId && nodes.length > 0) {
+            const draft = JSON.stringify({ nodes, edges, name: workflowName });
+            localStorage.setItem('workflow_draft', draft);
+        } else if (currentWorkflowId) {
+            // If we have a real ID, clear the draft to avoid confusion
+            localStorage.removeItem('workflow_draft');
+        }
+    }, [nodes, edges, workflowName, currentWorkflowId]);
 
     if (isMobile) {
         return (

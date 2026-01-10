@@ -26,6 +26,7 @@ export default function Sidebar() {
 
     const departmentItems: SidebarItem[] = [
         { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
+        { id: 'music', icon: Music, label: 'Music Department' },
         { id: 'social', icon: Network, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },

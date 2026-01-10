@@ -164,10 +164,25 @@ const AudioAnalyzer: React.FC = () => {
                     duration: result.duration
                 });
 
-                // Mock Auto-Tagging
-                const newTags = [];
-                if (result.energy > 0.7) newTags.push('High Energy');
-                if (result.bpm > 120) newTags.push('Upbeat');
+                // Smart Auto-Tagging based on Sonic DNA
+                const newTags: string[] = [];
+
+                // Mood Tags
+                if ((result.valence || 0.5) > 0.75) newTags.push('Euphoric', 'Positive');
+                else if ((result.valence || 0.5) > 0.6) newTags.push('Happy');
+                else if ((result.valence || 0.5) < 0.3) newTags.push('Melancholic', 'Dark');
+                else if ((result.valence || 0.5) < 0.45) newTags.push('Moody');
+
+                // Energy Tags
+                if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
+                else if (result.energy > 0.6) newTags.push('Driving');
+                else if (result.energy < 0.3) newTags.push('Chill', 'Ambient');
+
+                // Rhythm Tags
+                if (result.bpm > 135) newTags.push('High Tempo');
+                else if (result.bpm < 90) newTags.push('Downtempo');
+                if ((result.danceability || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
+
                 setTags(newTags);
 
                 // Save

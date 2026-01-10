@@ -103,6 +103,95 @@ export default function MusicStudio() {
         setValidMetadataCount(valid);
     }, [loadedAudio]);
 
+    // Auto-load library on mount
+    useEffect(() => {
+        const initLibrary = async () => {
+            if (!nativeFileSystemService.isSupported()) return;
+
+            try {
+                const handle = await nativeFileSystemService.getSavedDirectoryHandle('music-library');
+                if (handle) {
+                    // Don't toast here, let the loader do it
+                    await loadTracksFromDirectory(handle, true);
+                }
+            } catch (err) {
+                console.error('Failed to restore library:', err);
+            }
+        };
+
+        initLibrary();
+    }, []);
+
+    const loadTracksFromDirectory = async (directoryHandle: FileSystemDirectoryHandle, isAutoLoad = false) => {
+        const files = await nativeFileSystemService.getAudioFilesFromDirectory(directoryHandle);
+        if (files.length === 0) {
+            if (!isAutoLoad) toast.info('No audio files found in that folder');
+            return;
+        }
+
+        const tracks: LoadedAudio[] = files.map(({ file, path }, index) => ({
+            id: `${Date.now()}-${index}-${path.replace(/\W/g, '')}`,
+            name: file.name,
+            path,
+            file,
+            url: URL.createObjectURL(file), // Note: Need to verify if this leaks memory over time if not revoked.
+            features: null,
+            isGenerated: false,
+            metadata: { ...INITIAL_METADATA, trackTitle: file.name.replace(/\.[^/.]+$/, "") }
+        }));
+
+        setLoadedAudio(prev => {
+            // Avoid duplicates if restoring
+            const existingPaths = new Set(prev.map(p => p.path));
+            const newTracks = tracks.filter(t => !existingPaths.has(t.path));
+            return [...prev, ...newTracks];
+        });
+
+        // Set first track as active if none selected
+        setCurrentTrackId(prev => prev || (tracks.length > 0 ? tracks[0].id : null));
+
+        const batchToastId = toast.loading(isAutoLoad ? `Restoring ${tracks.length} tracks...` : `Analyzing ${tracks.length} tracks...`);
+
+        // Async batch analysis
+        (async () => {
+            for (const track of tracks) {
+                if (!track.file) continue;
+                try {
+                    // 1. Check Library First (Firebase persistence)
+                    const existingAnalysis = await MusicLibraryService.getTrackAnalysis(track.file);
+
+                    let features, fingerprint;
+
+                    if (existingAnalysis) {
+                        features = existingAnalysis.features;
+                        fingerprint = existingAnalysis.fingerprint;
+                        if (existingAnalysis.metadata) {
+                            track.metadata = { ...track.metadata, ...existingAnalysis.metadata };
+                        }
+                    } else {
+                        // 2. Analyze if missing
+                        features = await audioAnalysisService.analyze(track.file);
+                        fingerprint = await fingerprintService.generateFingerprint(track.file, features);
+                        // 3. Persist to Firebase
+                        await MusicLibraryService.saveTrackAnalysis(track.file, features, fingerprint || undefined);
+                    }
+
+                    setLoadedAudio(prev => prev.map(t =>
+                        t.id === track.id ? {
+                            ...t,
+                            features,
+                            metadata: { ...track.metadata, masterFingerprint: fingerprint ?? undefined }
+                        } : t
+                    ));
+                } catch (e) {
+                    console.error('Batch analysis failed for', track.name);
+                }
+            }
+            toast.dismiss(batchToastId);
+            toast.success(isAutoLoad ? "Library Restored" : "Batch Analysis Complete");
+        })();
+    };
+
     const togglePlayPause = () => {
         if (wavesurferRef.current) {
             wavesurferRef.current.playPause();
@@ -179,67 +268,7 @@ export default function MusicStudio() {
         const directoryHandle = await nativeFileSystemService.pickDirectory();
         if (!directoryHandle) return;
 
-        const files = await nativeFileSystemService.getAudioFilesFromDirectory(directoryHandle);
-        if (files.length === 0) {
-            toast.info('No audio files found in that folder');
-            return;
-        }
-
-        // Create tracks initially
-        const tracks: LoadedAudio[] = files.map(({ file, path }) => ({
-            id: `${Date.now()}-${path}`,
-            name: file.name,
-            path,
-            file,
-            url: URL.createObjectURL(file),
-            features: null,
-            metadata: { ...INITIAL_METADATA, trackTitle: file.name.replace(/\.[^/.]+$/, "") }
-        }));
-
-        setLoadedAudio(prev => [...prev, ...tracks]);
-        setCurrentTrackId(tracks[0].id);
-
-        // Asynchronously fingerprint/analyze all loaded tracks
-        const batchToastId = toast.loading(`Analyzing ${tracks.length} tracks...`);
-
-        (async () => {
-            for (const track of tracks) {
-                if (!track.file) continue;
-                try {
-                    // 1. Check Library First
-                    const existingAnalysis = await MusicLibraryService.getTrackAnalysis(track.file);
-
-                    let features, fingerprint;
-
-                    if (existingAnalysis) {
-                        features = existingAnalysis.features;
-                        fingerprint = existingAnalysis.fingerprint;
-                        if (existingAnalysis.metadata) {
-                            track.metadata = { ...track.metadata, ...existingAnalysis.metadata };
-                        }
-                    } else {
-                        // 2. Analyze if missing
-                        features = await audioAnalysisService.analyze(track.file);
-                        fingerprint = await fingerprintService.generateFingerprint(track.file, features);
-                        // 3. Persist
-                        await MusicLibraryService.saveTrackAnalysis(track.file, features, fingerprint || undefined);
-                    }
-
-                    setLoadedAudio(prev => prev.map(t =>
-                        t.id === track.id ? {
-                            ...t,
-                            features,
-                            metadata: { ...track.metadata, masterFingerprint: fingerprint ?? undefined }
-                        } : t
-                    ));
-                } catch (e) {
-                    // console.error('Batch analysis failed for', track.name);
-                }
-            }
-            toast.dismiss(batchToastId);
-            toast.success("Batch Analysis Complete");
-        })();
-
+        await loadTracksFromDirectory(directoryHandle);
         await nativeFileSystemService.saveDirectoryHandle('music-library', directoryHandle);
     };
 
