@@ -7,13 +7,16 @@ interface DailyItemProps {
     isSelected: boolean;
     onSelect: (item: HistoryItem) => void;
     onDragStart: (e: React.DragEvent, item: HistoryItem) => void;
+    /** Duration in seconds. Defaults to 4s if not provided. */
+    duration?: number;
 }
 
 export const DailyItem = React.memo<DailyItemProps>(({
     video,
     isSelected,
     onSelect,
-    onDragStart
+    onDragStart,
+    duration = 4
 }) => {
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -22,11 +25,14 @@ export const DailyItem = React.memo<DailyItemProps>(({
         }
     };
 
+    const formattedDuration = `00:${duration.toString().padStart(2, '0')}`;
+    const durationLabel = `${duration} seconds`;
+
     return (
         <div
             role="button"
             tabIndex={0}
-            aria-label={`Select video: ${video.prompt || 'Untitled video'}`}
+            aria-label={`Select video: ${video.prompt || 'Untitled video'}, Duration: ${durationLabel}`}
             aria-pressed={isSelected}
             onKeyDown={handleKeyDown}
             onClick={() => onSelect(video)}
@@ -52,9 +58,12 @@ export const DailyItem = React.memo<DailyItemProps>(({
                 <Play size={16} className="text-white fill-white" />
             </div>
 
-            {/* Duration Badge (Mock) */}
-            <div className="absolute bottom-1 right-1 bg-black/80 text-[8px] text-white px-1 rounded">
-                00:04
+            {/* Duration Badge */}
+            <div
+                className="absolute bottom-1 right-1 bg-black/80 text-[8px] text-white px-1 rounded"
+                aria-hidden="true"
+            >
+                {formattedDuration}
             </div>
         </div>
     );
