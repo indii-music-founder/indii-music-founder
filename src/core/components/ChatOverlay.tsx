@@ -149,13 +149,50 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     ? children.map((c: any) => String(c)).join('')
                                     : String(children || '');
 
-                            // Detect Raw AI Image Tool Output
-                            // Format: [Tool: generate_image] Output: Success: {"count":1,"urls":["data:image..."]}
-                            const toolMatch = text.match(/\[Tool: generate_image\] Output: (?:Success: )?(\{.*\})/s);
+                            // Detect Raw AI Image Tool Output (Generic Director Tools)
+                            // Handles: generate_image, batch_edit_images, generate_high_res_asset, render_cinematic_grid, extract_grid_frame
+                            const toolMatch = text.match(/\[Tool: (generate_image|batch_edit_images|generate_high_res_asset|render_cinematic_grid|extract_grid_frame)\] Output: (?:Success: )?(\{.*\})/s);
 
                             if (toolMatch) {
                                 try {
-                                    const json = JSON.parse(toolMatch[1]);
+                                    const toolName = toolMatch[1];
+                                    const json = JSON.parse(toolMatch[2]);
+                                    const { generatedHistory } = useStore.getState();
+
+                                    let imageIds: string[] = [];
+
+                                    // Collect IDs based on return format
+                                    if (json.image_ids && Array.isArray(json.image_ids)) imageIds = json.image_ids;
+                                    else if (json.asset_id) imageIds = [json.asset_id];
+                                    else if (json.grid_id) imageIds = [json.grid_id];
+                                    else if (json.frame_id) imageIds = [json.frame_id];
+
+                                    // Resolve IDs to Image Objects
+                                    const images = imageIds
+                                        .map(id => generatedHistory.find(h => h.id === id))
+                                        .filter(Boolean);
+
+                                    if (images.length > 0) {
+                                        return (
+                                            <div className="flex flex-col gap-4 my-4">
+                                                {images.map((img: any, idx: number) => (
+                                                    <div key={idx} className="bg-black/40 rounded-xl p-4 border border-white/10">
+                                                        <div className="text-xs text-purple-300 mb-2 font-mono flex items-center gap-2">
+                                                            <Sparkles size={12} />
+                                                            {toolName === 'generate_image' ? 'GENERATED ASSET' :
+                                                                toolName === 'batch_edit_images' ? 'EDITED ASSET' :
+                                                                    toolName === 'render_cinematic_grid' ? 'CINEMATIC GRID' :
+                                                                        toolName === 'extract_grid_frame' ? 'EXTRACTED FRAME' :
+                                                                            'HIGH-RES ASSET'} {idx + 1}
+                                                        </div>
+                                                        <ImageRenderer src={img.url} alt={img.prompt || `Generated Image ${idx + 1}`} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+
+                                    // Fallback: Legacy Base64 URLs (only for generate_image/batch_edit usually)
                                     if (json.urls && Array.isArray(json.urls)) {
                                         return (
                                             <div className="flex flex-col gap-4 my-4">
@@ -173,6 +210,68 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                 } catch (e) {
                                     console.warn("Failed to parse image tool output:", e);
                                     // Fallback to text if parse fails
+                                }
+                            }
+
+                            // Detect Delegate Task Output (Nested Tool Outputs)
+                            // Format: [Tool: delegate_task] Output: Success: {"text": "[Tool: analyze_brand_consistency] Output: Success: { ... }"}
+                            const delegateMatch = text.match(/\[Tool: delegate_task\] Output: (?:Success: )?(\{.*\})/s);
+                            if (delegateMatch) {
+                                try {
+                                    const json = JSON.parse(delegateMatch[1]);
+                                    if (json.text) {
+                                        // Check if the inner text is ITSELF a tool output (e.g. analyze_brand_consistency)
+                                        // [Tool: analyze_brand_consistency] Output: Success: {"analysis": "..."}
+                                        const innerToolMatch = json.text.match(/\[Tool: ([^\]]+)\] Output: (?:Success: )?(\{.*\})/s);
+
+                                        if (innerToolMatch) {
+                                            const toolName = innerToolMatch[1]; // e.g. "analyze_brand_consistency"
+                                            const innerJsonStr = innerToolMatch[2];
+
+                                            try {
+                                                const innerJson = JSON.parse(innerJsonStr);
+
+                                                // If it's brand consistency analysis
+                                                if (toolName === 'analyze_brand_consistency' && innerJson.analysis) {
+                                                    return (
+                                                        <div className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
+                                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+                                                                <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                                                                <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
+                                                            </div>
+                                                            <div className="prose prose-invert prose-sm max-w-none">
+                                                                <ReactMarkdown components={{
+                                                                    // Prevent infinite recursion if possible, though 'p' here is scoped
+                                                                    p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>
+                                                                }}>
+                                                                    {innerJson.analysis}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // Fallback for other tools: just return the formatted JSON text or a generic block
+                                                // If we have a 'text' or 'result' field, show that.
+                                                // Otherwise showing the raw tool output might be noisy, but better than nothing.
+                                                // Actually, if we're here, we have parsed inner JSON.
+                                                return (
+                                                    <div className="my-2 p-3 bg-white/5 rounded-lg border-l-2 border-purple-500 text-sm text-gray-300 font-mono whitespace-pre-wrap">
+                                                        <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">Tool Result: {toolName}</div>
+                                                        {JSON.stringify(innerJson, null, 2)}
+                                                    </div>
+                                                );
+
+                                            } catch (e) {
+                                                // Inner parser error, just return text
+                                            }
+                                        }
+
+                                        // If not a tool pattern, it's just text returned from the delegate
+                                        return <ReactMarkdown>{json.text}</ReactMarkdown>;
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to parse delegate tool output:", e);
                                 }
                             }
 

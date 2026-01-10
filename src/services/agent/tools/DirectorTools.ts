@@ -154,7 +154,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             });
             return toolSuccess({
                 count: results.length,
-                urls: results.map(r => r.url)
+                image_ids: results.map(r => r.id)
             }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
         }
         return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
@@ -213,7 +213,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             });
             return toolSuccess({
                 count: results.length,
-                urls: results.map(r => r.url)
+                image_ids: results.map(r => r.id)
             }, `Successfully edited ${results.length} images based on instruction: "${args.prompt}".`);
         }
         return toolError("Batch edit completed but no images were returned.", "EMPTY_RESULT");
@@ -259,7 +259,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 });
             });
             return toolSuccess({
-                url: results[0].url
+                asset_id: results[0].id
             }, `High-resolution asset (${args.templateType}) generated successfully.`);
         }
         return toolError("Failed to generate high-resolution asset.", "GENERATION_FAILED");
@@ -299,7 +299,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 meta: 'cinematic_grid'
             });
             return toolSuccess({
-                gridUrl: res.url
+                grid_id: res.id
             }, `Cinematic grid generated for "${args.prompt}".`);
         }
         return toolError("Failed to generate cinematic grid.", "GENERATION_FAILED");
@@ -346,7 +346,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         addToHistory(frameItem);
 
         return toolSuccess({
-            frameUrl: extractedDataUrl
+            frame_id: frameItem.id
         }, `Successfully extracted ${frameLabels[gridIndex]} (panel ${gridIndex}) from the cinematic grid. The frame is now in your Gallery.`);
     }),
 
