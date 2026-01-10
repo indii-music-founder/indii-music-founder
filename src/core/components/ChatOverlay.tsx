@@ -160,7 +160,12 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     } catch (e) { }
                                 }
                             }
-                            return <pre {...props}>{children}</pre>;
+                            // Wrap pre in scrollable container for mobile responsiveness
+                            return (
+                                <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/30">
+                                    <pre {...props} className="p-4 min-w-full">{children}</pre>
+                                </div>
+                            );
                         },
                         table: ({ node, ...props }: any) => (
                             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
