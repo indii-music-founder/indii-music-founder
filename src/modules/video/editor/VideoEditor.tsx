@@ -92,7 +92,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 <VideoTimeline
                     project={project}
                     isPlaying={isPlaying}
-                    currentTime={currentTime}
                     selectedClipId={selectedClipIdState}
                     handlePlayPause={handlePlayPause}
                     handleSeek={handleSeek}
