@@ -127,6 +127,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
 
         <div
             data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
+            aria-live={msg.role === 'model' && msg.isStreaming ? 'polite' : undefined}
             className={`max-w-[85%] rounded-[1.5rem] px-5 py-4 relative group transition-all duration-300 ${msg.role === 'user'
                 ? 'bg-gradient-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
                 : msg.role === 'system'
@@ -159,7 +160,12 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     } catch (e) { }
                                 }
                             }
-                            return <pre {...props}>{children}</pre>;
+                            // Wrap pre in scrollable container for mobile responsiveness
+                            return (
+                                <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/30">
+                                    <pre {...props} className="p-4 min-w-full">{children}</pre>
+                                </div>
+                            );
                         },
                         table: ({ node, ...props }: any) => (
                             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
@@ -197,6 +203,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
 
             {msg.isStreaming && (
                 <div className="mt-2 flex items-center gap-1.5 h-4" data-testid="thinking-dots">
+                <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
                     <motion.div
                         animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}

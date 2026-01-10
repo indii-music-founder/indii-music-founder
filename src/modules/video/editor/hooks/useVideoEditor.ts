@@ -159,6 +159,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         addTrack,
         removeTrack,
         removeClip,
-        setProject
+        setProject,
+        setCurrentTime // Expose setCurrentTime for frame synchronization
     };
 }

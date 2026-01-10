@@ -16,10 +16,13 @@ export default function Dashboard() {
     if (viewMode === 'studio') {
         return (
             <StudioLayout>
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-center mb-10">
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter mb-1 font-heading">STUDIO HQ</h1>
-                        <p className="text-gray-400 text-xs font-medium uppercase tracking-widest">Command Center // IndiiJS Alpha</p>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1 h-8 bg-white/20 rounded-full" />
+                            <h1 className="text-4xl font-bold text-white tracking-tight font-display">STUDIO HQ</h1>
+                        </div>
+                        <p className="text-gray-400 text-xs font-mono uppercase tracking-widest pl-4">Command Center // IndiiJS Alpha</p>
                     </div>
                     <ModeSelector mode={viewMode} onChange={setViewMode} />
                 </div>
@@ -31,7 +34,7 @@ export default function Dashboard() {
                     className="space-y-12"
                 >
                     <section>
-                        <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-3 font-mono">
                             <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                             Departments
                         </h2>
@@ -39,7 +42,7 @@ export default function Dashboard() {
                     </section>
 
                     <section>
-                        <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-3 font-mono">
                             <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
                             Start a Trip
                         </h2>
@@ -48,14 +51,14 @@ export default function Dashboard() {
 
                     <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
-                            <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-3 font-mono">
                                 <span className="w-1.5 h-1.5 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
                                 Reference Assets
                             </h2>
                             <ReferenceImageManager />
                         </div>
                         <div>
-                            <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-3 font-mono">
                                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                                 Quick Analytics
                             </h2>

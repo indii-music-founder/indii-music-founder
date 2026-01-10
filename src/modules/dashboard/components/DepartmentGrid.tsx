@@ -11,15 +11,24 @@ import {
     Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useStore } from '@/core/store';
+import { ModuleId } from '@/core/constants';
 
-const DEPARTMENTS = [
+interface Department {
+    id: ModuleId;
+    name: string;
+    description: string;
+    icon: React.ElementType;
+    color: string;
+}
+
+const DEPARTMENTS: Department[] = [
     {
         id: 'marketing',
         name: 'Marketing Dept.',
         description: 'Campaigns, social media & ads',
         icon: Megaphone,
         color: 'from-pink-500 to-rose-500',
-        path: '/marketing'
     },
     {
         id: 'publishing',
@@ -27,7 +36,6 @@ const DEPARTMENTS = [
         description: 'Royalties, split sheets & PROs',
         icon: Copyright,
         color: 'from-blue-500 to-cyan-500',
-        path: '/publishing'
     },
     {
         id: 'creative',
@@ -35,7 +43,6 @@ const DEPARTMENTS = [
         description: 'Cover art, video & assets',
         icon: Video,
         color: 'from-purple-500 to-violet-500',
-        path: '/showroom'
     },
     {
         id: 'distribution',
@@ -43,7 +50,6 @@ const DEPARTMENTS = [
         description: 'Upload to DSPs & stores',
         icon: Share2,
         color: 'from-green-500 to-emerald-500',
-        path: '/distribution'
     },
     {
         id: 'finance',
@@ -51,7 +57,6 @@ const DEPARTMENTS = [
         description: 'Earnings & expenses',
         icon: Wallet,
         color: 'from-yellow-500 to-amber-500',
-        path: '/finance'
     },
     {
         id: 'legal',
@@ -59,56 +64,46 @@ const DEPARTMENTS = [
         description: 'Contracts & agreements',
         icon: Scale,
         color: 'from-gray-500 to-slate-500',
-        path: '/legal'
     },
-    {
-        id: 'analytics',
-        name: 'Data Analytics',
-        description: 'Cross-platform insights',
-        icon: BarChart3,
-        color: 'from-indigo-500 to-blue-600',
-        path: '/analytics' // Assuming path
-    },
-    // Add more as needed
 ];
 
 export default function DepartmentGrid() {
-    const navigate = useNavigate();
+    const { setModule } = useStore();
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
             {DEPARTMENTS.map((dept, index) => (
-                <motion.div
+                <motion.button
                     key={dept.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.03 }}
-                    onClick={() => navigate(dept.path)}
-                    className="group relative bg-[#161b22]/80 backdrop-blur-md border border-white/5 rounded-xl p-4 cursor-pointer hover:border-white/20 transition-all hover:bg-[#1c2128] hover:shadow-lg overflow-hidden flex items-center gap-4"
+                    onClick={() => setModule(dept.id)}
+                    className="group relative bg-[#090b0e] border border-white/5 rounded-lg p-5 cursor-pointer hover:border-white/10 transition-all hover:bg-[#11161d] overflow-hidden flex items-center gap-4 text-left w-full"
                 >
-                    {/* Hover Gradient Background (Subtle) */}
-                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-5 bg-gradient-to-r ${dept.color} transition-opacity duration-300`} />
+                    {/* Hover Glow */}
+                    <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 bg-gradient-to-r ${dept.color} transition-opacity duration-300 blur-xl`} />
 
                     {/* Icon */}
-                    <div className={`p-2.5 rounded-lg bg-gradient-to-br ${dept.color} bg-opacity-10 text-white shadow-sm shrink-0`}>
-                        <dept.icon size={18} />
+                    <div className={`p-3 rounded-md bg-gradient-to-br ${dept.color} bg-opacity-10 text-white shadow-sm shrink-0 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-300`}>
+                        <dept.icon size={20} />
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors truncate">
+                    <div className="flex-1 min-w-0 z-10">
+                        <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors truncate font-display tracking-tight">
                                 {dept.name}
                             </h3>
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500 -mr-1">
+                            <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 text-gray-500">
                                 &rarr;
                             </span>
                         </div>
-                        <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors truncate">
+                        <p className="text-[11px] text-gray-500 group-hover:text-gray-400 transition-colors truncate font-mono tracking-tight">
                             {dept.description}
                         </p>
                     </div>
-                </motion.div>
+                </motion.button>
             ))}
         </div>
     );

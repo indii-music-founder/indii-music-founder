@@ -31,10 +31,10 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
 
     // Default favorable mocks
     mockFitnessFn.mockImplementation(async (gene) => {
-        // Deterministic fitness based on ID to simulate selection pressure
-        if (gene.id === 'elite') return 1.0;
-        if (gene.id === 'mid') return 0.5;
-        return 0.1;
+      // Deterministic fitness based on ID to simulate selection pressure
+      if (gene.id === 'elite') return 1.0;
+      if (gene.id === 'mid') return 0.5;
+      return 0.1;
     });
 
     mockCrossoverFn.mockImplementation(async (p1, p2) => ({
@@ -99,10 +99,10 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
 
     // Actually, let's just spy on the crossover function arguments.
     const population: AgentGene[] = [
-        { ...mockGene, id: 'elite', fitness: 100 },
-        { ...mockGene, id: 'weak1', fitness: 0.01 },
-        { ...mockGene, id: 'weak2', fitness: 0.01 },
-        { ...mockGene, id: 'weak3', fitness: 0.01 }
+      { ...mockGene, id: 'elite', fitness: 100 },
+      { ...mockGene, id: 'weak1', fitness: 0.01 },
+      { ...mockGene, id: 'weak2', fitness: 0.01 },
+      { ...mockGene, id: 'weak3', fitness: 0.01 }
     ];
 
     // Create a larger population in next gen to trigger multiple selections
@@ -117,8 +117,8 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
     let eliteSelections = 0;
 
     for (const [p1, p2] of calls) {
-        if (p1.id === 'elite') eliteSelections++;
-        if (p2.id === 'elite') eliteSelections++;
+      if (p1.id === 'elite') eliteSelections++;
+      if (p2.id === 'elite') eliteSelections++;
     }
 
     // It won't be 100% because elite might not be picked for the tournament sample,
@@ -129,12 +129,12 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
   it('Mutation Safety: Retries on invalid mutation (Death to the buggy)', async () => {
     // Mock mutation to fail the first time (invalid JSON simulation) then succeed
     mockMutationFn
-        .mockRejectedValueOnce(new Error("Invalid JSON Output")) // 1st attempt fails
-        .mockResolvedValueOnce({ ...mockGene, id: 'valid', systemPrompt: 'valid' }); // 2nd succeeds
+      .mockRejectedValueOnce(new Error("Invalid JSON Output")) // 1st attempt fails
+      .mockResolvedValueOnce({ ...mockGene, id: 'valid', systemPrompt: 'valid' }); // 2nd succeeds
 
     const population: AgentGene[] = [
-        { ...mockGene, id: 'p1', fitness: 1.0 },
-        { ...mockGene, id: 'p2', fitness: 1.0 }
+      { ...mockGene, id: 'p1', fitness: 1.0 },
+      { ...mockGene, id: 'p2', fitness: 1.0 }
     ];
 
     const testConfig = { ...config, populationSize: 2, eliteCount: 1, mutationRate: 1.0 };
@@ -148,35 +148,35 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
   });
 
   it('Inbreeding Check: Ensures diversity in output', async () => {
-      // Helix's "Favorite Test".
-      // We start with identical parents.
-      const population: AgentGene[] = [
-          { ...mockGene, id: 'clone1', fitness: 1.0, systemPrompt: 'SAME' },
-          { ...mockGene, id: 'clone2', fitness: 1.0, systemPrompt: 'SAME' }
-      ];
+    // Helix's "Favorite Test".
+    // We start with identical parents.
+    const population: AgentGene[] = [
+      { ...mockGene, id: 'clone1', fitness: 1.0, systemPrompt: 'SAME' },
+      { ...mockGene, id: 'clone2', fitness: 1.0, systemPrompt: 'SAME' }
+    ];
 
-      // Mutation adds diversity
-      const testConfig = { ...config, populationSize: 5, eliteCount: 1, mutationRate: 1.0 };
+    // Mutation adds diversity
+    const testConfig = { ...config, populationSize: 5, eliteCount: 1, mutationRate: 1.0 };
 
-      // Mutation appends a random suffix to ensure uniqueness
-      let counter = 0;
-      mockMutationFn.mockImplementation(async (g) => ({
-          ...g,
-          systemPrompt: g.systemPrompt + `-${counter++}`
-      }));
+    // Mutation appends a random suffix to ensure uniqueness
+    let counter = 0;
+    mockMutationFn.mockImplementation(async (g) => ({
+      ...g,
+      systemPrompt: g.systemPrompt + `-${counter++}`
+    }));
 
-      engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
-      const nextGen = await engine.evolve(population);
+    engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+    const nextGen = await engine.evolve(population);
 
-      // Extract prompts
-      const prompts = nextGen.map(g => g.systemPrompt);
-      const uniquePrompts = new Set(prompts);
+    // Extract prompts
+    const prompts = nextGen.map(g => g.systemPrompt);
+    const uniquePrompts = new Set(prompts);
 
-      // We expect diversity because mutation is happening
-      expect(uniquePrompts.size).toBeGreaterThan(1);
+    // We expect diversity because mutation is happening
+    expect(uniquePrompts.size).toBeGreaterThan(1);
 
-      // Specifically, we expect the offspring to be different from the elite survivor
-      expect(prompts[1]).not.toEqual(prompts[0]);
+    // Specifically, we expect the offspring to be different from the elite survivor
+    expect(prompts[1]).not.toEqual(prompts[0]);
   });
 
   it('Evolutionary Deadlock: Returns partial population when reproduction fails repeatedly', async () => {
@@ -191,8 +191,8 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
     engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
 
     const population: AgentGene[] = [
-        { ...mockGene, id: 'elite', fitness: 1.0 },
-        { ...mockGene, id: 'weak', fitness: 0.1 }
+      { ...mockGene, id: 'elite', fitness: 1.0 },
+      { ...mockGene, id: 'weak', fitness: 0.1 }
     ];
 
     // 3. Evolve
@@ -208,6 +208,8 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
     // It tries to fill (5 - 1) = 4 spots.
     // So it should have called crossover roughly 25 times.
     expect(mockCrossoverFn).toHaveBeenCalledTimes(25);
+  });
+
   it('Fitness Validator: Zero fitness agents are strictly excluded from reproduction', async () => {
     // 1. Setup: 1 Fit agent, 3 Zero-fitness agents
     const population: AgentGene[] = [
@@ -228,10 +230,10 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
     // 4. Assert
     // Every offspring should have 'fit' as both parents, because 'dead' ones should not be selected.
     nextGen.forEach(child => {
-       expect(child.lineage).not.toContain('dead1');
-       expect(child.lineage).not.toContain('dead2');
-       expect(child.lineage).not.toContain('dead3');
-       expect(child.lineage).toEqual(['fit', 'fit']);
+      expect(child.lineage).not.toContain('dead1');
+      expect(child.lineage).not.toContain('dead2');
+      expect(child.lineage).not.toContain('dead3');
+      expect(child.lineage).toEqual(['fit', 'fit']);
     });
   });
 });
