@@ -161,6 +161,7 @@ const PreviewPanel = memo(({
                             id="caption-preview"
                             value={result.caption}
                             onChange={(e) => onCaptionChange(e.target.value)}
+                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none resize-none transition-all"
                             className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 resize-none outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:border-transparent"
                             className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 focus-visible:ring-1 focus-visible:ring-pink-500 outline-none resize-none"
                             className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none focus-visible:ring-1 focus-visible:ring-pink-500 resize-none"
