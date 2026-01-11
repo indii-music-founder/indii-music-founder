@@ -76,7 +76,11 @@ class ScreenControlService {
                 .map(([key, value]) => `${key}=${value}`)
                 .join(',');
 
-            window.open(contentUrl, '_blank', features);
+            // 🛡️ Sentinel: Ensure noopener/noreferrer is set, though for same-origin projector
+            // we might want opener access. However, assuming safe default for now.
+            // If projector needs to communicate back, we can remove 'noopener'.
+            // For now, adding noreferrer to prevent leaking referrers.
+            window.open(contentUrl, '_blank', `${features},noreferrer`);
         }
     }
 }
