@@ -175,7 +175,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                 <Star size={16} />
                             </button>
                             <button
-                                onClick={() => window.open(item.url, '_blank')}
+                                onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
                                 className="p-2 hover:bg-green-900/40 text-gray-400 hover:text-green-400 rounded-lg transition-colors"
                                 title="Download"
                             >
