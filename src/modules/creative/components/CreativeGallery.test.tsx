@@ -27,7 +27,8 @@ describe('CreativeGallery', () => {
         generationMode: 'image',
         setVideoInput: vi.fn(),
         selectedItem: null,
-        setSelectedItem: vi.fn()
+        setSelectedItem: vi.fn(),
+        setEntityAnchor: vi.fn()
     };
 
     beforeEach(() => {
@@ -38,7 +39,7 @@ describe('CreativeGallery', () => {
         default: () => <div data-testid="file-upload">Mock File Upload</div>
     }));
 
-    it('renders empty state with upload and camera buttons', () => {
+    it('renders empty state with upload icon', () => {
         render(<CreativeGallery />);
 
         // Check for empty state text
@@ -46,28 +47,36 @@ describe('CreativeGallery', () => {
         expect(screen.getByText('Upload or generate to see them here')).toBeInTheDocument();
     });
 
-    it('renders assets section with camera button when items exist', () => {
+    it('renders generated history items correctly', () => {
         (useStore as any).mockReturnValue({
             ...mockStore,
-            uploadedImages: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test' }]
-        });
-
-        render(<CreativeGallery />);
-
-        // Check for "Take Picture" button (mobile only, but rendered in DOM)
-        expect(screen.getByText('Take Picture')).toBeInTheDocument();
-    });
-
-    it('renders compact Add Asset card when only generated history exists', () => {
-        (useStore as any).mockReturnValue({
-            ...mockStore,
-            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test' }],
+            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt' }],
             uploadedImages: []
         });
 
         render(<CreativeGallery />);
 
-        // Check for compact "Add Asset" card (replaced large drop zone)
-        expect(screen.getByText('Add Asset')).toBeInTheDocument();
+        expect(screen.getByText('Generation History')).toBeInTheDocument();
+        expect(screen.getByText('test prompt')).toBeInTheDocument();
+        expect(screen.getByAltText('test prompt')).toBeInTheDocument();
+    });
+
+    it('buttons have accessibility attributes', () => {
+        (useStore as any).mockReturnValue({
+            ...mockStore,
+            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt' }],
+            uploadedImages: []
+        });
+
+        render(<CreativeGallery />);
+
+        // Check for aria-labels on buttons
+        expect(screen.getByLabelText('Like')).toBeInTheDocument();
+        expect(screen.getByLabelText('Dislike')).toBeInTheDocument();
+        expect(screen.getByLabelText('Delete')).toBeInTheDocument();
+        expect(screen.getByLabelText('View Fullsize')).toBeInTheDocument();
+
+        // Check for role="button" on the item container
+        expect(screen.getByRole('button', { name: 'Select test prompt' })).toBeInTheDocument();
     });
 });

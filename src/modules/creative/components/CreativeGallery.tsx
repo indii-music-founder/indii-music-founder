@@ -74,7 +74,16 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             draggable
             onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
             onClick={() => onSelect ? onSelect(item) : setSelectedItem(item)}
-            className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer"
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect ? onSelect(item) : setSelectedItem(item);
+                }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label={`Select ${item.prompt}`}
+            className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
         >
             {item.type === 'video' ? (
                 item.url.startsWith('data:image') ? (
@@ -107,6 +116,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', item); toast.success("Set as First Frame"); }}
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                                     title="Set as First Frame"
@@ -116,6 +126,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', item); toast.success("Set as Last Frame"); }}
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                                     title="Set as Last Frame"
@@ -127,6 +138,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         )}
                         <button
                             onClick={(e) => { e.stopPropagation(); setEntityAnchor(item); toast.success("Entity Anchor Set"); }}
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Set as Entity Anchor (Character Lock)"
@@ -134,6 +146,22 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         >
                             <Anchor size={14} />
                         </button>
+                        <button
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                            title="View Fullsize"
+                            aria-label="View Fullsize"
+                        >
+                            <Maximize2 size={14} />
+                        </button>
+                        <button
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                            title="Like"
+                            aria-label="Like"
+                        >
+                            <ThumbsUp size={14} />
+                        </button>
+                        <button
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                         <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors" title="View Fullsize" aria-label="View Fullsize">
                             <Maximize2 size={14} />
                         </button>
@@ -164,6 +192,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                            className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors border border-red-500/20"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50 transition-colors border border-red-500/20"
                             title="Delete"
