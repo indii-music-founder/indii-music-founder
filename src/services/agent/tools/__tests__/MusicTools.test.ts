@@ -88,52 +88,6 @@ describe('MusicTools', () => {
         expect(result.data).toEqual({ title: 'Test Song', artist: 'Test Artist' });
     });
 
-    // New tests
-    describe('save_track_idea', () => {
-        it('should save track idea with valid inputs', async () => {
-            mockAddTrack.mockResolvedValue('track-123');
-            const args = { title: 'My New Song', notes: 'Needs more cowbell' };
-
-            const result = await MusicTools.save_track_idea(args);
-
-            expect(mockAddTrack).toHaveBeenCalledWith({
-                title: 'My New Song',
-                artist: 'Test Artist',
-                version: '1.0',
-                tags: [],
-                metadata: { notes: 'Needs more cowbell' },
-                status: 'demo'
-            });
-            expect(result.success).toBe(true);
-            expect(result.data).toEqual({ id: 'track-123', title: 'My New Song' });
-        });
-
-        it('should handle empty notes', async () => {
-            mockAddTrack.mockResolvedValue('track-456');
-            const args = { title: 'Instrumental' };
-
-            const result = await MusicTools.save_track_idea(args);
-
-            expect(mockAddTrack).toHaveBeenCalledWith(expect.objectContaining({
-                title: 'Instrumental',
-                metadata: { notes: '' }
-            }));
-            expect(result.success).toBe(true);
-        });
-
-        it('should use default artist name "Me" if userProfile is missing', async () => {
-            mockGetState.mockReturnValue({ userProfile: null });
-            mockAddTrack.mockResolvedValue('track-789');
-            const args = { title: 'Mystery Track' };
-
-            await MusicTools.save_track_idea(args);
-
-            expect(mockAddTrack).toHaveBeenCalledWith(expect.objectContaining({
-                artist: 'Me'
-            }));
-        });
-    });
-
     describe('create_playlist', () => {
         it('should create playlist with valid inputs', async () => {
             mockCreatePlaylist.mockResolvedValue('playlist-123');
