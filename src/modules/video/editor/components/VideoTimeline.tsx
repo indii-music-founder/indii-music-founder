@@ -5,7 +5,7 @@ import { TimeRuler } from './TimeRuler';
 import { TrackList } from './TrackList';
 import { Playhead } from './Playhead';
 import { PIXELS_PER_FRAME } from '../constants';
-import { groupClipsByTrack } from '../utils/timelineUtils';
+import { useStableGroupedClips } from '../hooks/useStableGroupedClips';
 
 interface VideoTimelineProps {
     project: VideoProject;
@@ -69,10 +69,9 @@ export const VideoTimeline = memo(({
         updateKeyframe(clipId, property, frame, { easing: nextEasing });
     }, [removeKeyframe, updateKeyframe]);
 
-    // 1. Pre-group clips by track ID
-    const clipsByTrack = useMemo(() => {
-        return groupClipsByTrack(project.clips);
-    }, [project.clips]);
+    // 1. Pre-group clips by track ID with optimization for partial updates
+    // This prevents re-rendering all tracks when only one track's clips change
+    const clipsByTrack = useStableGroupedClips(project.clips);
 
     return (
         <div className="h-full border-t border-[--border] bg-[--card] flex flex-col">
