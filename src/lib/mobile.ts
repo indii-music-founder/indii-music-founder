@@ -197,16 +197,30 @@ export const releaseWakeLock = async (): Promise<void> => {
  * Call this on mount and window resize
  */
 export const fixViewportHeight = (): void => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return; // SSR or non-browser environment
+    }
+
     // Set CSS variable for actual viewport height
     const vh = window.innerHeight * 0.01;
     document.documentElement.style.setProperty('--vh', `${vh}px`);
 };
 
-// Auto-update on resize
-if (typeof window !== 'undefined') {
+/**
+ * Initialize viewport height fixes and resize listener
+ * Call this once on app bootstrap (client-side only)
+ */
+export const initViewportFixes = (): void => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return; // SSR or non-browser environment
+    }
+
+    // Initial fix
     fixViewportHeight();
+
+    // Auto-update on resize
     window.addEventListener('resize', fixViewportHeight);
-}
+};
 
 // ============================================================================
 // Safe Area Insets
@@ -235,6 +249,7 @@ export const getSafeAreaInsets = () => {
 // ============================================================================
 
 let isKeyboardOpen = false;
+let originalHeight = 0; // Mutable baseline for keyboard detection
 
 /**
  * Detect if mobile keyboard is open
@@ -243,16 +258,31 @@ export const detectKeyboard = (): boolean => {
     return isKeyboardOpen;
 };
 
-// Listen for keyboard events
-if (typeof window !== 'undefined' && isMobile()) {
-    const originalHeight = window.visualViewport?.height || window.innerHeight;
+/**
+ * Initialize keyboard detection listeners
+ * Call this once on app bootstrap (client-side only, mobile devices)
+ */
+export const initKeyboardDetection = (): void => {
+    if (typeof window === 'undefined' || !isMobile()) {
+        return; // SSR, non-browser, or desktop environment
+    }
+
+    // Initialize baseline height
+    originalHeight = window.visualViewport?.height || window.innerHeight;
 
     const checkKeyboard = () => {
         const currentHeight = window.visualViewport?.height || window.innerHeight;
-        const heightDiff = originalHeight - currentHeight;
 
-        // If viewport shrunk by more than 150px, keyboard is probably open
-        isKeyboardOpen = heightDiff > 150;
+        // If viewport grew (orientation change, browser chrome), update baseline
+        if (currentHeight >= originalHeight) {
+            originalHeight = currentHeight;
+            isKeyboardOpen = false;
+        } else {
+            // Viewport shrunk - check if keyboard opened
+            const heightDiff = originalHeight - currentHeight;
+            // If viewport shrunk by more than 150px, keyboard is probably open
+            isKeyboardOpen = heightDiff > 150;
+        }
 
         // Dispatch event
         window.dispatchEvent(new CustomEvent('keyboard-change', {
@@ -260,9 +290,25 @@ if (typeof window !== 'undefined' && isMobile()) {
         }));
     };
 
+    // Handle orientation changes (update baseline)
+    const handleOrientationChange = () => {
+        // Wait for orientation change to complete
+        setTimeout(() => {
+            originalHeight = window.visualViewport?.height || window.innerHeight;
+            isKeyboardOpen = false;
+            window.dispatchEvent(new CustomEvent('keyboard-change', {
+                detail: { isOpen: false }
+            }));
+        }, 100);
+    };
+
+    // Listen for resize events
     window.visualViewport?.addEventListener('resize', checkKeyboard);
     window.addEventListener('resize', checkKeyboard);
-}
+
+    // Listen for orientation changes
+    window.addEventListener('orientationchange', handleOrientationChange);
+};
 
 // ============================================================================
 // Network Status

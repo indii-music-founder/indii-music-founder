@@ -75,9 +75,13 @@ test.describe('Mobile Experience', () => {
             const mobileNav = page.locator('.md\\:hidden.fixed.bottom-0');
             await expect(mobileNav).toBeVisible();
 
-            // Check position
+            // Check position (viewport-agnostic)
+            const viewportSize = page.viewportSize();
+            const viewportHeight = viewportSize?.height || 812;
             const boundingBox = await mobileNav.boundingBox();
-            expect(boundingBox?.y).toBeGreaterThan(700); // Near bottom of viewport
+
+            // Mobile nav should be near bottom (within 120px of bottom edge)
+            expect(boundingBox?.y).toBeGreaterThan(viewportHeight - 120);
         });
 
         test('should have WCAG compliant touch targets', async ({ page }) => {
