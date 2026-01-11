@@ -480,8 +480,14 @@ ${task}
             }
 
             const response = await responsePromise;
-            const functionCall = response.functionCalls()?.[0];
+            const usage = response.usage();
+            const mappedUsage = usage ? {
+                promptTokens: usage.promptTokenCount || 0,
+                completionTokens: usage.candidatesTokenCount || 0,
+                totalTokens: usage.totalTokenCount || 0
+            } : undefined;
 
+            const functionCall = response.functionCalls()?.[0];
             if (functionCall) {
                 const { name, args } = functionCall;
                 onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
@@ -530,12 +536,14 @@ ${task}
 
                 return {
                     text: `[Tool: ${name}] Output: ${outputText}`,
-                    data: result
+                    data: result,
+                    usage: mappedUsage
                 };
             }
 
             return {
-                text: response.text()
+                text: response.text(),
+                usage: mappedUsage
             };
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);

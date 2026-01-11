@@ -55,6 +55,7 @@ export const DailyItem = React.memo<DailyItemProps>(({
             onMouseLeave={handleMouseLeave}
             draggable
             onDragStart={(e) => onDragStart(e, video)}
+            data-testid={`daily-item-${video.id}`}
             className={`
                 relative h-20 aspect-video rounded-lg overflow-hidden cursor-pointer group flex-shrink-0 transition-all border-2
                 focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:outline-none

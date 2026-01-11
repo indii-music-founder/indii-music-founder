@@ -8,16 +8,17 @@ import {
     audit_workload_isolation,
     audit_permissions
 } from '../SecurityTools';
-import { AI } from '@/services/ai/AIService';
 import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
-        generateContent: vi.fn(),
-        generateStructuredData: vi.fn()
+vi.mock('@/services/ai/FirebaseAIService', () => ({
+    firebaseAI: {
+        generateStructuredData: vi.fn(),
+        generateContent: vi.fn()
     }
 }));
+
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
@@ -74,7 +75,7 @@ describe('SecurityTools (Mocked)', () => {
             expect(viewerRole.count).toBe(2);
 
             // AI should NOT be called
-            expect(AI.generateContent).not.toHaveBeenCalled();
+            expect(firebaseAI.generateStructuredData).not.toHaveBeenCalled();
         });
 
         it('should fallback to AI if Firestore returns empty/error', async () => {
@@ -88,15 +89,14 @@ describe('SecurityTools (Mocked)', () => {
                 roles: [{ role: 'admin', count: 1, risk: 'LOW' }],
                 recommendations: []
             };
-            (AI.generateContent as any).mockResolvedValue({
-                text: () => JSON.stringify(mockAIResponse)
-            });
+
+            (firebaseAI.generateStructuredData as any).mockResolvedValue(mockAIResponse);
 
             const result = await audit_permissions({ project_id: 'test-project' });
             const parsed = result.data;
 
             expect(parsed.status).toBe("AI Audit");
-            expect(AI.generateContent).toHaveBeenCalled();
+            expect(firebaseAI.generateStructuredData).toHaveBeenCalled();
         });
     });
 

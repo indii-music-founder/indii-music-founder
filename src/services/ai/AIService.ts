@@ -20,7 +20,8 @@ import {
     GenerateImageOptions,
     EmbedContentOptions,
     StreamChunk,
-    RetryableError
+    RetryableError,
+    UsageMetadata
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -87,6 +88,9 @@ function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
                 }
             }
             return [];
+        },
+        usage: (): UsageMetadata | undefined => {
+            return rawResponse.usageMetadata;
         }
     };
 }

@@ -47,13 +47,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
 
     // Simulate telemetry updates
-    const [speed, setSpeed] = useState(65);
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setSpeed(prev => Math.max(55, Math.min(75, prev + (Math.random() - 0.5) * 5)));
-        }, 2000);
-        return () => clearInterval(interval);
-    }, []);
+
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;
@@ -110,14 +104,10 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-[#0d1117] p-3 rounded-lg border border-gray-800 text-center">
-                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Current Speed</div>
-                                <div className="text-2xl font-mono text-yellow-500">{Math.round(speed)} <span className="text-xs text-gray-600">MPH</span></div>
-                            </div>
+                        <div className="grid grid-cols-1 gap-4">
                             <div className="bg-[#0d1117] p-3 rounded-lg border border-gray-800 text-center">
                                 <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Distance Rem.</div>
-                                <div className="text-2xl font-mono text-white">{(nextStop?.distance || 124)} <span className="text-xs text-gray-600">MI</span></div>
+                                <div className="text-2xl font-mono text-white">{nextStop?.distance !== undefined ? nextStop.distance : '--'} <span className="text-xs text-gray-600">MI</span></div>
                             </div>
                         </div>
                     </CardContent>

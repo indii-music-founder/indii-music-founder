@@ -51,7 +51,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
 
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generate: vi.fn().mockResolvedValue({ id: 'mock-vid', url: 'mock-video-url' })
+        generateVideo: vi.fn().mockResolvedValue([{ id: 'mock-vid', url: 'mock-video-url' }])
     }
 }));
 
