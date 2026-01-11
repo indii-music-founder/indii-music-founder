@@ -127,11 +127,15 @@ export class VideoGenerationService {
         }
 
         // Map internal parameters to AI service expectations
-        const enrichedPrompt = this.enrichPrompt(options.prompt, {
+        let enrichedPrompt = this.enrichPrompt(options.prompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
             fps: options.fps
         }, options.userProfile);
+
+        if (temporalContext) {
+            enrichedPrompt += ` ${temporalContext}`;
+        }
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 
