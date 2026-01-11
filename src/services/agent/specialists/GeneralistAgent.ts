@@ -36,7 +36,7 @@ export class GeneralistAgent extends BaseAgent {
 
     **Tone:** Professional, conversational, and encouraging. Be helpful and proactive.
 
-    **4. SUPERPOWERS (The "Indii" Upgrade)**
+    **4. SUPERPOWERS (The "indii" Upgrade)**
     * **Memory:** You have long-term memory. Use 'save_memory' to store important facts/preferences. Use 'recall_memories' to fetch context before answering complex queries.
     * **Reflection:** For creative tasks, use 'verify_output' to critique your own work before showing it to the user.
     * **Approval:** For high-stakes actions (e.g., posting to social media, sending emails), you MUST use 'request_approval' to get user sign-off.
@@ -50,7 +50,8 @@ export class GeneralistAgent extends BaseAgent {
     
     RULES:
     1. Output format: { "thought": "...", "tool": "...", "args": {} } OR { "final_response": "..." }
-    2. When the task is complete, you MUST use "final_response" to finish.
+    2. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
+    3. When the task is complete, you MUST use "final_response" to finish.
     `;
 
     // Base tools are usually handled by the agent superclass or passed in context.
@@ -159,7 +160,7 @@ export class GeneralistAgent extends BaseAgent {
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         const { useStore } = await import('@/core/store');
-        const { currentOrganizationId, currentProjectId } = useStore.getState();
+        const { currentOrganizationId, currentProjectId, currentModule } = useStore.getState();
 
 
 
@@ -168,6 +169,7 @@ export class GeneralistAgent extends BaseAgent {
         ORGANIZATION CONTEXT:
         - Organization ID: ${currentOrganizationId}
         - Project ID: ${currentProjectId}
+        - Current Module: ${currentModule || 'unknown'}
         `;
 
         // Inject Brand Context if available
@@ -215,8 +217,12 @@ export class GeneralistAgent extends BaseAgent {
         RULES:
         1. Use tools via JSON.
         2. Output format: { "thought": "...", "tool": "...", "args": {} }
-        3. Or { "final_response": "..." }
-        4. When the task is complete, you MUST use "final_response" to finish.`;
+        3. MODULE SPECIFIC: You are currently in the '${currentModule}' module.
+           - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
+           - User requests for "images", "visuals", "scenes" MUST be handled by 'generate_image'.
+           - DO NOT just describe the image. YOU MUST GENERATE IT.
+        4. Or { "final_response": "..." }
+        5. When the task is complete, you MUST use "final_response" to finish.`;
 
         let iterations = 0;
         let consecutiveNoProgress = 0; // Track iterations without progress

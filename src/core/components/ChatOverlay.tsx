@@ -610,7 +610,7 @@ export default function ChatOverlay() {
                                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-60 transition duration-500"></div>
                                     <div className="relative w-9 h-9 rounded-full bg-black flex items-center justify-center border border-white/10 overflow-hidden">
                                         {avatarUrl ? (
-                                            <img src={avatarUrl} alt="Indii" className="w-full h-full object-cover" />
+                                            <img src={avatarUrl} alt="indii" className="w-full h-full object-cover" />
                                         ) : (
                                             <Sparkles size={18} className="text-purple-300" />
                                         )}
@@ -619,7 +619,7 @@ export default function ChatOverlay() {
 
                                 <div className="min-w-0 flex flex-col justify-center">
                                     <h3 className="text-[15px] font-bold text-white leading-tight flex items-center gap-2 tracking-tight">
-                                        {currentSession?.title || 'Talk to Indii'}
+                                        {currentSession?.title || 'Talk to indii'}
                                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
                                             BETA
                                         </span>
@@ -704,7 +704,7 @@ export default function ChatOverlay() {
                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-black/20 overflow-x-auto custom-scrollbar">
                                     {currentSession.participants.map(p => (
                                         <span key={p} className="text-[10px] bg-purple-900/30 px-2 py-1 rounded text-purple-200 border border-purple-500/20 whitespace-nowrap">
-                                            {p === 'indii' ? '🤖 Indii' : `👤 ${p.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
+                                            {p === 'indii' ? '🤖 indii' : `👤 ${p.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
                                         </span>
                                     ))}
                                 </div>
