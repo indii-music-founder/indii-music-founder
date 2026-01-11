@@ -30,6 +30,7 @@ const AudioAnalyzer: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -81,12 +82,12 @@ const AudioAnalyzer: React.FC = () => {
 
         const ws = WaveSurfer.create({
             container: waveformContainerRef.current,
-            waveColor: 'rgba(255, 255, 255, 0.2)',
-            progressColor: '#facc15', // Variable primary color (Yellow)
+            waveColor: 'rgba(255, 255, 255, 0.4)', // Increased contrast
+            progressColor: '#facc15',
             cursorColor: '#ffffff',
             barWidth: 2,
             barGap: 3,
-            height: 120,
+            height: 100, // Slightly more compact
             normalize: true,
             backend: 'WebAudio',
             minPxPerSec: 50,
@@ -273,6 +274,32 @@ const AudioAnalyzer: React.FC = () => {
         }
     };
 
+    const handleSaveAnalysis = async () => {
+        if (!file) return;
+        setIsSaving(true);
+        const toastId = toast.loading(`Saving Sonic DNA for ${file.name}...`);
+        try {
+            // Map common features back to AudioFeatures format
+            // Map common features back to AudioFeatures format
+            const analysisFeatures = {
+                ...features,
+                bpm: features.bpm,
+                key: features.key.split(' ')[0], // Extract just the key
+                scale: features.key.split(' ')[1] || 'major',
+                valence: features.happiness
+            };
+
+            await MusicLibraryService.saveTrackAnalysis(file, analysisFeatures as any, undefined);
+            toast.success("Analysis saved to Music Library.");
+        } catch (error) {
+            console.error("Save failed:", error);
+            toast.error("Failed to save analysis.");
+        } finally {
+            toast.dismiss(toastId);
+            setIsSaving(false);
+        }
+    };
+
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
@@ -289,7 +316,7 @@ const AudioAnalyzer: React.FC = () => {
 
     return (
         <ModuleDashboard title="Sonic DNA Console" description="Deep Metadata Extraction & Laboratory Analysis" icon={<Activity className="text-primary" />}>
-            <div className="flex flex-col h-[calc(100vh-10rem)] p-4 gap-6">
+            <div className="flex flex-col h-full p-4 gap-4 overflow-hidden">
 
                 {/* Top Section: Analysis & Operations (Split View) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
@@ -305,22 +332,28 @@ const AudioAnalyzer: React.FC = () => {
 
                         {/* Key Stats Row */}
                         <div className="flex justify-between w-full px-8 mt-6">
-                            <div className="text-center">
+                            <div className="text-center" data-testid="bpm-stat">
                                 <div className="text-[10px] text-muted-foreground uppercase">BPM</div>
-                                <div className="text-2xl font-mono text-primary glow-text-white">{(regionFeatures || features).bpm || '--'}</div>
+                                <div className="text-2xl font-mono text-primary glow-text-white">{Math.round((regionFeatures || features).bpm) || '--'}</div>
                             </div>
-                            <div className="text-center">
+                            <div className="text-center" data-testid="key-stat">
                                 <div className="text-[10px] text-muted-foreground uppercase">KEY</div>
                                 <div className="text-2xl font-mono text-primary glow-text-white">{(regionFeatures || features).key || '--'}</div>
                             </div>
-                            <div className="text-center">
+                            <div className="text-center" data-testid="energy-stat">
                                 <div className="text-[10px] text-muted-foreground uppercase">ENERGY</div>
                                 <div className="text-2xl font-mono text-primary glow-text-white">{((regionFeatures || features).energy * 10).toFixed(1)}</div>
                             </div>
                         </div>
 
                         {regionFeatures && (
-                            <Button variant="ghost" size="sm" onClick={() => setRegionFeatures(null)} className="mt-4 text-[10px] h-6 text-muted-foreground hover:text-white">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setRegionFeatures(null)}
+                                className="mt-4 text-[10px] h-6 text-muted-foreground hover:text-white"
+                                data-testid="reset-to-global-button"
+                            >
                                 <RotateCcw size={10} className="mr-1" /> Reset to Global
                             </Button>
                         )}
@@ -343,7 +376,7 @@ const AudioAnalyzer: React.FC = () => {
                     {/* Right: Actions & AI Output (3 cols) */}
                     <div className="lg:col-span-3 flex flex-col gap-4">
                         {/* Upload Card */}
-                        <label className="bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-xl p-4 cursor-pointer transition-all group flex items-center gap-4">
+                        <label className="bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-xl p-4 cursor-pointer transition-all group flex items-center gap-4" data-testid="import-track-button">
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Upload size={18} className="text-primary" />
                             </div>
@@ -351,7 +384,7 @@ const AudioAnalyzer: React.FC = () => {
                                 <div className="text-sm font-bold text-primary">Import Track</div>
                                 <div className="text-[10px] text-muted-foreground">WAV, MP3, AIFF</div>
                             </div>
-                            <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
+                            <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} data-testid="import-track-input" />
                         </label>
 
                         {/* AI Summary */}
@@ -367,7 +400,12 @@ const AudioAnalyzer: React.FC = () => {
                             </div>
                         </div>
 
-                        <Button className="w-full bg-purple-600 hover:bg-purple-500" disabled={!file}>
+                        <Button
+                            className="w-full bg-purple-600 hover:bg-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.3)]"
+                            disabled={!file || isAnalyzing || isSaving}
+                            onClick={handleSaveAnalysis}
+                            data-testid="save-analysis-button"
+                        >
                             <Save size={14} className="mr-2" />
                             Save Analysis
                         </Button>
@@ -375,7 +413,7 @@ const AudioAnalyzer: React.FC = () => {
                 </div>
 
                 {/* Bottom Section: Waveform Console */}
-                <div className="h-48 bg-card glass-panel rounded-2xl border border-white/5 flex flex-col relative overflow-hidden shrink-0">
+                <div className="h-40 bg-card glass-panel rounded-2xl border border-white/5 flex flex-col relative overflow-hidden shrink-0">
                     {/* Toolbar */}
                     <div className="h-10 border-b border-white/5 flex items-center px-4 justify-between bg-white/5">
                         <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
@@ -389,7 +427,7 @@ const AudioAnalyzer: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2">
                             {selectedRegion && (
-                                <Button size="sm" variant="secondary" className="h-6 text-[10px]" onClick={handleAnalyzeRegion}>
+                                <Button size="sm" variant="secondary" className="h-6 text-[10px]" onClick={handleAnalyzeRegion} data-testid="analyze-segment-button">
                                     Analyze Segment DNA
                                 </Button>
                             )}
@@ -419,6 +457,7 @@ const AudioAnalyzer: React.FC = () => {
                                 if (wavesurferRef.current) wavesurferRef.current.stop();
                                 setIsPlaying(false);
                             }}
+                            data-testid="stop-button"
                         >
                             <RotateCcw size={16} />
                         </Button>
@@ -431,6 +470,7 @@ const AudioAnalyzer: React.FC = () => {
                             )}
                             onClick={togglePlay}
                             disabled={!file}
+                            data-testid="play-pause-button"
                         >
                             {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
                         </Button>
@@ -446,6 +486,7 @@ const AudioAnalyzer: React.FC = () => {
                                     if (wavesurferRef.current) wavesurferRef.current.setVolume(vals[0] / 100);
                                 }}
                                 className="flex-1"
+                                data-testid="volume-slider"
                             />
                         </div>
                     </div>

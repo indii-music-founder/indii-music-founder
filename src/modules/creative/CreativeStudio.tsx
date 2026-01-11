@@ -104,19 +104,21 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     return (
         <ModuleErrorBoundary moduleName="Creative Director">
             <div className="flex flex-col h-full w-full bg-[#0f0f0f]">
-                <CreativeNavbar />
+                <CreativeNavbar data-testid="creative-navbar" />
 
                 {/* Mobile Tab Switcher */}
                 <div className="md:hidden flex border-b border-white/10 bg-[#0f0f0f] flex-shrink-0">
                     <button
                         onClick={() => setActiveMobileTab('controls')}
                         className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileTab === 'controls' ? 'text-purple-400 border-b-2 border-purple-400 bg-white/5' : 'text-gray-500'}`}
+                        data-testid="mobile-tab-controls"
                     >
                         Controls
                     </button>
                     <button
                         onClick={() => setActiveMobileTab('studio')}
                         className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileTab === 'studio' ? 'text-purple-400 border-b-2 border-purple-400 bg-white/5' : 'text-gray-500'}`}
+                        data-testid="mobile-tab-studio"
                     >
                         Studio
                     </button>
@@ -133,6 +135,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'gallery' && <CreativeGallery />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'showroom' && <Showroom />}
+                        {viewMode === 'video_production' && <VideoWorkflow />}
                     </div>
                 </div>
 

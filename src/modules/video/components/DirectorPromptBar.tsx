@@ -32,6 +32,7 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
                     type="text"
                     value={prompt}
                     onChange={(e) => onPromptChange(e.target.value)}
+                    data-testid="director-prompt-input"
                     placeholder="Describe your scene (e.g. 'Cyberpunk street styling, rain, neon lights')..."
                     aria-label="Describe your scene"
                     className="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 focus-visible:ring-2 focus-visible:ring-purple-500/50 rounded-sm text-sm font-medium h-10 px-2"
@@ -55,6 +56,7 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
                 {/* Generate Button */}
                 <button
                     onClick={onGenerate}
+                    data-testid="video-generate-btn"
                     disabled={!prompt.trim() || isGenerating}
                     aria-label={isGenerating ? "Generating video..." : "Generate video"}
                     className={`

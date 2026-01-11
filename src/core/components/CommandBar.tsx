@@ -205,48 +205,48 @@ function CommandBar() {
     }, []);
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-        e?.preventDefault();
-        console.error("DEBUG_CRITICAL: CommandBar handleSubmit called", { input, isProcessing });
-
-        if (!input.trim() && attachments.length === 0) {
-            console.error("DEBUG_CRITICAL: Input empty, aborting");
-            return;
-        }
-
-        if (isProcessing) {
-            console.error("DEBUG_CRITICAL: Already processing, aborting");
-            return;
-        }
-
-        setIsProcessing(true);
-        const currentInput = input;
-        const currentAttachments = [...attachments];
-
-        // Clear immediately for optimistic UI
-        setInput('');
-        setAttachments([]);
-        setIsFileMenuOpen(false);
-
-        // Auto-open agent window if not already open
-        if (!isAgentOpen) {
-            console.error("DEBUG_CRITICAL: Opening agent window");
-            toggleAgentWindow();
-        }
-
         try {
-            console.error("DEBUG_CRITICAL: Calling agentService.sendMessage");
-            const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
-            const targetAgent = knownAgentIds.includes(currentModule) ? currentModule : undefined;
+            e?.preventDefault();
 
-            await agentService.sendMessage(currentInput, processedAttachments, targetAgent);
-            console.log("CommandBar: Message sent successfully");
-            setIsProcessing(false);
-        } catch (error) {
-            console.error('DEBUG_CRITICAL: Failed to send message:', error);
-            toast.error("Failed to send message.");
-            // Restore input on error
-            setInput(currentInput);
-            setAttachments(currentAttachments);
+            if (!input.trim() && attachments.length === 0) {
+                return;
+            }
+
+            if (isProcessing) {
+                return;
+            }
+
+            setIsProcessing(true);
+            const currentInput = input;
+            const currentAttachments = [...attachments];
+
+            // Clear immediately for optimistic UI
+            setInput('');
+            setAttachments([]);
+
+            // Auto-open agent window if not already open
+            if (!isAgentOpen) {
+                if (toggleAgentWindow) {
+                    toggleAgentWindow();
+                }
+            }
+
+            try {
+                const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
+                const targetAgent = knownAgentIds.includes(currentModule) ? currentModule : undefined;
+
+                await agentService.sendMessage(currentInput, processedAttachments, targetAgent);
+                setIsProcessing(false);
+            } catch (error) {
+                console.error('CommandBar: Failed to send message:', error);
+                toast.error("Failed to send message.");
+                // Restore input on error
+                setInput(currentInput);
+                setAttachments(currentAttachments);
+                setIsProcessing(false);
+            }
+        } catch (fatalError) {
+            console.error("CommandBar: Fatal crash in handleSubmit", fatalError);
             setIsProcessing(false);
         }
     }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing]);
@@ -402,11 +402,12 @@ function CommandBar() {
                                 <button
                                     type="button"
                                     onClick={(e) => handleSubmit(e)}
+                                    data-testid="command-bar-run-btn"
                                     disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
                                 >
                                     {isProcessing ? (
-                                        <Loader2 size={14} className="animate-spin" />
+                                        <Loader2 data-testid="run-loader" size={14} className="animate-spin" />
                                     ) : (
                                         <>
                                             Run

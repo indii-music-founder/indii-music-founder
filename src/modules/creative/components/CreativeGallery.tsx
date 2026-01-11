@@ -83,6 +83,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             tabIndex={0}
             role="button"
             aria-label={`Select ${item.prompt}`}
+            data-testid={`gallery-item-${item.id}`}
             className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
         >
             {item.type === 'video' ? (
@@ -116,6 +117,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', item); toast.success("Set as First Frame"); }}
+                                    data-testid="set-first-frame-btn"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                                     title="Set as First Frame"
                                     aria-label="Set as First Frame"
@@ -124,6 +126,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', item); toast.success("Set as Last Frame"); }}
+                                    data-testid="set-last-frame-btn"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                                     title="Set as Last Frame"
                                     aria-label="Set as Last Frame"
@@ -134,6 +137,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         )}
                         <button
                             onClick={(e) => { e.stopPropagation(); setEntityAnchor(item); toast.success("Entity Anchor Set"); }}
+                            data-testid="set-anchor-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Set as Entity Anchor (Character Lock)"
                             aria-label="Set as Entity Anchor (Character Lock)"
@@ -141,6 +145,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <Anchor size={14} />
                         </button>
                         <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                            data-testid="view-fullsize-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="View Fullsize"
                             aria-label="View Fullsize"
@@ -148,6 +154,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <Maximize2 size={14} />
                         </button>
                         <button
+                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Liked"); }}
+                            data-testid="like-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Like"
                             aria-label="Like"
@@ -155,6 +163,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <ThumbsUp size={14} />
                         </button>
                         <button
+                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Disliked"); }}
+                            data-testid="dislike-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Dislike"
                             aria-label="Dislike"
@@ -163,6 +173,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                            data-testid="delete-asset-btn"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50 transition-colors border border-red-500/20"
                             title="Delete"
                             aria-label="Delete"

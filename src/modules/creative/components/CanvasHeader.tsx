@@ -54,7 +54,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 {!isEditing ? (
                     <>
                         <button
-                            onClick={() => setIsEditing(true)}
+                            onClick={() => { setIsEditing(true); toast.success("Editor mode active"); }}
+                            data-testid="edit-canvas-btn"
                             className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                         >
                             <Brush size={14} /> Edit in Canvas
@@ -62,7 +63,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         {onRefine && (
                             <button
                                 onClick={onRefine}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                                data-testid="refine-btn"
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <Sparkles size={14} /> Refine
                             </button>
@@ -76,11 +78,13 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                     type="text"
                                     value={magicFillPrompt}
                                     onChange={(e) => setMagicFillPrompt(e.target.value)}
+                                    data-testid="magic-fill-input"
                                     placeholder="Describe changes..."
                                     className="bg-transparent border-none text-white text-sm px-2 focus:ring-0 outline-none w-48"
                                 />
                                 <button
                                     onClick={handleMagicFill}
+                                    data-testid="magic-generate-btn"
                                     disabled={isProcessing}
                                     className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded flex items-center gap-1"
                                 >
@@ -92,6 +96,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         <div className="relative group">
                             <button
                                 onClick={saveCanvas}
+                                data-testid="save-canvas-btn"
                                 className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-l-lg transition-colors flex items-center gap-2"
                             >
                                 <Save size={14} /> Save
@@ -154,6 +159,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         )}
                         <button
                             onClick={handleAnimate}
+                            data-testid="animate-btn"
                             className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                         >
                             <Play size={14} /> Animate
@@ -176,6 +182,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             </button>
                             <button
                                 onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
+                                data-testid="download-btn"
                                 className="p-2 hover:bg-green-900/40 text-gray-400 hover:text-green-400 rounded-lg transition-colors"
                                 title="Download"
                             >
@@ -184,7 +191,11 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         </div>
                     </>
                 )}
-                <button onClick={onClose} className="p-2 hover:bg-red-900/50 rounded-lg text-gray-400 hover:text-red-400 transition-colors">
+                <button
+                    onClick={onClose}
+                    data-testid="canvas-close-btn"
+                    className="p-2 hover:bg-red-900/50 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                >
                     <X size={18} />
                 </button>
             </div>

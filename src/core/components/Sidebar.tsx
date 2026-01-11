@@ -85,7 +85,9 @@ export default function Sidebar() {
                 )}
                 <button
                     onClick={toggleSidebar}
+                    data-testid="sidebar-toggle"
                     className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                    aria-label={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
                 >
                     {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
                 </button>

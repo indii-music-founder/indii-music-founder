@@ -44,6 +44,7 @@ export default function VideoNavbar() {
                     <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setViewMode('director')}
+                            data-testid="mode-director-btn"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 ${viewMode === 'director' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
@@ -51,6 +52,7 @@ export default function VideoNavbar() {
                         </button>
                         <button
                             onClick={() => setViewMode('editor')}
+                            data-testid="mode-editor-btn"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 ${viewMode === 'editor' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
@@ -70,6 +72,7 @@ export default function VideoNavbar() {
                         disabled={isProjecting}
                         title={isProjecting ? "Opening Projector..." : "Open Projector"}
                         aria-label={isProjecting ? "Opening Projector..." : "Open Projector"}
+                        data-testid="open-projector-btn"
                         className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isProjecting ? (

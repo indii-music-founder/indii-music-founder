@@ -91,6 +91,7 @@ export default function ReferenceManager() {
                         <button
                             onClick={() => setShowCamera(true)}
                             disabled={isUploading}
+                            data-testid="camera-btn"
                             className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-5 py-3 rounded-xl text-sm font-bold transition-all border border-white/10 active:scale-95 disabled:opacity-50"
                         >
                             <Camera size={18} />
@@ -99,9 +100,10 @@ export default function ReferenceManager() {
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
+                            data-testid="upload-btn"
                             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] active:scale-95 disabled:opacity-50"
                         >
-                            {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                            {isUploading ? <Loader2 data-testid="upload-loader" size={18} className="animate-spin" /> : <Upload size={18} />}
                             Upload Files
                         </button>
                     </div>
@@ -138,6 +140,7 @@ export default function ReferenceManager() {
                                     <button
                                         onClick={() => handleDelete(idx)}
                                         className="p-2 bg-red-500/90 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg hover:scale-110"
+                                        aria-label="Delete reference image"
                                     >
                                         <Trash2 size={14} />
                                     </button>
@@ -149,6 +152,7 @@ export default function ReferenceManager() {
                     {/* Quick Add Placeholder */}
                     <button
                         onClick={() => fileInputRef.current?.click()}
+                        data-testid="add-new-btn"
                         className="aspect-square rounded-2xl border border-dashed border-white/10 hover:border-purple-500/50 bg-white/5 hover:bg-purple-500/5 transition-all flex flex-col items-center justify-center gap-3 group"
                     >
                         <div className="w-12 h-12 rounded-full bg-white/5 group-hover:bg-purple-500/20 flex items-center justify-center transition-colors">
