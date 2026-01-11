@@ -29,6 +29,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "generate:icons": "node scripts/generate-pwa-icons.cjs",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",

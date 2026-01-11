@@ -93,14 +93,13 @@
 
 ### 1. PWA Manifest Validation ✅
 
-```
+```text
 ✅ PWA manifest validation passed
   - Name: indiiOS - AI Creative Studio
   - Short name: indiiOS
   - Display: standalone
   - Icons: 3 defined
   - Shortcuts: 3 defined
-  - Share target: True
 ```
 
 **Validated Against:** W3C Web App Manifest Specification

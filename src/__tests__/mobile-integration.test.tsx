@@ -106,11 +106,9 @@ describe('Mobile Experience Integration', () => {
                 expect(screen.getByText('More Features')).toBeInTheDocument();
             });
 
-            // Click backdrop
-            const backdrop = screen.getByText('More Features').parentElement?.previousSibling;
-            if (backdrop) {
-                fireEvent.click(backdrop);
-            }
+            // Click backdrop using stable selector
+            const backdrop = screen.getByTestId('overflow-backdrop');
+            fireEvent.click(backdrop);
 
             expect(mobileUtils.haptic).toHaveBeenCalledWith('light');
         });

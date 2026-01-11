@@ -239,7 +239,7 @@ getBatteryStatus() // Get battery level & charging state
 7. **Image Optimization** - WebP with fallbacks
 8. **Dark/Light Mode Toggle** - Respect system preference
 9. **Biometric Auth** - Face ID / Fingerprint login
-10. **Share Target Handler** - Handle incoming shares
+10. **Share Target Handler** - Accept files/URLs from other apps (requires backend route handler)
 
 ### Performance Targets
 - First Contentful Paint: < 1.5s

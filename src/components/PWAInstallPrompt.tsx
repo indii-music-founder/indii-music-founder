@@ -15,14 +15,24 @@ export const PWAInstallPrompt: React.FC = () => {
         // Don't show if already installed or dismissed
         if (isStandalone()) return;
 
-        const dismissedTimestamp = localStorage.getItem('pwa-install-dismissed');
-        if (dismissedTimestamp) {
-            const daysSinceDismissal = (Date.now() - parseInt(dismissedTimestamp)) / (1000 * 60 * 60 * 24);
-            // Show again after 7 days
-            if (daysSinceDismissal < 7) {
-                setDismissed(true);
-                return;
+        // Check if previously dismissed (with safe localStorage access)
+        try {
+            const dismissedTimestamp = localStorage.getItem('pwa-install-dismissed');
+            if (dismissedTimestamp) {
+                const timestamp = parseInt(dismissedTimestamp, 10);
+                if (!isNaN(timestamp)) {
+                    const daysSinceDismissal = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+                    // Show again after 7 days
+                    if (daysSinceDismissal < 7) {
+                        setDismissed(true);
+                        return;
+                    }
+                }
             }
+        } catch (error) {
+            // localStorage unavailable (private browsing, quota exceeded, etc.)
+            // Treat as "not dismissed" and continue
+            console.debug('[PWA] localStorage unavailable, skipping dismissal check:', error);
         }
 
         // Initialize PWA install prompt
@@ -53,7 +63,15 @@ export const PWAInstallPrompt: React.FC = () => {
     const handleDismiss = () => {
         haptic('light');
         setDismissed(true);
-        localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+
+        // Save dismissal timestamp (with safe localStorage access)
+        try {
+            localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+        } catch (error) {
+            // localStorage unavailable (private browsing, quota exceeded, etc.)
+            // Silently ignore - user dismissed the prompt in memory
+            console.debug('[PWA] localStorage unavailable, dismissal not persisted:', error);
+        }
     };
 
     // Don't show if can't install, dismissed, or already standalone

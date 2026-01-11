@@ -78,6 +78,7 @@ export const MobileNav = () => {
                 <div className="md:hidden fixed inset-0 z-[60] flex items-end justify-center animate-in fade-in duration-200">
                     {/* Backdrop */}
                     <div
+                        data-testid="overflow-backdrop"
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         onClick={() => {
                             haptic('light');

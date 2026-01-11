@@ -50,21 +50,5 @@
       "url": "/?module=music",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
-  ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "media",
-          "accept": ["image/*", "video/*", "audio/*"]
-        }
-      ]
-    }
-  }
+  ]
 }
