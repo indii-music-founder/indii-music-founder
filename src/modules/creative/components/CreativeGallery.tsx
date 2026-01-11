@@ -98,7 +98,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                 )
             )}
 
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex flex-col justify-end p-3">
                 <p className="text-xs text-white line-clamp-2 mb-2">{item.prompt}</p>
                 <div className="flex justify-between items-center">
                     <span className="text-[10px] text-gray-400 uppercase">{item.type}</span>
@@ -107,15 +107,17 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', item); toast.success("Set as First Frame"); }}
-                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 transition-colors"
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors"
                                     title="Set as First Frame"
+                                    aria-label="Set as First Frame"
                                 >
                                     <ArrowLeftToLine size={14} />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', item); toast.success("Set as Last Frame"); }}
-                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors"
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors"
                                     title="Set as Last Frame"
+                                    aria-label="Set as Last Frame"
                                 >
                                     <ArrowRightToLine size={14} />
                                 </button>
@@ -123,24 +125,26 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         )}
                         <button
                             onClick={(e) => { e.stopPropagation(); setEntityAnchor(item); toast.success("Entity Anchor Set"); }}
-                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors"
                             title="Set as Entity Anchor (Character Lock)"
+                            aria-label="Set as Entity Anchor (Character Lock)"
                         >
                             <Anchor size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 transition-colors" title="View Fullsize">
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors" title="View Fullsize" aria-label="View Fullsize">
                             <Maximize2 size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 transition-colors" title="Like">
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors" title="Like" aria-label="Like">
                             <ThumbsUp size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 transition-colors" title="Dislike">
+                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors" title="Dislike" aria-label="Dislike">
                             <ThumbsDown size={14} />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                            className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
+                            className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none transition-colors border border-red-500/20"
                             title="Delete"
+                            aria-label="Delete"
                         >
                             <Trash2 size={14} />
                         </button>
