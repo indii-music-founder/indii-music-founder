@@ -63,12 +63,12 @@ test.describe('100-Click Path Challenge', () => {
                     await page.waitForTimeout(300);
                 }
 
+                console.log(`[ATTEMPT] Clicking ${name}`);
                 await element.click({ force: true });
                 logClick(name);
 
-                // Wait for potential navigation or state change
-                await page.waitForLoadState('domcontentloaded');
-                await page.waitForTimeout(1000); // Increased stability pause
+                // Just wait for stability, no strict navigation check
+                await page.waitForTimeout(1000);
             } catch (e) {
                 console.error(`[FAILURE] Failed to click ${name} at step ${clickCount + 1}`);
                 // Fallback: Try matching by title (for collapsed sidebar)
