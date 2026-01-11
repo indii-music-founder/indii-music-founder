@@ -39,7 +39,11 @@ export const registerSFTPHandlers = () => {
 
             const resolvedLocalPath = path.resolve(validated.localPath);
 
-            const isAllowed = allowedRoots.some(root => resolvedLocalPath.startsWith(root));
+            const isAllowed = allowedRoots.some(root => {
+                // Ensure exact match or proper subdirectory match (prevent /tmp vs /tmp_hacker prefix attacks)
+                const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
+                return resolvedLocalPath === root || resolvedLocalPath.startsWith(rootWithSep);
+            });
 
             if (!isAllowed) {
                 console.error(`[Security] Blocked SFTP upload from unauthorized path: ${resolvedLocalPath}`);
