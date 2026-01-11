@@ -68,10 +68,10 @@ const CampaignDashboard: React.FC = () => {
     // Test Helper: Allow injecting campaign updates from E2E tests (Maestro Workflow)
     useEffect(() => {
         // Only enable in non-production environments or if specifically enabled
-        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+        if (import.meta.env.DEV || window.location.hostname === 'localhost' || (window as any).__MAESTRO_TEST_MODE__) {
             const handleTestUpdate = (event: CustomEvent) => {
                 console.log("[Maestro] Injecting Agent Plan...", event.detail);
-                setSelectedCampaign(prev => prev ? { ...prev, ...event.detail } : null);
+                setSelectedCampaign(prev => prev ? { ...prev, ...event.detail } : event.detail);
             };
             window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
             return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
