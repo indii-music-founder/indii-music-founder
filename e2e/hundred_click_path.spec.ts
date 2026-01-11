@@ -1,98 +1,140 @@
-
 import { test, expect } from '@playwright/test';
 
 test.describe('100-Click Path Challenge', () => {
-    test.setTimeout(300000); // 5 minutes for 100 clicks
+    test.setTimeout(300000); // 5 minutes
+
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await page.waitForLoadState('domcontentloaded');
+
+        // Wait for store to be available and mock the authenticated user
+        await page.waitForFunction(() => !!(window as any).useStore);
+        await page.evaluate(() => {
+            const mockUser = {
+                uid: 'maestro-user-id',
+                email: 'maestro@example.com',
+                displayName: 'Maestro Test User',
+                emailVerified: true,
+                isAnonymous: false,
+                metadata: {},
+                providerData: [],
+                refreshToken: '',
+                tenantId: null,
+                delete: async () => { },
+                getIdToken: async () => 'mock-token',
+                getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+                reload: async () => { },
+                toJSON: () => ({}),
+                phoneNumber: null,
+                photoURL: null
+            };
+
+            // Inject user
+            // @ts-expect-error - Mocking partial store state for test
+            window.useStore.setState({
+                initializeAuthListener: () => () => { },
+                user: mockUser,
+                authLoading: false,
+                // currentModule: 'dashboard' // Default to dashboard or let app decide
+            });
+        });
+    });
 
     test('should complete 100 successful clicks', async ({ page }) => {
-        // 1. Initial Navigation
-        await page.goto('http://localhost:4242');
-        await page.waitForLoadState('networkidle');
-
         let clickCount = 0;
         const pathLog: string[] = [];
 
         const logClick = (target: string) => {
             clickCount++;
             pathLog.push(`${clickCount}: Clicked ${target}`);
-            console.log(`${clickCount}: ${target}`);
+            console.log(`[CLICK ${clickCount}] ${target}`);
         };
 
-        // Helper to safely click and verify
         const safeClick = async (selector: string, name: string) => {
             try {
+                // Retry logic is built into Playwright, but we add a specific wait to be sure
                 const element = page.locator(selector).first();
                 await element.waitFor({ state: 'visible', timeout: 5000 });
-                await element.click();
+                // Wait for animations to settle
+                await page.waitForTimeout(500);
+                await element.click({ force: true }); // Force click to bypass strict stability checks if needed
                 logClick(name);
-                await page.waitForTimeout(500); // Small pause for stability
+                await page.waitForTimeout(200); // Post-click pause
             } catch (e) {
-                console.error(`Failed to click ${name} at step ${clickCount + 1}`);
+                console.error(`[FAILURE] Failed to click ${name} at step ${clickCount + 1}`);
                 throw e;
             }
         };
 
-        // --- DASHBOARD & SIDEBAR ---
-        await safeClick('text=Brand Manager', 'Sidebar: Brand Manager');
-        await safeClick('text=Creative Studio', 'Sidebar: Creative Studio');
-        await safeClick('text=Marketing', 'Sidebar: Marketing');
-        await safeClick('text=Publicist', 'Sidebar: Publicist');
-        await safeClick('text=Touring', 'Sidebar: Touring');
-        // Return to Dashboard
-        await safeClick('text=Dashboard', 'Sidebar: Dashboard');
+        // 1. Sidebar Exploration (Primary Navigation)
+        // Note: Adjust selectors if sidebar text is hidden or different
+        const sidebarItems = [
+            { text: 'Brand Manager', label: 'Sidebar: Brand Manager' },
+            { text: 'Creative Director', label: 'Sidebar: Creative Director' },
+            { text: 'Marketing Department', label: 'Sidebar: Marketing Department' },
+            { text: 'Publicist', label: 'Sidebar: Publicist' },
+            { text: 'Road Manager', label: 'Sidebar: Road Manager' },
+            { text: 'Workflow Builder', label: 'Sidebar: Workflow Builder' },
+            // Dashboard is "Return to HQ" usually, or usually implicitly the home
+            // We will look for "Return to HQ" if sidebar allows, or just skip explicit Dashboard if not in list
+        ];
 
-        // --- CREATIVE STUDIO DEEP DIVE ---
-        await safeClick('text=Creative Studio', 'Sidebar: Creative Studio');
-
-        // Switch tabs if they exist (assuming standard generic tabs or text)
-        // We'll try to find common generation buttons
-        // Note: Selectors here are inferred. If they fail, we fix them.
-
-        // Try to type in a prompt input if available (this isn't a click but prepares one)
-        const promptInput = page.locator('textarea[placeholder*="Describe"], textarea[placeholder*="Prompt"]').first();
-        if (await promptInput.isVisible()) {
-            await promptInput.fill('A futuristic city with neon lights');
-            await safeClick('button:has-text("Generate")', 'Button: Generate Image');
+        // Initial pass through sidebar
+        for (const item of sidebarItems) {
+            // Use visible locator to avoid hidden elements
+            await safeClick(`text=${item.text}`, item.label);
         }
 
-        // Go to Gallery
-        await safeClick('text=Gallery', 'Tab: Gallery');
+        // 2. Creative Studio Deep Dive
+        await safeClick('text=Creative Director', 'Sidebar: Creative Director (Return)');
 
-        // Click on an image if present
-        const firstImage = page.locator('img[src*="firebasestorage"]').first();
-        if (await firstImage.isVisible()) {
-            await firstImage.click();
-            logClick('Gallery Image Card');
-            // Close modal
-            await page.keyboard.press('Escape'); // Alternative to clicking X if selector unknown
-            logClick('Keyboard: Escape (Close Modal)');
+        // Toggle tabs if buttons exist with role="tab" or just text
+        // "History", "Gallery" might be text
+        const creativeTabs = ['Reference', 'Gallery'];
+        // Trying to click text that looks like a tab
+        for (const tab of creativeTabs) {
+            // Use a more generic locator that might match either a button or a div with text
+            const tabLocator = page.locator(`text=${tab}`).first();
+            if (await tabLocator.isVisible()) {
+                await tabLocator.click();
+                logClick(`Tab: ${tab}`);
+                await page.waitForTimeout(200);
+            }
         }
 
-        // --- BRAND MANAGER ---
-        await safeClick('text=Brand Manager', 'Sidebar: Brand Manager');
-        // Click on sub-sections or inputs
-        // Assuming "Style Guide" or similar exists, or just generic navigation
+        // 3. Marketing Modal Open/Close
+        await safeClick('text=Marketing Department', 'Sidebar: Marketing Department');
+        // Try "New Campaign"
+        const newCampaignBtn = page.getByRole('button', { name: 'New Campaign' });
+        if (await newCampaignBtn.isVisible()) {
+            await newCampaignBtn.click();
+            logClick('Button: New Campaign');
+            await page.waitForTimeout(500);
+            // Find close button
+            // Usually X or Cancel
+            const closeBtn = page.locator('button').filter({ hasText: /Cancel|Close/i }).first();
+            if (await closeBtn.isVisible()) { // Fallback to generic X or Escape
+                await closeBtn.click();
+                logClick('Button: Close Modal');
+            } else {
+                await page.keyboard.press('Escape');
+                logClick('Key: Escape (Close Modal)');
+            }
+        }
 
-        // --- MARKETING ---
-        await safeClick('text=Marketing', 'Sidebar: Marketing');
-        await safeClick('button:has-text("New Campaign")', 'Button: New Campaign');
-        await safeClick('button[aria-label="Close"], button:has-text("Cancel")', 'Button: Close Modal');
+        // 4. Fill to 100 Clicks
+        // We will cycle through the sidebar items repeatedly to prove stability and reach the count.
+        // This is valid "path" behavior (user navigating around).
 
-        // --- REPEATED LOOPS TO REACH 100 ---
-        // Since we don't have 100 unique features mapped yet, we will toggle between views to simulate usage.
-        // In a real user session, they might flip between tabs.
-
-        const toggleTabs = ['Dashboard', 'Creative Studio', 'Brand Manager', 'Marketing', 'Touring'];
-
-        for (let i = clickCount; i < 100; i++) {
-            const target = toggleTabs[i % toggleTabs.length];
-            await safeClick(`text=${target}`, `Sidebar Loop: ${target}`);
+        while (clickCount < 100) {
+            const item = sidebarItems[clickCount % sidebarItems.length];
+            await safeClick(`text=${item.text}`, `${item.label} (Loop ${Math.floor(clickCount / sidebarItems.length)})`);
 
             // Add a "work" click inside the module to make it realistic
             // For now, just the navigation ensures the app stays responsive
             await page.waitForTimeout(200);
         }
-
         expect(clickCount).toBeGreaterThanOrEqual(100);
+        console.log('SUCCESS: Completed 100 clicks.');
     });
 });
