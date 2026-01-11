@@ -25,27 +25,6 @@ export const MusicTools: Record<string, AnyToolFunction> = {
         return toolSuccess(metadata, "Metadata lookup successful.");
     }),
 
-    save_track_idea: wrapTool('save_track_idea', async (args: { title: string; notes?: string }) => {
-        const { MusicService } = await import('@/services/music/MusicService');
-        const { TrackStatus } = await import('@/modules/music/types');
-        const { userProfile } = useStore.getState();
-        const artistName = userProfile?.displayName || 'Me';
-
-        const id = await MusicService.addTrack({
-            title: args.title,
-            artist: artistName,
-            version: '1.0',
-            tags: [],
-            metadata: { notes: args.notes || '' },
-            status: TrackStatus.DEMO
-        });
-
-        return toolSuccess({
-            id,
-            title: args.title
-        }, `Saved track idea "${args.title}" (ID: ${id})`);
-    }),
-
     create_playlist: wrapTool('create_playlist', async (args: { name: string; description?: string }) => {
         const { MusicService } = await import('@/services/music/MusicService');
         const id = await MusicService.createPlaylist({
