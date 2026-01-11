@@ -2,12 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { VideoEditor } from '../VideoEditor';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useVideoEditorStore } from '../../store/videoEditorStore';
 import { useToast } from '@/core/context/ToastContext';
 import { httpsCallable } from 'firebase/functions';
 
 // Mock dependencies
-vi.mock('../store/videoEditorStore', () => ({
+vi.mock('../../store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn(),
     VideoProject: {},
     VideoClip: {}
@@ -27,19 +27,17 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Mock complex sub-components to focus on integration logic
-vi.mock('../components/VideoPreview', () => ({
+vi.mock('./VideoPreview', () => ({
     VideoPreview: () => <div data-testid="video-preview" />
 }));
 
-vi.mock('../components/VideoPropertiesPanel', () => ({
+vi.mock('./VideoPropertiesPanel', () => ({
     VideoPropertiesPanel: () => <div data-testid="video-properties-panel" />
 }));
 
 // We keep VideoTimeline and Sidebar real if possible, or mock them if they are too complex.
 // For now, let's mock them but make them interactive enough for our test.
-// Actually, let's mock them to ensure we are testing the orchestrator (VideoEditor + useVideoEditor),
-// and trust unit tests for the leaf components.
-vi.mock('../components/VideoTimeline', () => ({
+vi.mock('./VideoTimeline', () => ({
     VideoTimeline: ({ handlePlayPause, handleAddTrack, handleAddSampleClip }: any) => (
         <div data-testid="video-timeline">
             <button data-testid="play-pause-btn" onClick={handlePlayPause}>Play/Pause</button>
@@ -49,7 +47,7 @@ vi.mock('../components/VideoTimeline', () => ({
     )
 }));
 
-vi.mock('../components/VideoEditorSidebar', () => ({
+vi.mock('./VideoEditorSidebar', () => ({
     VideoEditorSidebar: ({ onLibraryDragStart }: any) => (
         <div data-testid="video-editor-sidebar">
             <div

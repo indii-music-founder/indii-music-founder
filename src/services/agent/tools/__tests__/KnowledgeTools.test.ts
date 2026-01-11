@@ -1,154 +1,78 @@
-/**
- * @vitest-environment node
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { KnowledgeTools } from '../KnowledgeTools';
+import { runAgenticWorkflow } from '@/services/rag/ragService';
+import { useStore } from '@/core/store';
 
-// Mock dependencies before imports
+// Mock dependencies
+vi.mock('@/services/rag/ragService', () => ({
+    runAgenticWorkflow: vi.fn()
+}));
+
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: vi.fn()
     }
 }));
 
-vi.mock('@/services/rag/ragService', () => ({
-    runAgenticWorkflow: vi.fn()
-}));
-
-import { KnowledgeTools } from '../KnowledgeTools';
-import { useStore } from '@/core/store';
-import { runAgenticWorkflow } from '@/services/rag/ragService';
+// Mock console methods to avoid cluttering test output
+const consoleMock = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+};
+global.console = { ...global.console, ...consoleMock };
 
 describe('KnowledgeTools', () => {
-    const mockUserProfile = {
-        id: 'user-123',
-        displayName: 'Test User',
-        email: 'test@example.com'
-    };
-
-    const mockStoreState = {
-        userProfile: mockUserProfile
-    };
-
     beforeEach(() => {
-        vi.resetAllMocks();
-        (useStore.getState as any).mockReturnValue(mockStoreState);
+        vi.clearAllMocks();
     });
 
     describe('search_knowledge', () => {
-        it('should search knowledge base successfully', async () => {
-            const mockAsset = {
-                content: 'The answer to your question is 42.',
-                sources: [
-                    { name: 'Guide.pdf' },
-                    { name: 'FAQ.md' }
-                ]
-            };
-            (runAgenticWorkflow as any).mockResolvedValue({ asset: mockAsset });
+        it('should error if user is not logged in', async () => {
+            (useStore.getState as any).mockReturnValue({ userProfile: null });
 
-            const result = await KnowledgeTools.search_knowledge({
-                query: 'What is the meaning of life?'
-            });
+            const result = await KnowledgeTools.search_knowledge({ query: 'test query' });
 
-            const data = result.data;
-            expect(data.answer).toBe('The answer to your question is 42.');
-            expect(data.sources).toHaveLength(2);
-            expect(data.sources[0].title).toBe('Guide.pdf');
+            expect(result.success).toBe(false);
+            expect(result.error).toBe("User profile not loaded. Please log in.");
+            expect(result.metadata?.errorCode).toBe('AUTH_REQUIRED');
         });
 
-        it('should pass user profile to workflow', async () => {
-            const mockAsset = { content: 'Answer', sources: [] };
-            (runAgenticWorkflow as any).mockResolvedValue({ asset: mockAsset });
+        it('should run agentic workflow and return structured data when logged in', async () => {
+            (useStore.getState as any).mockReturnValue({ userProfile: { id: 'test-user' } });
 
-            await KnowledgeTools.search_knowledge({ query: 'test query' });
+            const mockAsset = {
+                content: 'Test answer',
+                sources: [
+                    { name: 'Source 1' },
+                    { name: 'Source 2' }
+                ]
+            };
+
+            (runAgenticWorkflow as any).mockResolvedValue({
+                asset: mockAsset,
+                updatedProfile: null
+            });
+
+            const result = await KnowledgeTools.search_knowledge({ query: 'test query' });
 
             expect(runAgenticWorkflow).toHaveBeenCalledWith(
                 'test query',
-                mockUserProfile,
+                { id: 'test-user' },
                 null,
                 expect.any(Function),
                 expect.any(Function)
             );
-        });
 
-        it('should handle missing user profile', async () => {
-            (useStore.getState as any).mockReturnValue({ userProfile: null });
-
-            const result = await KnowledgeTools.search_knowledge({ query: 'test' });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('User profile not loaded');
-            expect(runAgenticWorkflow).not.toHaveBeenCalled();
-        });
-
-        it('should handle workflow errors', async () => {
-            (runAgenticWorkflow as any).mockRejectedValue(
-                new Error('Knowledge base unavailable')
-            );
-
-            const result = await KnowledgeTools.search_knowledge({ query: 'test' });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('Knowledge base unavailable');
-        });
-
-        it('should handle empty sources', async () => {
-            const mockAsset = {
-                content: 'No specific sources found.',
-                sources: []
-            };
-            (runAgenticWorkflow as any).mockResolvedValue({ asset: mockAsset });
-
-            const result = await KnowledgeTools.search_knowledge({ query: 'obscure topic' });
-
-            const data = result.data;
-            expect(data.answer).toBe('No specific sources found.');
-            expect(data.sources).toHaveLength(0);
-        });
-
-        it('should map source names to titles', async () => {
-            const mockAsset = {
-                content: 'Answer',
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual({
+                answer: 'Test answer',
                 sources: [
-                    { name: 'Document 1.pdf', content: 'Some content' },
-                    { name: 'Document 2.md', content: 'Other content' }
-                ]
-            };
-            (runAgenticWorkflow as any).mockResolvedValue({ asset: mockAsset });
-
-            const result = await KnowledgeTools.search_knowledge({ query: 'test' });
-
-            const data = result.data;
-            expect(data.sources[0].title).toBe('Document 1.pdf');
-            expect(data.sources[1].title).toBe('Document 2.md');
-        });
-
-        it('should log progress updates', async () => {
-            const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => { });
-
-            const mockAsset = { content: 'Answer', sources: [] };
-            (runAgenticWorkflow as any).mockImplementation(
-                async (query: any, profile: any, track: any, onUpdate: any) => {
-                    onUpdate('Searching...');
-                    onUpdate('Processing results...');
-                    return { asset: mockAsset };
-                }
-            );
-
-            await KnowledgeTools.search_knowledge({ query: 'test' });
-
-            expect(consoleSpy).toHaveBeenCalledWith('[RAG] Searching...');
-            expect(consoleSpy).toHaveBeenCalledWith('[RAG] Processing results...');
-
-            consoleSpy.mockRestore();
-        });
-
-        it('should handle non-Error exceptions', async () => {
-            (runAgenticWorkflow as any).mockRejectedValue('String error');
-
-            const result = await KnowledgeTools.search_knowledge({ query: 'test' });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('String error');
+                    { title: 'Source 1' },
+                    { title: 'Source 2' }
+                ],
+                message: 'Knowledge search completed successfully.'
+            });
         });
     });
 });

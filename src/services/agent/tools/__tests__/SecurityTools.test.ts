@@ -8,7 +8,6 @@ import {
     audit_workload_isolation,
     audit_permissions
 } from '../SecurityTools';
-import { AI } from '@/services/ai/AIService';
 import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
@@ -76,7 +75,7 @@ describe('SecurityTools (Mocked)', () => {
             expect(viewerRole.count).toBe(2);
 
             // AI should NOT be called
-            expect(AI.generateContent).not.toHaveBeenCalled();
+            expect(firebaseAI.generateStructuredData).not.toHaveBeenCalled();
         });
 
         it('should fallback to AI if Firestore returns empty/error', async () => {

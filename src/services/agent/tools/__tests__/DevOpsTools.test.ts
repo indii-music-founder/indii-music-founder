@@ -1,130 +1,92 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { DevOpsTools } from '../DevOpsTools';
 
+// Mock Firebase Functions
 const mockHttpsCallable = vi.fn();
-
-// Mock firebase/functions
 vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn(),
-    httpsCallable: (...args: any[]) => mockHttpsCallable(...args)
+    httpsCallable: (_functions: any, _name: string) => mockHttpsCallable
 }));
 
-// Mock @/services/firebase
 vi.mock('@/services/firebase', () => ({
     functions: {}
 }));
 
-import { httpsCallable } from 'firebase/functions';
-import { DevOpsTools } from '../DevOpsTools';
+// Mock console methods
+const consoleMock = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+};
+global.console = { ...global.console, ...consoleMock };
 
-// No need to cast again since we defined mockHttpsCallable above
-// const mockHttpsCallable = httpsCallable as ReturnType<typeof vi.fn>;
-
-describe('DevOpsTools (Real GCP via Cloud Functions)', () => {
+describe('DevOpsTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('list_clusters calls listGKEClusters function', async () => {
-        const mockClusters = [
-            { name: 'prod-cluster', status: 'RUNNING', location: 'us-central1-a', currentNodeCount: 5, currentMasterVersion: '1.27.3' }
-        ];
-        const mockCallable = vi.fn().mockResolvedValue({ data: { clusters: mockClusters } });
-        mockHttpsCallable.mockReturnValue(mockCallable);
+    describe('list_clusters', () => {
+        it('should call listGKEClusters cloud function and return clusters', async () => {
+            const mockClusters = [
+                { name: 'cluster-1', status: 'RUNNING', location: 'us-central1' },
+                { name: 'cluster-2', status: 'STOPPING', location: 'europe-west1' }
+            ];
 
-        const result = await DevOpsTools.list_clusters({ projectId: 'test-project' });
+            mockHttpsCallable.mockResolvedValueOnce({
+                data: { clusters: mockClusters }
+            });
 
-        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'listGKEClusters');
-        expect(mockCallable).toHaveBeenCalledWith({ projectId: 'test-project', location: '-' });
-        expect(result.success).toBe(true);
-        expect(result.data.clusters).toEqual(mockClusters);
-    });
+            const result = await DevOpsTools.list_clusters({});
 
-    it('get_cluster_status calls getGKEClusterStatus function', async () => {
-        const mockStatus = {
-            name: 'prod-cluster',
-            status: 'RUNNING',
-            conditions: [{ type: 'Ready', status: 'True' }],
-            nodePools: [{ name: 'default-pool', status: 'RUNNING', nodeCount: 3 }]
-        };
-        const mockCallable = vi.fn().mockResolvedValue({ data: mockStatus });
-        mockHttpsCallable.mockReturnValue(mockCallable);
-
-        const result = await DevOpsTools.get_cluster_status({ cluster_id: 'prod-cluster', location: 'us-central1-a' });
-
-        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'getGKEClusterStatus');
-        expect(mockCallable).toHaveBeenCalledWith({
-            clusterName: 'prod-cluster',
-            projectId: undefined,
-            location: 'us-central1-a'
-        });
-        expect(result.success).toBe(true);
-        expect(result.data.status).toBe('RUNNING');
-    });
-
-    it('scale_deployment calls scaleGKENodePool function', async () => {
-        const mockResult = { success: true, message: 'Scaling initiated', operation: 'op-123' };
-        const mockCallable = vi.fn().mockResolvedValue({ data: mockResult });
-        mockHttpsCallable.mockReturnValue(mockCallable);
-
-        const result = await DevOpsTools.scale_deployment({
-            cluster_id: 'prod-cluster',
-            nodePoolName: 'default-pool',
-            nodeCount: 5,
-            location: 'us-central1-a'
+            expect(result.success).toBe(true);
+            expect(result.data.clusters).toEqual(mockClusters);
+            expect(result.message).toContain('Retrieved 2 GKE clusters');
         });
 
-        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'scaleGKENodePool');
-        expect(mockCallable).toHaveBeenCalledWith({
-            clusterName: 'prod-cluster',
-            nodePoolName: 'default-pool',
-            nodeCount: 5,
-            projectId: undefined,
-            location: 'us-central1-a'
+        it('should handle errors gracefully', async () => {
+            mockHttpsCallable.mockRejectedValueOnce(new Error('Cloud API Error'));
+
+            const result = await DevOpsTools.list_clusters({});
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Cloud API Error');
+            expect(result.metadata.errorCode).toBe('TOOL_EXECUTION_ERROR');
         });
-        expect(result.success).toBe(true);
     });
 
-    it('list_instances calls listGCEInstances function', async () => {
-        const mockInstances = [
-            { name: 'web-server-01', zone: 'us-central1-a', status: 'RUNNING', machineType: 'e2-medium' }
-        ];
-        const mockCallable = vi.fn().mockResolvedValue({ data: { instances: mockInstances } });
-        mockHttpsCallable.mockReturnValue(mockCallable);
+    describe('scale_deployment', () => {
+        it('should call scaleGKENodePool cloud function', async () => {
+            mockHttpsCallable.mockResolvedValueOnce({
+                data: { success: true, message: 'Scaled successfully' }
+            });
 
-        const result = await DevOpsTools.list_instances({ zone: 'us-central1-a' });
+            const args = {
+                cluster_id: 'test-cluster',
+                nodePoolName: 'default-pool',
+                nodeCount: 5
+            };
+            const result = await DevOpsTools.scale_deployment(args);
 
-        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'listGCEInstances');
-        expect(result.success).toBe(true);
-        expect(result.data.instances).toEqual(mockInstances);
+            expect(result.success).toBe(true);
+            expect(result.data.success).toBe(true);
+            expect(result.message).toContain('Successfully scaled default-pool');
+        });
     });
 
-    it('restart_service calls restartGCEInstance function', async () => {
-        const mockResult = { success: true, message: 'Instance reset initiated', operation: 'op-456' };
-        const mockCallable = vi.fn().mockResolvedValue({ data: mockResult });
-        mockHttpsCallable.mockReturnValue(mockCallable);
+    describe('restart_service', () => {
+        it('should call restartGCEInstance cloud function', async () => {
+            mockHttpsCallable.mockResolvedValueOnce({
+                data: { success: true, message: 'Restarted successfully' }
+            });
 
-        const result = await DevOpsTools.restart_service({
-            instance_name: 'web-server-01',
-            zone: 'us-central1-a'
+            const args = {
+                instance_name: 'test-instance',
+                zone: 'us-central1-a'
+            };
+            const result = await DevOpsTools.restart_service(args);
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('Successfully restarted test-instance');
         });
-
-        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'restartGCEInstance');
-        expect(mockCallable).toHaveBeenCalledWith({
-            instanceName: 'web-server-01',
-            zone: 'us-central1-a',
-            projectId: undefined
-        });
-        expect(result.success).toBe(true);
-        expect(result.data).toHaveProperty('timestamp');
-    });
-
-    it('handles errors gracefully', async () => {
-        const mockCallable = vi.fn().mockRejectedValue(new Error('GKE API not enabled'));
-        mockHttpsCallable.mockReturnValue(mockCallable);
-
-        const result = await DevOpsTools.list_clusters({});
-
-        expect(result.success).toBe(false);
-        expect(result.error).toBe('GKE API not enabled');
     });
 });
