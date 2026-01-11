@@ -11,7 +11,8 @@ import {
   where,
   orderBy,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot
 } from 'firebase/firestore';
 import { EarningsSummary as DSREarningsSummary } from '@/services/ddex/types/dsr';
 
@@ -140,11 +141,32 @@ export class FinanceService {
     }
   }
 
+  /**
+   * Internal validation for double-entry bookkeeping principles.
+   */
+  private validateDoubleEntry(expense: Omit<Expense, 'id' | 'createdAt'>): void {
+    // 1. Every transaction must be balanced: Debits = Credits
+    // In this simple context, the expense (Debit) must equal the payout source (Credit).
+    // We implicitly treat the 'amount' as both the debit to expense and credit to cash.
+    if (!expense.amount || expense.amount <= 0) {
+      throw new AppException(AppErrorCode.VALIDATION_ERROR, 'Double-entry failure: Transaction amount must be positive and non-zero.');
+    }
+
+    // 2. Attribution check
+    if (!expense.userId || !expense.category) {
+      throw new AppException(AppErrorCode.VALIDATION_ERROR, 'Double-entry failure: Transaction must have a user and account category.');
+    }
+  }
+
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<string> {
     try {
       if (!auth.currentUser || auth.currentUser.uid !== expense.userId) {
         throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized add expense operation');
       }
+
+      // Local Validation for Double-Entry principles
+      this.validateDoubleEntry(expense);
+
       const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), {
         ...expense,
         createdAt: Timestamp.now()
@@ -184,6 +206,64 @@ export class FinanceService {
       Sentry.captureException(error);
       throw error;
     }
+  }
+
+  /**
+   * Subscribe to expenses for real-time updates.
+   */
+  subscribeToExpenses(userId: string, callback: (expenses: Expense[]) => void): () => void {
+    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+      console.error('Unauthorized subscribe to expenses');
+      return () => { };
+    }
+
+    const q = query(
+      collection(db, this.EXPENSES_COLLECTION),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const expenses = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: (data.createdAt instanceof Timestamp) ? data.createdAt.toDate().toISOString() : data.createdAt
+        } as Expense;
+      });
+      callback(expenses);
+    }, (error) => {
+      console.error("Error subscribing to expenses:", error);
+      Sentry.captureException(error);
+    });
+  }
+
+  /**
+   * Subscribe to earnings reports for real-time updates.
+   */
+  subscribeToEarnings(userId: string, callback: (earnings: DSREarningsSummary | null) => void): () => void {
+    if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
+      console.error('Unauthorized subscribe to earnings');
+      return () => { };
+    }
+
+    const q = query(
+      collection(db, FinanceService.EARNINGS_COLLECTION),
+      where('userId', '==', userId)
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const docData = snapshot.docs[0].data();
+        callback(docData as DSREarningsSummary);
+      } else {
+        callback(null);
+      }
+    }, (error) => {
+      console.error("Error subscribing to earnings:", error);
+      Sentry.captureException(error);
+    });
   }
 }
 

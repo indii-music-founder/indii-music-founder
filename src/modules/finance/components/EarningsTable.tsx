@@ -8,38 +8,52 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { ReleaseEarnings } from '@/services/ddex/types/dsr';
+import { motion } from 'framer-motion';
 
 interface EarningsTableProps {
     data: ReleaseEarnings[];
 }
 
-/**
- * ⚡ Bolt Optimization:
- * Wrapped in React.memo to prevent unnecessary re-renders when parent
- * EarningsDashboard updates (e.g. active tab changes) but data remains stable.
- */
 export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
     return (
-        <div className="rounded-md border">
+        <div className="w-full overflow-hidden">
             <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Release</TableHead>
-                        <TableHead>ISRC</TableHead>
-                        <TableHead className="text-right">Streams</TableHead>
-                        <TableHead className="text-right">Downloads</TableHead>
-                        <TableHead className="text-right">Revenue</TableHead>
+                <TableHeader className="bg-white/5">
+                    <TableRow className="border-white/10 hover:bg-transparent">
+                        <TableHead className="text-gray-400 font-semibold py-4">Release</TableHead>
+                        <TableHead className="text-gray-400 font-semibold py-4">ISRC</TableHead>
+                        <TableHead className="text-right text-gray-400 font-semibold py-4">Streams</TableHead>
+                        <TableHead className="text-right text-gray-400 font-semibold py-4">Downloads</TableHead>
+                        <TableHead className="text-right text-teal-400 font-semibold py-4">Revenue</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.map((row) => (
-                        <TableRow key={row.releaseId}>
-                            <TableCell className="font-medium">{row.releaseName}</TableCell>
-                            <TableCell>{row.isrc || '-'}</TableCell>
-                            <TableCell className="text-right">{row.streams.toLocaleString()}</TableCell>
-                            <TableCell className="text-right">{row.downloads.toLocaleString()}</TableCell>
-                            <TableCell className="text-right">${row.revenue.toFixed(2)}</TableCell>
-                        </TableRow>
+                    {data.map((row, index) => (
+                        <motion.tr
+                            key={row.releaseId}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="border-white/5 hover:bg-white/5 transition-colors group cursor-default"
+                        >
+                            <TableCell className="py-5">
+                                <span className="font-medium text-white group-hover:text-purple-400 transition-colors">
+                                    {row.releaseName}
+                                </span>
+                            </TableCell>
+                            <TableCell className="text-gray-500 font-mono text-xs">{row.isrc || 'N/A'}</TableCell>
+                            <TableCell className="text-right text-gray-300">
+                                {row.streams.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right text-gray-300">
+                                {row.downloads.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <span className="font-bold text-white bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
+                                    ${row.revenue.toFixed(2)}
+                                </span>
+                            </TableCell>
+                        </motion.tr>
                     ))}
                 </TableBody>
             </Table>

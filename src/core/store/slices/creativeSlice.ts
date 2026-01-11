@@ -112,6 +112,7 @@ export interface CreativeSlice {
         ingredients: HistoryItem[];
     };
     setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
+    setVideoInputs: (inputs: Partial<CreativeSlice['videoInputs']>) => void;
 
     // Entity Anchor (Character Consistency)
     entityAnchor: HistoryItem | null;
@@ -281,6 +282,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     },
     setVideoInput: (key, value) => set(state => ({
         videoInputs: { ...state.videoInputs, [key]: value }
+    })),
+    setVideoInputs: (inputs) => set(state => ({
+        videoInputs: { ...state.videoInputs, ...inputs }
     })),
 
     entityAnchor: null,
