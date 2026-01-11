@@ -13,6 +13,18 @@ import ContractRenderer from './ContractRenderer';
 import { voiceService } from '@/services/ai/VoiceService';
 import { Volume2, VolumeX, ChevronDown, ChevronRight, FileJson, X, Bot, Sparkles, History as HistoryIcon, Plus, UserPlus } from 'lucide-react';
 
+// Helper to recursively extract text from React children (ignoring structure)
+// This ensures that even if Markdown parses URLs as links (React Elements), we still see the raw text pattern.
+const getText = (node: any): string => {
+    if (typeof node === 'string') return node;
+    if (typeof node === 'number') return String(node);
+    if (Array.isArray(node)) return node.map(getText).join('');
+    if (typeof node === 'object' && node !== null && 'props' in node) {
+        return getText(node.props.children);
+    }
+    return '';
+};
+
 const CollapsibleJson = ({ data }: { data: any }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
@@ -101,6 +113,59 @@ const ThoughtChain = memo(({ thoughts, messageId }: { thoughts: AgentThought[]; 
     );
 });
 
+const EMPTY_ARRAY: AgentMessage[] = [];
+
+const ImageRenderer = ({ src, alt }: { src?: string; alt?: string }) => {
+    const { setModule, setGenerationMode, setViewMode, setSelectedItem, generatedHistory, currentProjectId } = useStore.getState();
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleClick = () => {
+        if (!src) return;
+
+        // 1. Try to find the image in history
+        const historyItem = generatedHistory.find(h => h.url === src);
+
+        // 2. Prepare item (found or temp)
+        const itemToEdit = historyItem || {
+            id: crypto.randomUUID(),
+            url: src,
+            prompt: alt || 'Imported Image',
+            type: 'image',
+            timestamp: Date.now(),
+            projectId: currentProjectId
+        };
+
+        // 3. Navigate
+        setModule('creative');
+        setGenerationMode('image');
+        setViewMode('canvas');
+        setSelectedItem(itemToEdit);
+    };
+
+    return (
+        <div
+            className="group relative inline-block my-2 cursor-pointer rounded-lg overflow-hidden border border-white/10 shadow-lg transition-transform hover:scale-[1.02]"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={handleClick}
+        >
+            <img
+                src={src}
+                alt={alt}
+                className="max-w-full h-auto rounded-lg"
+                style={{ maxHeight: '400px' }}
+            />
+
+            {/* Hover Overlay */}
+            <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+                <div className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-xl transform scale-100 hover:scale-105 transition-transform">
+                    <span>✏️ Edit in Studio</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: string }) => (
     <motion.div
         initial={{ opacity: 0, y: 10, scale: 0.98 }}
@@ -143,11 +208,8 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                     components={{
                         img: ImageRenderer,
                         p: ({ children }: any) => {
-                            const text = typeof children === 'string'
-                                ? children
-                                : Array.isArray(children)
-                                    ? children.map((c: any) => String(c)).join('')
-                                    : String(children || '');
+                            const text = getText(children);
+                            // console.log("Parsed P Text:", text);
 
                             // Detect Raw AI Image Tool Output (Generic Director Tools)
                             // Handles: generate_image, batch_edit_images, generate_high_res_asset, render_cinematic_grid, extract_grid_frame
@@ -209,29 +271,24 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     }
                                 } catch (e) {
                                     console.warn("Failed to parse image tool output:", e);
-                                    // Fallback to text if parse fails
                                 }
                             }
 
                             // Detect Delegate Task Output (Nested Tool Outputs)
-                            // Format: [Tool: delegate_task] Output: Success: {"text": "[Tool: analyze_brand_consistency] Output: Success: { ... }"}
                             const delegateMatch = text.match(/\[Tool: delegate_task\] Output: (?:Success: )?(\{.*\})/s);
                             if (delegateMatch) {
                                 try {
                                     const json = JSON.parse(delegateMatch[1]);
                                     if (json.text) {
-                                        // Check if the inner text is ITSELF a tool output (e.g. analyze_brand_consistency)
-                                        // [Tool: analyze_brand_consistency] Output: Success: {"analysis": "..."}
                                         const innerToolMatch = json.text.match(/\[Tool: ([^\]]+)\] Output: (?:Success: )?(\{.*\})/s);
 
                                         if (innerToolMatch) {
-                                            const toolName = innerToolMatch[1]; // e.g. "analyze_brand_consistency"
+                                            const toolName = innerToolMatch[1];
                                             const innerJsonStr = innerToolMatch[2];
 
                                             try {
                                                 const innerJson = JSON.parse(innerJsonStr);
 
-                                                // If it's brand consistency analysis
                                                 if (toolName === 'analyze_brand_consistency' && innerJson.analysis) {
                                                     return (
                                                         <div className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
@@ -241,7 +298,6 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                                             </div>
                                                             <div className="prose prose-invert prose-sm max-w-none">
                                                                 <ReactMarkdown components={{
-                                                                    // Prevent infinite recursion if possible, though 'p' here is scoped
                                                                     p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>
                                                                 }}>
                                                                     {innerJson.analysis}
@@ -250,11 +306,6 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                                         </div>
                                                     );
                                                 }
-
-                                                // Fallback for other tools: just return the formatted JSON text or a generic block
-                                                // If we have a 'text' or 'result' field, show that.
-                                                // Otherwise showing the raw tool output might be noisy, but better than nothing.
-                                                // Actually, if we're here, we have parsed inner JSON.
                                                 return (
                                                     <div className="my-2 p-3 bg-white/5 rounded-lg border-l-2 border-purple-500 text-sm text-gray-300 font-mono whitespace-pre-wrap">
                                                         <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">Tool Result: {toolName}</div>
@@ -263,11 +314,8 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                                 );
 
                                             } catch (e) {
-                                                // Inner parser error, just return text
                                             }
                                         }
-
-                                        // If not a tool pattern, it's just text returned from the delegate
                                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
                                     }
                                 } catch (e) {
@@ -373,59 +421,6 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
         </div>
     </motion.div>
 ));
-
-const EMPTY_ARRAY: AgentMessage[] = [];
-
-const ImageRenderer = ({ src, alt }: { src?: string; alt?: string }) => {
-    const { setModule, setGenerationMode, setViewMode, setSelectedItem, generatedHistory, currentProjectId } = useStore.getState();
-    const [isHovered, setIsHovered] = useState(false);
-
-    const handleClick = () => {
-        if (!src) return;
-
-        // 1. Try to find the image in history
-        const historyItem = generatedHistory.find(h => h.url === src);
-
-        // 2. Prepare item (found or temp)
-        const itemToEdit = historyItem || {
-            id: crypto.randomUUID(),
-            url: src,
-            prompt: alt || 'Imported Image',
-            type: 'image',
-            timestamp: Date.now(),
-            projectId: currentProjectId
-        };
-
-        // 3. Navigate
-        setModule('creative');
-        setGenerationMode('image');
-        setViewMode('canvas');
-        setSelectedItem(itemToEdit);
-    };
-
-    return (
-        <div
-            className="group relative inline-block my-2 cursor-pointer rounded-lg overflow-hidden border border-white/10 shadow-lg transition-transform hover:scale-[1.02]"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={handleClick}
-        >
-            <img
-                src={src}
-                alt={alt}
-                className="max-w-full h-auto rounded-lg"
-                style={{ maxHeight: '400px' }}
-            />
-
-            {/* Hover Overlay */}
-            <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-xl transform scale-100 hover:scale-105 transition-transform">
-                    <span>✏️ Edit in Studio</span>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export default function ChatOverlay() {
     const agentHistory = useStore(state => state.agentHistory) || EMPTY_ARRAY;
