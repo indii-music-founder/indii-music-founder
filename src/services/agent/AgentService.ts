@@ -31,7 +31,11 @@ export class AgentService {
      * @param forcedAgentId Optional specific agent to use, bypassing orchestration.
      */
     async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[], forcedAgentId?: string): Promise<void> {
-        if (this.isProcessing) return;
+        console.error("DEBUG_CRITICAL: AgentService.sendMessage called", { text, forcedAgentId });
+        if (this.isProcessing) {
+            console.error("DEBUG_CRITICAL: AgentService isProcessing is true, aborting");
+            return;
+        }
         this.isProcessing = true;
 
         // Add User Message

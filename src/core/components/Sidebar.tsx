@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore();
@@ -41,6 +41,7 @@ export default function Sidebar() {
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'banana-preview', icon: Palette, label: 'Banana Preview' },
         { id: 'observability', icon: Globe, label: 'System Observability' },
+        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
