@@ -111,6 +111,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 ...item,
                 url: imageUrl,
                 timestamp: Timestamp.fromMillis(item.timestamp),
+                projectId: item.projectId || 'default-project',
                 orgId: orgId || 'personal',
                 userId: auth.currentUser?.uid || null
             } as HistoryDocument);

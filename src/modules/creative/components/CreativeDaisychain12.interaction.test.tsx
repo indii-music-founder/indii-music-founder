@@ -57,7 +57,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 
 vi.mock('@/services/image/EditingService', () => ({
     Editing: {
-        createMockup: vi.fn().mockResolvedValue({ id: 'mock-img', url: 'mock-image-url' })
+        generateComposite: vi.fn().mockResolvedValue({ id: 'mock-img', url: 'mock-image-url' })
     }
 }));
 
@@ -149,7 +149,8 @@ describe('Creative Director 12-Click Daisychain', () => {
                             colors: ['#FF00FF'],
                             fonts: 'Inter'
                         }
-                    }
+                    },
+                    addToHistory: vi.fn()
                 };
                 return selector ? selector(state) : state;
             });

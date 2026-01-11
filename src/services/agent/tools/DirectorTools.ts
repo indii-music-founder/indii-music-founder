@@ -150,7 +150,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId
+                    projectId: currentProjectId || 'default-project'
                 });
             });
             return toolSuccess({

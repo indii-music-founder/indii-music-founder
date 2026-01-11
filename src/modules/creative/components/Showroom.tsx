@@ -354,6 +354,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             className="hidden"
                             accept="image/png,image/jpeg"
                             onChange={handleAssetUpload}
+                            data-testid="showroom-upload-input"
                         />
 
                         {productAsset ? (
@@ -411,6 +412,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                 <button
                                     key={option.id}
                                     onClick={() => setPlacement(option.id)}
+                                    data-testid={`placement-${option.id}`}
                                     className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${placement === option.id ? 'bg-blue-900/20 border-blue-500 text-blue-300' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'}`}
                                 >
                                     {option.icon}
@@ -502,6 +504,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                         <button
                                             key={preset.id}
                                             onClick={() => handleMotionPreset(preset)}
+                                            data-testid={`motion-preset-${preset.id}`}
                                             className="px-3 py-1.5 bg-purple-900/10 border border-purple-900/30 rounded-full text-xs text-purple-300 hover:text-white hover:border-purple-500 hover:bg-purple-900/20 transition-colors"
                                         >
                                             {preset.label}

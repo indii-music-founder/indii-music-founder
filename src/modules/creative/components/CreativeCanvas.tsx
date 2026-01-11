@@ -18,9 +18,10 @@ interface CreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
     onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
+    onRefine?: () => void;
 }
 
-export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: CreativeCanvasProps) {
+export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefine }: CreativeCanvasProps) {
     const { generatedHistory } = useStore();
     const toast = useToast();
 
@@ -270,7 +271,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                         handleAnimate={handleAnimate}
                         onClose={onClose}
                         onSendToWorkflow={onSendToWorkflow}
-                        onRefine={handleRefine}
+                        onRefine={onRefine || handleRefine}
                     />
 
                     <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">

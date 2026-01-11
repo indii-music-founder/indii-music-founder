@@ -56,6 +56,16 @@ export default function CreativeNavbar() {
                         >
                             Showroom
                         </button>
+                        {generationMode === 'video' && (
+                            <button
+                                onClick={() => setViewMode('video_production')}
+                                data-testid="director-view-btn"
+                                className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'video_production' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                Director
+                            </button>
+                        )}
                     </div>
                 </div>
 

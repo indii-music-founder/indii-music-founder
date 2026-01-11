@@ -61,6 +61,7 @@ export default function Sidebar() {
                     ${!isSidebarOpen ? 'justify-center px-2' : ''}
                 `}
                 title={!isSidebarOpen ? item.label : ''}
+                data-testid={`nav-item-${item.id}`}
             >
                 <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
                 {isSidebarOpen && <span className="truncate">{item.label}</span>}
@@ -78,6 +79,7 @@ export default function Sidebar() {
                         <button
                             onClick={() => setModule('dashboard')}
                             className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
+                            data-testid="return-hq-btn"
                         >
                             <Layout size={12} /> Return to HQ
                         </button>
@@ -137,7 +139,7 @@ export default function Sidebar() {
                             <p className="text-sm font-medium text-gray-200 truncate">
                                 {userProfile?.bio || 'Creative Director'}
                             </p>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-gray-500 truncate" data-testid="user-profile-info">
                                 System Active
                             </p>
                         </div>
@@ -146,6 +148,7 @@ export default function Sidebar() {
                         onClick={() => logout()}
                         className={`p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors ${!isSidebarOpen ? 'mt-1' : ''}`}
                         title="Reload System"
+                        data-testid="logout-btn"
                     >
                         <LogOut size={14} />
                     </button>
@@ -158,6 +161,7 @@ export default function Sidebar() {
                             onClick={() => setTheme('dark')}
                             className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-indigo-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
                             title="Dark Mode"
+                            data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
                         </button>
@@ -165,6 +169,7 @@ export default function Sidebar() {
                             onClick={() => setTheme('banana')}
                             className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana' ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-yellow-200'}`}
                             title="Banana Mode"
+                            data-testid="theme-btn-banana"
                         >
                             <ShoppingBag size={14} />
                         </button>
@@ -172,6 +177,7 @@ export default function Sidebar() {
                             onClick={() => setTheme('banana-pro')}
                             className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana-pro' ? 'text-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-yellow-400'}`}
                             title="Banana Pro"
+                            data-testid="theme-btn-pro"
                         >
                             <Scale size={14} />
                         </button>

@@ -527,6 +527,7 @@ Mission: Stress test the Physical Media rendering engine.
 * **The Long Take**: Verify video loop/chaining.
 * **The Magic Kill**: Verify multi-mask compositing.
 * Execute Video: `npx vitest run src/services/agent/tools/VideoTools.test.ts`
+* Execute Daisy Chain Interaction: `npx vitest run src/modules/video/components/VideoDaisychain.interaction.test.tsx`
 * Execute Image: `npx vitest run src/services/image/__tests__/EditingService.test.ts`
 
 ---

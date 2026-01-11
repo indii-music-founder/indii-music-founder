@@ -86,10 +86,11 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // We need a wrapper to manage the store state transitions during the test
         const DaisychainApp = () => {
             const [state, setState] = useState<any>({
-                viewMode: 'video_production', // CreativeStudio effect will likely enforce this anyway
+                viewMode: 'video_production',
                 generationMode: 'video',
                 videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0 },
                 generatedHistory: mockItems,
+                uploadedImages: [], // <--- Added this
                 studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 },
                 currentProjectId: 'p1',
                 currentOrganizationId: 'o1'
@@ -130,7 +131,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                     setPendingPrompt: vi.fn(),
                     selectedItem: null,
                     userProfile: { id: 'u1', name: 'Test User' },
-                    whiskState: { activeSubjects: [], activeStyles: [] }
+                    whiskState: { subjects: [], scenes: [], styles: [], preciseReference: false }
                 };
                 return selector ? selector(storeState) : storeState;
             });
@@ -157,17 +158,14 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // Initial state logic in CreativeStudio might force us to video_production view
 
         // --- STEP 0: Switch to Gallery View ---
-        screen.debug();
         const galleryTab = screen.getByTestId('gallery-view-btn');
         fireEvent.click(galleryTab);
 
-        // --- STEP 1: Set First Frame ---
         const firstFrameBtn = screen.getAllByTestId('set-first-frame-btn')[0];
         fireEvent.click(firstFrameBtn);
 
         expect(mockToast.success).toHaveBeenCalledWith('Set as First Frame'); // Updated expected message
 
-        // --- STEP 2: Set Last Frame ---
         const lastFrameBtn = screen.getAllByTestId('set-last-frame-btn')[1];
         fireEvent.click(lastFrameBtn);
         expect(mockToast.success).toHaveBeenCalledWith('Set as Last Frame'); // Updated expected message
@@ -177,6 +175,10 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         fireEvent.click(daisyToggle);
 
         // --- STEP 4: Input Prompt ---
+        // Switch back to Director View to see the prompt input
+        const directorTab = screen.getByTestId('director-view-btn');
+        fireEvent.click(directorTab);
+
         const promptInput = screen.getByTestId('director-prompt-input');
         fireEvent.change(promptInput, { target: { value: 'Cinematic morph' } });
 
