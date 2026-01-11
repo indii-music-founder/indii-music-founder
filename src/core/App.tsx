@@ -12,6 +12,7 @@ import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -341,6 +342,9 @@ export default function App() {
 
                     {/* Instrument Approval Manager - Shows for instrument execution approvals */}
                     <ApprovalManager />
+
+                    {/* PWA Install Prompt - Shows when app can be installed */}
+                    <PWAInstallPrompt />
                 </div>
             </ToastProvider>
         </VoiceProvider>
