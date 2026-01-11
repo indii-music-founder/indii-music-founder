@@ -105,8 +105,8 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         });
         rerender(<ChatOverlay />);
 
-        // Verify "Thinking" indicators
-        expect(screen.getByTestId('thinking-dots')).toBeInTheDocument();
+        // Verify "Thinking" indicators using Role, not TestId
+        expect(screen.getByRole('status', { name: /thinking/i })).toBeInTheDocument();
     });
 
     it('Scenario 2: Verifies progressive text streaming without layout thrashing', async () => {
@@ -148,7 +148,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         });
         const { rerender } = render(<ChatOverlay />);
 
-        expect(screen.getByTestId('thinking-dots')).toBeInTheDocument();
+        expect(screen.getByRole('status', { name: /thinking/i })).toBeInTheDocument();
 
         // 2. Completed State
         updateStore({
@@ -159,7 +159,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         rerender(<ChatOverlay />);
 
         // Dots should be gone
-        expect(screen.queryByTestId('thinking-dots')).not.toBeInTheDocument();
+        expect(screen.queryByRole('status', { name: /thinking/i })).not.toBeInTheDocument();
     });
 
     it('Scenario 4: Handles Thought Chain updates correctly', () => {
