@@ -52,16 +52,36 @@ test.describe('100-Click Path Challenge', () => {
 
         const safeClick = async (selector: string, name: string) => {
             try {
-                // Retry logic is built into Playwright, but we add a specific wait to be sure
+                // Try multiple selector strategies if generic text fails
                 const element = page.locator(selector).first();
-                await element.waitFor({ state: 'visible', timeout: 5000 });
-                // Wait for animations to settle
-                await page.waitForTimeout(500);
-                await element.click({ force: true }); // Force click to bypass strict stability checks if needed
+                // Wait for it to be attached/visible
+                await element.waitFor({ state: 'attached', timeout: 5000 });
+
+                // Ensure sidebar is open if we are clicking sidebar items by text
+                if (name.includes('Sidebar') && await page.locator('[aria-label="Expand Sidebar"]').isVisible()) {
+                    await page.locator('[aria-label="Expand Sidebar"]').click();
+                    await page.waitForTimeout(300);
+                }
+
+                await element.click({ force: true });
                 logClick(name);
-                await page.waitForTimeout(200); // Post-click pause
+                await page.waitForTimeout(300); // 300ms pause for UI reaction
             } catch (e) {
                 console.error(`[FAILURE] Failed to click ${name} at step ${clickCount + 1}`);
+                // Fallback: Try matching by title (for collapsed sidebar)
+                try {
+                    if (selector.startsWith('text=')) {
+                        const label = selector.replace('text=', '');
+                        const altSelector = `button[title="${label}"]`;
+                        if (await page.locator(altSelector).isVisible()) {
+                            await page.locator(altSelector).click({ force: true });
+                            logClick(`${name} (via Title)`);
+                            return;
+                        }
+                    }
+                } catch (retryError) {
+                    // Ignore retry error and throw original
+                }
                 throw e;
             }
         };

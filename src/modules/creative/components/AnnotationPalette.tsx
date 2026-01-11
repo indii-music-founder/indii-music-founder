@@ -67,6 +67,7 @@ export default function AnnotationPalette({
 
             <button
                 onClick={onOpenDefinitions}
+                data-testid="palette-settings-btn"
                 className="mt-auto mb-2 w-10 h-10 rounded-xl bg-[#222] hover:bg-[#333] text-gray-400 hover:text-white flex items-center justify-center transition-colors border border-gray-800"
                 title="Edit Definitions"
             >

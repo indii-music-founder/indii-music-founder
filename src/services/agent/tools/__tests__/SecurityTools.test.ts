@@ -32,6 +32,14 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     };
 });
 
+// Mock the local firebase service to prevent real initialization
+vi.mock('@/services/firebase', () => ({
+    db: {}, // Mock db object
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: {}, // Mock remote config
+    ai: {} // Mock ai service
+}));
+
 describe('SecurityTools (Mocked)', () => {
     beforeEach(() => {
         vi.clearAllMocks();

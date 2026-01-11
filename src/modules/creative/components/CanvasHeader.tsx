@@ -106,12 +106,14 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                     <>
                                         <button
                                             onClick={() => onSendToWorkflow('firstFrame', item)}
+                                            data-testid="use-first-frame-btn"
                                             className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
                                         >
                                             <Film size={14} className="text-blue-400" /> Use as First Frame
                                         </button>
                                         <button
                                             onClick={() => onSendToWorkflow('lastFrame', item)}
+                                            data-testid="use-last-frame-btn"
                                             className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
                                         >
                                             <Clapperboard size={14} className="text-green-400" /> Use as Last Frame
@@ -130,6 +132,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         {onSendToWorkflow && (
                             <button
                                 onClick={() => onSendToWorkflow('firstFrame', item)}
+                                data-testid="to-video-btn"
                                 className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                                 title="Send to Video Workflow"
                             >
@@ -152,6 +155,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         ) : (
                             <button
                                 onClick={() => setIsSelectingEndFrame(true)}
+                                data-testid="set-last-frame-inline-btn"
                                 className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <ImageIcon size={14} /> Set Last Frame
@@ -168,6 +172,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         <div className="flex items-center gap-1 bg-gray-800/50 p-1 rounded-lg border border-gray-700">
                             <button
                                 onClick={() => toast.success("Shared!")}
+                                data-testid="share-btn"
                                 className="p-2 hover:bg-blue-900/40 text-gray-400 hover:text-blue-400 rounded-lg transition-colors"
                                 title="Share"
                             >
@@ -175,6 +180,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             </button>
                             <button
                                 onClick={() => toast.success("Added to Favorites!")}
+                                data-testid="favorite-btn"
                                 className="p-2 hover:bg-yellow-900/40 text-gray-400 hover:text-yellow-400 rounded-lg transition-colors"
                                 title="Add to Favorites"
                             >
