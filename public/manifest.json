@@ -1,0 +1,70 @@
+{
+  "name": "indiiOS - AI Creative Studio",
+  "short_name": "indiiOS",
+  "description": "AI-native creative platform for image generation, video production, music analysis, and campaign management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["productivity", "entertainment", "music", "photo"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Creative Studio",
+      "short_name": "Studio",
+      "description": "Open Creative Studio for image generation",
+      "url": "/?module=creative",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Video Studio",
+      "short_name": "Video",
+      "description": "Open Video Studio",
+      "url": "/?module=video",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Music Analysis",
+      "short_name": "Music",
+      "description": "Open Music Analysis",
+      "url": "/?module=music",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "media",
+          "accept": ["image/*", "video/*", "audio/*"]
+        }
+      ]
+    }
+  }
+}

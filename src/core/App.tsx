@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -12,6 +12,7 @@ import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -92,9 +93,25 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
 // ============================================================================
 
 function LoadingFallback() {
+    const [show, setShow] = useState(false);
+
+    useEffect(() => {
+        // Delay showing the loader to prevent flash for fast module loads
+        const timer = setTimeout(() => setShow(true), 200);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Don't show anything for the first 200ms (prevents flash)
+    if (!show) {
+        return null;
+    }
+
     return (
-        <div className="flex items-center justify-center h-screen w-screen bg-background text-muted-foreground animate-pulse">
-            Loading Module...
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 px-6 py-4 bg-surface/90 rounded-lg border border-white/10 shadow-lg">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
         </div>
     );
 }
@@ -325,6 +342,9 @@ export default function App() {
 
                     {/* Instrument Approval Manager - Shows for instrument execution approvals */}
                     <ApprovalManager />
+
+                    {/* PWA Install Prompt - Shows when app can be installed */}
+                    <PWAInstallPrompt />
                 </div>
             </ToastProvider>
         </VoiceProvider>
