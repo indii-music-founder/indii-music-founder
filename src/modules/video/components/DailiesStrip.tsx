@@ -26,6 +26,7 @@ export const DailiesStrip: React.FC<DailiesStripProps> = ({
             className="absolute bottom-6 left-6 right-6 h-32 glass rounded-xl border border-white/10 flex flex-col pointer-events-auto overflow-hidden z-20"
             role="region"
             aria-label="Dailies Bin"
+            data-testid="dailies-strip"
         >
             {/* Header */}
             <div className="h-8 px-3 flex items-center justify-between border-b border-white/5 bg-black/20">
@@ -36,6 +37,7 @@ export const DailiesStrip: React.FC<DailiesStripProps> = ({
                 <button
                     className="text-gray-600 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 outline-none rounded-sm"
                     aria-label="Dailies Options"
+                    data-testid="dailies-options-btn"
                 >
                     <MoreHorizontal size={14} aria-hidden="true" />
                 </button>

@@ -230,6 +230,9 @@ describe('Creative Director 12-Click Daisychain', () => {
             fireEvent.change(input, { target: { files: [file] } });
         });
 
+        // Wait for FileReader to process and state to update
+        await screen.findByText("Change Asset");
+
         // --- CLICK 10: Generate Mockup (New Step) ---
         // Ensure scene prompt is set (from Preset click)
         const mockupBtn = screen.getByTestId('showroom-generate-mockup-btn');

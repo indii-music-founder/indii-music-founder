@@ -86,8 +86,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // We need a wrapper to manage the store state transitions during the test
         const DaisychainApp = () => {
             const [state, setState] = useState<any>({
-                viewMode: 'gallery',
-                generationMode: 'image',
+                viewMode: 'video_production', // CreativeStudio effect will likely enforce this anyway
+                generationMode: 'video',
                 videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0 },
                 generatedHistory: mockItems,
                 studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 },
@@ -157,6 +157,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // Initial state logic in CreativeStudio might force us to video_production view
 
         // --- STEP 0: Switch to Gallery View ---
+        screen.debug();
         const galleryTab = screen.getByTestId('gallery-view-btn');
         fireEvent.click(galleryTab);
 
