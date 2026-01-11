@@ -75,8 +75,13 @@ export class WorkflowCoordinator {
     }
 
     private requiresTools(message: string): boolean {
-        // If it looks like it needs tools (e.g. database access, memory), force Agent
+        // If it looks like it needs tools (e.g. database access, memory, media generation), force Agent
         const lower = message.toLowerCase();
+
+        // Media generation keywords
+        const mediaKeywords = ['image', 'photo', 'picture', 'art', 'draw', 'video', 'movie', 'film', 'music', 'song', 'track'];
+        if (mediaKeywords.some(w => lower.includes(w))) return true;
+
         return lower.includes('my') || lower.includes('save') || lower.includes('find');
     }
 
