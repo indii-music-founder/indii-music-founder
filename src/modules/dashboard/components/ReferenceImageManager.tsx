@@ -128,12 +128,13 @@ export default function ReferenceImageManager() {
                             alt={img.description}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex flex-col justify-end p-3">
                             <div className="flex justify-between items-center gap-2">
                                 <span className="text-[10px] text-white font-medium truncate flex-1">{img.description}</span>
                                 <button
                                     onClick={() => handleDelete(idx)}
-                                    className="p-2.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                    className="p-2.5 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors shadow-lg min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                                    aria-label="Delete reference image"
                                 >
                                     <Trash2 size={16} />
                                 </button>
