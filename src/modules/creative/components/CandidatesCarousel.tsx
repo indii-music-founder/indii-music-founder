@@ -29,6 +29,7 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
                     </div>
                     <button
                         onClick={() => onSelect(cand, idx)}
+                        data-testid={`candidate-select-btn-${idx}`}
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                     >
                         <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">
@@ -39,6 +40,7 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
             ))}
             <button
                 onClick={onClose}
+                data-testid="carousel-close-btn"
                 className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center self-center"
             >
                 <span className="text-xl">&times;</span>

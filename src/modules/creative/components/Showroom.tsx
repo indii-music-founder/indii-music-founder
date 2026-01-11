@@ -391,6 +391,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                             setPlacement(newPlacements[0].id);
                                         }
                                     }}
+                                    data-testid={`showroom-product-${type.id}`}
                                     className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-purple-900/20 border-purple-500 text-purple-300' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'}`}
                                 >
                                     <type.icon size={16} />
@@ -436,6 +437,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             <textarea
                                 value={scenePrompt}
                                 onChange={(e) => setScenePrompt(e.target.value)}
+                                data-testid="scene-prompt-input"
                                 placeholder="E.g. A streetwear model leaning against a brick wall in Tokyo at night..."
                                 className="w-full h-32 bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-purple-500 outline-none resize-none"
                             />
@@ -449,6 +451,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             <textarea
                                 value={motionPrompt}
                                 onChange={(e) => setMotionPrompt(e.target.value)}
+                                data-testid="motion-prompt-input"
                                 placeholder="E.g. Slow camera pan to the right, model looks at the camera..."
                                 className="w-full h-32 bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-purple-500 outline-none resize-none"
                                 disabled={!mockupResult} // Only enable after mockup
@@ -479,6 +482,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                     <button
                                         key={preset.label}
                                         onClick={() => setScenePrompt(prev => prev ? `${prev}. ${preset.prompt}` : preset.prompt)}
+                                        data-testid={`showroom-preset-${preset.label}`}
                                         className="px-3 py-1.5 bg-[#1a1a1a] border border-gray-700 rounded-full text-xs text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
                                     >
                                         {preset.label}
@@ -545,6 +549,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         <button
                             onClick={handleGenerateMockup}
                             disabled={isGeneratingMockup || !productAsset || !scenePrompt}
+                            data-testid="showroom-generate-mockup-btn"
                             className="py-4 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-gray-700 hover:border-gray-500"
                         >
                             <ImageIcon size={20} className="text-blue-400" />
@@ -554,6 +559,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         <button
                             onClick={handleGenerateVideo}
                             disabled={isGeneratingVideo || !mockupResult || !motionPrompt}
+                            data-testid="showroom-animate-scene-btn"
                             className="py-4 bg-purple-900/20 hover:bg-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed text-purple-300 rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-purple-900/50 hover:border-purple-500"
                         >
                             <Video size={20} className={mockupResult ? "text-purple-400" : "text-gray-600"} />
@@ -562,6 +568,6 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -100,6 +100,12 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             const orgId = OrganizationService.getCurrentOrgId();
             const { auth } = await import('./firebase');
 
+            // DEV BYPASS: If no user is logged in during dev, skip Firestore to prevent permission errors
+            if (import.meta.env.DEV && !auth.currentUser) {
+                console.warn("StorageService: Skipping Firestore write (Unauthenticated Dev Session)");
+                return item.id;
+            }
+
             // Use 'set' instead of 'add' to ensure Firestore ID matches local ID
             await this.set(item.id, {
                 ...item,

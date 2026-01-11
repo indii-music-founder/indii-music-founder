@@ -266,7 +266,7 @@ export default function App() {
     return (
         <VoiceProvider>
             <ToastProvider>
-                <div className="flex h-screen w-screen bg-background text-white overflow-hidden" data-testid="app-container">
+                <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
                     {/* Left Sidebar - Hidden for standalone modules */}
                     {showChrome && (
                         <div className="hidden md:block h-full">

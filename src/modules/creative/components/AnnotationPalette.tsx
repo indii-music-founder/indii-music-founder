@@ -34,6 +34,7 @@ export default function AnnotationPalette({
                         <div key={color.id} className="relative group">
                             <button
                                 onClick={() => onColorSelect(color)}
+                                data-testid={`color-btn-${color.id}`}
                                 className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm relative flex items-center justify-center
                                     ${isActive
                                         ? 'border-white scale-110 shadow-md ring-2 ring-white/20'
