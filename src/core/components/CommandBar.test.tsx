@@ -69,12 +69,12 @@ describe('CommandBar', () => {
 
     it('renders the delegate button correctly', () => {
         render(<CommandBar />);
-        expect(screen.getByText('Delegate to Indii')).toBeInTheDocument();
+        expect(screen.getByText('Delegate to indii')).toBeInTheDocument();
     });
 
     it('opens the dropdown when delegate button is clicked', () => {
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to Indii').closest('button');
+        const button = screen.getByText('Delegate to indii').closest('button');
         fireEvent.click(button!);
 
         expect(screen.getByText("Manager's Office")).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('CommandBar', () => {
 
     it('switches module and opens agent window when a manager is selected', () => {
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to Indii').closest('button');
+        const button = screen.getByText('Delegate to indii').closest('button');
         fireEvent.click(button!);
 
         const roadManagerOption = screen.getByText('Road Manager');
@@ -98,7 +98,7 @@ describe('CommandBar', () => {
 
     it('switches module and opens agent window when a department is selected', () => {
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to Indii').closest('button');
+        const button = screen.getByText('Delegate to indii').closest('button');
         fireEvent.click(button!);
 
         const marketingOption = screen.getByText('Marketing');
@@ -108,12 +108,12 @@ describe('CommandBar', () => {
         expect(mockToggleAgentWindow).toHaveBeenCalled();
     });
 
-    it('does not switch module but toggles agent window when Indii is selected', () => {
+    it('does not switch module but toggles agent window when indii is selected', () => {
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to Indii').closest('button');
+        const button = screen.getByText('Delegate to indii').closest('button');
         fireEvent.click(button!);
 
-        const indiiOption = screen.getByText('Indii (Chief of Staff)');
+        const indiiOption = screen.getByText('indii (Chief of Staff)');
         fireEvent.click(indiiOption);
 
         expect(mockSetModule).not.toHaveBeenCalled();

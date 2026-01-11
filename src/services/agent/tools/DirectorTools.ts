@@ -93,6 +93,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
+        console.log("DirectorTools: generate_image called with args", args);
         const { studioControls, addToHistory, currentProjectId, userProfile } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
