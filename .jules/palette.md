@@ -11,3 +11,6 @@
 ## 2024-05-24 - [Hidden Actions Accessibility]
 **Learning:** Hover-revealed actions (like "Use generated image" overlays) are invisible to keyboard users unless explicitly handled. Standardizing on `group-focus-within:opacity-100` ensures these actions become visible when tabbing into the container.
 **Action:** Whenever using `group-hover:opacity-100` for action overlays, always pair it with `group-focus-within:opacity-100` and ensure interactive children have visible focus states.
+## 2024-05-24 - [Hidden Action Trap]
+**Learning:** Hover-revealed actions (opacity-0) are invisible to keyboard users, creating a "phantom focus" trap where users tab to invisible elements.
+**Action:** Always pair `group-hover:opacity-100` with `group-focus-within:opacity-100` for overlays containing interactive elements.
