@@ -6,10 +6,6 @@ import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
 import './index.css';
 
-// Initialize mobile utilities (must run after DOM is ready)
-initViewportFixes();
-initKeyboardDetection();
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <BrowserRouter>
@@ -19,6 +15,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </BrowserRouter>
     </React.StrictMode>,
 );
+
+// Initialize mobile utilities (after React root is created)
+initViewportFixes();
+initKeyboardDetection();
 
 // Disable Default Drag-and-Drop (HEY Audit Hardening)
 // Prevents the app from navigating to dropped files (potential RCE)
