@@ -9,7 +9,6 @@ import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import WhiskSidebar from './components/whisk/WhiskSidebar';
-import MainPromptBar from './components/whisk/MainPromptBar';
 import { WhiskService } from '@/services/WhiskService';
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
@@ -137,8 +136,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     </div>
                 </div>
 
-                {/* Main Prompt Bar at Bottom */}
-                <MainPromptBar />
+                {/* Main Prompt Bar Removed - Using Global CommandBar */}
 
                 {/* Global Overlay */}
                 {selectedItem && (

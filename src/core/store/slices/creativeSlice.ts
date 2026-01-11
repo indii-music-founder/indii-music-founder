@@ -147,17 +147,19 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     addToHistory: (item: HistoryItem) => {
         // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
+            console.log("CreativeSlice: addToHistory called", item.id);
             const { currentOrganizationId } = useStore.getState();
             const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
 
             set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory] }));
+            console.log("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(enrichedItem)
-                    .then(() => { /* Saved to Firestore */ })
-                    .catch(() => { /* Error handled silently */ });
-            });
-        });
+                    .then(() => { console.log("CreativeSlice: Saved to Storage", enrichedItem.id) })
+                    .catch((err) => { console.error("CreativeSlice: Storage Save Error", err) });
+            }).catch(err => console.error("CreativeSlice: Failed to import StorageService", err));
+        }).catch(err => console.error("CreativeSlice: Failed to import store", err));
     },
     initializeHistory: async () => {
         const { StorageService } = await import('@/services/StorageService');

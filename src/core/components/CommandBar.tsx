@@ -48,7 +48,7 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                                     className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
                                 >
                                     <div className="w-2 h-2 rounded-full bg-gray-500" />
-                                    Indii (Chief of Staff)
+                                    indii (Chief of Staff)
                                 </button>
                             </div>
 
@@ -206,28 +206,50 @@ function CommandBar() {
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!input.trim() && attachments.length === 0) return;
+        console.error("DEBUG_CRITICAL: CommandBar handleSubmit called", { input, isProcessing });
+
+        if (!input.trim() && attachments.length === 0) {
+            console.error("DEBUG_CRITICAL: Input empty, aborting");
+            return;
+        }
+
+        if (isProcessing) {
+            console.error("DEBUG_CRITICAL: Already processing, aborting");
+            return;
+        }
 
         setIsProcessing(true);
+        const currentInput = input;
+        const currentAttachments = [...attachments];
+
+        // Clear immediately for optimistic UI
+        setInput('');
+        setAttachments([]);
+        setIsFileMenuOpen(false);
+
+        // Auto-open agent window if not already open
         if (!isAgentOpen) {
+            console.error("DEBUG_CRITICAL: Opening agent window");
             toggleAgentWindow();
         }
 
         try {
+            console.error("DEBUG_CRITICAL: Calling agentService.sendMessage");
+            const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
             const targetAgent = knownAgentIds.includes(currentModule) ? currentModule : undefined;
-            const processedAttachments = attachments.length > 0 ? await processAttachments(attachments) : undefined;
 
-            await agentService.sendMessage(input, processedAttachments, targetAgent);
-
-            setInput('');
-            setAttachments([]);
+            await agentService.sendMessage(currentInput, processedAttachments, targetAgent);
+            console.log("CommandBar: Message sent successfully");
             setIsProcessing(false);
         } catch (error) {
-            console.error("CommandBar error:", error);
+            console.error('DEBUG_CRITICAL: Failed to send message:', error);
             toast.error("Failed to send message.");
+            // Restore input on error
+            setInput(currentInput);
+            setAttachments(currentAttachments);
             setIsProcessing(false);
         }
-    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast]);
+    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing]);
 
     return (
         <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
@@ -334,7 +356,7 @@ function CommandBar() {
                                             onClick={() => setOpenDelegate(!openDelegate)}
                                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
                                         >
-                                            <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'Indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
+                                            <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
                                             <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
                                         </button>
 

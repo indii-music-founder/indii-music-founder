@@ -1,5 +1,4 @@
-import React from 'react';
-import { Play } from 'lucide-react';
+import React, { useRef } from 'react';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 
 interface DailyItemProps {
@@ -18,10 +17,26 @@ export const DailyItem = React.memo<DailyItemProps>(({
     onDragStart,
     duration = 4
 }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onSelect(video);
+        }
+    };
+
+    const handleMouseEnter = () => {
+        // ⚡ Bolt Optimization: Only play video on hover to save resources
+        videoRef.current?.play().catch(() => {
+            // Ignore auto-play errors (e.g. if user hasn't interacted with document yet)
+        });
+    };
+
+    const handleMouseLeave = () => {
+        if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0; // Reset to start
         }
     };
 
@@ -36,6 +51,8 @@ export const DailyItem = React.memo<DailyItemProps>(({
             aria-pressed={isSelected}
             onKeyDown={handleKeyDown}
             onClick={() => onSelect(video)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             draggable
             onDragStart={(e) => onDragStart(e, video)}
             className={`
@@ -50,17 +67,21 @@ export const DailyItem = React.memo<DailyItemProps>(({
             {video.url.startsWith('data:image') || video.url.includes('placehold') ? (
                 <img src={video.url} alt={video.prompt} className="w-full h-full object-cover" />
             ) : (
-                <video src={video.url} className="w-full h-full object-cover" />
+                // ⚡ Bolt Optimization: Use preload="metadata" to avoid downloading full video until needed
+                <video
+                    ref={videoRef}
+                    src={video.url}
+                    className="w-full h-full object-cover"
+                    preload="metadata"
+                    muted
+                    playsInline
+                    loop
+                />
             )}
-
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Play size={16} className="text-white fill-white" />
-            </div>
 
             {/* Duration Badge */}
             <div
-                className="absolute bottom-1 right-1 bg-black/80 text-[8px] text-white px-1 rounded"
+                className="absolute bottom-1 right-1 bg-black/80 text-[8px] text-white px-1 rounded pointer-events-none"
                 aria-hidden="true"
             >
                 {formattedDuration}

@@ -28,7 +28,8 @@ export const MODULE_IDS = [
     'merch',
     'audio-analyzer',
     'banana-preview',
-    'observability'
+    'observability',
+    'reference-manager'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];

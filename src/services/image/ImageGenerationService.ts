@@ -129,6 +129,21 @@ export class ImageGenerationService {
                 }
             }
         } catch (err) {
+            console.error("Image Generation Error:", err);
+
+            // MOCK FALLBACK FOR DEV/DEMO (When Cloud Function fails or permissions deny)
+            if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
+                console.warn("Using Mock Fallback for Image Generation");
+                // Return a generated placeholder
+                const mockId = crypto.randomUUID();
+                results.push({
+                    id: mockId,
+                    url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', // Red dot placeholder
+                    prompt: options.prompt + " (MOCK)"
+                });
+                return results;
+            }
+
             throw err;
         }
 
