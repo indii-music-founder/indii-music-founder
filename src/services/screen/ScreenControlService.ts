@@ -76,7 +76,8 @@ class ScreenControlService {
                 .map(([key, value]) => `${key}=${value}`)
                 .join(',');
 
-            window.open(contentUrl, '_blank', features);
+            // 🛡️ Sentinel: Added noopener,noreferrer for security
+            window.open(contentUrl, '_blank', `${features},noopener,noreferrer`);
         }
     }
 }

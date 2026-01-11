@@ -127,7 +127,7 @@ Only return valid JSON.
     };
 
     const handleFindCounsel = () => {
-        window.open('https://www.entertainmentlawyer.ca/directory', '_blank'); // Placeholder for a real directory
+        window.open('https://www.entertainmentlawyer.ca/directory', '_blank', 'noopener,noreferrer'); // Placeholder for a real directory
         toast.info("Opening entertainment lawyer directory...");
     };
 
