@@ -1,17 +1,3 @@
-## 2024-05-22 - Fitness Function Resilience
-**Learning:** A single agent triggering a crash in the `fitnessFn` (e.g., throwing a Safety Filter error) previously halted the entire evolutionary loop.
-**Action:** Wrapped `fitnessFn` execution in a try-catch block. Agents that crash the fitness function are now assigned a fitness of 0.0 ("Death to the buggy") instead of killing the process.
-## 2024-05-22 - [Evolutionary Loop Integrity]
-**Learning:** The previous `EvolutionaryLoop.test.ts` was testing a hypothetical function `runEvolutionStep` inside the test file itself, rather than the actual `EvolutionEngine` service. This created a false sense of security.
-**Action:** Created `HelixEvolution.test.ts` to test the actual `EvolutionEngine.ts` class, verifying Elitism, Diversity, and Mutation Resilience against the real implementation.
-
-## 2024-05-22 - [Fitness Floor Enforcement]
-**Learning:** Agents with 0.0 fitness were technically able to reproduce if tournament selection luck favored them (e.g. pitting three 0.0 agents against each other). This allowed "dead" genes to persist.
-**Action:** Updated `EvolutionEngine.ts` to strictly filter out zero-fitness agents from the mating pool before selection begins. Added "Fitness Validator" test to `HelixEvolution.test.ts`.
-
-## Helix Journal
-# Helix Journal - Genetic Guardrails
-
-## 2024-05-23 - [Evolutionary Deadlock Resilience]
-**Learning:** The `EvolutionEngine` correctly implements a safety break (`MAX_ATTEMPTS`) to prevent infinite loops when mutation consistently fails (e.g., due to Safety Filters). The engine prioritizes returning a partial, valid population (Elites) over hanging indefinitely.
-**Action:** Added `Evolutionary Deadlock` test to `HelixEvolution.test.ts` to strictly enforce this behavior.
+## 2024-05-23 - [Genetic Defect: Self-Crossover in Small Populations]
+**Learning:** When using Tournament Selection with a small population (e.g., < 10) and a high Tournament Size (e.g., 3), the probability of selecting the same agent as both `parent1` and `parent2` is extremely high. This leads to "Self-Crossover" (Asexual Reproduction), which dramatically reduces genetic diversity and effectively bypasses the benefits of crossover logic.
+**Action:** In future engine iterations, enforce `parent1 !== parent2` during selection, or implement a "Sexual Selection" penalty for self-breeding. For now, tests must account for this behavior by using larger populations or explicitly testing for self-crossover resilience.
