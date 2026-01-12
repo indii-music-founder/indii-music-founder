@@ -55,7 +55,7 @@ describe('OnboardingPage GenUI Verification', () => {
         render(<OnboardingPage />);
 
         // 1. Send user message to trigger response
-        const input = screen.getByPlaceholderText(/Tell me about your music/i);
+        const input = screen.getByPlaceholderText(/Tell me about your brand/i);
         fireEvent.change(input, { target: { value: 'Hi' } });
 
         const sendButton = screen.getByLabelText('Send message');

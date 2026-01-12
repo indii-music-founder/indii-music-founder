@@ -81,13 +81,7 @@ vi.mock('@/services/audio/FingerprintService', () => ({
     }
 }));
 
-// Mock MusicLibraryService
-vi.mock('../music/services/MusicLibraryService', () => ({
-    MusicLibraryService: {
-        getTrackAnalysis: vi.fn().mockResolvedValue(null), // Default to no existing analysis
-        saveTrackAnalysis: vi.fn().mockResolvedValue(true),
-    }
-}));
+// MusicLibraryService removed as it belonged to the deleted music module.
 
 beforeEach(() => {
     vi.clearAllMocks();
