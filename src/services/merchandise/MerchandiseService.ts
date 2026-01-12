@@ -147,7 +147,7 @@ export const MerchandiseService = {
             const array = new Uint8Array(9);
             crypto.getRandomValues(array);
             const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
-            const orderId = `BANA-${randomPart}`;
+            const orderId = `ORDER-${randomPart}`;
 
             const docRef = await addDoc(collection(db, 'manufacture_requests'), {
                 ...request,

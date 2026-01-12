@@ -66,6 +66,13 @@ export default function EnhancedShowroom({ initialAsset = null }: EnhancedShowro
 
     // State
     const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
+
+    // Sync state with prop if it changes from outside
+    useEffect(() => {
+        if (initialAsset) {
+            setProductAsset(initialAsset);
+        }
+    }, [initialAsset]);
     const [productType, setProductType] = useState('t-shirt');
     const [placement, setPlacement] = useState('center-chest');
     const [scenePrompt, setScenePrompt] = useState('');

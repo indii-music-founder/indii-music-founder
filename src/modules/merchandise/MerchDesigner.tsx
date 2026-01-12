@@ -1,39 +1,110 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { MerchLayout } from './components/Layout';
 import { MerchButton } from './components/MerchButton';
 import { MerchCard } from './components/MerchCard';
-import { Undo, Redo, Download, Layers, Type, Sticker, Wand2, Monitor, LayoutTemplate } from 'lucide-react';
+import { Undo, Redo, Download, Layers, Type, Sticker, Wand2, Monitor, LayoutTemplate, Send } from 'lucide-react';
 import EnhancedShowroom from './components/EnhancedShowroom';
+import MerchCanvas, { MerchCanvasRef } from './components/MerchCanvas';
+import { useToast } from '@/core/context/ToastContext';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { useStore } from '@/core/store';
 
 export default function MerchDesigner() {
+    const toast = useToast();
     const [mode, setMode] = useState<'design' | 'showroom'>('design');
     const [selectedTool, setSelectedTool] = useState('sticker');
     const [currentDesign, setCurrentDesign] = useState<string | null>(null);
+    const [aiPrompt, setAiPrompt] = useState("");
+    const [isGenerating, setIsGenerating] = useState(false);
+    const canvasRef = useRef<MerchCanvasRef>(null);
+    const userProfile = useStore(state => state.userProfile);
 
     // Handler to export current canvas design to showroom
     const handleExportToShowroom = () => {
-        // In a full implementation, this would capture the canvas as an image
-        // For now, we'll just switch modes
-        // TODO: Implement canvas.toDataURL() capture
-        setMode('showroom');
+        if (!canvasRef.current) return;
+
+        const loadingId = toast.loading("Processing design for staging...");
+
+        try {
+            // Capture the high-res PNG from the canvas
+            const dataUrl = canvasRef.current.exportToDataURL();
+            setCurrentDesign(dataUrl);
+
+            setTimeout(() => {
+                toast.dismiss(loadingId);
+                toast.success("Design pushed to Showroom!");
+                setMode('showroom');
+            }, 800);
+        } catch (error) {
+            toast.dismiss(loadingId);
+            toast.error("Failed to export design.");
+            console.error(error);
+        }
+    };
+
+    const handleAddText = () => {
+        canvasRef.current?.addText("NEW DESIGN");
+    };
+
+    const handleAddEmoji = (emoji: string) => {
+        canvasRef.current?.addEmoji(emoji);
+    };
+
+    const handleGenerateAI = async () => {
+        if (!aiPrompt.trim()) {
+            toast.error("Please enter a prompt first");
+            return;
+        }
+
+        setIsGenerating(true);
+        const loadingId = toast.loading("Invoking Creative Agent...");
+
+        try {
+            const results = await ImageGeneration.generateImages({
+                prompt: `Streetwear graphic design, vector art, ${aiPrompt}, isolated on black background, high contrast, professional merch design`,
+                count: 1,
+                userProfile: userProfile || undefined
+            });
+
+            if (results && results.length > 0) {
+                canvasRef.current?.addImage(results[0].url);
+                toast.dismiss(loadingId);
+                toast.success("Asset generated and added to canvas!");
+                setAiPrompt("");
+            } else {
+                toast.dismiss(loadingId);
+                toast.error("No image generated. Try a different prompt.");
+            }
+        } catch (error) {
+            toast.dismiss(loadingId);
+            toast.error("AI Generation failed.");
+            console.error(error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleAddAsset = (url: string) => {
+        canvasRef.current?.addImage(url);
+        toast.info("Asset added to design");
     };
 
     return (
         <MerchLayout>
             {mode === 'design' ? (
-                <div className="h-full flex flex-col">
+                <div className="h-full flex flex-col animate-in fade-in duration-500">
                     {/* Toolbar Header */}
                     <header className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <ModeToggle
-                                    active={(mode as string) === 'design'}
+                                    active={true}
                                     onClick={() => setMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
                                 />
                                 <ModeToggle
-                                    active={(mode as string) === 'showroom'}
+                                    active={false}
                                     onClick={() => setMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
@@ -43,16 +114,16 @@ export default function MerchDesigner() {
                             <div className="h-6 w-px bg-white/10 mx-2" />
 
                             <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
-                                <IconButton icon={<Undo size={16} />} />
-                                <IconButton icon={<Redo size={16} />} />
+                                <IconButton onClick={() => canvasRef.current?.undo()} icon={<Undo size={16} />} />
+                                <IconButton onClick={() => canvasRef.current?.redo()} icon={<Redo size={16} />} />
                             </div>
-                            <span className="text-sm font-bold text-neutral-500">Untitled Design_01</span>
+                            <span className="text-sm font-bold text-neutral-500">INDII_STREETWEAR_V1</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <button className="text-sm text-neutral-400 hover:text-white transition-colors">Save Draft</button>
-                            <MerchButton size="sm" glow>
-                                <Download size={16} />
-                                Export
+                            <MerchButton size="sm" glow onClick={handleExportToShowroom}>
+                                <Send size={16} />
+                                Push to Showroom
                             </MerchButton>
                         </div>
                     </header>
@@ -63,77 +134,160 @@ export default function MerchDesigner() {
                         {/* Left Panel */}
                         <div className="space-y-4 flex flex-col overflow-hidden">
                             <div className="flex gap-2 mb-2">
-                                <ToolButton active={selectedTool === 'sticker'} onClick={() => setSelectedTool('sticker')} icon={<Sticker size={18} />} label="Stickers" />
+                                <ToolButton active={selectedTool === 'sticker'} onClick={() => setSelectedTool('sticker')} icon={<Sticker size={18} />} label="Library" />
                                 <ToolButton active={selectedTool === 'text'} onClick={() => setSelectedTool('text')} icon={<Type size={18} />} label="Text" />
                                 <ToolButton active={selectedTool === 'ai'} onClick={() => setSelectedTool('ai')} icon={<Wand2 size={18} />} label="AI Gen" />
                             </div>
 
-                            <MerchCard className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col">
-                                <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">Assets</h4>
+                            <MerchCard className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col bg-neutral-950 border-white/5 shadow-2xl">
+                                <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">
+                                    {selectedTool === 'sticker' ? 'Asset Library' : selectedTool === 'text' ? 'Typography' : 'AI Assistant'}
+                                </h4>
 
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
-                                        <div key={i} className="aspect-square bg-neutral-800 rounded-lg border border-white/5 hover:border-yellow-400 hover:bg-neutral-700 transition-all cursor-pointer flex items-center justify-center">
-                                            <span className="text-xl">👕</span>
+                                {selectedTool === 'sticker' && (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {['👕', '🔥', '💀', '⚡', '🖤', '🎸', '🎨', '🚀', '💎'].map((emoji, i) => (
+                                                <div
+                                                    key={i}
+                                                    onClick={() => handleAddEmoji(emoji)}
+                                                    className="aspect-square bg-neutral-900 rounded-lg border border-white/5 hover:border-yellow-400 hover:bg-neutral-800 transition-all cursor-pointer flex items-center justify-center text-2xl group"
+                                                >
+                                                    <span className="group-hover:scale-125 transition-transform">{emoji}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+
+                                        <div className="pt-4 border-t border-white/5">
+                                            <h5 className="text-[10px] font-bold text-neutral-600 uppercase mb-3">Sample Graphics</h5>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[
+                                                    'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=200&h=200&fit=crop',
+                                                    'https://images.unsplash.com/photo-1578632292335-df3abbb0d586?w=200&h=200&fit=crop',
+                                                    'https://images.unsplash.com/photo-1515405299443-f71bb798351e?w=200&h=200&fit=crop',
+                                                    'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=200&h=200&fit=crop'
+                                                ].map((url, i) => (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => handleAddAsset(url)}
+                                                        className="aspect-square bg-neutral-900 rounded-lg overflow-hidden border border-white/5 hover:border-yellow-400 cursor-pointer"
+                                                    >
+                                                        <img src={url} alt="asset" className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedTool === 'text' && (
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={handleAddText}
+                                            className="w-full py-3 bg-neutral-900 border border-white/10 rounded-xl hover:border-yellow-400 text-sm font-bold transition-all text-white"
+                                        >
+                                            Add Headline Text
+                                        </button>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {['Inter', 'Oswald', 'Gothic', 'Serif'].map(font => (
+                                                <div key={font} className="p-3 bg-neutral-900 rounded-lg border border-white/5 text-center text-xs text-neutral-400 cursor-pointer hover:border-white/20">
+                                                    {font}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedTool === 'ai' && (
+                                    <div className="flex-1 flex flex-col gap-4">
+                                        <div className="flex-1 flex flex-col justify-center items-center text-center p-4">
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 transition-all ${isGenerating ? 'bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] animate-spin' : 'bg-yellow-400/10 text-yellow-400'}`}>
+                                                <Wand2 size={24} className={isGenerating ? 'text-black' : ''} />
+                                            </div>
+                                            <p className="text-xs text-neutral-400">Describe what you want to create and our Creative Agent will generate a unique asset.</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <textarea
+                                                value={aiPrompt}
+                                                onChange={(e) => setAiPrompt(e.target.value)}
+                                                placeholder="e.g. A cybernetic skull with neon roses..."
+                                                className="w-full h-24 bg-neutral-900 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-yellow-400 focus:outline-none resize-none transition-all"
+                                                disabled={isGenerating}
+                                            />
+                                            <MerchButton
+                                                onClick={handleGenerateAI}
+                                                loading={isGenerating}
+                                                glow
+                                                fullWidth
+                                            >
+                                                Generate Asset
+                                            </MerchButton>
+                                        </div>
+                                    </div>
+                                )}
                             </MerchCard>
                         </div>
 
                         {/* Center Canvas */}
-                        <div className="lg:col-span-2 relative bg-neutral-900/20 rounded-2xl border border-white/5 overflow-hidden flex flex-col">
-                            <div className="flex-1 relative flex items-center justify-center">
-                                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                        <div className="lg:col-span-2 relative bg-neutral-950 rounded-2xl border border-white/5 overflow-hidden flex flex-col shadow-inner">
+                            <div className="flex-1 relative flex items-center justify-center p-8">
+                                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-                                <div className="relative w-3/4 max-w-md aspect-[3/4] bg-black rounded-3xl shadow-2xl flex items-center justify-center border border-white/5 ring-1 ring-white/5">
-                                    <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent_70%)]" />
-                                    <div className="relative z-10 text-center">
-                                        <h1 className="text-6xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(255,225,53,0.5)] tracking-tighter transform -rotate-6">
-                                            PREMIUM<br />STUDIO
-                                        </h1>
-                                    </div>
-                                </div>
+                                <MerchCanvas ref={canvasRef} />
 
-                                <div className="absolute bottom-6 flex gap-4 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-20">
-                                    <div className="w-6 h-6 rounded-full bg-black border border-white cursor-pointer" />
-                                    <div className="w-6 h-6 rounded-full bg-white border border-gray-300 cursor-pointer" />
-                                    <div className="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-600 ring-2 ring-white/20 cursor-pointer" />
-                                    <div className="w-6 h-6 rounded-full bg-blue-600 border border-blue-800 cursor-pointer" />
+                                <div className="absolute bottom-6 flex gap-4 bg-black/60 backdrop-blur-xl px-5 py-2.5 rounded-full border border-white/10 z-20 shadow-2xl">
+                                    <div onClick={() => canvasRef.current?.changeColor('#000000')} className="w-6 h-6 rounded-full bg-black border border-white/20 cursor-pointer hover:scale-110 transition-transform" />
+                                    <div onClick={() => canvasRef.current?.changeColor('#ffffff')} className="w-6 h-6 rounded-full bg-white border border-gray-300 cursor-pointer hover:scale-110 transition-transform" />
+                                    <div onClick={() => canvasRef.current?.changeColor('#FFE135')} className="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-600 ring-2 ring-white/20 cursor-pointer hover:scale-110 transition-transform" />
+                                    <div onClick={() => canvasRef.current?.changeColor('#3b82f6')} className="w-6 h-6 rounded-full bg-blue-600 border border-blue-800 cursor-pointer hover:scale-110 transition-transform" />
+                                    <div onClick={() => canvasRef.current?.changeColor('#ef4444')} className="w-6 h-6 rounded-full bg-red-600 border border-red-800 cursor-pointer hover:scale-110 transition-transform" />
                                 </div>
                             </div>
                         </div>
 
                         {/* Right Properties Panel */}
                         <div className="space-y-4 flex flex-col h-full overflow-hidden">
-                            <MerchCard className="p-4">
+                            <MerchCard className="p-4 bg-neutral-950 border-white/5">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Layers size={16} className="text-yellow-400" />
-                                    <h4 className="text-sm font-bold text-white">Layers</h4>
+                                    <h4 className="text-sm font-bold text-white uppercase tracking-tighter">Design Layers</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    <LayerItem active label="Text: PREMIUM TEE" visible />
-                                    <LayerItem label="Image: Peel.png" visible />
-                                    <LayerItem label="Base: Heavy Cotton Tee" visible={false} locked />
+                                    <LayerItem active label="Headline: INDII_OS" visible />
+                                    <LayerItem label="Graphic: Sticker_Fire" visible />
+                                    <LayerItem label="Template: Pro Hoodie" visible={true} locked />
                                 </div>
                             </MerchCard>
 
-                            <MerchCard className="flex-1 p-4">
-                                <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">Properties</h4>
-                                <div className="space-y-4">
+                            <MerchCard className="flex-1 p-4 bg-neutral-950 border-white/5">
+                                <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-4">Element Tuning</h4>
+                                <div className="space-y-6">
                                     <div>
-                                        <label className="text-xs text-neutral-400 block mb-1">Blend Mode</label>
-                                        <select className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-400">
-                                            <option>Normal</option>
-                                            <option>Multiply</option>
-                                            <option>Screen</option>
-                                            <option>Overlay</option>
-                                        </select>
+                                        <div className="flex justify-between mb-2">
+                                            <label className="text-[10px] text-neutral-500 font-bold uppercase">Exposure</label>
+                                            <span className="text-[10px] text-yellow-400">100%</span>
+                                        </div>
+                                        <input type="range" className="w-full accent-yellow-400 h-1 bg-neutral-900 rounded-lg appearance-none cursor-pointer" />
                                     </div>
 
                                     <div>
-                                        <label className="text-xs text-neutral-400 block mb-1">Opacity</label>
-                                        <input type="range" className="w-full accent-yellow-400" />
+                                        <div className="flex justify-between mb-2">
+                                            <label className="text-[10px] text-neutral-500 font-bold uppercase">Surface Blend</label>
+                                            <span className="text-[10px] text-yellow-400">Overlay</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1">
+                                            <button className="py-1 px-2 bg-yellow-400 text-black text-[10px] font-bold rounded">NORMAL</button>
+                                            <button className="py-1 px-2 bg-neutral-900 text-neutral-500 text-[10px] font-bold rounded">MULTIPLY</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-white/5">
+                                        <label className="text-[10px] text-neutral-500 font-bold uppercase mb-2 block">Quick Actions</label>
+                                        <div className="flex gap-2">
+                                            <button className="flex-1 py-2 bg-neutral-900 border border-white/5 rounded text-[10px] font-bold text-neutral-400 hover:text-white transition-colors uppercase">Center</button>
+                                            <button className="flex-1 py-2 bg-neutral-900 border border-white/5 rounded text-[10px] font-bold text-neutral-400 hover:text-white transition-colors uppercase">Mirror</button>
+                                        </div>
                                     </div>
                                 </div>
                             </MerchCard>
@@ -141,31 +295,40 @@ export default function MerchDesigner() {
                     </div>
                 </div>
             ) : (
-                <div className="h-full flex flex-col">
+                <div className="h-full flex flex-col animate-in slide-in-from-right duration-500">
                     {/* Showroom Mode Toolbar */}
                     <header className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <ModeToggle
-                                    active={(mode as string) === 'design'}
+                                    active={false}
                                     onClick={() => setMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
                                     data-testid="mode-design-btn"
                                 />
                                 <ModeToggle
-                                    active={(mode as string) === 'showroom'}
+                                    active={true}
                                     onClick={() => setMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
                                     data-testid="mode-showroom-btn"
                                 />
                             </div>
+                            <div className="h-6 w-px bg-white/10 mx-2" />
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">Stage Live</span>
+                            </div>
                         </div>
+                        <MerchButton size="sm" onClick={() => setMode('design')}>
+                            <LayoutTemplate size={16} />
+                            Back to Canvas
+                        </MerchButton>
                     </header>
 
                     {/* Enhanced Showroom */}
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-hidden border border-white/10 rounded-2xl shadow-inner">
                         <EnhancedShowroom initialAsset={currentDesign} />
                     </div>
                 </div>
@@ -174,8 +337,8 @@ export default function MerchDesigner() {
     );
 }
 
-const IconButton = ({ icon }: { icon: React.ReactNode }) => (
-    <button className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+const IconButton = ({ icon, onClick }: { icon: React.ReactNode, onClick?: () => void }) => (
+    <button onClick={onClick} className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors">
         {icon}
     </button>
 );
@@ -205,10 +368,15 @@ const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, l
 );
 
 const LayerItem = ({ label, active, visible, locked }: { label: string, active?: boolean, visible?: boolean, locked?: boolean }) => (
-    <div className={`p-2 rounded flex items-center justify-between text-sm ${active ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/20' : 'text-neutral-400 hover:bg-white/5'}`}>
-        <span>{label}</span>
-        <div className="flex gap-2 opacity-50">
-            {locked && <span>🔒</span>}
+    <div className={`p-2 rounded flex items-center justify-between text-[11px] font-medium tracking-tight ${active ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20' : 'text-neutral-500 hover:bg-white/5'}`}>
+        <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-yellow-400' : 'bg-neutral-700'}`} />
+            <span>{label}</span>
+        </div>
+        <div className="flex gap-2">
+            {locked && <span className="text-[10px] opacity-20">🔒</span>}
+            {visible && <span className="text-[10px] opacity-20">👁️</span>}
         </div>
     </div>
 );
+

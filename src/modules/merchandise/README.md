@@ -36,15 +36,16 @@ The Merchandise module is a comprehensive, AI-powered system for designing merch
 **Purpose:** Analytics overview and quick navigation
 
 **Features:**
+
 - User greeting with dynamic name
-- Revenue metrics ("Banana Juice")
-- Sales volume ("Units Peeled")
+- Revenue metrics
+- Sales volume ("Units Sold")
 - Conversion rate tracking
-- Ripeness Score (94/100) - overall health metric
-- Peel Performance - week-over-week growth
+- Trend Score (94/100) - overall health metric
+- Performance Growth - week-over-week growth
 - Top Sellers section with revenue breakdown
 - Fresh Prints - recent design history
-- "Peel New Design" CTA button
+- "New Design" CTA button
 
 ### 2. Designer (`MerchDesigner.tsx`)
 
@@ -55,19 +56,21 @@ The Designer has **two modes** accessible via toggle:
 **Purpose:** Create merchandise designs from scratch
 
 **Layout:**
+
 ```
 ┌────────┬──────────────┬────────────┐
 │ Assets │    Canvas    │ Properties │
 │Library │              │            │
-│        │  [BANANA]    │  Layers    │
-│🍌🍌🍌   │   [PRO]      │  Blending  │
-│🍌🍌🍌   │              │  Opacity   │
-│🍌🍌🍌   │              │            │
+│        │  [PRODUCT]   │  Layers    │
+│        │              │  Blending  │
+│        │              │  Opacity   │
+│        │              │            │
 └────────┴──────────────┴────────────┘
 ```
 
 **Features:**
-- **Left Panel:** Asset library with 9 banana emoji placeholders
+
+- **Left Panel:** Asset library with professional design placeholders
 - **Tool Selection:** Stickers, Text, AI Gen
 - **Center Canvas:** Design area with grid background and product preview
 - **Right Panel:** Layers panel + Properties (Blend Mode, Opacity)
@@ -78,6 +81,7 @@ The Designer has **two modes** accessible via toggle:
 **Purpose:** AI-powered product photography and production workflow
 
 **Layout:**
+
 ```
 ┌──────────┬──────────┬──────────┬──────────────┐
 │ The Asset│ Scenario │The Stage │ Production   │
@@ -92,6 +96,7 @@ The Designer has **two modes** accessible via toggle:
 ```
 
 **Column 1: The Asset (Input)**
+
 - Asset upload with drag & drop
 - File input (PNG with transparency recommended)
 - Product type selector:
@@ -110,6 +115,7 @@ The Designer has **two modes** accessible via toggle:
   - Poster: Full Bleed, Centered, Bordered
 
 **Column 2: The Scenario (Context)**
+
 - **Scene Description:** Textarea for environment/setting prompt
 - **Scene Presets (8):**
   - Studio Minimal
@@ -121,7 +127,7 @@ The Designer has **two modes** accessible via toggle:
   - Fashion Runway
   - Cozy Interior
 - **Motion Description:** Textarea for camera movement (enabled after mockup)
-- **Motion Presets (10):**
+- **Motion Presets (10):
   - Slow Pan Right/Left
   - 360° Orbit
   - Zoom In/Out
@@ -132,6 +138,7 @@ The Designer has **two modes** accessible via toggle:
   - Static Hero
 
 **Column 3: The Stage (Output)**
+
 - Preview monitor (video/image display)
 - **Generate Mockup** button (requires asset + scene)
 - **Animate Scene** button (requires mockup + motion)
@@ -139,6 +146,7 @@ The Designer has **two modes** accessible via toggle:
 - Video playback controls
 
 **Column 4: Production (Manufacturing)**
+
 - Item spec selection (dropdown)
 - Base color picker (4 options)
 - Size run selection (XS-2XL)
@@ -153,26 +161,27 @@ The Designer has **two modes** accessible via toggle:
 - **Order Sample** button
 - **Send to Production** button
 
-### 3. Catalog (`BananaMerch.tsx` & `BananaProMerch.tsx`)
+### 3. Catalog (Standard & Pro Templates)
 
 **Purpose:** Browse and clone product templates
 
-**Standard Collection (`BananaMerch.tsx`):**
+**Standard Collection:**
+
 - Bright, vibrant aesthetic
-- Creamy yellow background (#FFF9E5)
-- Ripe banana skin colors (#FFEBA0)
-- "BANANA COLLECTION" hero banner
+- Professional color palette
+- "SIGNATURE COLLECTION" hero banner
 - Grid display with hover animations
 - "LATEST DROPS" section with category filters
 - Flash Drops (Sunday 10AM EST)
 - Artist Collabs banners
 
-**Pro Collection (`BananaProMerch.tsx`):**
+**Pro Collection:**
+
 - Elite, minimalist aesthetic
 - Black background with white accents
 - Yellow-400 accent colors
 - Glassmorphism effects with backdrop blur
-- "BANANA PRO" with gradient text
+- "PREMIUM PRO" with gradient text
 - "THE CATALOGUE" with sourcing/shipping details
 - Staggered grid layout (offset rows)
 - "SECURE ITEM" buttons on hover
@@ -202,6 +211,7 @@ subscribeToVideoJob(jobId: string, callback): Unsubscribe
 ```
 
 **Key Features:**
+
 - Firestore integration for persistence
 - Secure Order ID generation using `crypto.getRandomValues()`
 - Real AI mockup generation via ImageGenerationService
@@ -229,6 +239,7 @@ subscribeToVideoJob(jobId: string, callback): Unsubscribe
 ## Data Types
 
 ### MerchProduct
+
 ```typescript
 interface MerchProduct {
   id: string;
@@ -244,6 +255,7 @@ interface MerchProduct {
 ```
 
 ### ManufactureRequest
+
 ```typescript
 interface ManufactureRequest {
   productId: string;
@@ -257,6 +269,7 @@ interface ManufactureRequest {
 ```
 
 ### CatalogProduct
+
 ```typescript
 interface CatalogProduct extends MerchProduct {
   basePrice: number;
@@ -267,7 +280,9 @@ interface CatalogProduct extends MerchProduct {
 ## Firestore Collections
 
 ### `merchandise`
+
 User's created products
+
 ```
 {
   id: string
@@ -283,7 +298,9 @@ User's created products
 ```
 
 ### `merchandise_catalog`
+
 Admin-managed product templates
+
 ```
 {
   id: string
@@ -298,7 +315,9 @@ Admin-managed product templates
 ```
 
 ### `manufacture_requests`
+
 Production orders
+
 ```
 {
   productId: string
@@ -306,13 +325,15 @@ Production orders
   quantity: number
   userId: string
   status: 'pending' | 'processing' | 'completed'
-  orderId: string (format: BANA-XXXXXXXXXXXXX)
+  orderId: string (format: ORDER-XXXXXXXXXXXXX)
   createdAt: Timestamp
 }
 ```
 
 ### `mockup_generations`
+
 AI mockup tracking
+
 ```
 {
   userId: string
@@ -327,7 +348,9 @@ AI mockup tracking
 ```
 
 ### `videoJobs`
+
 Video generation jobs
+
 ```
 {
   jobId: string (UUID)
@@ -345,10 +368,11 @@ Video generation jobs
 ## Theme System
 
 ### Standard Theme
+
 ```typescript
 {
-  primary: '#FFE135',        // Banana yellow
-  secondary: '#FFEBA0',      // Light banana
+  primary: '#FFE135',        // Merchandise yellow
+  secondary: '#FFEBA0',      // Light yellow
   background: '#FFF9E5',     // Creamy yellow
   text: '#4A4A4A',           // Dark gray
   accent: '#FF9800'          // Orange accent
@@ -356,9 +380,10 @@ Video generation jobs
 ```
 
 ### Pro Theme
+
 ```typescript
 {
-  primary: '#FFE135',        // Banana yellow
+  primary: '#FFE135',        // Merchandise yellow
   secondary: '#1a1a1a',      // Near black
   background: '#000000',     // Pure black
   text: '#FFFFFF',           // White
@@ -372,21 +397,21 @@ Video generation jobs
 MerchStudio.tsx (Router)
 ├── MerchDashboard.tsx
 │   ├── MerchCard
-│   ├── BananaButton
+│   ├── MerchButton
 │   └── StandardProductCard
 │
 ├── MerchDesigner.tsx
 │   ├── Layout
 │   ├── MerchCard
-│   ├── BananaButton
+│   ├── PrimaryButton
 │   └── EnhancedShowroom
 │       ├── ManufacturingPanel
 │       └── (Asset/Scenario/Stage/Production columns)
 │
 └── Catalog Routes
-    ├── BananaMerch (Standard)
+    ├── StandardMerch (Standard)
     │   └── StandardProductCard (memoized)
-    └── BananaProMerch (Pro)
+    └── ProMerch (Pro)
         └── StandardProductCard (memoized)
 ```
 
@@ -395,6 +420,7 @@ MerchStudio.tsx (Router)
 ### useMerchandise (`hooks/useMerchandise.ts`)
 
 **Returns:**
+
 ```typescript
 {
   products: MerchProduct[]          // All products
@@ -419,7 +445,7 @@ MerchStudio.tsx (Router)
 ### Complete Production Flow
 
 1. **Dashboard** → View stats and recent designs
-2. **Click "Peel New Design"** → Enter Designer
+2. **Click "New Design"** → Enter Designer
 3. **Design Mode:**
    - Select tools (Stickers/Text/AI Gen)
    - Add assets to canvas
@@ -451,16 +477,18 @@ MerchStudio.tsx (Router)
 9. **Submit to Production:**
    - Click "Order Sample" (for prototype) OR
    - Click "Send to Production" (for bulk order)
-   - Receive secure Order ID (BANA-XXXXXXXXXXXXX)
+   - Receive secure Order ID (ORDER-XXXXXXXXXXXXX)
 
 ## Mobile Responsive Design
 
 **Desktop (≥1024px):**
+
 - Full 4-column layout in Showroom mode
 - Side-by-side panels in Design mode
 - All features visible simultaneously
 
 **Mobile (<1024px):**
+
 - Showroom mode: 3-tab layout
   - **Tab 1:** Setup (Asset + Scenario)
   - **Tab 2:** The Stage (Preview + Actions)
@@ -475,6 +503,7 @@ MerchStudio.tsx (Router)
 **File:** `e2e/merchandise-unified-workflow.spec.ts`
 
 **Test Cases:**
+
 1. **Complete workflow:** Dashboard → Designer → Showroom → Mockup → Video → Production
 2. **Design mode elements:** Assets, Layers, Properties, Tools, Canvas
 3. **Showroom mode elements:** 4 columns, Product types, Presets, Actions
@@ -483,6 +512,7 @@ MerchStudio.tsx (Router)
 **File:** `e2e/merch-unified.spec.ts`
 
 **Test Cases:**
+
 1. Dashboard visibility (Ripeness/Performance metrics)
 2. "Peel New Design" navigation
 3. Design ↔ Showroom mode toggling
@@ -492,6 +522,7 @@ MerchStudio.tsx (Router)
 ## Security Features
 
 ### Secure Order ID Generation
+
 ```typescript
 // ✅ CORRECT - Using crypto.getRandomValues()
 const array = new Uint8Array(9);
@@ -499,10 +530,10 @@ crypto.getRandomValues(array);
 const randomPart = Array.from(array, byte =>
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]
 ).join('');
-const orderId = `BANA-${randomPart}`;
+const orderId = `ORDER-${randomPart}`;
 
 // ❌ WRONG - Using Math.random()
-const orderId = `BANA-${Math.random().toString(36).slice(2)}`;
+const orderId = `ORDER-${Math.random().toString(36).slice(2)}`;
 ```
 
 **Rationale:** `Math.random()` is predictable and can be exploited. `crypto.getRandomValues()` provides cryptographically secure randomness.
@@ -510,6 +541,7 @@ const orderId = `BANA-${Math.random().toString(36).slice(2)}`;
 ## Performance Optimizations
 
 ### Image Loading
+
 ```jsx
 // Hero images
 <img fetchPriority="high" />
@@ -519,6 +551,7 @@ const orderId = `BANA-${Math.random().toString(36).slice(2)}`;
 ```
 
 ### Component Memoization
+
 ```typescript
 // StandardProductCard uses memo with custom equality check
 export default memo(StandardProductCard, (prevProps, nextProps) => {
@@ -528,6 +561,7 @@ export default memo(StandardProductCard, (prevProps, nextProps) => {
 ```
 
 ### Constant Arrays
+
 ```typescript
 // Define outside component to prevent reallocation
 const STARS = ['★', '★', '★', '★', '★'];
@@ -540,11 +574,13 @@ function Component() {
 ## Known Issues
 
 ### E2E Test Failures (Pre-Migration)
-- `BananaMerch` price test fails (text split across elements)
-- `BananaProMerch` price test fails (same issue)
+
+- `Merch` price test fails (text split across elements)
+- `ProMerch` price test fails (same issue)
 - **Fix:** Use selector refinement instead of full text match
 
 ### Video Generation Timing
+
 - First video generation may be slow (~5-10 minutes) due to cold start
 - Subsequent requests faster (~2-3 minutes)
 - **Mitigation:** Show progress messages, allow background continuation
@@ -552,6 +588,7 @@ function Component() {
 ## Future Enhancements
 
 ### Planned Features
+
 1. **Canvas Export:** Direct export from Design mode to Showroom asset
 2. **Batch Production:** Submit multiple designs in one order
 3. **Template Marketplace:** Share/sell custom templates
@@ -561,6 +598,7 @@ function Component() {
 7. **Inventory Management:** Track stock levels and reorders
 
 ### Technical Improvements
+
 1. **Webhook Integration:** Real-time production status updates
 2. **Cost API:** Dynamic pricing based on market rates
 3. **Fulfillment Tracking:** Shipping and delivery status
@@ -572,23 +610,27 @@ function Component() {
 ### From Separate Features to Unified Module
 
 **Before:**
+
 - Showroom scattered in Creative Studio (confusing UX)
-- Basic Banana Merch with limited showroom mode
+- Legacy Merch module with limited showroom mode
 - Two incomplete implementations
 
 **After:**
+
 - Single unified merchandise module
 - Clear user flow: Design → Showroom → Production
 - All features in one place
 - Creative Studio focused on image/video generation only
 
 **Breaking Changes:**
+
 - ✅ None - No changes to existing user data
 - ✅ Firestore schema unchanged
 - ✅ Backend services unchanged
 - ✅ Existing products preserved
 
 **Migration Steps:**
+
 1. Removed Showroom from Creative Studio navigation
 2. Removed Showroom component rendering from CreativeStudio.tsx
 3. Updated `creativeSlice.ts` viewMode type (removed 'showroom')
@@ -602,6 +644,7 @@ function Component() {
 ### Adding a New Product Type
 
 1. Update `placementOptions` in `EnhancedShowroom.tsx`:
+
 ```typescript
 'new-product': [
   { id: 'placement-1', label: 'Placement 1', icon: <Target size={14} /> },
@@ -609,14 +652,16 @@ function Component() {
 ]
 ```
 
-2. Update `getPlacementDescription()`:
+1. Update `getPlacementDescription()`:
+
 ```typescript
 'new-product': {
   'placement-1': 'description of where design appears'
 }
 ```
 
-3. Add to `productTypes` array:
+1. Add to `productTypes` array:
+
 ```typescript
 { id: 'new-product', label: 'New Product', icon: Icon }
 ```

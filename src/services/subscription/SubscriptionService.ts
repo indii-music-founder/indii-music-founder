@@ -72,6 +72,24 @@ export class SubscriptionService {
 
       return subscription;
     } catch (error) {
+      // In development mode, fallback to STUDIO tier if backend is unreachable
+      if (import.meta.env.DEV) {
+        console.warn("SubscriptionService: Backend unreachable in DEV, using mock STUDIO subscription.");
+        const mockSubscription: Subscription = {
+          id: 'dev_mock_sub_id',
+          userId,
+          tier: SubscriptionTier.STUDIO,
+          status: 'active',
+          currentPeriodStart: Date.now(),
+          currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          cancelAtPeriodEnd: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        this.subscriptionCache.set(userId, mockSubscription);
+        return mockSubscription;
+      }
+
       console.error("SubscriptionService.getSubscription error:", error);
       throw new Error('Failed to fetch subscription. Please try again.');
     }
@@ -119,6 +137,37 @@ export class SubscriptionService {
 
       return stats;
     } catch (error) {
+      // In development, fallback to unlimited usage if backend is unreachable
+      if (import.meta.env.DEV) {
+        console.warn("SubscriptionService: Backend unreachable in DEV, using mock usage stats.");
+        const mockStats: UsageStats = {
+          tier: SubscriptionTier.STUDIO,
+          resetDate: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          imagesGenerated: 0,
+          imagesRemaining: 1000,
+          imagesPerMonth: 1000,
+          videoDurationSeconds: 0,
+          videoDurationMinutes: 0,
+          videoRemainingMinutes: 1000,
+          videoTotalMinutes: 1000,
+          aiChatTokensUsed: 0,
+          aiChatTokensRemaining: 1000000,
+          aiChatTokensPerMonth: 1000000,
+          storageUsedGB: 0,
+          storageRemainingGB: 1000,
+          storageTotalGB: 1000,
+          projectsCreated: 0,
+          projectsRemaining: 100,
+          maxProjects: 100,
+          teamMembersUsed: 0,
+          teamMembersRemaining: 10,
+          maxTeamMembers: 10
+        };
+
+        this.usageCache.set(userId, { stats: mockStats, timestamp: Date.now() });
+        return mockStats;
+      }
+
       console.error("SubscriptionService.getUsageStats error:", error);
       throw new Error('Failed to fetch usage statistics. Please try again.');
     }

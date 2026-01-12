@@ -53,7 +53,7 @@ export default function MerchDashboard() {
                         <p className="text-neutral-400">Your empire is growing.</p>
                     </div>
                     <MerchButton
-                        onClick={() => navigate('/merchandise/design')}
+                        onClick={() => navigate('/merch/design')}
                         glow size="lg"
                         className="rounded-full"
                         data-testid="new-design-btn"
@@ -85,7 +85,7 @@ export default function MerchDashboard() {
                     />
                 </div>
 
-                {/* Creative Health (Banana Metrics) */}
+                {/* Creative Health (Performance Metrics) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <MerchCard className="p-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -130,7 +130,7 @@ export default function MerchDashboard() {
                     {/* Top Sellers */}
                     <div className="lg:col-span-2 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-white">Top Killers</h3>
+                            <h3 className="text-xl font-bold text-white">Top Performing Products</h3>
                             <button className="text-xs text-[#FFE135] hover:underline">View All</button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -159,7 +159,7 @@ export default function MerchDashboard() {
                             ) : (
                                 <div className="col-span-2 p-8 text-center border border-dashed border-white/10 rounded-lg">
                                     <p className="text-neutral-500 mb-4">No sales yet. Time to market!</p>
-                                    <MerchButton size="sm" variant="outline" onClick={() => navigate('/merchandise/design')}>
+                                    <MerchButton size="sm" variant="outline" onClick={() => navigate('/merch/design')}>
                                         Start Selling
                                     </MerchButton>
                                 </div>
