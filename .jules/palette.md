@@ -14,3 +14,9 @@
 ## 2024-05-24 - [Hidden Action Trap]
 **Learning:** Hover-revealed actions (opacity-0) are invisible to keyboard users, creating a "phantom focus" trap where users tab to invisible elements.
 **Action:** Always pair `group-hover:opacity-100` with `group-focus-within:opacity-100` for overlays containing interactive elements.
+## 2024-05-24 - [Hidden Focus Trap Fixed]
+**Learning:** Hover-revealed actions (like selection overlays) must use  and  to be accessible to keyboard users.
+**Action:** When creating overlays, always ensure they are revealed on focus as well as hover.
+## 2024-05-24 - [Hidden Focus Trap Fixed]
+**Learning:** Hover-revealed actions (like selection overlays) must use `focus-visible:opacity-100` and `group-focus-within:opacity-100` to be accessible to keyboard users.
+**Action:** When creating overlays, always ensure they are revealed on focus as well as hover.

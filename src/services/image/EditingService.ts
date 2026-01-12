@@ -210,7 +210,7 @@ export class EditingService {
         projectContext?: string;
     }): Promise<{ id: string, url: string, prompt: string } | null> {
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
             const parts: import('firebase/ai').Part[] = [];
             options.images.forEach((img, idx) => {
                 parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
@@ -276,7 +276,7 @@ export class EditingService {
                 }
 
                 // Step 3: Generate Frame
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
                 const parts: import('firebase/ai').Part[] = [];
                 if (previousImage) {
                     parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
