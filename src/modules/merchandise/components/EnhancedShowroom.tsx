@@ -1,7 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
+import { Editing } from '@/services/image/EditingService';
+import { useStore } from '@/core/store';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '../themes';
 
@@ -53,12 +55,17 @@ const motionPresets = [
     { id: 'static-hero', label: 'Static Hero', prompt: 'Subtle ambient movement, hero product shot with slight camera drift' },
 ];
 
-export default function EnhancedShowroom() {
+interface EnhancedShowroomProps {
+    initialAsset?: string | null;
+}
+
+export default function EnhancedShowroom({ initialAsset = null }: EnhancedShowroomProps) {
     const toast = useToast();
+    const { addToHistory, currentProjectId } = useStore();
     const [activeMobileSection, setActiveMobileSection] = useState<'setup' | 'stage' | 'production'>('stage');
 
     // State
-    const [productAsset, setProductAsset] = useState<string | null>(null);
+    const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
     const [productType, setProductType] = useState('t-shirt');
     const [placement, setPlacement] = useState('center-chest');
     const [scenePrompt, setScenePrompt] = useState('');
@@ -69,8 +76,65 @@ export default function EnhancedShowroom() {
 
     const [isGeneratingMockup, setIsGeneratingMockup] = useState(false);
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+    const [currentVideoJobId, setCurrentVideoJobId] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const unsubscribeRef = useRef<(() => void) | null>(null);
+
+    // Clean up subscription on unmount
+    useEffect(() => {
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+        };
+    }, []);
+
+    // Monitor video job
+    useEffect(() => {
+        if (!currentVideoJobId) return;
+
+        // Clean up previous subscription
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+        }
+
+        setIsGeneratingVideo(true);
+        unsubscribeRef.current = MerchandiseService.subscribeToVideoJob(currentVideoJobId, (job) => {
+            if (!job) return;
+
+            if (job.status === 'completed' && job.videoUrl) {
+                setVideoResult(job.videoUrl);
+                setIsGeneratingVideo(false);
+                setCurrentVideoJobId(null);
+                toast.success("Video generated successfully!");
+
+                // Save to history
+                if (currentProjectId) {
+                    addToHistory({
+                        id: job.id,
+                        url: job.videoUrl,
+                        prompt: `Merchandise Video: ${motionPrompt}`,
+                        type: 'video',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
+                }
+            } else if (job.status === 'failed') {
+                setIsGeneratingVideo(false);
+                setCurrentVideoJobId(null);
+                toast.error(`Video generation failed: ${job.error || 'Unknown error'}`);
+            }
+        });
+
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+                unsubscribeRef.current = null;
+            }
+        };
+    }, [currentVideoJobId, toast, motionPrompt, addToHistory, currentProjectId]);
 
     // Get current placement options based on product type
     const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'];
@@ -137,11 +201,15 @@ export default function EnhancedShowroom() {
         const loadingId = toast.loading("Generating product mockup...");
 
         try {
-            // Use MerchandiseService which uses the same underlying AI services
+            // Extract mimeType and data from Data URL
+            const match = productAsset.match(/^data:(.+);base64,(.+)$/);
+            if (!match) throw new Error("Invalid asset data");
+
+            const assetImage = { mimeType: match[1], data: match[2] };
             const placementDesc = getPlacementDescription(productType, placement);
 
-            // Enhanced prompt for better texture mapping
-            const enhancedScenePrompt = `PRODUCT VISUALIZATION TASK:
+            // Enhanced texture mapping prompt with placement awareness
+            const fullPrompt = `PRODUCT VISUALIZATION TASK:
 
 Product Type: ${productType.replace('-', ' ').toUpperCase()}
 Placement: The graphic design should be applied ${placementDesc}.
@@ -150,7 +218,7 @@ Scene Description: ${scenePrompt}
 
 CRITICAL INSTRUCTIONS:
 1. You are a professional product visualizer and 3D texture mapping expert.
-2. Apply the provided graphic design onto the ${productType} with photorealistic accuracy.
+2. Apply the provided graphic design (Reference Image 1) onto the ${productType} with photorealistic accuracy.
 3. The graphic MUST:
    - Conform perfectly to the surface geometry and curvature of the ${productType}
    - Follow natural fabric folds, wrinkles, and creases (if applicable)
@@ -164,14 +232,35 @@ Style: High-end commercial product photography, 8K resolution, professional stud
 
             toast.updateProgress?.(loadingId, 30, "Compositing scene...");
 
-            // Store asset in temp for MerchandiseService to use
-            const url = await MerchandiseService.generateMockup(productAsset, productType, enhancedScenePrompt);
+            const result = await Editing.generateComposite({
+                images: [assetImage],
+                prompt: fullPrompt,
+                projectContext: "Premium commercial product visualization with accurate texture mapping."
+            });
 
             toast.updateProgress?.(loadingId, 90, "Finalizing mockup...");
 
-            setMockupResult(url);
-            toast.dismiss(loadingId);
-            toast.success("Mockup generated successfully!");
+            if (result) {
+                setMockupResult(result.url);
+
+                // Save to history
+                if (currentProjectId) {
+                    addToHistory({
+                        id: result.id,
+                        url: result.url,
+                        prompt: `Showroom Mockup: ${productType} (${placement}) - ${scenePrompt}`,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
+                }
+
+                toast.dismiss(loadingId);
+                toast.success("Mockup generated successfully!");
+            } else {
+                toast.dismiss(loadingId);
+                toast.error("Failed to generate mockup.");
+            }
         } catch (error: unknown) {
             console.error(error);
             toast.dismiss(loadingId);
@@ -191,11 +280,10 @@ Style: High-end commercial product photography, 8K resolution, professional stud
             return;
         }
 
-        setIsGeneratingVideo(true);
-        const loadingId = toast.loading("Rendering video...");
+        const loadingId = toast.loading("Starting video generation...");
 
         try {
-            toast.updateProgress?.(loadingId, 20, "Analyzing scene...");
+            toast.updateProgress?.(loadingId, 20, "Queueing job...");
 
             const enhancedPrompt = `CINEMATIC PRODUCT VIDEO:
 
@@ -210,28 +298,22 @@ REQUIREMENTS:
 
 Style: Premium brand commercial, 4K cinematic quality.`;
 
-            toast.updateProgress?.(loadingId, 40, "Generating video frames...");
-
             const jobId = await MerchandiseService.generateVideo(mockupResult, enhancedPrompt);
 
-            toast.updateProgress?.(loadingId, 90, "Finalizing video...");
-
-            // Note: In real implementation, we'd subscribe to the job status
-            // For now, we'll just set the jobId and wait
-            setVideoResult(jobId); // This should be the URL when available
-
             toast.dismiss(loadingId);
-            toast.success("Scene animated successfully!");
+            toast.success("Video generation started! This may take a few minutes...");
+
+            // Set job ID to trigger subscription
+            setCurrentVideoJobId(jobId);
         } catch (error: unknown) {
             console.error(error);
             toast.dismiss(loadingId);
-            if (error instanceof Error) {
-                toast.error(`Failed to animate scene: ${error.message}`);
-            } else {
-                toast.error("Failed to animate scene: An unknown error occurred.");
-            }
-        } finally {
             setIsGeneratingVideo(false);
+            if (error instanceof Error) {
+                toast.error(`Failed to start video generation: ${error.message}`);
+            } else {
+                toast.error("Failed to start video generation: An unknown error occurred.");
+            }
         }
     };
 

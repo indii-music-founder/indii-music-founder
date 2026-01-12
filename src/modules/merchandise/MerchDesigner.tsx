@@ -8,6 +8,15 @@ import EnhancedShowroom from './components/EnhancedShowroom';
 export default function MerchDesigner() {
     const [mode, setMode] = useState<'design' | 'showroom'>('design');
     const [selectedTool, setSelectedTool] = useState('sticker');
+    const [currentDesign, setCurrentDesign] = useState<string | null>(null);
+
+    // Handler to export current canvas design to showroom
+    const handleExportToShowroom = () => {
+        // In a full implementation, this would capture the canvas as an image
+        // For now, we'll just switch modes
+        // TODO: Implement canvas.toDataURL() capture
+        setMode('showroom');
+    };
 
     return (
         <MerchLayout>
@@ -155,7 +164,7 @@ export default function MerchDesigner() {
 
                     {/* Enhanced Showroom */}
                     <div className="flex-1 overflow-hidden">
-                        <EnhancedShowroom />
+                        <EnhancedShowroom initialAsset={currentDesign} />
                     </div>
                 </div>
             )}
