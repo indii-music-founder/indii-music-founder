@@ -139,7 +139,11 @@ export const MerchandiseService = {
                 throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
             }
 
-            const orderId = `BANA-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+            // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
+            const array = new Uint8Array(9);
+            crypto.getRandomValues(array);
+            const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
+            const orderId = `BANA-${randomPart}`;
 
             const docRef = await addDoc(collection(db, 'manufacture_requests'), {
                 ...request,
