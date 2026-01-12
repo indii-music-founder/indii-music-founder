@@ -40,6 +40,13 @@ export class EvolutionEngine {
     // Sort by fitness (descending)
     scoredPopulation.sort((a, b) => (b.fitness || 0) - (a.fitness || 0));
 
+    // Helix: "Doomsday Switch"
+    // If the population has reached the maximum generation, we halt evolution to prevent infinite loops.
+    const currentMaxGeneration = Math.max(...scoredPopulation.map(g => g.generation || 0));
+    if (this.config.maxGenerations && currentMaxGeneration >= this.config.maxGenerations) {
+      return scoredPopulation.slice(0, this.config.populationSize);
+    }
+
     // 2. Selection (Elitism)
     const nextGeneration: AgentGene[] = [];
     const elites = scoredPopulation.slice(0, this.config.eliteCount);
