@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crown, Zap, ShieldCheck } from 'lucide-react';
 import { useMerchandise } from '../hooks/useMerchandise';
+import BananaProItem from './BananaProItem';
 
 
 
@@ -70,50 +71,7 @@ export const BananaProMerch: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
                     {products.map((product, i) => (
-                        <div key={product.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-24' : ''}`}>
-                            <div className="aspect-[3/4] bg-secondary/20 relative overflow-hidden mb-8 border border-border/10 group-hover:border-primary/30 transition-all duration-700">
-                                {/* ⚡ Bolt Optimization: Lazy load below-fold images to save bandwidth */}
-                                <img
-                                    src={product.image}
-                                    alt={product.title}
-                                    className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-[1500ms]"
-                                    loading="lazy"
-                                />
-
-                                <div className="absolute top-0 right-0 p-8">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[10px] font-black text-foreground/40 font-mono tracking-widest">0{i + 1}</span>
-                                        <div className="w-px h-12 bg-border/30 mt-2" />
-                                    </div>
-                                </div>
-
-                                <div className="absolute bottom-0 left-0 w-full p-8 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                                    <button className="w-full bg-primary text-primary-foreground font-black py-5 text-xs tracking-[0.4em] uppercase hover:bg-white hover:text-black transition-colors">
-                                        SECURE ITEM
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="text-2xl text-foreground font-black tracking-tighter mb-2 italic">{product.title}</h3>
-                                        <div className="flex gap-6 overflow-hidden">
-                                            {product.features?.map(f => (
-                                                <div key={f} className="flex items-center gap-2">
-                                                    <div className="w-1 h-1 bg-primary rounded-full" />
-                                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{f}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-2xl text-foreground font-light tracking-tighter">{product.price}</span>
-                                        <p className="text-[8px] text-muted-foreground uppercase font-mono mt-1">INC. TAX</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <BananaProItem key={product.id} product={product} index={i} />
                     ))}
                 </div>
             </div>
