@@ -40,6 +40,13 @@ export class EvolutionEngine {
     // Sort by fitness (descending)
     scoredPopulation.sort((a, b) => (b.fitness || 0) - (a.fitness || 0));
 
+    // Helix: "Doomsday Switch"
+    // If the population has reached the maximum generation, we halt evolution to prevent infinite loops.
+    const currentMaxGeneration = Math.max(...scoredPopulation.map(g => g.generation || 0));
+    if (this.config.maxGenerations && currentMaxGeneration >= this.config.maxGenerations) {
+      return scoredPopulation.slice(0, this.config.populationSize);
+    }
+
     // 2. Selection (Elitism)
     const nextGeneration: AgentGene[] = [];
     const elites = scoredPopulation.slice(0, this.config.eliteCount);
@@ -65,13 +72,31 @@ export class EvolutionEngine {
         // Simple Tournament Selection or Top K for parents
         // We select strictly from the mating pool (fitness > 0)
         const parent1 = this.selectParent(matingPool);
-        const parent2 = this.selectParent(matingPool);
+
+        // Helix: Prevent asexual reproduction (Self-Crossover)
+        // We exclude the first parent from the pool for the second selection.
+        const remainingPool = matingPool.filter(p => p.id !== parent1.id);
+
+        // If only one parent exists in the entire pool, we are forced to self-crossover.
+        // Otherwise, we strictly select a different partner.
+        let parent2: AgentGene;
+        if (remainingPool.length > 0) {
+          parent2 = this.selectParent(remainingPool);
+        } else {
+          parent2 = parent1;
+        }
 
         let offspring = await this.crossoverFn(parent1, parent2);
 
         // Mutation
         if (Math.random() < this.config.mutationRate) {
           offspring = await this.mutationFn(offspring);
+        }
+
+        // Helix: Validation Guardrail
+        // Prevent "Empty Soul" (Empty Prompt) or malformed agents from entering the gene pool.
+        if (!offspring || !offspring.systemPrompt || typeof offspring.systemPrompt !== 'string' || offspring.systemPrompt.trim() === '') {
+           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
         }
 
         // Ensure ID is new and lineage is tracked

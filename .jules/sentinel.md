@@ -20,3 +20,7 @@
 **Risk:** High. Allows a compromised process to read and upload any file the user has access to, bypassing the intended sandbox restrictions of the SFTP tool.
 **Learning:** `path.resolve` normalizes strings but does not verify physical file structure. Security boundaries based on file paths must always resolve symbolic links (`fs.realpathSync`) before verifying containment to prevent Time-of-Check Time-of-Use (TOCTOU) or logical bypasses.
 **Prevention:** Updated `electron/handlers/sftp.ts` to explicitly resolve the `localPath` using `fs.realpathSync` before performing the containment check against allowed roots.
+## 2025-05-21 - [Insecure Randomness in Business Identifiers]
+**Vulnerability:** The `MerchandiseService` used `Math.random()` to generate `orderId` values. `Math.random()` is not cryptographically secure, leading to potentially predictable identifiers.
+**Learning:** Even for non-secret values like Order IDs, using insecure randomness can create bad habits and theoretical predictability vectors (e.g. guessing the next order ID to probe for existence).
+**Prevention:** Replaced `Math.random()` with `crypto.getRandomValues()` to generate a secure 9-character alphanumeric string, maintaining the existing `BANA-` format while ensuring cryptographic strength.
