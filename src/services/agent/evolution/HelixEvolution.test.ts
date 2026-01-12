@@ -236,4 +236,34 @@ describe('🧬 Helix: Evolutionary Loop Verification', () => {
       expect(child.lineage).toEqual(['fit', 'fit']);
     });
   });
+
+  it('Crossover Diversity: Parents should be distinct (No Asexual Reproduction)', async () => {
+    // 1. Setup small population where random selection is likely to pick same parent twice
+    const population: AgentGene[] = [
+      { ...mockGene, id: 'a1', fitness: 1.0 },
+      { ...mockGene, id: 'a2', fitness: 0.1 },
+      { ...mockGene, id: 'a3', fitness: 0.1 }
+    ];
+
+    // Mock crossover to just return p1 (so we don't crash)
+    mockCrossoverFn.mockImplementation(async (p1, p2) => ({
+      ...p1,
+      id: 'child',
+      lineage: [p1.id, p2.id]
+    }));
+
+    const testConfig = { ...config, populationSize: 10, eliteCount: 0 };
+    engine = new EvolutionEngine(testConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    await engine.evolve(population);
+
+    // 2. Assert that crossover was never called with same ID for both parents
+    const calls = mockCrossoverFn.mock.calls;
+    expect(calls.length).toBeGreaterThan(0); // Ensure we actually bred
+    for (const call of calls) {
+      const p1 = call[0] as AgentGene;
+      const p2 = call[1] as AgentGene;
+      expect(p1.id).not.toBe(p2.id);
+    }
+  });
 });
