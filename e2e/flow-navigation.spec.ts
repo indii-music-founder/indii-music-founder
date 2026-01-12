@@ -1,4 +1,3 @@
-
 import { test, expect } from '@playwright/test';
 
 /**
@@ -6,7 +5,8 @@ import { test, expect } from '@playwright/test';
  * Mission: Verify the URL is the single source of truth and navigation history works.
  */
 
-const STUDIO_URL = process.env.STUDIO_URL || 'http://localhost:4242';
+// We default to the relative path as required by boundaries ("Never do: Hardcode full domains").
+// The baseURL is configured in playwright.config.ts (http://localhost:4242).
 const E2E_EMAIL = process.env.E2E_EMAIL || 'automator@indiios.com';
 const E2E_PASSWORD = process.env.E2E_PASSWORD || 'AutomatorPass123!';
 
@@ -15,7 +15,7 @@ test.describe('Flow: Routing & Navigation', () => {
 
     test.beforeEach(async ({ page }) => {
         // Shared login logic
-        await page.goto(STUDIO_URL);
+        await page.goto('/');
         const loginButton = page.getByRole('button', { name: /sign in/i });
         if (await loginButton.isVisible()) {
             await page.getByLabel(/email/i).fill(E2E_EMAIL);
@@ -26,23 +26,19 @@ test.describe('Flow: Routing & Navigation', () => {
     });
 
     test('URL Sync: Sidebar navigation updates URL', async ({ page }) => {
-        // Initial state should be dashboard (likely / or /dashboard)
-        // We will assert loosely first as we are establishing the baseline
-
         // 1. Navigate to Brand Manager
         console.log('Navigating to Brand Manager...');
-        await page.getByRole('button', { name: 'Brand Manager', exact: true }).click();
+        await page.getByTestId('nav-item-brand').click();
 
         // UI Check
         await expect(page.getByText('Brand Guidelines')).toBeVisible();
 
-        // URL Check - This is the Critical Flow Requirement
-        // Expect URL to contain /brand
+        // URL Check
         expect(page.url()).toContain('/brand');
 
         // 2. Navigate to Creative Director
         console.log('Navigating to Creative Director...');
-        await page.getByRole('button', { name: 'Creative Director', exact: true }).click();
+        await page.getByTestId('nav-item-creative').click();
 
         // UI Check
         await expect(page.getByText('Creative Studio')).toBeVisible();
@@ -53,13 +49,12 @@ test.describe('Flow: Routing & Navigation', () => {
 
     test('History: Back button restores state', async ({ page }) => {
         // 1. Go to Marketing
-        await page.getByRole('button', { name: 'Marketing Department', exact: true }).click();
+        await page.getByTestId('nav-item-marketing').click();
         await expect(page.getByText('Marketing Dashboard')).toBeVisible();
-        const marketingUrl = page.url();
-        expect(marketingUrl).toContain('/marketing');
+        expect(page.url()).toContain('/marketing');
 
         // 2. Go to Music
-        await page.getByRole('button', { name: 'Music Department', exact: true }).click();
+        await page.getByTestId('nav-item-music').click();
         await expect(page.getByText('Music Studio')).toBeVisible();
         expect(page.url()).toContain('/music');
 
@@ -73,15 +68,51 @@ test.describe('Flow: Routing & Navigation', () => {
     });
 
     test('Deep Link: Direct access loads correct module', async ({ page }) => {
-        // We need to reload the page or open a new context to test deep linking
-        // Let's try navigating directly
-        const targetUrl = `${STUDIO_URL}/legal`;
-        console.log(`Deep linking to: ${targetUrl}`);
-
-        await page.goto(targetUrl);
-
-        // Should bypass dashboard and go straight to Legal
-        // Note: Login might persist via cookies/storage
+        console.log('Deep linking to: /legal');
+        await page.goto('/legal');
         await expect(page.getByText('Legal Dashboard')).toBeVisible({ timeout: 20000 });
+    });
+
+    test('Deep Link: Sub-path preservation', async ({ page }) => {
+        // Navigate to a sub-path (e.g., /creative/project-123)
+        // Even if the module doesn't handle the ID, it should load the module
+        console.log('Deep linking to sub-path: /creative/project-123');
+        await page.goto('/creative/project-123');
+
+        // Should load Creative Studio
+        await expect(page.getByText('Creative Studio')).toBeVisible({ timeout: 20000 });
+
+        // URL should NOT revert to /creative or /
+        // It should stay as is (unless Creative Studio explicitly redirects, which it shouldn't for arbitrary IDs usually)
+        expect(page.url()).toContain('/creative/project-123');
+    });
+
+    test('Integrity: Invalid Route redirects to Dashboard', async ({ page }) => {
+        const invalidUrl = '/non-existent-module-xyz';
+        console.log(`Navigating to invalid route: ${invalidUrl}`);
+        await page.goto(invalidUrl);
+
+        // Should redirect to Dashboard (/)
+        await expect(page.getByRole('heading', { name: /STUDIO HQ/i })).toBeVisible();
+
+        // URL should be cleaned up
+        const url = new URL(page.url());
+        expect(url.pathname).toBe('/');
+
+        // Note: Ideally, this should show a 404 page, but currently the app implements
+        // a "Safety Redirect" to prevent getting lost.
+    });
+
+    test('Active State: Sidebar highlights current module', async ({ page }) => {
+        // Navigate to Marketing
+        await page.getByTestId('nav-item-marketing').click();
+
+        // Check if marketing button is active using robust accessibility attribute
+        const marketingBtn = page.getByTestId('nav-item-marketing');
+        await expect(marketingBtn).toHaveAttribute('aria-current', 'page');
+
+        // Check that another item is NOT active
+        const musicBtn = page.getByTestId('nav-item-music');
+        await expect(musicBtn).not.toHaveAttribute('aria-current', 'page');
     });
 });
