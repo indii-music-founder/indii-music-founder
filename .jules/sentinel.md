@@ -14,3 +14,8 @@
 **Risk:** Medium. While `validateSender` prevented unauthorized access, a compromised renderer could potentially send malformed data (like SQL injection strings or extremely long payloads) to the main process services (`CredentialService`, `APIService`), potentially causing denial of service or logic errors in the backend.
 **Learning:** "Manual validation is fragile." Consistent schema validation (Zod) across *all* IPC boundaries ensures that the Main process only ever processes well-formed, typed data, acting as a robust firewall against renderer instability or compromise.
 **Prevention:** Enforced Zod schema validation for all inputs in `electron/handlers/audio.ts` and `electron/handlers/credential.ts`. Added `AudioLookupSchema` (hex strings only) and `CredentialIdSchema` (alphanumeric/safe chars only) to strict validation.
+
+## 2025-05-21 - [Insecure Randomness in Business Identifiers]
+**Vulnerability:** The `MerchandiseService` used `Math.random()` to generate `orderId` values. `Math.random()` is not cryptographically secure, leading to potentially predictable identifiers.
+**Learning:** Even for non-secret values like Order IDs, using insecure randomness can create bad habits and theoretical predictability vectors (e.g. guessing the next order ID to probe for existence).
+**Prevention:** Replaced `Math.random()` with `crypto.getRandomValues()` to generate a secure 9-character alphanumeric string, maintaining the existing `BANA-` format while ensuring cryptographic strength.
