@@ -139,6 +139,7 @@ export const MerchandiseService = {
                 throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
             }
 
+            // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
             // 🛡️ Sentinel: Use secure random generation for orderId
             const array = new Uint8Array(9);
             crypto.getRandomValues(array);
