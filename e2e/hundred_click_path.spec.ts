@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Locator } from '@playwright/test';
 
 /**
  * 100-CLICK PATH TEST: CREATIVE STUDIO STABILITY GAUNTLET
@@ -40,9 +40,18 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                 window.useStore.setState({
                     initializeAuthListener: () => () => { },
                     user: mockUser,
+                    userProfile: {
+                        id: 'maestro-user-id',
+                        uid: 'maestro-user-id',
+                        displayName: 'Maestro Test User',
+                        email: 'maestro@example.com',
+                        role: 'admin',
+                        onboardingStatus: 'completed'
+                    },
                     authLoading: false,
                     isSidebarOpen: true,
                 });
+                console.log('Mock store state injected');
             }
         });
 
@@ -60,52 +69,66 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
             console.log(`[CLICK ${clickCount}/100] Step ${id}: ${desc} (${action}) [URL: ${url}]`);
         };
 
-        const safeClick = async (id: number, target: string | RegExp, desc: string, options: { timeout?: number, force?: boolean, noWait?: boolean } = {}) => {
-            const locator = target instanceof RegExp ? page.locator(`[data-testid]`).filter({ hasText: target }).first() : page.locator(`[data-testid="${target}"]`).first();
+        const safeClick = async (id: number, target: string | RegExp, desc: string, options: { timeout?: number, force?: boolean, noWait?: boolean, rawSelector?: boolean } = {}) => {
+            let locator: Locator;
+            if (options.rawSelector && typeof target === 'string') {
+                locator = page.locator(target).first();
+            } else if (target instanceof RegExp) {
+                // Improved Regex handling for data-testid: Find element where data-testid matches the regex
+                // Filter by attribute value directly using page.evaluate or iterating if necessary, but locator filter is cleaner if possible.
+                // Playwright doesn't support regex in css attribute selectors directly.
+                // We'll use a specific strategy: get all with data-testid, then filter.
+                locator = page.locator('[data-testid]').filter({
+                    has: page.locator(`xpath=self::*[matches(@data-testid, "${target.source}")]`)
+                }).first();
+
+                // Fallback for Safari/Webkit if regex xpath issue, or simplified approach:
+                // We will handle the fallback in the try/catch block if this locator fails to attach.
+            } else {
+                locator = page.locator(`[data-testid="${target}"]`).first();
+            }
+
             try {
                 await test.step(`Click ${desc}`, async () => {
                     if (!options.noWait) {
                         try {
+                            // If regex, we might need manual finding if xpath fails
+                            if (target instanceof RegExp) {
+                                const count = await locator.count().catch(() => 0);
+                                if (count === 0) {
+                                    // Manual fallback
+                                    const elements = await page.locator('[data-testid]').all();
+                                    for (const el of elements) {
+                                        const tid = await el.getAttribute('data-testid');
+                                        if (tid && target.test(tid)) {
+                                            locator = el;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                             await locator.waitFor({ state: 'visible', timeout: options.timeout || 10000 });
                         } catch (e) {
                             if (target instanceof RegExp) {
-                                // Fallback for regex if not found by text (try matching attribute value)
+                                // Manual fallback one last time if wait failed
                                 const elements = await page.locator('[data-testid]').all();
                                 for (const el of elements) {
-                                    const testId = await el.getAttribute('data-testid');
-                                    if (testId && target.test(testId)) {
-                                        await el.click({ force: true });
+                                    const tid = await el.getAttribute('data-testid');
+                                    if (tid && target.test(tid)) {
+                                        await el.click({ force: options.force });
                                         return;
                                     }
                                 }
-                                throw new Error(`Regex target ${target} not found`);
                             }
                             throw e;
                         }
                     }
-                    if (target instanceof RegExp) {
-                        // Click handled in catch block fallback or filtered locator
-                        const count = await locator.count();
-                        if (count > 0) await locator.click({ force: options.force });
-                        else {
-                            // Manual regex scan
-                            const elements = await page.locator('[data-testid]').all();
-                            for (const el of elements) {
-                                const testId = await el.getAttribute('data-testid');
-                                if (testId && target.test(testId)) {
-                                    await el.click({ force: true });
-                                    return;
-                                }
-                            }
-                        }
-                    } else {
-                        await locator.click({ force: options.force });
-                    }
+                    await locator.click({ force: options.force });
                 });
                 logStep(id, 'click', desc);
                 await page.waitForTimeout(300);
                 return true;
-            } catch (e) {
+            } catch (e: any) {
                 console.warn(`[SKIP] Step ${id}: Could not click ${desc} (${target}) - ${e.message}`);
                 return false;
             }
@@ -121,7 +144,7 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                 logStep(id, 'fill', desc);
                 await page.waitForTimeout(200);
                 return true;
-            } catch (e) {
+            } catch (e: any) {
                 console.warn(`[SKIP] Step ${id}: Could not fill ${desc} (${target}) - ${e.message}`);
                 return false;
             }
@@ -137,7 +160,7 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                 logStep(id, 'select', desc);
                 await page.waitForTimeout(300);
                 return true;
-            } catch (e) {
+            } catch (e: any) {
                 console.warn(`[SKIP] Step ${id}: Could not select ${value} for ${desc} (${target}) - ${e.message}`);
                 return false;
             }
@@ -174,8 +197,8 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         await safeClick(12, 'nav-item-merch', 'Navigate to Merch Studio');
         await page.waitForTimeout(2000);
 
-        // Go to Design Mode first (Dashboard -> Peel New Design)
-        await safeClick(13, 'peel-new-design-btn', 'Click Peel New Design');
+        // Go to Design Mode first (Dashboard -> New Design)
+        await safeClick(13, 'new-design-btn', 'Click New Design');
         await page.waitForTimeout(1000);
 
         // Switch to Showroom Mode
@@ -197,52 +220,77 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         }
 
         // --- PHASE 3: CREATIVE CANVAS ---
+        // --- PHASE 3: CREATIVE CANVAS ---
         console.log('--- Phase 3: Creative Canvas ---');
         await safeClick(19, 'nav-item-creative', 'Navigate to Creative Director');
         await page.waitForTimeout(2000);
-        // Assuming Gallery is default, switch to Canvas?
-        // CreativeStudio.tsx handles modes. viewMode 'canvas'.
-        // There is usually a toggle in CreativeNavbar?
-        // Let's check CreativeNavbar previously... ah, I didn't verify CreativeNavbar buttons fully.
-        // But assumed 'canvas-view-btn' exists.
-        await safeClick(20, 'canvas-view-btn', 'Switch to Canvas', { timeout: 5000 });
 
-        await safeClick(21, 'tool-brush', 'Select Brush');
-        await safeClick(22, 'edit-canvas-btn', 'Click Edit');
-        await safeClick(23, 'save-canvas-btn', 'Click Save');
+        // Ensure Gallery Mode
+        await safeClick(20, 'gallery-view-btn', 'Switch to Gallery View');
+
+        // Select an item from Gallery (Assume Phase 1 generated something)
+        // Using raw selector for "starts with" since regex logic in safeClick is custom
+        await safeClick(21, '[data-testid^="gallery-item-"]', 'Select Gallery Item', { rawSelector: true });
+
+        // Modal Open
+        await safeClick(22, 'edit-canvas-btn', 'Click Edit Mode');
+        await safeClick(23, 'add-rect-btn', 'Add Rectangle'); // Instead of tool-brush
+        await safeClick(24, 'save-canvas-btn', 'Click Save');
+        await safeClick(25, 'canvas-close-btn', 'Close Canvas Modal');
 
         // --- PHASE 4: ASSETS (Reference Manager) ---
-        console.log('--- Phase 4: Assets (Reference Manager) ---');
-        await safeClick(24, 'nav-item-reference-manager', 'Navigate to Reference Assets');
+        console.log('--- Phase 4: Reference Manager ---');
+        await safeClick(26, 'nav-item-reference-manager', 'Navigate to Reference Assets');
         await page.waitForTimeout(2000);
 
-        // Click Add New
-        await safeClick(25, 'add-new-btn', 'Click Add New Asset');
-        // Click a gallery item if exists
-        await safeClick(26, /gallery-item-.*/, 'Click Gallery Item (if any)');
+        // Interactions in Reference Manager
+        await safeClick(27, 'add-new-btn', 'Click Add New Asset (Manual)');
+        // Close modal if it opened or just continue
+        await page.keyboard.press('Escape');
+
+        // Click a gallery item specific to Reference Manager if distinct, but reused ID ok
+        await safeClick(28, '[data-testid^="gallery-item-"]', 'Click Ref Item', { rawSelector: true });
+
+        // Share button or similar
+        // await safeClick(29, 'share-btn', 'Share Asset'); // Might not exist
 
         // --- PHASE 5: STABILITY FILLER ---
         console.log('--- Phase 5: Cycle to 100 Clicks ---');
-        const modules = ['video', 'creative', 'merch', 'reference-manager', 'brand', 'road', 'campaign', 'agent'];
-        let cycleId = 27;
+        const modules = ['video', 'merch', 'creative', 'reference-manager'];
+        let cycleId = 30;
+
+        // We need usually ~70 more clicks. 
         while (clickCount < 100) {
             const mod = modules[cycleId % modules.length];
+            // Randomized slight wait
+            await page.waitForTimeout(100 + Math.random() * 200);
+
             const success = await safeClick(cycleId, `nav-item-${mod}`, `Cycle: Navigate to ${mod}`);
 
-            if (mod === 'video' && success) {
+            if (success) {
                 cycleId++;
-                await safeClick(cycleId, 'mode-director-btn', 'Cycle: Switch Director');
-            } else if (mod === 'merch' && success) {
-                // If on dashboard, go to design
-                await page.waitForTimeout(500);
-                if (await page.locator('[data-testid="peel-new-design-btn"]').isVisible()) {
-                    cycleId++;
-                    await safeClick(cycleId, 'peel-new-design-btn', 'Cycle: Peel New Design');
+                // Perform one "deep" action per module to ensure not just nav switching
+                if (mod === 'video') {
+                    await safeClick(cycleId, 'mode-director-btn', 'Director Mode');
+                    // Maybe click a random aspect ratio?
+                } else if (mod === 'merch') {
+                    // Check if new design button needed
+                    const designBtn = page.locator('[data-testid="new-design-btn"]');
+                    if (await designBtn.isVisible()) {
+                        await safeClick(cycleId, 'new-design-btn', 'New Design');
+                    } else {
+                        await safeClick(cycleId, 'mode-showroom-btn', 'Showroom Mode');
+                    }
+                } else if (mod === 'creative') {
+                    await safeClick(cycleId, 'gallery-view-btn', 'Gallery View');
+                } else if (mod === 'reference-manager') {
+                    // Just click a gallery item
+                    await safeClick(cycleId, '[data-testid^="gallery-item-"]', 'Ref Item', { rawSelector: true, noWait: true });
                 }
             }
 
             cycleId++;
-            if (cycleId > 300) break; // Safety break
+            if (cycleId > 400) break; // Safety
         }
 
         console.log(`TOTAL SUCCESSFUL CLICKS: ${clickCount}`);

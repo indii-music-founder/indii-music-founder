@@ -8,11 +8,11 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             {/* Sidebar */}
             <aside className="w-64 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col z-20">
                 <div className="p-6 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#FFE135] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,225,53,0.3)]">
-                        <span className="text-black font-black text-lg">B</span>
+                    <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(250,204,21,0.3)]">
+                        <span className="text-black font-black text-lg">M</span>
                     </div>
                     <div>
-                        <h1 className="font-bold text-lg tracking-tight leading-none">Banana<span className="text-[#FFE135]">Pro</span></h1>
+                        <h1 className="font-bold text-lg tracking-tight leading-none">Merch<span className="text-yellow-400">Pro</span></h1>
                         <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Merch OS</span>
                     </div>
                 </div>
@@ -38,8 +38,8 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             {/* Main Content */}
             <main className="flex-1 flex flex-col relative overflow-hidden">
                 {/* Background Blobs */}
-                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#FFE135]/5 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#CCFF00]/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-yellow-400/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-lime-400/5 rounded-full blur-[120px] pointer-events-none" />
 
                 <div className="flex-1 overflow-auto p-8 relative z-10 custom-scrollbar text-white">
                     {children}
@@ -56,7 +56,7 @@ const NavItem = ({ to, icon, children, exact }: { to: string, icon: React.ReactN
         className={({ isActive }: { isActive: boolean }) => `
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
             ${isActive
-                ? 'bg-[#FFE135]/10 text-[#FFE135] shadow-[0_0_10px_rgba(255,225,53,0.1)] border border-[#FFE135]/20'
+                ? 'bg-yellow-400/10 text-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.1)] border border-yellow-400/20'
                 : 'text-neutral-400 hover:text-white hover:bg-white/5'}
         `}
     >

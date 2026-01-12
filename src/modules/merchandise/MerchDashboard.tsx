@@ -1,7 +1,7 @@
 import React from 'react';
 import { MerchLayout } from './components/Layout';
 import { MerchCard } from './components/MerchCard';
-import { BananaButton } from './components/BananaButton';
+import { MerchButton } from './components/MerchButton';
 import { TrendingUp, ShoppingBag, DollarSign, Plus, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMerchandise } from './hooks/useMerchandise';
@@ -48,31 +48,31 @@ export default function MerchDashboard() {
 
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'} 🍌</h2>
-                        <p className="text-neutral-400">Your empire is ripening nicely.</p>
+                    <div className="mb-6">
+                        <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'}</h2>
+                        <p className="text-neutral-400">Your empire is growing.</p>
                     </div>
-                    <BananaButton
+                    <MerchButton
                         onClick={() => navigate('/merchandise/design')}
                         glow size="lg"
                         className="rounded-full"
-                        data-testid="peel-new-design-btn"
+                        data-testid="new-design-btn"
                     >
                         <Plus size={18} />
-                        Peel New Design
-                    </BananaButton>
+                        New Design
+                    </MerchButton>
                 </div>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatsCard
-                        title="Banana Juice (Rev)"
+                        title="Total Revenue"
                         value={formatCurrency(stats.totalRevenue)}
                         change={`+${stats.revenueChange}%`}
                         icon={<DollarSign className="text-[#FFE135]" />}
                     />
                     <StatsCard
-                        title="Units Peeled"
+                        title="Units Sold"
                         value={stats.unitsSold.toString()}
                         change={`+${stats.unitsChange}%`}
                         icon={<ShoppingBag className="text-[#FFE135]" />}
@@ -89,10 +89,10 @@ export default function MerchDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <MerchCard className="p-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <span className="text-6xl">🍌</span>
+                            <span className="text-6xl">📈</span>
                         </div>
                         <div className="relative z-10">
-                            <h3 className="text-lg font-bold text-white mb-2" data-testid="ripeness-score-title">Ripeness Score</h3>
+                            <h3 className="text-lg font-bold text-white mb-2" data-testid="trend-score-title">Trend Score</h3>
                             <div className="flex items-end gap-2 mb-2">
                                 <span className="text-4xl font-black text-[#FFE135]">94</span>
                                 <span className="text-sm text-neutral-400 mb-1">/ 100</span>
@@ -109,7 +109,7 @@ export default function MerchDashboard() {
                             <span className="text-6xl">⚡️</span>
                         </div>
                         <div className="relative z-10">
-                            <h3 className="text-lg font-bold text-white mb-2" data-testid="peel-performance-title">Peel Performance</h3>
+                            <h3 className="text-lg font-bold text-white mb-2" data-testid="production-performance-title">Production Velocity</h3>
                             <div className="flex items-end gap-2 mb-2">
                                 <span className="text-4xl font-black text-green-400">+12%</span>
                                 <span className="text-sm text-neutral-400 mb-1">vs last week</span>
@@ -158,10 +158,10 @@ export default function MerchDashboard() {
                                 ))
                             ) : (
                                 <div className="col-span-2 p-8 text-center border border-dashed border-white/10 rounded-lg">
-                                    <p className="text-neutral-500 mb-4">No sales yet. Time to market that peel!</p>
-                                    <BananaButton size="sm" variant="outline" onClick={() => navigate('/merchandise/design')}>
+                                    <p className="text-neutral-500 mb-4">No sales yet. Time to market!</p>
+                                    <MerchButton size="sm" variant="outline" onClick={() => navigate('/merchandise/design')}>
                                         Start Selling
-                                    </BananaButton>
+                                    </MerchButton>
                                 </div>
                             )}
                         </div>
@@ -203,9 +203,10 @@ export default function MerchDashboard() {
                         <MerchCard className="p-6 bg-gradient-to-br from-[#FFE135]/10 to-transparent border-[#FFE135]/20">
                             <h4 className="font-bold text-[#FFE135] mb-2">Campaign Ready?</h4>
                             <p className="text-xs text-neutral-400 mb-4">You have {products.length} approved designs ready for production.</p>
-                            <BananaButton size="sm" variant="outline" className="w-full">
+                            <MerchButton size="sm" variant="outline" className="w-full">
+                                <Plus size={16} />
                                 Launch Campaign
-                            </BananaButton>
+                            </MerchButton>
                         </MerchCard>
                     </div>
                 </div>

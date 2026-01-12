@@ -86,7 +86,6 @@ export const PricingPage: React.FC = () => {
   const features = [
     'AI image generation',
     'AI video creation',
-    'AI music analysis',
     'Agent-powered assistance',
     'Project management',
     'Multi-format export',

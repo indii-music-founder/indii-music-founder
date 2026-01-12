@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MerchLayout } from './components/Layout';
-import { BananaButton } from './components/BananaButton';
+import { MerchButton } from './components/MerchButton';
 import { MerchCard } from './components/MerchCard';
 import { Undo, Redo, Download, Layers, Type, Sticker, Wand2, Monitor, LayoutTemplate } from 'lucide-react';
 import EnhancedShowroom from './components/EnhancedShowroom';
@@ -27,13 +27,13 @@ export default function MerchDesigner() {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <ModeToggle
-                                    active={mode === 'design'}
+                                    active={(mode as string) === 'design'}
                                     onClick={() => setMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
                                 />
                                 <ModeToggle
-                                    active={mode === 'showroom'}
+                                    active={(mode as string) === 'showroom'}
                                     onClick={() => setMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
@@ -50,10 +50,10 @@ export default function MerchDesigner() {
                         </div>
                         <div className="flex items-center gap-3">
                             <button className="text-sm text-neutral-400 hover:text-white transition-colors">Save Draft</button>
-                            <BananaButton size="sm" glow>
+                            <MerchButton size="sm" glow>
                                 <Download size={16} />
                                 Export
-                            </BananaButton>
+                            </MerchButton>
                         </div>
                     </header>
 
@@ -73,8 +73,8 @@ export default function MerchDesigner() {
 
                                 <div className="grid grid-cols-3 gap-2">
                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
-                                        <div key={i} className="aspect-square bg-neutral-800 rounded-lg border border-white/5 hover:border-[#FFE135] hover:bg-neutral-700 transition-all cursor-pointer flex items-center justify-center">
-                                            <span className="text-xl">🍌</span>
+                                        <div key={i} className="aspect-square bg-neutral-800 rounded-lg border border-white/5 hover:border-yellow-400 hover:bg-neutral-700 transition-all cursor-pointer flex items-center justify-center">
+                                            <span className="text-xl">👕</span>
                                         </div>
                                     ))}
                                 </div>
@@ -89,8 +89,8 @@ export default function MerchDesigner() {
                                 <div className="relative w-3/4 max-w-md aspect-[3/4] bg-black rounded-3xl shadow-2xl flex items-center justify-center border border-white/5 ring-1 ring-white/5">
                                     <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent_70%)]" />
                                     <div className="relative z-10 text-center">
-                                        <h1 className="text-6xl font-black text-[#FFE135] drop-shadow-[0_0_15px_rgba(255,225,53,0.5)] tracking-tighter transform -rotate-6">
-                                            BANANA<br />PRO
+                                        <h1 className="text-6xl font-black text-yellow-400 drop-shadow-[0_0_15px_rgba(255,225,53,0.5)] tracking-tighter transform -rotate-6">
+                                            PREMIUM<br />STUDIO
                                         </h1>
                                     </div>
                                 </div>
@@ -98,7 +98,7 @@ export default function MerchDesigner() {
                                 <div className="absolute bottom-6 flex gap-4 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-20">
                                     <div className="w-6 h-6 rounded-full bg-black border border-white cursor-pointer" />
                                     <div className="w-6 h-6 rounded-full bg-white border border-gray-300 cursor-pointer" />
-                                    <div className="w-6 h-6 rounded-full bg-[#FFE135] border border-yellow-600 ring-2 ring-white/20 cursor-pointer" />
+                                    <div className="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-600 ring-2 ring-white/20 cursor-pointer" />
                                     <div className="w-6 h-6 rounded-full bg-blue-600 border border-blue-800 cursor-pointer" />
                                 </div>
                             </div>
@@ -108,11 +108,11 @@ export default function MerchDesigner() {
                         <div className="space-y-4 flex flex-col h-full overflow-hidden">
                             <MerchCard className="p-4">
                                 <div className="flex items-center gap-2 mb-4">
-                                    <Layers size={16} className="text-[#FFE135]" />
+                                    <Layers size={16} className="text-yellow-400" />
                                     <h4 className="text-sm font-bold text-white">Layers</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    <LayerItem active label="Text: BANANA PRO" visible />
+                                    <LayerItem active label="Text: PREMIUM TEE" visible />
                                     <LayerItem label="Image: Peel.png" visible />
                                     <LayerItem label="Base: Heavy Cotton Tee" visible={false} locked />
                                 </div>
@@ -123,7 +123,7 @@ export default function MerchDesigner() {
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-xs text-neutral-400 block mb-1">Blend Mode</label>
-                                        <select className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]">
+                                        <select className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-400">
                                             <option>Normal</option>
                                             <option>Multiply</option>
                                             <option>Screen</option>
@@ -133,7 +133,7 @@ export default function MerchDesigner() {
 
                                     <div>
                                         <label className="text-xs text-neutral-400 block mb-1">Opacity</label>
-                                        <input type="range" className="w-full accent-[#FFE135]" />
+                                        <input type="range" className="w-full accent-yellow-400" />
                                     </div>
                                 </div>
                             </MerchCard>
@@ -147,14 +147,14 @@ export default function MerchDesigner() {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <ModeToggle
-                                    active={mode === 'design'}
+                                    active={(mode as string) === 'design'}
                                     onClick={() => setMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
                                     data-testid="mode-design-btn"
                                 />
                                 <ModeToggle
-                                    active={mode === 'showroom'}
+                                    active={(mode as string) === 'showroom'}
                                     onClick={() => setMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
@@ -185,7 +185,7 @@ const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }:
         onClick={onClick}
         data-testid={dataTestId}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${active
-            ? 'bg-[#FFE135] text-black shadow-lg shadow-[#FFE135]/20'
+            ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
             : 'text-neutral-400 hover:text-white hover:bg-white/10'
             }`}
     >
@@ -197,7 +197,7 @@ const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }:
 const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
     <button
         onClick={onClick}
-        className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${active ? 'bg-[#FFE135] border-[#FFE135] text-black shadow-[0_0_15px_rgba(255,225,53,0.3)]' : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/20 hover:text-white'}`}
+        className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${active ? 'bg-yellow-400 border-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/20 hover:text-white'}`}
     >
         {icon}
         <span className="text-[10px] font-bold mt-1 uppercase tracking-tight">{label}</span>
@@ -205,7 +205,7 @@ const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, l
 );
 
 const LayerItem = ({ label, active, visible, locked }: { label: string, active?: boolean, visible?: boolean, locked?: boolean }) => (
-    <div className={`p-2 rounded flex items-center justify-between text-sm ${active ? 'bg-[#FFE135]/20 text-[#FFE135] border border-[#FFE135]/20' : 'text-neutral-400 hover:bg-white/5'}`}>
+    <div className={`p-2 rounded flex items-center justify-between text-sm ${active ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/20' : 'text-neutral-400 hover:bg-white/5'}`}>
         <span>{label}</span>
         <div className="flex gap-2 opacity-50">
             {locked && <span>🔒</span>}

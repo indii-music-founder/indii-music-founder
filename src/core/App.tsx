@@ -22,7 +22,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // ============================================================================
 
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
-const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
 const VideoStudio = lazy(() => import('../modules/video/VideoStudioContainer'));
@@ -45,7 +44,6 @@ const DistributionDashboard = lazy(() => import('../modules/distribution/Distrib
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
-const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 
@@ -63,7 +61,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'dashboard': Dashboard,
     'creative': CreativeStudio,
     'video': VideoStudio,
-    'music': MusicStudio,
     'legal': LegalDashboard,
     'marketing': MarketingDashboard,
     'workflow': WorkflowLab,
@@ -83,7 +80,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
-    'banana-preview': BananaThemePreview,
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
 };
@@ -252,15 +248,11 @@ export default function App() {
         const theme = userProfile?.preferences?.theme || 'dark';
 
         // Remove all theme classes first
-        document.documentElement.classList.remove('dark', 'banana', 'banana-pro');
+        document.documentElement.classList.remove('dark');
 
         // Apply current theme
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else if (theme === 'banana') {
-            document.documentElement.classList.add('banana');
-        } else if (theme === 'banana-pro') {
-            document.documentElement.classList.add('banana-pro', 'dark'); // Banana Pro is dark-based
         }
     }, [userProfile?.preferences?.theme]);
 

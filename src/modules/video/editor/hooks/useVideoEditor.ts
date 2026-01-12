@@ -122,7 +122,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
 
                 if (trackId) {
                     addClip({
-                        type: item.type === 'video' ? 'video' : item.type === 'music' ? 'audio' : 'image',
+                        type: item.type === 'video' ? 'video' : 'image',
                         src: item.url,
                         startFrame: dropFrame,
                         durationInFrames: item.type === 'image' ? 90 : 150,

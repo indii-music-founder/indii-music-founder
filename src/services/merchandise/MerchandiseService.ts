@@ -46,7 +46,7 @@ export const MerchandiseService = {
     /**
      * Subscribe to products for a user
      */
-    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void) => {
+    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void, onError?: (error: any) => void) => {
         const q = query(
             collection(db, COLLECTION_NAME),
             where('userId', '==', userId)
@@ -58,6 +58,9 @@ export const MerchandiseService = {
                 ...docSnap.data()
             } as MerchProduct));
             callback(products);
+        }, (error) => {
+            console.warn('[MerchandiseService] Subscription error:', error);
+            if (onError) onError(error);
         });
     },
 
@@ -220,7 +223,7 @@ export const MerchandiseService = {
 
             throw new Error('No images generated');
         } catch (error: any) {
-             await updateDoc(docRef, {
+            await updateDoc(docRef, {
                 status: 'failed',
                 error: error.message
             });
@@ -260,11 +263,11 @@ export const MerchandiseService = {
                 orgId: orgId || "personal"
             });
 
-             // We also want to track this in our own collection if needed,
-             // but 'triggerVideoJob' already creates a document in 'videoJobs'.
-             // We can return the jobId and let the UI subscribe to 'videoJobs'.
+            // We also want to track this in our own collection if needed,
+            // but 'triggerVideoJob' already creates a document in 'videoJobs'.
+            // We can return the jobId and let the UI subscribe to 'videoJobs'.
 
-             return jobId;
+            return jobId;
 
         } catch (error: any) {
             console.error("Video Generation Error:", error);
@@ -277,13 +280,13 @@ export const MerchandiseService = {
      * Re-exported for convenience from Merchandise Service
      */
     subscribeToVideoJob: (jobId: string, callback: (job: any) => void) => {
-         const jobRef = doc(db, 'videoJobs', jobId);
-         return onSnapshot(jobRef, (snapshot) => {
-             if (snapshot.exists()) {
-                 callback({ id: snapshot.id, ...snapshot.data() });
-             } else {
-                 callback(null);
-             }
-         });
+        const jobRef = doc(db, 'videoJobs', jobId);
+        return onSnapshot(jobRef, (snapshot) => {
+            if (snapshot.exists()) {
+                callback({ id: snapshot.id, ...snapshot.data() });
+            } else {
+                callback(null);
+            }
+        });
     }
 };

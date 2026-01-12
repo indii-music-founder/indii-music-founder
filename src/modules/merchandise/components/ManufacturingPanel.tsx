@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator } from 'lucide-react';
-import { BananaTheme } from '@/modules/merchandise/themes';
+import { MerchTheme } from '@/modules/merchandise/themes';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { useToast } from '@/core/context/ToastContext';
 import { ProductType } from '../types';
 
 interface ManufacturingPanelProps {
-    theme: BananaTheme;
+    theme: MerchTheme;
     productType: ProductType;
     onClose?: () => void;
 }
@@ -133,7 +133,7 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
                             step="50"
                             value={quantity}
                             onChange={(e) => setQuantity(Number(e.target.value))}
-                            className="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-yellow-400 [&::-webkit-slider-thumb]:rounded-full"
+                            className="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-yellow-400"
                         />
                         <span className={`font-mono font-bold ${theme.colors.text}`}>{quantity}</span>
                     </div>

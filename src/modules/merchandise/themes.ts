@@ -1,4 +1,4 @@
-export interface BananaTheme {
+export interface MerchTheme {
     name: string;
     colors: {
         background: string;
@@ -18,15 +18,15 @@ export interface BananaTheme {
     };
 }
 
-export const StandardTheme: BananaTheme = {
+export const StandardTheme: MerchTheme = {
     name: 'Standard',
     colors: {
-        background: 'bg-[#FFF9E5]', // Creamy light yellow
-        surface: 'bg-[#FFEBA0]', // Ripe banana skin
-        surfaceHighlight: 'bg-[#FFF2C0]',
-        border: 'border-yellow-200',
-        text: 'text-yellow-900',
-        textSecondary: 'text-yellow-800/70',
+        background: 'bg-neutral-50',
+        surface: 'bg-white',
+        surfaceHighlight: 'bg-neutral-100',
+        border: 'border-neutral-200',
+        text: 'text-neutral-900',
+        textSecondary: 'text-neutral-500',
         accent: 'text-yellow-600',
         accentGlow: 'shadow-yellow-500/20',
     },
@@ -38,7 +38,7 @@ export const StandardTheme: BananaTheme = {
     },
 };
 
-export const ProTheme: BananaTheme = {
+export const ProTheme: MerchTheme = {
     name: 'Pro',
     colors: {
         background: 'bg-black',
@@ -48,7 +48,7 @@ export const ProTheme: BananaTheme = {
         text: 'text-white',
         textSecondary: 'text-gray-400',
         accent: 'text-yellow-400',
-        accentGlow: 'shadow-yellow-500/50',
+        accentGlow: 'shadow-yellow-400/50',
     },
     effects: {
         glass: 'backdrop-blur-xl bg-opacity-40',

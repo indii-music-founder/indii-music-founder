@@ -2,7 +2,6 @@ import { AgentConfig } from './BaseAgent';
 import { MarketingAgent } from './definitions/MarketingAgent';
 import { LegalAgent } from '@/agents/legal/config';
 import { FinanceAgent } from './definitions/FinanceAgent';
-import { MusicAgent } from './definitions/MusicAgent';
 import { DirectorAgent } from '@/agents/director/config';
 import { VideoAgent } from './definitions/VideoAgent';
 import { SocialAgent } from './definitions/SocialAgent';
@@ -21,7 +20,6 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     LegalAgent,
     FinanceAgent,
     ProducerAgent,
-    MusicAgent,
     DirectorAgent,
     ScreenwriterAgent,
     VideoAgent,

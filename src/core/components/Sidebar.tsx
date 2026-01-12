@@ -26,7 +26,6 @@ export default function Sidebar() {
 
     const departmentItems: SidebarItem[] = [
         { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
-        { id: 'music', icon: Music, label: 'Music Department' },
         { id: 'social', icon: Network, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
@@ -39,7 +38,6 @@ export default function Sidebar() {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'banana-preview', icon: Palette, label: 'Banana Preview' },
         { id: 'observability', icon: Globe, label: 'System Observability' },
         { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
@@ -165,22 +163,6 @@ export default function Sidebar() {
                             data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
-                        </button>
-                        <button
-                            onClick={() => setTheme('banana')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana' ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-yellow-200'}`}
-                            title="Banana Mode"
-                            data-testid="theme-btn-banana"
-                        >
-                            <ShoppingBag size={14} />
-                        </button>
-                        <button
-                            onClick={() => setTheme('banana-pro')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana-pro' ? 'text-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-yellow-400'}`}
-                            title="Banana Pro"
-                            data-testid="theme-btn-pro"
-                        >
-                            <Scale size={14} />
                         </button>
                     </div>
                 )}
