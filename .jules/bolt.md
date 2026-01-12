@@ -7,3 +7,6 @@
 ## 2025-05-22 - Firestore Snapshot Reference Instability
 **Learning:** Firestore `onSnapshot` maps often create new object references for every document on every update (even unchanged ones). `React.memo`'s default shallow comparison fails here, causing full list re-renders.
 **Action:** Implement `arePropsEqual` deep comparison for list items fed by Firestore subscriptions to skip renders when data content is identical despite reference changes.
+## 2025-05-22 - Firestore Snapshot Instability
+**Learning:** Firestore `onSnapshot` listeners combined with `doc.data()` mapping often generate new object references for *every* document on every update, breaking `React.memo`'s default shallow comparison.
+**Action:** Always implement a custom `arePropsEqual` deep comparison function for list items rendered from real-time Firestore collections to prevent full-list re-renders when single items change.
