@@ -65,7 +65,19 @@ export class EvolutionEngine {
         // Simple Tournament Selection or Top K for parents
         // We select strictly from the mating pool (fitness > 0)
         const parent1 = this.selectParent(matingPool);
-        const parent2 = this.selectParent(matingPool);
+
+        // Helix: Prevent asexual reproduction (Self-Crossover)
+        // We exclude the first parent from the pool for the second selection.
+        const remainingPool = matingPool.filter(p => p.id !== parent1.id);
+
+        // If only one parent exists in the entire pool, we are forced to self-crossover.
+        // Otherwise, we strictly select a different partner.
+        let parent2: AgentGene;
+        if (remainingPool.length > 0) {
+          parent2 = this.selectParent(remainingPool);
+        } else {
+          parent2 = parent1;
+        }
 
         let offspring = await this.crossoverFn(parent1, parent2);
 
