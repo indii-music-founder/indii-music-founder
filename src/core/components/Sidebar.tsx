@@ -62,6 +62,7 @@ export default function Sidebar() {
                 `}
                 title={!isSidebarOpen ? item.label : ''}
                 data-testid={`nav-item-${item.id}`}
+                aria-current={isActive ? 'page' : undefined}
             >
                 <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
                 {isSidebarOpen && <span className="truncate">{item.label}</span>}

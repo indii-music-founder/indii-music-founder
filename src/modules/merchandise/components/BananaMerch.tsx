@@ -2,10 +2,11 @@ import React from 'react';
 import { Tag, Star } from 'lucide-react';
 import { useMerchandise } from '../hooks/useMerchandise';
 import { StandardProductCard } from './StandardProductCard';
+import { DeptLoader } from '@/components/ui/DeptLoader';
 
 
 export const BananaMerch: React.FC = () => {
-    const { standardProducts: products } = useMerchandise();
+    const { standardProducts: products, loading } = useMerchandise();
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -67,25 +68,33 @@ export const BananaMerch: React.FC = () => {
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {products.map(product => (
-                        <StandardProductCard key={product.id} product={product} />
-                    ))}
+                    {loading && products.length === 0 ? (
+                        <div className="col-span-full py-12 flex justify-center" role="status">
+                            <DeptLoader message="Loading drops..." moduleId="merchandise" />
+                        </div>
+                    ) : (
+                        <>
+                            {products.map(product => (
+                                <StandardProductCard key={product.id} product={product} />
+                            ))}
 
-                    {/* Add New Placeholder */}
-                    <button
-                        type="button"
-                        aria-label="Design new asset"
-                        className="w-full h-full text-left border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group min-h-[400px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                    >
-                        <div className="w-20 h-20 bg-secondary/50 rounded-2xl flex items-center justify-center mb-6 border border-border/50 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
-                            <Tag className="text-primary" size={32} />
-                        </div>
-                        <h4 className="text-foreground font-black text-lg tracking-tight">DESIGN NEW ASSET</h4>
-                        <p className="text-muted-foreground text-sm text-center mt-2 max-w-[200px]">Launch a new merch drop in minutes with AI.</p>
-                        <div className="mt-8 text-primary font-black text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-primary/70 hover:border-primary/70 transition-all">
-                            Open Designer
-                        </div>
-                    </button>
+                            {/* Add New Placeholder */}
+                            <button
+                                type="button"
+                                aria-label="Design new asset"
+                                className="w-full h-full text-left border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group min-h-[400px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                            >
+                                <div className="w-20 h-20 bg-secondary/50 rounded-2xl flex items-center justify-center mb-6 border border-border/50 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                                    <Tag className="text-primary" size={32} />
+                                </div>
+                                <h4 className="text-foreground font-black text-lg tracking-tight">DESIGN NEW ASSET</h4>
+                                <p className="text-muted-foreground text-sm text-center mt-2 max-w-[200px]">Launch a new merch drop in minutes with AI.</p>
+                                <div className="mt-8 text-primary font-black text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-primary/70 hover:border-primary/70 transition-all">
+                                    Open Designer
+                                </div>
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
