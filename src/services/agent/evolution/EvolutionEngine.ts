@@ -93,6 +93,12 @@ export class EvolutionEngine {
           offspring = await this.mutationFn(offspring);
         }
 
+        // Helix: Validation Guardrail
+        // Prevent "Empty Soul" (Empty Prompt) or malformed agents from entering the gene pool.
+        if (!offspring || !offspring.systemPrompt || typeof offspring.systemPrompt !== 'string' || offspring.systemPrompt.trim() === '') {
+           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
+        }
+
         // Ensure ID is new and lineage is tracked
         offspring.id = uuidv4();
         offspring.generation = Math.max(parent1.generation, parent2.generation) + 1;
