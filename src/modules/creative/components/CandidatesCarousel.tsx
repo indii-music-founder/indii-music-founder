@@ -44,6 +44,8 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
             <button
                 onClick={onClose}
                 data-testid="carousel-close-btn"
+                className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center self-center focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                aria-label="Close candidates carousel"
                 className="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center self-center focus-visible:ring-2 focus-visible:ring-purple-500 outline-none"
                 aria-label="Close candidates"
                 aria-label="Close candidates"
