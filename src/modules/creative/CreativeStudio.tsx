@@ -3,7 +3,6 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeGallery from './components/CreativeGallery';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
-import Showroom from './components/Showroom';
 import VideoWorkflow from '../video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
@@ -134,7 +133,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>
                         {viewMode === 'gallery' && <CreativeGallery />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
-                        {viewMode === 'showroom' && <Showroom />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
                     </div>
                 </div>

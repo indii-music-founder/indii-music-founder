@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
-import { useStore } from '@/core/store';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { Editing } from '@/services/image/EditingService';
+import { useStore } from '@/core/store';
+import ManufacturingPanel from './ManufacturingPanel';
+import { THEMES } from '../themes';
 
 // Placement options for different product types
 const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {
@@ -54,13 +55,17 @@ const motionPresets = [
     { id: 'static-hero', label: 'Static Hero', prompt: 'Subtle ambient movement, hero product shot with slight camera drift' },
 ];
 
-export default function Showroom() {
-    const { addToHistory, currentProjectId } = useStore();
+interface EnhancedShowroomProps {
+    initialAsset?: string | null;
+}
+
+export default function EnhancedShowroom({ initialAsset = null }: EnhancedShowroomProps) {
     const toast = useToast();
-    const [activeMobileSection, setActiveMobileSection] = useState<'setup' | 'stage'>('stage');
+    const { addToHistory, currentProjectId } = useStore();
+    const [activeMobileSection, setActiveMobileSection] = useState<'setup' | 'stage' | 'production'>('stage');
 
     // State
-    const [productAsset, setProductAsset] = useState<string | null>(null);
+    const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
     const [productType, setProductType] = useState('t-shirt');
     const [placement, setPlacement] = useState('center-chest');
     const [scenePrompt, setScenePrompt] = useState('');
@@ -71,8 +76,65 @@ export default function Showroom() {
 
     const [isGeneratingMockup, setIsGeneratingMockup] = useState(false);
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+    const [currentVideoJobId, setCurrentVideoJobId] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const unsubscribeRef = useRef<(() => void) | null>(null);
+
+    // Clean up subscription on unmount
+    useEffect(() => {
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+        };
+    }, []);
+
+    // Monitor video job
+    useEffect(() => {
+        if (!currentVideoJobId) return;
+
+        // Clean up previous subscription
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+        }
+
+        setIsGeneratingVideo(true);
+        unsubscribeRef.current = MerchandiseService.subscribeToVideoJob(currentVideoJobId, (job) => {
+            if (!job) return;
+
+            if (job.status === 'completed' && job.videoUrl) {
+                setVideoResult(job.videoUrl);
+                setIsGeneratingVideo(false);
+                setCurrentVideoJobId(null);
+                toast.success("Video generated successfully!");
+
+                // Save to history
+                if (currentProjectId) {
+                    addToHistory({
+                        id: job.id,
+                        url: job.videoUrl,
+                        prompt: `Merchandise Video: ${motionPrompt}`,
+                        type: 'video',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
+                }
+            } else if (job.status === 'failed') {
+                setIsGeneratingVideo(false);
+                setCurrentVideoJobId(null);
+                toast.error(`Video generation failed: ${job.error || 'Unknown error'}`);
+            }
+        });
+
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+                unsubscribeRef.current = null;
+            }
+        };
+    }, [currentVideoJobId, toast, motionPrompt, addToHistory, currentProjectId]);
 
     // Get current placement options based on product type
     const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'];
@@ -168,7 +230,7 @@ CRITICAL INSTRUCTIONS:
 
 Style: High-end commercial product photography, 8K resolution, professional studio or environmental lighting.`;
 
-            toast.updateProgress(loadingId, 30, "Compositing scene...");
+            toast.updateProgress?.(loadingId, 30, "Compositing scene...");
 
             const result = await Editing.generateComposite({
                 images: [assetImage],
@@ -176,20 +238,22 @@ Style: High-end commercial product photography, 8K resolution, professional stud
                 projectContext: "Premium commercial product visualization with accurate texture mapping."
             });
 
-            toast.updateProgress(loadingId, 90, "Finalizing mockup...");
+            toast.updateProgress?.(loadingId, 90, "Finalizing mockup...");
 
             if (result) {
                 setMockupResult(result.url);
 
                 // Save to history
-                addToHistory({
-                    id: result.id,
-                    url: result.url,
-                    prompt: `Showroom Mockup: ${productType} (${placement}) - ${scenePrompt}`,
-                    type: 'image',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
+                if (currentProjectId) {
+                    addToHistory({
+                        id: result.id,
+                        url: result.url,
+                        prompt: `Showroom Mockup: ${productType} (${placement}) - ${scenePrompt}`,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId
+                    });
+                }
 
                 toast.dismiss(loadingId);
                 toast.success("Mockup generated successfully!");
@@ -216,11 +280,10 @@ Style: High-end commercial product photography, 8K resolution, professional stud
             return;
         }
 
-        setIsGeneratingVideo(true);
-        const loadingId = toast.loading("Rendering video...");
+        const loadingId = toast.loading("Starting video generation...");
 
         try {
-            toast.updateProgress(loadingId, 20, "Analyzing scene...");
+            toast.updateProgress?.(loadingId, 20, "Queueing job...");
 
             const enhancedPrompt = `CINEMATIC PRODUCT VIDEO:
 
@@ -235,47 +298,22 @@ REQUIREMENTS:
 
 Style: Premium brand commercial, 4K cinematic quality.`;
 
-            toast.updateProgress(loadingId, 40, "Generating video frames...");
+            const jobId = await MerchandiseService.generateVideo(mockupResult, enhancedPrompt);
 
-            const results = await VideoGeneration.generateVideo({
-                prompt: enhancedPrompt,
-                firstFrame: mockupResult,
-                resolution: '720p',
-                aspectRatio: '16:9'
-            });
+            toast.dismiss(loadingId);
+            toast.success("Video generation started! This may take a few minutes...");
 
-            toast.updateProgress(loadingId, 90, "Finalizing video...");
-
-            if (results && results.length > 0) {
-                setVideoResult(results[0].url);
-
-                // Save to history
-                addToHistory({
-                    id: results[0].id,
-                    url: results[0].url,
-                    prompt: `Showroom Video: ${motionPrompt}`,
-                    type: 'video',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
-
-                toast.dismiss(loadingId);
-                toast.success("Scene animated successfully!");
-            } else {
-                toast.dismiss(loadingId);
-                toast.error("Failed to animate scene.");
-            }
+            // Set job ID to trigger subscription
+            setCurrentVideoJobId(jobId);
         } catch (error: unknown) {
             console.error(error);
             toast.dismiss(loadingId);
-            if (error instanceof Error) {
-                toast.error(`Failed to animate scene: ${error.message}`);
-            }
-            else {
-                toast.error("Failed to animate scene: An unknown error occurred.");
-            }
-        } finally {
             setIsGeneratingVideo(false);
+            if (error instanceof Error) {
+                toast.error(`Failed to start video generation: ${error.message}`);
+            } else {
+                toast.error("Failed to start video generation: An unknown error occurred.");
+            }
         }
     };
 
@@ -294,43 +332,49 @@ Style: Premium brand commercial, 4K cinematic quality.`;
     ];
 
     return (
-        <div className="flex-1 bg-[#0f0f0f] text-white overflow-hidden flex flex-col">
+        <div className="flex-1 text-white overflow-hidden flex flex-col bg-black">
             {/* Header */}
-            <div className="h-16 border-b border-gray-800 flex items-center px-6 justify-between bg-[#1a1a1a]">
+            <div className="h-16 border-b border-white/10 flex items-center px-6 justify-between bg-neutral-900">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-900/30 rounded-lg text-purple-400">
+                    <div className="p-2 bg-[#FFE135]/20 rounded-lg text-[#FFE135]">
                         <Box size={20} />
                     </div>
                     <div>
                         <h1 className="font-bold text-lg">Product Showroom</h1>
-                        <p className="text-xs text-gray-400">Virtual Product Photography & Motion Studio</p>
+                        <p className="text-xs text-neutral-400">Virtual Product Photography & Motion Studio</p>
                     </div>
                 </div>
             </div>
 
             {/* Mobile View Toggle */}
-            <div className="lg:hidden flex border-b border-white/10 bg-[#1a1a1a]">
+            <div className="lg:hidden flex border-b border-white/10 bg-neutral-900">
                 <button
                     onClick={() => setActiveMobileSection('setup')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'setup' ? 'text-blue-400 border-b-2 border-blue-400 bg-white/5' : 'text-gray-500'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'setup' ? 'text-[#FFE135] border-b-2 border-[#FFE135] bg-white/5' : 'text-neutral-500'}`}
                 >
                     Setup (1 & 2)
                 </button>
                 <button
                     onClick={() => setActiveMobileSection('stage')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'stage' ? 'text-purple-400 border-b-2 border-purple-400 bg-white/5' : 'text-gray-500'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'stage' ? 'text-[#FFE135] border-b-2 border-[#FFE135] bg-white/5' : 'text-neutral-500'}`}
                 >
                     The Stage (3)
                 </button>
+                <button
+                    onClick={() => setActiveMobileSection('production')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'production' ? 'text-[#FFE135] border-b-2 border-[#FFE135] bg-white/5' : 'text-neutral-500'}`}
+                >
+                    Production
+                </button>
             </div>
 
-            {/* Main Grid */}
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-800 overflow-hidden">
+            {/* Main Grid - 4 columns on desktop */}
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-white/10 overflow-hidden">
 
                 {/* Column 1: The Asset (Input) */}
-                <div className={`${activeMobileSection === 'setup' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-[#111]`}>
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs">1</span>
+                <div className={`${activeMobileSection === 'setup' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-neutral-950`}>
+                    <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-neutral-800 text-white flex items-center justify-center text-xs">1</span>
                         The Asset
                     </h2>
 
@@ -346,7 +390,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                 fileInputRef.current?.click();
                             }
                         }}
-                        className={`aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-8 relative group overflow-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none ${productAsset ? 'border-purple-500 bg-purple-900/10' : 'border-gray-700 hover:border-gray-500 hover:bg-gray-800'}`}
+                        className={`aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-8 relative group overflow-hidden focus-visible:ring-2 focus-visible:ring-[#FFE135] focus-visible:outline-none ${productAsset ? 'border-[#FFE135] bg-[#FFE135]/10' : 'border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800'}`}
                     >
                         <input
                             type="file"
@@ -366,12 +410,12 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             </>
                         ) : (
                             <>
-                                <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform">
+                                <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 group-hover:scale-110 transition-transform">
                                     <Upload size={24} />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-bold text-gray-300">Upload Design</p>
-                                    <p className="text-xs text-gray-500 mt-1">PNG with transparency recommended</p>
+                                    <p className="font-bold text-neutral-300">Upload Design</p>
+                                    <p className="text-xs text-neutral-500 mt-1">PNG with transparency recommended</p>
                                 </div>
                             </>
                         )}
@@ -379,7 +423,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
 
                     {/* Product Type Selector */}
                     <div className="space-y-3">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Product Type</label>
+                        <label className="text-xs font-bold text-neutral-500 uppercase">Product Type</label>
                         <div className="grid grid-cols-2 gap-2">
                             {productTypes.map(type => (
                                 <button
@@ -393,7 +437,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                         }
                                     }}
                                     data-testid={`showroom-product-${type.id}`}
-                                    className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-purple-900/20 border-purple-500 text-purple-300' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'}`}
+                                    className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-[#FFE135]/20 border-[#FFE135] text-[#FFE135]' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
                                 >
                                     <type.icon size={16} />
                                     <span className="text-sm font-medium">{type.label}</span>
@@ -404,7 +448,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
 
                     {/* Placement Selector */}
                     <div className="space-y-3 mt-6">
-                        <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
                             <Target size={12} /> Placement
                         </label>
                         <div className="flex flex-wrap gap-2">
@@ -413,7 +457,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                     key={option.id}
                                     onClick={() => setPlacement(option.id)}
                                     data-testid={`placement-${option.id}`}
-                                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${placement === option.id ? 'bg-blue-900/20 border-blue-500 text-blue-300' : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'}`}
+                                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${placement === option.id ? 'bg-[#FFE135]/20 border-[#FFE135] text-[#FFE135]' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
                                 >
                                     {option.icon}
                                     {option.label}
@@ -424,16 +468,16 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                 </div>
 
                 {/* Column 2: The Scenario (Context) */}
-                <div className={`${activeMobileSection === 'setup' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-[#111]`}>
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs">2</span>
+                <div className={`${activeMobileSection === 'setup' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-neutral-950`}>
+                    <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-neutral-800 text-white flex items-center justify-center text-xs">2</span>
                         The Scenario
                     </h2>
 
                     <div className="space-y-6">
                         {/* Scene Description */}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
                                 <ImageIcon size={12} /> Scene Description
                             </label>
                             <textarea
@@ -441,13 +485,13 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                 onChange={(e) => setScenePrompt(e.target.value)}
                                 data-testid="scene-prompt-input"
                                 placeholder="E.g. A streetwear model leaning against a brick wall in Tokyo at night..."
-                                className="w-full h-32 bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-purple-500 outline-none resize-none"
+                                className="w-full h-32 bg-neutral-900 border border-neutral-700 rounded-xl p-4 text-sm text-white placeholder-neutral-600 focus:border-[#FFE135] outline-none resize-none"
                             />
                         </div>
 
                         {/* Motion Description */}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
                                 <Video size={12} /> Motion Description
                             </label>
                             <textarea
@@ -455,7 +499,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                 onChange={(e) => setMotionPrompt(e.target.value)}
                                 data-testid="motion-prompt-input"
                                 placeholder="E.g. Slow camera pan to the right, model looks at the camera..."
-                                className="w-full h-32 bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:border-purple-500 outline-none resize-none"
+                                className="w-full h-32 bg-neutral-900 border border-neutral-700 rounded-xl p-4 text-sm text-white placeholder-neutral-600 focus:border-[#FFE135] outline-none resize-none"
                                 disabled={!mockupResult} // Only enable after mockup
                             />
                             {!mockupResult && (
@@ -466,8 +510,8 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         </div>
 
                         {/* Scene Presets */}
-                        <div className="pt-4 border-t border-gray-800">
-                            <p className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                        <div className="pt-4 border-t border-neutral-800">
+                            <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2">
                                 <Sparkles size={12} /> Scene Presets
                             </p>
                             <div className="flex flex-wrap gap-2">
@@ -485,7 +529,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                         key={preset.label}
                                         onClick={() => setScenePrompt(prev => prev ? `${prev}. ${preset.prompt}` : preset.prompt)}
                                         data-testid={`showroom-preset-${preset.label}`}
-                                        className="px-3 py-1.5 bg-[#1a1a1a] border border-gray-700 rounded-full text-xs text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+                                        className="px-3 py-1.5 bg-neutral-900 border border-neutral-700 rounded-full text-xs text-neutral-400 hover:text-white hover:border-neutral-500 transition-colors"
                                     >
                                         {preset.label}
                                     </button>
@@ -495,8 +539,8 @@ Style: Premium brand commercial, 4K cinematic quality.`;
 
                         {/* Motion Presets */}
                         {mockupResult && (
-                            <div className="pt-4 border-t border-gray-800">
-                                <p className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                            <div className="pt-4 border-t border-neutral-800">
+                                <p className="text-xs font-bold text-neutral-500 uppercase mb-3 flex items-center gap-2">
                                     <Video size={12} /> Motion Presets
                                 </p>
                                 <div className="flex flex-wrap gap-2">
@@ -505,7 +549,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                             key={preset.id}
                                             onClick={() => handleMotionPreset(preset)}
                                             data-testid={`motion-preset-${preset.id}`}
-                                            className="px-3 py-1.5 bg-purple-900/10 border border-purple-900/30 rounded-full text-xs text-purple-300 hover:text-white hover:border-purple-500 hover:bg-purple-900/20 transition-colors"
+                                            className="px-3 py-1.5 bg-[#FFE135]/10 border border-[#FFE135]/30 rounded-full text-xs text-[#FFE135] hover:text-white hover:border-[#FFE135] hover:bg-[#FFE135]/20 transition-colors"
                                         >
                                             {preset.label}
                                         </button>
@@ -517,20 +561,20 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                 </div>
 
                 {/* Column 3: The Stage (Output) */}
-                <div className={`${activeMobileSection === 'stage' ? 'flex' : 'hidden'} lg:flex flex-col p-6 bg-[#0a0a0a] relative`}>
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs">3</span>
+                <div className={`${activeMobileSection === 'stage' ? 'flex' : 'hidden'} lg:flex flex-col p-6 bg-black relative`}>
+                    <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-neutral-800 text-white flex items-center justify-center text-xs">3</span>
                         The Stage
                     </h2>
 
                     {/* Preview Monitor */}
-                    <div className="flex-1 bg-[#111] rounded-2xl border border-gray-800 relative overflow-hidden flex items-center justify-center mb-6 group">
+                    <div className="flex-1 bg-neutral-950 rounded-2xl border border-neutral-800 relative overflow-hidden flex items-center justify-center mb-6 group">
                         {videoResult ? (
                             <video src={videoResult} controls autoPlay loop className="max-w-full max-h-full object-contain" />
                         ) : mockupResult ? (
                             <img src={mockupResult} alt="Mockup" className="max-w-full max-h-full object-contain" />
                         ) : (
-                            <div className="text-center text-gray-600">
+                            <div className="text-center text-neutral-600">
                                 <MonitorPlay size={48} className="mx-auto mb-4 opacity-50" />
                                 <p>Ready to Render</p>
                             </div>
@@ -539,7 +583,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         {/* Loading Overlay */}
                         {(isGeneratingMockup || isGeneratingVideo) && (
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
-                                <Loader2 size={48} className="text-purple-500 animate-spin mb-4" />
+                                <Loader2 size={48} className="text-[#FFE135] animate-spin mb-4" />
                                 <p className="text-white font-bold animate-pulse">
                                     {isGeneratingMockup ? "Compositing Scene..." : "Rendering Video..."}
                                 </p>
@@ -553,9 +597,9 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             onClick={handleGenerateMockup}
                             disabled={isGeneratingMockup || !productAsset || !scenePrompt}
                             data-testid="showroom-generate-mockup-btn"
-                            className="py-4 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-gray-700 hover:border-gray-500"
+                            className="py-4 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-neutral-700 hover:border-neutral-500"
                         >
-                            <ImageIcon size={20} className="text-blue-400" />
+                            <ImageIcon size={20} className="text-[#FFE135]" />
                             <span>Generate Mockup</span>
                         </button>
 
@@ -563,12 +607,24 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             onClick={handleGenerateVideo}
                             disabled={isGeneratingVideo || !mockupResult || !motionPrompt}
                             data-testid="showroom-animate-scene-btn"
-                            className="py-4 bg-purple-900/20 hover:bg-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed text-purple-300 rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-purple-900/50 hover:border-purple-500"
+                            className="py-4 bg-[#FFE135]/20 hover:bg-[#FFE135]/40 disabled:opacity-50 disabled:cursor-not-allowed text-[#FFE135] rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-[#FFE135]/50 hover:border-[#FFE135]"
                         >
-                            <Video size={20} className={mockupResult ? "text-purple-400" : "text-gray-600"} />
+                            <Video size={20} className={mockupResult ? "text-[#FFE135]" : "text-neutral-600"} />
                             <span>Animate Scene</span>
                         </button>
                     </div>
+                </div>
+
+                {/* Column 4: Manufacturing Panel */}
+                <div className={`${activeMobileSection === 'production' ? 'flex' : 'hidden'} lg:flex flex-col p-6 overflow-y-auto custom-scrollbar bg-neutral-950`}>
+                    <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-neutral-800 text-white flex items-center justify-center text-xs">4</span>
+                        Production
+                    </h2>
+                    <ManufacturingPanel
+                        theme={THEMES.pro}
+                        productType={productType.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    />
                 </div>
             </div>
         </div >

@@ -53,6 +53,25 @@ export class AgentRegistry {
             console.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
         }
 
+        // Register Merchandise Agent (Class-based)
+        try {
+            const merchMeta = {
+                id: 'merchandise',
+                name: 'Merchandise Specialist',
+                description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
+                color: '#FFE135',
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(merchMeta, async () => {
+                const { MerchandiseAgent } = await import('./MerchandiseAgent');
+                return new MerchandiseAgent();
+            });
+        } catch (e) {
+            console.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
+        }
+
         // Register Config-based Agents
         AGENT_CONFIGS.forEach(config => {
             try {

@@ -62,6 +62,7 @@ export const VALID_AGENT_IDS = [
     'brand',
     'devops',
     'security',
+    'merchandise',  // Merchandise creation & production
     'generalist'  // Agent Zero
 ] as const;
 

@@ -48,14 +48,6 @@ export default function CreativeNavbar() {
                         >
                             Canvas
                         </button>
-                        <button
-                            onClick={() => setViewMode('showroom')}
-                            data-testid="showroom-view-btn"
-                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'showroom' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            Showroom
-                        </button>
                         {generationMode === 'video' && (
                             <button
                                 onClick={() => setViewMode('video_production')}

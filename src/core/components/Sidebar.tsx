@@ -31,11 +31,11 @@ export default function Sidebar() {
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
-        { id: 'showroom', label: 'Banana Studio', icon: Shirt },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
     ];
 
     const toolItems: SidebarItem[] = [
+        { id: 'merch', icon: ShoppingBag, label: 'Merch Tool' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
