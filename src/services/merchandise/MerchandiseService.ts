@@ -140,6 +140,7 @@ export const MerchandiseService = {
             }
 
             // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
+            // 🛡️ Sentinel: Use secure random generation for orderId
             const array = new Uint8Array(9);
             crypto.getRandomValues(array);
             const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
