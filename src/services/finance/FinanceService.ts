@@ -149,12 +149,12 @@ export class FinanceService {
     // In this simple context, the expense (Debit) must equal the payout source (Credit).
     // We implicitly treat the 'amount' as both the debit to expense and credit to cash.
     if (!expense.amount || expense.amount <= 0) {
-      throw new AppException(AppErrorCode.VALIDATION_ERROR, 'Double-entry failure: Transaction amount must be positive and non-zero.');
+      throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Double-entry failure: Transaction amount must be positive and non-zero.');
     }
 
     // 2. Attribution check
     if (!expense.userId || !expense.category) {
-      throw new AppException(AppErrorCode.VALIDATION_ERROR, 'Double-entry failure: Transaction must have a user and account category.');
+      throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Double-entry failure: Transaction must have a user and account category.');
     }
   }
 

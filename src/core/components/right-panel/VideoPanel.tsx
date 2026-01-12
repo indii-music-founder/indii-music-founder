@@ -177,9 +177,9 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
                                     <option value="16:9" data-testid="aspect-ratio-option-16-9">16:9 Landscape</option>
-                                    <option value="1:1">1:1 Square</option>
-                                    <option value="9:16">9:16 Portrait</option>
-                                    <option value="21:9">21:9 Ultrawide</option>
+                                    <option value="1:1" data-testid="aspect-ratio-option-1-1">1:1 Square</option>
+                                    <option value="9:16" data-testid="aspect-ratio-option-9-16">9:16 Portrait</option>
+                                    <option value="21:9" data-testid="aspect-ratio-option-21-9">21:9 Ultrawide</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                             </div>
@@ -193,9 +193,9 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                     data-testid="resolution-select"
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
-                                    <option value="1024x1024">1K (Square)</option>
-                                    <option value="1280x720">HD (720p)</option>
-                                    <option value="1920x1080">FHD (1080p)</option>
+                                    <option value="1024x1024" data-testid="resolution-option-1k">1K (Square)</option>
+                                    <option value="1280x720" data-testid="resolution-option-hd">HD (720p)</option>
+                                    <option value="1920x1080" data-testid="resolution-option-fhd">FHD (1080p)</option>
                                     <option value="3840x2160" data-testid="resolution-option-4k">4K (UHD)</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />

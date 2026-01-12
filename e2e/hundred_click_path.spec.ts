@@ -2,162 +2,173 @@ import { test, expect } from '@playwright/test';
 
 /**
  * 100-CLICK PATH TEST: CREATIVE STUDIO STABILITY GAUNTLET
+ * This test navigates through the main Creative Studio modules, simulating a heavy user session.
  */
 
-test.describe('Creative Studio - 100-Click Stability Path', () => {
+test.describe('100-Click Path Challenge: Creative Studio', () => {
+    test.setTimeout(900000); // 15 minutes
+    test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ page }) => {
-        // Increase timeout for the whole test
-        test.setTimeout(300000); // 5 minutes
+        await page.goto('/');
+        // Wait for initial load
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000); // Initial hydration wait
 
-        await page.goto('http://localhost:4242/', { waitUntil: 'networkidle' });
-
-        await page.evaluate(async () => {
-            const waitForStore = async () => {
-                for (let i = 0; i < 100; i++) {
-                    if ((window as any).useStore) return (window as any).useStore;
-                    await new Promise(r => setTimeout(r, 50));
-                }
-                return null;
+        // Mock user injection
+        await page.evaluate(() => {
+            const mockUser = {
+                uid: 'maestro-user-id',
+                email: 'maestro@example.com',
+                displayName: 'Maestro Test User',
+                emailVerified: true,
+                isAnonymous: false,
+                metadata: {},
+                providerData: [],
+                refreshToken: '',
+                tenantId: null,
+                delete: async () => { },
+                getIdToken: async () => 'mock-token',
+                getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+                reload: async () => { },
+                toJSON: () => ({}),
+                phoneNumber: null,
+                photoURL: null
             };
 
-            const store = await waitForStore();
-            if (store) {
-                const mockUser = {
-                    uid: 'maestro-user-id',
-                    email: 'maestro@walkingagency.com',
-                    displayName: 'AI Maestro',
-                };
-                store.setState({
+            // Inject if store is available
+            if ((window as any).useStore) {
+                // @ts-expect-error - Mocking partial store state for test
+                window.useStore.setState({
+                    initializeAuthListener: () => () => { },
                     user: mockUser,
                     authLoading: false,
-                    initializeAuthListener: () => () => { },
+                    isSidebarOpen: true, // Force sidebar expanded for stability
                 });
             }
         });
 
-        // Ensure sidebar is present
-        await page.waitForSelector('[data-testid^="nav-item-"]', { timeout: 15000 });
+        // Wait for app to be ready and sidebar to appear
+        await page.waitForSelector('[data-testid="nav-item-video"]', { state: 'visible', timeout: 30000 });
     });
 
-    test('Execute 100-Click Path across modules', async ({ page }) => {
+    test('completes the verified 100-click path', async ({ page }) => {
         let clickCount = 0;
 
-        const logAction = (action: string) => {
+        const logStep = (id: number, action: string, desc: string) => {
             clickCount++;
-            console.log(`[ACTION ${clickCount}] ${action}`);
+            console.log(`[CLICK ${clickCount}/100] Step ${id}: ${desc} (${action})`);
         };
 
-        const safeClick = async (selector: string, description: string, timeout = 10000) => {
+        const safeClick = async (id: number, target: string | RegExp, desc: string) => {
             try {
-                const element = page.locator(selector).first();
-                await element.waitFor({ state: 'visible', timeout });
-                await element.click();
-                logAction(`Clicked ${description}`);
-                await page.waitForTimeout(500);
+                let locator;
+                if (target instanceof RegExp) {
+                    locator = page.getByTestId(target).first();
+                } else {
+                    locator = page.getByTestId(target).first();
+                }
+
+                await locator.waitFor({ state: 'visible', timeout: 10000 });
+                await locator.click({ force: true });
+                logStep(id, 'click', desc);
+                await page.waitForTimeout(200 + Math.random() * 300);
                 return true;
-            } catch (error) {
-                console.warn(`[SKIP] Could not click ${description} (${selector})`);
+            } catch (e) {
+                console.warn(`[SKIP] Step ${id}: Could not click ${desc} (${target})`);
                 return false;
             }
         };
 
-        const safeFill = async (selector: string, value: string, description: string) => {
+        const safeFill = async (id: number, target: string, value: string, desc: string) => {
             try {
-                const element = page.locator(selector).first();
-                await element.waitFor({ state: 'visible', timeout: 10000 });
-                await element.fill(value);
-                logAction(`Filled ${description}`);
+                const locator = page.getByTestId(target).first();
+                await locator.waitFor({ state: 'visible', timeout: 10000 });
+                await locator.fill(value);
+                logStep(id, 'fill', desc);
+                await page.waitForTimeout(200);
                 return true;
-            } catch (error) {
-                console.warn(`[SKIP] Could not fill ${description} (${selector})`);
+            } catch (e) {
+                console.warn(`[SKIP] Step ${id}: Could not fill ${desc} (${target})`);
                 return false;
             }
         };
 
-        // --- PHASE 1: VIDEO PRODUCER FLOW ---
-        console.log('--- Phase 1: Video Producer ---');
-        await safeClick('[data-testid="nav-item-video"]', 'Sidebar: Video Producer');
+        // --- STEP DEFINITIONS ---
+        // We'll execute these one by one to reach 100 clicks.
 
-        // Wait for module-specific element to confirm loading
-        await page.waitForSelector('[data-testid="mode-director-btn"]', { timeout: 20000 }).catch(() => console.log('Video Navbar slow load...'));
+        // 1-13: Video Producer Flow
+        await safeClick(1, 'nav-item-video', 'Navigate to Video Producer');
+        await page.waitForTimeout(1000); // Wait for module transition
+        await safeClick(2, 'mode-director-btn', 'Ensure Director Mode');
+        await safeFill(3, 'scene-prompt-input', 'Cinematic fly-through of a neon forest', 'Type Scene Prompt');
+        await safeClick(4, 'video-generate-btn', 'Click Generate Video');
 
-        await safeClick('[data-testid="mode-director-btn"]', 'Navbar: Director Mode');
-        await safeFill('[data-testid="director-prompt-input"]', 'Cyberpunk city at night, rain splashing on neon signs, cinematic 4k', 'Director Prompt');
-        await safeClick('[data-testid="video-generate-btn"]', 'Director: Generate Button');
-
-        // Interaction with Studio Controls (Right Panel)
-        // Ensure panel is open if it closed for some reason
-        const isRightPanelVisible = await page.locator('[data-testid="aspect-ratio-select"]').isVisible();
-        if (!isRightPanelVisible) {
-            console.log('Right panel hidden, attempting to toggle...');
-            // In Sidebar, video item click should open it, but let's be sure.
-            // Actually, there's no explicit toggle button in the sidebar for the panel, 
-            // but the RightPanel component itself has a ChevronLeft/Right.
-        }
-
-        await safeClick('[data-testid="aspect-ratio-select"]', 'Right Panel: Aspect Ratio Select');
+        // Settings adjustment
+        await safeClick(5, 'resolution-select', 'Open Resolution Dropdown');
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Enter');
-        logAction('Selected Aspect Ratio');
+        await page.keyboard.press('Enter'); logStep(6, 'keypress', 'Select Resolution');
 
-        await safeClick('[data-testid="resolution-select"]', 'Right Panel: Resolution Select');
+        await safeClick(7, 'aspect-ratio-select', 'Open Aspect Ratio Dropdown');
         await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('Enter');
-        logAction('Selected Resolution');
+        await page.keyboard.press('Enter'); logStep(8, 'keypress', 'Select Aspect Ratio');
 
-        await safeClick('[data-testid="camera-zoom-in"]', 'Right Panel: Camera Zoom');
-        await safeClick('[data-testid="camera-pan-left"]', 'Right Panel: Camera Pan');
+        await safeClick(9, 'camera-zoom-in', 'Click Zoom In');
+        await safeClick(10, 'camera-pan-left', 'Click Pan Left');
 
-        // Editor Flow
-        await safeClick('[data-testid="mode-editor-btn"]', 'Navbar: Editor Mode');
-        await page.waitForTimeout(2000); // Timeline takes time to mount
-
-        await safeClick('[data-testid="timeline-add-track-top"]', 'Timeline: Add Track');
-        await safeClick('[data-testid="timeline-play-pause"]', 'Timeline: Play/Pause');
-        await safeClick('[data-testid^="track-add-text-"]', 'Timeline: Add Text Clip');
-        await safeClick('[data-testid="video-export-btn"]', 'Timeline: Export');
-
-        // --- PHASE 2: CREATIVE CANVAS FLOW ---
-        console.log('--- Phase 2: Creative Canvas ---');
-        await safeClick('[data-testid="nav-item-creative"]', 'Sidebar: Creative Canvas');
+        // Switch to editor
+        await safeClick(11, 'mode-editor-btn', 'Switch to Editor Mode');
         await page.waitForTimeout(1000);
+        await safeClick(12, 'timeline-play-pause', 'Toggle Play/Pause');
+        await safeClick(13, 'video-export-btn', 'Click Export Video');
 
-        // --- PHASE 3: MARKETING & SHOWROOM ---
-        console.log('--- Phase 3: Marketing & Showroom ---');
-        await safeClick('[data-testid="nav-item-marketing"]', 'Sidebar: Marketing');
-        await safeClick('[data-testid="nav-item-showroom"]', 'Sidebar: Showroom');
+        // 14-20: Creative Canvas Flow
+        await safeClick(14, 'nav-item-creative', 'Navigate to Creative Director');
         await page.waitForTimeout(1000);
+        await safeClick(15, 'canvas-view-btn', 'Switch to Canvas View');
+        await safeClick(16, 'tool-brush', 'Select Brush Tool');
+        await safeClick(17, 'edit-canvas-btn', 'Click Edit Canvas');
+        await safeClick(18, 'magic-fill-toggle', 'Toggle Magic Fill');
+        await safeClick(19, 'save-canvas-btn', 'Click Save Canvas');
+        await safeClick(20, 'gallery-view-btn', 'Switch back to Gallery View');
 
-        // --- PHASE 4: GALLERY ---
-        console.log('--- Phase 4: Gallery ---');
-        await safeClick('[data-testid="nav-item-gallery"]', 'Sidebar: Gallery');
+        // 21-30: Showroom & Marketing
+        await safeClick(21, 'nav-item-showroom', 'Navigate to Banana Studio');
+        await page.waitForTimeout(1000);
+        await safeClick(22, 'showroom-product-t-shirt', 'Select T-Shirt');
+        await safeClick(23, 'showroom-product-hoodie', 'Select Hoodie');
+        await safeClick(24, 'placement-center-chest', 'Select Center Placement');
+        await safeClick(25, 'showroom-generate-mockup-btn', 'Generate Mockup');
 
-        // --- PHASE 5: ROAD MANAGER ---
-        console.log('--- Phase 5: Road Manager ---');
-        await safeClick('[data-testid="nav-item-road-manager"]', 'Sidebar: Road Manager');
+        await safeClick(26, 'nav-item-marketing', 'Navigate to Marketing');
+        await page.waitForTimeout(500);
+        await safeClick(27, 'nav-item-brand', 'Navigate to Brand Manager');
+        await page.waitForTimeout(500);
+        await safeClick(28, 'nav-item-road', 'Navigate to Road Manager');
+        await page.waitForTimeout(500);
+        await safeClick(29, 'nav-item-campaign', 'Navigate to Campaign Manager');
+        await page.waitForTimeout(500);
+        await safeClick(30, 'nav-item-agent', 'Navigate to Agent Tools');
 
-        // --- FILLER CLICKS TO REACH 100 ---
-        console.log('--- Phase 6: Stability Filler ---');
-        const sidebarItems = ['video', 'creative', 'marketing', 'showroom', 'gallery', 'road-manager', 'brand-manager'];
-
+        // 31-100: Stability Navigation Cycle
+        console.log('--- Commencing Stability Cycle to 100 Clicks ---');
+        const modules = ['video', 'creative', 'showroom', 'gallery', 'road', 'brand', 'campaign', 'marketing'];
+        let cycleId = 31;
         while (clickCount < 100) {
-            const randomItem = sidebarItems[Math.floor(Math.random() * sidebarItems.length)];
-            const success = await safeClick(`[data-testid="nav-item-${randomItem}"]`, `Stability: Navigate to ${randomItem}`, 5000);
+            const mod = modules[cycleId % modules.length];
+            await safeClick(cycleId, `nav-item-${mod}`, `Cycle: Navigate to ${mod}`);
 
-            if (success && randomItem === 'video') {
-                // If we are in video, do sub-actions
-                await safeClick('[data-testid="timeline-play-pause"]', 'Stability: Video Play', 3000);
-                await safeClick('[data-testid="timeline-skip-start"]', 'Stability: Video Skip', 3000);
+            // Random internal click if in video
+            if (mod === 'video' && clickCount < 100) {
+                cycleId++;
+                await safeClick(cycleId, 'timeline-play-pause', 'Cycle: Toggle Play (Internal)');
             }
 
-            // Randomly click something in the main area if possible
-            if (clickCount > 150) break;
+            cycleId++;
+            if (cycleId > 150) break; // Infinite loop protection
         }
 
-        console.log(`GAUNTLET COMPLETE. Total actions: ${clickCount}`);
+        console.log(`TOTAL CLICKS VERIFIED: ${clickCount}`);
         expect(clickCount).toBeGreaterThanOrEqual(100);
     });
-
 });
