@@ -3,7 +3,7 @@ import { SubscriptionService } from '../SubscriptionService';
 import { SubscriptionTier, TIER_CONFIGS } from '../SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
 import { UsageWarningLevel } from '../types';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 
 // Mock Firebase
 vi.mock('firebase/functions', () => ({
@@ -54,7 +54,12 @@ describe('SubscriptionService', () => {
                 id: 'sub_123',
                 userId: 'test-user-id',
                 tier: SubscriptionTier.PRO_MONTHLY,
-                status: 'active'
+                status: 'active',
+                currentPeriodStart: 1000,
+                currentPeriodEnd: 2000,
+                cancelAtPeriodEnd: false,
+                createdAt: 1000,
+                updatedAt: 1000
             };
 
             // Inject into private cache map via type casting or just mock cacheService
@@ -72,7 +77,12 @@ describe('SubscriptionService', () => {
                 id: 'sub_remote',
                 userId: 'test-user-id',
                 tier: SubscriptionTier.FREE,
-                status: 'active'
+                status: 'active',
+                currentPeriodStart: 1000,
+                currentPeriodEnd: 2000,
+                cancelAtPeriodEnd: false,
+                createdAt: 1000,
+                updatedAt: 1000
             };
 
             mockFunctions.getSubscription.mockResolvedValue({ data: mockSub });
@@ -88,8 +98,15 @@ describe('SubscriptionService', () => {
         // Helper to setup mocks for quota tests
         const setupMocks = (tier: SubscriptionTier, usageOverrides: any = {}) => {
             const mockSub = {
+                id: 'sub_123',
+                userId: 'test-user-id',
                 tier,
-                status: 'active'
+                status: 'active',
+                currentPeriodStart: 1000,
+                currentPeriodEnd: 2000,
+                cancelAtPeriodEnd: false,
+                createdAt: 1000,
+                updatedAt: 1000
             };
             (cacheService.get as any).mockImplementation((key: string) => {
                 if (key.startsWith('subscription:')) return mockSub;
@@ -103,18 +120,26 @@ describe('SubscriptionService', () => {
             const defaultUsage = {
                 userId: 'test-user-id',
                 tier,
+                resetDate: 123456789,
                 imagesGenerated: 0,
                 imagesRemaining: 100,
+                imagesPerMonth: 100,
+                videoDurationSeconds: 0,
                 videoDurationMinutes: 0,
                 videoRemainingMinutes: 100,
+                videoTotalMinutes: 100,
                 aiChatTokensUsed: 0,
                 aiChatTokensRemaining: 10000,
+                aiChatTokensPerMonth: 10000,
                 storageUsedGB: 0,
                 storageRemainingGB: 10,
+                storageTotalGB: 10,
                 projectsCreated: 0,
                 projectsRemaining: 10,
+                maxProjects: 10,
                 teamMembersUsed: 0,
                 teamMembersRemaining: 5,
+                maxTeamMembers: 5,
                 ...usageOverrides
             };
 
@@ -189,18 +214,32 @@ describe('SubscriptionService', () => {
 
     describe('getUsageWarnings', () => {
         it('should return no warnings for low usage', async () => {
-            const mockSub = { tier: SubscriptionTier.FREE };
+            const mockSub = { tier: SubscriptionTier.FREE, id: 'sub_123', userId: 'test-user-id', status: 'active', currentPeriodStart: 1000, currentPeriodEnd: 2000, cancelAtPeriodEnd: false, createdAt: 1000, updatedAt: 1000 };
             mockFunctions.getSubscription.mockResolvedValue({ data: mockSub });
 
-            const config = TIER_CONFIGS[SubscriptionTier.FREE];
             mockFunctions.getUsageStats.mockResolvedValue({
                 data: {
                     tier: SubscriptionTier.FREE,
+                    resetDate: 123456789,
                     imagesGenerated: 5,
                     imagesRemaining: 45, // 10% used
+                    imagesPerMonth: 50,
+                    videoDurationSeconds: 0,
                     videoDurationMinutes: 0,
+                    videoRemainingMinutes: 100,
+                    videoTotalMinutes: 100,
                     aiChatTokensUsed: 0,
-                    storageUsedGB: 0
+                    aiChatTokensRemaining: 10000,
+                    aiChatTokensPerMonth: 10000,
+                    storageUsedGB: 0,
+                    storageRemainingGB: 10,
+                    storageTotalGB: 10,
+                    projectsCreated: 0,
+                    projectsRemaining: 10,
+                    maxProjects: 10,
+                    teamMembersUsed: 0,
+                    teamMembersRemaining: 5,
+                    maxTeamMembers: 5
                 }
             });
             (cacheService.get as any).mockReturnValue(mockSub);
@@ -210,7 +249,7 @@ describe('SubscriptionService', () => {
         });
 
         it('should return CRITICAL warning when 85% image quota used', async () => {
-            const mockSub = { tier: SubscriptionTier.FREE };
+            const mockSub = { tier: SubscriptionTier.FREE, id: 'sub_123', userId: 'test-user-id', status: 'active', currentPeriodStart: 1000, currentPeriodEnd: 2000, cancelAtPeriodEnd: false, createdAt: 1000, updatedAt: 1000 };
             const config = TIER_CONFIGS[SubscriptionTier.FREE];
             const limit = config.imageGenerations.monthly;
             const used = Math.floor(limit * 0.9); // 90%
@@ -221,11 +260,26 @@ describe('SubscriptionService', () => {
             mockFunctions.getUsageStats.mockResolvedValue({
                 data: {
                     tier: SubscriptionTier.FREE,
+                    resetDate: 123456789,
                     imagesGenerated: used,
                     imagesRemaining: limit - used,
+                    imagesPerMonth: limit,
+                    videoDurationSeconds: 0,
                     videoDurationMinutes: 0,
+                    videoRemainingMinutes: 100,
+                    videoTotalMinutes: 100,
                     aiChatTokensUsed: 0,
-                    storageUsedGB: 0
+                    aiChatTokensRemaining: 10000,
+                    aiChatTokensPerMonth: 10000,
+                    storageUsedGB: 0,
+                    storageRemainingGB: 10,
+                    storageTotalGB: 10,
+                    projectsCreated: 0,
+                    projectsRemaining: 10,
+                    maxProjects: 10,
+                    teamMembersUsed: 0,
+                    teamMembersRemaining: 5,
+                    maxTeamMembers: 5
                 }
             });
 
@@ -236,7 +290,7 @@ describe('SubscriptionService', () => {
         });
 
         it('should return EXCEEDED warning when 100% video quota used', async () => {
-            const mockSub = { tier: SubscriptionTier.PRO_MONTHLY };
+            const mockSub = { tier: SubscriptionTier.PRO_MONTHLY, id: 'sub_123', userId: 'test-user-id', status: 'active', currentPeriodStart: 1000, currentPeriodEnd: 2000, cancelAtPeriodEnd: false, createdAt: 1000, updatedAt: 1000 };
             const config = TIER_CONFIGS[SubscriptionTier.PRO_MONTHLY];
             const limit = config.videoGenerations.totalDurationMinutes;
 
@@ -246,11 +300,26 @@ describe('SubscriptionService', () => {
             mockFunctions.getUsageStats.mockResolvedValue({
                 data: {
                     tier: SubscriptionTier.PRO_MONTHLY,
+                    resetDate: 123456789,
                     imagesGenerated: 0,
+                    imagesRemaining: 100,
+                    imagesPerMonth: 100,
                     videoDurationMinutes: limit, // 100%
                     videoRemainingMinutes: 0,
+                    videoTotalMinutes: limit,
+                    videoDurationSeconds: limit * 60,
                     aiChatTokensUsed: 0,
-                    storageUsedGB: 0
+                    aiChatTokensRemaining: 10000,
+                    aiChatTokensPerMonth: 10000,
+                    storageUsedGB: 0,
+                    storageRemainingGB: 10,
+                    storageTotalGB: 10,
+                    projectsCreated: 0,
+                    projectsRemaining: 10,
+                    maxProjects: 10,
+                    teamMembersUsed: 0,
+                    teamMembersRemaining: 5,
+                    maxTeamMembers: 5
                 }
             });
 

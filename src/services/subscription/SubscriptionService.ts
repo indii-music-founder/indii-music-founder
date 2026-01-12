@@ -8,7 +8,6 @@
  * - Stripe checkout sessions
  */
 
-import { getApps, initializeApp } from 'firebase/app';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import {
@@ -20,11 +19,11 @@ import type {
   QuotaCheckResult,
   CheckoutSessionParams,
   CheckoutSessionResponse,
-  UsageWarning,
-  SubscriptionChangeRequest
+  UsageWarning
 } from './types';
-import { SubscriptionTier, TIER_CONFIGS, getTierConfig } from './SubscriptionTier';
+import { SubscriptionTier, getTierConfig } from './SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
+import { SubscriptionSchema, UsageStatsSchema } from './schemas';
 
 export class SubscriptionService {
   private subscriptionCache: Map<string, Subscription> = new Map();
@@ -57,7 +56,15 @@ export class SubscriptionService {
       const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
 
       const result = await getSubscriptionFn({ userId });
-      const subscription: Subscription = result.data as Subscription;
+
+      // Zod Validation (Bolt Hardening)
+      const parsed = SubscriptionSchema.safeParse(result.data);
+      if (!parsed.success) {
+        console.error("Subscription data validation failed:", parsed.error);
+        throw new Error("Received invalid subscription data from backend.");
+      }
+
+      const subscription: Subscription = parsed.data as Subscription;
 
       // Update caches
       this.subscriptionCache.set(userId, subscription);
@@ -65,23 +72,7 @@ export class SubscriptionService {
 
       return subscription;
     } catch (error) {
-      // FALLBACK FOR DEV: Bypass CORS/Function errors in local development
-      if (import.meta.env.DEV) {
-        const mockSub: Subscription = {
-          id: 'mock_sub_' + userId,
-          userId,
-          tier: SubscriptionTier.STUDIO, // Give unlimited access for dev
-          status: 'active',
-          currentPeriodStart: Date.now(),
-          currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
-          cancelAtPeriodEnd: false,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        };
-        this.subscriptionCache.set(userId, mockSub);
-        return mockSub;
-      }
-
+      console.error("SubscriptionService.getSubscription error:", error);
       throw new Error('Failed to fetch subscription. Please try again.');
     }
   }
@@ -113,43 +104,22 @@ export class SubscriptionService {
       const getUsageStatsFn = httpsCallable(functions, 'getUsageStats');
 
       const result = await getUsageStatsFn({ userId });
-      const stats: UsageStats = result.data as UsageStats;
+
+      // Zod Validation (Bolt Hardening)
+      const parsed = UsageStatsSchema.safeParse(result.data);
+      if (!parsed.success) {
+        console.error("Usage stats validation failed:", parsed.error);
+        throw new Error("Received invalid usage stats from backend.");
+      }
+
+      const stats: UsageStats = parsed.data as UsageStats;
 
       // Update cache
       this.usageCache.set(userId, { stats, timestamp: Date.now() });
 
       return stats;
     } catch (error) {
-      // FALLBACK FOR DEV: Bypass CORS/Function errors in local development
-      if (import.meta.env.DEV) {
-        const mockStats: UsageStats = {
-          userId,
-          tier: SubscriptionTier.STUDIO,
-          imagesGenerated: 0,
-          imagesRemaining: 9999,
-          imagesPerMonth: 9999,
-          videoDurationSeconds: 0,
-          videoDurationMinutes: 0,
-          videoRemainingMinutes: 9999,
-          videoTotalMinutes: 9999,
-          aiChatTokensUsed: 0,
-          aiChatTokensRemaining: 999999,
-          aiChatTokensPerMonth: 999999,
-          storageUsedGB: 0,
-          storageTotalGB: 1000,
-          storageRemainingGB: 1000,
-          projectsCreated: 0,
-          projectsRemaining: 999,
-          maxProjects: 999,
-          teamMembersUsed: 0,
-          teamMembersRemaining: 999,
-          maxTeamMembers: 999,
-          resetDate: Date.now() + 30 * 24 * 60 * 60 * 1000
-        };
-        this.usageCache.set(userId, { stats: mockStats, timestamp: Date.now() });
-        return mockStats;
-      }
-
+      console.error("SubscriptionService.getUsageStats error:", error);
       throw new Error('Failed to fetch usage statistics. Please try again.');
     }
   }
@@ -212,7 +182,7 @@ export class SubscriptionService {
           }
           return { allowed: true };
 
-        case 'generateVideo':
+        case 'generateVideo': {
           const videoMinutesNeeded = amount / 60;
           if (usage.videoRemainingMinutes < videoMinutesNeeded) {
             return {
@@ -229,6 +199,7 @@ export class SubscriptionService {
             };
           }
           return { allowed: true };
+        }
 
         case 'chat':
           if (usage.aiChatTokensRemaining < amount) {
@@ -309,8 +280,6 @@ export class SubscriptionService {
     if (!auth.currentUser && !params.userId) {
       throw new Error('User must be authenticated');
     }
-
-    const userId = params.userId || auth.currentUser!.uid;
 
     try {
       const functions = getFunctions();
