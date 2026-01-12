@@ -54,6 +54,33 @@ export const StandardProductCard = React.memo(({ product }: StandardProductCardP
             </div>
         </div>
     );
-});
+}, arePropsEqual);
+
+// ⚡ Bolt Optimization: Custom comparison function to prevent re-renders when parent regenerates
+// object references (e.g. from Firestore snapshots) but the data hasn't changed.
+function arePropsEqual(prevProps: StandardProductCardProps, nextProps: StandardProductCardProps) {
+    const prev = prevProps.product;
+    const next = nextProps.product;
+
+    // 1. Reference equality check (fastest)
+    if (prev === next) return true;
+
+    // 2. Deep check of displayed fields
+    if (prev.id !== next.id) return false;
+    if (prev.title !== next.title) return false;
+    if (prev.image !== next.image) return false;
+    if (prev.price !== next.price) return false;
+
+    // 3. Check tags array
+    if (prev.tags === next.tags) return true;
+    if (!prev.tags || !next.tags) return prev.tags === next.tags;
+    if (prev.tags.length !== next.tags.length) return false;
+
+    for (let i = 0; i < prev.tags.length; i++) {
+        if (prev.tags[i] !== next.tags[i]) return false;
+    }
+
+    return true;
+}
 
 StandardProductCard.displayName = 'StandardProductCard';

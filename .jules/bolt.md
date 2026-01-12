@@ -4,3 +4,6 @@
 ## 2025-05-22 - Video List Optimization
 **Learning:** For lists of video elements, using `preload='metadata'` drastically reduces memory usage compared to default preloading. Interactive 'play-on-hover' provides a better UX than static thumbnails while maintaining performance.
 **Action:** Apply `preload='metadata'` and `muted` to all list-based video components and implement hover-to-play patterns.
+## 2025-05-22 - Firestore Snapshot Reference Instability
+**Learning:** Firestore `onSnapshot` maps often create new object references for every document on every update (even unchanged ones). `React.memo`'s default shallow comparison fails here, causing full list re-renders.
+**Action:** Implement `arePropsEqual` deep comparison for list items fed by Firestore subscriptions to skip renders when data content is identical despite reference changes.
