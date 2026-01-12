@@ -14,3 +14,7 @@
 ## 2024-05-24 - [Hidden Action Trap]
 **Learning:** Hover-revealed actions (opacity-0) are invisible to keyboard users, creating a "phantom focus" trap where users tab to invisible elements.
 **Action:** Always pair `group-hover:opacity-100` with `group-focus-within:opacity-100` for overlays containing interactive elements.
+
+## 2025-05-28 - [Accessible Candidates Carousel]
+**Learning:** Horizontal scrolling lists (carousels) with hover-revealed actions create a "double trap" for keyboard users: they can't see the actions, and they might get stuck navigating a long list without a clear exit.
+**Action:** Ensure all hover-revealed actions in carousels use `group-focus-within:opacity-100` and `focus-visible:opacity-100`. Always provide an accessible `aria-label` for "Close" buttons that use icons.
