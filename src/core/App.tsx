@@ -191,9 +191,10 @@ function useURLSync() {
         // Check if it is a valid module
         // We cast to ModuleId to check existence in MODULE_COMPONENTS
         if (targetModule !== currentModule && MODULE_COMPONENTS[targetModule as ModuleId]) {
-             setModule(targetModule as ModuleId);
+            setModule(targetModule as ModuleId);
         }
-    }, [location.pathname, currentModule, setModule]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.pathname, setModule]);
 
     // 2. Store -> URL (Navigation)
     useEffect(() => {
@@ -203,8 +204,8 @@ function useURLSync() {
         // Only navigate if the module actually CHANGED from what's in the URL
         // This preserves sub-paths (e.g. /creative/123) if the module is still 'creative'
         if (currentModule !== currentPathModule) {
-             const targetUrl = currentModule === 'dashboard' ? '/' : `/${currentModule}`;
-             navigate(targetUrl);
+            const targetUrl = currentModule === 'dashboard' ? '/' : `/${currentModule}`;
+            navigate(targetUrl);
         }
     }, [currentModule, navigate, location.pathname]);
 }

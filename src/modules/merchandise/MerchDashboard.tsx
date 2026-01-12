@@ -52,7 +52,12 @@ export default function MerchDashboard() {
                         <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'} 🍌</h2>
                         <p className="text-neutral-400">Your empire is ripening nicely.</p>
                     </div>
-                    <BananaButton onClick={() => navigate('/merchandise/design')} glow size="lg" className="rounded-full">
+                    <BananaButton
+                        onClick={() => navigate('/merchandise/design')}
+                        glow size="lg"
+                        className="rounded-full"
+                        data-testid="peel-new-design-btn"
+                    >
                         <Plus size={18} />
                         Peel New Design
                     </BananaButton>

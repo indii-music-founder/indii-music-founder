@@ -151,12 +151,14 @@ export default function MerchDesigner() {
                                     onClick={() => setMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
+                                    data-testid="mode-design-btn"
                                 />
                                 <ModeToggle
                                     active={mode === 'showroom'}
                                     onClick={() => setMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
+                                    data-testid="mode-showroom-btn"
                                 />
                             </div>
                         </div>
@@ -178,12 +180,13 @@ const IconButton = ({ icon }: { icon: React.ReactNode }) => (
     </button>
 );
 
-const ModeToggle = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
+const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
     <button
         onClick={onClick}
+        data-testid={dataTestId}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${active
-                ? 'bg-[#FFE135] text-black shadow-lg shadow-[#FFE135]/20'
-                : 'text-neutral-400 hover:text-white hover:bg-white/10'
+            ? 'bg-[#FFE135] text-black shadow-lg shadow-[#FFE135]/20'
+            : 'text-neutral-400 hover:text-white hover:bg-white/10'
             }`}
     >
         {icon}
