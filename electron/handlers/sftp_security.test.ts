@@ -32,6 +32,14 @@ vi.mock('os', () => ({
     tmpdir: () => '/mock/tmp'
 }));
 
+// Mock 'fs' module
+vi.mock('fs', () => ({
+    default: {
+        realpathSync: vi.fn((p) => p), // Default to returning input path
+    },
+    realpathSync: vi.fn((p) => p),
+}));
+
 // Mock 'electron'
 vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
