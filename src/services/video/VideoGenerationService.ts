@@ -175,6 +175,7 @@ export class VideoGenerationService {
      */
     async waitForJob(jobId: string, timeoutMs: number = 300000): Promise<any> {
         let unsub: (() => void) | undefined;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const jobPromise = new Promise((resolve, reject) => {
             unsub = this.subscribeToJob(jobId, (job) => {
@@ -189,14 +190,17 @@ export class VideoGenerationService {
             });
         });
 
-        const timeoutPromise = delay(timeoutMs).then(() => {
-            throw new Error(`Video generation timeout for Job ID: ${jobId}`);
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+                reject(new Error(`Video generation timeout for Job ID: ${jobId}`));
+            }, timeoutMs);
         });
 
         try {
             return await Promise.race([jobPromise, timeoutPromise]);
         } finally {
             if (unsub) unsub();
+            if (timeoutId) clearTimeout(timeoutId);
         }
     }
 
