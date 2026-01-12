@@ -5,6 +5,10 @@
 ## 2024-05-24 - [Hidden Action Trap]
 **Learning:** Hover-revealed actions (like "Use generated image" overlays) are completely invisible to keyboard users if they rely solely on `opacity-0 group-hover:opacity-100`. The action exists in the DOM but cannot be seen when focused.
 **Action:** Always pair `group-hover` with `group-focus-within` (e.g., `group-focus-within:opacity-100`) and ensure interactive children have visible focus rings (`focus-visible:ring`).
+
+## 2025-02-18 - [CandidatesCarousel Accessibility]
+**Learning:** Action overlays on image cards often lack keyboard focus visibility, making them "phantom" traps.
+**Action:** Implemented `group-focus-within:opacity-100` pattern on `CandidatesCarousel`, confirming it as a standard solution for this recurring UI pattern.
 ## 2024-05-24 - [Keyboard Accessibility for Hover Actions]
 **Learning:** Hover-only actions (opacity-0) are invisible to keyboard users, creating a "phantom focus" trap where users tab to invisible elements.
 **Action:** Always pair `group-hover:opacity-100` with `group-focus-within:opacity-100` for overlays containing interactive elements.
