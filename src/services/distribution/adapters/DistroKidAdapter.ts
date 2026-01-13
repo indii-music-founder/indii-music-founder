@@ -149,7 +149,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             console.warn('[DistroKid] SFTP unavailable or credentials missing. Returning MOCK success.');
             return {
                 success: true,
-                status: 'validating',
+                status: 'processing',
                 releaseId: metadata.id,
                 distributorReleaseId: 'MOCK-DK-ID',
                 metadata: {
