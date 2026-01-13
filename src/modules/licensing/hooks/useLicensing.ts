@@ -16,11 +16,15 @@ import { useToast } from '@/core/context/ToastContext';
 export function useLicensing() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [requests, setRequests] = useState<LicenseRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [licensesLoaded, setLicensesLoaded] = useState(false);
+  const [requestsLoaded, setRequestsLoaded] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { userProfile } = useStore();
   const toast = useToast();
+
+  const isLoading = (!licensesLoaded || !requestsLoaded) || isActionLoading;
 
   // Subscribe to data
   useEffect(() => {
@@ -32,7 +36,6 @@ export function useLicensing() {
 
     const setupSubscriptions = async () => {
       try {
-        setIsLoading(true);
         // Trigger seeding if needed by fetching once
         await licensingService.getActiveLicenses(userProfile.id).catch(err =>
           console.error('[useLicensing] Seeding Error:', err)
@@ -43,21 +46,29 @@ export function useLicensing() {
         unsubscribeLicenses = licensingService.subscribeToActiveLicenses((data) => {
           if (isMounted) {
             setLicenses(data);
-            setIsLoading(false);
+            setLicensesLoaded(true);
           }
         }, userProfile.id, (err) => {
           console.error('[useLicensing] License Subscription Error:', err);
-          if (isMounted) setError(err.message);
+          if (isMounted) {
+            setError(err.message);
+            // Ensure we don't hang if one stream fails
+            setLicensesLoaded(true);
+          }
         });
 
         unsubscribeRequests = licensingService.subscribeToPendingRequests((data) => {
           if (isMounted) {
             setRequests(data);
-            setIsLoading(false);
+            setRequestsLoaded(true);
           }
         }, userProfile.id, (err) => {
           console.error('[useLicensing] Request Subscription Error:', err);
-          if (isMounted) setError(err.message);
+          if (isMounted) {
+            setError(err.message);
+            // Ensure we don't hang if one stream fails
+            setRequestsLoaded(true);
+          }
         });
 
       } catch (err) {
@@ -65,7 +76,9 @@ export function useLicensing() {
         if (isMounted) {
           const message = (err as Error).message;
           setError(message);
-          setIsLoading(false);
+          // Force load completion on error to prevent infinite spinner
+          setLicensesLoaded(true);
+          setRequestsLoaded(true);
           toast.error(`Licensing Data Error: ${message}`);
         }
       }
@@ -104,14 +117,14 @@ export function useLicensing() {
 
   const createLicense = async (licenseData: Omit<License, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      setIsLoading(true);
+      setIsActionLoading(true);
       const id = await licensingService.createLicense(licenseData);
       return id;
     } catch (err: any) {
       setError(err.message);
       throw err;
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
