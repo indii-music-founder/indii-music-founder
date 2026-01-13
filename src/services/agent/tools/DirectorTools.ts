@@ -131,34 +131,48 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }
 
         // Use the Unified ImageGenerationService
-        const results = await ImageGeneration.generateImages({
-            prompt: args.prompt,
-            count: args.count || 1,
-            resolution: args.resolution || studioControls.resolution,
-            aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
-            negativePrompt: args.negativePrompt || studioControls.negativePrompt,
-            seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
-            sourceImages,
-            userProfile
-        });
-
-        if (results.length > 0) {
-            results.forEach((res: { id: string, url: string, prompt: string }) => {
-                addToHistory({
-                    id: res.id,
-                    url: res.url,
-                    prompt: res.prompt,
-                    type: 'image',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId || 'default-project'
-                });
+        try {
+            const results = await ImageGeneration.generateImages({
+                prompt: args.prompt,
+                count: args.count || 1,
+                resolution: args.resolution || studioControls.resolution,
+                aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
+                negativePrompt: args.negativePrompt || studioControls.negativePrompt,
+                seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
+                sourceImages,
+                userProfile
             });
-            return toolSuccess({
-                count: results.length,
-                image_ids: results.map(r => r.id)
-            }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
+
+            if (results.length > 0) {
+                results.forEach((res: { id: string, url: string, prompt: string }) => {
+                    addToHistory({
+                        id: res.id,
+                        url: res.url,
+                        prompt: res.prompt,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'default-project'
+                    });
+                });
+                return toolSuccess({
+                    count: results.length,
+                    image_ids: results.map(r => r.id)
+                }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
+            }
+            return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+
+            // CRITICAL FIX: Prevent infinite retry loops on subscription errors
+            if (errorMessage.includes("Failed to fetch subscription")) {
+                return toolError(
+                    "Subscription verification failed. Please check your network connection or subscription status. Do not retry immediately.",
+                    "SUBSCRIPTION_ERROR"
+                );
+            }
+
+            throw err; // Re-throw other errors to be handled by wrapTool
         }
-        return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
     }),
 
     batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }) => {
