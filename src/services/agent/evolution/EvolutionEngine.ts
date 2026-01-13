@@ -99,6 +99,12 @@ export class EvolutionEngine {
            throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
         }
 
+        // Helix: "Brainless" Check
+        // Ensure parameters exist and are not null (prevents runtime crashes).
+        if (!offspring.parameters || typeof offspring.parameters !== 'object') {
+           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Missing Parameters)");
+        }
+
         // Ensure ID is new and lineage is tracked
         offspring.id = uuidv4();
         offspring.generation = Math.max(parent1.generation, parent2.generation) + 1;
