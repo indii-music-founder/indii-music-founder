@@ -70,7 +70,7 @@ describe('Veo Timeout Handler (Lens)', () => {
         vi.useRealTimers();
     });
 
-    it.skip('should throw a timeout error if Veo generation hangs beyond the limit', async () => {
+    it('should throw a timeout error if Veo generation hangs beyond the limit', async () => {
         // Arrange
         const jobId = 'job-hung-123';
         const timeoutMs = 5000; // 5 seconds for test
@@ -91,6 +91,7 @@ describe('Veo Timeout Handler (Lens)', () => {
 
         // Act & Assert
         const pendingPromise = service.waitForJob(jobId, timeoutMs);
+        pendingPromise.catch(() => {}); // Suppress unhandled rejection
 
         // Fast-forward time past the timeout
         await vi.advanceTimersByTimeAsync(timeoutMs + 100);
