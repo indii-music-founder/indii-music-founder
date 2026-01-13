@@ -102,34 +102,21 @@ export class MarketplaceService {
             createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString()
         } as Product));
 
-        // Auto-seed if empty
-        if (results.length === 0) {
-            // @ts-expect-error seedDatabase might be missing in some versions
-            if (typeof this.seedDatabase === 'function') {
-                // @ts-expect-error seedDatabase might be missing in some versions
-                await this.seedDatabase(artistId);
-                return this.getProductsByArtist(artistId); // Recursive call after seeding
-            }
-        }
-
         return results;
     }
 
     /**
      * Process a purchase for a product.
-     * NOTE: This currently uses MOCK payment logic for the Alpha phase.
      */
     static async purchaseProduct(productId: string, buyerId: string, sellerId: string, amount: number): Promise<string> {
-        // 1. Validate Product Availability (Inventory) - Skipped for MVP/Unlimited digital items
+        // 1. Validate Product Availability (Inventory)
 
-        // 2. Process Payment (MOCK)
-        const mockTransactionId = `txn_${Math.random().toString(36).substr(2, 9)}`;
-        const success = true; // Simulate 100% success rate
+        // 2. Process Payment
+        // TODO: Integrate Stripe Payment Intents or Checkout Sessions for products.
+        // The current subscription flow (createCheckoutSession) is not compatible with one-off product purchases.
+        throw new Error("Payment processing is not yet enabled in this environment.");
 
-        if (!success) {
-            throw new Error('Payment failed');
-        }
-
+        /*
         // 3. Record Purchase
         const purchaseData: Omit<Purchase, 'id'> = {
             buyerId,
@@ -138,20 +125,12 @@ export class MarketplaceService {
             amount,
             currency: 'USD',
             status: 'completed',
-            transactionId: mockTransactionId,
-            createdAt: new Date().toISOString() // Storing as string for simplicity in Purchase type
+            transactionId: "txn_placeholder",
+            createdAt: new Date().toISOString()
         };
 
         const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
-
-        // 4. Update Inventory (if applicable) and Sales Stats (Social Drops)
-        // 4. Update Inventory (if applicable) and Sales Stats (Social Drops)
-        // const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
-        // await updateDoc(productRef, { inventory: increment(-1) }); // If we tracked inventory
-
-        // 5. Trigger fulfillment (e.g. grant access to digital asset)
-        // This would be handled by a cloud function trigger on the 'purchases' collection
-
         return purchaseRef.id;
+        */
     }
 }

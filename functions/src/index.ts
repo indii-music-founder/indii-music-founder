@@ -1095,16 +1095,12 @@ export const executeBigQueryQuery = functions
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
         requireAdmin(context);
 
-        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
-        if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
-        }
-
-        try {
-            return await bigqueryService.executeQuery(data.query, projectId, { maxResults: data.maxResults });
-        } catch (error: any) {
-            throw new functions.https.HttpsError('internal', error.message);
-        }
+        // SECURITY: Raw SQL execution is disabled for production safety.
+        // Developers should implement specific, parameterized query endpoints.
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Raw SQL execution is disabled in this environment for security reasons.'
+        );
     });
 
 /**

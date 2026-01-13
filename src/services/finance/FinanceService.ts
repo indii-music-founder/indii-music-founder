@@ -79,9 +79,8 @@ export class FinanceService {
 
   /**
    * Fetch persistent earnings reports (DSR style).
-   * Uses Firestore with a self-seeding strategy for Alpha.
    */
-  async fetchEarnings(userId: string): Promise<DSREarningsSummary> {
+  async fetchEarnings(userId: string): Promise<DSREarningsSummary | null> {
     try {
       if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
         throw new Error('Unauthorized');
@@ -100,36 +99,7 @@ export class FinanceService {
         return docData as DSREarningsSummary;
       }
 
-      // If no data, seed with simulated persistent data
-      const initialData: DSREarningsSummary & { userId: string, createdAt: any } = {
-        userId,
-        createdAt: serverTimestamp(),
-        period: { startDate: '2024-01-01', endDate: '2024-01-31' },
-        totalGrossRevenue: 12500.50,
-        totalNetRevenue: 8750.35,
-        totalStreams: 1245000,
-        totalDownloads: 1540,
-        currencyCode: 'USD',
-        byPlatform: [
-          { platformName: 'Spotify', revenue: 4500.20, streams: 650000, downloads: 0 },
-          { platformName: 'Apple Music', revenue: 2800.15, streams: 320000, downloads: 450 },
-          { platformName: 'YouTube Music', revenue: 1450.00, streams: 275000, downloads: 0 }
-        ],
-        byTerritory: [
-          { territoryCode: 'US', territoryName: 'United States', revenue: 5200.00, streams: 850000, downloads: 900 },
-          { territoryCode: 'GB', territoryName: 'United Kingdom', revenue: 1200.00, streams: 150000, downloads: 200 },
-          { territoryCode: 'JP', territoryName: 'Japan', revenue: 850.00, streams: 95000, downloads: 150 },
-          { territoryCode: 'DE', territoryName: 'Germany', revenue: 600.00, streams: 75000, downloads: 120 },
-          { territoryCode: 'FR', territoryName: 'France', revenue: 900.35, streams: 75000, downloads: 170 }
-        ],
-        byRelease: [
-          { releaseId: 'rel_1', releaseName: 'Midnight Echoes', revenue: 6500.00, streams: 950000, downloads: 1200 },
-          { releaseId: 'rel_2', releaseName: 'Neon Dreams', revenue: 2250.35, streams: 295000, downloads: 340 }
-        ]
-      };
-
-      await addDoc(collection(db, FinanceService.EARNINGS_COLLECTION), initialData);
-      return initialData;
+      return null;
 
     } catch (error) {
       Sentry.captureException(error);
