@@ -12,6 +12,15 @@ vi.mock('@/services/firebase', () => ({
     functions: {}
 }));
 
+// Mock useStore for requestApproval
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: () => ({
+            requestApproval: vi.fn().mockResolvedValue(true)
+        })
+    }
+}));
+
 // Mock console methods
 const consoleMock = {
     info: vi.fn(),

@@ -115,7 +115,11 @@ describe('🖱️ Click: Creative Studio Daisychain', () => {
             expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Applied Option 1'));
         }, { timeout: 2000 });
 
-        expect(canvasOps.applyCandidateImage).toHaveBeenCalledWith('candidate.jpg');
+        expect(canvasOps.applyCandidateImage).toHaveBeenCalledWith(
+            'candidate.jpg',
+            true,
+            expect.objectContaining({ id: 'orange' })
+        );
 
         // --- Step 7: Close ---
         const closeBtn = screen.getByTestId('canvas-close-btn');

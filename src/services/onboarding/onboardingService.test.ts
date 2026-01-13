@@ -17,7 +17,17 @@ describe('onboardingService', () => {
             const emptyProfile: UserProfile = {
                 id: 'test-user',
                 bio: '',
-                preferences: '',
+                uid: 'test-uid',
+                email: 'test@example.com',
+                displayName: 'Test User',
+                photoURL: null,
+                createdAt: { seconds: 0, nanoseconds: 0 } as any,
+                updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+                lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+                emailVerified: true,
+                membership: { tier: 'free', expiresAt: null },
+                accountType: 'artist',
+                preferences: { theme: 'dark', notifications: true },
                 brandKit: {
                     colors: [],
                     fonts: '',
@@ -52,6 +62,16 @@ describe('onboardingService', () => {
     describe('determinePhase', () => {
         const baseProfile: UserProfile = {
             id: 'test-user',
+            uid: 'test-uid',
+            email: 'test@example.com',
+            displayName: 'Test User',
+            photoURL: null,
+            createdAt: { seconds: 0, nanoseconds: 0 } as any,
+            updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+            lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+            emailVerified: true,
+            membership: { tier: 'free', expiresAt: null },
+            accountType: 'artist',
             bio: 'This is a long enough bio for testing.',
             careerStage: 'Emerging',
             goals: ['Touring'],
@@ -68,11 +88,11 @@ describe('onboardingService', () => {
             analyzedTrackIds: [],
             knowledgeBase: [],
             savedWorkflows: [],
-            preferences: {}
+            preferences: { theme: 'dark', notifications: true }
         };
 
         it('should return identity_core if distributor is missing', () => {
-            const profile = { ...baseProfile, brandKit: { ...baseProfile.brandKit, socials: { instagram: '@test' } } };
+            const profile = { ...baseProfile, brandKit: { ...baseProfile.brandKit!, socials: { instagram: '@test' } } };
             const phase = determinePhase(profile);
             expect(phase).toBe('identity_core');
         });
@@ -81,8 +101,8 @@ describe('onboardingService', () => {
             const profile = {
                 ...baseProfile,
                 brandKit: {
-                    ...baseProfile.brandKit,
-                    socials: { ...baseProfile.brandKit.socials, distributor: 'DistroKid' },
+                    ...baseProfile.brandKit!,
+                    socials: { ...baseProfile.brandKit!.socials, distributor: 'DistroKid' },
                     colors: [],
                     fonts: '',
                     brandDescription: ''
@@ -96,8 +116,18 @@ describe('onboardingService', () => {
     describe('processFunctionCalls', () => {
         const baseProfile: UserProfile = {
             id: 'test-user',
+            uid: 'test-uid',
+            email: 'test@example.com',
+            displayName: 'Test User',
+            photoURL: null,
+            createdAt: { seconds: 0, nanoseconds: 0 } as any,
+            updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+            lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+            emailVerified: true,
+            membership: { tier: 'free', expiresAt: null },
+            accountType: 'artist',
             bio: '',
-            preferences: '',
+            preferences: { theme: 'dark', notifications: true },
             brandKit: {
                 colors: [],
                 fonts: '',
@@ -152,9 +182,9 @@ describe('onboardingService', () => {
             }];
 
             const { updatedProfile, updates } = processFunctionCalls(calls, baseProfile, []);
-            expect(updatedProfile.brandKit.releaseDetails?.title).toBe('My Song');
-            expect(updatedProfile.brandKit.releaseDetails?.type).toBe('Single');
-            expect(updatedProfile.brandKit.releaseDetails?.mood).toBe('Sad');
+            expect(updatedProfile.brandKit!.releaseDetails?.title).toBe('My Song');
+            expect(updatedProfile.brandKit!.releaseDetails?.type).toBe('Single');
+            expect(updatedProfile.brandKit!.releaseDetails?.mood).toBe('Sad');
             expect(updates).toContain('Release Details');
         });
 
@@ -170,10 +200,10 @@ describe('onboardingService', () => {
             }];
 
             const { updatedProfile, updates } = processFunctionCalls(calls, baseProfile, []);
-            expect(updatedProfile.brandKit.socials.spotify).toBe('https://spotify.com/artist/12345');
-            expect(updatedProfile.brandKit.socials.soundcloud).toBe('https://soundcloud.com/artist');
-            expect(updatedProfile.brandKit.socials.pro).toBe('ASCAP');
-            expect(updatedProfile.brandKit.socials.distributor).toBe('DistroKid');
+            expect(updatedProfile.brandKit!.socials.spotify).toBe('https://spotify.com/artist/12345');
+            expect(updatedProfile.brandKit!.socials.soundcloud).toBe('https://soundcloud.com/artist');
+            expect(updatedProfile.brandKit!.socials.pro).toBe('ASCAP');
+            expect(updatedProfile.brandKit!.socials.distributor).toBe('DistroKid');
             expect(updates).toContain('Socials & Pro Details');
         });
 
@@ -196,8 +226,8 @@ describe('onboardingService', () => {
             }];
 
             const { updatedProfile, updates } = processFunctionCalls(calls, baseProfile, files);
-            expect(updatedProfile.brandKit.brandAssets).toHaveLength(1);
-            expect(updatedProfile.brandKit.brandAssets[0].description).toBe('Main Logo');
+            expect(updatedProfile.brandKit!.brandAssets).toHaveLength(1);
+            expect(updatedProfile.brandKit!.brandAssets[0].description).toBe('Main Logo');
             expect(updates).toContain('Brand Asset');
         });
 

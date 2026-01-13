@@ -23,6 +23,7 @@ export const createAudioIntelligenceSlice: StateCreator<AudioIntelligenceSlice> 
         try {
             // 1. Generate Fingerprint (ID)
             const id = await fingerprintService.generateFingerprint(file);
+            if (!id) throw new Error('Could not generate fingerprint for file');
 
             // 2. Check Cache
             const existing = get().audioProfiles[id];

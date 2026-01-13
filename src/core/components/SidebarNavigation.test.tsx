@@ -77,13 +77,19 @@ describe('Sidebar Navigation Integration', () => {
         authLoading: false,
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
+        loadSessions: vi.fn(),
         ...overrides,
     });
 
     beforeEach(() => {
         vi.clearAllMocks();
         const storeState = buildStoreState();
-        (useStore as any).mockReturnValue(storeState);
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                return selector(storeState);
+            }
+            return storeState;
+        });
         // Mock setState and getState on the store object itself for App.tsx direct usage
         (useStore as any).setState = vi.fn();
         (useStore as any).getState = vi.fn().mockReturnValue(storeState);

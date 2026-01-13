@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { motion } from 'framer-motion';
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
@@ -176,8 +177,8 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                     <div
                         {...getRootProps()}
                         className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-300 ${isDragActive
-                                ? 'border-teal-500 bg-teal-500/10 scale-[0.98]'
-                                : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                            ? 'border-teal-500 bg-teal-500/10 scale-[0.98]'
+                            : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                             }`}
                     >
                         <input {...getInputProps()} />

@@ -1,6 +1,7 @@
 import { useStore, type HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { ToolFunctionArgs, AnyToolFunction } from '../types';
 
@@ -389,5 +390,30 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         return toolSuccess({
             anchorId: anchorItem.id
         }, "Entity Anchor set successfully. Character consistency is now locked.");
+    }),
+
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No audio found at index ${args.uploadedAudioIndex}. Please upload audio first.`, "NOT_FOUND");
+        }
+
+        try {
+            // Convert Data URI to File/Blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], "audio_track.mp3", { type: blob.type });
+
+            const profile = await audioIntelligence.analyze(file);
+
+            return toolSuccess(
+                profile,
+                `Audio analysis complete for "${audioItem.prompt || 'Track'}". Semantic Vibe: ${profile.semantic.mood.join(', ')}`
+            );
+        } catch (error: any) {
+            return toolError(`Failed to analyze audio: ${error.message}`, "ANALYSIS_FAILED");
+        }
     })
 };

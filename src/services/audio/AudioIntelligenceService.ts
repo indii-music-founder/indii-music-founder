@@ -52,6 +52,9 @@ export class AudioIntelligenceService {
 
         // 1. Generate ID (Fingerprint)
         const id = await fingerprintService.generateFingerprint(file);
+        if (!id) {
+            throw new Error('Failed to generate audio fingerprint');
+        }
 
         // TODO: Check cache here
 
@@ -132,3 +135,7 @@ Describe the audio's "Visual Vibe" — if this song was a scene in a movie, what
 }
 
 export const audioIntelligence = new AudioIntelligenceService();
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    (window as any).audioIntelligence = audioIntelligence;
+}

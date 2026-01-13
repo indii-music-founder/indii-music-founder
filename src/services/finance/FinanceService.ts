@@ -14,6 +14,10 @@ import {
   serverTimestamp,
   onSnapshot
 } from 'firebase/firestore';
+import {
+  EarningsSummarySchema,
+  type EarningsSummary as ValidatedEarningsSummary
+} from '@/services/revenue/schema';
 import { EarningsSummary as DSREarningsSummary } from '@/services/ddex/types/dsr';
 
 export interface EarningsSummary {
@@ -81,7 +85,7 @@ export class FinanceService {
    * Fetch persistent earnings reports (DSR style).
    * Uses Firestore with a self-seeding strategy for Alpha.
    */
-  async fetchEarnings(userId: string): Promise<DSREarningsSummary> {
+  async fetchEarnings(userId: string): Promise<ValidatedEarningsSummary | null> {
     try {
       if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
         throw new Error('Unauthorized');
@@ -94,42 +98,23 @@ export class FinanceService {
 
       const snapshot = await getDocs(q);
 
-      if (!snapshot.empty) {
-        // Return existing data
-        const docData = snapshot.docs[0].data();
-        return docData as DSREarningsSummary;
+      if (snapshot.empty) {
+        console.info(`[FinanceService] No earnings data found for user: ${userId}`);
+        return null;
       }
 
-      // If no data, seed with simulated persistent data
-      const initialData: DSREarningsSummary & { userId: string, createdAt: any } = {
-        userId,
-        createdAt: serverTimestamp(),
-        period: { startDate: '2024-01-01', endDate: '2024-01-31' },
-        totalGrossRevenue: 12500.50,
-        totalNetRevenue: 8750.35,
-        totalStreams: 1245000,
-        totalDownloads: 1540,
-        currencyCode: 'USD',
-        byPlatform: [
-          { platformName: 'Spotify', revenue: 4500.20, streams: 650000, downloads: 0 },
-          { platformName: 'Apple Music', revenue: 2800.15, streams: 320000, downloads: 450 },
-          { platformName: 'YouTube Music', revenue: 1450.00, streams: 275000, downloads: 0 }
-        ],
-        byTerritory: [
-          { territoryCode: 'US', territoryName: 'United States', revenue: 5200.00, streams: 850000, downloads: 900 },
-          { territoryCode: 'GB', territoryName: 'United Kingdom', revenue: 1200.00, streams: 150000, downloads: 200 },
-          { territoryCode: 'JP', territoryName: 'Japan', revenue: 850.00, streams: 95000, downloads: 150 },
-          { territoryCode: 'DE', territoryName: 'Germany', revenue: 600.00, streams: 75000, downloads: 120 },
-          { territoryCode: 'FR', territoryName: 'France', revenue: 900.35, streams: 75000, downloads: 170 }
-        ],
-        byRelease: [
-          { releaseId: 'rel_1', releaseName: 'Midnight Echoes', revenue: 6500.00, streams: 950000, downloads: 1200 },
-          { releaseId: 'rel_2', releaseName: 'Neon Dreams', revenue: 2250.35, streams: 295000, downloads: 340 }
-        ]
-      };
+      const docData = snapshot.docs[0].data();
 
-      await addDoc(collection(db, FinanceService.EARNINGS_COLLECTION), initialData);
-      return initialData;
+      // Zod Validation for Production Safety
+      const parseResult = EarningsSummarySchema.safeParse(docData);
+
+      if (!parseResult.success) {
+        console.error(`[FinanceService] Earnings data validation failed for ${userId}:`, parseResult.error);
+        Sentry.captureMessage(`Earnings validation failed for user ${userId}`, 'error');
+        return null;
+      }
+
+      return parseResult.data;
 
     } catch (error) {
       Sentry.captureException(error);
@@ -238,7 +223,7 @@ export class FinanceService {
   /**
    * Subscribe to earnings reports for real-time updates.
    */
-  subscribeToEarnings(userId: string, callback: (earnings: DSREarningsSummary | null) => void): () => void {
+  subscribeToEarnings(userId: string, callback: (earnings: ValidatedEarningsSummary | null) => void): () => void {
     if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
       console.error('Unauthorized subscribe to earnings');
       return () => { };
@@ -252,7 +237,14 @@ export class FinanceService {
     return onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const docData = snapshot.docs[0].data();
-        callback(docData as DSREarningsSummary);
+        const parseResult = EarningsSummarySchema.safeParse(docData);
+
+        if (parseResult.success) {
+          callback(parseResult.data);
+        } else {
+          console.error(`[FinanceService] Earnings snapshot validation failed:`, parseResult.error);
+          callback(null);
+        }
       } else {
         callback(null);
       }

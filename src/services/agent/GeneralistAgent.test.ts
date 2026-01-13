@@ -19,19 +19,23 @@ vi.mock('./tools', () => ({
 const mockStream = (jsonResponse: any) => {
     const text = JSON.stringify(jsonResponse);
     return {
-        getReader: () => {
-            let read = false;
-            return {
-                read: async () => {
-                    if (!read) {
-                        read = true;
-                        return { done: false, value: { text: () => text } };
-                    }
-                    return { done: true, value: undefined };
-                }
+        // This makes it an AsyncIterable
+        [Symbol.asyncIterator]: async function* () {
+            yield {
+                text: () => text,
+                functionCalls: () => [],
             };
         }
     };
+};
+
+const mockResponse = (jsonResponse: any) => {
+    const text = JSON.stringify(jsonResponse);
+    return Promise.resolve({
+        text: () => text,
+        functionCalls: () => [],
+        usage: () => ({ totalTokens: 100 })
+    });
 };
 
 describe('GeneralistAgent', () => {
@@ -58,8 +62,14 @@ describe('GeneralistAgent', () => {
     it('executes a simple task immediately (Executor Mode)', async () => {
         // Mock AI to return a tool call then a final response
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValueOnce({ stream: mockStream({ tool: 'test_tool', args: {} }) as any, response: {} as any }) // First turn: Tool call
-            .mockResolvedValueOnce({ stream: mockStream({ final_response: 'Task done.' }) as any, response: {} as any }); // Second turn: Final response
+            .mockResolvedValueOnce({
+                stream: mockStream({ tool: 'test_tool', args: {} }) as any,
+                response: mockResponse({ tool: 'test_tool', args: {} }) as any
+            })
+            .mockResolvedValueOnce({
+                stream: mockStream({ final_response: 'Task done.' }) as any,
+                response: mockResponse({ final_response: 'Task done.' }) as any
+            });
 
         await generalistAgent.execute('Simple task', { currentOrganizationId: 'org1', currentProjectId: 'proj1' } as any);
 
@@ -68,7 +78,10 @@ describe('GeneralistAgent', () => {
 
     it('returns the final response correctly', async () => {
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValueOnce({ stream: mockStream({ final_response: 'Task done.' }) as any, response: {} as any });
+            .mockResolvedValueOnce({
+                stream: mockStream({ final_response: 'Task done.' }) as any,
+                response: mockResponse({ final_response: 'Task done.' }) as any
+            });
 
         const result = await generalistAgent.execute('Simple task', {} as any);
         expect(result.text).toBe('Task done.');
@@ -79,8 +92,14 @@ describe('GeneralistAgent', () => {
         vi.mocked(TOOL_REGISTRY.test_tool).mockRejectedValueOnce(new Error('Tool failed'));
 
         vi.mocked(AI.generateContentStream)
-            .mockResolvedValueOnce({ stream: mockStream({ tool: 'test_tool', args: {} }) as any, response: {} as any })
-            .mockResolvedValueOnce({ stream: mockStream({ final_response: 'Tool failed, but I handled it.' }) as any, response: {} as any });
+            .mockResolvedValueOnce({
+                stream: mockStream({ tool: 'test_tool', args: {} }) as any,
+                response: mockResponse({ tool: 'test_tool', args: {} }) as any
+            })
+            .mockResolvedValueOnce({
+                stream: mockStream({ final_response: 'Tool failed, but I handled it.' }) as any,
+                response: mockResponse({ final_response: 'Tool failed, but I handled it.' }) as any
+            });
 
         const result = await generalistAgent.execute('Fail tool', {} as any);
 

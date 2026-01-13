@@ -798,25 +798,25 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {(userProfile.brandKit.releaseDetails.title || userProfile.brandKit.releaseDetails.genre) && (
+                        {(userProfile.brandKit?.releaseDetails?.title || userProfile.brandKit?.releaseDetails?.genre) && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50">
                                 <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Latest Release</p>
-                                {userProfile.brandKit.releaseDetails.title && (
-                                    <p className="text-sm text-white font-medium mb-1">{userProfile.brandKit.releaseDetails.title}</p>
+                                {userProfile.brandKit?.releaseDetails?.title && (
+                                    <p className="text-sm text-white font-medium mb-1">{userProfile.brandKit?.releaseDetails?.title}</p>
                                 )}
                                 <div className="flex gap-2 text-xs">
-                                    {userProfile.brandKit.releaseDetails.genre && (
-                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit.releaseDetails.genre}</span>
+                                    {userProfile.brandKit?.releaseDetails?.genre && (
+                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit?.releaseDetails?.genre}</span>
                                     )}
-                                    {userProfile.brandKit.releaseDetails.type && (
-                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit.releaseDetails.type}</span>
+                                    {userProfile.brandKit?.releaseDetails?.type && (
+                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit?.releaseDetails?.type}</span>
                                     )}
                                 </div>
                             </div>
                         )}
 
                         {/* Color Palette Preview */}
-                        {userProfile.brandKit.colors && userProfile.brandKit.colors.length > 0 && (
+                        {userProfile.brandKit?.colors && userProfile.brandKit.colors.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50">
                                 <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Brand Colors</p>
                                 <div className="flex gap-2 flex-wrap">
@@ -833,9 +833,9 @@ export default function OnboardingPage() {
                         )}
 
                         {/* Aesthetic, Fonts & Avoid Preview */}
-                        {(userProfile.brandKit.aestheticStyle || userProfile.brandKit.fonts || userProfile.brandKit.negativePrompt) && (
+                        {(userProfile.brandKit?.aestheticStyle || userProfile.brandKit?.fonts || userProfile.brandKit?.negativePrompt) && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-3">
-                                {userProfile.brandKit.aestheticStyle && (
+                                {userProfile.brandKit?.aestheticStyle && (
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold">Aesthetic</p>
                                         <span className="inline-block mt-1 text-sm text-purple-300 bg-purple-500/10 px-2 py-1 rounded">
@@ -843,13 +843,13 @@ export default function OnboardingPage() {
                                         </span>
                                     </div>
                                 )}
-                                {userProfile.brandKit.fonts && (
+                                {userProfile.brandKit?.fonts && (
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold">Typography</p>
                                         <p className="text-sm text-gray-300">{userProfile.brandKit.fonts}</p>
                                     </div>
                                 )}
-                                {userProfile.brandKit.negativePrompt && (
+                                {userProfile.brandKit?.negativePrompt && (
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold">Avoid</p>
                                         <p className="text-sm text-gray-400 italic">{userProfile.brandKit.negativePrompt}</p>

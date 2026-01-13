@@ -27,6 +27,30 @@ vi.mock('firebase-admin', () => ({
     storage: vi.fn()
 }));
 
+// Mock firebase-functions/v1 to bypass secrets validation
+const mockBuilder = {
+    https: {
+        onCall: vi.fn((handler) => handler),
+        onRequest: vi.fn((handler) => handler)
+    },
+    runWith: vi.fn().mockReturnThis()
+};
+
+vi.mock('firebase-functions/v1', () => ({
+    runWith: vi.fn(() => mockBuilder),
+    https: {
+        onCall: vi.fn((handler) => handler),
+        HttpsError: class extends Error {
+            code: string;
+            constructor(code: string, message: string) {
+                super(message);
+                this.code = code;
+            }
+        }
+    },
+    config: vi.fn(() => ({}))
+}));
+
 // Mock Firestore FieldValue
 (admin.firestore as any).FieldValue = {
     serverTimestamp: vi.fn(),
@@ -36,7 +60,7 @@ vi.mock('firebase-admin', () => ({
 // Fix Inngest Mock to be a Class
 vi.mock('inngest', () => ({
     Inngest: class MockInngest {
-        constructor() {}
+        constructor() { }
         send = mockInngestSend;
     }
 }));
@@ -56,7 +80,7 @@ vi.mock('firebase-functions/params', () => ({
 // Mock Stripe to prevent initialization error
 vi.mock('stripe', () => ({
     default: class MockStripe {
-        constructor(apiKey: string) {}
+        constructor(apiKey: string) { }
     }
 }));
 
@@ -92,7 +116,9 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
         // Import the function dynamically to ensure mocks are applied
         const mod = await import('../index');
         triggerLongFormVideoJob = mod.triggerLongFormVideoJob;
-        wrappedFunction = testEnv.wrap(triggerLongFormVideoJob);
+        // Since we mocked firebase-functions to return the handler directly, we don't need to wrap it
+        // wrappedFunction = testEnv.wrap(triggerLongFormVideoJob);
+        wrappedFunction = triggerLongFormVideoJob;
     });
 
     afterEach(() => {
@@ -188,7 +214,7 @@ describe('triggerLongFormVideoJob (Ledger Quota Checks)', () => {
         // In the code: if orgId is personal, it skips org lookup and uses default 'free'
         // But let's mock the org lookup just in case specific logic changes
 
-         mockFirestore.collection.mockImplementation((collectionName) => {
+        mockFirestore.collection.mockImplementation((collectionName) => {
             if (collectionName === 'organizations') {
                 return {
                     doc: vi.fn(() => ({

@@ -204,7 +204,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                             <button
                                                 key={obj.id}
                                                 onClick={() => setObjective(obj.id)}
-                                                aria-pressed={objective === obj.id}
                                                 role="radio"
                                                 aria-checked={objective === obj.id}
                                                 className={`p-3 rounded-lg text-left transition-all ${objective === obj.id
@@ -310,7 +309,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                             <button
                                                 key={t.id}
                                                 onClick={() => setTone(t.id)}
-                                                aria-pressed={tone === t.id}
                                                 role="radio"
                                                 aria-checked={tone === t.id}
                                                 className={`px-4 py-2 rounded-full text-sm border transition-all ${tone === t.id

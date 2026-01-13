@@ -8,11 +8,12 @@ if (typeof window !== 'undefined') {
     await import('fake-indexeddb/auto');
 
     // Mock ResizeObserver
-    global.ResizeObserver = vi.fn().mockImplementation(() => ({
-        observe: vi.fn(),
-        unobserve: vi.fn(),
-        disconnect: vi.fn(),
-    }));
+    // Mock ResizeObserver
+    global.ResizeObserver = class ResizeObserver {
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+    };
 
     // Mock HTMLCanvasElement.getContext
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
