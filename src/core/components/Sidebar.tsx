@@ -22,6 +22,7 @@ export default function Sidebar() {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
+        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const departmentItems: SidebarItem[] = [
@@ -39,7 +40,6 @@ export default function Sidebar() {
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'observability', icon: Globe, label: 'System Observability' },
-        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
@@ -96,7 +96,7 @@ export default function Sidebar() {
 
             <div className="flex-1 py-4 space-y-6">
                 {/* Manager's Office */}
-                <div>
+                <div data-testid="manager-section">
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
                     <div className="space-y-0.5">
                         {managerItems.map(item => (
