@@ -141,7 +141,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             }}
                             placeholder="e.g., Summer Single Release"
                             className={cn(
-                                "w-full bg-[#0d1117] border rounded-lg p-2.5 text-white outline-none transition-all",
+                                "w-full bg-bg-dark border rounded-lg p-2.5 text-white outline-none transition-all",
                                 errors.title
                                     ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50"
                                     : "border-gray-700 focus:border-blue-500"
@@ -166,7 +166,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief overview of the campaign..."
-                            className="w-full h-24 bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none resize-none"
+                            className="w-full h-24 bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none resize-none"
                             data-testid="campaign-description-input"
                         />
                     </div>
@@ -188,7 +188,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                         if (errors.startDate) setErrors(prev => ({ ...prev, startDate: '' }));
                                     }}
                                     className={cn(
-                                        "w-full bg-[#0d1117] border rounded-lg p-2.5 pl-10 text-white outline-none transition-all",
+                                        "w-full bg-bg-dark border rounded-lg p-2.5 pl-10 text-white outline-none transition-all",
                                         errors.startDate
                                             ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50"
                                             : "border-gray-700 focus:border-blue-500"
@@ -214,7 +214,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
                                     data-testid="campaign-end-date-input"
                                 />
                             </div>
@@ -228,7 +228,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 id="campaign-platform"
                                 value={platform}
                                 onChange={(e) => setPlatform(e.target.value)}
-                                className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
+                                className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
                                 data-testid="campaign-platform-select"
                             >
                                 <option>Instagram</option>

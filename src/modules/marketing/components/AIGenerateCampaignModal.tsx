@@ -183,7 +183,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         value={topic}
                                         onChange={(e) => setTopic(e.target.value)}
                                         placeholder="e.g., New album 'Midnight Dreams' release, upcoming tour dates, new merch drop..."
-                                        className="w-full h-24 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
+                                        className="w-full h-24 bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
                                     />
                                 </div>
 
@@ -209,7 +209,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                                 aria-checked={objective === obj.id}
                                                 className={`p-3 rounded-lg text-left transition-all ${objective === obj.id
                                                     ? 'bg-pink-900/30 border border-pink-500/50'
-                                                    : 'bg-[#0d1117] border border-gray-800 hover:border-gray-600'
+                                                    : 'bg-bg-dark border border-gray-800 hover:border-gray-600'
                                                     }`}
                                             >
                                                 <div className={`text-sm font-medium ${objective === obj.id ? 'text-pink-200' : 'text-gray-300'}`}>
@@ -242,7 +242,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                                 aria-label={platform.label}
                                                 className={`flex-1 py-2 px-3 rounded-lg text-sm flex items-center justify-center gap-2 transition-all ${selectedPlatforms.includes(platform.id)
                                                     ? 'bg-pink-900/30 border border-pink-500/50 text-pink-200'
-                                                    : 'bg-[#0d1117] border border-gray-800 text-gray-400 hover:border-gray-600'
+                                                    : 'bg-bg-dark border border-gray-800 text-gray-400 hover:border-gray-600'
                                                     }`}
                                             >
                                                 <span aria-hidden="true">{platform.icon}</span>
@@ -265,7 +265,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                             id="campaign-duration"
                                             value={durationDays}
                                             onChange={(e) => setDurationDays(Number(e.target.value))}
-                                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                         >
                                             <option value={3}>3 days</option>
                                             <option value={7}>7 days</option>
@@ -284,7 +284,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                             id="posts-per-day"
                                             value={postsPerDay}
                                             onChange={(e) => setPostsPerDay(Number(e.target.value))}
-                                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                         >
                                             <option value={1}>1 post</option>
                                             <option value={2}>2 posts</option>
@@ -338,7 +338,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         value={targetAudience}
                                         onChange={(e) => setTargetAudience(e.target.value)}
                                         placeholder="e.g., Gen Z music lovers, indie rock fans..."
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                     />
                                 </div>
 
@@ -355,7 +355,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                     />
                                 </div>
                             </div>
@@ -364,7 +364,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                         /* Preview View */
                         <div className="space-y-6">
                             {/* Plan Header */}
-                            <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-6">
+                            <div className="bg-bg-dark border border-gray-800 rounded-xl p-6">
                                 <h3 className="text-xl font-bold text-white mb-2">{generatedPlan.title}</h3>
                                 <p className="text-gray-400 text-sm">{generatedPlan.description}</p>
                                 <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
@@ -381,7 +381,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                     {generatedPlan.posts.slice(0, 10).map((post, index) => (
                                         <div
                                             key={index}
-                                            className="bg-[#0d1117] border border-gray-800 rounded-lg p-4"
+                                            className="bg-bg-dark border border-gray-800 rounded-lg p-4"
                                         >
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-2">
@@ -421,7 +421,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-[#0d1117]">
+                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-bg-dark">
                     {generatedPlan ? (
                         <>
                             <button

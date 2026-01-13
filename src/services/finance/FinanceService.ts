@@ -52,33 +52,29 @@ export class FinanceService {
    * Get earnings summary for dashboard (RevenueService aggregation).
    */
   async getEarningsSummary(userId: string): Promise<EarningsSummary> {
-    try {
-      if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
-        throw new Error('Unauthorized');
-      }
-      // Use the RevenueService to get aggregated stats
-      const stats = await revenueService.getUserRevenueStats(userId);
-
-      return {
-        totalEarnings: stats.totalRevenue,
-        pendingPayouts: stats.pendingPayouts,
-        lastPayout: stats.lastPayoutAmount,
-        lastPayoutDate: stats.lastPayoutDate ? stats.lastPayoutDate.toISOString() : undefined,
-        currency: 'USD',
-        trends: {
-          earningsChange: stats.revenueChange,
-          payoutsChange: 0
-        },
-        sources: [
-          { name: 'Streaming', amount: stats.sources.streaming, percentage: stats.totalRevenue ? (stats.sources.streaming / stats.totalRevenue) * 100 : 0 },
-          { name: 'Merch', amount: stats.sources.merch, percentage: stats.totalRevenue ? (stats.sources.merch / stats.totalRevenue) * 100 : 0 },
-          { name: 'Licensing', amount: stats.sources.licensing || 0, percentage: stats.totalRevenue ? ((stats.sources.licensing || 0) / stats.totalRevenue) * 100 : 0 },
-          { name: 'Social', amount: stats.sources.social || 0, percentage: stats.totalRevenue ? ((stats.sources.social || 0) / stats.totalRevenue) * 100 : 0 }
-        ]
-      };
-    } catch (error) {
-      throw error;
+    if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
+      throw new Error('Unauthorized');
     }
+    // Use the RevenueService to get aggregated stats
+    const stats = await revenueService.getUserRevenueStats(userId);
+
+    return {
+      totalEarnings: stats.totalRevenue,
+      pendingPayouts: stats.pendingPayouts,
+      lastPayout: stats.lastPayoutAmount,
+      lastPayoutDate: stats.lastPayoutDate ? stats.lastPayoutDate.toISOString() : undefined,
+      currency: 'USD',
+      trends: {
+        earningsChange: stats.revenueChange,
+        payoutsChange: 0
+      },
+      sources: [
+        { name: 'Streaming', amount: stats.sources.streaming, percentage: stats.totalRevenue ? (stats.sources.streaming / stats.totalRevenue) * 100 : 0 },
+        { name: 'Merch', amount: stats.sources.merch, percentage: stats.totalRevenue ? (stats.sources.merch / stats.totalRevenue) * 100 : 0 },
+        { name: 'Licensing', amount: stats.sources.licensing || 0, percentage: stats.totalRevenue ? ((stats.sources.licensing || 0) / stats.totalRevenue) * 100 : 0 },
+        { name: 'Social', amount: stats.sources.social || 0, percentage: stats.totalRevenue ? ((stats.sources.social || 0) / stats.totalRevenue) * 100 : 0 }
+      ]
+    };
   }
 
   /**

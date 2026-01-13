@@ -52,10 +52,8 @@ function setupIpcHandlers() {
                 return { success: false, error: String(error) };
             }
         });
-    }
 
-    // Secure Agent IPC - Development Only
-    if (!app.isPackaged) {
+        // Secure Agent IPC - Development Only
         ipcMain.handle('agent:navigate-and-extract', async (event: any, url: string) => {
             try {
                 validateSender(event);
@@ -83,7 +81,6 @@ function setupIpcHandlers() {
             try {
                 validateSender(event);
                 // Validate inputs against schema (allows text to be optional)
-                // Casting to specific enum type for the service call if needed, but schema guarantees 'action' is one of the allowed strings
                 const validated = AgentActionSchema.parse({ action, selector, text });
 
                 const { browserAgentService } = await import('./services/BrowserAgentService');
@@ -96,18 +93,18 @@ function setupIpcHandlers() {
                 return { success: false, error: String(error) };
             }
         });
-    }
 
-    ipcMain.handle('agent:capture-state', async (event: any) => {
-        const { browserAgentService } = await import('./services/BrowserAgentService');
-        try {
-            validateSender(event);
-            const snapshot = await browserAgentService.captureSnapshot();
-            return { success: true, ...snapshot };
-        } catch (error) {
-            return { success: false, error: String(error) };
-        }
-    });
+        ipcMain.handle('agent:capture-state', async (event: any) => {
+            const { browserAgentService } = await import('./services/BrowserAgentService');
+            try {
+                validateSender(event);
+                const snapshot = await browserAgentService.captureSnapshot();
+                return { success: true, ...snapshot };
+            } catch (error) {
+                return { success: false, error: String(error) };
+            }
+        });
+    }
 }
 
 /**
@@ -155,7 +152,7 @@ const createWindow = () => {
         // Use logic similar to will-navigate for consistency
         const parsedUrl = new URL(url);
         if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
-             shell.openExternal(url);
+            shell.openExternal(url);
         }
         return { action: 'deny' };
     });

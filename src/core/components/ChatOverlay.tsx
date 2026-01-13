@@ -504,7 +504,7 @@ export default function ChatOverlay() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[70] flex flex-col bg-[#0d1117]"
+                    className="fixed inset-0 z-[70] flex flex-col bg-bg-dark"
                 >
                     {/* Mobile Header */}
                     <div className="flex items-center justify-between p-4 border-b border-white/10 mobile-safe-top">
@@ -544,7 +544,7 @@ export default function ChatOverlay() {
                     </div>
 
                     {/* Mobile Footer with Voice Toggle */}
-                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-[#0d1117] mobile-safe-bottom">
+                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-bg-dark mobile-safe-bottom">
                         <span className="text-xs text-gray-500">
                             {agentHistory.length} messages
                         </span>

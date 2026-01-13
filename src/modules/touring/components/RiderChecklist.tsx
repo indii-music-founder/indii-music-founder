@@ -64,12 +64,12 @@ export const RiderChecklist: React.FC = () => {
                                 onChange={(e) => setNewItemLabel(e.target.value)}
                                 placeholder="Add requirement..."
                                 aria-label="New item name"
-                                className="flex-1 bg-[#0d1117] border border-gray-700 rounded-lg px-4 py-3 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none placeholder:text-gray-600 transition-all font-mono"
+                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg px-4 py-3 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none placeholder:text-gray-600 transition-all font-mono"
                             />
                             <select
                                 value={newItemCategory}
                                 onChange={(e) => setNewItemCategory(e.target.value as RiderItem['category'])}
-                                className="bg-[#0d1117] border border-gray-700 rounded-lg px-3 py-3 text-xs text-gray-400 focus:border-purple-500 outline-none cursor-pointer uppercase font-bold tracking-wider"
+                                className="bg-bg-dark border border-gray-700 rounded-lg px-3 py-3 text-xs text-gray-400 focus:border-purple-500 outline-none cursor-pointer uppercase font-bold tracking-wider"
                                 aria-label="Category"
                             >
                                 <option value="essential">Essential</option>
@@ -118,7 +118,7 @@ export const RiderChecklist: React.FC = () => {
                                         }}
                                         className={`group flex items-center gap-4 p-3 rounded-lg border cursor-pointer transition-all duration-200 relative overflow-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161b22] outline-none ${item.completed
                                             ? 'bg-green-950/10 border-green-900/30 opacity-60'
-                                            : 'bg-[#0d1117] border-gray-800 hover:border-purple-500/50 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
+                                            : 'bg-bg-dark border-gray-800 hover:border-purple-500/50 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
                                             }`}
                                     >
                                         {/* Checkbox Visual */}

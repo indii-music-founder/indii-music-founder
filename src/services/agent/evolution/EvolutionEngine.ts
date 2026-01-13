@@ -96,7 +96,7 @@ export class EvolutionEngine {
         // Helix: Validation Guardrail
         // Prevent "Empty Soul" (Empty Prompt) or malformed agents from entering the gene pool.
         if (!offspring || !offspring.systemPrompt || typeof offspring.systemPrompt !== 'string' || offspring.systemPrompt.trim() === '') {
-           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
+          throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
         }
 
         // Helix: "The Bloat Check"
@@ -104,12 +104,12 @@ export class EvolutionEngine {
         // Cap is set to 100,000 characters (approx 25k tokens), which is a safe limit for system prompts.
         const MAX_PROMPT_LENGTH = 100000;
         if (offspring.systemPrompt.length > MAX_PROMPT_LENGTH) {
-           throw new Error(`Helix Guardrail: Mutation produced invalid offspring (Prompt Bloat: ${offspring.systemPrompt.length} chars)`);
+          throw new Error(`Helix Guardrail: Mutation produced invalid offspring (Prompt Bloat: ${offspring.systemPrompt.length} chars)`);
         }
         // Helix: "Brainless" Check
         // Ensure parameters exist and are not null (prevents runtime crashes).
         if (!offspring.parameters || typeof offspring.parameters !== 'object') {
-           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Missing Parameters)");
+          throw new Error("Helix Guardrail: Mutation produced invalid offspring (Missing Parameters)");
         }
 
         // Ensure ID is new and lineage is tracked

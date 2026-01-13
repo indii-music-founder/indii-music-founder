@@ -149,12 +149,12 @@ export class FirebaseAIService {
             });
 
             try {
-                // @ts-ignore - options param not in typed definition but supported
+
                 const result = await modelCallback.generateContent(
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
                         : { contents: sanitizedPrompt } as any,
-                    // @ts-ignore - options param not in typed definition but supported by underlying implementation
+                    // @ts-expect-error - options param not in typed definition but supported by underlying implementation
                     options
                 );
 
@@ -209,10 +209,11 @@ export class FirebaseAIService {
             });
 
             try {
-                // @ts-ignore - Signal supported in SDK
+
                 const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
                     typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
-                    // @ts-ignore - options param not in typed definition but supported
+
+                    // @ts-expect-error - options param not in typed definition but supported
                     options
                 );
 
@@ -398,11 +399,7 @@ export class FirebaseAIService {
             // CACHE SET
             await aiCache.set(cacheKeyString, text, modelName, config);
 
-            try {
-                return JSON.parse(text) as T;
-            } catch (e) {
-                throw e;
-            }
+            return JSON.parse(text) as T;
         });
     }
 

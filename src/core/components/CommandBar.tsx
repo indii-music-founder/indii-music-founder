@@ -265,7 +265,7 @@ function CommandBar() {
     }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing]);
 
     return (
-        <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
+        <div className="w-full bg-bg-dark border-t border-white/10 p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
                 <div

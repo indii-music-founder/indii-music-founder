@@ -132,47 +132,43 @@ export const MerchandiseService = {
      * Submits a design to the production line (Firestore).
      */
     submitToProduction: async (request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> => {
-        try {
-            let userId = request.userId;
-            if (!userId) {
-                userId = useStore.getState().userProfile?.id;
-            }
-
-            if (!userId) {
-                throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
-            }
-
-            // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
-            // 🛡️ Sentinel: Use secure random generation for orderId
-            const array = new Uint8Array(9);
-            crypto.getRandomValues(array);
-            const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
-            const orderId = `ORDER-${randomPart}`;
-
-            const docRef = await addDoc(collection(db, 'manufacture_requests'), {
-                ...request,
-                userId,
-                status: 'pending',
-                orderId,
-                createdAt: serverTimestamp()
-            });
-
-            // Simulate processing delay then update status
-            delay(2000).then(async () => {
-                try {
-                    await updateDoc(docRef, { status: 'completed' });
-                } catch (e) {
-                    // Status update failed - not critical
-                }
-            });
-
-            return {
-                success: true,
-                orderId
-            };
-        } catch (error) {
-            throw error;
+        let userId = request.userId;
+        if (!userId) {
+            userId = useStore.getState().userProfile?.id;
         }
+
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
+        }
+
+        // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
+        // 🛡️ Sentinel: Use secure random generation for orderId
+        const array = new Uint8Array(9);
+        crypto.getRandomValues(array);
+        const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
+        const orderId = `ORDER-${randomPart}`;
+
+        const docRef = await addDoc(collection(db, 'manufacture_requests'), {
+            ...request,
+            userId,
+            status: 'pending',
+            orderId,
+            createdAt: serverTimestamp()
+        });
+
+        // Simulate processing delay then update status
+        delay(2000).then(async () => {
+            try {
+                await updateDoc(docRef, { status: 'completed' });
+            } catch (e) {
+                // Status update failed - not critical
+            }
+        });
+
+        return {
+            success: true,
+            orderId
+        };
     },
 
     /**

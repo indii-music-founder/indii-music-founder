@@ -228,66 +228,57 @@ export class VideoGenerationService {
             );
         }
 
-        try {
-            const jobId = `long_${uuidv4()}`;
-            const orgId = useStore.getState().currentOrganizationId;
-            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+        const jobId = `long_${uuidv4()}`;
+        const orgId = useStore.getState().currentOrganizationId;
+        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
-            // Enrich prompt with distributor context
-            const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
+        // Enrich prompt with distributor context
+        const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
 
-            const targetAspectRatio = this.determineTargetAspectRatio(options);
+        const targetAspectRatio = this.determineTargetAspectRatio(options);
 
-            // Construct segment-wise prompts for the background worker
-            const BLOCK_DURATION = 8;
-            const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
-            const prompts = Array.from({ length: numBlocks }, (_, i) =>
-                `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
-            );
+        // Construct segment-wise prompts for the background worker
+        const BLOCK_DURATION = 8;
+        const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
+        const prompts = Array.from({ length: numBlocks }, (_, i) =>
+            `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
+        );
 
-            await triggerLongFormVideoJob({
-                jobId,
-                prompts,
-                orgId,
-                startImage: options.firstFrame,
-                totalDuration: options.totalDuration,
-                aspectRatio: targetAspectRatio,
-                resolution: options.resolution,
-                seed: options.seed,
-                negativePrompt: options.negativePrompt,
-            });
+        await triggerLongFormVideoJob({
+            jobId,
+            prompts,
+            orgId,
+            startImage: options.firstFrame,
+            totalDuration: options.totalDuration,
+            aspectRatio: targetAspectRatio,
+            resolution: options.resolution,
+            seed: options.seed,
+            negativePrompt: options.negativePrompt,
+        });
 
-            // Return a placeholder list with the main jobId
-            // The UI will subscribe to this jobId and see updates as progress changes
-            return [{
-                id: jobId,
-                url: '',
-                prompt: options.prompt
-            }];
-
-        } catch (e: unknown) {
-            throw e;
-        }
+        // Return a placeholder list with the main jobId
+        // The UI will subscribe to this jobId and see updates as progress changes
+        return [{
+            id: jobId,
+            url: '',
+            prompt: options.prompt
+        }];
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
-        try {
-            const { functions } = await import('../firebase');
-            const { httpsCallable } = await import('firebase/functions');
+        const { functions } = await import('../firebase');
+        const { httpsCallable } = await import('firebase/functions');
 
-            const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
-            const jobId = uuidv4();
+        const jobId = uuidv4();
 
-            await triggerVideoJob({
-                ...options,
-                jobId,
-            });
+        await triggerVideoJob({
+            ...options,
+            jobId,
+        });
 
-            return { jobId };
-        } catch (error) {
-            throw error;
-        }
+        return { jobId };
     }
 }
 

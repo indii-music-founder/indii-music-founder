@@ -83,7 +83,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         onClick={() => setPlatform(p)}
                         className={`p-4 rounded-xl border transition-all flex items-center gap-3 ${platform.name === p.name
                             ? 'bg-blue-600/20 border-blue-500 ring-1 ring-blue-500'
-                            : 'bg-[#0d1117] border-gray-800 hover:border-gray-600'
+                            : 'bg-bg-dark border-gray-800 hover:border-gray-600'
                             }`}
                     >
                         <div className={`w-8 h-8 rounded-full ${p.color} flex items-center justify-center text-white font-bold text-xs`}>
@@ -100,7 +100,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         type="text"
                         value={brandName}
                         onChange={(e) => setBrandName(e.target.value)}
-                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
+                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
                         placeholder="e.g. Acme Corp"
                     />
                 </div>
@@ -110,7 +110,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         type="text"
                         value={industry}
                         onChange={(e) => setIndustry(e.target.value)}
-                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
+                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
                         placeholder="e.g. Technology"
                     />
                 </div>
@@ -143,7 +143,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Suggested Handles</label>
                         <div className="space-y-2">
                             {generatedIdentity.handles.map((handle, i) => (
-                                <div key={i} className="flex items-center justify-between bg-[#0d1117] p-3 rounded-lg border border-gray-800 group hover:border-gray-600 transition-colors">
+                                <div key={i} className="flex items-center justify-between bg-bg-dark p-3 rounded-lg border border-gray-800 group hover:border-gray-600 transition-colors">
                                     <span className="font-mono text-blue-400">{handle}</span>
                                     <button onClick={() => copyToClipboard(handle)} className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Copy size={14} />
@@ -156,7 +156,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Suggested Bios</label>
                         <div className="space-y-2">
                             {generatedIdentity.bios.map((bio, i) => (
-                                <div key={i} className="flex items-start justify-between bg-[#0d1117] p-3 rounded-lg border border-gray-800 group hover:border-gray-600 transition-colors">
+                                <div key={i} className="flex items-start justify-between bg-bg-dark p-3 rounded-lg border border-gray-800 group hover:border-gray-600 transition-colors">
                                     <p className="text-sm text-gray-300">{bio}</p>
                                     <button onClick={() => copyToClipboard(bio)} className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity mt-1">
                                         <Copy size={14} />
@@ -247,7 +247,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 Go to {platform.name} Sign Up <ExternalLink size={20} />
             </a>
 
-            <div className="bg-[#0d1117] p-4 rounded-xl border border-gray-800 text-left max-w-sm mx-auto">
+            <div className="bg-bg-dark p-4 rounded-xl border border-gray-800 text-left max-w-sm mx-auto">
                 <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Quick Copy</h4>
                 {generatedIdentity && generatedIdentity.handles[0] && (
                     <div className="flex justify-between items-center mb-2">
@@ -269,7 +269,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[600px]">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#0d1117]">
+                <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-bg-dark">
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
                             {[1, 2, 3, 4].map(i => (
@@ -292,7 +292,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-800 bg-[#0d1117] flex justify-between">
+                <div className="p-4 border-t border-gray-800 bg-bg-dark flex justify-between">
                     <button
                         onClick={() => setStep(s => Math.max(1, s - 1))}
                         disabled={step === 1}

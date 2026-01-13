@@ -161,7 +161,11 @@ vi.mock('firebase/ai', () => ({
             }
         }),
         generateContentStream: vi.fn().mockResolvedValue({
-            stream: (async function* () { yield { text: () => "{}" }; })(),
+            stream: {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => "{}" };
+                }
+            },
             response: Promise.resolve({
                 text: () => "{}",
                 functionCalls: () => []

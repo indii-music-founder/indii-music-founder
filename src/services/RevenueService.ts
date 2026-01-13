@@ -128,9 +128,9 @@ export class RevenueService {
         // Handle Firestore Timestamp or standard Date/Number
         let dateObj = new Date();
         if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-           dateObj = data.createdAt.toDate();
+          dateObj = data.createdAt.toDate();
         } else if (data.timestamp) {
-           dateObj = new Date(data.timestamp);
+          dateObj = new Date(data.timestamp);
         }
 
         const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -142,7 +142,7 @@ export class RevenueService {
       snapshotPrevious.docs.forEach(doc => {
         const parseResult = RevenueEntrySchema.safeParse(doc.data());
         if (parseResult.success) {
-            previousRevenue += (parseResult.data.amount || 0);
+          previousRevenue += (parseResult.data.amount || 0);
         }
       });
 

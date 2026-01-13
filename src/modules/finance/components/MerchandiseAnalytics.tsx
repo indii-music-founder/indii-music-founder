@@ -57,7 +57,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={revenueTrendData}>
                             <defs>
-                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                <linearGradient id="merchRevenueGradient" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
                                     <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
                                 </linearGradient>
@@ -94,7 +94,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                                 stroke="#14b8a6"
                                 strokeWidth={4}
                                 fillOpacity={1}
-                                fill="url(#colorRevenue)"
+                                fill="url(#merchRevenueGradient)"
                                 animationDuration={2000}
                                 animationEasing="ease-in-out"
                             />

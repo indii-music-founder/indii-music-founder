@@ -50,7 +50,7 @@
   /* ─────────────────────────────────────────────────────────────────────────────
    * SURFACE COLORS - Professional dark palette
    * ───────────────────────────────────────────────────────────────────────────── */
-  --color-bg-dark: #0F172A;
+  --color-bg-dark: #0d1117;
   --color-surface: #1E293B;
   --color-surface-elevated: #334155;
 
@@ -197,20 +197,25 @@
    * Usage: text-dept-royalties, bg-dept-marketing, border-dept-legal, etc.
    * These mirror the :root variables for Tailwind utility generation
    * ═══════════════════════════════════════════════════════════════════════════ */
-  --color-dept-royalties: #FFC107;
-  --color-dept-distribution: #2196F3;
-  --color-dept-marketing: #E91E63;
-  --color-dept-legal: #455A64;
-  --color-dept-creative: #9C27B0;
-  --color-dept-touring: #FF5722;
-  --color-dept-publishing: #8BC34A;
-  --color-dept-social: #00BCD4;
-  --color-dept-licensing: #009688;
-  --color-dept-brand: #FFB300;
-  --color-dept-campaign: #FF7043;
-  --color-dept-default: #78909C;
+  --color-dept-royalties: var(--color-dept-royalties);
+  --color-dept-distribution: var(--color-dept-distribution);
+  --color-dept-marketing: var(--color-dept-marketing);
+  --color-dept-legal: var(--color-dept-legal);
+  --color-dept-creative: var(--color-dept-creative);
+  --color-dept-touring: var(--color-dept-touring);
+  --color-dept-publishing: var(--color-dept-publishing);
+  --color-dept-social: var(--color-dept-social);
+  --color-dept-licensing: var(--color-dept-licensing);
+  --color-dept-brand: var(--color-dept-brand);
+  --color-dept-campaign: var(--color-dept-campaign);
+  --color-dept-default: var(--color-dept-default);
 
-  /* Sonic OS Palette */
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SYSTEM COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-bg-dark: #0d1117;
+  /* GitHub Dark - Standard App Background */
+
   --color-sonic-purple: var(--sonic-purple);
   --color-sonic-blue: var(--sonic-blue);
   --color-sonic-yellow: var(--sonic-yellow);

@@ -77,7 +77,7 @@ describe('📚 Keeper: Context Integrity', () => {
         vi.clearAllMocks();
 
         const config: AgentConfig = {
-            id: 'keeper-agent',
+            id: 'generalist',
             name: 'Keeper',
             description: 'The Guardian of Context',
             color: 'blue',
@@ -107,16 +107,16 @@ describe('📚 Keeper: Context Integrity', () => {
         const payload = generateCall[0];
 
         // Extract the full prompt text sent to the model
-        // @ts-ignore - inspecting the complex payload structure
+        // @ts-expect-error - inspecting the complex payload structure
         const parts = payload.contents[0].parts;
         // The BaseAgent might be sending multiple parts. We need to find the one with the huge history.
         // Or checking total length of all parts.
 
         let fullPromptText = "";
         for (const part of parts) {
-             if ('text' in part) {
-                 fullPromptText += part.text;
-             }
+            if ('text' in part) {
+                fullPromptText += part.text;
+            }
         }
 
         // 4. Assert Truncation

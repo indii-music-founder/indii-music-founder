@@ -87,7 +87,7 @@ export default function TestPlaybookPanel() {
     }
 
     return (
-        <div className="fixed bottom-4 right-4 z-50 w-96 bg-[#0d1117] border border-gray-700 rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200">
+        <div className="fixed bottom-4 right-4 z-50 w-96 bg-bg-dark border border-gray-700 rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200">
             {/* Header */}
             <div className="p-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between select-none cursor-pointer" onClick={() => setIsOpen(false)}>
                 <div className="flex items-center gap-2 text-indigo-400 font-bold">

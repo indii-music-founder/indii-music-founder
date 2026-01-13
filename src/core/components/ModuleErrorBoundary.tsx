@@ -33,7 +33,7 @@ export class ModuleErrorBoundary extends Component<Props, State> {
     public render() {
         if (this.state.hasError) {
             return (
-                <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-[#0d1117] text-white">
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-bg-dark text-white">
                     <div className="bg-red-900/20 p-4 rounded-full mb-4">
                         <AlertTriangle className="w-12 h-12 text-red-500" />
                     </div>

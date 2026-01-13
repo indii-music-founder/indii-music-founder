@@ -170,7 +170,7 @@ describe("AIService", () => {
       expect(p1).toBe(p2);
 
       // Resolve underlying call
-      // @ts-ignore
+      // @ts-expect-error
       resolveGenerate(mockResponse);
 
       const r1 = await p1;
