@@ -60,8 +60,16 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
 
     initializeAuthListener: () => {
-        // Check for TEST_MODE bypass (E2E Testing)
-        if (typeof window !== 'undefined' && localStorage.getItem('TEST_MODE') === 'true') {
+        // SECURE: TEST_MODE only allowed in development builds AND with explicit env flag
+        // This prevents production bypass via localStorage manipulation
+        const isTestEnvironment =
+            import.meta.env.DEV === true &&
+            import.meta.env.VITE_ALLOW_TEST_MODE === 'true' &&
+            typeof window !== 'undefined' &&
+            localStorage.getItem('TEST_MODE') === 'true';
+
+        if (isTestEnvironment) {
+            console.warn('[Auth] TEST_MODE active - This should NEVER appear in production!');
             const mockUser = {
                 uid: 'test-stress-user',
                 email: 'stress@test.com',
