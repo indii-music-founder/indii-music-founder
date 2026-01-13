@@ -24,3 +24,8 @@
 **Vulnerability:** The `MerchandiseService` used `Math.random()` to generate `orderId` values. `Math.random()` is not cryptographically secure, leading to potentially predictable identifiers.
 **Learning:** Even for non-secret values like Order IDs, using insecure randomness can create bad habits and theoretical predictability vectors (e.g. guessing the next order ID to probe for existence).
 **Prevention:** Replaced `Math.random()` with `crypto.getRandomValues()` to generate a secure 9-character alphanumeric string, maintaining the existing `BANA-` format while ensuring cryptographic strength.
+
+## 2025-05-22 - [Unchecked Agent Agency in DevOps Tools]
+**Vulnerability:** The `DevOpsTools.ts` allowed an Agent to execute destructive infrastructure changes (scaling clusters, restarting instances) without explicit human confirmation. While the *user* was authenticated as admin, a compromised Agent (via prompt injection or error) could abuse this authority to damage infrastructure.
+**Learning:** "Agency without Authorization is a vulnerability." Just because a *user* has permission doesn't mean the *agent* should automatically inherit the right to execute sensitive actions without a "human-in-the-loop" check.
+**Prevention:** Implemented a mandatory `requireApproval` check within `scale_deployment` and `restart_service` tools, enforcing a critical-level human approval dialog before execution.

@@ -1,7 +1,8 @@
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { useStore } from '@/core/store';
 
 // Tool: DevOps Infrastructure (Real GKE/GCE via Cloud Functions)
 // This tool interacts with Google Cloud Platform services through Firebase Cloud Functions.
@@ -49,6 +50,19 @@ interface RestartResult {
     operation?: string;
 }
 
+/**
+ * Helper to request human approval for sensitive DevOps actions.
+ * Prevents Agent hallucination or injection from triggering destructive infra changes.
+ */
+async function requireApproval(action: string, details: string): Promise<boolean> {
+    const { requestApproval } = useStore.getState();
+    const approved = await requestApproval(
+        `[DevOps Security] Agent is requesting to execute: **${action}**\n\nDetails: ${details}`,
+        'critical'
+    );
+    return approved;
+}
+
 export const DevOpsTools: Record<string, AnyToolFunction> = {
     list_clusters: wrapTool('list_clusters', async (args?: { projectId?: string; location?: string }) => {
         console.info(`[DevOps] Listing GKE clusters`);
@@ -92,6 +106,16 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
         projectId?: string;
         location?: string
     }) => {
+        // SECURITY: Require approval for scaling operations
+        const isApproved = await requireApproval(
+            `Scale Node Pool`,
+            `Cluster: ${args.cluster_id}\nNode Pool: ${args.nodePoolName}\nNew Node Count: ${args.nodeCount}`
+        );
+
+        if (!isApproved) {
+            return toolError("User denied the scaling request.", "APPROVAL_DENIED");
+        }
+
         console.info(`[DevOps] Scaling node pool ${args.nodePoolName} in ${args.cluster_id} to ${args.nodeCount} nodes`);
 
         const scaleGKENodePoolFn = httpsCallable<
@@ -133,6 +157,16 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
         zone: string;
         projectId?: string
     }) => {
+        // SECURITY: Require approval for restart operations
+        const isApproved = await requireApproval(
+            `Restart Instance`,
+            `Instance: ${args.instance_name}\nZone: ${args.zone}`
+        );
+
+        if (!isApproved) {
+            return toolError("User denied the restart request.", "APPROVAL_DENIED");
+        }
+
         console.info(`[DevOps] Restarting instance: ${args.instance_name} in ${args.zone}`);
 
         const restartGCEInstanceFn = httpsCallable<

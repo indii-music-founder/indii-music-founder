@@ -37,3 +37,6 @@
 ## 2026-01-13 - [Interactive List Item Trap]
 **Learning:** List items that use `onClick` on a `div` are inaccessible to keyboard users, who can't tab to them or activate them with keys.
 **Action:** Always add `role="button"`, `tabIndex={0}`, and `onKeyDown` (handling Enter/Space) to interactive list items, and ensure nested actions (like delete) are focusable and visible on focus.
+## 2025-10-26 - [ProjectHub Menu Accessibility]
+**Learning:** The "More Vertical" menu in `ProjectHub` was a classic "Hidden Action Trap". It was only visible on hover, making it accessible to mouse users but a mystery to keyboard users who would tab onto an invisible button.
+**Action:** Applied `group-focus-within:opacity-100` to the container and added `focus-visible:ring-2` to the button. This ensures the menu appears when any element inside it receives focus, and the button itself has a clear focus indicator. Also added `aria-label` for screen reader context.
