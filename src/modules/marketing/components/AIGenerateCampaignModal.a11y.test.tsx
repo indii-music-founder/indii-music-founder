@@ -76,17 +76,17 @@ describe('AIGenerateCampaignModal Accessibility', () => {
         render(<AIGenerateCampaignModal onClose={mockOnClose} onSave={mockOnSave} />);
 
         // Find the 'Launch' objective which is selected by default
-        const launchButton = screen.getByRole('button', { name: /Launch/i });
-        expect(launchButton).toHaveAttribute('aria-pressed', 'true');
+        const launchButton = screen.getByRole('radio', { name: /Launch/i });
+        expect(launchButton).toHaveAttribute('aria-checked', 'true');
 
         // Find the 'Awareness' objective which is not selected
-        const awarenessButton = screen.getByRole('button', { name: /Awareness/i });
-        expect(awarenessButton).toHaveAttribute('aria-pressed', 'false');
+        const awarenessButton = screen.getByRole('radio', { name: /Awareness/i });
+        expect(awarenessButton).toHaveAttribute('aria-checked', 'false');
 
         // Interaction Check
         fireEvent.click(awarenessButton);
-        expect(awarenessButton).toHaveAttribute('aria-pressed', 'true');
-        expect(launchButton).toHaveAttribute('aria-pressed', 'false');
+        expect(awarenessButton).toHaveAttribute('aria-checked', 'true');
+        expect(launchButton).toHaveAttribute('aria-checked', 'false');
     });
 
     it('platform toggle buttons should use aria-pressed and update on click', () => {
@@ -113,16 +113,16 @@ describe('AIGenerateCampaignModal Accessibility', () => {
         render(<AIGenerateCampaignModal onClose={mockOnClose} onSave={mockOnSave} />);
 
         // 'Professional' is selected by default
-        const proButton = screen.getByRole('button', { name: /Professional/i });
-        expect(proButton).toHaveAttribute('aria-pressed', 'true');
+        const proButton = screen.getByRole('radio', { name: /Professional/i });
+        expect(proButton).toHaveAttribute('aria-checked', 'true');
 
-        const casualButton = screen.getByRole('button', { name: /Casual/i });
-        expect(casualButton).toHaveAttribute('aria-pressed', 'false');
+        const casualButton = screen.getByRole('radio', { name: /Casual/i });
+        expect(casualButton).toHaveAttribute('aria-checked', 'false');
 
         // Select Casual
         fireEvent.click(casualButton);
-        expect(casualButton).toHaveAttribute('aria-pressed', 'true');
-        expect(proButton).toHaveAttribute('aria-pressed', 'false');
+        expect(casualButton).toHaveAttribute('aria-checked', 'true');
+        expect(proButton).toHaveAttribute('aria-checked', 'false');
     });
 
     it('text areas and inputs should have accessible labels', () => {

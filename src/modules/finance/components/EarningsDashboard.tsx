@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
 import { EarningsTable } from './EarningsTable';
-import type { EarningsSummary } from '@/services/ddex/types/dsr';
+import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 import { motion } from 'framer-motion';
 import { TrendingUp, Music, Globe, DollarSign, ArrowUpRight } from 'lucide-react';
 
-const OverviewTab = ({ data }: { data: EarningsSummary }) => (
+const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -88,8 +88,32 @@ export const EarningsDashboard: React.FC = () => {
         </div>
     );
 
-    if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
-    if (!earningsSummary) return <div className="p-8 text-gray-500">No earnings data available.</div>;
+    if (error) return (
+        <div className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-red-500/20 m-8">
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
+                <ArrowUpRight size={24} className="rotate-45" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Fetch Error</h3>
+            <p className="text-gray-500 max-w-sm text-center px-6">{error}</p>
+        </div>
+    );
+
+    if (!earningsSummary) return (
+        <div className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-white/5 m-8 border-dashed">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
+                <DollarSign size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">No Reports Found</h3>
+            <p className="text-gray-500 max-w-sm text-center px-6">
+                Your royalty reports haven't arrived yet. Once your distributor processes your streams, they'll appear here automatically.
+            </p>
+            <div className="mt-8 flex gap-4">
+                <button className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-gray-300 transition-all uppercase tracking-widest">
+                    Refresh
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div className="flex flex-col space-y-6 pt-2 pb-8 bg-transparent min-h-screen">

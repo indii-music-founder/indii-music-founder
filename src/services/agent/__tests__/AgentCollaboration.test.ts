@@ -60,7 +60,12 @@ describe('Agent Collaboration', () => {
         const mockResponse: WrappedResponse = {
             response: {} as any,
             text: () => 'Delegating...',
-            functionCalls: () => [{ name: 'delegate_task', args: { targetAgentId: 'marketing', task: 'Create a plan' } }]
+            functionCalls: () => [{ name: 'delegate_task', args: { targetAgentId: 'marketing', task: 'Create a plan' } }],
+            usage: vi.fn().mockReturnValue({
+                promptTokenCount: 10,
+                candidatesTokenCount: 20,
+                totalTokenCount: 30
+            })
         };
 
         (AI.generateContentStream as any).mockResolvedValue({
@@ -102,11 +107,16 @@ describe('Agent Collaboration', () => {
                 name: 'consult_experts',
                 args: {
                     consultations: [
-                        { targetAgentId: 'music', task: 'Analyze audio' },
+                        { targetAgentId: 'producer', task: 'Analyze audio' },
                         { targetAgentId: 'marketing', task: 'Draft tweet' }
                     ]
                 }
-            }]
+            }],
+            usage: vi.fn().mockReturnValue({
+                promptTokenCount: 10,
+                candidatesTokenCount: 20,
+                totalTokenCount: 30
+            })
         };
 
         (AI.generateContentStream as any).mockResolvedValue({
@@ -116,7 +126,7 @@ describe('Agent Collaboration', () => {
 
         // 2. Mock specialist responses
         (agentService.runAgent as any).mockImplementation(async (id: string) => {
-            if (id === 'music') return { text: 'Audio is fine.' };
+            if (id === 'producer') return { text: 'Audio is fine.' };
             if (id === 'marketing') return { text: 'Tweet drafted.' };
             return { text: 'Unknown' };
         });

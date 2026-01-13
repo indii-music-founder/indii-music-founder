@@ -14,6 +14,10 @@ import {
   serverTimestamp,
   onSnapshot
 } from 'firebase/firestore';
+import {
+  EarningsSummarySchema,
+  type EarningsSummary as ValidatedEarningsSummary
+} from '@/services/revenue/schema';
 import { EarningsSummary as DSREarningsSummary } from '@/services/ddex/types/dsr';
 
 export interface EarningsSummary {
@@ -81,6 +85,7 @@ export class FinanceService {
    * Fetch persistent earnings reports (DSR style).
    */
   async fetchEarnings(userId: string): Promise<DSREarningsSummary | null> {
+  async fetchEarnings(userId: string): Promise<ValidatedEarningsSummary | null> {
     try {
       if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
         throw new Error('Unauthorized');
@@ -93,13 +98,24 @@ export class FinanceService {
 
       const snapshot = await getDocs(q);
 
-      if (!snapshot.empty) {
-        // Return existing data
-        const docData = snapshot.docs[0].data();
-        return docData as DSREarningsSummary;
+      if (snapshot.empty) {
+        console.info(`[FinanceService] No earnings data found for user: ${userId}`);
+        return null;
       }
 
       return null;
+      const docData = snapshot.docs[0].data();
+
+      // Zod Validation for Production Safety
+      const parseResult = EarningsSummarySchema.safeParse(docData);
+
+      if (!parseResult.success) {
+        console.error(`[FinanceService] Earnings data validation failed for ${userId}:`, parseResult.error);
+        Sentry.captureMessage(`Earnings validation failed for user ${userId}`, 'error');
+        return null;
+      }
+
+      return parseResult.data;
 
     } catch (error) {
       Sentry.captureException(error);
@@ -208,7 +224,7 @@ export class FinanceService {
   /**
    * Subscribe to earnings reports for real-time updates.
    */
-  subscribeToEarnings(userId: string, callback: (earnings: DSREarningsSummary | null) => void): () => void {
+  subscribeToEarnings(userId: string, callback: (earnings: ValidatedEarningsSummary | null) => void): () => void {
     if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
       console.error('Unauthorized subscribe to earnings');
       return () => { };
@@ -222,7 +238,14 @@ export class FinanceService {
     return onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const docData = snapshot.docs[0].data();
-        callback(docData as DSREarningsSummary);
+        const parseResult = EarningsSummarySchema.safeParse(docData);
+
+        if (parseResult.success) {
+          callback(parseResult.data);
+        } else {
+          console.error(`[FinanceService] Earnings snapshot validation failed:`, parseResult.error);
+          callback(null);
+        }
       } else {
         callback(null);
       }

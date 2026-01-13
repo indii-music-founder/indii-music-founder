@@ -39,7 +39,13 @@ export class AudioAnalysisService {
                     }
                 };
 
-                const { Essentia, EssentiaWASM } = await import('essentia.js') as EssentiaModule;
+                const imported = await import('essentia.js') as any;
+                let { Essentia, EssentiaWASM } = imported;
+
+                // Handle Vite/Rollup interop for EssentiaWASM import
+                if (!EssentiaWASM && imported.default?.EssentiaWASM) {
+                    EssentiaWASM = imported.default.EssentiaWASM;
+                }
 
                 let moduleInstance;
                 if (typeof EssentiaWASM === 'function') {
@@ -50,7 +56,16 @@ export class AudioAnalysisService {
                         }
                     });
                 } else {
-                    moduleInstance = EssentiaWASM;
+                    // Check if EssentiaWASM is nested (common in some builds)
+                    if ((EssentiaWASM as any).EssentiaWASM) {
+                        moduleInstance = (EssentiaWASM as any).EssentiaWASM;
+                    } else {
+                        moduleInstance = EssentiaWASM;
+                    }
+                }
+
+                if (!moduleInstance) {
+                    throw new Error("Failed to resolve EssentiaWASM instance");
                 }
 
                 this.essentia = new Essentia(moduleInstance);

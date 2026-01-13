@@ -15,6 +15,17 @@ vi.mock('@/core/store', () => ({
     }),
 }));
 
+// Mock useToast
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        showToast: vi.fn()
+    })
+}));
+
 // Mock Service
 vi.mock('@/services/onboarding/onboardingService', () => ({
     runOnboardingConversation: vi.fn(),
@@ -55,7 +66,7 @@ describe('OnboardingPage GenUI Verification', () => {
         render(<OnboardingPage />);
 
         // 1. Send user message to trigger response
-        const input = screen.getByPlaceholderText(/Tell me about your brand/i);
+        const input = screen.getByPlaceholderText(/Tell me about your music/i);
         fireEvent.change(input, { target: { value: 'Hi' } });
 
         const sendButton = screen.getByLabelText('Send message');

@@ -58,12 +58,9 @@ describe('GeneralistAgent', () => {
         // Mock AI response to avoid actual call
         (AI.generateContentStream as any).mockResolvedValue({
             stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => JSON.stringify({ final_response: 'Understood.' }) } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => JSON.stringify({ final_response: 'Understood.' }) };
+                }
             },
             response: Promise.resolve({
                 text: () => JSON.stringify({ final_response: 'Understood.' }),
@@ -99,14 +96,10 @@ describe('GeneralistAgent', () => {
 
         (AI.generateContentStream as any).mockResolvedValue({
             stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => toolCallJson } })
-                        // Return final response after tool
-                        .mockResolvedValueOnce({ done: false, value: { text: () => JSON.stringify({ final_response: "Image generated." }) } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => toolCallJson };
+                    yield { text: () => JSON.stringify({ final_response: "Image generated." }) };
+                }
             },
             response: Promise.resolve({ text: () => toolCallJson })
         });

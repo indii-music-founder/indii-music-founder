@@ -31,11 +31,27 @@ vi.mock('@/services/ai/AIService', () => ({
     }
 }));
 
+// Mock useStore for AgentArchitecture tests
+// Note: The provided change for useStore seems to be for a different test file (e.g., OnboardingPage or CreateCampaignModal)
+// as it changes the mock structure from { getState, setState } to a hook-like return.
+// For AgentArchitecture, we need getState and setState.
+// Reverting to the original mock structure for useStore in this file to maintain existing test compatibility.
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: vi.fn(),
         setState: vi.fn()
     }
+}));
+
+// Mock useToast - This is a new mock from the provided change
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        showToast: vi.fn()
+    })
 }));
 
 describe('Multi-Agent Architecture Tests', () => {
@@ -59,7 +75,7 @@ describe('Multi-Agent Architecture Tests', () => {
 
         // Pre-load agents for synchronous tests
         const agents = [
-            'legal', 'marketing', 'music', 'publicist', 'brand', 'road', 'director', 'video', 'finance', 'generalist'
+            'legal', 'marketing', 'producer', 'publicist', 'brand', 'road', 'director', 'video', 'finance', 'generalist'
         ];
         await Promise.all(agents.map(id => agentRegistry.getAsync(id)));
     });
@@ -121,7 +137,11 @@ describe('Multi-Agent Architecture Tests', () => {
 
             // Mock LLM response for routing
             (AI.generateContent as any).mockResolvedValueOnce({
-                text: () => 'legal'
+                text: () => JSON.stringify({
+                    targetAgentId: 'legal',
+                    confidence: 1.0,
+                    reasoning: 'Request is about contracts'
+                })
             });
 
             const context = { currentModule: 'creative' }; // Even in creative module
@@ -149,7 +169,7 @@ describe('Multi-Agent Architecture Tests', () => {
 
     describe('4. Specialist Agents Verification', () => {
         const agents = [
-            'legal', 'marketing', 'music', 'publicist', 'brand', 'road', 'director', 'video'
+            'legal', 'marketing', 'producer', 'publicist', 'brand', 'road', 'director', 'video'
         ];
 
         agents.forEach(agentId => {
@@ -231,8 +251,8 @@ describe('Multi-Agent Architecture Tests', () => {
                 task: 'Create strict delegation test'
             }, { someContext: true });
 
-            expect(spy).toHaveBeenCalledWith('video', 'Create strict delegation test', expect.objectContaining({ someContext: true }));
-            expect(result).toBe('Delegation Success');
+            expect(spy).toHaveBeenCalledWith('video', 'Create strict delegation test', expect.objectContaining({ someContext: true }), undefined, undefined);
+            expect(result.data).toBe('Delegation Success');
 
             spy.mockRestore();
         });
