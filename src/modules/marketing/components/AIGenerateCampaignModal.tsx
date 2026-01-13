@@ -89,7 +89,27 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
         };
 
         try {
-            const plan = await CampaignAI.generateCampaign(brief);
+            // Check for E2E Mock Plan
+            const mockPlan = (window as any).__MOCK_AI_PLAN__;
+
+            let plan: GeneratedCampaignPlan;
+            if (mockPlan) {
+                // Use the mock plan if available (Maestro Testing)
+                console.log("[AIGenerateCampaignModal] Using Mock AI Plan:", mockPlan);
+                plan = mockPlan;
+
+                // Clear the mock so the next generation (e.g. retry) doesn't use the same one unless re-injected
+                // But wait, the test injects it before clicking generate.
+                // The test will reinject the "Good Plan" before the second click.
+                // So we can clear it here safely.
+                (window as any).__MOCK_AI_PLAN__ = undefined;
+
+                // Simulate delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } else {
+                plan = await CampaignAI.generateCampaign(brief);
+            }
+
             setGeneratedPlan(plan);
             toast.success('Campaign plan generated!');
         } catch (error) {
