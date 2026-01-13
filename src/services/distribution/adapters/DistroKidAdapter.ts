@@ -146,16 +146,20 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             }
 
             // 4. Mock Fallback (Browser / No Creds)
-            console.warn('[DistroKid] SFTP unavailable or credentials missing. Returning MOCK success.');
-            return {
-                success: true,
-                status: 'processing',
-                releaseId: metadata.id,
-                distributorReleaseId: 'MOCK-DK-ID',
-                metadata: {
-                    reviewRequired: true
-                }
-            };
+            if (import.meta.env.DEV) {
+                console.warn('[DistroKid] SFTP unavailable or credentials missing. Returning MOCK success.');
+                return {
+                    success: true,
+                    status: 'processing',
+                    releaseId: metadata.id,
+                    distributorReleaseId: 'MOCK-DK-ID',
+                    metadata: {
+                        reviewRequired: true
+                    }
+                };
+            }
+
+            throw new Error('DistroKid SFTP credentials missing in production.');
         } catch (e) {
             console.error('[DistroKid] Create Release Error:', e);
             return {

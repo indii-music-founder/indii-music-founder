@@ -158,7 +158,7 @@ export class RevenueService {
       const result: RevenueStats = {
         totalRevenue,
         revenueChange,
-        pendingPayouts: totalRevenue * 0.1, // Still using heuristic for now
+        pendingPayouts: 0, // Heuristic removed for production safety
         lastPayoutAmount: 0, // No hardcoded placeholder
         lastPayoutDate: undefined,
         sources,

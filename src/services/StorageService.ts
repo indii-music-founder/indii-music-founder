@@ -2,7 +2,7 @@
 import { db, storage } from './firebase';
 import { collection, query, orderBy, limit, Timestamp, where, getDocs } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
-import { HistoryItem } from '../core/store';
+import { HistoryItem } from '@/types/History';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 

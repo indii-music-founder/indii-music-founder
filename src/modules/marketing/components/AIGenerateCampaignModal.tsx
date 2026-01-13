@@ -179,7 +179,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         htmlFor="campaign-topic"
                                         className="block text-xs text-gray-500 uppercase font-semibold mb-2"
                                     >
-                                    <label htmlFor="campaign-topic" className="block text-xs text-gray-500 uppercase font-semibold mb-2">
                                         Campaign Topic *
                                     </label>
                                     <textarea
@@ -201,13 +200,9 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                     </span>
                                     <div
                                         className="grid grid-cols-2 gap-2"
-                                        role="group"
+                                        role="radiogroup"
                                         aria-labelledby="objective-label"
                                     >
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
-                                        <Target size={14} /> Objective
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Objective">
                                         {OBJECTIVES.map(obj => (
                                             <button
                                                 key={obj.id}
@@ -242,8 +237,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         role="group"
                                         aria-labelledby="platforms-label"
                                     >
-                                    </label>
-                                    <div className="flex gap-2" role="group" aria-label="Platforms">
                                         {PLATFORMS.map(platform => (
                                             <button
                                                 key={platform.id}
@@ -292,11 +285,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         </label>
                                         <select
                                             id="posts-per-day"
-                                        <label htmlFor="campaign-posts" className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-                                            Posts/Day
-                                        </label>
-                                        <select
-                                            id="campaign-posts"
                                             value={postsPerDay}
                                             onChange={(e) => setPostsPerDay(Number(e.target.value))}
                                             className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
@@ -318,13 +306,9 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                     </span>
                                     <div
                                         className="flex flex-wrap gap-2"
-                                        role="group"
+                                        role="radiogroup"
                                         aria-labelledby="tone-label"
                                     >
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
-                                        <MessageSquare size={14} /> Tone
-                                    </label>
-                                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Tone">
                                         {TONES.map(t => (
                                             <button
                                                 key={t.id}
@@ -353,11 +337,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                     </label>
                                     <input
                                         id="target-audience"
-                                    <label htmlFor="campaign-audience" className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
-                                        <Users size={14} /> Target Audience (optional)
-                                    </label>
-                                    <input
-                                        id="campaign-audience"
                                         type="text"
                                         value={targetAudience}
                                         onChange={(e) => setTargetAudience(e.target.value)}
@@ -376,11 +355,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                     </label>
                                     <input
                                         id="start-date"
-                                    <label htmlFor="campaign-start" className="block text-xs text-gray-500 uppercase font-semibold mb-2">
-                                        Start Date
-                                    </label>
-                                    <input
-                                        id="campaign-start"
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
