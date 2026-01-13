@@ -54,46 +54,49 @@ function setupIpcHandlers() {
         });
     }
 
-    ipcMain.handle('agent:navigate-and-extract', async (event: any, url: string) => {
-        try {
-            validateSender(event);
-            const validated = AgentNavigateSchema.parse({ url });
-            const { browserAgentService } = await import('./services/BrowserAgentService');
+    // Secure Agent IPC - Development Only
+    if (!app.isPackaged) {
+        ipcMain.handle('agent:navigate-and-extract', async (event: any, url: string) => {
+            try {
+                validateSender(event);
+                const validated = AgentNavigateSchema.parse({ url });
+                const { browserAgentService } = await import('./services/BrowserAgentService');
 
-            await browserAgentService.startSession();
-            await browserAgentService.navigateTo(validated.url);
-            const snapshot = await browserAgentService.captureSnapshot();
-            await browserAgentService.closeSession();
-            return { success: true, ...snapshot };
-        } catch (error) {
-            console.error('Agent Navigate Failed:', error);
-            const { browserAgentService } = await import('./services/BrowserAgentService');
-            await browserAgentService.closeSession();
+                await browserAgentService.startSession();
+                await browserAgentService.navigateTo(validated.url);
+                const snapshot = await browserAgentService.captureSnapshot();
+                await browserAgentService.closeSession();
+                return { success: true, ...snapshot };
+            } catch (error) {
+                console.error('Agent Navigate Failed:', error);
+                const { browserAgentService } = await import('./services/BrowserAgentService');
+                await browserAgentService.closeSession();
 
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+                if (error instanceof z.ZodError) {
+                    return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+                }
+                return { success: false, error: String(error) };
             }
-            return { success: false, error: String(error) };
-        }
-    });
+        });
 
-    ipcMain.handle('agent:perform-action', async (event: any, action: string, selector: string, text?: string) => {
-        try {
-            validateSender(event);
-            // Validate inputs against schema (allows text to be optional)
-            // Casting to specific enum type for the service call if needed, but schema guarantees 'action' is one of the allowed strings
-            const validated = AgentActionSchema.parse({ action, selector, text });
+        ipcMain.handle('agent:perform-action', async (event: any, action: string, selector: string, text?: string) => {
+            try {
+                validateSender(event);
+                // Validate inputs against schema (allows text to be optional)
+                // Casting to specific enum type for the service call if needed, but schema guarantees 'action' is one of the allowed strings
+                const validated = AgentActionSchema.parse({ action, selector, text });
 
-            const { browserAgentService } = await import('./services/BrowserAgentService');
-            return await browserAgentService.performAction(validated.action as any, validated.selector, validated.text);
-        } catch (error) {
-            console.error('Agent Action Failed:', error);
-            if (error instanceof z.ZodError) {
-                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+                const { browserAgentService } = await import('./services/BrowserAgentService');
+                return await browserAgentService.performAction(validated.action as any, validated.selector, validated.text);
+            } catch (error) {
+                console.error('Agent Action Failed:', error);
+                if (error instanceof z.ZodError) {
+                    return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+                }
+                return { success: false, error: String(error) };
             }
-            return { success: false, error: String(error) };
-        }
-    });
+        });
+    }
 
     ipcMain.handle('agent:capture-state', async (event: any) => {
         const { browserAgentService } = await import('./services/BrowserAgentService');
@@ -122,7 +125,7 @@ const createWindow = () => {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
-            sandbox: false, // Disabled to ensure preload script loads correctly in production
+            sandbox: true, // Enabled for security
             safeDialogs: true,
             safeDialogsMessage: 'Stop seeing alerts from this page',
             webSecurity: !isDev,
@@ -250,12 +253,20 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
+let isQuitting = false;
+
+app.on('will-quit', () => {
+    isQuitting = true;
+});
+
 // Crash Handling & Observability
 app.on('render-process-gone', (_event, _webContents, details) => {
+    if (isQuitting) return;
     log.warn(`[Main] Renderer process gone: ${details.reason} (${details.exitCode})`);
 });
 
 app.on('child-process-gone', (_event, details) => {
+    if (isQuitting) return;
     log.warn(`[Main] Child process gone: ${details.type} - ${details.reason} (${details.exitCode})`);
 });
 
