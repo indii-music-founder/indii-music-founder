@@ -30,3 +30,7 @@
 
 **Learning:** React warnings about unrecognized props like `whileHover` on DOM elements in tests are often caused by overly simple mocks for `framer-motion` (e.g., just spreading `...props` onto a `div`).
 **Action:** When mocking `motion.div` or similar, explicitly destructure and filter out animation-specific props (like `whileHover`, `animate`, `initial`, `exit`) before passing the rest to the underlying DOM element, or use a more robust mock factory.
+
+## 2025-02-08 - [Substring Match Trap]
+**Learning:** `toHaveTextContent('0%')` matches '50%' because of the trailing characters. Use `expect(element.textContent).toBe('50%')` for precise numeric checks.
+**Action:** Always assert exact text content for percentages or numeric feedback to avoid false positives/negatives.
