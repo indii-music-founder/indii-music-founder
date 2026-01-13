@@ -187,6 +187,8 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
+        // Production: Return 0 earnings until actual API integration is available.
+        // DO NOT generate random numbers in production.
         return {
             distributorId: 'distrokid',
             releaseId: releaseId,
@@ -195,6 +197,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             downloads: 0,
             grossRevenue: 0,
             distributorFee: 0,
+            distributorFee: 0, // 100% Payout
             netRevenue: 0,
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()

@@ -16,6 +16,7 @@ export class RevenueService {
     try {
       const currentUser = auth.currentUser;
 
+      // Strict Security: Only allow access if the requested userId matches the authenticated user.
       if (!currentUser || currentUser.uid !== userId) {
         throw new Error('Unauthorized: Access denied to revenue data.');
       }

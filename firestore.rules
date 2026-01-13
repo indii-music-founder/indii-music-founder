@@ -248,6 +248,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -259,6 +260,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -270,6 +272,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -281,6 +284,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================

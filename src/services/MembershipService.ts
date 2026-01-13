@@ -8,6 +8,7 @@
 
 import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, collection, query, where, getCountFromServer } from 'firebase/firestore';
 
 export type MembershipTier = 'free' | 'pro' | 'enterprise';
 
@@ -338,6 +339,39 @@ class MembershipServiceImpl {
                     console.warn('[MembershipService] Failed to count projects:', e);
                     currentUsage = 0;
                 }
+                // Check if quota is unlimited first
+                if (tier === 'enterprise' && limits.maxProjects === -1) {
+                    return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+                }
+
+                try {
+                    // Count projects where the user is a member
+                    // Note: This relies on the 'projects' collection being indexed by 'orgId'
+                    // and the user being able to access them.
+                    // For a simpler check, we count projects created by the user or
+                    // check the organization's project count if applicable.
+                    // Assuming 'projects' has an 'orgId' field.
+
+                    // Get current Org ID from store state similar to getCurrentTier
+                    const { useStore } = await import('@/core/store');
+                    const state = useStore.getState();
+                    const currentOrgId = state.currentOrganizationId;
+
+                    if (currentOrgId) {
+                         const projectsRef = collection(db, 'projects');
+                         const q = query(projectsRef, where('orgId', '==', currentOrgId));
+                         const snapshot = await getCountFromServer(q);
+                         currentUsage = snapshot.data().count;
+                    } else {
+                        // Fallback to counting personal projects if no org context
+                        // This might need adjustment based on exact data model
+                        currentUsage = 0;
+                    }
+                } catch (e) {
+                    console.warn('[MembershipService] Failed to count projects:', e);
+                    currentUsage = 0; // Fail open but warn
+                }
+
                 maxAllowed = limits.maxProjects;
                 break;
             default:
