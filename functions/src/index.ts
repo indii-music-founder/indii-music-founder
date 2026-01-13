@@ -55,7 +55,54 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     }
 };
 
-const corsHandler = corsLib({ origin: true });
+/**
+ * CORS Configuration
+ *
+ * SECURITY: Whitelist specific origins instead of allowing all.
+ * This prevents unauthorized websites from calling our Cloud Functions.
+ */
+const getAllowedOrigins = (): string[] => {
+    const origins = [
+        'https://indiios-studio.web.app',
+        'https://indiios-v-1-1.web.app',
+        'https://studio.indiios.com',
+        'https://indiios.com',
+        'app://.'  // Electron app
+    ];
+
+    // Add localhost origins in emulator/development mode
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        origins.push(
+            'http://localhost:5173',
+            'http://localhost:4173',
+            'http://localhost:3000',
+            'http://127.0.0.1:5173'
+        );
+    }
+
+    return origins;
+};
+
+const corsHandler = corsLib({
+    origin: (origin, callback) => {
+        const allowedOrigins = getAllowedOrigins();
+
+        // Allow requests with no origin (mobile apps, Postman) only in emulator
+        if (!origin && process.env.FUNCTIONS_EMULATOR === 'true') {
+            return callback(null, true);
+        }
+
+        // Check if origin is in whitelist
+        if (origin && allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Reject unauthorized origins
+        console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        callback(new Error('CORS not allowed'));
+    },
+    credentials: true
+});
 
 // ----------------------------------------------------------------------------
 // Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
