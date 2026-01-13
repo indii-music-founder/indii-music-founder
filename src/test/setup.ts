@@ -111,7 +111,12 @@ vi.mock('firebase/firestore', () => ({
         update: vi.fn(),
         delete: vi.fn(),
         commit: vi.fn(() => Promise.resolve())
-    }))
+    })),
+    Timestamp: {
+        now: vi.fn(() => ({ toDate: () => new Date(), toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 })),
+        fromDate: vi.fn((date) => ({ toDate: () => date, toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })),
+        fromMillis: vi.fn((millis) => ({ toDate: () => new Date(millis), toMillis: () => millis, seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
+    }
 }));
 
 // Mock Firebase Functions

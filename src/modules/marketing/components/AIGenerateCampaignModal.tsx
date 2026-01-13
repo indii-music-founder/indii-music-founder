@@ -108,9 +108,6 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                 plan = mockPlan;
 
                 // Clear the mock so the next generation (e.g. retry) doesn't use the same one unless re-injected
-                // But wait, the test injects it before clicking generate.
-                // The test will reinject the "Good Plan" before the second click.
-                // So we can clear it here safely.
                 (window as any).__MOCK_AI_PLAN__ = undefined;
 
                 // Simulate delay
