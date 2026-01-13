@@ -125,6 +125,13 @@ describe('VideoTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.url).toBe(finalUrl);
         });
+
+        it('should fail if prompt is empty', async () => {
+            const result = await VideoTools.generate_video({ prompt: '   ' });
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(mockGenerateVideo).not.toHaveBeenCalled();
+        });
     });
 
     describe('generate_motion_brush', () => {
@@ -383,13 +390,13 @@ describe('VideoTools', () => {
             expect(result.metadata?.errorCode).toBe("TOOL_EXECUTION_ERROR");
         });
 
-        it('should return undefined jobId if service returns empty list', async () => {
+        it('should return error if service returns empty list', async () => {
             mockGenerateLongFormVideo.mockResolvedValue([]);
 
             const result = await VideoTools.generate_video_chain(validArgs);
 
-            expect(result.success).toBe(true);
-            expect(result.data.jobId).toBeUndefined();
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('GENERATION_FAILED');
         });
     });
 
