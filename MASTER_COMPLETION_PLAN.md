@@ -29,28 +29,28 @@ This document serves as the single source of truth for the remaining implementat
 The following agents currently exist as definitions but lack specialized tool implementations.
 
 ### 2.1 Brand Manager (`src/services/agent/definitions/BrandAgent.ts`)
-- [ ] Implement `analyze_brand_consistency`: Check content against Brand Kit.
-- [ ] Implement `generate_brand_guidelines`: Create structured guidelines from assets.
-- [ ] Implement `audit_visual_assets`: Verify color palettes and typography.
+- [x] Implement `analyze_brand_consistency`: Check content against Brand Kit.
+- [x] Implement `generate_brand_guidelines`: Create structured guidelines from assets.
+- [x] Implement `audit_visual_assets`: Verify color palettes and typography.
 
 ### 2.2 Marketing Manager (`src/services/agent/definitions/MarketingAgent.ts`)
-- [ ] Implement `create_campaign_brief`: Generate structured campaign plans.
-- [ ] Implement `analyze_audience`: Demographic analysis (mock or API).
-- [ ] Implement `schedule_content`: Calendar generation.
+- [x] Implement `create_campaign_brief`: Generate structured campaign plans.
+- [x] Implement `analyze_audience`: Demographic analysis (mock or API).
+- [x] Implement `schedule_content`: Calendar generation.
 
 ### 2.3 Publicist (`src/services/agent/definitions/PublicistAgent.ts`)
-- [ ] Implement `write_press_release`: Format standard PR text.
-- [ ] Implement `generate_crisis_response`: PR crisis management templates.
-- [ ] Implement `pitch_story`: Email pitch generation.
+- [x] Implement `write_press_release`: Format standard PR text.
+- [x] Implement `generate_crisis_response`: PR crisis management templates.
+- [x] Implement `pitch_story`: Email pitch generation.
 
 ### 2.4 Road Manager (`src/services/agent/definitions/RoadAgent.ts`)
-- [ ] Implement `plan_tour_route`: Logistics optimization.
-- [ ] Implement `calculate_tour_budget`: Cost estimation.
-- [ ] Implement `generate_itinerary`: Detailed day-sheets.
+- [x] Implement `plan_tour_route`: Logistics optimization.
+- [x] Implement `calculate_tour_budget`: Cost estimation.
+- [x] Implement `generate_itinerary`: Detailed day-sheets.
 
 ### 2.5 Security Guardian (`src/services/agent/definitions/SecurityAgent.ts`)
-- [ ] Implement `audit_permissions`: Check project access levels.
-- [ ] Implement `scan_for_vulnerabilities`: Config audit.
+- [x] Implement `audit_permissions`: Check project access levels.
+- [x] Implement `scan_for_vulnerabilities`: Config audit.
 
 ---
 

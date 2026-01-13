@@ -7,7 +7,7 @@
  */
 
 import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, FieldValue } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer } from 'firebase/firestore';
 
 export type MembershipTier = 'free' | 'pro' | 'enterprise';
 
@@ -330,7 +330,14 @@ class MembershipServiceImpl {
                 maxAllowed = limits.maxStorageMB;
                 break;
             case 'projects':
-                currentUsage = 0; // TODO: Fetch actual project count from Firestore
+                try {
+                    const q = query(collection(db, 'projects'), where('orgId', '==', 'personal'), where('userId', '==', userId));
+                    const snapshot = await getCountFromServer(q);
+                    currentUsage = snapshot.data().count;
+                } catch (e) {
+                    console.warn('[MembershipService] Failed to count projects:', e);
+                    currentUsage = 0;
+                }
                 maxAllowed = limits.maxProjects;
                 break;
             default:
