@@ -12,3 +12,7 @@
 ## 2026-01-12 - [Doomsday Switch Implementation]
 **Learning:** The Evolution Engine lacked an internal generation cap, relying solely on the caller. This risks infinite loops if the orchestrator fails.
 **Action:** Implemented strict `maxGenerations` check inside `EvolutionEngine.evolve` and verified with "Doomsday Switch" test.
+
+## 2026-05-27 - [The Zombie Gene Prevention]
+**Learning:** If an offspring inherits a fitness score (e.g., via buggy Crossover logic copying the parent object), the engine must strictly reset it to `undefined` upon birth. Failure to do so allows "Zombie Agents" to bypass the fitness function in the subsequent generation, surviving solely on inherited glory without validation.
+**Action:** Added `HelixLifecycle.test.ts` to enforce `fitness: undefined` on all new offspring, acting as a mandatory "Birth Certificate" for the next cycle.
