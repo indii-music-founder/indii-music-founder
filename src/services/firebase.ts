@@ -55,22 +55,11 @@ if (typeof window !== 'undefined') {
         window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
     }
 
-    // SECURITY: Hard fail in production if App Check is not configured
+    // SECURITY: Warn in production if App Check is not configured
     // This is a critical security control - App Check prevents unauthorized API access
     if (!env.DEV && !env.appCheckKey) {
-        const errorMessage = 'SECURITY VIOLATION: App Check key missing in production. Application cannot start.';
-        console.error(errorMessage);
-
-        // Show user-facing error instead of silently failing
-        if (typeof document !== 'undefined') {
-            document.body.innerHTML = `
-                <div style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:system-ui;background:#0a0a0a;color:#fff;">
-                    <h1 style="margin-bottom:1rem;">Configuration Error</h1>
-                    <p style="color:#888;">Application security configuration is missing. Please contact support.</p>
-                </div>
-            `;
-        }
-        throw new Error(errorMessage);
+        const errorMessage = 'SECURITY WARNING: App Check key missing in production. Application running without App Check.';
+        console.warn(errorMessage);
     }
 
     // Initialize App Check if we have a valid key
