@@ -50,6 +50,10 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                     },
                     authLoading: false,
                     isSidebarOpen: true,
+                    generatedHistory: [
+                        { id: 'gen-1', url: 'https://via.placeholder.com/150', prompt: 'Test Item 1', timestamp: Date.now(), type: 'image' },
+                        { id: 'gen-2', url: 'https://via.placeholder.com/150', prompt: 'Test Item 2', timestamp: Date.now(), type: 'image' }
+                    ],
                 });
                 console.log('Mock store state injected');
             }
@@ -230,9 +234,10 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
 
         // Select an item from Gallery (Assume Phase 1 generated something)
         // Using raw selector for "starts with" since regex logic in safeClick is custom
-        await safeClick(21, '[data-testid^="gallery-item-"]', 'Select Gallery Item', { rawSelector: true });
+        await safeClick(21, '[data-testid^="gallery-item-"]', 'Select Gallery Item', { rawSelector: true, force: true });
 
         // Modal Open
+        await page.waitForSelector('[data-testid="creative-canvas-modal-content"]', { timeout: 10000 });
         await safeClick(22, 'edit-canvas-btn', 'Click Edit Mode');
         await safeClick(23, 'add-rect-btn', 'Add Rectangle'); // Instead of tool-brush
         await safeClick(24, 'save-canvas-btn', 'Click Save');

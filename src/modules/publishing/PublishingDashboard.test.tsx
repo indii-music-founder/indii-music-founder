@@ -149,7 +149,7 @@ describe('PublishingDashboard', () => {
             },
             {
                 id: '2',
-                metadata: { trackTitle: 'Banana', artistName: 'B', releaseType: 'Single' },
+                metadata: { trackTitle: 'Berry', artistName: 'B', releaseType: 'Single' },
                 assets: { coverArtUrl: null },
                 status: 'draft',
                 createdAt: new Date().toISOString()
@@ -166,7 +166,7 @@ describe('PublishingDashboard', () => {
 
         // Verify releases are rendered
         expect(screen.getByText('Apple')).toBeInTheDocument();
-        expect(screen.getByText('Banana')).toBeInTheDocument();
+        expect(screen.getByText('Berry')).toBeInTheDocument();
 
         // Ensure "Select All" button exists
         const selectAllBtn = screen.getByText('Select All');
@@ -189,7 +189,7 @@ describe('PublishingDashboard', () => {
     it('handles search and filtering correctly', () => {
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Apple', artistName: 'A', releaseType: 'Single' }, status: 'live', assets: {} },
-            { id: '2', metadata: { trackTitle: 'Banana', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
+            { id: '2', metadata: { trackTitle: 'Berry', artistName: 'B', releaseType: 'Single' }, status: 'draft', assets: {} }
         ] as any[];
 
         vi.mocked(useReleases).mockReturnValue({
@@ -206,14 +206,14 @@ describe('PublishingDashboard', () => {
         const searchInput = screen.getByPlaceholderText('Search releases...');
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getByText('Apple')).toBeInTheDocument();
-        expect(screen.queryByText('Banana')).not.toBeInTheDocument();
+        expect(screen.queryByText('Berry')).not.toBeInTheDocument();
 
         // Filter
         fireEvent.change(searchInput, { target: { value: '' } }); // Clear search
         const filterSelect = screen.getByRole('combobox');
         fireEvent.change(filterSelect, { target: { value: 'live' } });
         expect(screen.getByText('Apple')).toBeInTheDocument();
-        expect(screen.queryByText('Banana')).not.toBeInTheDocument();
+        expect(screen.queryByText('Berry')).not.toBeInTheDocument();
     });
 
     it('executes bulk delete with toast promise', async () => {

@@ -247,6 +247,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
                 onClick={onClose}
+                data-testid="creative-canvas-modal-overlay"
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -254,6 +255,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     exit={{ scale: 0.9, opacity: 0 }}
                     className="relative max-w-6xl w-full h-[90vh] bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden flex flex-col shadow-2xl"
                     onClick={e => e.stopPropagation()}
+                    data-testid="creative-canvas-modal-content"
                 >
                     <CanvasHeader
                         isEditing={isEditing}

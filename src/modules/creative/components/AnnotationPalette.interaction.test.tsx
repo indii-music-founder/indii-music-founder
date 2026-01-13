@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import AnnotationPalette from './AnnotationPalette';
-import { NANA_COLORS } from '../constants';
+import { STUDIO_COLORS } from '../constants';
 
 // Mock dependencies if needed, but constants should import fine.
-// If NANA_COLORS is complex, we might mock it, but usually it's just data.
+// If STUDIO_COLORS is complex, we might mock it, but usually it's just data.
 
 describe('AnnotationPalette Interaction (🖱️ Click)', () => {
     const mockOnColorSelect = vi.fn();
@@ -14,8 +14,8 @@ describe('AnnotationPalette Interaction (🖱️ Click)', () => {
     };
 
     // We'll use the first real color for testing to ensure integration is correct
-    const firstColor = NANA_COLORS[0];
-    const secondColor = NANA_COLORS[1];
+    const firstColor = STUDIO_COLORS[0];
+    const secondColor = STUDIO_COLORS[1];
 
     it('verifies the Color Selection lifecycle (Click → Active State)', () => {
         const { rerender } = render(

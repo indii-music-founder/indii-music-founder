@@ -238,7 +238,8 @@ export class FirebaseAIService {
                         functionCalls: () => {
                             const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
                             return part ? [part.functionCall] : [];
-                        }
+                        },
+                        usage: () => aggResult.usageMetadata
                     };
                 });
 

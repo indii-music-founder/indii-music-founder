@@ -9,13 +9,10 @@ import { motion, AnimatePresence } from 'framer-motion';
  */
 export const PWAInstallPrompt: React.FC = () => {
     const [canInstall, setCanInstall] = useState(false);
-    const [dismissed, setDismissed] = useState(false);
+    const [dismissed, setDismissed] = useState(() => {
+        // Checking standalone or previous dismissal during state initialization
+        if (isStandalone()) return true;
 
-    useEffect(() => {
-        // Don't show if already installed or dismissed
-        if (isStandalone()) return;
-
-        // Check if previously dismissed (with safe localStorage access)
         try {
             const dismissedTimestamp = localStorage.getItem('pwa-install-dismissed');
             if (dismissedTimestamp) {
@@ -23,17 +20,18 @@ export const PWAInstallPrompt: React.FC = () => {
                 if (!isNaN(timestamp)) {
                     const daysSinceDismissal = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
                     // Show again after 7 days
-                    if (daysSinceDismissal < 7) {
-                        setDismissed(true);
-                        return;
-                    }
+                    return daysSinceDismissal < 7;
                 }
             }
         } catch (error) {
-            // localStorage unavailable (private browsing, quota exceeded, etc.)
-            // Treat as "not dismissed" and continue
-            console.debug('[PWA] localStorage unavailable, skipping dismissal check:', error);
+            console.debug('[PWA] localStorage unavailable during init:', error);
         }
+        return false;
+    });
+
+    useEffect(() => {
+        // Only initialize PWA install prompt listeners here
+        if (isStandalone()) return;
 
         // Initialize PWA install prompt
         initPWAInstall();

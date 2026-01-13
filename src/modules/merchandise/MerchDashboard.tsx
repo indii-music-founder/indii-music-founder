@@ -15,7 +15,7 @@ export default function MerchDashboard() {
     if (loading) {
         return (
             <MerchLayout>
-                <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+                <div className="flex items-center justify-center h-[calc(100vh-100px)]" data-testid="merch-dashboard-loading">
                     <Loader2 className="w-10 h-10 text-[#FFE135] animate-spin" />
                 </div>
             </MerchLayout>
@@ -25,8 +25,8 @@ export default function MerchDashboard() {
     if (error) {
         return (
             <MerchLayout>
-                <div className="flex items-center justify-center h-[calc(100vh-100px)] flex-col gap-4">
-                    <p className="text-red-500 font-bold">Failed to load dashboard data.</p>
+                <div className="flex items-center justify-center h-[calc(100vh-100px)] flex-col gap-4" data-testid="merch-dashboard-error">
+                    <p className="text-red-500 font-bold" data-testid="merch-error-message">Failed to load dashboard data.</p>
                     <p className="text-neutral-400">{error}</p>
                 </div>
             </MerchLayout>

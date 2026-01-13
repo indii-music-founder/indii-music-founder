@@ -314,6 +314,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                                 );
 
                                             } catch (e) {
+                                                // Failed to parse inner tool output, ignore
                                             }
                                         }
                                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
@@ -340,7 +341,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     try {
                                         JSON.parse(content.replace(/\n$/, ''));
                                         return <>{children}</>;
-                                    } catch (e) { }
+                                    } catch (e) { /* ignore json parse error */ }
                                 }
                             }
                             // Wrap pre in scrollable container for mobile responsiveness
@@ -372,7 +373,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
                                     if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
                                     return <CollapsibleJson data={data} />;
-                                } catch (e) { }
+                                } catch (e) { /* ignore json parse error */ }
                             }
                             return <code className={className} {...props}>{children}</code>
                         }

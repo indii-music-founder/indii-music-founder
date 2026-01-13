@@ -92,7 +92,7 @@ describe('🖱️ Click: Creative Studio Daisychain', () => {
 
         // --- STEP 5: Generate ---
         // Setup mock response for generation
-        vi.mocked(canvasOps.prepareMasksForEdit).mockReturnValue({ baseImage: '...', masks: [] });
+        vi.mocked(canvasOps.prepareMasksForEdit).mockReturnValue({ baseImage: { mimeType: 'image/png', data: 'mock' }, masks: [] });
         vi.mocked(Editing.multiMaskEdit).mockResolvedValue([
             { id: 'cand-1', url: 'candidate.jpg', prompt: 'Dragon variation' }
         ]);
@@ -100,7 +100,7 @@ describe('🖱️ Click: Creative Studio Daisychain', () => {
         const genBtn = screen.getByTestId('magic-generate-btn');
         fireEvent.click(genBtn);
 
-        expect(mockToast.info).toHaveBeenCalledWith('Processing Nana Banana Pro Edits...');
+        expect(mockToast.info).toHaveBeenCalledWith('Processing Studio Edits...');
 
         // Wait for carousel to appear
         await waitFor(() => {

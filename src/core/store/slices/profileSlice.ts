@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
-import { UserProfile, BrandKit } from '@/modules/workflow/types';
+import { UserProfile, BrandKit, UserPreferences } from '@/types/User';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
+import { Timestamp } from 'firebase/firestore';
 
 export interface Organization {
     id: string;
@@ -13,8 +14,6 @@ export interface ProfileSlice {
     currentOrganizationId: string;
     organizations: Organization[];
     userProfile: UserProfile;
-    // user: User | null; // REMOVED: No more Firebase User object. Identity is derived from profile.
-    // Auth state moved to AuthSlice
     setOrganization: (id: string) => void;
     addOrganization: (org: Organization) => void;
     setUserProfile: (profile: UserProfile) => void;
@@ -25,28 +24,44 @@ export interface ProfileSlice {
 }
 
 // Default Guest Profile
+const DEFAULT_BRAND_KIT: BrandKit = {
+    colors: ['#000000', '#ffffff'],
+    fonts: 'Inter',
+    brandDescription: 'My Studio Brand',
+    negativePrompt: '',
+    socials: {},
+    brandAssets: [],
+    referenceImages: [],
+    releaseDetails: {
+        title: 'Untitled Project',
+        type: 'Single',
+        artists: 'Me',
+        genre: 'Pop',
+        mood: 'Energetic',
+        themes: 'Life',
+        lyrics: ''
+    }
+};
+
 const DEFAULT_USER_PROFILE: UserProfile = {
     id: 'guest',
+    uid: 'guest',
+    email: 'guest@indii.os',
+    displayName: 'Guest Artist',
+    photoURL: null,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+    lastLoginAt: Timestamp.now(),
+    emailVerified: false,
+    membership: { tier: 'free', expiresAt: null },
+    accountType: 'artist',
+
     bio: 'Creative Director',
-    preferences: '{}',
-    brandKit: {
-        colors: ['#000000', '#ffffff'],
-        fonts: 'Inter',
-        brandDescription: 'My Studio Brand',
-        negativePrompt: '',
-        socials: {},
-        brandAssets: [],
-        referenceImages: [],
-        releaseDetails: {
-            title: 'Untitled Project',
-            type: 'Single',
-            artists: 'Me',
-            genre: 'Pop',
-            mood: 'Energetic',
-            themes: 'Life',
-            lyrics: ''
-        }
+    preferences: {
+        theme: 'dark',
+        notifications: true
     },
+    brandKit: DEFAULT_BRAND_KIT,
     analyzedTrackIds: [],
     knowledgeBase: [],
     savedWorkflows: [],
@@ -72,9 +87,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         saveProfileToStorage(profile).catch(err => console.error("[ProfileSlice] Failed to save profile:", err));
     },
     updateBrandKit: (updates) => set((state) => {
+        const currentBrandKit = state.userProfile.brandKit || DEFAULT_BRAND_KIT;
         const newProfile = {
             ...state.userProfile,
-            brandKit: { ...state.userProfile.brandKit, ...updates }
+            brandKit: { ...currentBrandKit, ...updates }
         };
         saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save profile update:", err));
         return { userProfile: newProfile };
@@ -92,11 +108,12 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             const profile = await getProfileFromStorage(uid);
             if (profile) {
                 console.info('[Profile] Loaded profile for:', uid);
+                // Ensure legacy profiles align with new schema if needed (runtime migration could go here)
                 set({ userProfile: profile });
             } else {
                 console.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user
-                const newProfile = { ...DEFAULT_USER_PROFILE, id: uid };
+                const newProfile = { ...DEFAULT_USER_PROFILE, id: uid, uid: uid };
                 set({ userProfile: newProfile });
                 await saveProfileToStorage(newProfile);
             }
@@ -111,9 +128,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         window.location.reload();
     },
     setTheme: (theme) => set((state) => {
-        const preferences = typeof state.userProfile.preferences === 'string'
-            ? JSON.parse(state.userProfile.preferences || '{}')
-            : { ...state.userProfile.preferences };
+        // Assume preferences is object now
+        const preferences = state.userProfile.preferences || { notifications: true, theme: 'dark' };
 
         const newProfile = {
             ...state.userProfile,

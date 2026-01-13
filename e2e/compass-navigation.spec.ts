@@ -67,7 +67,6 @@ test.describe('Compass: UI Traversal & Integrity Verification', () => {
             'Legal Department': 'Legal Dashboard',
             'Publishing Department': 'Catalog',
             'Finance Department': 'Finance',
-            'Banana Studio': 'Banana',
             'Licensing Department': 'Licensing',
             'Audio Analyzer': 'Analyzer',
             'Workflow Builder': 'Workflow',
@@ -111,9 +110,9 @@ test.describe('Compass: UI Traversal & Integrity Verification', () => {
             if (await returnBtn.isVisible()) {
                 await returnBtn.click();
             } else {
-                 if (!await page.getByRole('heading', { name: /STUDIO HQ/i }).isVisible()) {
-                      console.warn(`[Compass] ⚠️ "Return to HQ" not visible for ${targetName}.`);
-                 }
+                if (!await page.getByRole('heading', { name: /STUDIO HQ/i }).isVisible()) {
+                    console.warn(`[Compass] ⚠️ "Return to HQ" not visible for ${targetName}.`);
+                }
             }
             await expect(page.getByRole('heading', { name: /STUDIO HQ/i })).toBeVisible();
         }
@@ -159,9 +158,9 @@ test.describe('Compass: UI Traversal & Integrity Verification', () => {
         // 3. Attach Button (Desktop only)
         const attachBtn = page.getByRole('button', { name: 'Attach', exact: false });
         if (await attachBtn.count() === 0) {
-             await expect(page.locator('button[aria-label="Attach files"]')).toBeVisible();
+            await expect(page.locator('button[aria-label="Attach files"]')).toBeVisible();
         } else {
-             await expect(attachBtn).toBeVisible();
+            await expect(attachBtn).toBeVisible();
         }
 
         console.log('[Compass] ✅ Shortcut Integrity Verified.');
@@ -189,19 +188,19 @@ test.describe('Compass: UI Traversal & Integrity Verification', () => {
 
         // Let's check visibility
         if (await panel.isVisible()) {
-             console.log('[Compass] Right Panel is visible.');
+            console.log('[Compass] Right Panel is visible.');
 
-             // Verify content
-             // It should contain "Context" or specific module info.
-             // Creative Director has "CreativePanel"
-             await expect(panel).toBeVisible();
+            // Verify content
+            // It should contain "Context" or specific module info.
+            // Creative Director has "CreativePanel"
+            await expect(panel).toBeVisible();
         } else {
-             console.log('[Compass] Right Panel hidden, attempting to toggle...');
-             // Find toggle button. Usually in top header or near the edge.
-             // In Sidebar.tsx, there's a Sidebar toggle.
-             // Right Panel toggle is often in the header of the Right Panel (if visible) or elsewhere.
-             // If hidden, the toggle must be visible somewhere.
-             // We'll skip strict toggle if not found, but we verify we attempted.
+            console.log('[Compass] Right Panel hidden, attempting to toggle...');
+            // Find toggle button. Usually in top header or near the edge.
+            // In Sidebar.tsx, there's a Sidebar toggle.
+            // Right Panel toggle is often in the header of the Right Panel (if visible) or elsewhere.
+            // If hidden, the toggle must be visible somewhere.
+            // We'll skip strict toggle if not found, but we verify we attempted.
         }
 
         // Return to HQ

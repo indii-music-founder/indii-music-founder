@@ -102,12 +102,14 @@ export default function MerchDesigner() {
                                     onClick={() => setMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
+                                    data-testid="mode-design-btn"
                                 />
                                 <ModeToggle
                                     active={false}
                                     onClick={() => setMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
+                                    data-testid="mode-showroom-btn"
                                 />
                             </div>
 

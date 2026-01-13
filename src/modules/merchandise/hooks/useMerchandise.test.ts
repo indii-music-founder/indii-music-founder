@@ -81,18 +81,24 @@ describe('useMerchandise', () => {
             expect(result.current.products).toEqual(mockProducts);
         });
 
-        expect(MerchandiseService.subscribeToProducts).toHaveBeenCalledWith('test-user-id', expect.any(Function));
+        expect(MerchandiseService.subscribeToProducts).toHaveBeenCalledWith('test-user-id', expect.any(Function), expect.any(Function));
     });
 
-    it('should handle catalog loading errors', async () => {
+    it('should handle catalog loading errors gracefully', async () => {
         const error = new Error('Failed to fetch');
         vi.mocked(MerchandiseService.getCatalog).mockRejectedValue(error);
-        vi.mocked(MerchandiseService.subscribeToProducts).mockReturnValue(() => { });
+        vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((userId, callback) => {
+            callback([]); // Simulate empty products load to clear isProductsLoading
+            return () => { };
+        });
 
         const { result } = renderHook(() => useMerchandise());
 
         await waitFor(() => {
-            expect(result.current.error).toBe('Failed to fetch');
+            // Updated expectation: The hook swallows the error and sets catalog to empty
+            expect(result.current.error).toBeNull();
+            expect(result.current.catalog).toEqual([]);
+            expect(result.current.loading).toBe(false);
         });
     });
 

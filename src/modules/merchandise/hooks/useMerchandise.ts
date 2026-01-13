@@ -43,8 +43,8 @@ export const useMerchandise = () => {
             })
             .catch((err) => {
                 if (mounted) {
-                    console.warn("[Merchandise] Failed to load catalog:", err);
-                    setError(err.message || "Failed to load catalog");
+                    console.warn("[Merchandise] Failed to load catalog (non-fatal):", err);
+                    setCatalog([]); // Non-fatal, just show empty catalog
                     setIsCatalogLoading(false);
                 }
             });

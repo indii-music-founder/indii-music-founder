@@ -17,7 +17,7 @@ const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
     // Initialize Map
     useEffect(() => {
         if (ref.current && !map) {
-            const initialMap = new window.google.maps.Map(ref.current, {
+            const initialMap = new google.maps.Map(ref.current, {
                 center: { lat: 39.8283, lng: -98.5795 }, // Center of USA
                 zoom: 4,
                 styles: [ // Dark Mode Styles
