@@ -98,6 +98,11 @@ vi.mock('firebase/firestore', () => ({
     arrayRemove: vi.fn((...args) => args),
     increment: vi.fn((n) => n),
     serverTimestamp: vi.fn(() => new Date()),
+    Timestamp: {
+        now: vi.fn(() => ({ toMillis: () => Date.now(), toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 })),
+        fromDate: vi.fn((date) => ({ toMillis: () => date.getTime(), toDate: () => date, seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })),
+        fromMillis: vi.fn((millis) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
+    },
     persistentLocalCache: vi.fn(() => ({})),
     persistentMultipleTabManager: vi.fn(() => ({})),
     runTransaction: vi.fn((cb) => cb({

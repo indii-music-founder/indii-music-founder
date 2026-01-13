@@ -1,4 +1,3 @@
-
 import { db } from '@/services/firebase';
 import {
     collection,
@@ -10,13 +9,45 @@ import {
     doc,
     updateDoc,
     serverTimestamp,
-    onSnapshot,
-    Timestamp
+    onSnapshot
 } from 'firebase/firestore';
-import { VehicleStats, Itinerary, ItineraryStop } from '@/modules/touring/types';
+import { VehicleStats, Itinerary } from '@/modules/touring/types';
+import { z } from 'zod';
 
 const VEHICLES_COLLECTION = 'tour_vehicles';
 const ITINERARIES_COLLECTION = 'tour_itineraries';
+
+// Zod Schemas for Runtime Validation
+const ItineraryStopSchema = z.object({
+    date: z.string(),
+    city: z.string(),
+    venue: z.string(),
+    activity: z.string(),
+    notes: z.string(),
+    type: z.string().optional(),
+    distance: z.number().optional()
+});
+
+const ItinerarySchema = z.object({
+    userId: z.string(),
+    tourName: z.string(),
+    stops: z.array(ItineraryStopSchema),
+    totalDistance: z.string(),
+    estimatedBudget: z.string(),
+    createdAt: z.any().optional(),
+    updatedAt: z.any().optional()
+});
+
+const VehicleStatsSchema = z.object({
+    userId: z.string(),
+    milesDriven: z.number(),
+    fuelLevelPercent: z.number(),
+    tankSizeGallons: z.number(),
+    mpg: z.number(),
+    gasPricePerGallon: z.number(),
+    createdAt: z.any().optional(),
+    updatedAt: z.any().optional()
+});
 
 export const TouringService = {
     /**
@@ -33,38 +64,24 @@ export const TouringService = {
             const snapshot = await getDocs(q);
             if (!snapshot.empty) {
                 const data = snapshot.docs[0].data();
-                return {
-                    id: snapshot.docs[0].id,
-                    ...data
-                } as VehicleStats;
+                try {
+                    VehicleStatsSchema.passthrough().parse(data);
+                    return {
+                        id: snapshot.docs[0].id,
+                        ...data
+                    } as VehicleStats;
+                } catch (validationError) {
+                    console.error('Invalid VehicleStats data:', validationError);
+                    // Decide whether to return partial data or null.
+                    // For safety, returning null forces a fallback/re-seed flow or error state.
+                    return null;
+                }
             }
             return null;
         } catch (error) {
             console.error('Error fetching vehicle stats:', error);
             throw error;
         }
-    },
-
-    /**
-     * Seed initial vehicle stats.
-     */
-    seedDatabase: async (userId: string): Promise<VehicleStats> => {
-        const initialStats = {
-            userId,
-            milesDriven: 0,
-            fuelLevelPercent: 100,
-            tankSizeGallons: 150,
-            mpg: 8,
-            gasPricePerGallon: 4.50,
-            createdAt: serverTimestamp()
-        };
-
-        const docRef = await addDoc(collection(db, VEHICLES_COLLECTION), initialStats);
-        return {
-            id: docRef.id,
-            ...initialStats,
-            createdAt: new Date().toISOString() // Approximate for immediate UI return
-        } as unknown as VehicleStats;
     },
 
     /**
@@ -78,10 +95,19 @@ export const TouringService = {
         );
 
         return onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Itinerary[];
+            const items = snapshot.docs.map(doc => {
+                const data = doc.data();
+                try {
+                    ItinerarySchema.passthrough().parse(data);
+                    return {
+                        id: doc.id,
+                        ...data
+                    } as Itinerary;
+                } catch (validationError) {
+                    console.warn(`Skipping invalid itinerary ${doc.id}:`, validationError);
+                    return null;
+                }
+            }).filter((item): item is Itinerary => item !== null);
             callback(items);
         });
     },
@@ -90,6 +116,9 @@ export const TouringService = {
      * Save/Create an itinerary
      */
     saveItinerary: async (itinerary: Omit<Itinerary, 'id'>) => {
+        // Validate input before sending to DB
+        ItinerarySchema.omit({ createdAt: true, updatedAt: true }).passthrough().parse(itinerary);
+
         await addDoc(collection(db, ITINERARIES_COLLECTION), {
             ...itinerary,
             createdAt: serverTimestamp()
@@ -121,7 +150,12 @@ export const TouringService = {
             const docRef = snapshot.docs[0].ref;
             await updateDoc(docRef, { ...stats, updatedAt: serverTimestamp() });
         } else {
-            // If doesn't exist, create it
+            // Validate creation payload if possible, though 'stats' is Partial.
+            // We assume the merging with existing data or defaults happens upstream or we trust the partial update.
+            // However, creating a NEW doc requires checks.
+
+            // If we are creating, we expect essential fields.
+            // Ideally we should enforce full object for creation, but following existing signature:
             await addDoc(collection(db, VEHICLES_COLLECTION), {
                 ...stats,
                 userId,
