@@ -12,3 +12,7 @@
 ## 2026-01-12 - [Doomsday Switch Implementation]
 **Learning:** The Evolution Engine lacked an internal generation cap, relying solely on the caller. This risks infinite loops if the orchestrator fails.
 **Action:** Implemented strict `maxGenerations` check inside `EvolutionEngine.evolve` and verified with "Doomsday Switch" test.
+
+## 2026-01-15 - [The Bloat Check]
+**Learning:** Without explicit length constraints, the mutation function could theoretically produce infinitely growing prompts (Runaway Mutation), potentially crashing the context window of the LLM.
+**Action:** Implemented "The Bloat Check" in `EvolutionEngine` (cap at 100k chars) and verified it with `HelixSanity.test.ts`.
