@@ -46,7 +46,7 @@ const processEnv = {
     // Use environment variables when available - with fallbacks for Web/Public hosting
     // 🛡️ Sentinel: Removed hardcoded fallback API key for security.
     apiKey: readEnv('VITE_API_KEY') || "",
-    projectId: readEnv('VITE_VERTEX_PROJECT_ID') || "indiios-v-1-1",
+    projectId: readEnv('VITE_VERTEX_PROJECT_ID') || "",
     location: readEnv('VITE_VERTEX_LOCATION') || "us-central1",
     useVertex: toBoolean(readEnv('VITE_USE_VERTEX') || "false"),
     googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
@@ -113,19 +113,18 @@ export const env = {
     appCheckKey: processEnv.appCheckKey,
     appCheckDebugToken: processEnv.appCheckDebugToken,
 };
-// Firebase defaults for the production project. These keep the web app working when
-// environment overrides are not supplied (e.g., on Firebase Hosting deployments).
-// NOTE: Firebase API keys are PUBLIC by design (security is enforced via Firestore rules).
-// These fallbacks are required for Firebase Hosting where env vars aren't available at runtime.
+// Firebase defaults for the production project.
+// NOTE: Hardcoded fallbacks have been removed to prevent accidental production usage in dev/staging.
+// All configuration must be provided via environment variables (VITE_FIREBASE_*).
 export const firebaseDefaultConfig = {
-    apiKey: "AIzaSyBWCig_kA7j_3Xm5IphpAq4WqGLwpwEzvA", // Updated Public Firebase API Key (indiiOS)
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-    projectId: "indiios-v-1-1",
-    storageBucket: "indiios-v-1-1.firebasestorage.app",
-    messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd", // Main Studio Web App ID
-    measurementId: "G-KNWPRGE5JK" // Updated for main indiiOS app
+    apiKey: "",
+    authDomain: "",
+    databaseURL: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
 };
 
 // Resolved Firebase configuration that never falls back to unrelated API keys
@@ -133,12 +132,16 @@ export const firebaseDefaultConfig = {
 const firebaseEnv = parsed.success ? parsed.data : processEnv;
 
 export const firebaseConfig = {
-    apiKey: firebaseEnv.firebaseApiKey || firebaseDefaultConfig.apiKey, // Use environment variable if available
-    authDomain: firebaseDefaultConfig.authDomain,
-    databaseURL: firebaseEnv.firebaseDatabaseURL || firebaseDefaultConfig.databaseURL,
-    projectId: firebaseEnv.firebaseProjectId || firebaseDefaultConfig.projectId,
-    storageBucket: firebaseEnv.firebaseStorageBucket || firebaseDefaultConfig.storageBucket,
-    messagingSenderId: firebaseDefaultConfig.messagingSenderId,
-    appId: firebaseDefaultConfig.appId,
-    measurementId: firebaseDefaultConfig.measurementId,
+    apiKey: firebaseEnv.firebaseApiKey || "",
+    authDomain: firebaseEnv.firebaseProjectId ? `${firebaseEnv.firebaseProjectId}.firebaseapp.com` : "",
+    databaseURL: firebaseEnv.firebaseDatabaseURL || "",
+    projectId: firebaseEnv.firebaseProjectId || "",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "",
+    messagingSenderId: "223837784072", // Messaging Sender ID is generally static per project, but safe to keep or remove. Kept for now if needed.
+    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd", // Main App ID
+    measurementId: "G-KNWPRGE5JK"
 };
+
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    console.warn("⚠️ Firebase Configuration Missing: Please set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID");
+}

@@ -83,8 +83,8 @@ export class FinanceService {
 
   /**
    * Fetch persistent earnings reports (DSR style).
-   * Uses Firestore with a self-seeding strategy for Alpha.
    */
+  async fetchEarnings(userId: string): Promise<DSREarningsSummary | null> {
   async fetchEarnings(userId: string): Promise<ValidatedEarningsSummary | null> {
     try {
       if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
@@ -103,6 +103,7 @@ export class FinanceService {
         return null;
       }
 
+      return null;
       const docData = snapshot.docs[0].data();
 
       // Zod Validation for Production Safety
