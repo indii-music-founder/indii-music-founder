@@ -13,6 +13,9 @@
 **Learning:** The Evolution Engine lacked an internal generation cap, relying solely on the caller. This risks infinite loops if the orchestrator fails.
 **Action:** Implemented strict `maxGenerations` check inside `EvolutionEngine.evolve` and verified with "Doomsday Switch" test.
 
+## 2026-01-15 - [The Bloat Check]
+**Learning:** Without explicit length constraints, the mutation function could theoretically produce infinitely growing prompts (Runaway Mutation), potentially crashing the context window of the LLM.
+**Action:** Implemented "The Bloat Check" in `EvolutionEngine` (cap at 100k chars) and verified it with `HelixSanity.test.ts`.
 ## 2024-05-22 - [Gene Loss Prevention]
 **Learning:** Mutated agents can sometimes lose their "parameters" object (brain) if the mutation function (LLM) returns partial JSON. The original engine guardrail only checked for `systemPrompt`, allowing "Brainless" agents (undefined parameters) to crash the runtime later.
 **Action:** Implemented a "Brainless" Check in `EvolutionEngine` to strictly validate that `parameters` exist and are an object before accepting an offspring. Added `HelixGeneLoss.test.ts` to verify this rejection.

@@ -99,6 +99,12 @@ export class EvolutionEngine {
            throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
         }
 
+        // Helix: "The Bloat Check"
+        // Prevent runaway mutations from exploding the context window.
+        // Cap is set to 100,000 characters (approx 25k tokens), which is a safe limit for system prompts.
+        const MAX_PROMPT_LENGTH = 100000;
+        if (offspring.systemPrompt.length > MAX_PROMPT_LENGTH) {
+           throw new Error(`Helix Guardrail: Mutation produced invalid offspring (Prompt Bloat: ${offspring.systemPrompt.length} chars)`);
         // Helix: "Brainless" Check
         // Ensure parameters exist and are not null (prevents runtime crashes).
         if (!offspring.parameters || typeof offspring.parameters !== 'object') {
