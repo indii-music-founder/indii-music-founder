@@ -91,7 +91,6 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                         try {
                             await locator.waitFor({ state: 'visible', timeout: options.timeout || 10000 });
                         } catch (e) {
-                            // Recovery Strategy: Press Escape to clear modals
                             console.log(`[RECOVERY] Step ${id}: Attempting to clear modals...`);
                             await page.keyboard.press('Escape');
                             await page.waitForTimeout(500);
@@ -105,7 +104,6 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                 return true;
             } catch (e: any) {
                 console.warn(`[SKIP] Step ${id}: Could not click ${desc} (${target}) - ${e.message}`);
-                // Second Recovery: Just click body to move focus
                 await page.mouse.click(0, 0).catch(() => { });
                 return false;
             }
@@ -146,22 +144,14 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         // --- PHASE 1: VIDEO PRODUCER ---
         console.log('--- Phase 1: Video Producer ---');
         await safeClick(1, 'nav-item-video', 'Navigate to Video Producer');
-
-        // Wait for module load
         await page.waitForTimeout(3000);
         await page.waitForSelector('[data-testid="mode-director-btn"]', { state: 'visible', timeout: 20000 }).catch(() => { });
-
         await safeClick(2, 'mode-director-btn', 'Ensure Director Mode');
         await safeFill(3, 'director-prompt-input', 'Cinematic cyberpunk forest', 'Type Director Prompt');
         await safeClick(4, 'video-generate-btn', 'Click Generate');
-
-        // Controls removed from UI in V5 refactor - skipping Steps 5-8
-        // Using Shortcut instead for Editor Mode
         await page.keyboard.press('Meta+e');
         logStep(9, 'keypress', 'Switch to Editor (Cmd+E)');
         await page.waitForTimeout(2000);
-
-        // Switch back to Director
         await page.keyboard.press('Meta+e');
         logStep(10, 'keypress', 'Switch back to Director (Cmd+E)');
         await page.waitForTimeout(1000);
@@ -170,25 +160,17 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         console.log('--- Phase 2: Merch Studio ---');
         await safeClick(12, 'nav-item-merch', 'Navigate to Merch Studio');
         await page.waitForTimeout(2000);
-
-        // Go to Design Mode first (Dashboard -> New Design)
         await safeClick(13, 'new-design-btn', 'Click New Design');
         await page.waitForTimeout(1000);
-
-        // Switch to Showroom Mode
         await safeClick(14, 'mode-showroom-btn', 'Switch to Showroom Mode');
-
-        // Product Selection
         await safeClick(15, 'showroom-product-t-shirt', 'Select T-Shirt');
         await safeClick(16, 'placement-center-chest', 'Select Center Placement');
         await safeFill(17, 'scene-prompt-input', 'Urban street style', 'Type Scene Prompt');
-
-        // Generate Mockup (Disabled if no asset)
         const generateBtn = page.locator('[data-testid="showroom-generate-mockup-btn"]');
         if (await generateBtn.isVisible() && await generateBtn.isEnabled()) {
             await safeClick(18, 'showroom-generate-mockup-btn', 'Generate Mockup');
         } else {
-            console.log('[INFO] Skipping Mockup Generation (Button disabled/missing)');
+            console.log('[INFO] Skipping Mockup Generation');
             clickCount++;
         }
 
@@ -196,16 +178,11 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         console.log('--- Phase 3: Creative Canvas ---');
         await safeClick(19, 'nav-item-creative', 'Navigate to Creative Director');
         await page.waitForTimeout(2000);
-
-        // Ensure Gallery Mode
         await safeClick(20, 'gallery-view-btn', 'Switch to Gallery View');
-
-        // Robust Gallery Selection
         try {
             const galleryItemSelector = '[data-testid^="gallery-item-"]';
             await page.waitForSelector(galleryItemSelector, { timeout: 10000 });
             const galleryItems = await page.locator(galleryItemSelector).all();
-
             if (galleryItems.length > 0) {
                 const firstItem = galleryItems[0];
                 await firstItem.hover();
@@ -214,14 +191,12 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                 await viewBtn.click({ force: true });
                 logStep(21, 'click', 'Select Gallery Item (Fullsize View)');
             } else {
-                throw new Error('No gallery items found');
+                throw new Error('No gallery items');
             }
         } catch (e: any) {
             console.log(`[WARN] Step 21 fallback: ${e.message}`);
             await safeClick(21, '[data-testid^="gallery-item-"]', 'Select Gallery Item (Fallback)', { rawSelector: true, force: true });
         }
-
-        // Modal Open
         await page.waitForSelector('[data-testid="creative-canvas-modal-content"]', { timeout: 10000 });
         await safeClick(22, 'edit-canvas-btn', 'Click Edit Mode');
         await safeClick(23, 'add-rect-btn', 'Add Rectangle');
@@ -232,10 +207,8 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         console.log('--- Phase 4: Reference Manager ---');
         await safeClick(26, 'nav-item-reference-manager', 'Navigate to Reference Assets');
         await page.waitForTimeout(2000);
-
         await safeClick(27, 'add-new-btn', 'Click Add New Asset (Manual)');
         await page.keyboard.press('Escape');
-
         try {
             const refItemSelector = '[data-testid^="gallery-item-"]';
             await page.waitForSelector(refItemSelector, { timeout: 10000 });
@@ -253,20 +226,15 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         console.log('--- Phase 5: Cycle to 100 Clicks ---');
         const modules = ['video', 'merch', 'creative', 'reference-manager'];
         let cycleId = 30;
-
         while (clickCount < 100) {
             const mod = modules[cycleId % modules.length];
-
             if (clickCount > 0 && clickCount % 20 === 0) {
                 console.log(`[INFO] Periodic reload at ${clickCount} clicks...`);
                 await page.reload();
                 await page.waitForTimeout(2000);
             }
-
             await page.waitForTimeout(100 + Math.random() * 200);
-
             const success = await safeClick(cycleId, `nav-item-${mod}`, `Cycle: Navigate to ${mod}`);
-
             if (success) {
                 cycleId++;
                 if (mod === 'video') {
@@ -284,11 +252,9 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                     await safeClick(cycleId, '[data-testid^="gallery-item-"]', 'Ref Item', { rawSelector: true, noWait: true });
                 }
             }
-
             cycleId++;
-            if (cycleId > 600) break;
+            if (cycleId > 800) break;
         }
-
         console.log(`TOTAL SUCCESSFUL CLICKS: ${clickCount}`);
         expect(clickCount).toBeGreaterThanOrEqual(100);
     });

@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { HistoryItem } from '@/types/History';
+import { HistoryItem } from '@/core/types/history';
 
 export type { HistoryItem };
 

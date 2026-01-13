@@ -2,7 +2,7 @@
 import { db, storage } from './firebase';
 import { collection, query, orderBy, limit, Timestamp, where, getDocs } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
-import { HistoryItem } from '@/types/History';
+import { HistoryItem } from '@/core/types/history';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 
@@ -217,4 +217,3 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 }
 
 export const StorageService = new StorageServiceImpl();
-

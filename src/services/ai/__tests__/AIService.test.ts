@@ -170,7 +170,7 @@ describe("AIService", () => {
       expect(p1).toBe(p2);
 
       // Resolve underlying call
-      // @ts-expect-error
+      // @ts-expect-error - resolveGenerate is a mock function set asynchronously
       resolveGenerate(mockResponse);
 
       const r1 = await p1;
