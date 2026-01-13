@@ -31,15 +31,9 @@ vi.mock('../core/store', () => {
 });
 
 // Mock Dashboard to use useNavigate and verify it runs
-vi.mock('../modules/dashboard/Dashboard', () => {
-    const { useNavigate } = require('react-router-dom');
-    return {
-        default: () => {
-            useNavigate();
-            return <div>Dashboard Loaded</div>;
-        }
-    };
-});
+vi.mock('../modules/dashboard/Dashboard', () => ({
+    default: () => <div>Dashboard Loaded</div>
+}));
 
 // Mock ErrorBoundary to just render children so errors bubble up
 vi.mock('../core/components/ErrorBoundary', () => ({

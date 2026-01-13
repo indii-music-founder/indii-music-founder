@@ -21,7 +21,7 @@ export interface ProfileSlice {
     updateBrandKit: (updates: Partial<BrandKit>) => void;
     loadUserProfile: (uid: string) => Promise<void>;
     logout: () => Promise<void>;
-    setTheme: (theme: 'dark' | 'light' | 'banana' | 'banana-pro') => void;
+    setTheme: (theme: 'dark' | 'light') => void;
 }
 
 // Default Guest Profile

@@ -35,12 +35,12 @@ describe('MerchandiseDashboard', () => {
         expect(screen.getByText(/Growth/)).toBeInTheDocument();
     });
 
-    it('renders the Banana analytics components', () => {
+    it('renders the Sales analytics components', () => {
         render(<MerchandiseDashboard />);
 
         // These texts are inside MerchandiseAnalytics
-        expect(screen.getByText('Banana Sales Trend')).toBeInTheDocument();
-        expect(screen.getByText('Banana Pro Performance')).toBeInTheDocument();
+        expect(screen.getByText('Sales Trend')).toBeInTheDocument();
+        expect(screen.getByText('Conversion Cycle')).toBeInTheDocument();
 
         // Check for specific data points labels
         expect(screen.getByText('Standard Product Performance')).toBeInTheDocument();

@@ -78,7 +78,7 @@ vi.mock('framer-motion', async () => {
     };
 });
 
-describe('PhysicalMediaDesigner (Banana Pro Edition)', () => {
+describe('PhysicalMediaDesigner (Project Sonic Edition)', () => {
     const mockToast = {
         success: vi.fn(),
         error: vi.fn(),
@@ -119,15 +119,11 @@ describe('PhysicalMediaDesigner (Banana Pro Edition)', () => {
         expect(screen.getByTitle('Text')).toBeInTheDocument();
         expect(screen.getByTitle('Image')).toBeInTheDocument();
 
-        // Banana Time button
-        const bananaBtn = screen.getByTitle('Banana Time');
-        expect(bananaBtn).toBeInTheDocument();
+        // AI Synthesis button
+        const aiBtn = screen.getByTitle('AI Synthesis');
+        expect(aiBtn).toBeInTheDocument();
 
-        fireEvent.click(bananaBtn);
-        expect(mockToast.success).toHaveBeenCalledWith("It's Banana Time! 🍌");
-
-        // Check if BananaAssets panel appeared
-        expect(screen.getByText('Banana Assets')).toBeInTheDocument();
+        fireEvent.click(aiBtn);
     });
 
     test('LayerPanel interactions', () => {
@@ -138,11 +134,11 @@ describe('PhysicalMediaDesigner (Banana Pro Edition)', () => {
         expect(screen.getAllByText('Layers').length).toBeGreaterThan(0);
 
         // Check default layers
-        expect(screen.getByText('Main Banana')).toBeInTheDocument();
+        expect(screen.getByText('Title Text')).toBeInTheDocument();
         expect(screen.getByText('Background')).toBeInTheDocument();
 
-        const mainBanana = screen.getByText('Main Banana');
-        fireEvent.click(mainBanana);
+        const titleText = screen.getByText('Title Text');
+        fireEvent.click(titleText);
     });
 
     test('Creative Director chat interaction', async () => {

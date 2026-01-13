@@ -25,7 +25,7 @@ export const AI_MODELS = {
         FAST: 'gemini-3-flash-preview',
     },
     IMAGE: {
-        // Main image generation model (Nano Banana Pro)
+        // Main image generation model
         GENERATION: 'gemini-3-pro-image-preview',
     },
     AUDIO: {

@@ -11,10 +11,15 @@ export const useRider = () => {
     const [loading, setLoading] = useState(true);
     const toast = useToast();
 
+    const [prevUserId, setPrevUserId] = useState(userProfile?.id);
+    if (userProfile?.id !== prevUserId) {
+        setPrevUserId(userProfile?.id);
+        setLoading(!!userProfile?.id);
+    }
+
     useEffect(() => {
         if (!userProfile?.id) return;
 
-        setLoading(true);
         const unsubscribe = RiderService.subscribeToRiderItems(userProfile.id, (data) => {
             setItems(data);
             setLoading(false);

@@ -9,7 +9,7 @@ import { EndFrameSelector } from './EndFrameSelector';
 import { CandidatesCarousel, Candidate } from './CandidatesCarousel';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
-import { NANA_COLORS, NanaColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
@@ -34,7 +34,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
     // Data State
     const [prompt, setPrompt] = useState('');
-    const [activeColor, setActiveColor] = useState<NanaColor>(NANA_COLORS[0]);
+    const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]);
     const [editDefinitions, setEditDefinitions] = useState<Record<string, string>>({});
     const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string; data: string } | null>>({});
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
@@ -106,7 +106,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         }
 
         setIsProcessing(true);
-        toast.info('Processing Nana Banana Pro Edits...');
+        toast.info('Processing Studio Edits...');
 
         try {
             const results = await Editing.multiMaskEdit({

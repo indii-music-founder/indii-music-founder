@@ -3,14 +3,25 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrendingUp, Award, Zap, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const bananaTrendData = [
+interface RevenueTrend {
+    name: string;
+    sales: number;
+    revenue: number;
+}
+
+interface ConversionCycle {
+    day: string;
+    revenue: number;
+}
+
+const revenueTrendData: RevenueTrend[] = [
     { name: 'Week 1', sales: 1500, revenue: 1500 },
     { name: 'Week 2', sales: 2300, revenue: 2000 },
     { name: 'Week 3', sales: 3200, revenue: 3500 },
     { name: 'Week 4', sales: 4500, revenue: 4500 },
 ];
 
-const bananaProPerformanceData = [
+const conversionCycleData: ConversionCycle[] = [
     { day: 'Mon', revenue: 1200 },
     { day: 'Tue', revenue: 2100 },
     { day: 'Wed', revenue: 1800 },
@@ -44,7 +55,7 @@ export const MerchandiseAnalytics: React.FC = () => {
 
                 <div className="h-[250px] w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={bananaTrendData}>
+                        <AreaChart data={revenueTrendData}>
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
@@ -117,7 +128,7 @@ export const MerchandiseAnalytics: React.FC = () => {
 
                 <div className="h-[250px] w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={bananaProPerformanceData}>
+                        <BarChart data={conversionCycleData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
                             <XAxis
                                 dataKey="day"
@@ -142,7 +153,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                                 animationDuration={1500}
                                 animationEasing="ease-out"
                             >
-                                {bananaProPerformanceData.map((entry, index) => (
+                                {conversionCycleData.map((entry: ConversionCycle, index: number) => (
                                     <Cell
                                         key={`cell-${index}`}
                                         fill={entry.revenue > 3000 ? '#A855F7' : '#22d3ee20'}

@@ -11,7 +11,7 @@ interface TourMapProps {
 const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<google.maps.Map>();
-    const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
+    const markersRef = useRef<google.maps.Marker[]>([]);
     const toast = useToast();
 
     // Initialize Map
@@ -113,20 +113,22 @@ const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
         if (!map) return;
 
         // Clear existing markers
-        markers.forEach(marker => marker.setMap(null));
-        setMarkers([]);
+        markersRef.current.forEach(marker => marker.setMap(null));
+        markersRef.current = [];
 
         if (locations.length === 0) return;
 
-        const geocoder = new window.google.maps.Geocoder();
-        const bounds = new window.google.maps.LatLngBounds();
-        const newMarkers: google.maps.Marker[] = [];
+        const geocoder = new google.maps.Geocoder();
+        const bounds = new google.maps.LatLngBounds();
 
         locations.forEach((location, index) => {
-            geocoder.geocode({ address: location }, (results, status) => {
+            geocoder.geocode({ address: location }, (
+                results: google.maps.GeocoderResult[] | null,
+                status: google.maps.GeocoderStatus
+            ) => {
                 if (status === 'OK' && results && results[0]) {
                     const position = results[0].geometry.location;
-                    const marker = new window.google.maps.Marker({
+                    const marker = new google.maps.Marker({
                         position,
                         map,
                         title: location,
@@ -135,15 +137,15 @@ const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
                             color: "white",
                             fontWeight: "bold"
                         },
-                        animation: window.google.maps.Animation.DROP
+                        animation: google.maps.Animation.DROP
                     });
 
-                    newMarkers.push(marker);
+                    markersRef.current.push(marker);
                     bounds.extend(position);
 
                     // If it's the last one, confirm set and fit bounds
                     // Note: Geocoding is async, this logic is a bit naive for order but works for visualization
-                    if (newMarkers.length > 0) {
+                    if (markersRef.current.length > 0) {
                         map.fitBounds(bounds);
                         // If only one marker, zoom out a bit so we're not too close
                         if (locations.length === 1) {
@@ -156,8 +158,6 @@ const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
                 }
             });
         });
-
-        setMarkers(newMarkers);
     }, [map, locations]); // Re-run when locations list changes
 
     return <div ref={ref} className="w-full h-full rounded-xl overflow-hidden" />;

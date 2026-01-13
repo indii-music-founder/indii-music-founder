@@ -17,10 +17,15 @@ export const useTouring = () => {
     const currentItineraryRef = useRef<Itinerary | null>(null);
     useEffect(() => { currentItineraryRef.current = currentItinerary; }, [currentItinerary]);
 
+    const [prevUserId, setPrevUserId] = useState(userProfile?.id);
+    if (userProfile?.id !== prevUserId) {
+        setPrevUserId(userProfile?.id);
+        setLoading(!!userProfile?.id);
+    }
+
     useEffect(() => {
         if (!userProfile?.id) return;
 
-        setLoading(true);
 
         // Fetch vehicle stats
         TouringService.getVehicleStats(userProfile.id).then(stats => {
