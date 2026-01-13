@@ -187,16 +187,17 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        // Mock Earnings Data - but using real credentials if present
+        // Production: Return 0 earnings until actual API integration is available.
+        // DO NOT generate random numbers in production.
         return {
             distributorId: 'distrokid',
             releaseId: releaseId,
             period: period,
-            streams: Math.floor(Math.random() * 50000),
-            downloads: Math.floor(Math.random() * 100),
-            grossRevenue: 150.00,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
             distributorFee: 0, // 100% Payout
-            netRevenue: 150.00,
+            netRevenue: 0,
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()
         };

@@ -15,8 +15,8 @@ export class RevenueService {
   async getUserRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
     try {
       const currentUser = auth.currentUser;
-      // Allow 'superuser' stub for development/testing
-      if (userId !== 'superuser' && (!currentUser || currentUser.uid !== userId)) {
+      // Strict Security: Only allow access if the requested userId matches the authenticated user.
+      if (!currentUser || currentUser.uid !== userId) {
         throw new Error('Unauthorized: Access denied to revenue data.');
       }
 
