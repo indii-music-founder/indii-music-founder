@@ -229,8 +229,11 @@ export class GeneralistAgent extends BaseAgent {
         let currentInput = task;
         const history = useStore.getState().agentHistory;
         let finalResponseText = '';
-        const MAX_ITERATIONS = 8;
+        const MAX_ITERATIONS = 5; // Reduced from 8 to prevent infinite loops
         const MAX_NO_PROGRESS = 3; // Bail out after 3 iterations without progress
+
+        // Track last tool call to prevent stuttering loops (retrying same failed action)
+        let lastToolCall: { name: string; args: string; result: 'success' | 'error' } | null = null;
 
         while (iterations < MAX_ITERATIONS) { // Limit iterations for safety
             iterations++; // Increment at start to ensure we always count
@@ -334,30 +337,65 @@ export class GeneralistAgent extends BaseAgent {
 
                             if (result.tool) {
                                 stepActionTaken = true;
-                                // Report tool usage
-                                onProgress?.({ type: 'tool', toolName: result.tool as string, content: `Executing ${result.tool}...` });
+                                const toolName = result.tool as string;
+                                const argsStr = JSON.stringify(result.args || {});
 
-                                const toolFunc = TOOL_REGISTRY[result.tool as string];
+                                // LOOP DETECTION: Check if we are retrying the exact same failed action
+                                if (lastToolCall &&
+                                    lastToolCall.name === toolName &&
+                                    lastToolCall.args === argsStr &&
+                                    lastToolCall.result === 'error') {
+
+                                    const errorMsg = "Loop Detected: You are retrying the exact same tool call that just failed. Stopping execution to prevent infinite loop.";
+                                    console.warn(`[GeneralistAgent] ${errorMsg}`);
+                                    onProgress?.({ type: 'thought', content: errorMsg });
+
+                                    // Force termination
+                                    return { text: `Agent stopped: ${errorMsg}` };
+                                }
+
+                                // Report tool usage
+                                onProgress?.({ type: 'tool', toolName: toolName, content: `Executing ${toolName}...` });
+
+                                const toolFunc = TOOL_REGISTRY[toolName];
                                 let output: string = "Unknown tool";
+                                let isError = false;
+
                                 if (toolFunc) {
                                     try {
                                         const toolResult = await toolFunc(result.args as Record<string, unknown>);
+
+                                        // Check if the result itself indicates an error (standardized ToolResult)
+                                        if (typeof toolResult === 'object' && toolResult !== null && 'success' in toolResult && (toolResult as any).success === false) {
+                                            isError = true;
+                                        }
+
                                         output = typeof toolResult === 'string'
                                             ? toolResult
                                             : (typeof toolResult === 'object' && toolResult !== null && 'message' in toolResult
                                                 ? (toolResult as any).message
                                                 : JSON.stringify(toolResult));
                                     } catch (err: unknown) {
+                                        isError = true;
                                         output = `Error: ${err instanceof Error ? err.message : String(err)}`;
                                     }
+                                } else {
+                                    isError = true;
                                 }
+
+                                // Update last tool call state
+                                lastToolCall = {
+                                    name: toolName,
+                                    args: argsStr,
+                                    result: isError ? 'error' : 'success'
+                                };
 
                                 onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
 
-                                if (String(output).toLowerCase().includes('successfully')) {
-                                    currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
+                                if (String(output).toLowerCase().includes('successfully') && !isError) {
+                                    currentInput = `Tool ${toolName} Output: ${output}. Task likely complete. Use final_response if done.`;
                                 } else {
-                                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                                    currentInput = `Tool ${toolName} Output: ${output}. Continue.`;
                                 }
                             }
                         }
