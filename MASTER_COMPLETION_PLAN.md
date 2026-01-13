@@ -7,17 +7,17 @@ This document serves as the single source of truth for the remaining implementat
 ## 1. Video Infrastructure
 
 ### 1.1 Video Backend (Cloud Functions)
-- [ ] **Implement `generateVideoFn` in `functions/src/index.ts`**
+- [x] **Implement `generateVideoFn` in `functions/src/index.ts`**
     - Replace placeholder with Vertex AI Veo-3.1 API integration.
     - Handle parameters: prompt, aspect ratio, duration.
     - Implement signed URL generation for output storage.
     - Add error handling and retry logic.
-- [ ] **Job Status Management**
+- [x] **Job Status Management**
     - Implement status updates to Firestore (`videoJobs` collection).
     - Track states: `queued`, `processing`, `complete`, `failed`.
 
 ### 1.2 Video Studio Export (Frontend)
-- [ ] **Implement Local Rendering Service**
+- [x] **Implement Local Rendering Service**
     - Create `src/services/video/RenderService.ts`.
     - Use `@remotion/renderer` (or browser-based equivalent if Node not available) to render compositions.
     - *Note:* Since this is a browser/electron app, we might need to rely on the Cloud Function for high-quality rendering, or a local FFMPEG binary if Electron-capable. The plan suggests "Local Rendering Service" but also "Backend API Setup". We will prioritize the Backend API (Veo) first as it's the AI generation part, then look at composition rendering.
@@ -57,33 +57,33 @@ The following agents currently exist as definitions but lack specialized tool im
 ## 3. Distribution System (DDEX)
 
 ### 3.1 DDEX Services (`src/services/ddex/`)
-- [ ] **Complete `ERNService.ts`**
+- [x] **Complete `ERNService.ts`**
     - Implement `mapContributors`, `mapResources`, `mapDeals`.
     - Ensure ERN 4.3 compliance for AI flagging.
-- [ ] **Implement `DSRService.ts`**
+- [x] **Implement `DSRService.ts`**
     - Parse sales reports (XML/CSV) into Firestore `dsrReports`.
 
 ### 3.2 Adapters (`src/services/distribution/adapters/`)
-- [ ] **DistroKid Adapter**: Implement `submitRelease`, `getEarnings`.
-- [ ] **TuneCore Adapter**: Implement `submitRelease`, `getEarnings`.
-- [ ] **CD Baby Adapter**: Implement `submitRelease`, `getEarnings`.
+- [x] **DistroKid Adapter**: Implement `submitRelease`, `getEarnings`.
+- [x] **TuneCore Adapter**: Implement `submitRelease`, `getEarnings`.
+- [x] **CD Baby Adapter**: Implement `submitRelease`, `getEarnings`.
 
 ### 3.3 UI Components (`src/modules/publishing/`)
-- [ ] `DistributorConnectionsPanel`: Manage API keys.
-- [ ] `ReleaseStatusCard`: Track delivery status.
-- [ ] `EarningsDashboard`: Visualize revenue from DSRs.
+- [x] `DistributorConnectionsPanel`: Manage API keys.
+- [x] `ReleaseStatusCard`: Track delivery status.
+- [x] `EarningsDashboard`: Visualize revenue from DSRs.
 
 ---
 
 ## 4. Social Commerce & Revenue
 
 ### 4.1 Revenue System
-- [ ] **Create `src/services/RevenueService.ts`**
+- [x] **Create `src/services/RevenueService.ts`**
     - Aggregate revenue from `dsrReports` (Distribution) and `storeOrders` (Merch).
     - Provide `getTotalRevenue`, `getRevenueBySource`.
 
 ### 4.2 Social Drops
-- [ ] **Update `SocialFeed`**
+- [x] **Update `SocialFeed`**
     - Support embedded `ProductCard` in posts.
     - "Buy Now" flow integration.
 
@@ -92,17 +92,17 @@ The following agents currently exist as definitions but lack specialized tool im
 ## 5. Financial & Integrity
 
 ### 5.1 Refactor `useFinance`
-- [ ] Remove demo logic.
-- [ ] Connect to `RevenueService` and `ExpenseService` (if exists) or Firestore.
+- [x] Remove demo logic.
+- [x] Connect to `RevenueService` and `ExpenseService` (if exists) or Firestore.
 
 ### 5.2 Earnings Dashboard
-- [ ] Update UI to V5.0 standards (Glassmorphism).
-- [ ] Real-time data binding.
+- [x] Update UI to V5.0 standards (Glassmorphism).
+- [x] Real-time data binding.
 
 ---
 
 ## Execution Order
-1.  **Video Infrastructure** (Backend + Export)
-2.  **Agent Expansion** (Tools Implementation)
-3.  **Distribution & Finance** (DDEX, Adapters, Revenue Service)
-4.  **Social Commerce** (UI integration)
+1.  **Video Infrastructure** (Backend + Export) ✅
+2.  **Agent Expansion** (Tools Implementation) ✅
+3.  **Distribution & Finance** (DDEX, Adapters, Revenue Service) ✅
+4.  **Social Commerce** (UI integration) ✅
