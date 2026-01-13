@@ -28,3 +28,7 @@
 ## 2025-05-28 - [Accessible Candidates Carousel]
 **Learning:** Horizontal scrolling lists (carousels) with hover-revealed actions create a "double trap" for keyboard users: they can't see the actions, and they might get stuck navigating a long list without a clear exit.
 **Action:** Ensure all hover-revealed actions in carousels use `group-focus-within:opacity-100` and `focus-visible:opacity-100`. Always provide an accessible `aria-label` for "Close" buttons that use icons.
+
+## 2025-10-26 - [ProjectHub Menu Accessibility]
+**Learning:** The "More Vertical" menu in `ProjectHub` was a classic "Hidden Action Trap". It was only visible on hover, making it accessible to mouse users but a mystery to keyboard users who would tab onto an invisible button.
+**Action:** Applied `group-focus-within:opacity-100` to the container and added `focus-visible:ring-2` to the button. This ensures the menu appears when any element inside it receives focus, and the button itself has a clear focus indicator. Also added `aria-label` for screen reader context.

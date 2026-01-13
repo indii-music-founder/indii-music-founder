@@ -10,6 +10,10 @@ import type { AnyToolFunction } from '../types';
 
 export const VideoTools: Record<string, AnyToolFunction> = {
     generate_video: wrapTool('generate_video', async (args: { prompt: string, image?: string, duration?: number }) => {
+        if (!args.prompt || args.prompt.trim().length === 0) {
+            return toolError("Prompt cannot be empty.", 'INVALID_INPUT');
+        }
+
         const { userProfile } = useStore.getState();
         const results = await VideoGeneration.generateVideo({
             prompt: args.prompt,
@@ -246,10 +250,13 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             userProfile
         });
 
-        const jobId = results[0]?.id;
-        return toolSuccess({
-            jobId
-        }, `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`);
+        if (results.length > 0) {
+            const jobId = results[0].id;
+            return toolSuccess({
+                jobId
+            }, `Long-form generation job started. Job ID: ${jobId}. You will see segments appear in your history as they are generated.`);
+        }
+        return toolError("Long-form video generation failed (no result returned).", 'GENERATION_FAILED');
     }),
 
     interpolate_sequence: wrapTool('interpolate_sequence', async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
