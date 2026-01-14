@@ -1,5 +1,16 @@
 import { StateCreator } from 'zustand';
-import { type ModuleId } from '@/core/constants';
+import { type ModuleId, isValidModule } from '@/core/constants';
+
+// Helper to get initial module from URL
+const getInitialModule = (): ModuleId => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    const firstSegment = pathSegments[0];
+    if (firstSegment && isValidModule(firstSegment)) {
+        return firstSegment;
+    }
+    return 'dashboard';
+};
 
 export interface Project {
     id: string;
@@ -29,7 +40,7 @@ export interface AppSlice {
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
-    currentModule: 'dashboard',
+    currentModule: getInitialModule(),
     currentProjectId: 'default',
     projects: [],
     setModule: (module) => set({
