@@ -57,7 +57,8 @@ export const useStore = create<StoreState>()((...a) => ({
 }));
 
 // Expose store for debugging/automation
-if (typeof window !== 'undefined' && import.meta.env.DEV) {
+// Expose store for debugging/automation
+if (typeof window !== 'undefined' && (import.meta.env.DEV || (window as any).__TEST_MODE__)) {
     const win = window as unknown as Window & { useStore: typeof useStore };
     win.useStore = useStore;
 }

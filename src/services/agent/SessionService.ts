@@ -72,3 +72,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 }
 
 export const sessionService = new SessionServiceImpl();
+
+if (import.meta.env.DEV || (typeof window !== 'undefined' && (window as any).__TEST_MODE__)) {
+    (window as any).sessionService = sessionService;
+}

@@ -557,6 +557,6 @@ export class SubscriptionService {
 
 export const subscriptionService = new SubscriptionService();
 
-if (import.meta.env.DEV) {
+if (import.meta.env.DEV || (typeof window !== 'undefined' && (window as any).__TEST_MODE__)) {
   (window as any).subscriptionService = subscriptionService;
 }
