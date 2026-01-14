@@ -75,14 +75,24 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
 
                 {/* Color Selection */}
                 <section>
-                    <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
-                        <Palette className="w-3 h-3" />
+                    <label
+                        id="color-label"
+                        className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2"
+                    >
+                        <Palette className="w-3 h-3" aria-hidden="true" />
                         Base Color
                     </label>
-                    <div className="flex gap-3">
+                    <div
+                        role="radiogroup"
+                        aria-labelledby="color-label"
+                        className="flex gap-3"
+                    >
                         {COLORS.map((color) => (
                             <motion.button
                                 key={color.name}
+                                role="radio"
+                                aria-checked={selectedColor.name === color.name}
+                                aria-label={color.name}
                                 onClick={() => setSelectedColor(color)}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
@@ -99,14 +109,23 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
 
                 {/* Size Selection */}
                 <section>
-                    <label className={`text-xs font-medium uppercase tracking-wider mb-3 block flex items-center gap-2 ${theme.colors.textSecondary}`}>
-                        <Ruler className="w-3 h-3" />
+                    <label
+                        id="size-label"
+                        className={`text-xs font-medium uppercase tracking-wider mb-3 block flex items-center gap-2 ${theme.colors.textSecondary}`}
+                    >
+                        <Ruler className="w-3 h-3" aria-hidden="true" />
                         Size Run
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div
+                        role="radiogroup"
+                        aria-labelledby="size-label"
+                        className="grid grid-cols-3 gap-2"
+                    >
                         {SIZES.map((size) => (
                             <button
                                 key={size}
+                                role="radio"
+                                aria-checked={selectedSize === size}
                                 onClick={() => setSelectedSize(size)}
                                 className={`py-2 rounded-lg text-xs font-medium border transition-all ${selectedSize === size
                                     ? 'bg-yellow-400 text-black border-yellow-400'
@@ -121,12 +140,16 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
 
                 {/* Quantity Selection */}
                 <section>
-                    <label className={`text-xs font-medium uppercase tracking-wider mb-3 block flex items-center gap-2 ${theme.colors.textSecondary}`}>
-                        <Calculator className="w-3 h-3" />
+                    <label
+                        htmlFor="run-quantity"
+                        className={`text-xs font-medium uppercase tracking-wider mb-3 block flex items-center gap-2 ${theme.colors.textSecondary}`}
+                    >
+                        <Calculator className="w-3 h-3" aria-hidden="true" />
                         Run Quantity
                     </label>
                     <div className="flex items-center gap-4">
                         <input
+                            id="run-quantity"
                             type="range"
                             min="50"
                             max="1000"

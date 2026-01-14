@@ -96,6 +96,10 @@ export class EvolutionEngine {
           offspring = structuredClone(offspring);
         } catch (e) {
           // Fallback for environments without structuredClone or non-clonable objects
+        // Helix: Reference Integrity Check
+        // If crossover returns a reference to a parent (lazy implementation),
+        // we must clone it to prevent "Mutation by Reference" affecting the parent (who might be an Elite).
+        if (offspring === parent1 || offspring === parent2) {
           offspring = JSON.parse(JSON.stringify(offspring));
         }
 

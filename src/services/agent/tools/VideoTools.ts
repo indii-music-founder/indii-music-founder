@@ -14,10 +14,15 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             return toolError("Prompt cannot be empty.", 'INVALID_INPUT');
         }
 
+        if (args.duration !== undefined && (args.duration <= 0 || args.duration > 300)) {
+            return toolError("Duration must be a positive number and cannot exceed 300 seconds.", 'INVALID_INPUT');
+        }
+
         const { userProfile } = useStore.getState();
         const results = await VideoGeneration.generateVideo({
             prompt: args.prompt,
             firstFrame: args.image,
+            duration: args.duration,
             userProfile
         });
 

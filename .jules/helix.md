@@ -26,3 +26,6 @@
 ## 2026-05-28 - [Mutation by Reference Defect]
 **Learning:** In environments where Crossover returns a direct reference to a parent (Lazy Crossover), subsequent Mutation operations (if in-place) will corrupt the Elite survivors in the previous generation. This destroys the "Elitism" guarantee, causing the best agents to be overwritten by their own mutated offspring.
 **Action:** Implemented a mandatory "Deep Clone" (via structuredClone) of the offspring immediately after Crossover in EvolutionEngine. This ensures that the new generation is physically distinct from the old one, preserving the integrity of Elite agents.
+## 2026-06-01 - [Mutation by Reference]
+**Learning:** If a Crossover function lazily returns a reference to a parent (instead of a new object), and the subsequent Mutation function modifies that object in-place, the original Parent (which might be an Elite preserved in the next generation) gets corrupted. This breaks Elitism and population stability.
+**Action:** Implemented a "Reference Integrity Check" in `EvolutionEngine` that detects if an offspring is a reference to a parent and creates a deep copy (JSON clone) before allowing mutation. Verified with `HelixReferenceIntegrity.test.ts`.
