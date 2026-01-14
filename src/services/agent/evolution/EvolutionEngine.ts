@@ -88,6 +88,21 @@ export class EvolutionEngine {
 
         let offspring = await this.crossoverFn(parent1, parent2);
 
+        // Helix Guardrail: Prevent "Mutation by Reference" (The Fly Defect)
+        // We deep clone the offspring to ensure that if crossover returned a parent reference,
+        // we don't accidentally mutate the parent (which might be an Elite survivor).
+        // This ensures the gene pool remains pure and history isn't rewritten.
+        try {
+          offspring = structuredClone(offspring);
+        } catch (e) {
+          // Fallback for environments without structuredClone or non-clonable objects
+        // Helix: Reference Integrity Check
+        // If crossover returns a reference to a parent (lazy implementation),
+        // we must clone it to prevent "Mutation by Reference" affecting the parent (who might be an Elite).
+        if (offspring === parent1 || offspring === parent2) {
+          offspring = JSON.parse(JSON.stringify(offspring));
+        }
+
         // Mutation
         if (Math.random() < this.config.mutationRate) {
           offspring = await this.mutationFn(offspring);

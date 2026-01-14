@@ -40,3 +40,7 @@
 ## 2025-10-26 - [ProjectHub Menu Accessibility]
 **Learning:** The "More Vertical" menu in `ProjectHub` was a classic "Hidden Action Trap". It was only visible on hover, making it accessible to mouse users but a mystery to keyboard users who would tab onto an invisible button.
 **Action:** Applied `group-focus-within:opacity-100` to the container and added `focus-visible:ring-2` to the button. This ensures the menu appears when any element inside it receives focus, and the button itself has a clear focus indicator. Also added `aria-label` for screen reader context.
+
+## 2026-02-19 - [Semantic Toggles]
+**Learning:** Using a generic `<button>` for a toggle state (on/off) is ambiguous.
+**Action:** Use `role="switch"` with `aria-checked` to clearly communicate the binary state to assistive technologies, instead of just visual cues.
