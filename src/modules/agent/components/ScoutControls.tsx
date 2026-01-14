@@ -81,6 +81,7 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
 
                 {/* Deploy Button */}
                 <button
+                    data-testid="deploy-scout-btn"
                     onClick={handleScan}
                     disabled={isScanning}
                     aria-busy={isScanning}
@@ -93,7 +94,7 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
                 >
                     {isScanning ? (
                         <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <div data-testid="scout-loading-spinner" className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             <span>Running...</span>
                         </>
                     ) : (
