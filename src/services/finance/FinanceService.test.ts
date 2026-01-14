@@ -139,6 +139,7 @@ describe('FinanceService', () => {
             const mockDocs = [{
                 data: () => ({
                     userId: 'user-123',
+                    period: { startDate: '2024-01-01', endDate: '2024-01-31' },
                     totalGrossRevenue: 1000.50,
                     byRelease: []
                 })
@@ -149,7 +150,17 @@ describe('FinanceService', () => {
             const result = await financeService.fetchEarnings('user-123');
 
             expect(mockGetDocs).toHaveBeenCalled(); // Should check Firestore
-            expect(result.totalGrossRevenue).toBe(1000.50);
+            expect(result?.totalGrossRevenue).toBe(1000.50);
+        });
+
+        it('should return null if no earnings data is found (no seeding)', async () => {
+            mockGetDocs.mockResolvedValueOnce({ docs: [], empty: true });
+
+            const result = await financeService.fetchEarnings('user-123');
+
+            expect(mockGetDocs).toHaveBeenCalled();
+            expect(result).toBeNull();
+            expect(mockAddDoc).not.toHaveBeenCalled();
         });
 
         it('should handle errors by logging to Sentry', async () => {

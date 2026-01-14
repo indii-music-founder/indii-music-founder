@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder } from 'lucide
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
+import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RightPanel() {
@@ -18,13 +19,19 @@ export default function RightPanel() {
                 return <VideoPanel toggleRightPanel={toggleRightPanel} />;
             case 'files':
                 return (
-                    <div className="h-full flex flex-col bg-[#0d1117] relative">
+                    <div className="h-full flex flex-col bg-bg-dark relative">
                         <div className="absolute top-2 right-2 z-10">
                             <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors">
                                 <ChevronRight size={16} />
                             </button>
                         </div>
-                        <ResourceTree className="flex-1 p-2" />
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            <ResourceTree className="flex-1 p-2 overflow-y-auto custom-scrollbar" />
+                            <div className="h-px bg-white/5 mx-2" />
+                            <div className="h-48 flex-shrink-0 bg-black/20">
+                                <FilePreview variant="compact" />
+                            </div>
+                        </div>
                     </div>
                 );
             default:
@@ -58,7 +65,7 @@ export default function RightPanel() {
             initial={false}
             animate={{ width: isRightPanelOpen ? 320 : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-white/10 bg-[#0d1117]/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
+            className="h-full border-l border-white/10 bg-bg-dark/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
         >
             <AnimatePresence mode="wait">
                 {!isRightPanelOpen ? (

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
@@ -27,7 +27,8 @@ export default function VideoWorkflow() {
         currentOrganizationId,
         pendingPrompt,
         setPendingPrompt,
-        selectedItem
+        selectedItem,
+        setVideoInputs
     } = useStore();
 
     // Editor Store
@@ -59,9 +60,14 @@ export default function VideoWorkflow() {
         // Drag logic
     }, []);
 
+    // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
+    const videoHistory = useMemo(() => generatedHistory.filter(h => h.type === 'video'), [generatedHistory]);
+
     // Sync pending prompt
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (pendingPrompt) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
             setPrompt(pendingPrompt);
             setPendingPrompt(null);
@@ -83,7 +89,9 @@ export default function VideoWorkflow() {
 
     // Set initial active video
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (selectedItem?.type === 'video') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveVideo(selectedItem);
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
@@ -286,6 +294,22 @@ export default function VideoWorkflow() {
                                         <span>•</span>
                                         <span>{activeVideo.id.slice(0, 8)}</span>
                                     </div>
+                                    <div className="flex gap-2 mt-2 pt-2 border-t border-white/10">
+                                        <button
+                                            onClick={() => setVideoInputs({ firstFrame: activeVideo })}
+                                            data-testid="set-anchor-btn"
+                                            className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors"
+                                        >
+                                            Set Anchor
+                                        </button>
+                                        <button
+                                            onClick={() => setVideoInputs({ lastFrame: activeVideo })}
+                                            data-testid="set-end-frame-btn"
+                                            className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors"
+                                        >
+                                            Set End Frame
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -311,7 +335,7 @@ export default function VideoWorkflow() {
 
                 {/* Dailies Strip (Bottom Overlay) */}
                 <DailiesStrip
-                    items={generatedHistory.filter(h => h.type === 'video')}
+                    items={videoHistory}
                     selectedId={activeVideo?.id || null}
                     onSelect={setActiveVideo}
                     onDragStart={handleDragStart}

@@ -20,11 +20,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const [platform, setPlatform] = useState('Instagram');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const titleInputRef = useRef<HTMLInputElement>(null);
-    const dateInputRef = useRef<HTMLInputElement>(null);
 
-    // Validation state
-    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Refs for focus management
     const titleRef = useRef<HTMLInputElement>(null);
@@ -77,31 +73,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Reset errors
-        setErrors({});
-        const newErrors: Record<string, string> = {};
-
-        if (!title.trim()) {
-            newErrors.title = 'Campaign name is required';
-        }
-        if (!startDate) {
-            newErrors.startDate = 'Start date is required';
-        }
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            toast.error('Please fix the errors below');
-
-            // Focus first invalid field
-            if (newErrors.title) {
-                titleInputRef.current?.focus();
-            } else if (newErrors.startDate) {
-                dateInputRef.current?.focus();
-            }
         if (!validate()) {
-            // Toast is still useful as a secondary feedback or for screen reader users who might miss inline changes immediately
-            // But now we have inline errors too.
-            // toast.error('Please fill in required fields');
             return;
         }
 
@@ -121,7 +93,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
             onSave(id);
             onClose();
         } catch (error) {
-            // console.error(error);
             toast.error('Failed to create campaign');
         } finally {
             setIsLoading(false);
@@ -159,26 +130,18 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             Campaign Name <span className="text-red-500" aria-hidden="true">*</span>
                         </label>
                         <input
-                            ref={titleInputRef}
                             ref={titleRef}
                             id="campaign-title"
                             type="text"
                             value={title}
                             onChange={(e) => {
                                 setTitle(e.target.value);
+                                if (errors.title) setErrors({...errors, title: ''});
                                 if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
                             }}
                             placeholder="e.g., Summer Single Release"
-                            className={`w-full bg-[#0d1117] border rounded-lg p-2.5 text-white outline-none transition-all ${
-                                errors.title
-                                    ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50'
-                                    : 'border-gray-700 focus:border-blue-500'
-                            }`}
-                                if (errors.title) setErrors({...errors, title: ''});
-                            }}
-                            placeholder="e.g., Summer Single Release"
                             className={cn(
-                                "w-full bg-[#0d1117] border rounded-lg p-2.5 text-white outline-none transition-all",
+                                "w-full bg-bg-dark border rounded-lg p-2.5 text-white outline-none transition-all",
                                 errors.title
                                     ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50"
                                     : "border-gray-700 focus:border-blue-500"
@@ -190,7 +153,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             data-testid="campaign-title-input"
                         />
                         {errors.title && (
-                            <p id="title-error" className="mt-1 text-xs text-red-500 flex items-center gap-1 animate-in slide-in-from-top-1">
                             <p id="title-error" className="mt-1 text-xs text-red-500 flex items-center gap-1 animate-in slide-in-from-left-1 duration-200">
                                 <AlertCircle size={12} /> {errors.title}
                             </p>
@@ -204,7 +166,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief overview of the campaign..."
-                            className="w-full h-24 bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none resize-none"
+                            className="w-full h-24 bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none resize-none"
                             data-testid="campaign-description-input"
                         />
                     </div>
@@ -217,27 +179,17 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             <div className="relative">
                                 <Calendar className="absolute left-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
                                 <input
-                                    ref={dateInputRef}
                                     ref={startDateRef}
                                     id="campaign-start-date"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => {
                                         setStartDate(e.target.value);
+                                        if (errors.startDate) setErrors({...errors, startDate: ''});
                                         if (errors.startDate) setErrors(prev => ({ ...prev, startDate: '' }));
                                     }}
-                                    className={`w-full bg-[#0d1117] border rounded-lg p-2.5 pl-10 text-white outline-none transition-all ${
-                                        errors.startDate
-                                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50'
-                                            : 'border-gray-700 focus:border-blue-500'
-                                    }`}
-                                    required
-                                    aria-invalid={!!errors.startDate}
-                                    aria-describedby={errors.startDate ? "date-error" : undefined}
-                                        if (errors.startDate) setErrors({...errors, startDate: ''});
-                                    }}
                                     className={cn(
-                                        "w-full bg-[#0d1117] border rounded-lg p-2.5 pl-10 text-white outline-none transition-all",
+                                        "w-full bg-bg-dark border rounded-lg p-2.5 pl-10 text-white outline-none transition-all",
                                         errors.startDate
                                             ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/50"
                                             : "border-gray-700 focus:border-blue-500"
@@ -249,7 +201,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 />
                             </div>
                             {errors.startDate && (
-                                <p id="date-error" className="mt-1 text-xs text-red-500 flex items-center gap-1 animate-in slide-in-from-top-1">
                                 <p id="start-date-error" className="mt-1 text-xs text-red-500 flex items-center gap-1 animate-in slide-in-from-left-1 duration-200">
                                     <AlertCircle size={12} /> {errors.startDate}
                                 </p>
@@ -264,7 +215,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 pl-10 text-white focus:border-blue-500 outline-none"
                                     data-testid="campaign-end-date-input"
                                 />
                             </div>
@@ -278,7 +229,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                 id="campaign-platform"
                                 value={platform}
                                 onChange={(e) => setPlatform(e.target.value)}
-                                className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
+                                className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
                                 data-testid="campaign-platform-select"
                             >
                                 <option>Instagram</option>
@@ -289,7 +240,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             </select>
                             <div className="absolute right-3 top-3 pointer-events-none text-gray-500">
                                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </div>
                         </div>
@@ -307,7 +258,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                             className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none"
                             data-testid="create-campaign-submit-btn"
                         >

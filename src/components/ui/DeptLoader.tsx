@@ -62,7 +62,7 @@ export function DeptLoader({
             className={`
                 flex flex-col items-center justify-center gap-3 p-6 rounded-lg
                 ${showPulse ? 'indii-auto-update' : ''}
-                ${fullPage ? 'bg-[#0d1117]/90 backdrop-blur-sm' : ''}
+                ${fullPage ? 'bg-bg-dark/90 backdrop-blur-sm' : ''}
             `}
         >
             <Loader2

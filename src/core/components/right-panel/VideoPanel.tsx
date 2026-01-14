@@ -78,7 +78,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-[#0d1117] to-[#0d1117]/90">
+        <div className="flex flex-col h-full bg-gradient-to-b from-bg-dark to-bg-dark/90">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-blue-500/10 rounded-lg">
@@ -173,12 +173,13 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 <select
                                     value={studioControls.aspectRatio}
                                     onChange={(e) => setStudioControls({ aspectRatio: e.target.value })}
+                                    data-testid="aspect-ratio-select"
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
-                                    <option value="16:9">16:9 Landscape</option>
-                                    <option value="1:1">1:1 Square</option>
-                                    <option value="9:16">9:16 Portrait</option>
-                                    <option value="21:9">21:9 Ultrawide</option>
+                                    <option value="16:9" data-testid="aspect-ratio-option-16-9">16:9 Landscape</option>
+                                    <option value="1:1" data-testid="aspect-ratio-option-1-1">1:1 Square</option>
+                                    <option value="9:16" data-testid="aspect-ratio-option-9-16">9:16 Portrait</option>
+                                    <option value="21:9" data-testid="aspect-ratio-option-21-9">21:9 Ultrawide</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                             </div>
@@ -189,12 +190,13 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 <select
                                     value={studioControls.resolution || '1024x1024'}
                                     onChange={(e) => setStudioControls({ resolution: e.target.value })}
+                                    data-testid="resolution-select"
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
-                                    <option value="1024x1024">1K (Square)</option>
-                                    <option value="1280x720">HD (720p)</option>
-                                    <option value="1920x1080">FHD (1080p)</option>
-                                    <option value="3840x2160">4K (UHD)</option>
+                                    <option value="1024x1024" data-testid="resolution-option-1k">1K (Square)</option>
+                                    <option value="1280x720" data-testid="resolution-option-hd">HD (720p)</option>
+                                    <option value="1920x1080" data-testid="resolution-option-fhd">FHD (1080p)</option>
+                                    <option value="3840x2160" data-testid="resolution-option-4k">4K (UHD)</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                             </div>
@@ -241,7 +243,10 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                     </div>
                                 </motion.div>
                             ))}
-                            <button className="w-full py-3 border border-dashed border-white/10 rounded-xl text-xs text-gray-500 hover:text-gray-300 hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2">
+                            <button
+                                data-testid="add-shot-btn"
+                                className="w-full py-3 border border-dashed border-white/10 rounded-xl text-xs text-gray-500 hover:text-gray-300 hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+                            >
                                 <Plus size={12} /> Add New Shot
                             </button>
                         </div>
@@ -254,7 +259,11 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                             {['Zoom In', 'Pan Left', 'Tilt Up'].map((move) => (
-                                <button key={move} className="px-2 py-2 bg-black/40 hover:bg-white/10 rounded-lg text-[10px] text-gray-300 border border-white/10 hover:border-white/20 transition-all">
+                                <button
+                                    key={move}
+                                    data-testid={`camera-${move.toLowerCase().replace(' ', '-')}`}
+                                    className="px-2 py-2 bg-black/40 hover:bg-white/10 rounded-lg text-[10px] text-gray-300 border border-white/10 hover:border-white/20 transition-all"
+                                >
                                     {move}
                                 </button>
                             ))}
@@ -266,11 +275,18 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         <div className="space-y-2">
                             <div className="flex justify-between">
                                 <label className="text-[10px] font-bold text-gray-500 tracking-wider">MOTION STRENGTH</label>
-                                <span className="text-[10px] text-gray-500 font-mono">0.7</span>
+                                <span className="text-[10px] text-gray-500 font-mono">{studioControls.motionStrength || 0.5}</span>
                             </div>
-                            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full w-[70%] bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value={(studioControls.motionStrength || 0.5) * 100}
+                                onChange={(e) => setStudioControls({ motionStrength: parseInt(e.target.value) / 100 })}
+                                data-testid="motion-slider"
+                                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                            />
                         </div>
                         <div className="space-y-2">
                             <div className="flex justify-between">
@@ -310,6 +326,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             whileTap={{ scale: 0.98 }}
                             onClick={handleRender}
                             disabled={isGenerating}
+                            data-testid="render-sequence-btn"
                             className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}

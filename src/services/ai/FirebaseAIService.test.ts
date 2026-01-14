@@ -211,7 +211,7 @@ describe('FirebaseAIService', () => {
         const { stream } = await service.generateContentStream('Stream me');
         const reader = stream.getReader();
         const { value } = await reader.read();
-        expect(value.text()).toBe('Stream');
+        expect(value?.text()).toBe('Stream');
     });
 
     it('should throw AppException if bootstrap fails', async () => {

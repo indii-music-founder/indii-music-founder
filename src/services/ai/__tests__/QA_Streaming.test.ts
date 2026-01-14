@@ -95,9 +95,9 @@ describe('Streaming QA', () => {
         const reader = stream.getReader();
 
         const r1 = await reader.read();
-        expect(r1.value.text()).toBe('Good');
+        expect(r1.value?.text()).toBe('Good');
 
         const r2 = await reader.read();
-        expect(r2.value.text()).toBe(''); // Should catch error and return empty string
+        expect(r2.value?.text()).toBe(''); // Should catch error and return empty string
     });
 });

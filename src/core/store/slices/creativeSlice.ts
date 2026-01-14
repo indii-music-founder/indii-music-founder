@@ -1,20 +1,7 @@
 import { StateCreator } from 'zustand';
+import { HistoryItem } from '@/core/types/history';
 
-export interface HistoryItem {
-    id: string;
-    type: 'image' | 'video' | 'music' | 'text';
-    url: string;
-    prompt: string;
-    timestamp: number;
-    projectId: string;
-    orgId?: string;
-    meta?: string;
-    mask?: string;
-    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
-    tags?: string[];
-    subject?: string;
-    origin?: 'generated' | 'uploaded';
-}
+export type { HistoryItem };
 
 export interface CanvasImage {
     id: string;
@@ -80,6 +67,10 @@ export interface CreativeSlice {
     updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
+    uploadedAudio: HistoryItem[];
+    addUploadedAudio: (audio: HistoryItem) => void;
+    removeUploadedAudio: (id: string) => void;
+
     // Studio Controls
     studioControls: {
         aspectRatio: string;
@@ -112,13 +103,14 @@ export interface CreativeSlice {
         ingredients: HistoryItem[];
     };
     setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
+    setVideoInputs: (inputs: Partial<CreativeSlice['videoInputs']>) => void;
 
     // Entity Anchor (Character Consistency)
     entityAnchor: HistoryItem | null;
     setEntityAnchor: (img: HistoryItem | null) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'showroom' | 'video_production';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'showroom' | 'video_production') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom') => void;
 
     prompt: string;
     setPrompt: (prompt: string) => void;
@@ -137,6 +129,9 @@ export interface CreativeSlice {
     removeWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
     toggleWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
     setPreciseReference: (precise: boolean) => void;
+
+    isGenerating: boolean;
+    setIsGenerating: (isGenerating: boolean) => void;
 }
 
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
@@ -144,17 +139,19 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     addToHistory: (item: HistoryItem) => {
         // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
+            console.log("CreativeSlice: addToHistory called", item.id);
             const { currentOrganizationId } = useStore.getState();
             const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
 
             set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory] }));
+            console.log("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(enrichedItem)
-                    .then(() => { /* Saved to Firestore */ })
-                    .catch(() => { /* Error handled silently */ });
-            });
-        });
+                    .then(() => { console.log("CreativeSlice: Saved to Storage", enrichedItem.id) })
+                    .catch((err) => { console.error("CreativeSlice: Storage Save Error", err) });
+            }).catch(err => console.error("CreativeSlice: Failed to import StorageService", err));
+        }).catch(err => console.error("CreativeSlice: Failed to import store", err));
     },
     initializeHistory: async () => {
         const { StorageService } = await import('@/services/StorageService');
@@ -163,11 +160,34 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             // bypass auth check for Ground Zero
             StorageService.loadHistory()
                 .then(history => {
-                    const generated = history.filter(item => item.origin !== 'uploaded');
-                    const uploaded = history.filter(item => item.origin === 'uploaded');
-                    set({
-                        generatedHistory: generated,
-                        uploadedImages: uploaded
+                    set((state) => {
+                        // Merge logic: If an item exists locally with a full data URI, 
+                        // and Firestore has a placeholder, keep the local one.
+                        const mergedHistory = [...state.generatedHistory];
+
+                        history.forEach(remItem => {
+                            const localIndex = mergedHistory.findIndex(loc => loc.id === remItem.id);
+                            if (localIndex !== -1) {
+                                // If local has data:uri and remote has placeholder, don't overwrite the URL
+                                if (mergedHistory[localIndex].url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                    mergedHistory[localIndex] = { ...remItem, url: mergedHistory[localIndex].url };
+                                } else {
+                                    mergedHistory[localIndex] = remItem;
+                                }
+                            } else {
+                                mergedHistory.push(remItem);
+                            }
+                        });
+
+                        const generated = mergedHistory.filter(item => item.origin !== 'uploaded');
+                        const uploadedImages = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'image');
+                        const uploadedAudio = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'music');
+
+                        return {
+                            generatedHistory: generated,
+                            uploadedImages: uploadedImages,
+                            uploadedAudio: uploadedAudio
+                        };
                     });
                     resolve();
                 })
@@ -207,6 +227,20 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     })),
     removeUploadedImage: (id: string) => {
         set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+        });
+    },
+
+    uploadedAudio: [],
+    addUploadedAudio: (audio: HistoryItem) => {
+        set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio] }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.saveItem(audio).catch(() => { /* Error handled silently */ });
+        });
+    },
+    removeUploadedAudio: (id: string) => {
+        set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
         import('@/services/StorageService').then(({ StorageService }) => {
             StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
         });
@@ -255,6 +289,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     },
     setVideoInput: (key, value) => set(state => ({
         videoInputs: { ...state.videoInputs, [key]: value }
+    })),
+    setVideoInputs: (inputs) => set(state => ({
+        videoInputs: { ...state.videoInputs, ...inputs }
     })),
 
     entityAnchor: null,
@@ -326,4 +363,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     setPreciseReference: (precise) => set((state) => ({
         whiskState: { ...state.whiskState, preciseReference: precise }
     })),
+
+    isGenerating: false,
+    setIsGenerating: (isGenerating) => set({ isGenerating }),
 });

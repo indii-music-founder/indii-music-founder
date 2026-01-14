@@ -139,8 +139,6 @@ describe('Video Quota & Circuit Breaker Tests', () => {
             jobId: 'job-quota-fail',
             prompts: ['A cinematic shot of a robot accountant'],
             orgId: 'personal', // Defaults to 'free' tier
-            totalDuration: "10",
-            orgId: 'personal',
             totalDuration: '10', // Passed as string to satisfy Zod
             startImage: 'data:image/png;base64,mockbase64'
         };
@@ -168,7 +166,6 @@ describe('Video Quota & Circuit Breaker Tests', () => {
             jobId: 'job-duration-fail',
             prompts: ['A 20 hour movie'],
             orgId: 'personal',
-            totalDuration: "600", // 10 minutes (600s). Free limit is 8 minutes (480s).
             totalDuration: '600', // Passed as string (600s = 10 mins > 8 mins limit)
             startImage: 'data:image/png;base64,mockbase64'
         };
@@ -183,7 +180,6 @@ describe('Video Quota & Circuit Breaker Tests', () => {
             jobId: 'job-success',
             prompts: ['A short clip'],
             orgId: 'personal',
-            totalDuration: "10",
             totalDuration: '10', // Passed as string
             startImage: 'data:image/png;base64,mockbase64'
         };

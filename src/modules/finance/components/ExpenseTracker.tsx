@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { motion } from 'framer-motion';
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
@@ -14,7 +15,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
     const {
         expenses,
         expensesLoading: isLoading,
-        actions: { loadExpenses, addExpense }
+        actions: { addExpense }
     } = useFinance();
 
     // UI State for analysis only
@@ -24,10 +25,6 @@ export const ExpenseTracker: React.FC = React.memo(() => {
     const [showManualEntry, setShowManualEntry] = useState(false);
 
     const toast = useToast();
-
-    useEffect(() => {
-        loadExpenses();
-    }, [loadExpenses]);
 
     // ⚡ Bolt Optimization: Memoize total calculation to avoid O(N) on every keystroke
     const totalSpend = useMemo(() => {
@@ -75,7 +72,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         mime_type: file.type
                     });
 
-                    const jsonMatch = resultJson.match(/\{[\s\S]*\}/);
+                    const jsonMatch = resultJson.data?.raw_data?.match(/\{[\s\S]*\}/);
                     if (jsonMatch && userProfile?.id) {
                         const data = JSON.parse(jsonMatch[0]);
                         const expenseData = {
@@ -130,26 +127,34 @@ export const ExpenseTracker: React.FC = React.memo(() => {
     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'image/*': [] } });
 
     return (
-        <div className="bg-[#0d1117] rounded-xl border border-gray-800 flex flex-col h-[600px] relative">
-            <div className="p-6 border-b border-gray-800 flex justify-between items-center">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col h-[600px] relative overflow-hidden"
+        >
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <DollarSign className="text-teal-500" />
+                        <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-400">
+                            <DollarSign size={16} />
+                        </div>
                         Expense Tracker
                     </h2>
-                    <p className="text-sm text-gray-400">Drag & drop receipts for AI Analysis</p>
+                    <p className="text-sm text-gray-400 mt-1 ml-10">Drag & drop receipts for AI Analysis</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setShowManualEntry(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded-lg transition-colors border border-gray-700"
+                        className="flex items-center gap-2 px-4 py-2 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-sm font-medium rounded-lg transition-colors border border-teal-500/20"
                     >
-                        <Plus size={14} />
+                        <Plus size={16} />
                         Add Manual
-                    </button>
-                    <div className="text-right">
+                    </motion.button>
+                    <div className="text-right px-4 py-2 bg-white/5 rounded-lg border border-white/5">
                         <div className="text-2xl font-bold text-white">${totalSpend}</div>
-                        <div className="text-xs text-teal-500 font-mono">TOTAL SPEND</div>
+                        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Total Spend</div>
                     </div>
                 </div>
             </div>
@@ -168,35 +173,36 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                 </div>
 
                 {/* Drop Zone */}
-                <div className="w-full md:w-1/3 p-4 border-l border-gray-800 bg-[#161b22]/50">
+                <div className="w-full md:w-1/3 p-4 border-l border-white/10 bg-black/20">
                     <div
                         {...getRootProps()}
-                        className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-colors ${isDragActive ? 'border-teal-500 bg-teal-500/10' : 'border-gray-700 hover:border-gray-600'
+                        className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-300 ${isDragActive
+                            ? 'border-teal-500 bg-teal-500/10 scale-[0.98]'
+                            : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                             }`}
                     >
                         <input {...getInputProps()} />
                         {isAnalyzing ? (
-                            <div className="animate-pulse flex flex-col items-center">
+                            <div className="flex flex-col items-center">
                                 <Loader2 className="animate-spin text-teal-500 mb-4" size={32} />
-                                <p className="text-teal-400 font-medium">Analyzing Receipt...</p>
+                                <p className="text-teal-400 font-medium animate-pulse">Analyzing Receipt...</p>
                                 <p className="text-xs text-gray-500 mt-2">Extracting Vendor & Amount</p>
                             </div>
                         ) : (
                             <>
-                                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 text-gray-400 group-hover:text-white transition-colors border border-white/5">
                                     <Camera size={24} />
                                 </div>
                                 <p className="text-white font-medium mb-2">Scan Receipt</p>
-                                <p className="text-xs text-gray-500">
-                                    Drop an image here or click to upload.<br />
-                                    AI will extract the details.
+                                <p className="text-xs text-gray-500 max-w-[200px]">
+                                    Drop an image here or click to upload. AI will automatically extract details.
                                 </p>
                             </>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 });
 

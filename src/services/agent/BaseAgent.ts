@@ -342,8 +342,13 @@ export class BaseAgent implements SpecializedAgent {
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
+        // KEEPER: Prevent Context Duplication
+        // We strip large fields from the JSON context because they are either
+        // injected separately (chatHistoryString) or not needed in the raw JSON dump.
+        const { chatHistoryString, chatHistory, memoryContext, ...leanContext } = context || {};
+
         const enrichedContext = {
-            ...context,
+            ...leanContext,
             orgId: context?.orgId,
             projectId: context?.projectId
         };
@@ -377,6 +382,18 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
+        // KEEPER: Truncate history string if it's too long
+        // Max context window for standard Gemini models is huge (1M), but we don't want to pay for all of it.
+        // Let's cap the HISTORY part at ~8k tokens (approx 32k chars) to be safe and efficient.
+        // This ensures the total prompt size (incl. system instructions and tools) stays manageable.
+        const MAX_HISTORY_CHARS = 32000;
+        let safeHistory = context?.chatHistoryString || '';
+        if (safeHistory.length > MAX_HISTORY_CHARS) {
+            safeHistory = safeHistory.slice(-MAX_HISTORY_CHARS);
+            // Prepend a marker
+            safeHistory = `[...Older history truncated...]\n${safeHistory}`;
+        }
+
         const fullPrompt = `
 # MISSION
 ${this.systemPrompt}
@@ -385,7 +402,7 @@ ${this.systemPrompt}
 ${JSON.stringify(enrichedContext, null, 2)}
 
 # HISTORY
-${context?.chatHistoryString || ''}
+${safeHistory}
 ${memorySection}
 ${distributorSection}
 
@@ -480,8 +497,15 @@ ${task}
             }
 
             const response = await responsePromise;
-            const functionCall = response.functionCalls()?.[0];
+            // Defensive check for usage method (safeguard against SDK mismatches)
+            const usage = typeof response.usage === 'function' ? response.usage() : undefined;
+            const mappedUsage = usage ? {
+                promptTokens: usage.promptTokenCount || 0,
+                completionTokens: usage.candidatesTokenCount || 0,
+                totalTokens: usage.totalTokenCount || 0
+            } : undefined;
 
+            const functionCall = response.functionCalls()?.[0];
             if (functionCall) {
                 const { name, args } = functionCall;
                 onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
@@ -530,12 +554,14 @@ ${task}
 
                 return {
                     text: `[Tool: ${name}] Output: ${outputText}`,
-                    data: result
+                    data: result,
+                    usage: mappedUsage
                 };
             }
 
             return {
-                text: response.text()
+                text: response.text(),
+                usage: mappedUsage
             };
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { NarrativeTools } from '../NarrativeTools';
 import { DirectorTools } from '../DirectorTools';
 import { VideoTools } from '../VideoTools';
-import { AI } from '../services/ai/AIService';
+import { AI } from '@/services/ai/AIService';
 import { useStore } from '@/core/store';
 
 // Mock dependencies

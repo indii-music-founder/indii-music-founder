@@ -4,7 +4,7 @@ import { Eye, EyeOff, GripVertical, Lock, Unlock } from 'lucide-react';
 interface Layer {
     id: string;
     name: string;
-    type: 'text' | 'image' | 'shape' | 'banana';
+    type: 'text' | 'image' | 'shape';
     visible: boolean;
     locked: boolean;
 }
@@ -26,8 +26,8 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
 }) => {
     return (
         <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-neutral-800">
-                <h3 className="text-xs font-bold text-[#FACC15] uppercase tracking-wider">Layers</h3>
+            <div className="p-4 border-b border-white/5">
+                <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Layers</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {layers.length === 0 ? (
@@ -40,14 +40,14 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                             key={layer.id}
                             onClick={() => onLayerSelect(layer.id)}
                             className={`group flex items-center p-2 rounded-lg cursor-pointer transition-all border ${activeLayerId === layer.id
-                                    ? 'bg-[#FACC15]/10 border-[#FACC15]/30'
-                                    : 'hover:bg-neutral-800 border-transparent hover:border-neutral-700'
+                                ? 'bg-cyan-500/10 border-cyan-500/30'
+                                : 'hover:bg-neutral-800 border-transparent hover:border-neutral-700'
                                 }`}
                         >
                             <GripVertical className="w-4 h-4 text-neutral-600 hover:text-white mr-2 cursor-grab active:cursor-grabbing" />
 
                             <div className="flex-1 min-w-0">
-                                <div className={`text-sm truncate ${activeLayerId === layer.id ? 'text-[#FACC15]' : 'text-neutral-300'}`}>
+                                <div className={`text-sm truncate ${activeLayerId === layer.id ? 'text-cyan-400' : 'text-neutral-300'}`}>
                                     {layer.name}
                                 </div>
                                 <div className="text-[10px] text-neutral-500 capitalize">{layer.type}</div>

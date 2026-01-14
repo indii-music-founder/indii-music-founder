@@ -128,16 +128,21 @@ export const LicensingAgent: AgentConfig = {
         },
         draft_license: async (args: { type: string, parties: string[], terms: string }) => {
             try {
-                const contract = await LegalTools.draft_contract({
+                const toolResult = await LegalTools.draft_contract({
                     type: args.type,
                     parties: args.parties,
                     terms: args.terms
                 });
 
+                if (!toolResult.success) {
+                    throw new Error(toolResult.error || "Unknown error in contract drafting");
+                }
+
                 return {
                     success: true,
                     data: {
-                        contract,
+                        contract: toolResult.data.content,
+                        contractId: toolResult.data.contractId,
                         message: "Initial draft generated. Review and finalize before signing."
                     }
                 };

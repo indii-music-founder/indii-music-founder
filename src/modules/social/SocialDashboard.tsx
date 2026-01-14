@@ -65,13 +65,13 @@ export default function SocialDashboard() {
         const days = [];
         // Empty cells for start of month
         for (let i = 0; i < startDay; i++) {
-            days.push(<div key={`empty-${i}`} className="h-32 bg-[#0d1117] border border-gray-800/50"></div>);
+            days.push(<div key={`empty-${i}`} className="h-32 bg-bg-dark border border-gray-800/50"></div>);
         }
         // Days
         for (let i = 1; i <= daysInMonth; i++) {
             const campaign = campaigns.find(c => c.day === i);
             days.push(
-                <div key={i} className="h-32 bg-[#0d1117] border border-gray-800/50 p-2 relative group hover:bg-[#161b22] transition-colors">
+                <div key={i} className="h-32 bg-bg-dark border border-gray-800/50 p-2 relative group hover:bg-[#161b22] focus-within:bg-[#161b22] transition-colors">
                     <span className="text-gray-500 text-sm font-mono">{i}</span>
                     {campaign && (
                         <div className="mt-2 p-2 rounded bg-blue-900/20 border border-blue-800/50 text-xs cursor-pointer hover:bg-blue-900/40 transition-colors">
@@ -82,8 +82,12 @@ export default function SocialDashboard() {
                             </div>
                         </div>
                     )}
-                    <button className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 transition-opacity">
-                        <Plus size={14} />
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        aria-label={`Create post for ${new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString()}`}
+                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500"
+                    >
+                        <Plus size={14} aria-hidden="true" />
                     </button>
                 </div>
             );
@@ -92,7 +96,7 @@ export default function SocialDashboard() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
+        <div className="h-full flex flex-col bg-bg-dark text-white p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
@@ -170,14 +174,14 @@ export default function SocialDashboard() {
                             <span className="w-2 h-2 rounded-full bg-purple-500 ml-2"></span> Email
                             <span className="w-2 h-2 rounded-full bg-green-500 ml-2"></span> Content
                         </div>
-                        <button className="p-2 hover:bg-gray-800 rounded text-gray-400">
+                        <button className="p-2 hover:bg-gray-800 rounded text-gray-400" aria-label="Calendar options">
                             <MoreHorizontal size={20} />
                         </button>
                     </div>
                 </div>
 
                 {/* Calendar Grid Header */}
-                <div className="grid grid-cols-7 bg-[#0d1117] border-b border-gray-800">
+                <div className="grid grid-cols-7 bg-bg-dark border-b border-gray-800">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                         <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             {day}
@@ -186,7 +190,7 @@ export default function SocialDashboard() {
                 </div>
 
                 {/* Calendar Grid Body */}
-                <div className="grid grid-cols-7 bg-[#0d1117]">
+                <div className="grid grid-cols-7 bg-bg-dark">
                     {renderCalendarGrid()}
                 </div>
             </div>

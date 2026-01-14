@@ -7,14 +7,13 @@ import { Send, ZoomIn, ZoomOut, Maximize, ArrowLeft, Layers, Palette, Sparkles }
 import { useToast } from '../../core/context/ToastContext';
 import { DesignToolbar } from './components/DesignToolbar';
 import { LayerPanel } from './components/LayerPanel';
-import { BananaAssets } from './components/BananaAssets';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Mock types for state
 interface Layer {
     id: string;
     name: string;
-    type: 'text' | 'image' | 'shape' | 'banana';
+    type: 'text' | 'image' | 'shape';
     visible: boolean;
     locked: boolean;
 }
@@ -25,15 +24,13 @@ export const PhysicalMediaDesigner: React.FC = () => {
     const [chatInput, setChatInput] = useState('');
     const [activeTool, setActiveTool] = useState('select');
     const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'director'>('layers');
-    const [showBananaAssets, setShowBananaAssets] = useState(false);
 
     // Mock State for Layers
     const [layers, setLayers] = useState<Layer[]>([
         { id: '1', name: 'Background', type: 'shape', visible: true, locked: true },
-        { id: '2', name: 'Main Banana', type: 'banana', visible: true, locked: false },
         { id: '3', name: 'Title Text', type: 'text', visible: true, locked: false },
     ]);
-    const [activeLayerId, setActiveLayerId] = useState<string | null>('2');
+    const [activeLayerId, setActiveLayerId] = useState<string | null>('3');
 
     const [messages, setMessages] = useState<{ role: 'user' | 'agent', content: string }[]>([
         { role: 'agent', content: "I'm your Creative Director. Select a format and let's design something iconic." }
@@ -42,11 +39,6 @@ export const PhysicalMediaDesigner: React.FC = () => {
     const toast = useToast();
 
     // Handlers
-    const handleBananaTime = () => {
-        setShowBananaAssets(!showBananaAssets);
-        toast.success("It's Banana Time! 🍌");
-    };
-
     const handleBackToTemplates = () => setSelectedTemplate(null);
 
     const handleSendMessage = async () => {
@@ -91,12 +83,12 @@ export const PhysicalMediaDesigner: React.FC = () => {
             {/* Left Sidebar - Navigation & Assets */}
             <div className="w-64 flex flex-col bg-[#0A0A0A]/80 backdrop-blur-3xl border-r border-white/5 z-20">
                 <div className="p-5 border-b border-white/5 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FACC15] to-[#EAB308] flex items-center justify-center text-black font-bold text-lg shadow-[0_0_15px_rgba(250,204,21,0.3)]">
-                        B
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00BCD4] to-[#2196F3] flex items-center justify-center text-white font-bold text-lg shadow-[0_0_15px_rgba(33,150,243,0.3)]">
+                        S
                     </div>
                     <div>
-                        <h1 className="font-bold text-base tracking-tight text-white leading-none">Banana Pro</h1>
-                        <p className="text-[10px] text-[#FACC15] font-medium tracking-wide opacity-80 mt-1">DESIGN STUDIO</p>
+                        <h1 className="font-bold text-base tracking-tight text-white leading-none">Project Sonic</h1>
+                        <p className="text-[10px] text-cyan-400 font-medium tracking-wide opacity-80 mt-1">DESIGN STUDIO</p>
                     </div>
                 </div>
 
@@ -111,7 +103,7 @@ export const PhysicalMediaDesigner: React.FC = () => {
                             <div className="p-4">
                                 <button
                                     onClick={handleBackToTemplates}
-                                    className="flex items-center text-xs font-medium text-neutral-400 hover:text-[#FACC15] mb-6 transition-colors group"
+                                    className="flex items-center text-xs font-medium text-neutral-400 hover:text-cyan-400 mb-6 transition-colors group"
                                 >
                                     <ArrowLeft className="w-3 h-3 mr-1.5 group-hover:-translate-x-1 transition-transform" />
                                     Change Template
@@ -119,7 +111,7 @@ export const PhysicalMediaDesigner: React.FC = () => {
 
                                 <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                                        <Sparkles className="w-12 h-12 text-[#FACC15]" />
+                                        <Sparkles className="w-12 h-12 text-cyan-400" />
                                     </div>
                                     <h3 className="font-bold text-white text-lg">{selectedTemplate.name}</h3>
                                     <div className="text-[10px] text-neutral-400 mt-2 grid grid-cols-2 gap-y-1 gap-x-4">
@@ -130,30 +122,9 @@ export const PhysicalMediaDesigner: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {showBananaAssets && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="mb-4"
-                                    >
-                                        <h3 className="text-xs font-bold text-[#FACC15] uppercase tracking-wider mb-2 pl-1">Banana Assets</h3>
-                                        <BananaAssets onSelect={(asset) => {
-                                            toast.success(`Added ${asset.name} to canvas`);
-                                            // In real app, add layer here
-                                            setLayers(prev => [{
-                                                id: Date.now().toString(),
-                                                name: asset.name,
-                                                type: 'banana',
-                                                visible: true,
-                                                locked: false
-                                            }, ...prev]);
-                                        }} />
-                                    </motion.div>
-                                )}
-
                                 <div className="space-y-2 mt-auto">
                                     <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3 pl-1">Export</h4>
-                                    <button className="w-full py-2.5 bg-[#FACC15] text-black text-xs font-bold rounded-xl hover:bg-[#EAB308] hover:shadow-[0_0_20px_rgba(250,204,21,0.2)] transition-all">
+                                    <button className="w-full py-2.5 bg-cyan-500 text-black text-xs font-bold rounded-xl hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-all">
                                         Export Print PDF
                                     </button>
                                     <button className="w-full py-2.5 bg-neutral-800 text-white text-xs font-medium rounded-xl hover:bg-neutral-700 border border-transparent hover:border-neutral-600 transition-all">
@@ -171,7 +142,6 @@ export const PhysicalMediaDesigner: React.FC = () => {
                 <DesignToolbar
                     activeTool={activeTool}
                     onToolSelect={setActiveTool}
-                    onBananaTime={handleBananaTime}
                 />
             )}
 

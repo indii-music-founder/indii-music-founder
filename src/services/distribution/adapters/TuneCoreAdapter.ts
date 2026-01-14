@@ -121,11 +121,11 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
             distributorId: 'tunecore',
             releaseId: releaseId,
             period: period,
-            streams: Math.floor(Math.random() * 20000),
-            downloads: Math.floor(Math.random() * 50),
-            grossRevenue: 80.00,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
             distributorFee: 0,
-            netRevenue: 80.00,
+            netRevenue: 0,
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()
         };

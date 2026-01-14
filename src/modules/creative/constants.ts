@@ -20,13 +20,13 @@ export const ASPECT_RATIOS = [
     { label: '21:9', value: '21:9', icon: 'Wide' }, // Panoramic
 ];
 
-export interface NanaColor {
+export interface CreativeColor {
     id: string;
     name: string;
     hex: string;
 }
 
-export const NANA_COLORS: NanaColor[] = [
+export const STUDIO_COLORS: CreativeColor[] = [
     { id: 'purple', name: 'Purple', hex: '#A855F7' },
     { id: 'red', name: 'Red', hex: '#EF4444' },
     { id: 'yellow', name: 'Yellow', hex: '#EAB308' },

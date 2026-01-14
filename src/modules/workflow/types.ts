@@ -75,21 +75,9 @@ export interface SavedWorkflow {
     updatedAt: string;
 }
 
+export type { BrandKit, BrandAsset, ReleaseDetails, SocialLinks, KnowledgeDocument, KnowledgeDocumentIndexingStatus, UserProfile } from '@/types/User';
+
 export type WorkflowData = Omit<SavedWorkflow, 'id' | 'createdAt' | 'updatedAt'>;
-
-export type KnowledgeDocumentIndexingStatus = 'pending' | 'indexing' | 'ready' | 'error';
-
-export interface KnowledgeDocument {
-    id: string;
-    name: string;
-    content: string;
-    type: string;
-    tags?: string[];
-    entities?: string[];
-    embeddingId?: string;
-    indexingStatus: KnowledgeDocumentIndexingStatus;
-    createdAt: number;
-}
 
 export interface KnowledgeAsset extends AnyAsset {
     assetType: 'knowledge';
@@ -99,74 +87,8 @@ export interface KnowledgeAsset extends AnyAsset {
     reasoningTrace?: string[];
 }
 
-export interface SocialLinks {
-    twitter?: string;
-    instagram?: string;
-    website?: string;
-    spotify?: string;
-    soundcloud?: string;
-    bandcamp?: string;
-    beatport?: string;
-    pro?: string; // Performing Rights Org
-    distributor?: string;
-}
+// UserProfile moved to @/types/User
 
-export interface ReleaseDetails {
-    title: string;
-    type: string; // Single, EP, Album
-    artists: string;
-    genre: string;
-    mood: string;
-    themes: string;
-    lyrics: string;
-}
-
-export interface BrandAsset {
-    id?: string;
-    url: string;
-    description: string;
-    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
-    tags?: string[];
-    subject?: string; // e.g. "Dave", "The Band"
-}
-
-export interface BrandKit {
-    colors: string[];
-    fonts: string;
-    brandDescription: string;
-    aestheticStyle?: string; // Visual aesthetic (e.g., "Cyberpunk", "Minimalist", "Retro 80s")
-    negativePrompt: string;
-    socials: SocialLinks;
-    brandAssets: BrandAsset[];
-    referenceImages: BrandAsset[];
-    releaseDetails: ReleaseDetails;
-    visualsAcknowledged?: boolean; // True if user confirmed they have no visual assets yet
-    targetAudience?: string; // Target demographic for marketing
-    visualIdentity?: string; // Brand visual style/vibe
-}
-
-export interface UserProfile {
-    id: string; // Mandatory for Beta reliability
-    uid?: string; // Add uid for compatibility
-    email?: string | null;
-    displayName?: string | null;
-    photoURL?: string | null;
-
-    bio: string;
-    preferences: any; // Changed from string to any/object to match new User model
-    creativePreferences?: string; // Renamed legacy 'preferences' string
-
-    careerStage?: string;
-    goals?: string[];
-    brandKit: BrandKit;
-    analyzedTrackIds: string[];
-    knowledgeBase: KnowledgeDocument[];
-    savedWorkflows: SavedWorkflow[];
-
-    // UI Overrides
-    accountType?: 'artist' | 'label' | 'fan' | 'admin';
-    avatarUrl?: string; // Legacy support
-}
 
 export interface AudioAnalysisJob {
     id: string;

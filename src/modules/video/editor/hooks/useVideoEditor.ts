@@ -54,7 +54,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     // Sync player state with store
     useEffect(() => {
         if (playerRef.current) {
-            isPlaying ? playerRef.current.play() : playerRef.current.pause();
+            if (isPlaying) {
+                playerRef.current.play();
+            } else {
+                playerRef.current.pause();
+            }
         }
     }, [isPlaying]);
 
@@ -122,7 +126,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
 
                 if (trackId) {
                     addClip({
-                        type: item.type === 'video' ? 'video' : item.type === 'music' ? 'audio' : 'image',
+                        type: item.type === 'video' ? 'video' : 'image',
                         src: item.url,
                         startFrame: dropFrame,
                         durationInFrames: item.type === 'image' ? 90 : 150,
@@ -159,6 +163,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         addTrack,
         removeTrack,
         removeClip,
-        setProject
+        setProject,
+        setCurrentTime // Expose setCurrentTime for frame synchronization
     };
 }

@@ -60,7 +60,6 @@ export const departmentCssVars = {
     agent: '--color-dept-creative',        // Agent shares Creative
     'audio-analyzer': '--color-dept-creative', // Audio Analyzer shares Creative
     onboarding: '--color-dept-creative',   // Onboarding shares Creative
-    music: '--color-dept-publishing',      // Music shares Publishing
     workflow: '--color-dept-social',       // Workflow shares Social
     showroom: '--color-dept-brand',        // Showroom shares Brand
     merch: '--color-dept-brand',           // Merch shares Brand
@@ -68,7 +67,6 @@ export const departmentCssVars = {
     files: '--color-dept-default',
     dashboard: '--color-dept-default',
     'select-org': '--color-dept-default',
-    'banana-preview': '--color-dept-royalties', // Banana uses Royalties/Gold
 } as const;
 
 /**
@@ -211,16 +209,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
     },
-    music: {
-        // Music tools share Publishing's growth vibe
-        text: 'text-dept-publishing',
-        bg: 'bg-dept-publishing/10',
-        border: 'border-dept-publishing',
-        ring: 'focus-within:ring-dept-publishing/50',
-        hoverText: 'hover:text-dept-publishing',
-        hoverBg: 'hover:bg-dept-publishing/5',
-        cssVar: '--color-dept-publishing',
-    },
     workflow: {
         // Workflow uses Social's connectivity cyan
         text: 'text-dept-social',
@@ -332,15 +320,23 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
     },
-    'banana-preview': {
-        // Banana uses Royalties' gold (premium feature)
-        text: 'text-dept-royalties',
-        bg: 'bg-dept-royalties/10',
-        border: 'border-dept-royalties',
-        ring: 'focus-within:ring-dept-royalties/50',
-        hoverText: 'hover:text-dept-royalties',
-        hoverBg: 'hover:bg-dept-royalties/5',
-        cssVar: '--color-dept-royalties',
+    observability: {
+        text: 'text-dept-distribution',
+        bg: 'bg-dept-distribution/10',
+        border: 'border-dept-distribution',
+        ring: 'focus-within:ring-dept-distribution/50',
+        hoverText: 'hover:text-dept-distribution',
+        hoverBg: 'hover:bg-dept-distribution/5',
+        cssVar: '--color-dept-distribution',
+    },
+    'reference-manager': {
+        text: 'text-dept-creative',
+        bg: 'bg-dept-creative/10',
+        border: 'border-dept-creative',
+        ring: 'focus-within:ring-dept-creative/50',
+        hoverText: 'hover:text-dept-creative',
+        hoverBg: 'hover:bg-dept-creative/5',
+        cssVar: '--color-dept-creative',
     }
 };
 

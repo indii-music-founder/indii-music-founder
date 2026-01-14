@@ -39,7 +39,6 @@ describe('VideoTimeline', () => {
     const defaultProps = {
         project: mockProject,
         isPlaying: false,
-        currentTime: 0,
         selectedClipId: null,
         handlePlayPause: vi.fn(),
         handleSeek: vi.fn(),
@@ -53,10 +52,23 @@ describe('VideoTimeline', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useVideoEditorStore as any).mockReturnValue({
+        const mockState = {
             addKeyframe: mockAddKeyframe,
             removeKeyframe: mockRemoveKeyframe,
             updateKeyframe: mockUpdateKeyframe,
+            currentTime: 0,
+        };
+
+        // Mock implementation to handle both direct access and selector access
+        (useVideoEditorStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                try {
+                    return selector(mockState);
+                } catch (e) {
+                    return undefined;
+                }
+            }
+            return mockState;
         });
     });
 

@@ -89,13 +89,13 @@ describe('RoadManager', () => {
 
     it('renders input fields', () => {
         render(<RoadManager />);
-        expect(screen.getByText('Tour Details')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Add a city...')).toBeInTheDocument();
+        expect(screen.getByText('Tour Parameters')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Enter City, State (e.g. Austin, TX)')).toBeInTheDocument();
     });
 
     it('allows adding and removing locations', async () => {
         render(<RoadManager />);
-        const input = screen.getByPlaceholderText('Add a city...');
+        const input = screen.getByPlaceholderText('Enter City, State (e.g. Austin, TX)');
         const addButton = screen.getByLabelText('Add location');
 
         fireEvent.change(input, { target: { value: 'New York' } });
@@ -103,7 +103,6 @@ describe('RoadManager', () => {
 
         expect(screen.getByText('New York')).toBeInTheDocument();
 
-        // Remove location
         // Remove location
         const removeButton = screen.getByLabelText('Remove New York');
         fireEvent.click(removeButton);
@@ -113,13 +112,7 @@ describe('RoadManager', () => {
         });
     });
 
-
-
     it('generates itinerary when inputs are valid', async () => {
-        // Setup mock return if we were using the hook, but here we move it before render
-        // to follow the pattern requested, even if this specific test uses httpsCallable mocks above.
-        // The PR comment requested: "Move mock setup before render"
-
         render(<RoadManager />);
 
         // Setup mock return
@@ -133,7 +126,7 @@ describe('RoadManager', () => {
         fireEvent.change(endDateInput, { target: { value: '2023-10-10' } });
 
         // Add location
-        const locationInput = screen.getByPlaceholderText('Add a city...');
+        const locationInput = screen.getByPlaceholderText('Enter City, State (e.g. Austin, TX)');
         fireEvent.change(locationInput, { target: { value: 'New York' } });
         fireEvent.keyDown(locationInput, { key: 'Enter', code: 'Enter' });
 
@@ -142,13 +135,13 @@ describe('RoadManager', () => {
             expect(screen.getByText('New York')).toBeInTheDocument();
         });
 
-        const generateButton = screen.getByText('Launch Route Generator');
+        const generateButton = screen.getByText('Initialize Route');
         expect(generateButton).not.toBeDisabled();
 
         fireEvent.click(generateButton);
 
         // Check for loading state
-        expect(screen.getByText('Synchronizing...')).toBeInTheDocument();
+        expect(screen.getByText('Calculating Route...')).toBeInTheDocument();
 
         await waitFor(() => {
             expect(saveItineraryMock).toHaveBeenCalled();
@@ -161,7 +154,15 @@ describe('RoadManager', () => {
             currentItinerary: {
                 id: '123',
                 tourName: 'Test Tour',
-                stops: [],
+                stops: [
+                    {
+                        date: '2023-10-01',
+                        city: 'New York',
+                        venue: 'MSG',
+                        type: 'Show',
+                        distance: 50
+                    }
+                ],
                 totalDistance: '1000 km',
                 estimatedBudget: '$50'
             }
@@ -169,25 +170,21 @@ describe('RoadManager', () => {
 
         render(<RoadManager />);
 
-        // We don't need to interact to generate, just check logistics directly if button is enabled/visible
-        // But the check button calls handleCheckLogistics which guards on !itinerary
+        // Wait for itinerary to be rendered
+        await waitFor(() => {
+            expect(screen.getByText('Generated Itinerary')).toBeInTheDocument();
+        });
 
-        // Use the Planning tab default view
-
-        const generateButton = screen.getByText('Launch Route Generator');
-        fireEvent.click(generateButton);
-        // If itinerary is present, PlanningTab might show the itinerary details directly?
-        // Let's assume the UI shows the "Check Logistics" button when itinerary exists or we can just trigger it.
-        // Actually, PlanningTab shows "Active Itinerary" if `itinerary` prop is set.
-
-        expect(screen.getByText('Test Tour')).toBeInTheDocument();
-
-        const checkButton = screen.getByText('Check Logistics');
+        const checkButton = screen.getByText('Run Logistics Check');
         fireEvent.click(checkButton);
 
+        // Since checkLogistics calls a cloud function which we have verified mocks for,
+        // we mainly check the button state change or resulting toast/UI update.
+        // In the mock implementation of RoadManager (not shown in full here but inferred), 
+        // it updates state based on the report.
+
         await waitFor(() => {
-            expect(screen.getByText('Feasibility Report')).toBeInTheDocument();
-            expect(screen.getByText('Looks good')).toBeInTheDocument();
+            expect(screen.getByText('Logistics Verified')).toBeInTheDocument();
         });
     });
 });

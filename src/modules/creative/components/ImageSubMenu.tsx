@@ -82,9 +82,9 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
                 >
                     <Sparkles size={10} className={showBrandAssets ? "text-yellow-500" : "text-gray-500"} /> Brand
                 </button>
-                {userProfile.brandKit?.colors?.length > 0 && !showBrandAssets && (
+                {(userProfile.brandKit?.colors?.length || 0) > 0 && !showBrandAssets && (
                     <div className="flex gap-1">
-                        {userProfile.brandKit.colors.map((color, i) => (
+                        {userProfile.brandKit?.colors?.map((color, i) => (
                             <button
                                 key={i}
                                 type="button"

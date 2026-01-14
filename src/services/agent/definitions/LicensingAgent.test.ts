@@ -73,7 +73,7 @@ describe('LicensingAgent', () => {
                 url: 'https://example.com/license'
             };
 
-            const result = await (LicensingAgent.functions!.check_availability as Function)(args);
+            const result = await (LicensingAgent.functions!.check_availability as any)(args);
 
             expect(licenseScannerService.scanUrl).toHaveBeenCalledWith(args.url);
             expect(licensingService.createRequest).toHaveBeenCalledWith(expect.objectContaining({
@@ -102,7 +102,7 @@ describe('LicensingAgent', () => {
                 url: 'https://label.com/rights'
             };
 
-            const result = await (LicensingAgent.functions!.check_availability as Function)(args);
+            const result = await (LicensingAgent.functions!.check_availability as any)(args);
 
             expect(result.data.status).toBe('restricted');
             expect(result.data.requestId).toBe('restricted-request-id');
@@ -117,7 +117,7 @@ describe('LicensingAgent', () => {
                 usage: 'Background music'
             };
 
-            const result = await (LicensingAgent.functions!.check_availability as Function)(args);
+            const result = await (LicensingAgent.functions!.check_availability as any)(args);
 
             expect(licenseScannerService.scanUrl).not.toHaveBeenCalled();
             expect(result.data.status).toBe('pending');
@@ -134,7 +134,7 @@ describe('LicensingAgent', () => {
                 mime_type: 'application/pdf'
             };
 
-            const result = await (LicensingAgent.functions!.analyze_contract as Function)(args);
+            const result = await (LicensingAgent.functions!.analyze_contract as any)(args);
 
             expect(firebaseAI.analyzeImage).toHaveBeenCalled();
             expect(result.success).toBe(true);
@@ -145,7 +145,7 @@ describe('LicensingAgent', () => {
     describe('draft_license', () => {
         it('should use LegalTools to draft a contract', async () => {
             const { LegalTools } = await import('../tools/LegalTools');
-            vi.mocked(LegalTools.draft_contract).mockResolvedValue({ success: true, data: { contract: "Mocked Contract Content" } });
+            vi.mocked(LegalTools.draft_contract).mockResolvedValue({ success: true, data: { content: "Mocked Contract Content" } });
 
             const args = {
                 type: 'Sync License',
@@ -153,7 +153,7 @@ describe('LicensingAgent', () => {
                 terms: 'Commercial use for 1 year'
             };
 
-            const result = await (LicensingAgent.functions!.draft_license as Function)(args);
+            const result = await (LicensingAgent.functions!.draft_license as any)(args);
 
             expect(LegalTools.draft_contract).toHaveBeenCalledWith(args);
             expect(result.success).toBe(true);

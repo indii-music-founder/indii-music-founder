@@ -257,6 +257,7 @@ export interface WrappedResponse {
     response: GenerateContentResponse;
     text: () => string;
     functionCalls: () => FunctionCallPart['functionCall'][];
+    usage: () => UsageMetadata | undefined;
 }
 
 // ============================================================================

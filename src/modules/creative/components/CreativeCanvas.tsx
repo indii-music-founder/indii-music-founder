@@ -9,18 +9,20 @@ import { EndFrameSelector } from './EndFrameSelector';
 import { CandidatesCarousel, Candidate } from './CandidatesCarousel';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
-import { NANA_COLORS, NanaColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 interface CreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
     onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
+    onRefine?: () => void;
 }
 
-export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: CreativeCanvasProps) {
+export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefine }: CreativeCanvasProps) {
     const { generatedHistory } = useStore();
     const toast = useToast();
 
@@ -33,7 +35,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
 
     // Data State
     const [prompt, setPrompt] = useState('');
-    const [activeColor, setActiveColor] = useState<NanaColor>(NANA_COLORS[0]);
+    const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]);
     const [editDefinitions, setEditDefinitions] = useState<Record<string, string>>({});
     const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string; data: string } | null>>({});
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
@@ -105,7 +107,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
         }
 
         setIsProcessing(true);
-        toast.info('Processing Nana Banana Pro Edits...');
+        toast.info('Processing Studio Edits...');
 
         try {
             const results = await Editing.multiMaskEdit({
@@ -119,8 +121,12 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
             } else {
                 toast.error('Generation failed to produce candidates.');
             }
-        } catch (error) {
-            toast.error('Failed to process edits');
+        } catch (error: any) {
+            if (error?.name === 'QuotaExceededError' || error?.code === 'QUOTA_EXCEEDED') {
+                toast.error(error.message || 'Limit reached. Please upgrade.');
+            } else {
+                toast.error('Failed to process edits');
+            }
         } finally {
             setIsProcessing(false);
         }
@@ -137,9 +143,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
             } else {
                 throw new Error(result.error || 'Unknown error');
             }
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Animation failed: ${message}`);
+        } catch (error: any) {
+            if (error?.name === 'QuotaExceededError' || error?.code === 'QUOTA_EXCEEDED') {
+                toast.error(error.message || 'Video limit reached. Please upgrade.');
+            } else {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                toast.error(`Animation failed: ${message}`);
+            }
         }
     };
 
@@ -233,8 +243,12 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
             const { updateWhiskItem } = useStore.getState();
             updateWhiskItem('subject', whiskId, { aiCaption: caption });
             toast.success("Image essence extracted and locked!");
-        } catch (e) {
-            toast.warning("Could not auto-caption. Using original prompt.");
+        } catch (e: any) {
+            if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
+                toast.error(e.message || 'Quota exceeded during analysis.');
+            } else {
+                toast.warning("Could not auto-caption. Using original prompt.");
+            }
         }
     };
 
@@ -246,6 +260,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
                 onClick={onClose}
+                data-testid="creative-canvas-modal-overlay"
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -253,6 +268,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                     exit={{ scale: 0.9, opacity: 0 }}
                     className="relative max-w-6xl w-full h-[90vh] bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden flex flex-col shadow-2xl"
                     onClick={e => e.stopPropagation()}
+                    data-testid="creative-canvas-modal-content"
                 >
                     <CanvasHeader
                         isEditing={isEditing}
@@ -270,7 +286,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow }: Crea
                         handleAnimate={handleAnimate}
                         onClose={onClose}
                         onSendToWorkflow={onSendToWorkflow}
-                        onRefine={handleRefine}
+                        onRefine={onRefine || handleRefine}
                     />
 
                     <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">

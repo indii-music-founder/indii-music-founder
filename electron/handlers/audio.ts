@@ -5,7 +5,7 @@ import ffprobePath from 'ffprobe-static';
 import crypto from 'crypto';
 import fs from 'fs';
 import { apiService } from '../services/APIService';
-import { AudioAnalyzeSchema } from '../utils/validation';
+import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
@@ -88,16 +88,17 @@ export function registerAudioHandlers() {
         console.log('[Main] Metadata lookup requested for hash:', hash);
         try {
              validateSender(event);
-             // Basic hash validation (e.g., allow hex/base64 strings)
-             if (typeof hash !== 'string' || hash.length < 8) {
-                 throw new Error("Invalid hash format");
-             }
+             // Schema Validation
+             const validatedHash = AudioLookupSchema.parse(hash);
 
             // In a real app, you might pass the user's auth token here if needed
             // const token = await authService.getToken(); 
-            return await apiService.getSongMetadata(hash);
+            return await apiService.getSongMetadata(validatedHash);
         } catch (error) {
             console.error("[Main] Metadata lookup failed:", error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
             throw error;
         }
     });

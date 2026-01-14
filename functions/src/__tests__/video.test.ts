@@ -114,6 +114,18 @@ vi.mock('firebase-functions/v1', () => ({
     config: vi.fn(() => ({}))
 }));
 
+// Mock Stripe to prevent initialization error
+vi.mock('stripe', () => ({
+    default: class MockStripe {
+        constructor(apiKey: string) { }
+    }
+}));
+
+// Mock Stripe config to ensure it doesn't fail on process.env access
+vi.mock('../stripe/config', () => ({
+    stripe: {}
+}));
+
 // Mock firebase-functions/params
 vi.mock('firebase-functions/params', () => ({
     defineSecret: vi.fn(() => ({ value: mocks.secrets.value }))

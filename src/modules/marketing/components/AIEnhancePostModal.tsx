@@ -99,7 +99,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
                             </label>
                             <span className="text-xs text-gray-600">{post.copy.length} chars</span>
                         </div>
-                        <div className="bg-[#0d1117] border border-gray-800 rounded-lg p-4">
+                        <div className="bg-bg-dark border border-gray-800 rounded-lg p-4">
                             <p className="text-sm text-gray-400 whitespace-pre-wrap">{post.copy}</p>
                         </div>
                     </div>
@@ -117,7 +117,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
                                         onClick={() => setEnhancementType(type.id)}
                                         className={`p-3 rounded-lg text-left transition-all ${enhancementType === type.id
                                             ? 'bg-blue-900/30 border border-blue-500/50'
-                                            : 'bg-[#0d1117] border border-gray-800 hover:border-gray-600'
+                                            : 'bg-bg-dark border border-gray-800 hover:border-gray-600'
                                             }`}
                                     >
                                         <div className="text-lg mb-1">{type.icon}</div>
@@ -150,7 +150,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
                                 </div>
                                 <button
                                     onClick={() => setSelectedVersion('enhanced')}
-                                    className={`w-full text-left bg-[#0d1117] border rounded-lg p-4 transition-all ${selectedVersion === 'enhanced'
+                                    className={`w-full text-left bg-bg-dark border rounded-lg p-4 transition-all ${selectedVersion === 'enhanced'
                                         ? 'border-blue-500/50 ring-1 ring-blue-500/20'
                                         : 'border-gray-800 hover:border-gray-600'
                                         }`}
@@ -171,7 +171,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
                                             <button
                                                 key={index}
                                                 onClick={() => setSelectedVersion(index)}
-                                                className={`w-full text-left bg-[#0d1117] border rounded-lg p-4 transition-all ${selectedVersion === index
+                                                className={`w-full text-left bg-bg-dark border rounded-lg p-4 transition-all ${selectedVersion === index
                                                     ? 'border-blue-500/50 ring-1 ring-blue-500/20'
                                                     : 'border-gray-800 hover:border-gray-600'
                                                     }`}
@@ -216,7 +216,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
 
                             {/* Tone Analysis */}
                             {enhancement.toneAnalysis && (
-                                <div className="bg-[#0d1117] border border-gray-800 rounded-lg p-4">
+                                <div className="bg-bg-dark border border-gray-800 rounded-lg p-4">
                                     <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
                                         Tone Analysis
                                     </label>
@@ -228,7 +228,7 @@ export default function AIEnhancePostModal({ post, onClose, onApply }: AIEnhance
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-[#0d1117]">
+                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-bg-dark">
                     {enhancement ? (
                         <>
                             <button

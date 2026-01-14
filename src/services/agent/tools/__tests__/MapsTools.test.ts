@@ -44,9 +44,6 @@ describe('MapsTools', () => {
 
         // Mock document.createElement to avoid script injection during test
         vi.spyOn(document, 'createElement').mockImplementation((tag) => {
-            if (tag === 'script') {
-                return {} as any;
-            }
             return {} as any;
         });
     });

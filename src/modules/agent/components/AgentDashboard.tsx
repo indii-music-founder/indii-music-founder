@@ -1,13 +1,15 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Map, MapPin, Users, Mail, List, Globe, Search, Filter, Sparkles } from 'lucide-react';
+import { MapPin, Sparkles, Filter } from 'lucide-react';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
-import { Venue } from '../types';
 import BrowserAgentTester from './BrowserAgentTester';
 import { VenueCard } from './VenueCard';
 import { ScoutMapVisualization } from './ScoutMapVisualization';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+import { AgentSidebar } from './AgentSidebar';
+import { AgentToolbar } from './AgentToolbar';
+import { ScoutControls } from './ScoutControls';
 
 const AgentDashboard: React.FC = () => {
     // Hooks must be called unconditionally before early returns
@@ -70,183 +72,118 @@ const AgentDashboard: React.FC = () => {
     };
 
     return (
-        <div className="flex h-full w-full bg-slate-950 text-white font-sans">
-            {/* Agent Sidebar */}
-            <div className="w-64 border-r border-slate-800 p-4 flex flex-col gap-2 bg-slate-900/50">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-3 px-2">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <MapPin className="text-slate-900" size={20} />
-                    </div>
-                    Agent.ai
-                </h2>
+        <div className="flex h-full w-full bg-slate-950 text-white font-sans overflow-hidden">
+            {/* Standardized Agent Sidebar */}
+            <AgentSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                <NavButton
-                    active={activeTab === 'scout'}
-                    onClick={() => setActiveTab('scout')}
-                    icon={<Map size={18} />}
-                    label="The Scout"
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 bg-[--background]">
+                {/* Top Toolbar */}
+                <AgentToolbar
+                    left={
+                        <div className="flex items-center gap-3">
+                            <h2 className="font-bold text-lg text-white tracking-tight">Agent Tools</h2>
+                            <span className="text-slate-600">/</span>
+                            <span className="flex items-center gap-2 text-emerald-400 text-sm font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                <Sparkles size={12} />
+                                {activeTab === 'scout' ? 'The Scout' : activeTab === 'browser' ? 'Browser Agent' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                            </span>
+                        </div>
+                    }
+                    right={
+                        <div className="text-xs text-slate-500 font-mono">
+                            v2.4.0-alpha
+                        </div>
+                    }
                 />
-                <NavButton
-                    active={activeTab === 'browser'}
-                    onClick={() => setActiveTab('browser')}
-                    icon={<Globe size={18} />}
-                    label="Browser Agent"
-                />
-                <NavButton
-                    active={activeTab === 'campaigns'}
-                    onClick={() => setActiveTab('campaigns')}
-                    icon={<List size={18} />}
-                    label="Campaigns"
-                />
-                <NavButton
-                    active={activeTab === 'inbox'}
-                    onClick={() => setActiveTab('inbox')}
-                    icon={<Mail size={18} />}
-                    label="Inbox"
-                />
-            </div>
 
-            {/* Main Content */}
-            <div className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900">
-                {activeTab === 'scout' && (
-                    <div className="space-y-8 max-w-6xl mx-auto">
+                {/* Workspace Content */}
+                <div className="flex-1 flex flex-col overflow-hidden relative">
 
-                        {/* Header & Controls */}
-                        <div className="flex flex-col gap-6">
-                            <div>
-                                <h1 className="text-3xl font-bold text-white mb-2">The Scout</h1>
-                                <p className="text-slate-400">Deploy autonomous agents to find performance opportunities.</p>
-                            </div>
+                    {activeTab === 'scout' && (
+                        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-8">
+                            <div className="max-w-7xl mx-auto space-y-10">
 
-                            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl shadow-xl flex flex-wrap gap-4 items-end">
-                                <div className="flex-1 min-w-[200px]">
-                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">Target City</label>
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-2.5 text-slate-600" size={16} />
-                                        <input
-                                            value={city}
-                                            onChange={(e) => setCity(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder:text-slate-700"
-                                            placeholder="e.g. Nashville, TN"
+                                {/* Hero Section */}
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <h1 className="text-4xl font-bold text-white tracking-tight">The Scout</h1>
+                                        <p className="text-lg text-slate-400 max-w-2xl">
+                                            Deploy autonomous agents to identify high-value performance opportunities.
+                                            Select your target market and genre focus below.
+                                        </p>
+                                    </div>
+
+                                    {/* Control Bar - "Platinum Polish" */}
+                                    <div className="max-w-4xl">
+                                        <ScoutControls
+                                            city={city}
+                                            setCity={setCity}
+                                            genre={genre}
+                                            setGenre={setGenre}
+                                            isAutonomous={isAutonomous}
+                                            setIsAutonomous={setIsAutonomous}
+                                            handleScan={handleScan}
+                                            isScanning={isScanning}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="flex-1 min-w-[200px]">
-                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">Genre Focus</label>
-                                    <input
-                                        value={genre}
-                                        onChange={(e) => setGenre(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder:text-slate-700"
-                                        placeholder="e.g. Indie Rock"
-                                    />
-                                </div>
+                                {/* Visualization Area - conditionally rendered */}
+                                {isScanning && (
+                                    <div className="rounded-2xl overflow-hidden border border-slate-700/50 shadow-2xl">
+                                        <ScoutMapVisualization status={scanStatus} />
+                                    </div>
+                                )}
 
-                                <div className="flex items-center gap-3 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 h-[38px] cursor-pointer hover:border-slate-600 transition-colors">
-                                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isAutonomous ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600'}`}>
-                                            {isAutonomous && <CheckIcon />}
+                                {/* Results Grid */}
+                                {!isScanning && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+                                                Scouted Venues ({venues.length})
+                                            </h3>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={isAutonomous}
-                                            onChange={(e) => setIsAutonomous(e.target.checked)}
-                                            className="hidden"
-                                        />
-                                        <span className={`text-sm font-medium ${isAutonomous ? 'text-emerald-400' : 'text-slate-400'}`}>
-                                            Autonomous Mode
-                                        </span>
-                                    </label>
-                                </div>
 
-                                <button
-                                    onClick={handleScan}
-                                    disabled={isScanning}
-                                    className={`
-                                        h-[38px] px-6 rounded-lg font-bold text-sm tracking-wide transition-all flex items-center gap-2 shadow-lg
-                                        ${isScanning
-                                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                            : 'bg-emerald-600 hover:bg-emerald-500 text-white hover:scale-105 active:scale-95 shadow-emerald-900/30'}
-                                    `}
-                                >
-                                    {isScanning ? (
-                                        <React.Fragment>
-                                            <span className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
-                                            Deploying...
-                                        </React.Fragment>
-                                    ) : (
-                                        <React.Fragment>
-                                            <Sparkles size={16} /> Deploy Scout
-                                        </React.Fragment>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Visualization Area */}
-                        {isScanning && (
-                            <ScoutMapVisualization status={scanStatus} />
-                        )}
-
-                        {/* Results Grid */}
-                        {!isScanning && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                {venues.map(venue => (
-                                    <VenueCard key={venue.id} venue={venue} onAdd={(v) => console.log("Added", v.name)} />
-                                ))}
-                                {venues.length === 0 && (
-                                    <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/30">
-                                        <MapPin size={48} className="mb-4 opacity-50" />
-                                        <p className="text-lg font-medium">No venues scouted yet</p>
-                                        <p className="text-sm">Configure your parameters above and deploy the scout.</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            {venues.map(venue => (
+                                                <VenueCard key={venue.id} venue={venue} onAdd={(v) => console.log("Added", v.name)} />
+                                            ))}
+                                            {venues.length === 0 && (
+                                                <div className="col-span-full py-24 flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">
+                                                    <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 shadow-inner shadow-black/50">
+                                                        <MapPin size={32} className="opacity-40" />
+                                                    </div>
+                                                    <p className="text-lg font-medium text-slate-400">No venues scouted yet</p>
+                                                    <p className="text-sm">Configure your parameters above and deploy the scout.</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'browser' && (
-                    <BrowserAgentTester />
-                )}
-
-                {activeTab !== 'scout' && activeTab !== 'browser' && (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
-                        <div className="p-4 bg-slate-900 rounded-full">
-                            <Filter size={32} />
                         </div>
-                        <p>Module under construction</p>
-                    </div>
-                )}
+                    )}
+
+                    {activeTab === 'browser' && (
+                        <div className="h-full bg-[--background]">
+                            <BrowserAgentTester />
+                        </div>
+                    )}
+
+                    {activeTab !== 'scout' && activeTab !== 'browser' && (
+                        <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
+                            <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
+                                <Filter size={32} className="opacity-50" />
+                            </div>
+                            <p className="text-lg font-medium">Module under construction</p>
+                        </div>
+                    )}
+
+                </div>
             </div>
         </div>
     );
 };
-
-interface NavButtonProps {
-    active: boolean;
-    onClick: () => void;
-    icon: React.ReactNode;
-    label: string;
-}
-
-const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left transition-all duration-200 font-medium ${active
-            ? 'bg-emerald-500/10 text-emerald-400 shadow-sm border border-emerald-500/20'
-            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-            }`}
-    >
-        {icon}
-        <span>{label}</span>
-    </button>
-);
-
-const CheckIcon: React.FC = () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="w-3 h-3 text-slate-950">
-        <polyline points="20 6 9 17 4 12" />
-    </svg>
-);
 
 export default AgentDashboard;

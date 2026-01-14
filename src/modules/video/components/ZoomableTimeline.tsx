@@ -60,13 +60,18 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
     const frameWidth = timelineZoom * 2; // pixels per frame
 
     return (
-        <div className={`relative flex flex-col ${className}`}>
+        <div
+            className={`relative flex flex-col ${className}`}
+            role="region"
+            aria-label="Timeline"
+        >
             {/* Zoom Controls */}
             <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1 backdrop-blur-sm">
                 <button
                     onClick={handleZoomOut}
                     className="p-1 hover:bg-white/10 rounded transition-colors"
                     title="Zoom Out (Ctrl -)"
+                    aria-label="Zoom Out"
                     disabled={timelineZoom <= 0.25}
                 >
                     <ZoomOut size={16} className={timelineZoom <= 0.25 ? 'opacity-50' : ''} />
@@ -76,6 +81,7 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
                     onClick={handleResetZoom}
                     className="px-2 py-0.5 text-xs font-mono hover:bg-white/10 rounded transition-colors min-w-[48px]"
                     title="Reset Zoom"
+                    aria-label="Reset Zoom"
                 >
                     {Math.round(timelineZoom * 100)}%
                 </button>
@@ -84,6 +90,7 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
                     onClick={handleZoomIn}
                     className="p-1 hover:bg-white/10 rounded transition-colors"
                     title="Zoom In (Ctrl +)"
+                    aria-label="Zoom In"
                     disabled={timelineZoom >= 4}
                 >
                     <ZoomIn size={16} className={timelineZoom >= 4 ? 'opacity-50' : ''} />
@@ -95,13 +102,17 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
                     onClick={handleResetZoom}
                     className="p-1 hover:bg-white/10 rounded transition-colors"
                     title="Fit to View"
+                    aria-label="Fit to View"
                 >
                     <Maximize2 size={16} />
                 </button>
             </div>
 
             {/* Timeline Info */}
-            <div className="absolute bottom-2 left-2 z-10 text-xs text-white/60 font-mono bg-black/30 px-2 py-1 rounded">
+            <div
+                className="absolute bottom-2 left-2 z-10 text-xs text-white/60 font-mono bg-black/30 px-2 py-1 rounded"
+                aria-live="polite"
+            >
                 {visibleFrames} frames visible • {(project.durationInFrames / project.fps).toFixed(1)}s total
             </div>
 
@@ -112,6 +123,8 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
                 style={{
                     scrollBehavior: 'smooth',
                 }}
+                tabIndex={0}
+                aria-label="Timeline Tracks"
             >
                 <div
                     style={{

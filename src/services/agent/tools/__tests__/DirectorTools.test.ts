@@ -3,6 +3,7 @@ import { DirectorTools } from '../DirectorTools';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 // Mock dependencies
 vi.mock('@/services/image/ImageGenerationService', () => ({
@@ -116,6 +117,17 @@ describe('DirectorTools', () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('API Error');
+        });
+
+        it('propagates QuotaExceededError correctly', async () => {
+            const error = new QuotaExceededError('images', 'free', 'Upgrade to Pro', 5, 5);
+            vi.mocked(ImageGeneration.generateImages).mockRejectedValue(error);
+
+            const result = await DirectorTools.generate_image({ prompt: 'test' });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Quota exceeded');
+            expect(result.metadata?.errorCode).toBe('QUOTA_EXCEEDED');
         });
     });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2, Calendar, Target, Users, MessageSquare, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
@@ -57,6 +57,15 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
         return tomorrow.toISOString().split('T')[0];
     });
 
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
     const togglePlatform = (platform: Platform) => {
         setSelectedPlatforms(prev =>
             prev.includes(platform)
@@ -89,7 +98,24 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
         };
 
         try {
-            const plan = await CampaignAI.generateCampaign(brief);
+            // Check for E2E Mock Plan
+            const mockPlan = (window as any).__MOCK_AI_PLAN__;
+
+            let plan: GeneratedCampaignPlan;
+            if (mockPlan) {
+                // Use the mock plan if available (Maestro Testing)
+                console.log("[AIGenerateCampaignModal] Using Mock AI Plan:", mockPlan);
+                plan = mockPlan;
+
+                // Clear the mock so the next generation (e.g. retry) doesn't use the same one unless re-injected
+                (window as any).__MOCK_AI_PLAN__ = undefined;
+
+                // Simulate delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } else {
+                plan = await CampaignAI.generateCampaign(brief);
+            }
+
             setGeneratedPlan(plan);
             toast.success('Campaign plan generated!');
         } catch (error) {
@@ -110,24 +136,30 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+        >
             <div className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg">
-                            <Sparkles className="text-white" size={20} />
+                            <Sparkles className="text-white" size={20} aria-hidden="true" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">AI Campaign Generator</h2>
+                            <h2 id="modal-title" className="text-lg font-bold text-white">AI Campaign Generator</h2>
                             <p className="text-sm text-gray-500">Create a complete campaign with AI</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                        aria-label="Close"
                     >
-                        <X className="text-gray-400" size={20} />
+                        <X className="text-gray-400" size={20} aria-hidden="true" />
                     </button>
                 </div>
 
@@ -140,30 +172,43 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                             <div className="space-y-6">
                                 {/* Topic */}
                                 <div>
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
+                                    <label
+                                        htmlFor="campaign-topic"
+                                        className="block text-xs text-gray-500 uppercase font-semibold mb-2"
+                                    >
                                         Campaign Topic *
                                     </label>
                                     <textarea
+                                        id="campaign-topic"
                                         value={topic}
                                         onChange={(e) => setTopic(e.target.value)}
                                         placeholder="e.g., New album 'Midnight Dreams' release, upcoming tour dates, new merch drop..."
-                                        className="w-full h-24 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
+                                        className="w-full h-24 bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
                                     />
                                 </div>
 
                                 {/* Objective */}
                                 <div>
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
-                                        <Target size={14} /> Objective
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <span
+                                        id="objective-label"
+                                        className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2"
+                                    >
+                                        <Target size={14} aria-hidden="true" /> Objective
+                                    </span>
+                                    <div
+                                        className="grid grid-cols-2 gap-2"
+                                        role="radiogroup"
+                                        aria-labelledby="objective-label"
+                                    >
                                         {OBJECTIVES.map(obj => (
                                             <button
                                                 key={obj.id}
                                                 onClick={() => setObjective(obj.id)}
+                                                role="radio"
+                                                aria-checked={objective === obj.id}
                                                 className={`p-3 rounded-lg text-left transition-all ${objective === obj.id
                                                     ? 'bg-pink-900/30 border border-pink-500/50'
-                                                    : 'bg-[#0d1117] border border-gray-800 hover:border-gray-600'
+                                                    : 'bg-bg-dark border border-gray-800 hover:border-gray-600'
                                                     }`}
                                             >
                                                 <div className={`text-sm font-medium ${objective === obj.id ? 'text-pink-200' : 'text-gray-300'}`}>
@@ -177,20 +222,29 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
 
                                 {/* Platforms */}
                                 <div>
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
+                                    <span
+                                        id="platforms-label"
+                                        className="block text-xs text-gray-500 uppercase font-semibold mb-2"
+                                    >
                                         Platforms *
-                                    </label>
-                                    <div className="flex gap-2">
+                                    </span>
+                                    <div
+                                        className="flex gap-2"
+                                        role="group"
+                                        aria-labelledby="platforms-label"
+                                    >
                                         {PLATFORMS.map(platform => (
                                             <button
                                                 key={platform.id}
                                                 onClick={() => togglePlatform(platform.id)}
+                                                aria-pressed={selectedPlatforms.includes(platform.id)}
+                                                aria-label={platform.label}
                                                 className={`flex-1 py-2 px-3 rounded-lg text-sm flex items-center justify-center gap-2 transition-all ${selectedPlatforms.includes(platform.id)
                                                     ? 'bg-pink-900/30 border border-pink-500/50 text-pink-200'
-                                                    : 'bg-[#0d1117] border border-gray-800 text-gray-400 hover:border-gray-600'
+                                                    : 'bg-bg-dark border border-gray-800 text-gray-400 hover:border-gray-600'
                                                     }`}
                                             >
-                                                <span>{platform.icon}</span>
+                                                <span aria-hidden="true">{platform.icon}</span>
                                                 <span className="hidden sm:inline">{platform.label}</span>
                                             </button>
                                         ))}
@@ -203,13 +257,14 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                 {/* Duration & Posts */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
+                                        <label htmlFor="campaign-duration" className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
                                             <Calendar size={14} /> Duration (days)
                                         </label>
                                         <select
+                                            id="campaign-duration"
                                             value={durationDays}
                                             onChange={(e) => setDurationDays(Number(e.target.value))}
-                                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                         >
                                             <option value={3}>3 days</option>
                                             <option value={7}>7 days</option>
@@ -218,13 +273,17 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
+                                        <label
+                                            htmlFor="posts-per-day"
+                                            className="block text-xs text-gray-500 uppercase font-semibold mb-2"
+                                        >
                                             Posts/Day
                                         </label>
                                         <select
+                                            id="posts-per-day"
                                             value={postsPerDay}
                                             onChange={(e) => setPostsPerDay(Number(e.target.value))}
-                                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                         >
                                             <option value={1}>1 post</option>
                                             <option value={2}>2 posts</option>
@@ -235,14 +294,23 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
 
                                 {/* Tone */}
                                 <div>
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
-                                        <MessageSquare size={14} /> Tone
-                                    </label>
-                                    <div className="flex flex-wrap gap-2">
+                                    <span
+                                        id="tone-label"
+                                        className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2"
+                                    >
+                                        <MessageSquare size={14} aria-hidden="true" /> Tone
+                                    </span>
+                                    <div
+                                        className="flex flex-wrap gap-2"
+                                        role="radiogroup"
+                                        aria-labelledby="tone-label"
+                                    >
                                         {TONES.map(t => (
                                             <button
                                                 key={t.id}
                                                 onClick={() => setTone(t.id)}
+                                                role="radio"
+                                                aria-checked={tone === t.id}
                                                 className={`px-4 py-2 rounded-full text-sm border transition-all ${tone === t.id
                                                     ? 'bg-white text-black border-white'
                                                     : 'bg-transparent text-gray-400 border-gray-700 hover:border-gray-500'
@@ -256,28 +324,36 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
 
                                 {/* Target Audience */}
                                 <div>
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2">
-                                        <Users size={14} /> Target Audience (optional)
+                                    <label
+                                        htmlFor="target-audience"
+                                        className="block text-xs text-gray-500 uppercase font-semibold mb-2 flex items-center gap-2"
+                                    >
+                                        <Users size={14} aria-hidden="true" /> Target Audience (optional)
                                     </label>
                                     <input
+                                        id="target-audience"
                                         type="text"
                                         value={targetAudience}
                                         onChange={(e) => setTargetAudience(e.target.value)}
                                         placeholder="e.g., Gen Z music lovers, indie rock fans..."
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                     />
                                 </div>
 
                                 {/* Start Date */}
                                 <div>
-                                    <label className="block text-xs text-gray-500 uppercase font-semibold mb-2">
+                                    <label
+                                        htmlFor="start-date"
+                                        className="block text-xs text-gray-500 uppercase font-semibold mb-2"
+                                    >
                                         Start Date
                                     </label>
                                     <input
+                                        id="start-date"
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none"
                                     />
                                 </div>
                             </div>
@@ -286,7 +362,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                         /* Preview View */
                         <div className="space-y-6">
                             {/* Plan Header */}
-                            <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-6">
+                            <div className="bg-bg-dark border border-gray-800 rounded-xl p-6">
                                 <h3 className="text-xl font-bold text-white mb-2">{generatedPlan.title}</h3>
                                 <p className="text-gray-400 text-sm">{generatedPlan.description}</p>
                                 <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
@@ -303,7 +379,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                     {generatedPlan.posts.slice(0, 10).map((post, index) => (
                                         <div
                                             key={index}
-                                            className="bg-[#0d1117] border border-gray-800 rounded-lg p-4"
+                                            className="bg-bg-dark border border-gray-800 rounded-lg p-4"
                                         >
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-2">
@@ -343,21 +419,21 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-[#0d1117]">
+                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-bg-dark">
                     {generatedPlan ? (
                         <>
                             <button
                                 onClick={() => setGeneratedPlan(null)}
                                 className="px-4 py-2 text-gray-400 hover:text-white transition-colors flex items-center gap-2"
                             >
-                                <RefreshCw size={16} />
+                                <RefreshCw size={16} aria-hidden="true" />
                                 Regenerate
                             </button>
                             <button
                                 onClick={handleSave}
                                 className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-lg transition-all flex items-center gap-2"
                             >
-                                <Check size={16} />
+                                <Check size={16} aria-hidden="true" />
                                 Create Campaign
                             </button>
                         </>
@@ -376,12 +452,12 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                             >
                                 {isGenerating ? (
                                     <>
-                                        <Loader2 className="animate-spin" size={16} />
+                                        <Loader2 className="animate-spin" size={16} aria-hidden="true" />
                                         Generating...
                                     </>
                                 ) : (
                                     <>
-                                        <Sparkles size={16} />
+                                        <Sparkles size={16} aria-hidden="true" />
                                         Generate Campaign
                                     </>
                                 )}

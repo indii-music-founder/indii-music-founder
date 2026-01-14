@@ -4,6 +4,8 @@ export interface ItineraryStop {
     venue: string;
     activity: string;
     notes: string;
+    type?: string;
+    distance?: number;
 }
 
 export interface Itinerary {

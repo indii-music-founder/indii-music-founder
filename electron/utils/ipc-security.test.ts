@@ -43,19 +43,19 @@ describe('Sentinel: IPC Validation Security', () => {
         });
 
         it('should REJECT arbitrary HTTPS URLs', () => {
-             process.env.VITE_DEV_SERVER_URL = 'http://localhost:4242';
-             expect(() => validateSender(mockEvent('https://google.com/'))).toThrow('Unauthorized sender URL');
+            process.env.VITE_DEV_SERVER_URL = 'http://localhost:4242';
+            expect(() => validateSender(mockEvent('https://google.com/'))).toThrow('Unauthorized sender URL');
         });
 
         it('should REJECT URLs that merely start with the dev URL but are different domains (Prefix Attack)', () => {
-             process.env.VITE_DEV_SERVER_URL = 'http://localhost:4242';
-             // This tests the vulnerability: "http://localhost:4242.evil.com/" starts with "http://localhost:4242"
-             // But it should be blocked because it's a different origin.
-             expect(() => validateSender(mockEvent('http://localhost:4242.evil.com/'))).toThrow('Unauthorized sender URL');
+            process.env.VITE_DEV_SERVER_URL = 'http://localhost:4242';
+            // This tests the vulnerability: "http://localhost:4242.evil.com/" starts with "http://localhost:4242"
+            // But it should be blocked because it's a different origin.
+            expect(() => validateSender(mockEvent('http://localhost:4242.evil.com/'))).toThrow('Unauthorized sender URL');
         });
 
         it('should reject empty/undefined URLs', () => {
-            expect(() => validateSender(mockEvent(''))).toThrow('Unauthorized IPC Sender');
+            expect(() => validateSender(mockEvent(''))).toThrow('Security: Missing sender URL');
             expect(() => validateSender({} as any)).toThrow('Missing sender frame');
         });
     });

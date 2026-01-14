@@ -146,7 +146,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     addAgentMessage: (msg) => set((state) => {
         // If no session exists, create one implicitly (safety net)
         let currentSessionId = state.activeSessionId;
-        let sessions = { ...state.sessions };
+        const sessions = { ...state.sessions };
 
         if (!currentSessionId) {
             currentSessionId = crypto.randomUUID();

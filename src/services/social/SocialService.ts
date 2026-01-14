@@ -347,7 +347,7 @@ export class SocialService {
         authorId: userId,
         authorName: snapshot.data()?.displayName || "Alpha Artist",
         authorAvatar: snapshot.data()?.photoURL || null,
-        content: "Just dropped the new merch! 🍌 Banana Pro line is officially live. Check it out in the studio.",
+        content: "Just dropped the new merch! 🎨 Studio Pro line is officially live. Check it out in the studio.",
         mediaUrls: ["https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&fit=crop"],
         productId: "demo_prod_1",
         likes: 124,

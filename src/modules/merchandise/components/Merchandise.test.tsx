@@ -1,9 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { BananaMerch } from './BananaMerch';
-import { BananaProMerch } from './BananaProMerch';
+import '@testing-library/jest-dom';
+import { StandardMerch } from './StandardMerch';
+import { ProMerch } from './ProMerch';
+import MerchDashboard from '../MerchDashboard';
 import { useMerchandise } from '../hooks/useMerchandise';
 import { MerchProduct } from '../types';
+import { BrowserRouter } from 'react-router-dom';
 
 // Mock the hook
 vi.mock('../hooks/useMerchandise', () => ({
@@ -13,74 +16,110 @@ vi.mock('../hooks/useMerchandise', () => ({
 // Mock store
 vi.mock('@/core/store', () => ({
     useStore: () => ({
-        userProfile: { id: 'test-user' }
+        userProfile: { id: 'test-user', displayName: 'Test User' }
     })
 }));
 
-describe('Merchandise Components', () => {
+describe('Merchandise Dashboard', () => {
     const mockStandardProducts: MerchProduct[] = [
-        { id: '1', title: 'Standard Tee', price: '$25.00', category: 'standard', image: 'img.jpg', userId: 'user-1', createdAt: new Date() },
-        { id: '2', title: 'Standard Cap', price: '$15.00', category: 'standard', image: 'cap.jpg', userId: 'user-1', createdAt: new Date() }
+        { id: '1', userId: 'user-1', title: 'Kill Tee', image: 'img.jpg', price: '$25.00', category: 'standard', createdAt: new Date() },
+        { id: '2', userId: 'user-1', title: 'Killer Cap', image: 'cap.jpg', price: '$15.00', category: 'standard', createdAt: new Date() }
     ];
 
-    const mockProProducts: MerchProduct[] = [
-        { id: '3', title: 'Pro Hoodie', price: '$60.00', category: 'pro', features: ['Heavyweight'], image: 'hoodie.jpg', userId: 'user-1', createdAt: new Date() }
+    const mockProProducts: (MerchProduct & { revenue: number, units: number })[] = [
+        { id: '3', userId: 'user-1', title: 'Viral Hoodie', image: 'hoodie.jpg', price: '$45.00', category: 'pro', revenue: 5000, units: 120, createdAt: new Date() },
+        { id: '4', userId: 'user-1', title: 'Elite Bottle', image: 'bottle.jpg', price: '$35.00', category: 'pro', revenue: 3000, units: 85, createdAt: new Date() }
     ];
 
     const defaultMockReturn = {
-        products: [] as MerchProduct[],
-        standardProducts: [] as MerchProduct[],
-        proProducts: [] as MerchProduct[],
+        products: [...mockStandardProducts, ...mockProProducts],
+        standardProducts: mockStandardProducts,
+        proProducts: mockProProducts,
         catalog: [],
-        stats: { totalRevenue: 0, unitsSold: 0, conversionRate: 0, revenueChange: 0, unitsChange: 0 },
-        topSellingProducts: [],
+        stats: { totalRevenue: 3250, unitsSold: 150, conversionRate: 5.2, revenueChange: 12, unitsChange: 8 },
+        topSellingProducts: mockProProducts,
         loading: false,
-        error: null,
+        error: null as string | null,
         addProduct: vi.fn(),
         deleteProduct: vi.fn(),
         createFromCatalog: vi.fn()
     };
 
-    it('BananaMerch renders standard products', () => {
+    it('StandardMerch renders standard products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
-            products: [...mockStandardProducts, ...mockProProducts],
+            products: mockStandardProducts,
             standardProducts: mockStandardProducts,
-            proProducts: mockProProducts,
-        });
+            proProducts: [],
+            topSellingProducts: [],
+        } as any);
 
-        render(<BananaMerch />);
+        render(<StandardMerch />);
 
-        expect(screen.getByText('Standard Tee')).toBeInTheDocument();
+        expect(screen.getByText('Kill Tee')).toBeInTheDocument();
         expect(screen.getByText('$25.00')).toBeInTheDocument();
-        // Should not show Pro products in standard view usually, depends on component logic
-        // Verify standard logic: BananaMerch iterates standardProducts
     });
 
-    it('BananaProMerch renders pro products', () => {
+    it('ProMerch renders pro products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
-            products: [...mockStandardProducts, ...mockProProducts],
-            standardProducts: mockStandardProducts,
+            products: mockProProducts,
+            standardProducts: [],
             proProducts: mockProProducts,
-        });
+            topSellingProducts: mockProProducts,
+        } as any);
 
-        render(<BananaProMerch />);
+        render(<ProMerch />);
 
-        expect(screen.getByText('Pro Hoodie')).toBeInTheDocument();
-        expect(screen.getByText('$60.00')).toBeInTheDocument();
+        expect(screen.getByText('Viral Hoodie')).toBeInTheDocument();
+        expect(screen.getByText('$45.00')).toBeInTheDocument();
     });
 
-    it('shows loading state or empty state if no products', () => {
+    it('renders MerchDashboard with products', () => {
+        vi.mocked(useMerchandise).mockReturnValue(defaultMockReturn as any);
+
+        render(
+            <BrowserRouter>
+                <MerchDashboard />
+            </BrowserRouter>
+        );
+
+        expect(screen.getByTestId('merch-dashboard-content')).toBeInTheDocument();
+        expect(screen.getByText('Kill Tee')).toBeInTheDocument();
+        expect(screen.getByText('Killer Cap')).toBeInTheDocument();
+    });
+
+    it('shows loading state', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
-            loading: false, // assuming component handles empty list gracefully
-        });
+            loading: true,
+            products: []
+        } as any);
 
-        render(<BananaMerch />);
-        // Check for specific empty state text if it exists, or just ensure no crash
-        // For now, simple render check
-        const heading = screen.getByText(/Merch/i); // Adjust based on actual heading
-        expect(heading).toBeInTheDocument();
+        render(
+            <BrowserRouter>
+                <MerchDashboard />
+            </BrowserRouter>
+        );
+
+        expect(screen.queryByTestId('merch-dashboard-content')).not.toBeInTheDocument();
+        expect(screen.getByTestId('merch-dashboard-loading')).toBeInTheDocument();
+    });
+
+    it('shows error state', () => {
+        vi.mocked(useMerchandise).mockReturnValue({
+            ...defaultMockReturn,
+            error: 'Failed to fetch',
+            loading: false
+        } as any);
+
+        render(
+            <BrowserRouter>
+                <MerchDashboard />
+            </BrowserRouter>
+        );
+
+        expect(screen.getByText('Failed to load dashboard data.')).toBeInTheDocument();
+        expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
     });
 });

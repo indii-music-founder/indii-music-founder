@@ -1,0 +1,35 @@
+
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/merchandise/components/DesignCanvas.tsx
+  102:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/merchandise/components/DesignCanvas.tsx:102:13
+  100 |
+  101 |             fabricCanvasRef.current = canvas;
+> 102 |             setIsInitialized(true);
+      |             ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  103 |
+  104 |             // Notify parent that canvas is ready
+  105 |             if (onCanvasReady) {  react-hooks/set-state-in-effect
+
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/modules/video/VideoWorkflow.pulse.test.tsx
+  36:5  error  'editorStoreState' is never reassigned. Use 'const' instead  prefer-const
+
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/agent/AgentService.ts
+  202:64  error  Unnecessary escape character: \.  no-useless-escape
+
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/video/LensVeoSubscriptionRace.test.ts
+  154:41  error  The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/test/security/ssrf-exploit.test.ts
+  25:9  error  Include a description after the "@ts-expect-error" directive to explain why the @ts-expect-error is necessary. The description must be 3 characters or longer  @typescript-eslint/ban-ts-comment
+
+✖ 5 problems (5 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

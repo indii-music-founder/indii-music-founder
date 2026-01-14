@@ -39,7 +39,7 @@ const PlatformSelector = memo(({ selectedId, onSelect }: { selectedId: string, o
                     aria-pressed={selectedId === p.id}
                     className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${selectedId === p.id
                         ? 'bg-pink-900/30 border border-pink-500/50 text-pink-200'
-                        : 'bg-[#0d1117] border border-gray-800 text-gray-400 hover:border-gray-600'
+                        : 'bg-bg-dark border border-gray-800 text-gray-400 hover:border-gray-600'
                         }`}
                 >
                     <span aria-hidden="true">{p.icon}</span> {p.name}
@@ -100,7 +100,7 @@ const PreviewPanel = memo(({
             {result ? (
                 <div className="flex-1 flex flex-col gap-6 animate-in fade-in duration-500">
                     {/* Image Preview */}
-                    <div className="aspect-video bg-[#0d1117] rounded-lg border border-gray-800 flex items-center justify-center overflow-hidden relative group">
+                    <div className="aspect-video bg-bg-dark rounded-lg border border-gray-800 flex items-center justify-center overflow-hidden relative group">
                         {isGeneratingImage ? (
                             <div className="text-center text-pink-400">
                                 <Loader2 size={32} className="animate-spin mx-auto mb-2" aria-hidden="true" />
@@ -113,9 +113,9 @@ const PreviewPanel = memo(({
                                     alt={`Generated image for: ${result.topic}`}
                                     className="w-full h-full object-cover"
                                 />
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                     <button
-                                        className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform"
+                                        className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                         aria-label="Use generated image"
                                     >
                                         <Upload size={20} aria-hidden="true" />
@@ -136,7 +136,7 @@ const PreviewPanel = memo(({
                             <label htmlFor="caption-preview">Caption</label>
                             <button
                                 onClick={() => onCopyToClipboard(result.caption)}
-                                className="flex items-center gap-1 hover:text-white transition-colors"
+                                className="flex items-center gap-1 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1"
                                 aria-label="Copy caption to clipboard"
                             >
                                 <Copy size={12} aria-hidden="true" /> Copy
@@ -145,7 +145,7 @@ const PreviewPanel = memo(({
                         <div className="flex justify-end mb-2">
                             <button
                                 onClick={onEnhanceClick}
-                                className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                                className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1"
                                 aria-label="Enhance caption with AI"
                             >
                                 <Wand2 size={12} aria-hidden="true" /> Enhance with AI
@@ -155,7 +155,7 @@ const PreviewPanel = memo(({
                             id="caption-preview"
                             value={result.caption}
                             onChange={(e) => onCaptionChange(e.target.value)}
-                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
+                            className="w-full h-32 bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none focus-visible:ring-1 focus-visible:ring-pink-500 resize-none"
                         />
                         <div className="flex flex-wrap gap-2 mt-2">
                             {result.hashtags.map((tag: string) => (
@@ -383,7 +383,7 @@ export default function PostGenerator() {
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="e.g., Announcing my new single 'Void Ocean' dropping this Friday..."
-                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
+                            className="w-full h-32 bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
                         />
                     </div>
 

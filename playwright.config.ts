@@ -13,11 +13,6 @@ export default defineConfig({
             command: 'npm run dev -- --port 4242',
             port: 4242,
             reuseExistingServer: !process.env.CI,
-        },
-        {
-            command: 'cd landing-page && npm run dev',
-            port: 3000,
-            reuseExistingServer: !process.env.CI,
         }
     ],
     projects: [

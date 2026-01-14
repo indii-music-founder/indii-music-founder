@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -12,15 +12,16 @@ import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
+import { useURLSync } from '@/hooks/useURLSync';
 
 // ============================================================================
 // Lazy-loaded Module Components
 // ============================================================================
 
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
-const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
 const VideoStudio = lazy(() => import('../modules/video/VideoStudioContainer'));
@@ -43,8 +44,8 @@ const DistributionDashboard = lazy(() => import('../modules/distribution/Distrib
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
-const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
+const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 
 // Dev-only components
 const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
@@ -60,7 +61,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'dashboard': Dashboard,
     'creative': CreativeStudio,
     'video': VideoStudio,
-    'music': MusicStudio,
     'legal': LegalDashboard,
     'marketing': MarketingDashboard,
     'workflow': WorkflowLab,
@@ -80,8 +80,8 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
-    'banana-preview': BananaThemePreview,
     'observability': ObservabilityDashboard,
+    'reference-manager': ReferenceManager,
 };
 
 // ============================================================================
@@ -89,9 +89,25 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
 // ============================================================================
 
 function LoadingFallback() {
+    const [show, setShow] = useState(false);
+
+    useEffect(() => {
+        // Delay showing the loader to prevent flash for fast module loads
+        const timer = setTimeout(() => setShow(true), 200);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Don't show anything for the first 200ms (prevents flash)
+    if (!show) {
+        return null;
+    }
+
     return (
-        <div className="flex items-center justify-center h-screen w-screen bg-background text-muted-foreground animate-pulse">
-            Loading Module...
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 px-6 py-4 bg-surface/90 rounded-lg border border-white/10 shadow-lg">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
         </div>
     );
 }
@@ -158,6 +174,68 @@ function useOnboardingRedirect() {
 }
 
 // ============================================================================
+// Router Synchronization Hook
+// ============================================================================
+
+function useRouterSync() {
+    const { currentModule, setModule, user, authLoading } = useStore();
+
+    // 1. Initial Load: Sync URL to State (Deep Linking)
+    useEffect(() => {
+        if (!user || authLoading) return;
+
+        const path = window.location.pathname.substring(1); // Remove leading slash
+        const parts = path.split('/');
+        const initialModule = parts[0] as ModuleId;
+
+        // If URL has a module and it's different from current, update state
+        if (initialModule && initialModule !== currentModule && MODULE_COMPONENTS[initialModule]) {
+            setModule(initialModule);
+        } else if (!initialModule || initialModule === '') {
+             // Ensure dashboard URL if empty
+             window.history.replaceState(null, '', '/dashboard');
+        }
+    }, [user, authLoading, setModule]); // Run only on mount/auth-ready
+
+    // 2. State Change: Sync State to URL
+    useEffect(() => {
+        if (!user || authLoading) return;
+
+        const path = window.location.pathname.substring(1);
+        const parts = path.split('/');
+        const urlModule = parts[0] as ModuleId;
+
+        if (currentModule !== urlModule) {
+            const newPath = `/${currentModule}`;
+            // Use pushState only if we are actually changing contexts,
+            // but we need to avoid fighting with initial load or popstate
+            // Check if the current URL already matches
+            if (path !== currentModule) {
+                window.history.pushState(null, '', newPath);
+            }
+        }
+    }, [currentModule, user, authLoading]);
+
+    // 3. Browser Navigation (Back/Forward): Sync URL to State
+    useEffect(() => {
+        const handlePopState = () => {
+            const path = window.location.pathname.substring(1);
+            const parts = path.split('/');
+            const navModule = parts[0] as ModuleId;
+
+            if (navModule && MODULE_COMPONENTS[navModule]) {
+                setModule(navModule);
+            } else if (path === '' || path === '/') {
+                setModule('dashboard');
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [setModule]);
+}
+
+// ============================================================================
 // Module Renderer Component
 // ============================================================================
 
@@ -191,6 +269,9 @@ export default function App() {
     useAppInitialization();
     useOnboardingRedirect();
 
+    // Sync URL with State
+    useRouterSync();
+
     // Log module changes in dev
 
     // Handle Theme Switching
@@ -199,15 +280,11 @@ export default function App() {
         const theme = userProfile?.preferences?.theme || 'dark';
 
         // Remove all theme classes first
-        document.documentElement.classList.remove('dark', 'banana', 'banana-pro');
+        document.documentElement.classList.remove('dark');
 
         // Apply current theme
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else if (theme === 'banana') {
-            document.documentElement.classList.add('banana');
-        } else if (theme === 'banana-pro') {
-            document.documentElement.classList.add('banana-pro', 'dark'); // Banana Pro is dark-based
         }
     }, [userProfile?.preferences?.theme]);
 
@@ -216,6 +293,9 @@ export default function App() {
         () => !STANDALONE_MODULES.includes(currentModule as ModuleId),
         [currentModule]
     );
+
+    // Call URL Sync Hook (must be inside Router context, which App is)
+    useURLSync();
 
     if (authLoading) {
         return <LoadingFallback />;
@@ -228,7 +308,7 @@ export default function App() {
     return (
         <VoiceProvider>
             <ToastProvider>
-                <div className="flex h-screen w-screen bg-background text-white overflow-hidden" data-testid="app-container">
+                <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
                     {/* Left Sidebar - Hidden for standalone modules */}
                     {showChrome && (
                         <div className="hidden md:block h-full">
@@ -287,6 +367,9 @@ export default function App() {
 
                     {/* Instrument Approval Manager - Shows for instrument execution approvals */}
                     <ApprovalManager />
+
+                    {/* PWA Install Prompt - Shows when app can be installed */}
+                    <PWAInstallPrompt />
                 </div>
             </ToastProvider>
         </VoiceProvider>

@@ -7,6 +7,11 @@ import { AgentContext } from './types';
 export interface AgentResponse {
     text: string;
     data?: unknown;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+    };
 }
 
 export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;
@@ -51,6 +56,25 @@ export class AgentRegistry {
             // Log removed (Platinum Polish) - but we could use a silent internal flag if needed for debugging
         } catch (e) {
             console.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
+        }
+
+        // Register Merchandise Agent (Class-based)
+        try {
+            const merchMeta = {
+                id: 'merchandise',
+                name: 'Merchandise Specialist',
+                description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
+                color: '#FFE135',
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(merchMeta, async () => {
+                const { MerchandiseAgent } = await import('./MerchandiseAgent');
+                return new MerchandiseAgent();
+            });
+        } catch (e) {
+            console.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
         }
 
         // Register Config-based Agents

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { FetchUrlSchema, SftpUploadSchema, validateSender } from './validation';
+import { FetchUrlSchema, SftpUploadSchema } from './validation';
+import { validateSender } from './utils/ipc-security';
+import { validateSafeDistributionSource } from './utils/security-checks';
 
 describe('Sentinel: IPC Validation Security', () => {
     describe('FetchUrlSchema (SSRF Protection)', () => {
@@ -122,12 +124,63 @@ describe('Sentinel: IPC Validation Security', () => {
         });
 
         it('should reject external URLs', () => {
-             expect(() => validateSender(mockEvent('https://malicious.com'))).toThrow('Unauthorized IPC Sender');
+             expect(() => validateSender(mockEvent('https://malicious.com'))).toThrow('Security: Unauthorized sender URL');
         });
 
         it('should reject empty/undefined URLs', () => {
-            expect(() => validateSender(mockEvent(''))).toThrow('Unauthorized IPC Sender');
-            expect(() => validateSender({} as any)).toThrow('Unauthorized IPC Sender');
+            expect(() => validateSender(mockEvent(''))).toThrow('Security: Missing sender URL');
+            expect(() => validateSender({} as any)).toThrow('Security: Missing sender frame');
+        });
+    });
+
+    describe('validateSafeDistributionSource (LFI Prevention)', () => {
+        it('should accept valid media files', () => {
+            const valid = [
+                '/Users/artist/Music/song.wav',
+                '/Users/artist/Downloads/cover.jpg',
+                'C:\\Users\\Artist\\Documents\\lyrics.txt'
+            ];
+            valid.forEach(p => {
+                expect(() => validateSafeDistributionSource(p)).not.toThrow();
+            });
+        });
+
+        it('should reject system directories', () => {
+            const invalid = [
+                '/etc/passwd',
+                '/var/log/syslog',
+                '/usr/bin/bash',
+                'C:\\Windows\\System32\\drivers\\etc\\hosts'
+            ];
+            invalid.forEach(p => {
+                expect(() => validateSafeDistributionSource(p)).toThrow(/system directories/);
+            });
+        });
+
+        it('should reject hidden files and directories', () => {
+            const invalid = [
+                '/Users/artist/.ssh/id_rsa',
+                '/Users/artist/.config/app/secret.json',
+                '/Users/artist/project/.env'
+            ];
+            invalid.forEach(p => {
+                expect(() => validateSafeDistributionSource(p)).toThrow(/hidden files/);
+            });
+        });
+
+        it('should reject prohibited extensions', () => {
+            const invalid = [
+                '/Users/artist/Music/song.exe',
+                '/Users/artist/script.sh',
+                '/Users/artist/config.yaml' // YAML not in allowlist
+            ];
+            invalid.forEach(p => {
+                expect(() => validateSafeDistributionSource(p)).toThrow(/File type/);
+            });
+        });
+
+        it('should reject path traversal attempts', () => {
+             expect(() => validateSafeDistributionSource('../../../etc/passwd')).toThrow(/Path traversal/);
         });
     });
 });

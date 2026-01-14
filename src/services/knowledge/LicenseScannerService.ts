@@ -66,7 +66,7 @@ export class LicenseScannerService {
                 required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
             } satisfies JSONSchemaObject;
 
-            const analysis = await AI.generateStructuredData<LicenseAnalysis>(prompt, schema);
+            const analysis = await AI.generateStructuredData<LicenseAnalysis>(prompt, schema as any);
             return analysis;
 
         } catch (error) {

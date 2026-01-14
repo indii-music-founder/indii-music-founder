@@ -2,7 +2,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Maestro Campaign Workflow', () => {
-  test('should execute Agent-User Handoff: Create -> Approve -> Execute', async ({ page }) => {
+
+  test.beforeEach(async ({ page }) => {
     // -----------------------------------------------------------------------
     // 1. Setup & Auth Bypass (Mock User)
     // -----------------------------------------------------------------------
@@ -42,13 +43,12 @@ test.describe('Maestro Campaign Workflow', () => {
         currentModule: 'campaign'
       });
     });
+  });
 
+  test('should execute Agent-User Handoff: Create -> Approve -> Execute', async ({ page }) => {
     // -----------------------------------------------------------------------
-    // 2. Initialize Project State (Mock Agent Creation)
+    // 2. Initialize Project State (Manual Creation)
     // -----------------------------------------------------------------------
-    // NOTE: Instead of mocking complex Firestore WebSocket network traffic to "Inject" a plan,
-    // we use the UI to simulate the Agent creating the campaign. This ensures the
-    // internal state machine and validation logic are exercised correctly before the handoff.
 
     // Check we are on Campaign Manager
     const createBtn = page.getByRole('button', { name: 'New Campaign' }).first();
@@ -56,11 +56,9 @@ test.describe('Maestro Campaign Workflow', () => {
     await createBtn.click();
 
     // Expect Modal Title "New Campaign"
-    // Use .last() or filter to distinguish between the card title and the modal title
     await expect(page.getByRole('heading', { name: 'New Campaign' }).last()).toBeVisible();
 
     // Fill in the "Agent's Plan"
-    // Use specific song name as requested: "Dogs Having Fun"
     await page.getByTestId('campaign-title-input').fill('Dogs Having Fun');
     await page.getByTestId('campaign-description-input').fill('A viral campaign for the new hit song. Goal: Viral Awareness.');
 
@@ -68,29 +66,19 @@ test.describe('Maestro Campaign Workflow', () => {
     await page.getByTestId('create-campaign-submit-btn').click();
 
     // -----------------------------------------------------------------------
-    // 3. Verify State Transition: PLANNING -> GENERATING (Simulated)
+    // 3. Verify State Transition: PLANNING -> GENERATING
     // -----------------------------------------------------------------------
-    // In 'campaign' module, successful creation triggers `handleCreateSave` which:
-    // 1. Closes Modal
-    // 2. Fetches the new campaign by ID
-    // 3. Sets it as `selectedCampaign`
-    // This switches the view to CampaignDetail automatically.
-
-    // So we verify that the Detail View for "Dogs Having Fun" appears.
-    // This is the critical "Handoff" verification - the resource created in step 2 is available in step 3.
+    // Verify that the Detail View for "Dogs Having Fun" appears.
     await expect(page.getByRole('heading', { name: 'Dogs Having Fun' })).toBeVisible({ timeout: 10000 });
 
     // -----------------------------------------------------------------------
     // 4. User Review & Approval (The Handoff)
     // -----------------------------------------------------------------------
-    // Assert initial status (Should be PENDING or NEW)
     await expect(page.getByText('Pending', { exact: false })).toBeVisible();
 
     // "The User Disposes" -> Click Execute (Approve)
     const executeBtn = page.getByRole('button', { name: 'Execute Campaign' });
     await expect(executeBtn).toBeVisible();
-
-    // Ensure it is enabled
     await expect(executeBtn).toBeEnabled();
 
     // Click Approve
@@ -99,13 +87,86 @@ test.describe('Maestro Campaign Workflow', () => {
     // -----------------------------------------------------------------------
     // 5. Verify Execution State
     // -----------------------------------------------------------------------
-    // Assert state changes to PROCESSING or EXECUTING
-    // The button text changes to "Processing..."
     await expect(page.getByText('Processing...')).toBeVisible();
-
-    // NOTE: We stop verification here because completing the job requires a real backend
-    // or complex long-polling mocks which are outside the scope of this UI-focused E2E test.
-    // The "Processing..." state confirms the Handoff was successful and the system
-    // accepted the user's approval.
   });
+
+  test('should execute Agent AI Generation: Generate -> Preview -> Create -> Execute', async ({ page }) => {
+    // -----------------------------------------------------------------------
+    // 1. Open AI Generate Modal
+    // -----------------------------------------------------------------------
+    // The "AI Generate" card/button should be visible
+    const aiGenerateBtn = page.getByRole('button', { name: 'Generate with AI' }).first();
+    await expect(aiGenerateBtn).toBeVisible();
+    await aiGenerateBtn.click();
+
+    // verify modal open
+    await expect(page.getByText('AI Campaign Generator')).toBeVisible();
+
+    // -----------------------------------------------------------------------
+    // 2. Mock AI Response
+    // -----------------------------------------------------------------------
+    const mockPlan = {
+      title: 'AI Generated Campaign',
+      description: 'Generated by E2E Test Mock',
+      posts: [
+        {
+          platform: 'Twitter',
+          day: 1,
+          copy: 'Hello World from AI #testing',
+          imagePrompt: 'A futuristic robot passing a test',
+          hashtags: ['#testing', '#ai'],
+          bestTimeToPost: '9:00 AM'
+        },
+        {
+          platform: 'Instagram',
+          day: 1,
+          copy: 'Look at this amazing visual! #visuals',
+          imagePrompt: 'A colorful abstract explosion',
+          hashtags: ['#visuals', '#art'],
+          bestTimeToPost: '12:00 PM'
+        }
+      ]
+    };
+
+    await page.evaluate((plan) => {
+      // @ts-expect-error - injected by Playwright
+      window.__MOCK_AI_PLAN__ = plan;
+    }, mockPlan);
+
+    // -----------------------------------------------------------------------
+    // 3. Fill Brief & Generate
+    // -----------------------------------------------------------------------
+    // Fill Topic (textarea) using regex for robust placeholder matching
+    await page.getByPlaceholder(/e\.g\., New album/i).fill('Test AI Topic');
+
+    // Click Generate
+    await page.getByRole('button', { name: 'Generate Campaign' }).click();
+
+    // -----------------------------------------------------------------------
+    // 4. Verify Preview State
+    // -----------------------------------------------------------------------
+    // Should show "Post Preview" and the Mock Title
+    await expect(page.getByText('Post Preview')).toBeVisible();
+    await expect(page.getByText('AI Generated Campaign')).toBeVisible();
+    await expect(page.getByText('Hello World from AI #testing')).toBeVisible();
+
+    // -----------------------------------------------------------------------
+    // 5. Create & Verify Handoff
+    // -----------------------------------------------------------------------
+    await page.getByRole('button', { name: 'Create Campaign' }).click();
+
+    // Should redirect to detail view with the new campaign
+    await expect(page.getByRole('heading', { name: 'AI Generated Campaign' })).toBeVisible({ timeout: 10000 });
+
+    // -----------------------------------------------------------------------
+    // 6. Execute (Approve)
+    // -----------------------------------------------------------------------
+    const executeBtn = page.getByRole('button', { name: 'Execute Campaign' });
+    await expect(executeBtn).toBeVisible();
+    await executeBtn.click();
+
+    // Verify Processing
+    await expect(page.getByText('Processing...')).toBeVisible();
+  });
+
 });

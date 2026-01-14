@@ -55,7 +55,54 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     }
 };
 
-const corsHandler = corsLib({ origin: true });
+/**
+ * CORS Configuration
+ *
+ * SECURITY: Whitelist specific origins instead of allowing all.
+ * This prevents unauthorized websites from calling our Cloud Functions.
+ */
+const getAllowedOrigins = (): string[] => {
+    const origins = [
+        'https://indiios-studio.web.app',
+        'https://indiios-v-1-1.web.app',
+        'https://studio.indiios.com',
+        'https://indiios.com',
+        'app://.'  // Electron app
+    ];
+
+    // Add localhost origins in emulator/development mode
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        origins.push(
+            'http://localhost:5173',
+            'http://localhost:4173',
+            'http://localhost:3000',
+            'http://127.0.0.1:5173'
+        );
+    }
+
+    return origins;
+};
+
+const corsHandler = corsLib({
+    origin: (origin, callback) => {
+        const allowedOrigins = getAllowedOrigins();
+
+        // Allow requests with no origin (mobile apps, Postman) only in emulator
+        if (!origin && process.env.FUNCTIONS_EMULATOR === 'true') {
+            return callback(null, true);
+        }
+
+        // Check if origin is in whitelist
+        if (origin && allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Reject unauthorized origins
+        console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        callback(new Error('CORS not allowed'));
+    },
+    credentials: true
+});
 
 // ----------------------------------------------------------------------------
 // Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
@@ -224,8 +271,11 @@ export const triggerLongFormVideoJob = functions
             const limits = TIER_LIMITS[userTier];
             const durationNum = parseFloat((totalDuration || 0).toString());
 
+            // GOD MODE: Bypass for Builder
+            const isGodMode = context.auth?.token.email === 'the.walking.agency.det@gmail.com';
+
             // 2. Validate Duration Limit
-            if (durationNum > limits.maxVideoDuration) {
+            if (!isGodMode && durationNum > limits.maxVideoDuration) {
                 throw new functions.https.HttpsError(
                     "resource-exhausted",
                     `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
@@ -240,7 +290,7 @@ export const triggerLongFormVideoJob = functions
                 const usageDoc = await transaction.get(usageRef);
                 const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
 
-                if (currentUsage >= limits.maxVideoGenerationsPerDay) {
+                if (!isGodMode && currentUsage >= limits.maxVideoGenerationsPerDay) {
                     throw new functions.https.HttpsError(
                         "resource-exhausted",
                         `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
@@ -878,6 +928,16 @@ export const ragProxy = functions
             }
 
             try {
+                // SECURITY: Block Method Override Headers to prevent bypassing method checks
+                // Express might handle X-HTTP-Method-Override automatically, so strict method checking is key.
+
+                // 1. BLOCK DELETE (Data Integrity / Anti-Griefing)
+                // Prevents users from deleting files that might belong to others in the shared project.
+                if (req.method === 'DELETE') {
+                    res.status(403).send('Forbidden: Method not allowed');
+                    return;
+                }
+
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
                 const allowedPrefixes = [
@@ -885,6 +945,15 @@ export const ragProxy = functions
                     '/v1beta/models',
                     '/upload/v1beta/files'
                 ];
+
+                // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
+                // Prevents users from listing all files uploaded to the shared project.
+                // Exception: Getting metadata for a SPECIFIC file is allowed (path has extra segments).
+                // Path must NOT be exactly '/v1beta/files' if method is GET.
+                if (req.method === 'GET' && req.path === '/v1beta/files') {
+                    res.status(403).send('Forbidden: Listing files is disabled for security');
+                    return;
+                }
 
                 const isAllowed = allowedPrefixes.some(prefix =>
                     req.path === prefix || req.path.startsWith(prefix + '/')
@@ -1048,16 +1117,12 @@ export const executeBigQueryQuery = functions
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
         requireAdmin(context);
 
-        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
-        if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
-        }
-
-        try {
-            return await bigqueryService.executeQuery(data.query, projectId, { maxResults: data.maxResults });
-        } catch (error: any) {
-            throw new functions.https.HttpsError('internal', error.message);
-        }
+        // SECURITY: Raw SQL execution is disabled for production safety.
+        // Developers should implement specific, parameterized query endpoints.
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Raw SQL execution is disabled in this environment for security reasons.'
+        );
     });
 
 /**
