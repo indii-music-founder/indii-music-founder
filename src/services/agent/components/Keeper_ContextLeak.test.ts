@@ -62,7 +62,7 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         const historyB = useStore.getState().agentHistory;
         expect(historyB).toHaveLength(1);
         expect(historyB[0].text).toBe('Secret B');
-        expect(historyB.find(m => m.text === 'Secret A')).toBeUndefined();
+        expect(historyB.find((m: AgentMessage) => m.text === 'Secret A')).toBeUndefined();
 
         // 3. Switch back to Chat A
         store.setActiveSession(sessionA);
@@ -71,7 +71,7 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         const historyA = useStore.getState().agentHistory;
         expect(historyA).toHaveLength(1);
         expect(historyA[0].text).toBe('Secret A');
-        expect(historyA.find(m => m.text === 'Secret B')).toBeUndefined();
+        expect(historyA.find((m: AgentMessage) => m.text === 'Secret B')).toBeUndefined();
     });
 
     it('should scrub context when history is cleared (Privacy Scrub)', async () => {
