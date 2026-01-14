@@ -21,6 +21,8 @@ const safeConfig = firebaseConfig.apiKey ? firebaseConfig : {
 
 export const app = initializeApp(safeConfig);
 
+
+
 // Initialize Firebase AI with Production Security (App Check + Vertex AI Backend)
 export const ai = getAI(app, {
     backend: new VertexAIBackend('global'),
