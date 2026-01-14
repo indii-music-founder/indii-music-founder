@@ -142,7 +142,8 @@ const createWindow = () => {
     // Console message logging from renderer
     mainWindow.webContents.on('console-message', (_event, level, message) => {
         const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
-        console.log(`[Renderer][${levels[level] || 'INFO'}] ${message}`);
+        const tag = levels[level] || 'INFO';
+        log.info(`[Renderer][${tag}] ${message}`);
     });
 
     // Handle Window Open Requests

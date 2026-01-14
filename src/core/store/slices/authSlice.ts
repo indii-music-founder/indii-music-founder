@@ -60,6 +60,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
 
     initializeAuthListener: () => {
+        console.log('[Auth] Initializing Auth Listener...');
+
         // SECURE: TEST_MODE only allowed in development builds AND with explicit env flag
         // This prevents production bypass via localStorage manipulation
         const isTestEnvironment =
@@ -95,6 +97,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
 
         // Return unsubscribe function
         return onAuthStateChanged(auth, async (user) => {
+            console.log('[Auth] State Changed:', user ? `User ${user.uid}` : 'Logged Out');
             // Log removed (Platinum Polish)
             set({ user, authLoading: false });
 
@@ -107,7 +110,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     const userSnap = await getDoc(userRef);
 
                     if (!userSnap.exists()) {
-                        // console.info("[Auth] Creating new user profile for", user.uid);
+                        console.log("[Auth] Creating new user profile for", user.uid);
                         await setDoc(userRef, {
                             email: user.email,
                             displayName: user.displayName,
@@ -122,9 +125,12 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                         }, { merge: true });
                     }
                 } catch (e) {
-                    // console.error("[Auth] Failed to sync user to Firestore", e);
+                    console.error("[Auth] Failed to sync user to Firestore", e);
                 }
             }
+        }, (error) => {
+            console.error("[Auth] Auth State Change Error:", error);
+            set({ authError: error.message, authLoading: false });
         });
     }
 });
