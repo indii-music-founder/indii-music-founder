@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { MerchLayout } from './components/Layout';
 import { MerchCard } from './components/MerchCard';
 import { MerchButton } from './components/MerchButton';
@@ -14,6 +14,10 @@ export default function MerchDashboard() {
     const navigate = useNavigate();
     const { userProfile } = useStore();
     const { stats, topSellingProducts, products, loading, error } = useMerchandise();
+
+    const handleDesignClick = useCallback(() => {
+        navigate('/merch/design');
+    }, [navigate]);
 
     if (loading) {
         return (
@@ -47,7 +51,7 @@ export default function MerchDashboard() {
                         <p className="text-neutral-400">Your empire is growing.</p>
                     </div>
                     <MerchButton
-                        onClick={() => navigate('/merch/design')}
+                        onClick={handleDesignClick}
                         glow size="lg"
                         className="rounded-full"
                         data-testid="new-design-btn"
@@ -135,7 +139,7 @@ export default function MerchDashboard() {
                             ) : (
                                 <div className="col-span-2 p-8 text-center border border-dashed border-white/10 rounded-lg">
                                     <p className="text-neutral-500 mb-4">No sales yet. Time to market!</p>
-                                    <MerchButton size="sm" variant="outline" onClick={() => navigate('/merch/design')}>
+                                    <MerchButton size="sm" variant="outline" onClick={handleDesignClick}>
                                         Start Selling
                                     </MerchButton>
                                 </div>
@@ -154,7 +158,7 @@ export default function MerchDashboard() {
                                 <RecentDesignItem
                                     key={product.id}
                                     product={product}
-                                    onClick={() => navigate('/merch/design')}
+                                    onClick={handleDesignClick}
                                 />
                             ))}
                             {products.length === 0 && (
