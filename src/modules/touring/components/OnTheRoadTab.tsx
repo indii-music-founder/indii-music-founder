@@ -12,7 +12,7 @@ interface FuelStats {
     tankSizeGallons: number;
     mpg: number;
     gasPricePerGallon: number;
-    userId?: string;
+    userId: string;
 }
 
 interface OnTheRoadTabProps {
@@ -88,7 +88,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </CardHeader>
 
                     <CardContent className="flex-1 flex flex-col justify-center gap-6">
-                        <div className="bg-[#0d1117] p-4 rounded-lg border border-gray-800">
+                        <div className="bg-bg-dark p-4 rounded-lg border border-gray-800">
                             <label className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block mb-2">Next Destination</label>
                             {nextStop ? (
                                 <div>
@@ -105,7 +105,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                         </div>
 
                         <div className="grid grid-cols-1 gap-4">
-                            <div className="bg-[#0d1117] p-3 rounded-lg border border-gray-800 text-center">
+                            <div className="bg-bg-dark p-3 rounded-lg border border-gray-800 text-center">
                                 <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Distance Rem.</div>
                                 <div className="text-2xl font-mono text-white">{nextStop?.distance !== undefined ? nextStop.distance : '--'} <span className="text-xs text-gray-600">MI</span></div>
                             </div>
@@ -114,7 +114,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 </Card>
 
                 {/* Map Display */}
-                <Card className="lg:col-span-2 bg-[#0d1117] border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0">
+                <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0">
                     <TourMap locations={nextStop ? [currentLocation || 'Current Location', nextStop.city] : []} />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-4 flex justify-between items-end backdrop-blur-sm">
                         <div>
@@ -166,7 +166,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                     type="number"
                                     value={fuelStats.fuelLevelPercent}
                                     onChange={(e) => setFuelStats({ ...fuelStats, fuelLevelPercent: Number(e.target.value) })}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white font-mono focus:border-orange-500 outline-none"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white font-mono focus:border-orange-500 outline-none"
                                 />
                             </div>
                             <div className="space-y-1">
@@ -175,13 +175,13 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                     type="number"
                                     value={fuelStats.mpg}
                                     onChange={(e) => setFuelStats({ ...fuelStats, mpg: Number(e.target.value) })}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white font-mono focus:border-orange-500 outline-none"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white font-mono focus:border-orange-500 outline-none"
                                 />
                             </div>
                         </div>
 
                         {/* Calculated Stats */}
-                        <div className="mt-auto bg-[#0d1117]/50 border border-gray-800 rounded-lg p-4 grid grid-cols-3 gap-2">
+                        <div className="mt-auto bg-bg-dark/50 border border-gray-800 rounded-lg p-4 grid grid-cols-3 gap-2">
                             <div className="text-center">
                                 <div className="text-[10px] text-gray-500 uppercase font-bold">Range</div>
                                 <div className={`text-xl font-mono font-bold ${estimatedRange < 50 ? 'text-red-500 animate-pulse' : 'text-green-500'}`}>
@@ -219,7 +219,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                 placeholder="Current Location..."
                                 value={currentLocation}
                                 onChange={(e) => setCurrentLocation(e.target.value)}
-                                className="flex-1 bg-[#0d1117] border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
+                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
                             />
                             <Button
                                 onClick={handleLocateMe}
@@ -238,7 +238,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                             </Button>
                         </div>
 
-                        <div className="flex-1 bg-[#0d1117] border border-gray-800 rounded-lg overflow-y-auto custom-scrollbar p-2">
+                        <div className="flex-1 bg-bg-dark border border-gray-800 rounded-lg overflow-y-auto custom-scrollbar p-2">
                             {nearbyPlaces.length > 0 ? (
                                 <div className="space-y-2">
                                     {nearbyPlaces.map((place, i) => (

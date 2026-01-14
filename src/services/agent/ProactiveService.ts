@@ -113,7 +113,7 @@ export class ProactiveService {
             const { agentService } = await import('./AgentService');
             const context: AgentContext = {
                 traceId: `proactive-${task.id}`,
-                // @ts-ignore - extensions for proactive details
+                // @ts-expect-error - testing private method access if needed - extensions for proactive details
                 proactiveTask: task,
                 triggerType: task.triggerType
             };

@@ -25,3 +25,12 @@
 
 **Learning:** Testing single-click interactions is necessary but insufficient for verifying complex UX workflows. A success in Click 1 might pass, but if the state transition for Click 3 is broken (e.g., passing the wrong UUID to a refined item), the entire "Daisychain" fails. Multi-step interaction tests uncover "Prop Drilling" and "Global State Sync" issues that unit tests miss.
 **Action:** Implement integrated "Daisychain Tests" for primary workflows (e.g., Gallery Selection → Canvas Edit → Whisk Addition). Ensure stateful mock wrappers are used to simulate store transitions accurately.
+
+## 2026-02-11 - [Framer Motion Props in Test Mocks]
+
+**Learning:** React warnings about unrecognized props like `whileHover` on DOM elements in tests are often caused by overly simple mocks for `framer-motion` (e.g., just spreading `...props` onto a `div`).
+**Action:** When mocking `motion.div` or similar, explicitly destructure and filter out animation-specific props (like `whileHover`, `animate`, `initial`, `exit`) before passing the rest to the underlying DOM element, or use a more robust mock factory.
+
+## 2025-02-08 - [Substring Match Trap]
+**Learning:** `toHaveTextContent('0%')` matches '50%' because of the trailing characters. Use `expect(element.textContent).toBe('50%')` for precise numeric checks.
+**Action:** Always assert exact text content for percentages or numeric feedback to avoid false positives/negatives.

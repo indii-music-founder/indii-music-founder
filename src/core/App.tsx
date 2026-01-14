@@ -15,14 +15,13 @@ import ChatOverlay from './components/ChatOverlay';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useURLSync } from '@/hooks/useURLSync';
 
 // ============================================================================
 // Lazy-loaded Module Components
 // ============================================================================
 
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
-const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
 const VideoStudio = lazy(() => import('../modules/video/VideoStudioContainer'));
@@ -45,7 +44,6 @@ const DistributionDashboard = lazy(() => import('../modules/distribution/Distrib
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
-const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 
@@ -63,7 +61,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'dashboard': Dashboard,
     'creative': CreativeStudio,
     'video': VideoStudio,
-    'music': MusicStudio,
     'legal': LegalDashboard,
     'marketing': MarketingDashboard,
     'workflow': WorkflowLab,
@@ -83,7 +80,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
-    'banana-preview': BananaThemePreview,
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
 };
@@ -105,6 +101,8 @@ function LoadingFallback() {
     if (!show) {
         return null;
     }
+
+    console.log('[App] Rendering LoadingFallback (authLoading is probably true or Suspense triggered)');
 
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -138,9 +136,12 @@ function useAppInitialization() {
 
     // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
-        // Log removed (Platinum Polish)
+        console.log('[App] Initializing Auth Listener via useAppInitialization');
         const unsubscribe = initializeAuthListener();
-        return () => unsubscribe();
+        return () => {
+            console.log('[App] Unsubscribing Auth Listener');
+            unsubscribe();
+        };
     }, [initializeAuthListener]);
 
     // 2. Load User Profile when User is Authenticated
@@ -175,38 +176,6 @@ function useOnboardingRedirect() {
         // It renders modules. We probably need a Login Module or Overlay.
 
     }, [user, authLoading, currentModule]);
-}
-
-function useURLSync() {
-    const { currentModule, setModule } = useStore();
-    const navigate = useNavigate();
-    const location = useLocation();
-
-    // 1. URL -> Store (Deep Link / Back Button)
-    useEffect(() => {
-        // Parse module from path segments (robust splitting)
-        const pathSegments = location.pathname.split('/').filter(Boolean);
-        const targetModule = pathSegments[0] || 'dashboard';
-
-        // Check if it is a valid module
-        // We cast to ModuleId to check existence in MODULE_COMPONENTS
-        if (targetModule !== currentModule && MODULE_COMPONENTS[targetModule as ModuleId]) {
-             setModule(targetModule as ModuleId);
-        }
-    }, [location.pathname, currentModule, setModule]);
-
-    // 2. Store -> URL (Navigation)
-    useEffect(() => {
-        const pathSegments = location.pathname.split('/').filter(Boolean);
-        const currentPathModule = pathSegments[0] || 'dashboard';
-
-        // Only navigate if the module actually CHANGED from what's in the URL
-        // This preserves sub-paths (e.g. /creative/123) if the module is still 'creative'
-        if (currentModule !== currentPathModule) {
-             const targetUrl = currentModule === 'dashboard' ? '/' : `/${currentModule}`;
-             navigate(targetUrl);
-        }
-    }, [currentModule, navigate, location.pathname]);
 }
 
 // ============================================================================
@@ -251,15 +220,11 @@ export default function App() {
         const theme = userProfile?.preferences?.theme || 'dark';
 
         // Remove all theme classes first
-        document.documentElement.classList.remove('dark', 'banana', 'banana-pro');
+        document.documentElement.classList.remove('dark');
 
         // Apply current theme
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else if (theme === 'banana') {
-            document.documentElement.classList.add('banana');
-        } else if (theme === 'banana-pro') {
-            document.documentElement.classList.add('banana-pro', 'dark'); // Banana Pro is dark-based
         }
     }, [userProfile?.preferences?.theme]);
 

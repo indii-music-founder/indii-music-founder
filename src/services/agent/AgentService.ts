@@ -34,11 +34,18 @@ export class AgentService {
         if (this.isProcessing) return;
         this.isProcessing = true;
 
-        // Add User Message
+        // PII Redaction for Agent/LLM Input AND Storage
+        // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
+        const redactedText = this.redactPII(text);
+        if (redactedText !== text) {
+            console.log("🔒 PII Detected and Redacted from Agent Input");
+        }
+
+        // Add User Message (Redacted)
         const userMsg: AgentMessage = {
             id: uuidv4(),
             role: 'user',
-            text,
+            text: redactedText,
             timestamp: Date.now(),
             attachments
         };
@@ -70,7 +77,8 @@ export class AgentService {
             if (forcedAgentId) {
                 coordinatorResult = 'DELEGATED_TO_AGENT';
             } else {
-                coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk) => {
+                // Pass REDACTED text to the coordinator
+                coordinatorResult = await coordinator.handleUserRequest(redactedText, context, (chunk) => {
                     // Update the UI optimistically if chunks arrive from fast path
                     updateAgentMessage(responseId, { text: chunk });
                 });
@@ -96,7 +104,8 @@ export class AgentService {
             let agentId = forcedAgentId;
             if (!agentId) {
                 // If coordinator delegated, we determine the best agent
-                agentId = await this.orchestrator.determineAgent(context, text);
+                // Pass REDACTED text for classification
+                agentId = await this.orchestrator.determineAgent(context, redactedText);
             }
 
             // Update agent ID in the placeholder
@@ -104,7 +113,8 @@ export class AgentService {
 
             let currentStreamedText = '';
 
-            const result = await this.executor.execute(agentId, text, context, (event) => {
+            // Pass REDACTED text to the executor
+            const result = await this.executor.execute(agentId, redactedText, context, (event) => {
                 if (event.type === 'token') {
                     currentStreamedText += event.content;
                     updateAgentMessage(responseId, { text: currentStreamedText });
@@ -173,6 +183,39 @@ export class AgentService {
 
     private addSystemMessage(text: string): void {
         useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
+    }
+
+    /**
+     * Redacts sensitive information from the input text before sending it to the LLM.
+     */
+    private redactPII(text: string): string {
+        // Redact Credit Cards: 13-19 digits, possibly separated by spaces or dashes.
+        // Supports 4 groups of 4 (Visa/MC) and 15-digit (AMEX) formats.
+        // Regex looks for sequences of digits/spaces/dashes that look like cards.
+        const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
+
+        // Redact "Password: value" pattern
+        // Matches "password" followed by optional "is", then optional separators (colon, space, equals),
+        // then captures the value until whitespace or punctuation.
+        // We use a replacement function to ensure we replace the VALUE, not the label.
+        // Regex: (password(?:\s+is)?[:\s=]+)([^\s\.,;!]+)
+        const passwordRegex = /(password(?:\s+is)?[:\s=]+)([^\s\.,;!]+)/gi;
+
+        // Heuristic Check: Only replace if it passes Luhn check?
+        // For now, simple pattern matching to avoid complexity in this security filter.
+        // Note: The previous regex was too strict (4x4). This one is broader.
+        let redacted = text.replace(creditCardRegex, (match) => {
+            // Basic filter to avoid matching timestamps or simple IDs (e.g. 2024-10-10)
+            // A credit card usually has mixed spacing or is long.
+            if (match.replace(/\D/g, '').length < 13) return match;
+            return '[REDACTED_CREDIT_CARD]';
+        });
+
+        redacted = redacted.replace(passwordRegex, (match, prefix, value) => {
+            return `${prefix}[REDACTED_PASSWORD]`;
+        });
+
+        return redacted;
     }
 }
 

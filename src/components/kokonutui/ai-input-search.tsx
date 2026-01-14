@@ -131,8 +131,8 @@ export default function AI_Input_Search({
                         />
                     </div>
 
-                    <div className="h-12 bg-black/5 dark:bg-white/5 rounded-b-xl">
-                        <div className="absolute left-3 bottom-3 flex items-center gap-2">
+                    <div className="flex justify-between items-center p-2 min-h-[44px] bg-black/5 dark:bg-white/5 rounded-b-xl">
+                        <div className="flex items-center gap-2">
                             <input
                                 type="file"
                                 className="hidden"
@@ -143,7 +143,7 @@ export default function AI_Input_Search({
                             <button
                                 type="button"
                                 aria-label="Attach file"
-                                className="cursor-pointer rounded-lg p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none"
+                                className="cursor-pointer rounded-lg h-11 w-11 flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     fileInputRef.current?.click();
@@ -161,7 +161,7 @@ export default function AI_Input_Search({
                                         setShowSearch(!showSearch);
                                     }}
                                     className={cn(
-                                        "rounded-full transition-all flex items-center gap-2 px-1.5 py-1 border h-8 cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none",
+                                        "rounded-full transition-all flex items-center gap-2 px-3 border h-11 cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none",
                                         showSearch
                                             ? "bg-sky-500/15 border-sky-400 text-sky-500"
                                             : "bg-black/5 dark:bg-white/5 border-transparent text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white "
@@ -217,7 +217,7 @@ export default function AI_Input_Search({
                                 </button>
                             )}
                         </div>
-                        <div className="absolute right-3 bottom-3">
+                        <div>
                             <button
                                 type="button"
                                 disabled={isSendDisabled}
@@ -227,7 +227,7 @@ export default function AI_Input_Search({
                                     handleSubmit();
                                 }}
                                 className={cn(
-                                    "rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none",
+                                    "rounded-lg h-11 w-11 flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none",
                                     isSendDisabled
                                         ? "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 cursor-not-allowed opacity-50"
                                         : "bg-sky-500/15 text-sky-500 hover:bg-sky-500/20 cursor-pointer"

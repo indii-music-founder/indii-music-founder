@@ -59,14 +59,14 @@ vi.mock('../services/APIService', () => ({
 import { registerAudioHandlers } from './audio';
 
 describe('🛡️ Shield: Audio Analysis Security', () => {
-    let handlers: Record<string, Function> = {};
+    let handlers: Record<string, (...args: any[]) => any> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = {};
 
         // Capture handlers
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: Function) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
             handlers[channel] = handler;
         });
 
@@ -131,7 +131,7 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
 
         // Mock stream for hash
         const mockStream = {
-            on: (event: string, cb: Function) => {
+            on: (event: string, cb: (...args: any[]) => void) => {
                 if (event === 'end') cb();
                 return mockStream;
             },
@@ -149,7 +149,7 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
     });
 
     it('should BLOCK execution from untrusted IPC sender (e.g. Web)', async () => {
-         const maliciousEvent = {
+        const maliciousEvent = {
             senderFrame: { url: 'https://evil.com/exploit.html' }
         };
         const handler = handlers['audio:analyze'];

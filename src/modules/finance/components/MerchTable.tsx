@@ -47,6 +47,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
     }, [userProfile]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadProducts();
         loadAssets();
     }, [loadProducts, loadAssets]);

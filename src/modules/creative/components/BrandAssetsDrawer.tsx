@@ -112,7 +112,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 };
 
                 updateBrandKit({
-                    brandAssets: [...(userProfile.brandKit.brandAssets || []), newAsset]
+                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), newAsset]
                 });
 
                 addUploadedImage({

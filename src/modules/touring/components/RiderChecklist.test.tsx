@@ -44,7 +44,7 @@ describe('RiderChecklist', () => {
     it('renders empty state correctly', () => {
         setupRiderMock({ items: [] });
         render(<RiderChecklist />);
-        expect(screen.getByText('Rider list empty')).toBeInTheDocument();
+        expect(screen.getByText('No items requested')).toBeInTheDocument();
     });
 
     it('renders loading state', () => {
@@ -75,7 +75,7 @@ describe('RiderChecklist', () => {
         setupRiderMock({ addItem: addItemMock });
         render(<RiderChecklist />);
 
-        const input = screen.getByPlaceholderText('Add new item...');
+        const input = screen.getByPlaceholderText('Add requirement...');
         fireEvent.change(input, { target: { value: 'Beer' } });
 
         const addButton = screen.getByLabelText('Add Item');

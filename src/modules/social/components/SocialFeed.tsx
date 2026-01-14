@@ -89,7 +89,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0d1117] text-white">
+        <div className="flex flex-col h-full bg-bg-dark text-white">
             {/* Post Input */}
             {(!userId || userId === userProfile?.id) && (
                 <div className="p-4 border-b border-gray-800">

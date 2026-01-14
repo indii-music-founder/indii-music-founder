@@ -2,17 +2,18 @@ import { vi } from 'vitest';
 
 // Only import DOM-specific modules when running in jsdom environment
 if (typeof window !== 'undefined') {
-    // @ts-ignore
+    // @ts-expect-error - testing-library/jest-dom types not found in this environment
     await import('@testing-library/jest-dom');
-    // @ts-ignore
+    // @ts-expect-error - fake-indexeddb types not found in this environment
     await import('fake-indexeddb/auto');
 
     // Mock ResizeObserver
-    global.ResizeObserver = vi.fn().mockImplementation(() => ({
-        observe: vi.fn(),
-        unobserve: vi.fn(),
-        disconnect: vi.fn(),
-    }));
+    // Mock ResizeObserver
+    global.ResizeObserver = class ResizeObserver {
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+    };
 
     // Mock HTMLCanvasElement.getContext
     HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
@@ -98,6 +99,11 @@ vi.mock('firebase/firestore', () => ({
     arrayRemove: vi.fn((...args) => args),
     increment: vi.fn((n) => n),
     serverTimestamp: vi.fn(() => new Date()),
+    Timestamp: {
+        now: vi.fn(() => ({ toMillis: () => Date.now(), toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 })),
+        fromDate: vi.fn((date) => ({ toMillis: () => date.getTime(), toDate: () => date, seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })),
+        fromMillis: vi.fn((millis) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
+    },
     persistentLocalCache: vi.fn(() => ({})),
     persistentMultipleTabManager: vi.fn(() => ({})),
     runTransaction: vi.fn((cb) => cb({
@@ -111,7 +117,8 @@ vi.mock('firebase/firestore', () => ({
         update: vi.fn(),
         delete: vi.fn(),
         commit: vi.fn(() => Promise.resolve())
-    }))
+    })),
+
 }));
 
 // Mock Firebase Functions
@@ -156,7 +163,11 @@ vi.mock('firebase/ai', () => ({
             }
         }),
         generateContentStream: vi.fn().mockResolvedValue({
-            stream: (async function* () { yield { text: () => "{}" }; })(),
+            stream: {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => "{}" };
+                }
+            },
             response: Promise.resolve({
                 text: () => "{}",
                 functionCalls: () => []

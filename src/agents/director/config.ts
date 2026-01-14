@@ -90,7 +90,7 @@ export const DirectorAgent: AgentConfig = {
             },
             {
                 name: "generate_high_res_asset",
-                description: "Generate a 4K/UHD asset for physical media printing using Nano Banana Pro.",
+                description: "Generate a 4K/UHD asset for physical media printing.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

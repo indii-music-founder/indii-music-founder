@@ -8,7 +8,8 @@
       "DOM.Iterable"
     ],
     "types": [
-      "vitest/globals"
+      "vitest/globals",
+      "google.maps"
     ],
     "module": "ESNext",
     "skipLibCheck": true,

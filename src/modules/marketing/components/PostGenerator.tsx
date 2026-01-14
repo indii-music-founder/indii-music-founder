@@ -39,7 +39,7 @@ const PlatformSelector = memo(({ selectedId, onSelect }: { selectedId: string, o
                     aria-pressed={selectedId === p.id}
                     className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${selectedId === p.id
                         ? 'bg-pink-900/30 border border-pink-500/50 text-pink-200'
-                        : 'bg-[#0d1117] border border-gray-800 text-gray-400 hover:border-gray-600'
+                        : 'bg-bg-dark border border-gray-800 text-gray-400 hover:border-gray-600'
                         }`}
                 >
                     <span aria-hidden="true">{p.icon}</span> {p.name}
@@ -100,7 +100,7 @@ const PreviewPanel = memo(({
             {result ? (
                 <div className="flex-1 flex flex-col gap-6 animate-in fade-in duration-500">
                     {/* Image Preview */}
-                    <div className="aspect-video bg-[#0d1117] rounded-lg border border-gray-800 flex items-center justify-center overflow-hidden relative group">
+                    <div className="aspect-video bg-bg-dark rounded-lg border border-gray-800 flex items-center justify-center overflow-hidden relative group">
                         {isGeneratingImage ? (
                             <div className="text-center text-pink-400">
                                 <Loader2 size={32} className="animate-spin mx-auto mb-2" aria-hidden="true" />
@@ -155,7 +155,7 @@ const PreviewPanel = memo(({
                             id="caption-preview"
                             value={result.caption}
                             onChange={(e) => onCaptionChange(e.target.value)}
-                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none focus-visible:ring-1 focus-visible:ring-pink-500 resize-none"
+                            className="w-full h-32 bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none focus-visible:ring-1 focus-visible:ring-pink-500 resize-none"
                         />
                         <div className="flex flex-wrap gap-2 mt-2">
                             {result.hashtags.map((tag: string) => (
@@ -383,7 +383,7 @@ export default function PostGenerator() {
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
                             placeholder="e.g., Announcing my new single 'Void Ocean' dropping this Friday..."
-                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
+                            className="w-full h-32 bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-pink-500 outline-none resize-none"
                         />
                     </div>
 

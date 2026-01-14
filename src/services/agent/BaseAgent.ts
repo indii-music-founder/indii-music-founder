@@ -497,7 +497,8 @@ ${task}
             }
 
             const response = await responsePromise;
-            const usage = response.usage();
+            // Defensive check for usage method (safeguard against SDK mismatches)
+            const usage = typeof response.usage === 'function' ? response.usage() : undefined;
             const mappedUsage = usage ? {
                 promptTokens: usage.promptTokenCount || 0,
                 completionTokens: usage.candidatesTokenCount || 0,

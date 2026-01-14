@@ -33,14 +33,14 @@ test.describe('Agent Handover Flow', () => {
                 phoneNumber: null,
                 photoURL: null
             };
-            
+
             // Override listener to prevent Firebase from clearing our mock
             // And inject user
-            // @ts-ignore
-            window.useStore.setState({ 
-                initializeAuthListener: () => () => {}, // No-op
-                user: mockUser, 
-                authLoading: false 
+            // @ts-expect-error - Directly manipulating window store for test environment
+            window.useStore.setState({
+                initializeAuthListener: () => () => { }, // No-op
+                user: mockUser,
+                authLoading: false
             });
         });
         await page.waitForTimeout(1000); // Allow React to re-render

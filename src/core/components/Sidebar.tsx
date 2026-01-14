@@ -22,11 +22,11 @@ export default function Sidebar() {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
+        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const departmentItems: SidebarItem[] = [
         { id: 'marketing', icon: Megaphone, label: 'Marketing Department' }, // Duplicate icon, maybe different in real app
-        { id: 'music', icon: Music, label: 'Music Department' },
         { id: 'social', icon: Network, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
@@ -39,9 +39,7 @@ export default function Sidebar() {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'banana-preview', icon: Palette, label: 'Banana Preview' },
         { id: 'observability', icon: Globe, label: 'System Observability' },
-        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
@@ -71,7 +69,7 @@ export default function Sidebar() {
     };
 
     return (
-        <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-[#0d1117] border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
+        <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
             {/* Header */}
             <div className={`p-4 border-b border-white/5 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && (
@@ -98,7 +96,7 @@ export default function Sidebar() {
 
             <div className="flex-1 py-4 space-y-6">
                 {/* Manager's Office */}
-                <div>
+                <div data-testid="manager-section">
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
                     <div className="space-y-0.5">
                         {managerItems.map(item => (
@@ -165,22 +163,6 @@ export default function Sidebar() {
                             data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
-                        </button>
-                        <button
-                            onClick={() => setTheme('banana')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana' ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-yellow-200'}`}
-                            title="Banana Mode"
-                            data-testid="theme-btn-banana"
-                        >
-                            <ShoppingBag size={14} />
-                        </button>
-                        <button
-                            onClick={() => setTheme('banana-pro')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana-pro' ? 'text-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-yellow-400'}`}
-                            title="Banana Pro"
-                            data-testid="theme-btn-pro"
-                        >
-                            <Scale size={14} />
                         </button>
                     </div>
                 )}

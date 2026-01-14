@@ -616,7 +616,22 @@ export function processFunctionCalls(
                 const hasReleaseUpdates = args.release_title || args.release_type || args.release_artists || args.release_genre || args.release_mood || args.release_themes || args.release_lyrics;
 
                 if (hasBrandUpdates || hasReleaseUpdates) {
-                    const newBrandKit = { ...updatedProfile.brandKit };
+                    const baseBrandKit = updatedProfile.brandKit || {
+                        colors: [],
+                        fonts: '',
+                        brandDescription: '',
+                        aestheticStyle: '',
+                        negativePrompt: '',
+                        socials: {},
+                        brandAssets: [],
+                        referenceImages: [],
+                        releaseDetails: {
+                            title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: ''
+                        },
+                        visualsAcknowledged: false
+                    };
+
+                    const newBrandKit: BrandKit = { ...baseBrandKit };
 
                     // Identity Updates
                     if (args.brand_description) { newBrandKit.brandDescription = args.brand_description; updates.push('Brand Description'); }
@@ -645,7 +660,7 @@ export function processFunctionCalls(
                     // Release Updates
                     if (hasReleaseUpdates) {
                         newBrandKit.releaseDetails = {
-                            ...newBrandKit.releaseDetails,
+                            ...(newBrandKit.releaseDetails || { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' }),
                             ...(args.release_title && { title: args.release_title }),
                             ...(args.release_type && { type: args.release_type }),
                             ...(args.release_artists && { artists: args.release_artists }),
@@ -653,7 +668,7 @@ export function processFunctionCalls(
                             ...(args.release_mood && { mood: args.release_mood }),
                             ...(args.release_themes && { themes: args.release_themes }),
                             ...(args.release_lyrics && { lyrics: args.release_lyrics }),
-                        };
+                        } as ReleaseDetails;
                         updates.push('Release Details');
                     }
 
@@ -672,13 +687,27 @@ export function processFunctionCalls(
                         tags: args.tags,
                         subject: args.subject
                     };
-                    const newBrandKit = { ...updatedProfile.brandKit };
+                    const baseBrandKit = updatedProfile.brandKit || {
+                        colors: [],
+                        fonts: '',
+                        brandDescription: '',
+                        aestheticStyle: '',
+                        negativePrompt: '',
+                        socials: {},
+                        brandAssets: [],
+                        referenceImages: [],
+                        releaseDetails: {
+                            title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: ''
+                        },
+                        visualsAcknowledged: false
+                    };
+                    const newBrandKit: BrandKit = { ...baseBrandKit };
 
                     if (args.asset_type === 'brand_asset') {
-                        newBrandKit.brandAssets = [...newBrandKit.brandAssets, newAsset];
+                        newBrandKit.brandAssets = [...(newBrandKit.brandAssets || []), newAsset];
                         updates.push('Brand Asset');
                     } else if (args.asset_type === 'reference_image') {
-                        newBrandKit.referenceImages = [...newBrandKit.referenceImages, newAsset];
+                        newBrandKit.referenceImages = [...(newBrandKit.referenceImages || []), newAsset];
                         updates.push('Reference Image');
                     }
                     updatedProfile = { ...updatedProfile, brandKit: newBrandKit };
@@ -697,7 +726,7 @@ export function processFunctionCalls(
                         type: 'text',
                         createdAt: Date.now()
                     };
-                    updatedProfile = { ...updatedProfile, knowledgeBase: [...updatedProfile.knowledgeBase, newDoc] };
+                    updatedProfile = { ...updatedProfile, knowledgeBase: [...(updatedProfile.knowledgeBase || []), newDoc] };
                     updates.push('Knowledge Base');
                 }
                 break;

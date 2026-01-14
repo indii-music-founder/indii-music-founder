@@ -1,4 +1,5 @@
-import { useRef, useMemo } from 'react';
+/* eslint-disable react-hooks/refs */
+import { useRef, useMemo, useEffect } from 'react';
 import { VideoClip } from '../../store/videoEditorStore';
 import { groupClipsByTrack } from '../utils/timelineUtils';
 
@@ -10,8 +11,9 @@ export const useStableGroupedClips = (clips: VideoClip[]): Record<string, VideoC
     // Keep track of the previous result to reuse stable arrays
     const prevGroupedRef = useRef<Record<string, VideoClip[]>>({});
 
-    return useMemo(() => {
+    const result = useMemo(() => {
         const nextGrouped = groupClipsByTrack(clips);
+        // eslint-disable-next-line react-hooks/refs
         const prevGrouped = prevGroupedRef.current;
         const result: Record<string, VideoClip[]> = {};
 
@@ -48,14 +50,13 @@ export const useStableGroupedClips = (clips: VideoClip[]): Record<string, VideoC
             }
         }
 
-        // If we processed all tracks and nothing changed (and no tracks were removed compared to prev?),
-        // we might want to return the exact same object.
-        // But `useMemo` handles the outer object reference stability if `clips` doesn't change.
-        // Here we care about inner array stability.
-
-        // Update ref for next render
-        prevGroupedRef.current = result;
         return result;
 
     }, [clips]);
+
+    useEffect(() => {
+        prevGroupedRef.current = result;
+    }, [result]);
+
+    return result;
 };

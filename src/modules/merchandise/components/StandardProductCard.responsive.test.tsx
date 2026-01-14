@@ -12,11 +12,12 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
         id: '1',
         userId: 'user1',
         title: 'Phone Case',
+        title: 'Kill Phone Case',
         image: 'https://example.com/image.jpg',
         price: '$29.99',
         category: 'standard',
         tags: ['Accessory', 'Limited Edition', 'Drop 1', 'Very Long Tag That Might Overflow'],
-        features: ['Durable', 'Yellow'],
+        features: ['Durable', 'Quality'],
     };
 
     beforeEach(() => {
@@ -29,6 +30,7 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
         render(<StandardProductCard product={mockProduct} />);
 
         const title = screen.getByText('Phone Case');
+        const title = screen.getByText('Kill Phone Case');
         const price = screen.getByText('$29.99');
 
         expect(title).toBeInTheDocument();
@@ -87,6 +89,7 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
         render(<StandardProductCard product={mockProduct} />);
 
         const img = screen.getByAltText('Phone Case');
+        const img = screen.getByAltText('Kill Phone Case');
         expect(img).toHaveAttribute('loading', 'lazy');
         expect(img).toHaveAttribute('decoding', 'async');
     });

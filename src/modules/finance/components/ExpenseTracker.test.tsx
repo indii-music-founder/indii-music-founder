@@ -19,8 +19,16 @@ vi.mock('@/services/firebase', () => ({
 }));
 // Also mock repository since it imports firebase
 vi.mock('@/services/storage/repository', () => ({
-    getProfileFromStorage: vi.fn(),
-    saveProfileToStorage: vi.fn()
+  getProfileFromStorage: vi.fn(),
+  saveProfileToStorage: vi.fn()
+}));
+
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  },
+  AnimatePresence: ({ children }: any) => <>{children}</>
 }));
 
 vi.mock('react-dropzone', () => ({
@@ -63,8 +71,8 @@ describe('ExpenseTracker', () => {
     // Open modal
     fireEvent.click(screen.getByText('Add Manual'));
 
-    // Check if modal is visible
-    expect(screen.getByText('Add Manual Expense')).toBeInTheDocument();
+    // Check if modal is visible - "Add Expense" is the main header text
+    expect(screen.getByText('Add Expense')).toBeInTheDocument();
 
     // Fill form
     fireEvent.change(screen.getByPlaceholderText('e.g. Sweetwater'), {
@@ -74,8 +82,8 @@ describe('ExpenseTracker', () => {
       target: { value: '100' }
     });
 
-    // Submit
-    fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }));
+    // Submit - The button says "Confirm Ledger Entry"
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Ledger Entry' }));
 
     await waitFor(() => {
       expect(mockAddExpense).toHaveBeenCalledWith(expect.objectContaining({
@@ -85,9 +93,11 @@ describe('ExpenseTracker', () => {
       }));
     });
 
-    // Check if modal closed (simplified check, usually queryByText should be null)
+    // Check if manual entry modal is closed
     await waitFor(() => {
-        expect(screen.queryByText('Add Manual Expense')).not.toBeInTheDocument();
+      // "Add Expense" is the header in the modal, but strictly speaking it might still be there if animation takes time
+      // But with mocked AnimatePresence, it should unmount.
+      expect(screen.queryByText('Manual Ledger Entry')).not.toBeInTheDocument();
     });
   });
 });

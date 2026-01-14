@@ -88,6 +88,21 @@ export class EvolutionEngine {
 
         let offspring = await this.crossoverFn(parent1, parent2);
 
+        // Helix Guardrail: Prevent "Mutation by Reference" (The Fly Defect)
+        // We deep clone the offspring to ensure that if crossover returned a parent reference,
+        // we don't accidentally mutate the parent (which might be an Elite survivor).
+        // This ensures the gene pool remains pure and history isn't rewritten.
+        try {
+          offspring = structuredClone(offspring);
+        } catch (e) {
+          // Fallback for environments without structuredClone or non-clonable objects
+        // Helix: Reference Integrity Check
+        // If crossover returns a reference to a parent (lazy implementation),
+        // we must clone it to prevent "Mutation by Reference" affecting the parent (who might be an Elite).
+        if (offspring === parent1 || offspring === parent2) {
+          offspring = JSON.parse(JSON.stringify(offspring));
+        }
+
         // Mutation
         if (Math.random() < this.config.mutationRate) {
           offspring = await this.mutationFn(offspring);
@@ -96,7 +111,20 @@ export class EvolutionEngine {
         // Helix: Validation Guardrail
         // Prevent "Empty Soul" (Empty Prompt) or malformed agents from entering the gene pool.
         if (!offspring || !offspring.systemPrompt || typeof offspring.systemPrompt !== 'string' || offspring.systemPrompt.trim() === '') {
-           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
+          throw new Error("Helix Guardrail: Mutation produced invalid offspring (Empty Gene)");
+        }
+
+        // Helix: "The Bloat Check"
+        // Prevent runaway mutations from exploding the context window.
+        // Cap is set to 100,000 characters (approx 25k tokens), which is a safe limit for system prompts.
+        const MAX_PROMPT_LENGTH = 100000;
+        if (offspring.systemPrompt.length > MAX_PROMPT_LENGTH) {
+          throw new Error(`Helix Guardrail: Mutation produced invalid offspring (Prompt Bloat: ${offspring.systemPrompt.length} chars)`);
+        }
+        // Helix: "Brainless" Check
+        // Ensure parameters exist and are not null (prevents runtime crashes).
+        if (!offspring.parameters || typeof offspring.parameters !== 'object') {
+          throw new Error("Helix Guardrail: Mutation produced invalid offspring (Missing Parameters)");
         }
 
         // Ensure ID is new and lineage is tracked

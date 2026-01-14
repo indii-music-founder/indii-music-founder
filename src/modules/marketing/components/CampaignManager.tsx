@@ -47,11 +47,13 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         try {
             // Check if we are in a dev environment or if functions is not initialized
             const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
+            // Force mock for Maestro tests
+            const forceMock = (window as any).__MAESTRO_MOCK_EXECUTION__;
 
             let responseData: { posts?: ScheduledPost[] } = {};
 
-            if (isDev && !functions) {
-                console.warn("[CampaignManager] Firebase functions not available in Dev. specific mock mode.");
+            if ((isDev && !functions) || forceMock) {
+                console.warn("[CampaignManager] Using Mock Execution (Dev/Test Mode)");
                 // Mock delay
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 // Mock success

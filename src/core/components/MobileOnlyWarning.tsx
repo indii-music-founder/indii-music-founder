@@ -18,7 +18,7 @@ export const MobileOnlyWarning: React.FC<MobileOnlyWarningProps> = ({
     const { setModule } = useStore();
 
     return (
-        <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-[#0d1117]">
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-bg-dark">
             <div className="flex gap-4 mb-6">
                 <Smartphone className="w-12 h-12 text-neon-blue opacity-50" />
                 <Monitor className="w-12 h-12 text-neon-purple opacity-50" />

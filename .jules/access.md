@@ -5,3 +5,7 @@
 ## 2024-05-22 - Collapsible Sections
 **Learning:** Custom collapsible sections (like `ThoughtChain`) often miss `aria-expanded` and `aria-controls`, leaving screen reader users unaware of the state change.
 **Action:** Always bind `aria-expanded={isOpen}` to the toggle button and `id` to the content region.
+
+## 2025-02-18 - Modal Focus & Semantics
+**Learning:** Relying on `div` overlays for modals without `role="dialog"` and `aria-modal="true"` leaves screen reader users stranded in the main document flow. Simple visual "X" buttons are invisible to AT without explicit `aria-label`.
+**Action:** Enforce `role="dialog"`, `aria-modal="true"`, and accessible names for all custom modals. Ensure custom toggle buttons (like platform selectors) use `aria-pressed` to communicate state, not just color.

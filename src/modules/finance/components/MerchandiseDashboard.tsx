@@ -6,7 +6,7 @@ import { ShoppingBag, TrendingUp, Package, DollarSign } from 'lucide-react';
 
 export const MerchandiseDashboard: React.FC = () => {
     return (
-        <div className="flex flex-col space-y-8 pb-12">
+        <div className="flex flex-col space-y-8 pb-12" data-testid="merch-dashboard-content">
             {/* Header Stats Component - Upgraded to V2 */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

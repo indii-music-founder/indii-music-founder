@@ -40,9 +40,9 @@ const BrandManager: React.FC = () => {
     // Helpers to access nested data safely
     const brandKit = userProfile?.brandKit || {
         colors: [], fonts: 'Inter', brandDescription: '', negativePrompt: '', socials: {},
-        brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', genre: '', mood: '', themes: '' }
+        brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
     };
-    const release = brandKit.releaseDetails || { title: '', type: '', genre: '', mood: '', themes: '' };
+    const release = brandKit.releaseDetails || { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' };
 
     // -- IDENTITY SECTION HANDLERS --
     const handleSaveBio = async () => {
@@ -106,7 +106,7 @@ const BrandManager: React.FC = () => {
 
     // -- PERSISTENCE HELPER --
     const saveBrandKit = async (updates: Partial<BrandKit>) => {
-        if (!userProfile?.id) return;
+        if (!userProfile || !userProfile.id) return;
         const userRef = doc(db, 'users', userProfile.id);
         const firestoreUpdates: Record<string, unknown> = {};
         Object.keys(updates).forEach(key => {

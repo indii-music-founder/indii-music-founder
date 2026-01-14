@@ -1,20 +1,7 @@
 import { StateCreator } from 'zustand';
+import { HistoryItem } from '@/core/types/history';
 
-export interface HistoryItem {
-    id: string;
-    type: 'image' | 'video' | 'music' | 'text';
-    url: string;
-    prompt: string;
-    timestamp: number;
-    projectId: string;
-    orgId?: string;
-    meta?: string;
-    mask?: string;
-    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
-    tags?: string[];
-    subject?: string;
-    origin?: 'generated' | 'uploaded';
-}
+export type { HistoryItem };
 
 export interface CanvasImage {
     id: string;
@@ -80,6 +67,10 @@ export interface CreativeSlice {
     updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
+    uploadedAudio: HistoryItem[];
+    addUploadedAudio: (audio: HistoryItem) => void;
+    removeUploadedAudio: (id: string) => void;
+
     // Studio Controls
     studioControls: {
         aspectRatio: string;
@@ -118,8 +109,8 @@ export interface CreativeSlice {
     entityAnchor: HistoryItem | null;
     setEntityAnchor: (img: HistoryItem | null) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'video_production';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom') => void;
 
     prompt: string;
     setPrompt: (prompt: string) => void;
@@ -189,11 +180,13 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                         });
 
                         const generated = mergedHistory.filter(item => item.origin !== 'uploaded');
-                        const uploaded = mergedHistory.filter(item => item.origin === 'uploaded');
+                        const uploadedImages = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'image');
+                        const uploadedAudio = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'music');
 
                         return {
                             generatedHistory: generated,
-                            uploadedImages: uploaded
+                            uploadedImages: uploadedImages,
+                            uploadedAudio: uploadedAudio
                         };
                     });
                     resolve();
@@ -234,6 +227,20 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     })),
     removeUploadedImage: (id: string) => {
         set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+        });
+    },
+
+    uploadedAudio: [],
+    addUploadedAudio: (audio: HistoryItem) => {
+        set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio] }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.saveItem(audio).catch(() => { /* Error handled silently */ });
+        });
+    },
+    removeUploadedAudio: (id: string) => {
+        set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
         import('@/services/StorageService').then(({ StorageService }) => {
             StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
         });

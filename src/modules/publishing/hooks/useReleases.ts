@@ -9,14 +9,19 @@ export function useReleases(orgId: string | undefined) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
-    useEffect(() => {
-        if (!orgId) {
-            setReleases([]);
-            setLoading(false);
-            return;
-        }
+    const [prevOrgId, setPrevOrgId] = useState(orgId);
+    if (orgId !== prevOrgId) {
+        setPrevOrgId(orgId);
+        setReleases([]);
+        setLoading(!!orgId);
+    }
 
-        setLoading(true);
+    useEffect(() => {
+        if (!orgId) return;
+
+        // Fetching is initiated implicitly via the loading state and subscription below
+        // we don't need a separate setLoading(true) here as it's handled above during render
+
 
         const q = query(
             collection(db, 'ddexReleases'),

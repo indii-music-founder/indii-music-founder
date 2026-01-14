@@ -19,6 +19,51 @@ vi.mock('@/services/ai/AIService', () => ({
     }
 }));
 
+// Mock Firebase Modules
+vi.mock('firebase/app', () => ({
+    initializeApp: vi.fn(() => ({})),
+    getApp: vi.fn(() => ({})),
+    getApps: vi.fn(() => [])
+}));
+
+vi.mock('firebase/auth', () => ({
+    getAuth: vi.fn(() => ({
+        currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
+    })),
+    onAuthStateChanged: vi.fn()
+}));
+
+vi.mock('firebase/firestore', async () => {
+    return {
+        Timestamp: {
+            now: () => ({ toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
+            fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })
+        },
+        getFirestore: vi.fn(() => ({})),
+        initializeFirestore: vi.fn(() => ({})),
+        persistentLocalCache: vi.fn(),
+        persistentMultipleTabManager: vi.fn(),
+        doc: vi.fn(),
+        setDoc: vi.fn(),
+        getDoc: vi.fn(),
+        collection: vi.fn(),
+        onSnapshot: vi.fn(),
+        writeBatch: vi.fn(() => ({ commit: vi.fn() })),
+    };
+});
+
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadBytes: vi.fn(),
+    getDownloadURL: vi.fn()
+}));
+
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(),
+    httpsCallable: vi.fn()
+}));
+
 describe('📚 Keeper: Context Integrity', () => {
     let agent: BaseAgent;
 
@@ -32,7 +77,7 @@ describe('📚 Keeper: Context Integrity', () => {
         vi.clearAllMocks();
 
         const config: AgentConfig = {
-            id: 'keeper-agent',
+            id: 'generalist',
             name: 'Keeper',
             description: 'The Guardian of Context',
             color: 'blue',
@@ -62,8 +107,17 @@ describe('📚 Keeper: Context Integrity', () => {
         const payload = generateCall[0];
 
         // Extract the full prompt text sent to the model
-        // @ts-ignore - inspecting the complex payload structure
-        const fullPromptText = payload.contents[0].parts[0].text;
+        // @ts-expect-error - inspecting the complex payload structure
+        const parts = payload.contents[0].parts;
+        // The BaseAgent might be sending multiple parts. We need to find the one with the huge history.
+        // Or checking total length of all parts.
+
+        let fullPromptText = "";
+        for (const part of parts) {
+            if ('text' in part) {
+                fullPromptText += part.text;
+            }
+        }
 
         // 4. Assert Truncation
         // The original history is 200k chars.

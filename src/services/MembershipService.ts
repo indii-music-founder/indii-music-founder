@@ -7,7 +7,7 @@
  */
 
 import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, FieldValue } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer } from 'firebase/firestore';
 
 export type MembershipTier = 'free' | 'pro' | 'enterprise';
 
@@ -21,6 +21,7 @@ export interface DailyUsage {
     videosGenerated: number;
     videoSecondsGenerated: number;
     storageUsedMB: number;     // Cumulative, not daily
+    totalSpend: number;        // Track daily spend in USD
     updatedAt: number;         // Timestamp
 }
 
@@ -44,6 +45,9 @@ export interface TierLimits {
     // Project limits
     maxProjects: number;
 
+    // Cost limits
+    maxDailySpend: number;
+
     // Feature flags
     hasAdvancedEditing: boolean;
     hasCustomBranding: boolean;
@@ -62,6 +66,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         hasCMYKSupport: false,
         maxStorageMB: 500,                  // 500 MB
         maxProjects: 3,
+        maxDailySpend: 1.0,                 // $1.00 Daily Limit
         hasAdvancedEditing: false,
         hasCustomBranding: false,
         hasPriorityQueue: false,
@@ -77,6 +82,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         hasCMYKSupport: true,
         maxStorageMB: 10 * 1024,           // 10 GB
         maxProjects: 50,
+        maxDailySpend: 10.0,                // $10.00 Daily Limit
         hasAdvancedEditing: true,
         hasCustomBranding: true,
         hasPriorityQueue: true,
@@ -92,6 +98,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         hasCMYKSupport: true,
         maxStorageMB: 100 * 1024,          // 100 GB
         maxProjects: -1,                    // Unlimited
+        maxDailySpend: 100.0,               // $100.00 Daily Limit
         hasAdvancedEditing: true,
         hasCustomBranding: true,
         hasPriorityQueue: true,
@@ -240,6 +247,7 @@ class MembershipServiceImpl {
             videosGenerated: 0,
             videoSecondsGenerated: 0,
             storageUsedMB: 0,
+            totalSpend: 0,
             updatedAt: Date.now()
         };
     }
@@ -283,6 +291,7 @@ class MembershipServiceImpl {
                     videosGenerated: type === 'video' ? count : 0,
                     videoSecondsGenerated: type === 'video' && videoSeconds ? videoSeconds : 0,
                     storageUsedMB: 0,
+                    totalSpend: 0,
                     updatedAt: Date.now()
                 };
 
@@ -292,6 +301,53 @@ class MembershipServiceImpl {
             console.error('[MembershipService] Failed to increment usage:', error);
             // Don't throw - usage tracking shouldn't block generation
         }
+    }
+
+    /**
+     * Record monetary spend for a user
+     */
+    async recordSpend(userId: string, amount: number): Promise<void> {
+        const dateKey = this.getTodayKey();
+        const usageRef = doc(db, 'users', userId, 'usage', dateKey);
+
+        try {
+            // Atomic update or create with merge to prevent race conditions
+            await setDoc(usageRef, {
+                date: dateKey,
+                totalSpend: increment(amount),
+                updatedAt: Date.now()
+            }, { merge: true });
+        } catch (error) {
+            console.error('[MembershipService] Failed to record spend:', error);
+        }
+    }
+
+    /**
+     * Check if estimated cost is within daily budget
+     */
+    async checkBudget(estimatedCost: number): Promise<{ allowed: boolean; remainingBudget: number }> {
+        const userId = await this.getCurrentUserId();
+        if (!userId) {
+            return { allowed: false, remainingBudget: 0 };
+        }
+
+        const tier = await this.getCurrentTier();
+        const limits = this.getLimits(tier);
+        const usage = await this.getDailyUsage(userId);
+        const currentSpend = usage.totalSpend || 0;
+
+        // Use fixed point arithmetic for currency comparison to avoid float errors
+        const currentSpendFixed = Math.round(currentSpend * 100);
+        const estimatedCostFixed = Math.round(estimatedCost * 100);
+        const maxSpendFixed = Math.round(limits.maxDailySpend * 100);
+
+        const remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
+        const allowed = (currentSpendFixed + estimatedCostFixed) <= maxSpendFixed;
+
+        return {
+            allowed,
+            remainingBudget: remainingBudgetFixed / 100
+        };
     }
 
     /**
@@ -330,7 +386,47 @@ class MembershipServiceImpl {
                 maxAllowed = limits.maxStorageMB;
                 break;
             case 'projects':
-                currentUsage = 0; // TODO: Fetch actual project count from Firestore
+                try {
+                    const q = query(collection(db, 'projects'), where('orgId', '==', 'personal'), where('userId', '==', userId));
+                    const snapshot = await getCountFromServer(q);
+                    currentUsage = snapshot.data().count;
+                } catch (e) {
+                    console.warn('[MembershipService] Failed to count projects:', e);
+                    currentUsage = 0;
+                }
+                // Check if quota is unlimited first
+                if (tier === 'enterprise' && limits.maxProjects === -1) {
+                    return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+                }
+
+                try {
+                    // Count projects where the user is a member
+                    // Note: This relies on the 'projects' collection being indexed by 'orgId'
+                    // and the user being able to access them.
+                    // For a simpler check, we count projects created by the user or
+                    // check the organization's project count if applicable.
+                    // Assuming 'projects' has an 'orgId' field.
+
+                    // Get current Org ID from store state similar to getCurrentTier
+                    const { useStore } = await import('@/core/store');
+                    const state = useStore.getState();
+                    const currentOrgId = state.currentOrganizationId;
+
+                    if (currentOrgId) {
+                         const projectsRef = collection(db, 'projects');
+                         const q = query(projectsRef, where('orgId', '==', currentOrgId));
+                         const snapshot = await getCountFromServer(q);
+                         currentUsage = snapshot.data().count;
+                    } else {
+                        // Fallback to counting personal projects if no org context
+                        // This might need adjustment based on exact data model
+                        currentUsage = 0;
+                    }
+                } catch (e) {
+                    console.warn('[MembershipService] Failed to count projects:', e);
+                    currentUsage = 0; // Fail open but warn
+                }
+
                 maxAllowed = limits.maxProjects;
                 break;
             default:

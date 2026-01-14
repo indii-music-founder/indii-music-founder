@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit2, Settings, Check } from 'lucide-react';
-import { NANA_COLORS, NanaColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '../constants';
 
 interface AnnotationPaletteProps {
-    activeColor: NanaColor;
-    onColorSelect: (color: NanaColor) => void;
+    activeColor: CreativeColor;
+    onColorSelect: (color: CreativeColor) => void;
     colorDefinitions: Record<string, string>;
     onOpenDefinitions: () => void;
 }
@@ -21,12 +21,12 @@ export default function AnnotationPalette({
         <div className="flex flex-col gap-2 p-2 bg-[#111] border-r border-gray-800 h-full w-14 items-center">
             <div className="mb-4 mt-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
-                    <span className="text-[10px] font-bold text-white">NB</span>
+                    <span className="text-[10px] font-bold text-white">ID</span>
                 </div>
             </div>
 
             <div className="flex flex-col gap-3 items-center flex-1">
-                {NANA_COLORS.map((color) => {
+                {STUDIO_COLORS.map((color) => {
                     const hasDefinition = !!colorDefinitions[color.id];
                     const isActive = activeColor.id === color.id;
 

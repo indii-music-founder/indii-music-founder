@@ -180,7 +180,7 @@ const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: S
                             </span>
                             <StatusBadge status={post.status} />
                         </div>
-                        <button onClick={() => onEdit(post)} className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                        <button onClick={() => onEdit(post)} aria-label="Edit post" className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                             <Edit3Icon size={16} />
                         </button>
                     </div>

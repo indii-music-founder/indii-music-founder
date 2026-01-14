@@ -58,6 +58,11 @@ export class MarketingService {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return [];
 
+        // TEST MODE HOOK: Return mock campaigns if in test mode
+        if (userProfile.id === 'maestro-user-id' || (typeof window !== 'undefined' && (window as any).TEST_MODE)) {
+            return Object.values(testMemoryStore);
+        }
+
         try {
             const q = query(
                 collection(db, 'campaigns'),

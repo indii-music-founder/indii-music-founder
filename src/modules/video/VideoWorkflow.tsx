@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
@@ -60,9 +60,14 @@ export default function VideoWorkflow() {
         // Drag logic
     }, []);
 
+    // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
+    const videoHistory = useMemo(() => generatedHistory.filter(h => h.type === 'video'), [generatedHistory]);
+
     // Sync pending prompt
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (pendingPrompt) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
             setPrompt(pendingPrompt);
             setPendingPrompt(null);
@@ -84,7 +89,9 @@ export default function VideoWorkflow() {
 
     // Set initial active video
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (selectedItem?.type === 'video') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveVideo(selectedItem);
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
@@ -328,7 +335,7 @@ export default function VideoWorkflow() {
 
                 {/* Dailies Strip (Bottom Overlay) */}
                 <DailiesStrip
-                    items={generatedHistory.filter(h => h.type === 'video')}
+                    items={videoHistory}
                     selectedId={activeVideo?.id || null}
                     onSelect={setActiveVideo}
                     onDragStart={handleDragStart}
