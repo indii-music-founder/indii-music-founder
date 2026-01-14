@@ -191,6 +191,11 @@ export class SubscriptionService {
     amount: number = 1,
     userId?: string
   ): Promise<QuotaCheckResult> {
+    // GOD MODE: Bypass for Builder
+    if (auth.currentUser?.email === 'the.walking.agency.det@gmail.com') {
+      return { allowed: true };
+    }
+
     const targetUserId = userId || auth.currentUser?.uid;
     if (!targetUserId) {
       return {

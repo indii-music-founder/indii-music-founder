@@ -193,6 +193,12 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
+
+            // GOD MODE: Bypass for Builder
+            if (state.userProfile?.email === 'the.walking.agency.det@gmail.com') {
+                return 'enterprise';
+            }
+
             const currentOrg = state.organizations.find(o => o.id === state.currentOrganizationId);
             return currentOrg?.plan || 'free';
         } catch {
@@ -363,6 +369,17 @@ class MembershipServiceImpl {
             // No user = deny quota (must be authenticated for any generation)
             console.warn('[MembershipService] Quota check denied: No authenticated user');
             return { allowed: false, currentUsage: 0, maxAllowed: 0 };
+        }
+
+        // GOD MODE: Bypass for Builder
+        try {
+            const { useStore } = await import('@/core/store');
+            const email = useStore.getState().userProfile?.email;
+            if (email === 'the.walking.agency.det@gmail.com') {
+                 return { allowed: true, currentUsage: 0, maxAllowed: Infinity };
+            }
+        } catch (e) {
+            // Ignore
         }
 
         const tier = await this.getCurrentTier();
