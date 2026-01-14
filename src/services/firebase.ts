@@ -11,7 +11,15 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 import { getRemoteConfig } from 'firebase/remote-config';
 import { AI_MODELS } from '@/core/config/ai-models';
 
-export const app = initializeApp(firebaseConfig);
+// Prevent crash if config is missing (e.g. CI/Dev without env vars)
+const safeConfig = firebaseConfig.apiKey ? firebaseConfig : {
+    ...firebaseConfig,
+    apiKey: "AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000", // valid format placeholder
+    projectId: "demo-project",
+    authDomain: "demo-project.firebaseapp.com"
+};
+
+export const app = initializeApp(safeConfig);
 
 // Initialize Firebase AI with Production Security (App Check + Vertex AI Backend)
 export const ai = getAI(app, {
