@@ -46,7 +46,7 @@ export const MerchandiseService = {
     /**
      * Subscribe to products for a user
      */
-    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void) => {
+    subscribeToProducts: (userId: string, callback: (products: MerchProduct[]) => void, onError?: (error: any) => void) => {
         const q = query(
             collection(db, COLLECTION_NAME),
             where('userId', '==', userId)
@@ -58,6 +58,9 @@ export const MerchandiseService = {
                 ...docSnap.data()
             } as MerchProduct));
             callback(products);
+        }, (error) => {
+            console.warn('[MerchandiseService] Subscription error:', error);
+            if (onError) onError(error);
         });
     },
 
@@ -129,42 +132,43 @@ export const MerchandiseService = {
      * Submits a design to the production line (Firestore).
      */
     submitToProduction: async (request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> => {
-        try {
-            let userId = request.userId;
-            if (!userId) {
-                userId = useStore.getState().userProfile?.id;
-            }
-
-            if (!userId) {
-                throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
-            }
-
-            const orderId = `BANA-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-
-            const docRef = await addDoc(collection(db, 'manufacture_requests'), {
-                ...request,
-                userId,
-                status: 'pending',
-                orderId,
-                createdAt: serverTimestamp()
-            });
-
-            // Simulate processing delay then update status
-            delay(2000).then(async () => {
-                try {
-                    await updateDoc(docRef, { status: 'completed' });
-                } catch (e) {
-                    // Status update failed - not critical
-                }
-            });
-
-            return {
-                success: true,
-                orderId
-            };
-        } catch (error) {
-            throw error;
+        let userId = request.userId;
+        if (!userId) {
+            userId = useStore.getState().userProfile?.id;
         }
+
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to submit to production.');
+        }
+
+        // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
+        // 🛡️ Sentinel: Use secure random generation for orderId
+        const array = new Uint8Array(9);
+        crypto.getRandomValues(array);
+        const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
+        const orderId = `ORDER-${randomPart}`;
+
+        const docRef = await addDoc(collection(db, 'manufacture_requests'), {
+            ...request,
+            userId,
+            status: 'pending',
+            orderId,
+            createdAt: serverTimestamp()
+        });
+
+        // Simulate processing delay then update status
+        delay(2000).then(async () => {
+            try {
+                await updateDoc(docRef, { status: 'completed' });
+            } catch (e) {
+                // Status update failed - not critical
+            }
+        });
+
+        return {
+            success: true,
+            orderId
+        };
     },
 
     /**
@@ -215,7 +219,7 @@ export const MerchandiseService = {
 
             throw new Error('No images generated');
         } catch (error: any) {
-             await updateDoc(docRef, {
+            await updateDoc(docRef, {
                 status: 'failed',
                 error: error.message
             });
@@ -255,11 +259,11 @@ export const MerchandiseService = {
                 orgId: orgId || "personal"
             });
 
-             // We also want to track this in our own collection if needed,
-             // but 'triggerVideoJob' already creates a document in 'videoJobs'.
-             // We can return the jobId and let the UI subscribe to 'videoJobs'.
+            // We also want to track this in our own collection if needed,
+            // but 'triggerVideoJob' already creates a document in 'videoJobs'.
+            // We can return the jobId and let the UI subscribe to 'videoJobs'.
 
-             return jobId;
+            return jobId;
 
         } catch (error: any) {
             console.error("Video Generation Error:", error);
@@ -272,13 +276,13 @@ export const MerchandiseService = {
      * Re-exported for convenience from Merchandise Service
      */
     subscribeToVideoJob: (jobId: string, callback: (job: any) => void) => {
-         const jobRef = doc(db, 'videoJobs', jobId);
-         return onSnapshot(jobRef, (snapshot) => {
-             if (snapshot.exists()) {
-                 callback({ id: snapshot.id, ...snapshot.data() });
-             } else {
-                 callback(null);
-             }
-         });
+        const jobRef = doc(db, 'videoJobs', jobId);
+        return onSnapshot(jobRef, (snapshot) => {
+            if (snapshot.exists()) {
+                callback({ id: snapshot.id, ...snapshot.data() });
+            } else {
+                callback(null);
+            }
+        });
     }
 };

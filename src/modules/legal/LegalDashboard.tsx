@@ -127,12 +127,13 @@ Only return valid JSON.
     };
 
     const handleFindCounsel = () => {
-        window.open('https://www.entertainmentlawyer.ca/directory', '_blank'); // Placeholder for a real directory
+        // 🛡️ Sentinel: Added noopener,noreferrer for security
+        window.open('https://www.entertainmentlawyer.ca/directory', '_blank', 'noopener,noreferrer'); // Placeholder for a real directory
         toast.info("Opening entertainment lawyer directory...");
     };
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white p-6 overflow-y-auto">
+        <div className="h-full flex flex-col bg-bg-dark text-white p-6 overflow-y-auto">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
                     <Shield className="text-blue-500" />
@@ -213,7 +214,7 @@ Only return valid JSON.
                                 </div>
                             </div>
 
-                            <div className="bg-[#0d1117] rounded-lg p-4 mb-6 border border-gray-800">
+                            <div className="bg-bg-dark rounded-lg p-4 mb-6 border border-gray-800">
                                 <p className="text-gray-300 leading-relaxed">{analysisResult.summary}</p>
                             </div>
 
@@ -223,7 +224,7 @@ Only return valid JSON.
                             </h5>
                             <ul className="space-y-3">
                                 {analysisResult.risks.map((risk, index) => (
-                                    <li key={index} className="flex items-start gap-3 p-3 bg-[#0d1117] rounded border border-gray-800 hover:border-gray-700 transition-colors">
+                                    <li key={index} className="flex items-start gap-3 p-3 bg-bg-dark rounded border border-gray-800 hover:border-gray-700 transition-colors">
                                         <div className="mt-1 min-w-[6px] h-[6px] rounded-full bg-yellow-500" />
                                         <span className="text-sm text-gray-300">{risk}</span>
                                     </li>

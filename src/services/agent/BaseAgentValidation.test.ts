@@ -7,7 +7,8 @@ import { AgentConfig } from './types';
 // Mock dependencies
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
-        generateContent: vi.fn()
+        generateContent: vi.fn(),
+        generateContentStream: vi.fn()
     }
 }));
 
@@ -54,12 +55,9 @@ describe('BaseAgent Tool Validation', () => {
         const aiMock = await import('@/services/ai/AIService');
         vi.mocked(aiMock.AI.generateContentStream).mockResolvedValue({
             stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Calling tool...' } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => 'Calling tool...' };
+                }
             },
             response: Promise.resolve({
                 text: () => 'Response Text',
@@ -84,12 +82,9 @@ describe('BaseAgent Tool Validation', () => {
         const aiMock = await import('@/services/ai/AIService');
         vi.mocked(aiMock.AI.generateContentStream).mockResolvedValue({
             stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Calling tool...' } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => 'Calling tool...' };
+                }
             },
             response: Promise.resolve({
                 text: () => 'Response Text',

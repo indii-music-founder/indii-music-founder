@@ -1,6 +1,6 @@
 import * as fabric from 'fabric';
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
-import { NANA_COLORS, NanaColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '../constants';
 
 export interface MaskData {
     mimeType: string;
@@ -178,7 +178,7 @@ export class CanvasOperationsService {
     /**
      * Enable or disable magic fill (free drawing) mode
      */
-    setMagicFillMode(enabled: boolean, color: NanaColor): void {
+    setMagicFillMode(enabled: boolean, color: CreativeColor): void {
         if (!this.canvas) return;
 
         if (enabled) {
@@ -194,7 +194,7 @@ export class CanvasOperationsService {
     /**
      * Update brush color for magic fill mode
      */
-    updateBrushColor(color: NanaColor): void {
+    updateBrushColor(color: CreativeColor): void {
         if (!this.canvas?.isDrawingMode || !this.canvas.freeDrawingBrush) return;
         this.canvas.freeDrawingBrush.color = hexToRgba(color.hex, 0.5);
     }
@@ -230,7 +230,7 @@ export class CanvasOperationsService {
         const masks: MaskData[] = [];
 
         for (const [colorId, prompt] of activeDefinitions) {
-            const colorDef = NANA_COLORS.find(c => c.id === colorId);
+            const colorDef = STUDIO_COLORS.find(c => c.id === colorId);
             if (!colorDef) continue;
 
             const targetRgbaStart = hexToRgba(colorDef.hex, 0.5).slice(0, -4); // Remove ', 0.5)' for partial match
@@ -284,7 +284,7 @@ export class CanvasOperationsService {
     async applyCandidateImage(
         candidateUrl: string,
         magicFillEnabled: boolean,
-        activeColor: NanaColor
+        activeColor: CreativeColor
     ): Promise<void> {
         if (!this.canvas) return;
 

@@ -1,3 +1,3 @@
-## 2024-06-27 - [Unbreakable Code Blocks]
-**Learning:** `ReactMarkdown` does not automatically apply `overflow-x-auto` to code blocks styled with Tailwind Typography (`prose`) unless specifically configured or overridden.
-**Action:** Always override the `pre` component in `ReactMarkdown` to wrap it in a container with `overflow-x-auto` for mobile resilience.
+## 2025-06-27 - [Toolbar Layouts]
+**Learning:** Absolute positioning (`absolute bottom-3`) for toolbars creates fragile layouts on mobile that break when content scales or containers resize.
+**Action:** Always use `flex justify-between items-center` with `min-h-[44px]` for input toolbars to ensure buttons remain accessible and the layout adapts to content changes.

@@ -291,13 +291,21 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
             }
 
             // All segments done, trigger stitching
+            const derivedMetadata = {
+                duration_seconds: prompts.length * 5,
+                fps: 30,
+                mime_type: "video/mp4",
+                resolution: options?.aspectRatio === "9:16" ? "720x1280" : "1280x720"
+            };
+
             await step.sendEvent({
                 name: "video/stitch.requested",
                 data: {
                     jobId,
                     userId,
                     segmentUrls,
-                    orgId
+                    orgId,
+                    metadata: derivedMetadata
                 }
             });
 
@@ -413,6 +421,16 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
                     status: "completed",
                     videoUrl: finalVideoUrl,
+                    output: {
+                        url: finalVideoUrl,
+                        metadata: event.data.metadata || {
+                            // Fallback if metadata missing in event
+                            duration_seconds: segmentUrls.length * 5,
+                            fps: 30,
+                            mime_type: "video/mp4",
+                            resolution: "1280x720"
+                        }
+                    },
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             });

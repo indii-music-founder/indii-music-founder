@@ -19,54 +19,61 @@ export class AudioAnalysisService {
     private async init(): Promise<void> {
         if (this.essentia) return;
 
-        // Prevent concurrent initialization
         if (this.initPromise) {
             return this.initPromise;
         }
 
         this.initPromise = (async () => {
             try {
-                // Loading Essentia.js audio analysis engine...
+                console.info("[AudioAnalysis] Initializing Essentia.js WASM engine...");
 
-                // WASM path configuration: Essentia's UMD module looks for a global 'EssentiaWASM' object to use as the Module config.
-                // We provide 'locateFile' to point it to the correct location of the .wasm file.
-                // The .wasm file is in 'public/', so it's served at root '/'.
-                (window as unknown as { EssentiaWASM: any }).EssentiaWASM = {
-                    locateFile: (path: string, prefix: string) => {
-                        if (path.endsWith('.wasm')) {
-                            const baseUrl = import.meta.env.BASE_URL || '/';
-                            // Ensure the path is absolute relative to the base URL
-                            return new URL(path, window.location.origin + baseUrl).href;
-                        }
-                        return prefix + path;
+                const baseUrl = import.meta.env.BASE_URL || '/';
+                const wasmUrl = new URL('essentia-wasm.web.wasm', window.location.origin + baseUrl).href;
+
+                console.debug(`[AudioAnalysis] WASM URL: ${wasmUrl}`);
+
+                (window as any).EssentiaWASM = {
+                    locateFile: (path: string) => {
+                        if (path.endsWith('.wasm')) return wasmUrl;
+                        return path;
                     }
                 };
 
-                // Dynamic import - only loads when this method is called
-                const { Essentia, EssentiaWASM } = await import('essentia.js') as EssentiaModule;
+                const imported = await import('essentia.js') as any;
+                const { Essentia } = imported;
+                let { EssentiaWASM } = imported;
+
+                // Handle Vite/Rollup interop for EssentiaWASM import
+                if (!EssentiaWASM && imported.default?.EssentiaWASM) {
+                    EssentiaWASM = imported.default.EssentiaWASM;
+                }
 
                 let moduleInstance;
                 if (typeof EssentiaWASM === 'function') {
-                    // It's a factory function (standard Emscripten MODULARIZE=1)
-                    // We can pass the config here as well to be safe
                     moduleInstance = await (EssentiaWASM as any)({
-                        locateFile: (path: string, prefix: string) => {
-                            if (path.endsWith('.wasm')) {
-                                const baseUrl = import.meta.env.BASE_URL || '/';
-                                return new URL(path, window.location.origin + baseUrl).href;
-                            }
-                            return prefix + path;
+                        locateFile: (path: string) => {
+                            if (path.endsWith('.wasm')) return wasmUrl;
+                            return path;
                         }
                     });
                 } else {
-                    // It's already an initialized object (maybe via UMD auto-run)
-                    // In this case, we hope the `window.EssentiaWASM` pre-configuration worked.
-                    moduleInstance = EssentiaWASM;
+                    // Check if EssentiaWASM is nested (common in some builds)
+                    if ((EssentiaWASM as any).EssentiaWASM) {
+                        moduleInstance = (EssentiaWASM as any).EssentiaWASM;
+                    } else {
+                        moduleInstance = EssentiaWASM;
+                    }
+                }
+
+                if (!moduleInstance) {
+                    throw new Error("Failed to resolve EssentiaWASM instance");
                 }
 
                 this.essentia = new Essentia(moduleInstance);
+                console.info("[AudioAnalysis] Essentia.js WASM engine ready.");
             } catch (error) {
-                this.initPromise = null; // Allow retry on failure
+                console.error("[AudioAnalysis] Failed to initialize Essentia.js:", error);
+                this.initPromise = null;
                 throw error;
             }
         })();
@@ -75,62 +82,86 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Analyzes an audio file to extract high-level features.
+     * Analyzes an audio file/blob to extract high-level features.
      */
     async analyze(file: File | Blob): Promise<AudioFeatures> {
-        // Lazy-load essentia.js on first use
-        await this.init();
-
-        if (!this.essentia) {
-            throw new Error("Essentia not initialized");
-        }
+        await this.init(); // Ensure init
+        if (!this.essentia) throw new Error("Essentia not initialized");
 
         const audioContext = new (window.AudioContext || (window as unknown as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-        // We iterate through channels, but usually just taking the first channel (mono mix) is enough for feature extraction
-        const signal = this.essentia.arrayToVector(audioBuffer.getChannelData(0));
+        return this.analyzeBuffer(audioBuffer);
+    }
 
-        // 1. Rhythm (BPM)
-        // RhythmExtractor2013 is robust
-        const rhythm = this.essentia.RhythmExtractor2013(signal);
-        const bpm = rhythm.bpm;
+    /**
+     * Analyzes an already decoded AudioBuffer.
+     * Useful for analyzing segments/regions without re-decoding.
+     */
+    async analyzeBuffer(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
+        await this.init();
+        if (!this.essentia) throw new Error("Essentia not initialized");
 
-        // 2. Tonal (Key/Scale)
-        const keyData = this.essentia.KeyExtractor(signal);
-        const key = keyData.key;
-        const scale = keyData.scale;
+        console.info(`[AudioAnalysis] Analyzing buffer: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.sampleRate}Hz`);
 
-        // 3. Energy / Loudness
-        // Simple RMS energy calculation
-        const rms = this.essentia.RMS(signal);
-        const energy = rms.rms; // This returns a single value if input is frame, but signal is whole track?
-        // Wait, RMS on the whole signal returns one value? No, usually frame-wise.
-        // For whole track "Global Energy", we might just take mean of RMS frames.
-        // Let's use a simpler proxy for now or `Energy` algo if available for global.
-        // Actually, let's use the 'danceability' algo output which usually includes other metrics.
+        // Convert to Essentia-compatible vector (first channel)
+        const channelData = audioBuffer.getChannelData(0);
 
-        // Danceability (often requires framed signal, let's check standard usage)
-        // For simplicity in this robust-check pass, we'll stick to BPM/Key which are the most "visible" tech tags.
-        // We'll calculate loudness using standard WebAudio or simple math if Essentia is complex for global.
+        // Basic sanity check: is the buffer actually containing data?
+        let hasSignal = false;
+        for (let i = 0; i < Math.min(channelData.length, 1000); i++) {
+            if (Math.abs(channelData[i]) > 0.0001) {
+                hasSignal = true;
+                break;
+            }
+        }
 
-        // Let's assume Energy is roughly proportional to RMS for now.
+        if (!hasSignal) {
+            console.warn("[AudioAnalysis] Input buffer appears to be silent (or extremely low volume).");
+        }
 
-        const danceabilty = this.essentia.Danceability(signal).danceability;
+        const signal = this.essentia.arrayToVector(channelData);
 
-        // Cleanup wasm memory (vectors)
-        // this.essentia.deleteVector(signal); // If needed, depends on wrapper
+        try {
+            // 1. Rhythm (BPM)
+            const rhythm = this.essentia.RhythmExtractor2013(signal);
+            const bpm = rhythm.bpm;
 
-        return {
-            bpm: Math.round(bpm),
-            key: key,
-            scale: scale,
-            energy: energy, // Raw RMS value
-            duration: audioBuffer.duration,
-            danceability: danceabilty,
-            loudness: -1 // Placeholder if not calc
-        };
+            // 2. Tonal (Key/Scale)
+            const keyData = this.essentia.KeyExtractor(signal);
+            const key = keyData.key;
+            const scale = keyData.scale;
+
+            // 3. Energy / Loudness
+            const rms = this.essentia.RMS(signal);
+            const energyValue = rms.rms;
+
+            // 4. Danceability
+            const danceabilityValue = this.essentia.Danceability(signal).danceability;
+
+            console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
+
+            return {
+                bpm: Math.round(bpm),
+                key: key,
+                scale: scale,
+                // Normalize RMS to 0-1 range
+                energy: Math.min(1, Math.max(0, energyValue * 3.5)),
+                duration: audioBuffer.duration,
+                danceability: danceabilityValue,
+                valence: scale === 'major'
+                    ? 0.6 + (Math.min(1, energyValue * 3.5) * 0.3)
+                    : 0.2 + (Math.min(1, energyValue * 3.5) * 0.2),
+                loudness: -1
+            };
+        } finally {
+            // If using the official WASM build, memory management is important.
+            // Some versions of essentia.js require explicit deletion of vectors.
+            if ((this.essentia as any).deleteVector && signal) {
+                (this.essentia as any).deleteVector(signal);
+            }
+        }
     }
 }
 

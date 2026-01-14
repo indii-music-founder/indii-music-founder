@@ -17,7 +17,9 @@ vi.mock('@/services/finance/FinanceService', () => ({
     financeService: {
         getExpenses: vi.fn(),
         addExpense: vi.fn(),
-        fetchEarnings: vi.fn()
+        fetchEarnings: vi.fn(),
+        subscribeToEarnings: vi.fn(),
+        subscribeToExpenses: vi.fn()
     }
 }));
 
@@ -61,53 +63,54 @@ describe('useFinance', () => {
     });
 
     it('should initialize with default states', () => {
+        // Mock subscription to return a cleanup function
+        vi.mocked(financeService.subscribeToEarnings).mockReturnValue(() => { });
+        vi.mocked(financeService.subscribeToExpenses).mockReturnValue(() => { });
+
         const { result } = renderHook(() => useFinance());
 
+        // Initial state
         expect(result.current.earningsSummary).toBeNull();
         expect(result.current.expenses).toEqual([]);
-        expect(result.current.expensesLoading).toBe(false);
+        expect(result.current.expensesLoading).toBe(true); // Should be true initially
     });
 
     it('should load earnings on mount if user is logged in', () => {
+        const mockUnsubscribe = vi.fn();
+        vi.mocked(financeService.subscribeToEarnings).mockImplementation((userId, callback) => {
+            callback(null); // Simulate immediate update
+            return mockUnsubscribe;
+        });
+        vi.mocked(financeService.subscribeToExpenses).mockReturnValue(() => { });
+
         renderHook(() => useFinance());
 
-        // useEffect should trigger loadEarnings which calls fetchEarnings
-        // Note: fetchEarnings is called with a date range
-        expect(mockFetchEarnings).toHaveBeenCalled();
+        expect(financeService.subscribeToEarnings).toHaveBeenCalledWith('user-123', expect.any(Function));
     });
 
     it('should load expenses successfully', async () => {
         const mockExpenses = [{ id: '1', amount: 100 }];
-        vi.mocked(financeService.getExpenses).mockResolvedValue(mockExpenses as any);
+        const mockUnsubscribe = vi.fn();
+
+        vi.mocked(financeService.subscribeToEarnings).mockReturnValue(() => { });
+        vi.mocked(financeService.subscribeToExpenses).mockImplementation((userId, callback) => {
+            // callback is typed as (data: Expense[]) => void
+            callback(mockExpenses as any);
+            return mockUnsubscribe;
+        });
 
         const { result } = renderHook(() => useFinance());
 
-        await act(async () => {
-            await result.current.actions.loadExpenses();
-        });
-
+        // Since subscription callback is synchronous in our mock, state should update immediately
         expect(result.current.expenses).toEqual(mockExpenses);
-        expect(financeService.getExpenses).toHaveBeenCalledWith('user-123');
-    });
-
-    it('should handle errors when loading expenses', async () => {
-        const error = new Error('Fetch failed');
-        vi.mocked(financeService.getExpenses).mockRejectedValue(error);
-
-        const { result } = renderHook(() => useFinance());
-
-        await act(async () => {
-            await result.current.actions.loadExpenses();
-        });
-
-        expect(Sentry.captureException).toHaveBeenCalledWith(error);
-        expect(mockToast.error).toHaveBeenCalledWith('Failed to load expenses.');
-        expect(result.current.expenses).toEqual([]);
+        expect(result.current.expensesLoading).toBe(false);
+        expect(financeService.subscribeToExpenses).toHaveBeenCalledWith('user-123', expect.any(Function));
     });
 
     it('should add expense successfully', async () => {
         vi.mocked(financeService.addExpense).mockResolvedValue('new-id');
-        vi.mocked(financeService.getExpenses).mockResolvedValue([]);
+        vi.mocked(financeService.subscribeToEarnings).mockReturnValue(() => { });
+        vi.mocked(financeService.subscribeToExpenses).mockReturnValue(() => { });
 
         const { result } = renderHook(() => useFinance());
         const newExpense = {
@@ -119,13 +122,12 @@ describe('useFinance', () => {
             description: 'Test expense'
         };
 
+        let success;
         await act(async () => {
-            const success = await result.current.actions.addExpense(newExpense);
-            expect(success).toBe(true);
+            success = await result.current.actions.addExpense(newExpense);
         });
 
+        expect(success).toBe(true);
         expect(financeService.addExpense).toHaveBeenCalledWith(newExpense);
-        // It should also reload expenses
-        expect(financeService.getExpenses).toHaveBeenCalled();
     });
 });

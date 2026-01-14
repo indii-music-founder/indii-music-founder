@@ -4,11 +4,12 @@ import { MyComposition } from '../../remotion/MyComposition';
 import { VideoProject } from '../../store/videoEditorStore';
 
 interface VideoPreviewProps {
-    playerRef: React.RefObject<PlayerRef | null>;
+    playerRef: React.RefObject<PlayerRef>;
     project: VideoProject;
+    onFrameUpdate?: (frame: number) => void;
 }
 
-export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project }) => {
+export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, onFrameUpdate }) => {
     const aspectRatio = project.width / project.height;
 
     return (
@@ -32,6 +33,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project }
                     }}
                     controls
                     loop
+
                 />
 
                 {/* Glassmorphic Overlay Border */}

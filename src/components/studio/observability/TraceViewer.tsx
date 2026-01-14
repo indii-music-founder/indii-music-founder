@@ -42,33 +42,36 @@ export function TraceViewer() {
         }
     };
 
+    const [activeTab, setActiveTab] = useState('list');
+
     return (
         <div className="flex flex-col h-full w-full p-4 space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold tracking-tight">Agent Observability</h2>
-                <Tabs defaultValue="list" className="w-[400px]">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="list" className="flex items-center gap-2">
+                        <TabsTrigger
+                            value="list"
+                            className="flex items-center gap-2"
+                            data-testid="list-trigger"
+                        >
                             <LayoutGrid size={14} />
                             List View
                         </TabsTrigger>
-                        <TabsTrigger value="graph" className="flex items-center gap-2">
+                        <TabsTrigger
+                            value="graph"
+                            className="flex items-center gap-2"
+                            data-testid="graph-trigger"
+                        >
                             <Network size={14} />
                             Swarm Graph
                         </TabsTrigger>
                     </TabsList>
-
-                    <TabsContent value="list" className="mt-0">
-                        {/* List View handled below in main grid */}
-                    </TabsContent>
-                    <TabsContent value="graph" className="mt-0">
-                        {/* Graph View handled below in main grid */}
-                    </TabsContent>
                 </Tabs>
             </div>
 
-            <Tabs defaultValue="list" className="flex-1 flex flex-col min-h-0">
-                <TabsContent value="list" className="flex-1 min-h-0 mt-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+                <TabsContent value="list" className="flex-1 min-h-0 mt-0" data-testid="list-content">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
                         {/* Trace List */}
                         <Card className="col-span-1 h-full flex flex-col bg-black/40 border-white/10">
@@ -128,7 +131,7 @@ export function TraceViewer() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="graph" className="flex-1 min-h-0 mt-0">
+                <TabsContent value="graph" className="flex-1 min-h-0 mt-0" data-testid="graph-content">
                     <Card className="h-full flex flex-col bg-black/40 border-white/10 overflow-hidden">
                         <div className="flex-1 relative flex">
                             <div className="flex-1 min-w-0">

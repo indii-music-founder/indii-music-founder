@@ -29,7 +29,7 @@ test.describe('Workflow Coordinator', () => {
                 photoURL: null
             };
 
-            // @ts-ignore
+            // @ts-expect-error - Directly manipulating window store for test consistency
             window.useStore.setState({
                 initializeAuthListener: () => () => { },
                 user: mockUser,

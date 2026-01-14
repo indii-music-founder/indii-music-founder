@@ -351,12 +351,12 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 <p className="text-sm text-gray-300 line-clamp-3">{userProfile.bio}</p>
                             </div>
                         )}
-                        {userProfile.brandKit.releaseDetails.title && (
+                        {userProfile.brandKit?.releaseDetails?.title && (
                             <div>
                                 <p className="text-xs text-gray-500 mb-1">Active Release</p>
                                 <p className="text-sm text-gray-300">
-                                    {userProfile.brandKit.releaseDetails.title}
-                                    <span className="text-gray-500 ml-1">({userProfile.brandKit.releaseDetails.type})</span>
+                                    {userProfile.brandKit?.releaseDetails?.title}
+                                    <span className="text-gray-500 ml-1">({userProfile.brandKit?.releaseDetails?.type})</span>
                                 </p>
                             </div>
                         )}

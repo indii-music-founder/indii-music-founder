@@ -4,6 +4,12 @@ import { PIXELS_PER_FRAME } from '../constants';
 
 export const Playhead: React.FC = () => {
     // Select only currentTime to prevent re-renders on other store changes
+import React, { memo } from 'react';
+import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { PIXELS_PER_FRAME } from '../constants';
+
+export const Playhead = memo(() => {
+    // Select only currentTime to prevent unnecessary re-renders when other parts of store change
     const currentTime = useVideoEditorStore(state => state.currentTime);
 
     return (
@@ -15,3 +21,6 @@ export const Playhead: React.FC = () => {
         </div>
     );
 };
+});
+
+Playhead.displayName = 'Playhead';

@@ -24,10 +24,14 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }))
 }));
 
-vi.mock('firebase/firestore', () => ({
-    doc: vi.fn(),
-    onSnapshot: vi.fn()
-}));
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
+        doc: vi.fn(),
+        onSnapshot: vi.fn()
+    };
+});
 
 // Mock SubscriptionService
 vi.mock('@/services/subscription/SubscriptionService', () => ({

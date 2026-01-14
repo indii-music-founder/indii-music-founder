@@ -69,7 +69,7 @@ export default function LicensingDashboard() {
                 </div>
             </header>
 
-            {/* Metrics & Analytics (Banana Pro) */}
+            {/* Metrics & Analytics */}
             <MetricsGrid
                 activeLicensesCount={licenses.length}
                 pendingRequestsCount={requests.length}

@@ -56,7 +56,7 @@ export class WorkflowEngine {
         }
 
         this.isRunning = false;
-        
+
     }
 
     private async executeNode(task: ExecutionTask) {
@@ -86,7 +86,7 @@ export class WorkflowEngine {
 
                 case 'outputNode':
                     output = task.inputs.data; // Just pass through
-                    
+
                     break;
             }
 
@@ -128,10 +128,32 @@ export class WorkflowEngine {
             const images = await ImageGeneration.generateImages({ prompt, count: 1, aspectRatio: '1:1' });
             return images[0]?.url;
         } else if (data.departmentName === 'Marketing Department') {
-            // Generate Text
+            // Generate Text (Multimodal Aware)
+            const isImage = typeof prompt === 'string' && prompt.startsWith('data:image');
+
+            let contents;
+            if (isImage) {
+                // Parse Data URL
+                const [header, base64Data] = prompt.split(',');
+                const mimeType = header.split(':')[1].split(';')[0];
+
+                contents = [{
+                    role: 'user',
+                    parts: [
+                        { inlineData: { mimeType, data: base64Data } },
+                        { text: "Write marketing copy for this visual asset." }
+                    ]
+                }];
+            } else {
+                contents = [{
+                    role: 'user',
+                    parts: [{ text: `Write marketing copy for: ${prompt}` }]
+                }];
+            }
+
             const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: [{ role: 'user', parts: [{ text: `Write marketing copy for: ${prompt}` }] }]
+                model: AI_MODELS.TEXT.AGENT, // Both modes use the Pro Agent model
+                contents
             });
             return response.text();
         } else if (data.departmentName === 'Knowledge Base') {
@@ -175,7 +197,7 @@ export class WorkflowEngine {
         };
 
         await saveWorkflowToStorage(workflowData);
-        
+
     }
 
     public async loadWorkflow(id: string): Promise<any | null> {

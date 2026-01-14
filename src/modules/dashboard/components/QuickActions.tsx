@@ -29,12 +29,6 @@ const MODULES: ModuleAction[] = [
         description: 'AI-powered video workflow',
     },
     {
-        id: 'music',
-        name: 'Music Analysis',
-        icon: Music,
-        description: 'Analyze audio and extract features',
-    },
-    {
         id: 'marketing',
         name: 'Marketing',
         icon: Megaphone,

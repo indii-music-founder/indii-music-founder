@@ -187,23 +187,30 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
 
     if (!targetId) return undefined;
 
-    // 1. Try Local
-    let profile = await dbLocal.get(PROFILE_STORE, targetId);
-    if (profile) return profile;
-
-    // 2. Try Cloud if missing locally and we are authorized
+    // Strategy: Network First (for Profile, we want accuracy over speed on load)
+    // 1. Try Cloud if authorized
     if (user && user.uid === targetId) {
         try {
             const docRef = doc(db, 'users', user.uid);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                profile = snap.data() as UserProfile;
-                await dbLocal.put(PROFILE_STORE, profile);
-                return profile;
+                const cloudProfile = snap.data() as UserProfile;
+                console.info('[Repository] Fetched fresh profile from Cloud');
+
+                // Update Local Cache
+                await dbLocal.put(PROFILE_STORE, cloudProfile);
+                return cloudProfile;
             }
-        } catch (_error) {
-            // Failed to fetch profile from cloud
+        } catch (error) {
+            console.warn('[Repository] Cloud profile fetch failed, falling back to local:', error);
         }
+    }
+
+    // 2. Fallback to Local
+    const localProfile = await dbLocal.get(PROFILE_STORE, targetId);
+    if (localProfile) {
+        console.info('[Repository] Serving profile from Local Cache');
+        return localProfile;
     }
 
     return undefined;

@@ -49,7 +49,6 @@ export const VALID_AGENT_IDS = [
     'legal',
     'finance',
     'producer',
-    'music',
     'director',
     'screenwriter',
     'video',
@@ -62,6 +61,7 @@ export const VALID_AGENT_IDS = [
     'brand',
     'devops',
     'security',
+    'merchandise',  // Merchandise creation & production
     'generalist'  // Agent Zero
 ] as const;
 
@@ -204,6 +204,11 @@ export interface AgentExecutionResult {
     }>;
     thoughts?: string[];
     error?: string;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+    };
 }
 
 export type AgentResponse = AgentExecutionResult;

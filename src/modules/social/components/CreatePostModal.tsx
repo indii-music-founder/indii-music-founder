@@ -67,7 +67,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#0d1117]">
+                <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-bg-dark">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         Create New Post
                     </h2>
@@ -115,7 +115,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             value={copy}
                             onChange={(e) => setCopy(e.target.value)}
                             placeholder="What's on your mind?"
-                            className="w-full h-32 bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                            className="w-full h-32 bg-bg-dark border border-gray-700 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                         />
                     </div>
 
@@ -155,7 +155,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                                     type="date"
                                     value={scheduledDate}
                                     onChange={(e) => setScheduledDate(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                                 <Calendar className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
                             </div>
@@ -167,7 +167,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                                     type="time"
                                     value={scheduledTime}
                                     onChange={(e) => setScheduledTime(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
                                 <ChevronDown className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
                             </div>
@@ -176,7 +176,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-800 bg-[#0d1117] flex justify-end gap-3">
+                <div className="p-4 border-t border-gray-800 bg-bg-dark flex justify-end gap-3">
                     <button
                         onClick={onClose}
                         className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"

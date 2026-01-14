@@ -7,10 +7,11 @@ import AIGenerateCampaignModal from './AIGenerateCampaignModal';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
+import { Loader2 } from 'lucide-react';
 
 const CampaignDashboard: React.FC = () => {
     // Integrate with the Beta hook
-    const { campaigns, actions } = useMarketing();
+    const { campaigns, actions, isLoading } = useMarketing();
 
     // UI State
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
@@ -68,10 +69,10 @@ const CampaignDashboard: React.FC = () => {
     // Test Helper: Allow injecting campaign updates from E2E tests (Maestro Workflow)
     useEffect(() => {
         // Only enable in non-production environments or if specifically enabled
-        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+        if (import.meta.env.DEV || window.location.hostname === 'localhost' || (window as any).__MAESTRO_TEST_MODE__) {
             const handleTestUpdate = (event: CustomEvent) => {
                 console.log("[Maestro] Injecting Agent Plan...", event.detail);
-                setSelectedCampaign(prev => prev ? { ...prev, ...event.detail } : null);
+                setSelectedCampaign(prev => prev ? { ...prev, ...event.detail } : event.detail);
             };
             window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
             return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
@@ -98,14 +99,21 @@ const CampaignDashboard: React.FC = () => {
                     <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none" />
 
                     {activeTab === 'campaigns' || activeTab === 'overview' ? (
-                        <CampaignManager
-                            campaigns={campaigns}
-                            selectedCampaign={selectedCampaign}
-                            onSelectCampaign={setSelectedCampaign}
-                            onUpdateCampaign={handleUpdateCampaign}
-                            onCreateNew={handleCreateNew}
-                            onAIGenerate={handleAIGenerate}
-                        />
+                        isLoading ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-500" data-testid="marketing-dashboard-loader">
+                                <Loader2 className="animate-spin mb-4" size={48} />
+                                <p className="text-lg animate-pulse">Loading campaigns...</p>
+                            </div>
+                        ) : (
+                            <CampaignManager
+                                campaigns={campaigns}
+                                selectedCampaign={selectedCampaign}
+                                onSelectCampaign={setSelectedCampaign}
+                                onUpdateCampaign={handleUpdateCampaign}
+                                onCreateNew={handleCreateNew}
+                                onAIGenerate={handleAIGenerate}
+                            />
+                        )
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500">
                             <p className="text-lg">This module is correctly under development.</p>

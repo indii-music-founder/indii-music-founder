@@ -18,7 +18,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
 
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-[#0d1117] to-[#0d1117]/90">
+        <div className="flex flex-col h-full bg-gradient-to-b from-bg-dark to-bg-dark/90">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-purple-500/10 rounded-lg">

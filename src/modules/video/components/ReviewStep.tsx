@@ -51,11 +51,21 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                         {startFrameData ? (
                             <div className="relative group w-40 aspect-video rounded-lg overflow-hidden border border-gray-700">
                                 <img src={startFrameData} alt="Start Frame" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <button onClick={() => onDesignFrame('start')} className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white" title="Edit">
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() => onDesignFrame('start')}
+                                        className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                                        title="Edit Start Frame"
+                                        aria-label="Edit Start Frame"
+                                    >
                                         <PenTool size={14} />
                                     </button>
-                                    <button onClick={() => onClearFrame('start')} className="p-2 bg-red-600 rounded-full hover:bg-red-500 text-white" title="Remove">
+                                    <button
+                                        onClick={() => onClearFrame('start')}
+                                        className="p-2 bg-red-600 rounded-full hover:bg-red-500 text-white focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none"
+                                        title="Remove Start Frame"
+                                        aria-label="Remove Start Frame"
+                                    >
                                         <Trash2 size={14} />
                                     </button>
                                 </div>
@@ -77,11 +87,21 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                         {endFrameData ? (
                             <div className="relative group w-40 aspect-video rounded-lg overflow-hidden border border-gray-700">
                                 <img src={endFrameData} alt="End Frame" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <button onClick={() => onDesignFrame('end')} className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white" title="Edit">
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() => onDesignFrame('end')}
+                                        className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                                        title="Edit End Frame"
+                                        aria-label="Edit End Frame"
+                                    >
                                         <PenTool size={14} />
                                     </button>
-                                    <button onClick={() => onClearFrame('end')} className="p-2 bg-red-600 rounded-full hover:bg-red-500 text-white" title="Remove">
+                                    <button
+                                        onClick={() => onClearFrame('end')}
+                                        className="p-2 bg-red-600 rounded-full hover:bg-red-500 text-white focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none"
+                                        title="Remove End Frame"
+                                        aria-label="Remove End Frame"
+                                    >
                                         <Trash2 size={14} />
                                     </button>
                                 </div>
@@ -119,7 +139,9 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                             <img src={img.url} alt="Ingredient" className="w-full h-full object-cover" />
                             <button
                                 onClick={() => onRemoveIngredient(idx)}
-                                className="absolute top-2 right-2 p-1.5 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-2 right-2 p-1.5 bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none"
+                                title="Remove Ingredient"
+                                aria-label="Remove Ingredient"
                             >
                                 <Trash2 size={12} />
                             </button>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image } from 'lucide-react';
 
 export default function Sidebar() {
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore();
@@ -22,6 +22,7 @@ export default function Sidebar() {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
+        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const departmentItems: SidebarItem[] = [
@@ -30,15 +31,14 @@ export default function Sidebar() {
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Book, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },
-        { id: 'showroom', label: 'Banana Studio', icon: Shirt },
         { id: 'licensing', icon: FileText, label: 'Licensing Department' },
     ];
 
     const toolItems: SidebarItem[] = [
+        { id: 'merch', icon: ShoppingBag, label: 'Merch Tool' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'banana-preview', icon: Palette, label: 'Banana Preview' },
         { id: 'observability', icon: Globe, label: 'System Observability' },
     ];
 
@@ -59,6 +59,8 @@ export default function Sidebar() {
                     ${!isSidebarOpen ? 'justify-center px-2' : ''}
                 `}
                 title={!isSidebarOpen ? item.label : ''}
+                data-testid={`nav-item-${item.id}`}
+                aria-current={isActive ? 'page' : undefined}
             >
                 <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
                 {isSidebarOpen && <span className="truncate">{item.label}</span>}
@@ -67,7 +69,7 @@ export default function Sidebar() {
     };
 
     return (
-        <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-[#0d1117] border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
+        <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
             {/* Header */}
             <div className={`p-4 border-b border-white/5 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && (
@@ -76,6 +78,7 @@ export default function Sidebar() {
                         <button
                             onClick={() => setModule('dashboard')}
                             className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
+                            data-testid="return-hq-btn"
                         >
                             <Layout size={12} /> Return to HQ
                         </button>
@@ -83,7 +86,9 @@ export default function Sidebar() {
                 )}
                 <button
                     onClick={toggleSidebar}
+                    data-testid="sidebar-toggle"
                     className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                    aria-label={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
                 >
                     {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
                 </button>
@@ -91,7 +96,7 @@ export default function Sidebar() {
 
             <div className="flex-1 py-4 space-y-6">
                 {/* Manager's Office */}
-                <div>
+                <div data-testid="manager-section">
                     {isSidebarOpen && <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 whitespace-nowrap">Manager's Office</h3>}
                     <div className="space-y-0.5">
                         {managerItems.map(item => (
@@ -133,7 +138,7 @@ export default function Sidebar() {
                             <p className="text-sm font-medium text-gray-200 truncate">
                                 {userProfile?.bio || 'Creative Director'}
                             </p>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-xs text-gray-500 truncate" data-testid="user-profile-info">
                                 System Active
                             </p>
                         </div>
@@ -142,6 +147,7 @@ export default function Sidebar() {
                         onClick={() => logout()}
                         className={`p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors ${!isSidebarOpen ? 'mt-1' : ''}`}
                         title="Reload System"
+                        data-testid="logout-btn"
                     >
                         <LogOut size={14} />
                     </button>
@@ -154,22 +160,9 @@ export default function Sidebar() {
                             onClick={() => setTheme('dark')}
                             className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-indigo-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
                             title="Dark Mode"
+                            data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
-                        </button>
-                        <button
-                            onClick={() => setTheme('banana')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana' ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-yellow-200'}`}
-                            title="Banana Mode"
-                        >
-                            <ShoppingBag size={14} />
-                        </button>
-                        <button
-                            onClick={() => setTheme('banana-pro')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'banana-pro' ? 'text-yellow-500 bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : 'text-gray-500 hover:text-yellow-400'}`}
-                            title="Banana Pro"
-                        >
-                            <Scale size={14} />
                         </button>
                     </div>
                 )}

@@ -87,7 +87,7 @@ describe('ProactiveService', () => {
         });
 
         // Trigger polling manually for testing instead of relying on intervals
-        // @ts-ignore - reaching into private method for test
+        // @ts-expect-error - reaching into private method for test
         await proactiveService.checkScheduledTasks();
 
         expect(agentService.runAgent).toHaveBeenCalledWith(
