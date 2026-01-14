@@ -93,7 +93,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
             onSave(id);
             onClose();
         } catch (error) {
-            // console.error(error);
             toast.error('Failed to create campaign');
         } finally {
             setIsLoading(false);
@@ -137,6 +136,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             value={title}
                             onChange={(e) => {
                                 setTitle(e.target.value);
+                                if (errors.title) setErrors({...errors, title: ''});
                                 if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
                             }}
                             placeholder="e.g., Summer Single Release"
@@ -185,6 +185,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     value={startDate}
                                     onChange={(e) => {
                                         setStartDate(e.target.value);
+                                        if (errors.startDate) setErrors({...errors, startDate: ''});
                                         if (errors.startDate) setErrors(prev => ({ ...prev, startDate: '' }));
                                     }}
                                     className={cn(
