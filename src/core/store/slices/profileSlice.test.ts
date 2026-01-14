@@ -102,7 +102,7 @@ describe('ProfileSlice Persistence', () => {
         const { loadUserProfile, userProfile: initialDefault } = useStore.getState();
 
         // Ensure we expect the ID to be updated to the new UID
-        const expectedDefault = { ...initialDefault, id: 'test-uid' };
+        const expectedDefault = { ...initialDefault, id: 'test-uid', uid: 'test-uid' };
 
         await loadUserProfile('test-uid');
         await new Promise(resolve => setTimeout(resolve, 0));
