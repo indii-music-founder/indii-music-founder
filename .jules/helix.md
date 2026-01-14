@@ -22,3 +22,7 @@
 ## 2024-05-22 - [Gene Loss Prevention]
 **Learning:** Mutated agents can sometimes lose their "parameters" object (brain) if the mutation function (LLM) returns partial JSON. The original engine guardrail only checked for `systemPrompt`, allowing "Brainless" agents (undefined parameters) to crash the runtime later.
 **Action:** Implemented a "Brainless" Check in `EvolutionEngine` to strictly validate that `parameters` exist and are an object before accepting an offspring. Added `HelixGeneLoss.test.ts` to verify this rejection.
+
+## 2026-06-01 - [Mutation by Reference]
+**Learning:** If a Crossover function lazily returns a reference to a parent (instead of a new object), and the subsequent Mutation function modifies that object in-place, the original Parent (which might be an Elite preserved in the next generation) gets corrupted. This breaks Elitism and population stability.
+**Action:** Implemented a "Reference Integrity Check" in `EvolutionEngine` that detects if an offspring is a reference to a parent and creates a deep copy (JSON clone) before allowing mutation. Verified with `HelixReferenceIntegrity.test.ts`.
