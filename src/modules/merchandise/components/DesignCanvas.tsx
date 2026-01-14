@@ -157,7 +157,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 // Copy: Cmd/Ctrl + C
                 if ((e.metaKey || e.ctrlKey) && e.key === 'c' && activeObject) {
                     e.preventDefault();
-                    (activeObject as any).clone((cloned: fabric.Object) => {
+                    (activeObject as any).clone().then((cloned: fabric.Object) => {
                         (canvas as any)._clipboard = cloned;
                     });
                 }
@@ -167,7 +167,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     e.preventDefault();
                     const clipboard = (canvas as any)._clipboard;
                     if (clipboard) {
-                        clipboard.clone((cloned: fabric.Object) => {
+                        clipboard.clone().then((cloned: fabric.Object) => {
                             canvas.discardActiveObject();
                             cloned.set({
                                 left: (cloned.left || 0) + 10,
@@ -183,8 +183,9 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                             } else {
                                 canvas.add(cloned);
                             }
-                            (canvas as any)._clipboard.top! += 10;
-                            (canvas as any)._clipboard.left! += 10;
+                            const clip = (canvas as any)._clipboard;
+                            clip.top = (clip.top ?? 0) + 10;
+                            clip.left = (clip.left ?? 0) + 10;
                             canvas.setActiveObject(cloned);
                             canvas.requestRenderAll();
                         });
