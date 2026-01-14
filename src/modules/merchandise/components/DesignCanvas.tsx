@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { Loader2 } from 'lucide-react';
 import { useStore } from '@/core/store';
 
@@ -34,50 +34,40 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Memoized conversion function
-    const convertFabricToCanvasObject = useCallback((obj: fabric.Object): CanvasObject => {
+    // Convert Fabric.js object to CanvasObject
+    const convertFabricToCanvasObject = useCallback((obj: any): CanvasObject => {
         return {
-            id: obj.name || generateId(),
+            id: (obj as any).name || generateId(),
             type: obj.type === 'text' || obj.type === 'i-text' || obj.type === 'textbox'
                 ? 'text'
                 : obj.type === 'image'
-                ? 'image'
-                : 'shape',
-            name: obj.name || `${obj.type} ${Date.now()}`,
+                    ? 'image'
+                    : 'shape',
+            name: (obj as any).name || `${obj.type} ${Date.now()}`,
             visible: obj.visible ?? true,
             locked: !obj.selectable,
             fabricObject: obj
         };
     }, []);
 
-    // Emit layers change with proper memoization
+    // Emit layers change
     const emitLayersChange = useCallback(() => {
-        if (!fabricCanvasRef.current || !onLayersChange) return;
+        if (!fabricCanvasRef.current) return;
 
-        try {
-            const objects = fabricCanvasRef.current.getObjects();
-            const canvasObjects = objects.map(convertFabricToCanvasObject);
-            onLayersChange(canvasObjects);
-        } catch (err) {
-            console.error('Error emitting layers change:', err);
-        }
+        const objects = fabricCanvasRef.current.getObjects();
+        const canvasObjects = objects.map(convertFabricToCanvasObject);
+        onLayersChange?.(canvasObjects);
     }, [onLayersChange, convertFabricToCanvasObject]);
 
-    // Handle selection changes with proper memoization
+    // Handle selection changes
     const handleSelectionChange = useCallback((obj: fabric.Object | null | undefined) => {
-        if (!onSelectionChange) return;
-
-        try {
-            if (!obj) {
-                onSelectionChange(null);
-                return;
-            }
-
-            const canvasObj = convertFabricToCanvasObject(obj);
-            onSelectionChange(canvasObj);
-        } catch (err) {
-            console.error('Error handling selection change:', err);
+        if (!obj) {
+            onSelectionChange?.(null);
+            return;
         }
+
+        const canvasObj = convertFabricToCanvasObject(obj);
+        onSelectionChange?.(canvasObj);
     }, [onSelectionChange, convertFabricToCanvasObject]);
 
     // Initialize Fabric.js canvas
@@ -93,12 +83,11 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 selection: true,
                 renderOnAddRemove: true,
                 enableRetinaScaling: true,
-                // Touch support
                 allowTouchScrolling: false,
                 stopContextMenu: true,
             });
 
-            // Configure object controls
+            // Enable object controls
             fabric.Object.prototype.set({
                 transparentCorners: false,
                 borderColor: '#FFE135',
@@ -137,7 +126,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 
             // Keyboard shortcuts
             const handleKeyDown = (e: KeyboardEvent) => {
-                // Prevent if user is typing in an input
                 const target = e.target as HTMLElement;
                 if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
                     return;
@@ -145,7 +133,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 
                 const activeObject = canvas.getActiveObject();
 
-                // Delete key
                 if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject) {
                     e.preventDefault();
                     const activeObjects = canvas.getActiveObjects();
@@ -154,7 +141,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     canvas.renderAll();
                 }
 
-                // Copy: Cmd/Ctrl + C
                 if ((e.metaKey || e.ctrlKey) && e.key === 'c' && activeObject) {
                     e.preventDefault();
                     (activeObject as any).clone().then((cloned: fabric.Object) => {
@@ -162,7 +148,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     });
                 }
 
-                // Paste: Cmd/Ctrl + V
                 if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
                     e.preventDefault();
                     const clipboard = (canvas as any)._clipboard;
@@ -192,7 +177,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     }
                 }
 
-                // Select All: Cmd/Ctrl + A
                 if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
                     e.preventDefault();
                     canvas.discardActiveObject();
@@ -228,16 +212,13 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
 
-            // Maintain aspect ratio (800x1000 = 4:5)
             const canvasAspect = 800 / 1000;
             const containerAspect = containerWidth / containerHeight;
 
             let scale: number;
             if (containerAspect > canvasAspect) {
-                // Container is wider - fit to height
                 scale = (containerHeight * 0.85) / 1000;
             } else {
-                // Container is taller - fit to width
                 scale = (containerWidth * 0.85) / 800;
             }
 
@@ -290,14 +271,12 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
 
         const objects = canvasRef.current.getObjects();
         if (objects.length === 0) {
-            // First object: center it
             return {
                 left: (800 - width) / 2,
                 top: (1000 - height) / 2
             };
         }
 
-        // Place in cascade pattern
         const offset = (objects.length * 30) % 400;
         return {
             left: 100 + offset,
@@ -310,48 +289,35 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             throw new Error('Canvas not initialized');
         }
 
-        return new Promise<void>((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
+        try {
+            const img = await fabric.FabricImage.fromURL(imageUrl, { crossOrigin: 'anonymous' });
 
-            img.onload = () => {
-                fabric.Image.fromURL(imageUrl, (fabricImg) => {
-                    if (!fabricImg.width || !fabricImg.height) {
-                        reject(new Error('Invalid image dimensions'));
-                        return;
-                    }
+            if (!img.width || !img.height) {
+                throw new Error('Invalid image dimensions');
+            }
 
-                    // Scale image to fit canvas (max 600px width/height)
-                    const maxSize = 600;
-                    const scale = Math.min(maxSize / fabricImg.width, maxSize / fabricImg.height, 1);
+            const maxSize = 600;
+            const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+            const position = getSmartPosition(img.width * scale, img.height * scale);
 
-                    const position = getSmartPosition(fabricImg.width * scale, fabricImg.height * scale);
+            img.set({
+                ...position,
+                scaleX: scale,
+                scaleY: scale
+            });
 
-                    fabricImg.set({
-                        ...position,
-                        scaleX: scale,
-                        scaleY: scale,
-                        name: name || `Image ${generateId()}`
-                    });
+            (img as any).name = name || `Image ${generateId()}`;
 
-                    canvasRef.current?.add(fabricImg);
-                    canvasRef.current?.setActiveObject(fabricImg);
-                    canvasRef.current?.renderAll();
-                    resolve();
-                }, {
-                    crossOrigin: 'anonymous'
-                });
-            };
-
-            img.onerror = () => {
-                reject(new Error('Failed to load image. Check CORS policy or URL.'));
-            };
-
-            img.src = imageUrl;
-        });
+            canvasRef.current.add(img);
+            canvasRef.current.setActiveObject(img);
+            canvasRef.current.renderAll();
+        } catch (error) {
+            console.error('Failed to load image:', error);
+            throw error;
+        }
     }, [canvasRef, getSmartPosition]);
 
-    const addText = useCallback((text: string = 'Your Text', options?: Partial<fabric.ITextOptions>) => {
+    const addText = useCallback((text: string = 'Your Text', options?: any) => {
         if (!canvasRef.current) return;
 
         const position = getSmartPosition(200, 60);
@@ -391,7 +357,7 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         const activeObject = canvasRef.current.getActiveObject();
         if (!activeObject) return;
 
-        canvasRef.current.bringToFront(activeObject);
+        canvasRef.current.bringObjectToFront(activeObject);
         canvasRef.current.renderAll();
     }, [canvasRef]);
 
@@ -401,7 +367,7 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         const activeObject = canvasRef.current.getActiveObject();
         if (!activeObject) return;
 
-        canvasRef.current.sendToBack(activeObject);
+        canvasRef.current.sendObjectToBack(activeObject);
         canvasRef.current.renderAll();
     }, [canvasRef]);
 
@@ -412,7 +378,7 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             return canvasRef.current.toDataURL({
                 format: 'png',
                 quality: 1,
-                multiplier: 2 // Export at 2x resolution
+                multiplier: 2
             });
         } catch (err) {
             console.error('Export error:', err);
@@ -435,7 +401,6 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         canvasRef.current.renderAll();
     }, [canvasRef]);
 
-    // TODO: Implement proper undo/redo with history stack
     const undo = useCallback(() => {
         console.log('Undo not yet implemented');
     }, []);

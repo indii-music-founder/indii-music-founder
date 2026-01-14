@@ -3,6 +3,7 @@ import { MerchLayout } from './components/Layout';
 import { MerchCard } from './components/MerchCard';
 import { MerchButton } from './components/MerchButton';
 import { TrendingUp, ShoppingBag, DollarSign, Plus, ArrowRight, Loader2 } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import { useMerchandise } from './hooks/useMerchandise';
 import { useStore } from '@/core/store';
@@ -48,7 +49,7 @@ export default function MerchDashboard() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'}</h2>
-                        <p className="text-neutral-400">Your empire is growing.</p>
+                        <p className="text-neutral-400">Your merchandise empire is thriving.</p>
                     </div>
                     <MerchButton
                         onClick={handleDesignClick}

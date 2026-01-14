@@ -32,10 +32,10 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
         const loadingId = toast.loading('Generating image with AI...');
 
         try {
-            const result = await ImageGeneration.generate({
+            const result = await ImageGeneration.generateImages({
                 prompt: prompt.trim(),
                 aspectRatio: '1:1',
-                numberOfImages: 1
+                count: 1
             });
 
             if (result && result.length > 0) {

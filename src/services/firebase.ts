@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
+import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getAI, VertexAIBackend } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
@@ -45,7 +45,12 @@ export const db = initializeFirestore(app, {
 });
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
-export const auth = getAuth(app);
+
+// Use initializeAuth to ensure persistence is correctly configured for Electron
+// This fixes potential hangs where default persistence (IndexedDB) might fail silently
+export const auth = initializeAuth(app, {
+    persistence: [browserLocalPersistence, browserSessionPersistence]
+});
 
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);

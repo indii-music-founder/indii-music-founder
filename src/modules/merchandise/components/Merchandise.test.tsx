@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import '@testing-library/jest-dom';
 import { StandardMerch } from './StandardMerch';
 import { ProMerch } from './ProMerch';
 import MerchDashboard from '../MerchDashboard';
@@ -20,23 +21,23 @@ vi.mock('@/core/store', () => ({
 }));
 
 describe('Merchandise Dashboard', () => {
-    const mockProducts: MerchProduct[] = [
+    const mockStandardProducts: MerchProduct[] = [
         { id: '1', userId: 'user-1', title: 'Kill Tee', image: 'img.jpg', price: '$25.00', category: 'standard', createdAt: new Date() },
         { id: '2', userId: 'user-1', title: 'Killer Cap', image: 'cap.jpg', price: '$15.00', category: 'standard', createdAt: new Date() }
     ];
 
-    const topSellingProducts = [
+    const mockProProducts: (MerchProduct & { revenue: number, units: number })[] = [
         { id: '3', userId: 'user-1', title: 'Viral Hoodie', image: 'hoodie.jpg', price: '$45.00', category: 'pro', revenue: 5000, units: 120, createdAt: new Date() },
         { id: '4', userId: 'user-1', title: 'Elite Bottle', image: 'bottle.jpg', price: '$35.00', category: 'pro', revenue: 3000, units: 85, createdAt: new Date() }
     ];
 
     const defaultMockReturn = {
-        products: mockProducts,
-        standardProducts: mockProducts,
-        proProducts: [] as MerchProduct[],
+        products: [...mockStandardProducts, ...mockProProducts],
+        standardProducts: mockStandardProducts,
+        proProducts: mockProProducts,
         catalog: [],
         stats: { totalRevenue: 3250, unitsSold: 150, conversionRate: 5.2, revenueChange: 12, unitsChange: 8 },
-        topSellingProducts: topSellingProducts,
+        topSellingProducts: mockProProducts,
         loading: false,
         error: null as string | null,
         addProduct: vi.fn(),
@@ -47,20 +48,33 @@ describe('Merchandise Dashboard', () => {
     it('StandardMerch renders standard products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
-            products: [...mockStandardProducts, ...mockProProducts],
+            products: mockStandardProducts,
             standardProducts: mockStandardProducts,
-            proProducts: mockProProducts,
-        });
+            proProducts: [],
+            topSellingProducts: [],
+        } as any);
 
         render(<StandardMerch />);
 
-        expect(screen.getByText('Standard Tee')).toBeInTheDocument();
+        expect(screen.getByText('Kill Tee')).toBeInTheDocument();
         expect(screen.getByText('$25.00')).toBeInTheDocument();
-        // Should not show Pro products in standard view usually, depends on component logic
-        // Verify standard logic: StandardMerch iterates standardProducts
     });
 
     it('ProMerch renders pro products', () => {
+        vi.mocked(useMerchandise).mockReturnValue({
+            ...defaultMockReturn,
+            products: mockProProducts,
+            standardProducts: [],
+            proProducts: mockProProducts,
+            topSellingProducts: mockProProducts,
+        } as any);
+
+        render(<ProMerch />);
+
+        expect(screen.getByText('Viral Hoodie')).toBeInTheDocument();
+        expect(screen.getByText('$45.00')).toBeInTheDocument();
+    });
+
     it('renders MerchDashboard with products', () => {
         vi.mocked(useMerchandise).mockReturnValue(defaultMockReturn as any);
 
@@ -73,7 +87,6 @@ describe('Merchandise Dashboard', () => {
         expect(screen.getByTestId('merch-dashboard-content')).toBeInTheDocument();
         expect(screen.getByText('Kill Tee')).toBeInTheDocument();
         expect(screen.getByText('Killer Cap')).toBeInTheDocument();
-        // Check for formatted revenue if applicable, or just check if it renders
     });
 
     it('shows loading state', () => {
@@ -83,15 +96,14 @@ describe('Merchandise Dashboard', () => {
             products: []
         } as any);
 
-        render(<ProMerch />);
         render(
             <BrowserRouter>
                 <MerchDashboard />
             </BrowserRouter>
         );
 
-        // MerchDashboard uses a loader when loading is true
         expect(screen.queryByTestId('merch-dashboard-content')).not.toBeInTheDocument();
+        expect(screen.getByTestId('merch-dashboard-loading')).toBeInTheDocument();
     });
 
     it('shows error state', () => {
@@ -107,11 +119,7 @@ describe('Merchandise Dashboard', () => {
             </BrowserRouter>
         );
 
-        render(<StandardMerch />);
-        // Check for specific empty state text if it exists, or just ensure no crash
-        // For now, simple render check
-        const heading = screen.getByText(/Merch/i); // Adjust based on actual heading
-        expect(heading).toBeInTheDocument();
         expect(screen.getByText('Failed to load dashboard data.')).toBeInTheDocument();
+        expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
     });
 });

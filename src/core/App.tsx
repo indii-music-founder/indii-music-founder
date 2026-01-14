@@ -102,8 +102,6 @@ function LoadingFallback() {
         return null;
     }
 
-    console.log('[App] Rendering LoadingFallback (authLoading is probably true or Suspense triggered)');
-
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3 px-6 py-4 bg-surface/90 rounded-lg border border-white/10 shadow-lg">
@@ -136,12 +134,9 @@ function useAppInitialization() {
 
     // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
-        console.log('[App] Initializing Auth Listener via useAppInitialization');
+        // Log removed (Platinum Polish)
         const unsubscribe = initializeAuthListener();
-        return () => {
-            console.log('[App] Unsubscribing Auth Listener');
-            unsubscribe();
-        };
+        return () => unsubscribe();
     }, [initializeAuthListener]);
 
     // 2. Load User Profile when User is Authenticated

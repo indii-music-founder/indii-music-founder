@@ -149,6 +149,7 @@ const createWindow = () => {
     // Handle Window Open Requests
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
+        if (url.startsWith('https://indiios-v-1-1.firebaseapp.com')) return { action: 'allow' };
 
         // Use logic similar to will-navigate for consistency
         const parsedUrl = new URL(url);
@@ -161,7 +162,7 @@ const createWindow = () => {
     // Security Gate for WebNavigation
     mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com'];
+        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indiios-v-1-1.firebaseapp.com'];
 
         if (navigationUrl.startsWith(devServerUrl)) return;
 

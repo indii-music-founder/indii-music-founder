@@ -6,6 +6,9 @@
   "version": "0.1.0-beta.2",
   "type": "module",
   "main": "dist-electron/main.cjs",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
