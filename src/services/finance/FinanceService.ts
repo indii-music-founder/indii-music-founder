@@ -140,16 +140,22 @@ export class FinanceService {
     }
   }
 
-  async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<string> {
+  async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> {
     try {
       if (!auth.currentUser || auth.currentUser.uid !== expense.userId) {
         throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized add expense operation');
       }
+      const now = Timestamp.now();
       const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), {
         ...expense,
-        createdAt: Timestamp.now()
+        createdAt: now
       });
-      return docRef.id;
+
+      return {
+        id: docRef.id,
+        ...expense,
+        createdAt: now.toDate().toISOString()
+      };
     } catch (error) {
       Sentry.captureException(error);
       throw error;

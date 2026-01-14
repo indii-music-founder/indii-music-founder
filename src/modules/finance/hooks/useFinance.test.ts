@@ -106,11 +106,7 @@ describe('useFinance', () => {
     });
 
     it('should add expense successfully', async () => {
-        vi.mocked(financeService.addExpense).mockResolvedValue('new-id');
-        vi.mocked(financeService.getExpenses).mockResolvedValue([]);
-
-        const { result } = renderHook(() => useFinance());
-        const newExpense = {
+        const newExpenseInput = {
             amount: 50,
             vendor: 'Test',
             userId: 'user-123',
@@ -119,13 +115,26 @@ describe('useFinance', () => {
             description: 'Test expense'
         };
 
+        const expectedExpense = {
+            ...newExpenseInput,
+            id: 'new-id',
+            createdAt: new Date().toISOString()
+        };
+
+        vi.mocked(financeService.addExpense).mockResolvedValue(expectedExpense as any);
+        vi.mocked(financeService.getExpenses).mockResolvedValue([]);
+
+        const { result } = renderHook(() => useFinance());
+
         await act(async () => {
-            const success = await result.current.actions.addExpense(newExpense);
+            const success = await result.current.actions.addExpense(newExpenseInput);
             expect(success).toBe(true);
         });
 
-        expect(financeService.addExpense).toHaveBeenCalledWith(newExpense);
-        // It should also reload expenses
-        expect(financeService.getExpenses).toHaveBeenCalled();
+        expect(financeService.addExpense).toHaveBeenCalledWith(newExpenseInput);
+
+        // ⚡ Bolt Optimization: Verify local state update without re-fetch
+        expect(financeService.getExpenses).not.toHaveBeenCalled();
+        expect(result.current.expenses).toContainEqual(expectedExpense);
     });
 });

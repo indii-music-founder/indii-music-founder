@@ -42,9 +42,9 @@ export function useFinance() {
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
         try {
-            await financeService.addExpense(expenseData);
-            // Optimistic update or refresh
-            loadExpenses();
+            const newExpense = await financeService.addExpense(expenseData);
+            // ⚡ Bolt Optimization: Update local state instead of re-fetching
+            setExpenses(prev => [newExpense, ...prev]);
             return true;
         } catch (e) {
             console.error(e);
@@ -52,7 +52,7 @@ export function useFinance() {
             toast.error("Failed to add expense.");
             return false;
         }
-    }, [loadExpenses, toast]);
+    }, [toast]);
 
     // Initial load (Current Month)
     useEffect(() => {
