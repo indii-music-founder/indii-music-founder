@@ -88,6 +88,13 @@ export class EvolutionEngine {
 
         let offspring = await this.crossoverFn(parent1, parent2);
 
+        // Helix: Reference Integrity Check
+        // If crossover returns a reference to a parent (lazy implementation),
+        // we must clone it to prevent "Mutation by Reference" affecting the parent (who might be an Elite).
+        if (offspring === parent1 || offspring === parent2) {
+          offspring = JSON.parse(JSON.stringify(offspring));
+        }
+
         // Mutation
         if (Math.random() < this.config.mutationRate) {
           offspring = await this.mutationFn(offspring);
