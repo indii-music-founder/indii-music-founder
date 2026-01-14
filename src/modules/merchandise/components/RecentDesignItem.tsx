@@ -2,19 +2,38 @@ import React from 'react';
 import { MerchProduct } from '../types';
 import { ArrowRight } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 interface RecentDesignItemProps {
     product: MerchProduct;
+    onClick?: () => void;
 }
 
-export const RecentDesignItem = React.memo(({ product }: RecentDesignItemProps) => {
+export const RecentDesignItem = React.memo(({ product, onClick }: RecentDesignItemProps) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick?.();
+        }
+    };
+
     return (
-        <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
+        <div
+            className={cn(
+                "flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135] focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
+            )}
+            role="button"
+            tabIndex={0}
+            onClick={onClick}
+            onKeyDown={handleKeyDown}
+            aria-label={`View details for ${product.title}`}
+        >
             <div className="w-12 h-12 bg-neutral-800 rounded-md border border-white/10 flex items-center justify-center overflow-hidden">
                 {product.image ? (
-                    <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                    <img src={product.image} alt="" aria-hidden="true" className="w-full h-full object-cover" />
                 ) : (
-                    <span className="text-lg">🎨</span>
+                    <span className="text-lg" aria-hidden="true">🎨</span>
                 )}
             </div>
             <div className="flex-1">
@@ -26,7 +45,7 @@ export const RecentDesignItem = React.memo(({ product }: RecentDesignItemProps) 
                     }
                 </p>
             </div>
-            <ArrowRight size={14} className="text-neutral-600 group-hover:text-white" />
+            <ArrowRight size={14} className="text-neutral-600 group-hover:text-white" aria-hidden="true" />
         </div>
     );
 }, areRecentDesignPropsEqual);
@@ -34,6 +53,8 @@ export const RecentDesignItem = React.memo(({ product }: RecentDesignItemProps) 
 function areRecentDesignPropsEqual(prevProps: RecentDesignItemProps, nextProps: RecentDesignItemProps) {
     const prev = prevProps.product;
     const next = nextProps.product;
+
+    if (prevProps.onClick !== nextProps.onClick) return false;
 
     if (prev === next) return true;
     if (prev.id !== next.id) return false;
