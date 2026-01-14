@@ -18,6 +18,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
             <div className="flex items-center gap-2">
                 <div
                     onClick={() => onOpenFrameModal('firstFrame')}
+                    data-testid="first-frame-slot"
                     className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.firstFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
                 >
                     {videoInputs.firstFrame ? (
@@ -43,6 +44,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
             <div className="flex items-center gap-2">
                 <div
                     onClick={() => onOpenFrameModal('lastFrame')}
+                    data-testid="last-frame-slot"
                     className={`relative w-8 h-8 bg-gray-800 rounded border ${videoInputs.lastFrame ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500 cursor-pointer'} overflow-hidden flex items-center justify-center group transition-colors`}
                 >
                     {videoInputs.lastFrame ? (
@@ -64,6 +66,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
             {/* Daisy Chain Toggle */}
             <button
                 onClick={() => setVideoInput('isDaisyChain', !videoInputs.isDaisyChain)}
+                data-testid="daisy-chain-toggle"
                 className={`ml-2 text-[10px] px-2 py-0.5 rounded border transition-colors ${videoInputs.isDaisyChain ? 'bg-purple-900/30 border-purple-500 text-purple-300' : 'bg-transparent border-gray-700 text-gray-500 hover:text-gray-300'}`}
             >
                 Daisy Chain

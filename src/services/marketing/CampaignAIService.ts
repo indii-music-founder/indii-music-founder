@@ -71,6 +71,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
 `;
 
         const schema = {
+            nullable: false,
             type: 'object',
             properties: {
                 title: { type: 'string', description: 'Campaign title' },
@@ -94,8 +95,16 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
             required: ['title', 'description', 'posts']
         };
 
+        // E2E Test Mock Bypass
+        // @ts-expect-error - injected by Playwright
+        if (import.meta.env.DEV && window.__MOCK_AI_PLAN__) {
+            console.log('[CampaignAIService] Using MOCK AI Plan');
+            // @ts-expect-error - injected by Playwright
+            return window.__MOCK_AI_PLAN__;
+        }
+
         try {
-            const result = await AI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema);
+            const result = await AI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema as any);
 
             // Validate and clean up the result
             return {
@@ -191,6 +200,7 @@ Ensure all versions respect the platform's character limit.
 `;
 
         const schema = {
+            nullable: false,
             type: 'object',
             properties: {
                 enhancedCopy: { type: 'string', description: 'Primary enhanced version' },
@@ -210,7 +220,7 @@ Ensure all versions respect the platform's character limit.
         };
 
         try {
-            const result = await AI.generateStructuredData<PostEnhancement>(prompt, schema);
+            const result = await AI.generateStructuredData<PostEnhancement>(prompt, schema as any);
 
             return {
                 enhancedCopy: result.enhancedCopy || post.copy,
@@ -422,6 +432,7 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
 `;
 
         const schema = {
+            nullable: false,
             type: 'object',
             properties: {
                 overallScore: {
@@ -466,7 +477,7 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
         };
 
         try {
-            const result = await AI.generateStructuredData<EngagementPrediction>(prompt, schema);
+            const result = await AI.generateStructuredData<EngagementPrediction>(prompt, schema as any);
 
             return {
                 overallScore: result.overallScore || 50,

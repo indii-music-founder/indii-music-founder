@@ -15,8 +15,9 @@ export class RevenueService {
   async getUserRevenueStats(userId: string, period: '30d' | '90d' | '12y' | 'all' = '30d'): Promise<RevenueStats> {
     try {
       const currentUser = auth.currentUser;
-      // Allow 'superuser' stub for development/testing
-      if (userId !== 'superuser' && (!currentUser || currentUser.uid !== userId)) {
+
+      // Strict Security: Only allow access if the requested userId matches the authenticated user.
+      if (!currentUser || currentUser.uid !== userId) {
         throw new Error('Unauthorized: Access denied to revenue data.');
       }
 
@@ -127,9 +128,9 @@ export class RevenueService {
         // Handle Firestore Timestamp or standard Date/Number
         let dateObj = new Date();
         if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-           dateObj = data.createdAt.toDate();
+          dateObj = data.createdAt.toDate();
         } else if (data.timestamp) {
-           dateObj = new Date(data.timestamp);
+          dateObj = new Date(data.timestamp);
         }
 
         const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -141,7 +142,7 @@ export class RevenueService {
       snapshotPrevious.docs.forEach(doc => {
         const parseResult = RevenueEntrySchema.safeParse(doc.data());
         if (parseResult.success) {
-            previousRevenue += (parseResult.data.amount || 0);
+          previousRevenue += (parseResult.data.amount || 0);
         }
       });
 
@@ -157,7 +158,7 @@ export class RevenueService {
       const result: RevenueStats = {
         totalRevenue,
         revenueChange,
-        pendingPayouts: totalRevenue * 0.1, // Still using heuristic for now
+        pendingPayouts: 0, // Heuristic removed for production safety
         lastPayoutAmount: 0, // No hardcoded placeholder
         lastPayoutDate: undefined,
         sources,

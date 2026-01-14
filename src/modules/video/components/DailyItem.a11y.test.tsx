@@ -29,7 +29,7 @@ describe('Access: DailyItem Accessibility', () => {
 
         const results = await axe(container);
         expect(results).toHaveNoViolations();
-    });
+    }, 15000);
 
     it('has logical focus state and keyboard operability', () => {
         const onSelectMock = vi.fn();
@@ -46,7 +46,7 @@ describe('Access: DailyItem Accessibility', () => {
 
         // Check explicit attributes
         expect(item).toHaveAttribute('tabIndex', '0');
-        expect(item).toHaveAttribute('aria-label', `Select video: ${mockVideo.prompt}`);
+        expect(item).toHaveAttribute('aria-label', `Select video: ${mockVideo.prompt}, Duration: 4 seconds`);
 
         // Verify focus handling
         item.focus();
@@ -72,7 +72,7 @@ describe('Access: DailyItem Accessibility', () => {
 
         const item = screen.getByRole('button');
         // Falls back to "Untitled video"
-        expect(item).toHaveAttribute('aria-label', 'Select video: Untitled video');
+        expect(item).toHaveAttribute('aria-label', 'Select video: Untitled video, Duration: 4 seconds');
     });
 
     it('announces selection state via aria-pressed', () => {

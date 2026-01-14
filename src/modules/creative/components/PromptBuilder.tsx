@@ -13,6 +13,7 @@ const TagButton = memo(({ tag, onClick, variant = 'purple' }: { tag: string; onC
     <button
         onClick={onClick}
         role="menuitem"
+        data-testid={`tag-${tag}-btn`}
         className={`px-2 py-1 text-[10px] bg-[#222] hover:${variant === 'yellow' ? 'bg-yellow-900/50' : 'bg-purple-900/50'} text-gray-300 hover:text-white rounded border border-gray-800 hover:border-${variant === 'yellow' ? 'yellow' : 'purple'}-500 transition-colors text-left`}
     >
         {tag}
@@ -36,6 +37,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                 aria-expanded={isOpen}
                 aria-haspopup="true"
                 aria-controls={dropdownId}
+                data-testid={`category-${category}-trigger`}
                 className={`px-3 py-1.5 text-xs rounded-full border transition-all flex items-center gap-1 ${isOpen
                     ? variant === 'yellow' ? 'bg-yellow-900/50 border-yellow-500 text-yellow-200' : 'bg-purple-900/50 border-purple-500 text-purple-200'
                     : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'

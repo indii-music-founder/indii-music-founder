@@ -34,12 +34,16 @@ export const CredentialSchema = z.object({
     creds: z.record(z.string().optional())
 });
 
+export const CredentialIdSchema = z.string().min(1).max(256).regex(/^[a-zA-Z0-9_-]+$/, "ID must be alphanumeric, dashes, or underscores");
+
 export const AudioAnalyzeSchema = z.string().min(1).refine((path) => {
     // Prevent traversal
     if (path.includes('..')) return false;
     // Allow typical audio extensions
     return /\.(wav|mp3|flac|ogg|aiff|m4a)$/i.test(path);
 }, { message: "Invalid audio file path (Traversal detected or unsupported extension)" });
+
+export const AudioLookupSchema = z.string().min(8).regex(/^[a-fA-F0-9]+$/, "Hash must be a hex string");
 
 export const DistributionStageReleaseSchema = z.object({
     releaseId: z.string().uuid(),
@@ -59,13 +63,3 @@ export const SftpUploadSchema = z.object({
     const hasTraversal = (path: string) => path.includes('..');
     return !hasTraversal(data.localPath) && !hasTraversal(data.remotePath);
 }, { message: "Path traversal detected in local or remote path" });
-
-export const validateSender = (event: any) => {
-    const senderUrl = event.senderFrame?.url;
-    if (!senderUrl) throw new Error("Unauthorized IPC Sender");
-
-    if (senderUrl.startsWith('file://')) return;
-    if (process.env.VITE_DEV_SERVER_URL && senderUrl.startsWith(process.env.VITE_DEV_SERVER_URL)) return;
-
-    throw new Error(`Unauthorized IPC Sender: ${senderUrl}`);
-};

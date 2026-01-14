@@ -30,7 +30,7 @@ vi.mock('@/services/marketing/MarketingService', () => ({
         getCampaignById: vi.fn(),
         createCampaign: vi.fn(),
         getCampaigns: vi.fn(),
-        subscribeToCampaigns: vi.fn(() => () => {}), // Mock subscription
+        subscribeToCampaigns: vi.fn(() => () => { }), // Mock subscription
     }
 }));
 
@@ -52,7 +52,7 @@ vi.mock('./CampaignManager', () => ({
         // If selectedCampaign is present, show "Managing: Title"
         // Otherwise show list/empty state which includes "Create New Campaign" button
         if (selectedCampaign) {
-             return (
+            return (
                 <div data-testid="campaign-manager">
                     Managing: {selectedCampaign.title}
                 </div>
@@ -60,9 +60,9 @@ vi.mock('./CampaignManager', () => ({
         }
         return (
             <div>
-                 <div>Campaign Manager</div>
-                 <button onClick={onCreateNew}>Create New Campaign</button>
-                 <div>Select a campaign</div>
+                <div>Campaign Manager</div>
+                <button onClick={onCreateNew}>Create New Campaign</button>
+                <div>Select a campaign</div>
             </div>
         );
     },
@@ -87,7 +87,8 @@ describe('CampaignDashboard', () => {
         fireEvent.click(createBtn);
 
         // Wait for modal to appear
-        expect(await screen.findByText('New Campaign')).toBeInTheDocument();
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('New Campaign', { selector: 'h2' })).toBeInTheDocument();
 
         // Verify accessible inputs exist
         expect(screen.getByLabelText(/Campaign Name/)).toBeInTheDocument();

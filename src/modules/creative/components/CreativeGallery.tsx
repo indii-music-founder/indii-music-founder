@@ -15,19 +15,25 @@ interface CreativeGalleryProps {
 }
 
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
-    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore();
-    // const [selectedItem, setSelectedItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video'; mask?: string } | null>(null);
+    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
     // Filter items based on search query
-    const filteredUploaded = searchQuery
-        ? uploadedImages.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedImages;
+    const filteredUploadedImages = (searchQuery
+        ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedImages) || [];
 
-    const filteredGenerated = searchQuery
-        ? generatedHistory.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : generatedHistory;
+    const filteredUploadedAudio = (searchQuery
+        ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedAudio) || [];
+
+    const filteredGenerated = (searchQuery
+        ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : generatedHistory) || [];
+
+    // Combine all items and sort by timestamp (newest first)
+    const allItems = [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -38,15 +44,23 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             reader.onload = (e) => {
                 if (e.target?.result) {
                     const isVideo = file.type.startsWith('video/');
-                    addUploadedImage({
+                    const isAudio = file.type.startsWith('audio/');
+
+                    const newItem: HistoryItem = {
                         id: crypto.randomUUID(),
-                        type: isVideo ? 'video' : 'image',
+                        type: isAudio ? 'music' : (isVideo ? 'video' : 'image'),
                         url: e.target.result as string,
                         prompt: file.name,
                         timestamp: Date.now(),
                         projectId: currentProjectId,
                         origin: 'uploaded'
-                    });
+                    };
+
+                    if (isAudio) {
+                        addUploadedAudio(newItem);
+                    } else {
+                        addUploadedImage(newItem);
+                    }
                 }
             };
             reader.readAsDataURL(file);
@@ -54,27 +68,55 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         toast.success(`${files.length} asset(s) uploaded.`);
     };
 
-    const isEmpty = generatedHistory.length === 0 && uploadedImages.length === 0;
+    const isEmpty = allItems.length === 0;
 
     if (isEmpty) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-gray-500">
-                <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-dashed border-gray-800 flex items-center justify-center mb-4">
-                    <Upload className="w-6 h-6 text-gray-600" />
+                <div onClick={() => fileInputRef.current?.click()} className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-dashed border-gray-800 flex items-center justify-center mb-4 cursor-pointer hover:border-gray-600 hover:text-white transition-all">
+                    <Upload className="w-6 h-6 text-gray-600 group-hover:text-white" />
                 </div>
                 <p className="text-sm font-medium">No assets yet</p>
                 <p className="text-xs opacity-60 mt-1">Upload or generate to see them here</p>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    accept="image/*,video/*,audio/*"
+                    multiple
+                />
             </div>
         );
     }
 
-    const renderGridItem = (item: HistoryItem, onDelete: (id: string) => void) => (
+    const handleDelete = (id: string, type: 'image' | 'video' | 'music' | 'text', origin?: 'generated' | 'uploaded') => {
+        if (origin === 'uploaded') {
+            if (type === 'music') removeUploadedAudio(id);
+            else removeUploadedImage(id);
+        } else {
+            removeFromHistory(id);
+        }
+    };
+
+    const renderGridItem = (item: HistoryItem) => (
         <div
             key={item.id}
             draggable
             onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
             onClick={() => onSelect ? onSelect(item) : setSelectedItem(item)}
-            className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer"
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                    onSelect ? onSelect(item) : setSelectedItem(item);
+                }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label={`Select ${item.prompt}`}
+            data-testid={`gallery-item-${item.id}`}
+            className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
         >
             {item.type === 'video' ? (
                 item.url.startsWith('data:image') ? (
@@ -87,6 +129,13 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                 ) : (
                     <video src={item.url} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
                 )
+            ) : item.type === 'music' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-400 p-4 text-center group-hover:text-white transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center mb-2">
+                        <Share2 size={24} className="ml-1" />
+                    </div>
+                    <span className="text-[10px] font-mono leading-tight max-w-full truncate px-2">{item.prompt}</span>
+                </div>
             ) : (
                 item.url === 'placeholder:dev-data-uri-too-large' ? (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-500 p-4 text-center">
@@ -98,24 +147,28 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                 )
             )}
 
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex flex-col justify-end p-3">
                 <p className="text-xs text-white line-clamp-2 mb-2">{item.prompt}</p>
                 <div className="flex justify-between items-center">
                     <span className="text-[10px] text-gray-400 uppercase">{item.type}</span>
                     <div className="flex gap-1">
-                        {generationMode === 'video' && (
+                        {item.type !== 'music' && generationMode === 'video' && (
                             <>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', item); toast.success("Set as First Frame"); }}
-                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors"
+                                    data-testid="set-first-frame-btn"
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-600 transition-colors"
                                     title="Set as First Frame"
+                                    aria-label="Set as First Frame"
                                 >
                                     <ArrowLeftToLine size={14} />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', item); toast.success("Set as Last Frame"); }}
+                                    data-testid="set-last-frame-btn"
                                     className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors"
                                     title="Set as Last Frame"
+                                    aria-label="Set as Last Frame"
                                 >
                                     <ArrowRightToLine size={14} />
                                 </button>
@@ -123,27 +176,46 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         )}
                         <button
                             onClick={(e) => { e.stopPropagation(); setEntityAnchor(item); toast.success("Entity Anchor Set"); }}
-                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors"
+                            data-testid="set-anchor-btn"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Set as Entity Anchor (Character Lock)"
+                            aria-label="Set as Entity Anchor (Character Lock)"
                         >
                             <Anchor size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 transition-colors" title="View Fullsize">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                            data-testid="view-fullsize-btn"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
+                            title="View Fullsize"
+                            aria-label="View Fullsize"
+                        >
                             <Maximize2 size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 transition-colors" title="Like">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Liked"); }}
+                            data-testid="like-btn"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
+                            title="Like"
+                            aria-label="Like"
+                        >
                             <ThumbsUp size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 transition-colors" title="Dislike">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Disliked"); }}
+                            data-testid="dislike-btn"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
+                            title="Dislike"
+                            aria-label="Dislike"
+                        >
                             <ThumbsDown size={14} />
                         </button>
-                        <button className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black transition-colors" title="Flag">
-                            <Flag size={14} />
-                        </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                            className="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500 hover:text-white transition-colors"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(item.id, item.type, item.origin as any); }}
+                            data-testid="delete-asset-btn"
+                            className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
                             title="Delete"
+                            aria-label="Delete"
                         >
                             <Trash2 size={14} />
                         </button>
@@ -156,6 +228,11 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                     <Play size={10} className="text-white ml-0.5" />
                 </div>
             )}
+            {item.type === 'music' && (
+                <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500/50 rounded-full flex items-center justify-center pointer-events-none">
+                    <Download size={10} className="text-white" />
+                </div>
+            )}
         </div>
     );
 
@@ -165,124 +242,35 @@ export default function CreativeGallery({ compact = false, onSelect, className =
 
     return (
         <div className={`flex-1 flex flex-col h-full overflow-hidden ${className}`}>
-            {/* Assets Section - Compact to prioritize Generation History */}
-            <div
-                className="flex-shrink-0 p-4 border-b border-gray-800 max-h-[100px] overflow-y-auto custom-scrollbar transition-colors"
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.add('bg-gray-800/50');
-                }}
-                onDragLeave={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('bg-gray-800/50');
-                }}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('bg-gray-800/50');
-                    const id = e.dataTransfer.getData('text/plain');
-                    if (id) {
-                        const item = generatedHistory.find(i => i.id === id);
-                        if (item) {
-                            addUploadedImage({
-                                ...item,
-                                id: crypto.randomUUID(),
-                                timestamp: Date.now()
-                            });
-                            toast.success("Saved to Assets");
-                        }
-                    } else if (e.dataTransfer.files.length > 0) {
-                        // Handle file drop directly
-                        const files = e.dataTransfer.files;
-                        Array.from(files).forEach(file => {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                                if (ev.target?.result) {
-                                    const isVideo = file.type.startsWith('video/');
-                                    addUploadedImage({
-                                        id: crypto.randomUUID(),
-                                        type: isVideo ? 'video' : 'image',
-                                        url: ev.target.result as string,
-                                        prompt: file.name,
-                                        timestamp: Date.now(),
-                                        projectId: currentProjectId,
-                                        origin: 'uploaded'
-                                    });
-                                }
-                            };
-                            reader.readAsDataURL(file);
-                        });
-                        toast.success(`${files.length} asset(s) uploaded.`);
-                    }
-                }}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Assets & Uploads</h2>
+            {/* Upload Header - Optional if compact */}
+            {!compact && (
+                <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                    <h2 className="text-sm font-bold text-gray-200">Asset Gallery</h2>
                     <div className="flex gap-2">
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                            className="text-xs flex items-center gap-2 px-3 py-1.5 bg-[#222] hover:bg-[#333] text-white rounded-md transition-colors"
                         >
-                            <Plus size={14} /> Upload
+                            <Upload size={14} />
+                            Upload
                         </button>
-                        {/* Mobile Camera Button */}
-                        <button
-                            onClick={() => {
-                                if (fileInputRef.current) {
-                                    fileInputRef.current.setAttribute('capture', 'environment');
-                                    fileInputRef.current.click();
-                                    // Reset after click to allow normal upload next time
-                                    setTimeout(() => fileInputRef.current?.removeAttribute('capture'), 100);
-                                }
-                            }}
-                            className="md:hidden text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-900/20 px-2 py-1 rounded border border-purple-500/30"
-                        >
-                            <ImageIcon size={14} /> Take Picture
-                        </button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileUpload}
+                            accept="image/*,video/*,audio/*"
+                            multiple
+                        />
                     </div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        multiple
-                        accept="image/*,video/*"
-                        onChange={handleFileUpload}
-                    />
                 </div>
-                {filteredUploaded.length > 0 ? (
-                    <div className={gridClass}>
-                        {/* Add New Card */}
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="aspect-video bg-[#1a1a1a] rounded-lg border border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-900/10 transition-all flex flex-col items-center justify-center gap-2 group"
-                        >
-                            <div className="w-8 h-8 rounded-full bg-gray-800 group-hover:bg-purple-500/20 flex items-center justify-center transition-colors">
-                                <Plus size={16} className="text-gray-400 group-hover:text-purple-400" />
-                            </div>
-                            <span className="text-[10px] font-medium text-gray-500 group-hover:text-purple-300 uppercase tracking-wide">Add Asset</span>
-                        </button>
-                        {filteredUploaded.map(item => renderGridItem(item, removeUploadedImage))}
-                    </div>
-                ) : (
-                    <div className={gridClass}>
-                        {/* Compact Add Asset Card - matches the style when assets exist */}
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="aspect-video bg-[#1a1a1a] rounded-lg border border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-900/10 transition-all flex flex-col items-center justify-center gap-2 group"
-                        >
-                            <div className="w-8 h-8 rounded-full bg-gray-800 group-hover:bg-purple-500/20 flex items-center justify-center transition-colors">
-                                <Plus size={16} className="text-gray-400 group-hover:text-purple-400" />
-                            </div>
-                            <span className="text-[10px] font-medium text-gray-500 group-hover:text-purple-300 uppercase tracking-wide">Add Asset</span>
-                        </button>
-                    </div>
-                )}
-            </div>
+            )}
 
             {/* Generation History */}
             <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Generation History</h2>
+                {!compact && <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">All Assets</h2>}
                 <div className={gridClass}>
-                    {filteredGenerated.map(item => renderGridItem(item, removeFromHistory))}
+                    {allItems.map(item => renderGridItem(item))}
                 </div>
             </div>
         </div>

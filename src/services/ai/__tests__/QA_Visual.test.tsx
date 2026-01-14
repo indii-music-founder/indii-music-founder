@@ -158,7 +158,12 @@ describe('Visual Regression & Performance Verification', () => {
                 error: null,
                 metrics: {},
                 generatedHistory: [],
-                currentProjectId: 'test-project'
+                currentProjectId: 'test-project',
+                loadSessions: vi.fn(),
+                activeSessionId: null,
+                sessions: {},
+                createSession: vi.fn(),
+                toggleAgentWindow: vi.fn()
             };
 
             const mockUseStore = vi.mocked(useStore);

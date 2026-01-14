@@ -47,6 +47,7 @@ export const TimelineClip = memo(({
                             e.stopPropagation();
                             onToggleExpand(clip.id);
                         }}
+                        data-testid={`clip-expand-${clip.id}`}
                         className="pointer-events-auto p-0.5 hover:bg-black/20 rounded text-white/70 hover:text-white"
                         aria-label={isExpanded ? "Collapse clip details" : "Expand clip details"}
                         aria-expanded={isExpanded}
@@ -60,6 +61,7 @@ export const TimelineClip = memo(({
                         e.stopPropagation();
                         onRemove(clip.id);
                     }}
+                    data-testid={`clip-remove-${clip.id}`}
                     className="opacity-0 group-hover/clip:opacity-100 text-purple-200 hover:text-white transition-opacity pointer-events-auto"
                     aria-label={`Remove clip ${clip.name}`}
                 >

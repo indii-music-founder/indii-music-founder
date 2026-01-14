@@ -66,10 +66,11 @@ const BrowserAgentTester: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Target URL</label>
+                            <label htmlFor="agent-url" className="block text-sm font-medium text-slate-400 mb-1">Target URL</label>
                             <div className="relative">
                                 <ExternalLink className="absolute left-3 top-2.5 text-slate-600" size={16} />
                                 <input
+                                    id="agent-url"
                                     value={url}
                                     onChange={(e) => setUrl(e.target.value)}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
@@ -79,8 +80,9 @@ const BrowserAgentTester: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Instruction / Goal</label>
+                            <label htmlFor="agent-goal" className="block text-sm font-medium text-slate-400 mb-1">Instruction / Goal</label>
                             <textarea
+                                id="agent-goal"
                                 value={goal}
                                 onChange={(e) => setGoal(e.target.value)}
                                 className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white h-32 resize-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all"

@@ -36,7 +36,7 @@ export class GeneralistAgent extends BaseAgent {
 
     **Tone:** Professional, conversational, and encouraging. Be helpful and proactive.
 
-    **4. SUPERPOWERS (The "Indii" Upgrade)**
+    **4. SUPERPOWERS (The "indii" Upgrade)**
     * **Memory:** You have long-term memory. Use 'save_memory' to store important facts/preferences. Use 'recall_memories' to fetch context before answering complex queries.
     * **Reflection:** For creative tasks, use 'verify_output' to critique your own work before showing it to the user.
     * **Approval:** For high-stakes actions (e.g., posting to social media, sending emails), you MUST use 'request_approval' to get user sign-off.
@@ -50,7 +50,8 @@ export class GeneralistAgent extends BaseAgent {
     
     RULES:
     1. Output format: { "thought": "...", "tool": "...", "args": {} } OR { "final_response": "..." }
-    2. When the task is complete, you MUST use "final_response" to finish.
+    2. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
+    3. When the task is complete, you MUST use "final_response" to finish.
     `;
 
     // Base tools are usually handled by the agent superclass or passed in context.
@@ -159,7 +160,7 @@ export class GeneralistAgent extends BaseAgent {
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         const { useStore } = await import('@/core/store');
-        const { currentOrganizationId, currentProjectId } = useStore.getState();
+        const { currentOrganizationId, currentProjectId, currentModule } = useStore.getState();
 
 
 
@@ -168,6 +169,7 @@ export class GeneralistAgent extends BaseAgent {
         ORGANIZATION CONTEXT:
         - Organization ID: ${currentOrganizationId}
         - Project ID: ${currentProjectId}
+        - Current Module: ${currentModule || 'unknown'}
         `;
 
         // Inject Brand Context if available
@@ -215,16 +217,23 @@ export class GeneralistAgent extends BaseAgent {
         RULES:
         1. Use tools via JSON.
         2. Output format: { "thought": "...", "tool": "...", "args": {} }
-        3. Or { "final_response": "..." }
-        4. When the task is complete, you MUST use "final_response" to finish.`;
+        3. MODULE SPECIFIC: You are currently in the '${currentModule}' module.
+           - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
+           - User requests for "images", "visuals", "scenes" MUST be handled by 'generate_image'.
+           - DO NOT just describe the image. YOU MUST GENERATE IT.
+        4. Or { "final_response": "..." }
+        5. When the task is complete, you MUST use "final_response" to finish.`;
 
         let iterations = 0;
         let consecutiveNoProgress = 0; // Track iterations without progress
         let currentInput = task;
         const history = useStore.getState().agentHistory;
         let finalResponseText = '';
-        const MAX_ITERATIONS = 8;
+        const MAX_ITERATIONS = 5; // Reduced from 8 to prevent infinite loops
         const MAX_NO_PROGRESS = 3; // Bail out after 3 iterations without progress
+
+        // Track last tool call to prevent stuttering loops (retrying same failed action)
+        let lastToolCall: { name: string; args: string; result: 'success' | 'error' } | null = null;
 
         while (iterations < MAX_ITERATIONS) { // Limit iterations for safety
             iterations++; // Increment at start to ensure we always count
@@ -328,30 +337,65 @@ export class GeneralistAgent extends BaseAgent {
 
                             if (result.tool) {
                                 stepActionTaken = true;
-                                // Report tool usage
-                                onProgress?.({ type: 'tool', toolName: result.tool as string, content: `Executing ${result.tool}...` });
+                                const toolName = result.tool as string;
+                                const argsStr = JSON.stringify(result.args || {});
 
-                                const toolFunc = TOOL_REGISTRY[result.tool as string];
+                                // LOOP DETECTION: Check if we are retrying the exact same failed action
+                                if (lastToolCall &&
+                                    lastToolCall.name === toolName &&
+                                    lastToolCall.args === argsStr &&
+                                    lastToolCall.result === 'error') {
+
+                                    const errorMsg = "Loop Detected: You are retrying the exact same tool call that just failed. Stopping execution to prevent infinite loop.";
+                                    console.warn(`[GeneralistAgent] ${errorMsg}`);
+                                    onProgress?.({ type: 'thought', content: errorMsg });
+
+                                    // Force termination
+                                    return { text: `Agent stopped: ${errorMsg}` };
+                                }
+
+                                // Report tool usage
+                                onProgress?.({ type: 'tool', toolName: toolName, content: `Executing ${toolName}...` });
+
+                                const toolFunc = TOOL_REGISTRY[toolName];
                                 let output: string = "Unknown tool";
+                                let isError = false;
+
                                 if (toolFunc) {
                                     try {
                                         const toolResult = await toolFunc(result.args as Record<string, unknown>);
+
+                                        // Check if the result itself indicates an error (standardized ToolResult)
+                                        if (typeof toolResult === 'object' && toolResult !== null && 'success' in toolResult && (toolResult as any).success === false) {
+                                            isError = true;
+                                        }
+
                                         output = typeof toolResult === 'string'
                                             ? toolResult
                                             : (typeof toolResult === 'object' && toolResult !== null && 'message' in toolResult
                                                 ? (toolResult as any).message
                                                 : JSON.stringify(toolResult));
                                     } catch (err: unknown) {
+                                        isError = true;
                                         output = `Error: ${err instanceof Error ? err.message : String(err)}`;
                                     }
+                                } else {
+                                    isError = true;
                                 }
+
+                                // Update last tool call state
+                                lastToolCall = {
+                                    name: toolName,
+                                    args: argsStr,
+                                    result: isError ? 'error' : 'success'
+                                };
 
                                 onProgress?.({ type: 'thought', content: `Tool Output: ${output}` });
 
-                                if (String(output).toLowerCase().includes('successfully')) {
-                                    currentInput = `Tool ${result.tool} Output: ${output}. Task likely complete. Use final_response if done.`;
+                                if (String(output).toLowerCase().includes('successfully') && !isError) {
+                                    currentInput = `Tool ${toolName} Output: ${output}. Task likely complete. Use final_response if done.`;
                                 } else {
-                                    currentInput = `Tool ${result.tool} Output: ${output}. Continue.`;
+                                    currentInput = `Tool ${toolName} Output: ${output}. Continue.`;
                                 }
                             }
                         }

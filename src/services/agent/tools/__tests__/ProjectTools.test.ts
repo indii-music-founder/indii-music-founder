@@ -68,7 +68,7 @@ describe('ProjectTools', () => {
 
     describe('list_projects', () => {
         it('should list projects for current organization', async () => {
-            const result = await ProjectTools.list_projects();
+            const result = await ProjectTools.list_projects({});
 
             expect(result.success).toBe(true);
             expect(result.data.projects).toHaveLength(3); // ProjectTools just returns all projects in state for now
@@ -82,7 +82,7 @@ describe('ProjectTools', () => {
                 loadProjects: vi.fn().mockResolvedValue(undefined)
             });
 
-            const result = await ProjectTools.list_projects();
+            const result = await ProjectTools.list_projects({});
 
             expect(result.message).toContain('No projects found');
         });

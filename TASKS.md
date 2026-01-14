@@ -1,12 +1,12 @@
 # TASKS.md - Active Work Items
 
-**Last Updated:** 2025-12-27
+**Last Updated:** 2026-01-04
 
 This is the single source of truth for pending tasks. Completed plans have been archived to `archive/`.
 
 ---
 
-## Current App State (Dec 26, 2025)
+## Current App State (Jan 4, 2026)
 
 ### Working Features
 
@@ -17,54 +17,32 @@ This is the single source of truth for pending tasks. Completed plans have been 
   - **Metadata**: GoldenMetadata Schema, MetadataDrawer.
   - **Marketplace**: MerchTable UI for asset minting.
 - **Auth System**: Full robust implementation (Electron → Bridge → Google → IPC → Firebase).
+- **Distribution**: DDEX generation and multi-distributor adapters (DistroKid, TuneCore, etc).
+- **Social Commerce**: Product drops in social feed, "Buy Now" flows.
 
 ### Known Issues (Quality & Stability)
 
 - **GPU Process**: Non-blocking crash on app exit (Monitored via `main.ts` hooks).
 - **Audit Status**: All critical lint and security issues resolved (See `AUDIT_REPORT.md`).
+- **Adapter Mocking**: Distributor adapters use a hybrid approach (SFTP if configured, Mock fallback).
 
 ---
 
 ## High Priority
 
-### Code Hygiene & Stability (The Big Cleanup)
-
-- [x] **Big Cleanup**: Fix `react-hooks/purity` and `no-require-imports` violations to ensure stability.
-- [x] **React Hooks**: Fix `set-state-in-effect` violations (e.g. `verify-email` page).
-- [x] **Types**: Reduce explicit `any` usage in core services and store slices (Fixed: DashboardService, DistributorService, MerchTable, VideoEditor, FinanceTools).
-- [x] **Phase C**: Run "The Gauntlet" verification suite. (PASSED)
-
-### Fair AI Platform Phase 2: Social & Commerce
-
-- [x] **Social Layer**:
-  - [x] Implement `SocialService` (Follow/Unfollow, Activity Feed) - `src/services/social/SocialService.ts`
-  - [x] Update UserProfile with `accountType` (Fan/Artist/Label) and `socialStats` - `src/types/User.ts`
-  - [x] Create `SocialFeed` component - `src/modules/social/components/SocialFeed.tsx`
-- [x] **Commerce Engine**:
-  - [x] Verify `MarketplaceService` product creation flow - `src/services/marketplace/MarketplaceService.ts`
-  - [x] Implement "Buy" flow (MOCK payment) - `ProductCard.tsx` calls `purchaseProduct`
-  - [x] Link `MerchTable` to `SocialFeed` (Product drops) - SocialFeed has product picker, posts embed products
-
----
-
-## Medium Priority
-
-### Gemini 3.0 Migration (Final Steps)
-
-- [x] **Enterprise**: Migrate `generateImageV3` from AI Studio (API Key) to Vertex AI (IAM) once `gemini-3-pro-image-preview` is available on Vertex endpoints.
-
-### Mobile Experience Polish
-
-- [x] **Touch Targets**: Audit and fix Dashboard components for mobile (44x44px minimum):
-  - [x] GlobalSettings: Toggle switches enlarged to `w-12 h-7`
-  - [x] ProjectHub: Menu button increased to `p-3` with `min-w-[44px]`
-  - [x] SalesAnalytics: Period buttons increased to `px-4 py-2` with min dimensions
-  - [x] ReferenceImageManager: Delete button enlarged to `p-2.5` with min dimensions
-- [x] **Performance**: Fixed `DataStorageManager` progress bar animation (1000ms → 500ms)
+### Post-Launch Monitoring
+- [ ] Monitor Sentry for production errors after release.
+- [ ] Validate real-world DDEX delivery with test payloads.
 
 ---
 
 ## Recently Completed (Jan 2026)
+
+### Feature Completion (Alpha Release)
+- [x] **Social Commerce**: Integrated `ProductCard` into `SocialFeed` for product drops.
+- [x] **Finance**: Refactored `useFinance` to use `RevenueService` and remove demo logic.
+- [x] **Distribution**: Completed `DistroKidAdapter`, `TuneCoreAdapter`, and `ERNService` implementation.
+- [x] **Video Infrastructure**: Implemented `generateVideoFn` (Veo) and `stitchVideoFn` (Transcoder) in Cloud Functions.
 
 ### Image Generation Migration (Fix)
 

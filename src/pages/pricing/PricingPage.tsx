@@ -9,6 +9,7 @@ import { TIER_CONFIGS, SubscriptionTier, calculateYearlySavings } from '@/servic
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { auth } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
 
 interface Feature {
   text: string;
@@ -22,7 +23,7 @@ export const PricingPage: React.FC = () => {
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [showYearlyTooltip, setShowYearlyTooltip] = useState(false);
 
-  const { addToast } = useStore((state) => ({ addToast: state.addToast }));
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadCurrentTier();
@@ -43,10 +44,7 @@ export const PricingPage: React.FC = () => {
 
   const handleSubscribe = async (tier: SubscriptionTier) => {
     if (!auth.currentUser) {
-      addToast({
-        text: 'Please sign in to subscribe',
-        type: 'error'
-      });
+      showToast('Please sign in to subscribe', 'error');
       return;
     }
 
@@ -65,10 +63,7 @@ export const PricingPage: React.FC = () => {
       window.location.href = result.checkoutUrl;
     } catch (error) {
       console.error('Failed to create checkout session:', error);
-      addToast({
-        text: 'Failed to start checkout. Please try again.',
-        type: 'error'
-      });
+      showToast('Failed to start checkout. Please try again.', 'error');
     } finally {
       setSubscribing(null);
     }
@@ -84,17 +79,13 @@ export const PricingPage: React.FC = () => {
       window.location.href = url;
     } catch (error) {
       console.error('Failed to get portal URL:', error);
-      addToast({
-        text: 'Failed to open customer portal. Please try again.',
-        type: 'error'
-      });
+      showToast('Failed to open customer portal. Please try again.', 'error');
     }
   };
 
   const features = [
     'AI image generation',
     'AI video creation',
-    'AI music analysis',
     'Agent-powered assistance',
     'Project management',
     'Multi-format export',
@@ -129,14 +120,14 @@ export const PricingPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-bg-dark text-white flex items-center justify-center">
         <Loader2 className="animate-spin w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white">
+    <div className="min-h-screen bg-bg-dark text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <motion.div
@@ -154,17 +145,15 @@ export const PricingPage: React.FC = () => {
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4 mb-8">
             <button
-              className={`px-4 py-2 rounded-lg font-bold transition ${
-                !isYearly ? 'bg-white text-black' : 'bg-gray-800 text-gray-400'
-              }`}
+              className={`px-4 py-2 rounded-lg font-bold transition ${!isYearly ? 'bg-white text-black' : 'bg-gray-800 text-gray-400'
+                }`}
               onClick={() => setIsYearly(false)}
             >
               Monthly
             </button>
             <button
-              className={`px-4 py-2 rounded-lg font-bold transition relative ${
-                isYearly ? 'bg-white text-black' : 'bg-gray-800 text-gray-400'
-              }`}
+              className={`px-4 py-2 rounded-lg font-bold transition relative ${isYearly ? 'bg-white text-black' : 'bg-gray-800 text-gray-400'
+                }`}
               onClick={() => setIsYearly(true)}
               onMouseEnter={() => setShowYearlyTooltip(true)}
               onMouseLeave={() => setShowYearlyTooltip(false)}
@@ -210,10 +199,9 @@ export const PricingPage: React.FC = () => {
                 transition={{ delay: index * 0.1 }}
                 className={`
                   rounded-2xl p-8 border-2 relative
-                  ${
-                    isPopular
-                      ? 'border-yellow-500 bg-gradient-to-b from-yellow-500/10 to-[#161b22]'
-                      : tier === SubscriptionTier.FREE
+                  ${isPopular
+                    ? 'border-yellow-500 bg-gradient-to-b from-yellow-500/10 to-[#161b22]'
+                    : tier === SubscriptionTier.FREE
                       ? 'border-gray-700 bg-[#161b22]'
                       : 'border-purple-500 bg-gradient-to-b from-purple-500/10 to-[#161b22]'
                   }
@@ -287,9 +275,8 @@ export const PricingPage: React.FC = () => {
                   {features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm">
                       <Check
-                        className={`flex-shrink-0 mt-0.5 ${
-                          feature.important ? 'text-purple-500' : 'text-green-500'
-                        }`}
+                        className={`flex-shrink-0 mt-0.5 ${feature.important ? 'text-purple-500' : 'text-green-500'
+                          }`}
                         size={16}
                       />
                       <span className={feature.important ? 'text-white font-medium' : 'text-gray-300'}>
@@ -314,10 +301,9 @@ export const PricingPage: React.FC = () => {
                     disabled={subscribing !== null}
                     className={`
                       w-full py-3 rounded-lg font-bold transition flex items-center justify-center gap-2
-                      ${
-                        isPopular
-                          ? 'bg-yellow-500 text-black hover:bg-yellow-400'
-                          : tier === SubscriptionTier.FREE
+                      ${isPopular
+                        ? 'bg-yellow-500 text-black hover:bg-yellow-400'
+                        : tier === SubscriptionTier.FREE
                           ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                           : 'bg-purple-500 text-white hover:bg-purple-400'
                       }

@@ -45,7 +45,7 @@ export function ModuleDashboard({
 
     return (
         <div
-            className={`h-full flex flex-col bg-[#0d1117] text-white overflow-hidden ${className}`}
+            className={`h-full flex flex-col bg-bg-dark text-white overflow-hidden ${className}`}
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
         >
             {/* Department-tinted header bar */}

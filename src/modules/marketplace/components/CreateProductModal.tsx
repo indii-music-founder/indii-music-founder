@@ -66,7 +66,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                             required
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
+                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none"
                             placeholder="e.g. Limited Edition T-Shirt"
                         />
                     </div>
@@ -77,7 +77,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                             required
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none h-24 resize-none"
+                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none h-24 resize-none"
                             placeholder="Describe your product..."
                         />
                     </div>
@@ -93,7 +93,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                                     required
                                     value={price}
                                     onChange={(e) => setPrice(e.target.value)}
-                                    className="w-full bg-[#0d1117] border border-gray-700 rounded-lg pl-9 p-2.5 text-white focus:border-blue-500 outline-none"
+                                    className="w-full bg-bg-dark border border-gray-700 rounded-lg pl-9 p-2.5 text-white focus:border-blue-500 outline-none"
                                 />
                             </div>
                         </div>
@@ -103,7 +103,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                             <select
                                 value={type}
                                 onChange={(e) => setType(e.target.value as ProductType)}
-                                className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none"
+                                className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none"
                             >
                                 <option value="merch">Merchandise</option>
                                 <option value="song">Song (Digital)</option>

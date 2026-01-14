@@ -12,8 +12,8 @@ interface PropertiesPanelProps {
 
 export function PropertiesPanel({ title = "Properties", children, className = "" }: PropertiesPanelProps) {
     return (
-        <div className={`w-80 h-full bg-[#0d1117] border-l border-gray-800 flex flex-col overflow-hidden ${className}`}>
-            <div className="h-10 border-b border-gray-800 flex items-center px-4 shrink-0 bg-[#0d1117]">
+        <div className={`w-80 h-full bg-bg-dark border-l border-gray-800 flex flex-col overflow-hidden ${className}`}>
+            <div className="h-10 border-b border-gray-800 flex items-center px-4 shrink-0 bg-bg-dark">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</span>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
@@ -53,7 +53,7 @@ export function PanelSection({ title, children, defaultOpen = true, actions }: P
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                         className="overflow-hidden"
                     >
-                        <div className="p-3 bg-[#0d1117]">
+                        <div className="p-3 bg-bg-dark">
                             {children}
                         </div>
                     </motion.div>

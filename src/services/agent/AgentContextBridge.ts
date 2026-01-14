@@ -5,8 +5,10 @@
  * Allows agents to discover and execute instruments as if they were natural tools.
  */
 
-import { SubscriptionTier, SubscriptionService } from '@/services/subscription/SubscriptionService';
-import { instrumentRegistry, Instrument } from './instruments/InstrumentRegistry';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+import { SubscriptionService, subscriptionService } from '@/services/subscription/SubscriptionService';
+import { instrumentRegistry } from './instruments/InstrumentRegistry';
+import { Instrument } from './instruments/InstrumentTypes';
 
 export interface AgentInstrumentContext {
   /** Available instruments formatted for agent discovery */
@@ -104,11 +106,11 @@ export class AgentContextBridge {
   /**
    * Format instruments for LLM function calling
    */
-  formatInstrumentsForLLM(): Array<{
+  async formatInstrumentsForLLM(): Promise<Array<{
     name: string;
     description: string;
     parameters: any;
-  }> {
+  }>> {
     const context = await this.buildAgentContext();
 
     return context.availableInstruments.map(instrument => ({
@@ -257,8 +259,8 @@ export class AgentContextBridge {
 
     const descriptions = context.availableInstruments.map(instrument => {
       const approvalNote = instrument.requiresApproval ? ' ⚠️ Requires approval' : '';
-      const costNote = ` (${instrument.cost.amount} ${instrument.cost.costType || 'credits'})`;
-      const categoryEmoji = {
+      const costNote = ` (${instrument.cost.amount} ${instrument.cost.type || 'credits'})`;
+      const emojiMap: Record<string, string> = {
         'generation': '🎨',
         'utility': '🔧',
         'analysis': '🔍',
@@ -266,7 +268,9 @@ export class AgentContextBridge {
         'file_operations': '📁',
         'media_processing': '🎬',
         'data_processing': '📊'
-      }[instrument.category as keyof typeof categoryEmoji] || '🛠️';
+      };
+
+      const categoryEmoji = emojiMap[instrument.category] || '🛠️';
 
       return `- ${categoryEmoji} **${instrument.name}** ${costNote}: ${instrument.description}${approvalNote}`;
     }).join('\n');

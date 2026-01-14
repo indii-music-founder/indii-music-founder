@@ -3,48 +3,61 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 import { financeService, Expense } from '@/services/finance/FinanceService';
+import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 
 export function useFinance() {
-    const { finance, fetchEarnings, userProfile } = useStore();
-    const { earningsSummary, loading: earningsLoading, error: earningsError } = finance;
+    const { userProfile } = useStore();
+
+    const [earningsSummary, setEarningsSummary] = useState<ValidatedEarningsSummary | null>(null);
+    const [earningsLoading, setEarningsLoading] = useState(true);
+    const [earningsError, setEarningsError] = useState<string | null>(null);
+
     const toast = useToast();
 
-    // Expenses State matching component logic
+    // Expenses State
     const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [expensesLoading, setExpensesLoading] = useState(false);
+    const [expensesLoading, setExpensesLoading] = useState(true);
 
-    const loadEarnings = useCallback(async (startDate: string, endDate: string) => {
-        if (!userProfile?.id) return;
-
-        try {
-            await fetchEarnings({ startDate, endDate });
-        } catch (err) {
-            console.error("Failed to load earnings:", err);
-            Sentry.captureException(err);
-            toast.error("Failed to load earnings data.");
+    // Subscribe to Earnings
+    useEffect(() => {
+        if (!userProfile?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setEarningsLoading(false);
+            return;
         }
-    }, [fetchEarnings, userProfile?.id, toast]);
 
-    const loadExpenses = useCallback(async () => {
-        if (!userProfile?.id) return;
-        setExpensesLoading(true);
-        try {
-            const data = await financeService.getExpenses(userProfile.id);
-            setExpenses(data);
-        } catch (e) {
-            console.error(e);
-            Sentry.captureException(e);
-            toast.error("Failed to load expenses.");
-        } finally {
+        setEarningsLoading(true);
+        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: ValidatedEarningsSummary | null) => {
+            setEarningsSummary(data);
+            setEarningsLoading(false);
+            if (!data) {
+                console.info('[useFinance] No validated earnings data available for user.');
+            }
+        });
+
+        return () => unsubscribe();
+    }, [userProfile?.id]);
+
+    // Subscribe to Expenses
+    useEffect(() => {
+        if (!userProfile?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setExpensesLoading(false);
+            return;
         }
-    }, [userProfile?.id, toast]);
+
+        setExpensesLoading(true);
+        const unsubscribe = financeService.subscribeToExpenses(userProfile.id, (data: Expense[]) => {
+            setExpenses(data);
+            setExpensesLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [userProfile?.id]);
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
         try {
             await financeService.addExpense(expenseData);
-            // Optimistic update or refresh
-            loadExpenses();
             return true;
         } catch (e) {
             console.error(e);
@@ -52,23 +65,7 @@ export function useFinance() {
             toast.error("Failed to add expense.");
             return false;
         }
-    }, [loadExpenses, toast]);
-
-    // Initial load (Current Month)
-    useEffect(() => {
-        if (userProfile?.id) {
-            if (!earningsSummary && !earningsLoading) {
-                // Default to current month window
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-                loadEarnings(start, end);
-            }
-            // Load expenses implicitly on mount if not loaded? 
-            // The component seems to load it on mount, let's keep it explicit in the component or do it here.
-            // For now, exposing loadExpenses action is enough.
-        }
-    }, [userProfile?.id, earningsSummary, earningsLoading, loadEarnings]);
+    }, [toast]);
 
     return {
         // Earnings
@@ -81,8 +78,6 @@ export function useFinance() {
         expensesLoading,
 
         actions: {
-            loadEarnings,
-            loadExpenses,
             addExpense
         }
     };

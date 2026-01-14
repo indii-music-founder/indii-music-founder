@@ -8,6 +8,25 @@ vi.mock('@/core/context/ToastContext', () => ({
         success: vi.fn(),
         error: vi.fn(),
         info: vi.fn(),
+        warning: vi.fn(),
+    }),
+}));
+
+// Mock Store
+vi.mock('@/core/store', () => ({
+    useStore: () => ({
+        userProfile: {
+            id: 'test-user',
+            bio: 'Test Bio',
+            brandKit: {
+                colors: ['#000000'],
+                fonts: 'Inter',
+                brandDescription: 'Brand Desc',
+                releaseDetails: { title: 'Test Release', type: 'Single', genre: 'Pop', mood: 'Happy', themes: 'Love' }
+            }
+        },
+        updateBrandKit: vi.fn(),
+        setUserProfile: vi.fn(),
     }),
 }));
 
@@ -35,51 +54,81 @@ vi.mock('firebase/firestore', () => ({
     updateDoc: vi.fn()
 }));
 
+// Mock Framer Motion to avoid animation issues in tests
+vi.mock('framer-motion', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('framer-motion')>();
+    return {
+        ...actual,
+        AnimatePresence: ({ children }: any) => <>{children}</>,
+        motion: {
+            div: ({ children, layoutId, initial, animate, exit, transition, ...props }: any) => <div {...props}>{children}</div>,
+        }
+    };
+});
+
 describe('BrandManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders input fields', () => {
+    it('renders the main dashboard structure', () => {
         render(<BrandManager />);
-        expect(screen.getByPlaceholderText(/Paste your brand guidelines here/)).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/Paste the content you want to review/)).toBeInTheDocument();
+        expect(screen.getByText('Brand HQ')).toBeInTheDocument();
+        expect(screen.getAllByText('Identity Core').length).toBeGreaterThan(0);
+        expect(screen.getByText('Visual DNA')).toBeInTheDocument();
+        expect(screen.getByText('Release Manifest')).toBeInTheDocument();
+        expect(screen.getByText('Brand Health')).toBeInTheDocument();
     });
 
-    it('disables analyze button when inputs are empty', () => {
+    it('displays identity information by default', () => {
         render(<BrandManager />);
-        const button = screen.getByText('Analyze Consistency');
-        expect(button).toBeDisabled();
+        expect(screen.getByText('Test Bio')).toBeInTheDocument();
+        expect(screen.getByText('Identity Bio')).toBeInTheDocument();
     });
 
-    it('enables analyze button when inputs are filled', () => {
+    it('switches tabs correctly', async () => {
         render(<BrandManager />);
-        const guidelinesInput = screen.getByPlaceholderText(/Paste your brand guidelines here/);
-        const contentInput = screen.getByPlaceholderText(/Paste the content you want to review/);
 
-        fireEvent.change(guidelinesInput, { target: { value: 'Guidelines' } });
-        fireEvent.change(contentInput, { target: { value: 'Content' } });
+        // Switch to Visuals
+        const visualBtn = screen.getByRole('button', { name: /Visual DNA/i });
+        fireEvent.click(visualBtn);
+        await waitFor(() => {
+            expect(screen.getByText('Color Palette')).toBeInTheDocument();
+        });
 
-        const button = screen.getByText('Analyze Consistency');
+        // Switch to Release
+        const releaseBtn = screen.getByRole('button', { name: /Release Manifest/i });
+        fireEvent.click(releaseBtn);
+        await waitFor(() => {
+            expect(screen.getByText('Mission Architect')).toBeInTheDocument();
+        });
+    });
+
+    it('runs analysis in Health Check tab', async () => {
+        render(<BrandManager />);
+
+        // Navigate to Health tab
+        const healthBtn = screen.getByRole('button', { name: /Brand Health/i });
+        fireEvent.click(healthBtn);
+
+        await waitFor(() => {
+            expect(screen.getByText('System Audit')).toBeInTheDocument();
+        });
+
+        const input = screen.getByPlaceholderText(/Paste caption, email, or lyrics here.../);
+        fireEvent.change(input, { target: { value: 'Test content for analysis' } });
+
+        const button = screen.getByRole('button', { name: /Audit Brand Health/i });
         expect(button).not.toBeDisabled();
-    });
 
-    it('displays analysis results after execution', async () => {
-        render(<BrandManager />);
-        const guidelinesInput = screen.getByPlaceholderText(/Paste your brand guidelines here/);
-        const contentInput = screen.getByPlaceholderText(/Paste the content you want to review/);
-
-        fireEvent.change(guidelinesInput, { target: { value: 'Guidelines' } });
-        fireEvent.change(contentInput, { target: { value: 'Content' } });
-
-        const button = screen.getByText('Analyze Consistency');
         fireEvent.click(button);
 
+        // Should show Analyzing...
         expect(screen.getByText('Analyzing...')).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(screen.getByText('95/100')).toBeInTheDocument();
-            expect(screen.getByText('Great job!')).toBeInTheDocument();
+            expect(screen.getByText('Consistency Report')).toBeInTheDocument();
+            expect(screen.getByText('95%')).toBeInTheDocument();
         });
     });
 });

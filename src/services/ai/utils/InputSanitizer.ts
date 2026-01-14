@@ -6,6 +6,7 @@
 
 export class InputSanitizer {
     private static readonly MAX_PROMPT_LENGTH = 100000; // Reasonable limit for checking, though models support more
+    // eslint-disable-next-line no-control-regex
     private static readonly CONTROL_CHARS_REGEX = /[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F]/g;
     private static readonly DANGEROUS_TAGS_REGEX = /<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1>|<(script|style|iframe|object|embed|form)[^>]*\/?>/gi;
 

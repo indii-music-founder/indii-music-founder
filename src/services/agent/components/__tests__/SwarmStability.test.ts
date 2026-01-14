@@ -53,7 +53,7 @@ class FailingAgent extends BaseAgent {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
+    async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]): Promise<any> {
         throw new Error('Intentional Failure');
     }
 }

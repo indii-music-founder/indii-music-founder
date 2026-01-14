@@ -1,6 +1,7 @@
 import { useStore, type HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { ToolFunctionArgs, AnyToolFunction } from '../types';
 
@@ -93,6 +94,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
+        console.log("DirectorTools: generate_image called with args", args);
         const { studioControls, addToHistory, currentProjectId, userProfile } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
@@ -130,34 +132,48 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }
 
         // Use the Unified ImageGenerationService
-        const results = await ImageGeneration.generateImages({
-            prompt: args.prompt,
-            count: args.count || 1,
-            resolution: args.resolution || studioControls.resolution,
-            aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
-            negativePrompt: args.negativePrompt || studioControls.negativePrompt,
-            seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
-            sourceImages,
-            userProfile
-        });
-
-        if (results.length > 0) {
-            results.forEach((res: { id: string, url: string, prompt: string }) => {
-                addToHistory({
-                    id: res.id,
-                    url: res.url,
-                    prompt: res.prompt,
-                    type: 'image',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                });
+        try {
+            const results = await ImageGeneration.generateImages({
+                prompt: args.prompt,
+                count: args.count || 1,
+                resolution: args.resolution || studioControls.resolution,
+                aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
+                negativePrompt: args.negativePrompt || studioControls.negativePrompt,
+                seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
+                sourceImages,
+                userProfile
             });
-            return toolSuccess({
-                count: results.length,
-                urls: results.map(r => r.url)
-            }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
+
+            if (results.length > 0) {
+                results.forEach((res: { id: string, url: string, prompt: string }) => {
+                    addToHistory({
+                        id: res.id,
+                        url: res.url,
+                        prompt: res.prompt,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'default-project'
+                    });
+                });
+                return toolSuccess({
+                    count: results.length,
+                    image_ids: results.map(r => r.id)
+                }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
+            }
+            return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+
+            // CRITICAL FIX: Prevent infinite retry loops on subscription errors
+            if (errorMessage.includes("Failed to fetch subscription")) {
+                return toolError(
+                    "Subscription verification failed. Please check your network connection or subscription status. Do not retry immediately.",
+                    "SUBSCRIPTION_ERROR"
+                );
+            }
+
+            throw err; // Re-throw other errors to be handled by wrapTool
         }
-        return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
     }),
 
     batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }) => {
@@ -213,7 +229,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             });
             return toolSuccess({
                 count: results.length,
-                urls: results.map(r => r.url)
+                image_ids: results.map(r => r.id)
             }, `Successfully edited ${results.length} images based on instruction: "${args.prompt}".`);
         }
         return toolError("Batch edit completed but no images were returned.", "EMPTY_RESULT");
@@ -259,7 +275,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 });
             });
             return toolSuccess({
-                url: results[0].url
+                asset_id: results[0].id
             }, `High-resolution asset (${args.templateType}) generated successfully.`);
         }
         return toolError("Failed to generate high-resolution asset.", "GENERATION_FAILED");
@@ -299,7 +315,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 meta: 'cinematic_grid'
             });
             return toolSuccess({
-                gridUrl: res.url
+                grid_id: res.id
             }, `Cinematic grid generated for "${args.prompt}".`);
         }
         return toolError("Failed to generate cinematic grid.", "GENERATION_FAILED");
@@ -346,7 +362,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         addToHistory(frameItem);
 
         return toolSuccess({
-            frameUrl: extractedDataUrl
+            frame_id: frameItem.id
         }, `Successfully extracted ${frameLabels[gridIndex]} (panel ${gridIndex}) from the cinematic grid. The frame is now in your Gallery.`);
     }),
 
@@ -374,5 +390,30 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         return toolSuccess({
             anchorId: anchorItem.id
         }, "Entity Anchor set successfully. Character consistency is now locked.");
+    }),
+
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No audio found at index ${args.uploadedAudioIndex}. Please upload audio first.`, "NOT_FOUND");
+        }
+
+        try {
+            // Convert Data URI to File/Blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], "audio_track.mp3", { type: blob.type });
+
+            const profile = await audioIntelligence.analyze(file);
+
+            return toolSuccess(
+                profile,
+                `Audio analysis complete for "${audioItem.prompt || 'Track'}". Semantic Vibe: ${profile.semantic.mood.join(', ')}`
+            );
+        } catch (error: any) {
+            return toolError(`Failed to analyze audio: ${error.message}`, "ANALYSIS_FAILED");
+        }
     })
 };

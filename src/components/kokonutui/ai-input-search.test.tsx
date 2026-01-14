@@ -6,8 +6,8 @@ import AI_Input_Search from './ai-input-search';
 // Mock Lucide icons
 vi.mock('lucide-react', () => ({
   Globe: () => <div data-testid="icon-globe">Globe</div>,
-  Paperclip: ({ onClick }: { onClick: () => void }) => (
-    <div data-testid="icon-paperclip" onClick={onClick}>
+  Paperclip: ({ className }: { className?: string }) => (
+    <div data-testid="icon-paperclip" className={className}>
       Paperclip
     </div>
   ),
@@ -18,8 +18,9 @@ vi.mock('lucide-react', () => ({
 // Mock framer-motion/motion
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
+    // Correctly filtering out framer-motion props to avoid React warnings
+    div: ({ children, whileHover, animate, initial, exit, transition, ...props }: any) => <div {...props}>{children}</div>,
+    span: ({ children, whileHover, animate, initial, exit, transition, ...props }: any) => <span {...props}>{children}</span>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
@@ -45,7 +46,6 @@ describe('AI_Input_Search Interaction', () => {
     expect(sendButton).toHaveClass('cursor-not-allowed');
 
     // 2. Interaction: Type text
-    // We use placeholder to select the specific textarea, avoiding conflict with container role="textbox"
     const input = screen.getByPlaceholderText('Ask me anything...');
     await user.type(input, 'Hello Click Agent');
 
@@ -124,5 +124,73 @@ describe('AI_Input_Search Interaction', () => {
     expect(input).toHaveValue('');
 
     consoleSpy.mockRestore();
+  });
+
+  it('toggles Search mode visibility on click', async () => {
+    const user = userEvent.setup();
+    render(<AI_Input_Search />);
+
+    // Initial state: Search is visible (showSearch default is true)
+    const toggleButton = screen.getByRole('button', { name: /hide search options/i });
+    expect(toggleButton).toBeInTheDocument();
+
+    // Check if "Search" text is visible
+    expect(screen.getByText('Search')).toBeInTheDocument();
+
+    // Click to toggle off
+    await user.click(toggleButton);
+
+    // Feedback: Aria label changes
+    expect(toggleButton).toHaveAttribute('aria-label', 'Show search options');
+
+    // Feedback: "Search" text disappears (mocked AnimatePresence removes it)
+    await waitFor(() => {
+      expect(screen.queryByText('Search')).not.toBeInTheDocument();
+    });
+
+    // Click to toggle on
+    await user.click(toggleButton);
+
+    // Feedback: Aria label changes back
+    expect(toggleButton).toHaveAttribute('aria-label', 'Hide search options');
+    expect(screen.getByText('Search')).toBeInTheDocument();
+  });
+
+  it('triggers file selection when Paperclip is clicked', async () => {
+    const onFileSelect = vi.fn();
+    const user = userEvent.setup();
+    render(<AI_Input_Search onFileSelect={onFileSelect} />);
+
+    const file = new File(['hello'], 'hello.png', { type: 'image/png' });
+    const paperclipButton = screen.getByRole('button', { name: /attach file/i });
+    const fileInput = screen.getByLabelText(/upload file/i); // Using aria-label on hidden input
+
+    // Verify input is hidden
+    expect(fileInput).toHaveClass('hidden');
+
+    // Simulate file selection via user event on the input directly
+    // (In a real browser, clicking the button triggers the input click, but in JSDOM we can simulate the upload directly)
+    await user.upload(fileInput, file);
+
+    expect(onFileSelect).toHaveBeenCalledTimes(1);
+    expect(onFileSelect).toHaveBeenCalledWith(file);
+    // Note: The component does NOT reset the file input value after selection,
+    // so it will retain "C:\fakepath\hello.png" in JSDOM. We skip asserting empty value.
+  });
+
+  it('triggers file input click when Paperclip button is clicked', async () => {
+    // This tests the wiring between the visible button and the hidden input
+    const user = userEvent.setup();
+    render(<AI_Input_Search />);
+
+    const paperclipButton = screen.getByRole('button', { name: /attach file/i });
+    const fileInput = screen.getByLabelText(/upload file/i);
+
+    // Spy on the click method of the input
+    const clickSpy = vi.spyOn(fileInput, 'click');
+
+    await user.click(paperclipButton);
+
+    expect(clickSpy).toHaveBeenCalled();
   });
 });

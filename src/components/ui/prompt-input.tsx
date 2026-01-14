@@ -23,17 +23,17 @@ type PromptInputContextType = {
   maxHeight: number | string
   onSubmit?: () => void
   disabled?: boolean
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>
+  textareaRef: React.MutableRefObject<HTMLTextAreaElement | null>
 }
 
 const PromptInputContext = createContext<PromptInputContextType>({
   isLoading: false,
   value: "",
-  setValue: () => {},
+  setValue: () => { },
   maxHeight: 240,
   onSubmit: undefined,
   disabled: false,
-  textareaRef: React.createRef<HTMLTextAreaElement>(),
+  textareaRef: { current: null },
 })
 
 function usePromptInput() {
@@ -71,8 +71,10 @@ function PromptInput({
     onValueChange?.(newValue)
   }
 
+  const effectiveDisabled = disabled || isLoading
+
   const handleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (!disabled) textareaRef.current?.focus()
+    if (!effectiveDisabled) textareaRef.current?.focus()
     onClick?.(e)
   }
 
@@ -82,10 +84,10 @@ function PromptInput({
         value={{
           isLoading,
           value: value ?? internalValue,
-          setValue: onValueChange ?? handleChange,
+          setValue: handleChange,
           maxHeight,
           onSubmit,
-          disabled,
+          disabled: effectiveDisabled,
           textareaRef,
         }}
       >
@@ -94,7 +96,7 @@ function PromptInput({
           data-testid="prompt-input"
           className={cn(
             "border-input bg-background cursor-text rounded-3xl border p-2 shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-            disabled && "cursor-not-allowed opacity-60",
+            effectiveDisabled && "cursor-not-allowed opacity-60",
             className
           )}
           {...props}
@@ -156,6 +158,7 @@ function PromptInputTextarea({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (disabled) return
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       onSubmit?.()

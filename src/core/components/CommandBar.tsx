@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback, memo } from 'react';
+import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
 import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image, ChevronUp, X } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
@@ -48,7 +48,7 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                                     className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
                                 >
                                     <div className="w-2 h-2 rounded-full bg-gray-500" />
-                                    Indii (Chief of Staff)
+                                    indii (Chief of Staff)
                                 </button>
                             </div>
 
@@ -122,9 +122,20 @@ function CommandBar() {
     const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const { currentModule, setModule, toggleAgentWindow, isAgentOpen } = useStore();
+    const [isIndiiMode, setIsIndiiMode] = useState(currentModule === 'dashboard' || currentModule === 'select-org');
     const colors = getColorForModule(currentModule);
 
     const toast = useToast();
+
+    // Sync isIndiiMode with currentModule changes
+    useEffect(() => {
+        if (currentModule === 'dashboard' || currentModule === 'select-org') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsIndiiMode(true);
+        } else {
+            setIsIndiiMode(false);
+        }
+    }, [currentModule]);
 
     // Memoize agent lists to avoid re-calling registry on every render
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
@@ -205,32 +216,57 @@ function CommandBar() {
     }, []);
 
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-        e?.preventDefault();
-        if (!input.trim() && attachments.length === 0) return;
-
-        setIsProcessing(true);
-        if (!isAgentOpen) {
-            toggleAgentWindow();
-        }
-
         try {
-            const targetAgent = knownAgentIds.includes(currentModule) ? currentModule : undefined;
-            const processedAttachments = attachments.length > 0 ? await processAttachments(attachments) : undefined;
+            e?.preventDefault();
 
-            await agentService.sendMessage(input, processedAttachments, targetAgent);
+            if (!input.trim() && attachments.length === 0) {
+                return;
+            }
 
+            if (isProcessing) {
+                return;
+            }
+
+            setIsProcessing(true);
+            const currentInput = input;
+            const currentAttachments = [...attachments];
+
+            // Clear immediately for optimistic UI
             setInput('');
             setAttachments([]);
-            setIsProcessing(false);
-        } catch (error) {
-            console.error("CommandBar error:", error);
-            toast.error("Failed to send message.");
+
+            // Auto-open agent window if not already open
+            if (!isAgentOpen) {
+                if (toggleAgentWindow) {
+                    toggleAgentWindow();
+                }
+            }
+
+            try {
+                const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
+
+                // Determine target agent based on Indii Mode toggle
+                const targetId = isIndiiMode ? 'dashboard' : currentModule;
+                const targetAgent = knownAgentIds.includes(targetId) ? targetId : undefined;
+
+                await agentService.sendMessage(currentInput, processedAttachments, targetAgent);
+                setIsProcessing(false);
+            } catch (error) {
+                console.error('CommandBar: Failed to send message:', error);
+                toast.error("Failed to send message.");
+                // Restore input on error
+                setInput(currentInput);
+                setAttachments(currentAttachments);
+                setIsProcessing(false);
+            }
+        } catch (fatalError) {
+            console.error("CommandBar: Fatal crash in handleSubmit", fatalError);
             setIsProcessing(false);
         }
-    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast]);
+    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode]); // eslint-disable-line react-hooks/preserve-manual-memoization
 
     return (
-        <div className="w-full bg-[#0d1117] border-t border-white/10 p-4">
+        <div className="w-full bg-bg-dark border-t border-white/10 p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Input Area */}
                 <div
@@ -334,7 +370,7 @@ function CommandBar() {
                                             onClick={() => setOpenDelegate(!openDelegate)}
                                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
                                         >
-                                            <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'Indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
+                                            <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
                                             <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
                                         </button>
 
@@ -353,17 +389,18 @@ function CommandBar() {
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => toggleAgentWindow()}
+                                    onClick={() => setIsIndiiMode(!isIndiiMode)}
                                     className={cn(
                                         "p-1.5 rounded-lg transition-all border flex items-center gap-2 px-3 group",
-                                        isAgentOpen
+                                        isIndiiMode
                                             ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
                                             : "bg-black/20 border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10"
                                     )}
-                                    title="Open Chat"
-                                    aria-label="Open Chat"
+                                    title={isIndiiMode ? "Talk to Indii (Active)" : "Talk to Indii"}
+                                    aria-label={isIndiiMode ? "Switch to Department" : "Switch to Indii"}
+                                    aria-pressed={isIndiiMode}
                                 >
-                                    <div className={cn("w-2 h-2 rounded-full transition-colors", isAgentOpen ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
+                                    <div className={cn("w-2 h-2 rounded-full transition-colors", isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
                                     <span className="text-[10px] font-bold uppercase tracking-widest group-hover:tracking-[0.15em] transition-all">indii</span>
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
@@ -380,11 +417,12 @@ function CommandBar() {
                                 <button
                                     type="button"
                                     onClick={(e) => handleSubmit(e)}
+                                    data-testid="command-bar-run-btn"
                                     disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
                                 >
                                     {isProcessing ? (
-                                        <Loader2 size={14} className="animate-spin" />
+                                        <Loader2 data-testid="run-loader" size={14} className="animate-spin" />
                                     ) : (
                                         <>
                                             Run

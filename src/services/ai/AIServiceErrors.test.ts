@@ -76,14 +76,17 @@ describe('AIService Integration (Client SDK)', () => {
                 controller.close();
             }
         });
-        vi.mocked(firebaseAI.generateContentStream).mockResolvedValue(mockStream);
+        vi.mocked(firebaseAI.generateContentStream).mockResolvedValue({
+            stream: mockStream,
+            response: Promise.resolve({ candidates: [] } as any)
+        });
 
-        const stream = await AI.generateContentStream({
+        const result = await AI.generateContentStream({
             model: 'gemini-pro',
             contents: []
         });
 
-        const reader = stream.getReader();
+        const reader = result.stream.getReader();
         const { value } = await reader.read();
         expect(value?.text()).toBe('Chunk 1');
     });
@@ -103,9 +106,9 @@ describe('AIService Integration (Client SDK)', () => {
         // Use any for complex types if needed or exact type
         const spy = vi.spyOn(firebaseAI, 'generateStructuredData').mockResolvedValue(mockData);
 
-        const data = await AI.generateStructuredData('Prompt', schema, 1000, 'System Instruction');
+        const data = await AI.generateStructuredData('Prompt', schema as any, 1000, 'System Instruction');
 
         expect(data).toBe(mockData);
-        expect(spy).toHaveBeenCalledWith('Prompt', schema, 1000, 'System Instruction');
+        expect(spy).toHaveBeenCalledWith('Prompt', schema as any, 1000, 'System Instruction');
     });
 });

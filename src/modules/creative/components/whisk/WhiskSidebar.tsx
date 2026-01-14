@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskItem } from '@/core/store/slices/creativeSlice';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 interface WhiskSectionProps {
     title: string;
@@ -39,9 +40,13 @@ const WhiskSection = ({ title, category, items, onAdd, onRemove, onToggle, onUpd
                     const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, category);
                     onAdd('image', dataUrl, caption);
                     toast.success(`${title} reference added!`);
-                } catch (err) {
+                } catch (err: any) {
                     onAdd('image', dataUrl);
-                    toast.warning("Reference added, but captioning failed.");
+                    if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                        toast.error(err.message || 'Quota exceeded during analysis.');
+                    } else {
+                        toast.warning("Reference added, but captioning failed.");
+                    }
                 }
             }
         };
@@ -69,9 +74,13 @@ const WhiskSection = ({ title, category, items, onAdd, onRemove, onToggle, onUpd
                 const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, category);
                 onAdd('image', item.url, caption);
                 toast.success(`${title} reference updated!`);
-            } catch (err) {
+            } catch (err: any) {
                 onAdd('image', item.url);
-                toast.warning("Reference added, but captioning failed.");
+                if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                    toast.error(err.message || 'Quota exceeded during analysis.');
+                } else {
+                    toast.warning("Reference added, but captioning failed.");
+                }
             }
         }
     };
@@ -207,11 +216,11 @@ export default function WhiskSidebar() {
     const toast = useToast();
 
     return (
-        <div className="w-64 border-r border-gray-800 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
+        <div className="w-full md:w-64 border-r border-gray-800 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Sparkles className="text-purple-500" size={16} />
-                    <span className="text-xs font-bold text-white tracking-widest uppercase">Alchemy Studio</span>
+                    <span className="text-xs font-bold text-white tracking-widest uppercase">Creative Director</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-[9px] text-gray-500 uppercase font-bold">Precise</span>

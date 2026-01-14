@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import { Image as ImageIcon, Wand2, History, ChevronRight, ChevronDown, Plus, Loader2, Sliders } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
-import { motion } from 'framer-motion';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
-import { AI } from '@/services/ai/AIService';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useToast } from '@/core/context/ToastContext';
 
 interface CreativePanelProps {
@@ -14,58 +10,15 @@ interface CreativePanelProps {
 
 export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) {
     const [activeTab, setActiveTab] = useState('create');
-    const [isGenerating, setIsGenerating] = useState(false);
     const {
-        prompt, setPrompt,
         studioControls, setStudioControls,
-        addToHistory, currentProjectId
     } = useStore();
     const toast = useToast();
-
-    const handleGenerate = async () => {
-        if (!prompt.trim()) {
-            toast.error("Please enter a prompt");
-            return;
-        }
-
-        setIsGenerating(true);
-        try {
-            const results = await ImageGeneration.generateImages({
-                prompt: prompt,
-                count: 1,
-                aspectRatio: studioControls.aspectRatio,
-                resolution: studioControls.resolution,
-                negativePrompt: studioControls.negativePrompt,
-                seed: studioControls.seed ? parseInt(studioControls.seed) : undefined
-            });
-
-            if (results.length > 0) {
-                results.forEach(res => {
-                    addToHistory({
-                        id: res.id,
-                        url: res.url,
-                        prompt: res.prompt,
-                        type: 'image',
-                        timestamp: Date.now(),
-                        projectId: currentProjectId,
-                        origin: 'generated'
-                    });
-                });
-                toast.success("Image generated!");
-            } else {
-                toast.error("Generation returned no images. Please try again.");
-            }
-        } catch (e) {
-            toast.error("Generation failed");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
 
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-b from-[#0d1117] to-[#0d1117]/90">
+        <div className="flex flex-col h-full bg-gradient-to-b from-bg-dark to-bg-dark/90">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-purple-500/10 rounded-lg">
@@ -107,12 +60,12 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
 
                     {/* Negative Prompt */}
                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">CONSTRAINTS (NEGATIVE PROMPT)</label>
+                        <label className="text-[10px] font-bold text-gray-500 tracking-wider">CONSTRAINTS</label>
                         <textarea
                             value={studioControls.negativePrompt}
                             onChange={(e) => setStudioControls({ negativePrompt: e.target.value })}
                             className="w-full bg-black/40 text-white text-sm p-3 rounded-xl border border-white/10 outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 transition-all h-20 resize-none placeholder:text-gray-600 shadow-inner"
-                            placeholder="Blurry, low quality, distorted..."
+                            placeholder="Negative prompt: elements to exclude..."
                         />
                     </div>
 
@@ -178,32 +131,6 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
 
                     {/* Advanced Settings Toggle */}
 
-                </div>
-            )}
-
-            {/* Action Buttons - Only show in create mode */}
-            {activeTab === 'create' && (
-                <div className="p-4 border-t border-white/10 space-y-3 bg-black/20 backdrop-blur-md">
-                    <div className="flex gap-2">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleGenerate}
-                            disabled={isGenerating}
-                            className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2 group border border-purple-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} className="group-hover:rotate-12 transition-transform" />}
-                            {isGenerating ? 'Generating...' : 'Generate'}
-                        </motion.button>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-3 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 hover:border-white/20 transition-colors"
-                        >
-                            <Plus size={18} />
-                        </motion.button>
-                    </div>
-                    <p className="text-[10px] text-center text-gray-600 font-mono">Est. Cost: 2 Credits • Est. Time: 4.2s</p>
                 </div>
             )}
         </div>

@@ -8,7 +8,7 @@ describe('Finance Agent Integration', () => {
             distributor: 'distrokid'
         });
 
-        const data = JSON.parse(result);
+        const data = result.data;
         expect(data.status).toBe('READY_FOR_AUDIT');
         expect(data.distributor).toBe('DistroKid');
         expect(data.party_id).toBeDefined();
@@ -20,8 +20,8 @@ describe('Finance Agent Integration', () => {
             distributor: 'fake_distro'
         });
 
-        const data = JSON.parse(result);
-        expect(data.status).toBe('UNKNOWN_DISTRIBUTOR');
-        expect(data.risk).toBe('HIGH');
+        // toolError returns { success: false, metadata: { errorCode: ... } }
+        expect(result.success).toBe(false);
+        expect(result.metadata?.errorCode).toBe('UNKNOWN_DISTRIBUTOR');
     });
 });

@@ -149,12 +149,12 @@ export class FirebaseAIService {
             });
 
             try {
-                // @ts-ignore - options param not in typed definition but supported
+
                 const result = await modelCallback.generateContent(
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
-                        : sanitizedPrompt as Content,
-                    // @ts-ignore - options param not in typed definition but supported by underlying implementation
+                        : { contents: sanitizedPrompt } as any,
+                    // @ts-expect-error - options param not in typed definition but supported by underlying implementation
                     options
                 );
 
@@ -209,10 +209,11 @@ export class FirebaseAIService {
             });
 
             try {
-                // @ts-ignore - Signal supported in SDK
+
                 const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
                     typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
-                    // @ts-ignore - options param not in typed definition but supported
+
+                    // @ts-expect-error - options param not in typed definition but supported
                     options
                 );
 
@@ -238,7 +239,8 @@ export class FirebaseAIService {
                         functionCalls: () => {
                             const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
                             return part ? [part.functionCall] : [];
-                        }
+                        },
+                        usage: () => aggResult.usageMetadata
                     };
                 });
 
@@ -357,7 +359,8 @@ export class FirebaseAIService {
         prompt: string | Part[],
         schema: Schema,
         thinkingBudget?: number,
-        systemInstruction?: string
+        systemInstruction?: string,
+        modelOverride?: string
     ): Promise<T> {
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
@@ -369,10 +372,9 @@ export class FirebaseAIService {
                 config.thinkingConfig = { thinkingBudget };
             }
 
-            // CACHE CHECK
-            const modelName = this.model!.model;
-            // For structured data, prompt + schema is the key
-            const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema);
+            const modelName = modelOverride || this.model!.model;
+            // For structured data, prompt + schema + model is the key
+            const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema) + modelName;
             const cached = await aiCache.get(cacheKeyString, modelName, config);
 
             if (cached) {
@@ -397,11 +399,7 @@ export class FirebaseAIService {
             // CACHE SET
             await aiCache.set(cacheKeyString, text, modelName, config);
 
-            try {
-                return JSON.parse(text) as T;
-            } catch (e) {
-                throw e;
-            }
+            return JSON.parse(text) as T;
         });
     }
 

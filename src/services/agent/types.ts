@@ -49,7 +49,6 @@ export const VALID_AGENT_IDS = [
     'legal',
     'finance',
     'producer',
-    'music',
     'director',
     'screenwriter',
     'video',
@@ -62,6 +61,7 @@ export const VALID_AGENT_IDS = [
     'brand',
     'devops',
     'security',
+    'merchandise',  // Merchandise creation & production
     'generalist'  // Agent Zero
 ] as const;
 
@@ -108,6 +108,7 @@ export interface AgentContext {
     distributor?: DistributorInfo;
     traceId?: string;
     attachments?: { mimeType: string; base64: string }[];
+    systemPrompt?: string;
 }
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';
@@ -203,6 +204,11 @@ export interface AgentExecutionResult {
     }>;
     thoughts?: string[];
     error?: string;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+    };
 }
 
 export type AgentResponse = AgentExecutionResult;

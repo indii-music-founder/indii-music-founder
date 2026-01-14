@@ -20,7 +20,8 @@ import {
     GenerateImageOptions,
     EmbedContentOptions,
     StreamChunk,
-    RetryableError
+    RetryableError,
+    UsageMetadata
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -87,6 +88,9 @@ function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
                 }
             }
             return [];
+        },
+        usage: (): UsageMetadata | undefined => {
+            return rawResponse.usageMetadata;
         }
     };
 }
@@ -212,7 +216,7 @@ export class AIService {
 
                         if (options.cache !== false && cacheKey) {
                             // Default TTL or from options if added later
-                            this.cache.set(cacheKey, result.response, options.cacheTTL);
+                            this.cache.set(cacheKey, result.response as any, options.cacheTTL);
                         }
 
                         return wrapResponse({

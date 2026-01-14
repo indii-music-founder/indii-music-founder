@@ -34,6 +34,7 @@ export default function CreativeNavbar() {
                     <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setViewMode('gallery')}
+                            data-testid="gallery-view-btn"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'gallery' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
@@ -41,18 +42,22 @@ export default function CreativeNavbar() {
                         </button>
                         <button
                             onClick={() => setViewMode('canvas')}
+                            data-testid="canvas-view-btn"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'canvas' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             Canvas
                         </button>
-                        <button
-                            onClick={() => setViewMode('showroom')}
-                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'showroom' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            Showroom
-                        </button>
+                        {generationMode === 'video' && (
+                            <button
+                                onClick={() => setViewMode('video_production')}
+                                data-testid="director-view-btn"
+                                className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'video_production' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                Director
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -62,6 +67,7 @@ export default function CreativeNavbar() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setShowPromptBuilder(!showPromptBuilder)}
+                                data-testid="builder-btn"
                                 className={`flex items-center gap-1.5 px-2 py-1 rounded border transition-all text-[10px] font-medium uppercase tracking-wide
                                     ${showPromptBuilder
                                         ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'

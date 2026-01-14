@@ -13,6 +13,18 @@ import ContractRenderer from './ContractRenderer';
 import { voiceService } from '@/services/ai/VoiceService';
 import { Volume2, VolumeX, ChevronDown, ChevronRight, FileJson, X, Bot, Sparkles, History as HistoryIcon, Plus, UserPlus } from 'lucide-react';
 
+// Helper to recursively extract text from React children (ignoring structure)
+// This ensures that even if Markdown parses URLs as links (React Elements), we still see the raw text pattern.
+const getText = (node: any): string => {
+    if (typeof node === 'string') return node;
+    if (typeof node === 'number') return String(node);
+    if (Array.isArray(node)) return node.map(getText).join('');
+    if (typeof node === 'object' && node !== null && 'props' in node) {
+        return getText(node.props.children);
+    }
+    return '';
+};
+
 const CollapsibleJson = ({ data }: { data: any }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
@@ -50,8 +62,9 @@ const CollapsibleJson = ({ data }: { data: any }) => {
 
 // --- Components ---
 
-const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
+const ThoughtChain = memo(({ thoughts, messageId }: { thoughts: AgentThought[]; messageId: string }) => {
     const [isOpen, setIsOpen] = useState(true);
+    const contentId = `thought-chain-${messageId}`;
 
     if (!thoughts || thoughts.length === 0) return null;
 
@@ -60,6 +73,8 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
             <div className="absolute left-0 top-8 bottom-0 w-px bg-gradient-to-b from-purple-500/30 to-transparent" />
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                aria-controls={contentId}
                 className="group flex items-center gap-3 mb-3 h-8 px-3 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all"
             >
                 <div className={`w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)] ${isOpen ? 'animate-pulse' : ''}`} />
@@ -77,6 +92,8 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
                         initial={{ height: 0, opacity: 0, x: -5 }}
                         animate={{ height: 'auto', opacity: 1, x: 0 }}
                         exit={{ height: 0, opacity: 0, x: -5 }}
+                        id={contentId}
+                        role="region"
                         className="space-y-3 pl-6 overflow-hidden"
                     >
                         {thoughts.map(thought => (
@@ -95,118 +112,6 @@ const ThoughtChain = memo(({ thoughts }: { thoughts: AgentThought[] }) => {
         </div>
     );
 });
-
-const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: string }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-6 px-1`}
-    >
-        {msg.role === 'model' && (
-            <div className="relative mt-1 flex-shrink-0">
-                <div className="absolute -inset-1 bg-purple-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                {avatarUrl ? (
-                    <img
-                        src={avatarUrl}
-                        className="w-9 h-9 rounded-full object-cover relative z-10 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                        alt="AI"
-                    />
-                ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30">
-                        <Bot size={18} className="text-purple-200" />
-                    </div>
-                )}
-            </div>
-        )}
-
-        <div
-            data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
-            className={`max-w-[85%] rounded-[1.5rem] px-5 py-4 relative group transition-all duration-300 ${msg.role === 'user'
-                ? 'bg-gradient-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
-                : msg.role === 'system'
-                    ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[11px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-2'
-                    : 'bg-gradient-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
-                }`}>
-
-            {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} />}
-
-            <div className="prose prose-invert prose-sm max-w-none break-words leading-[1.6] font-medium tracking-tight">
-                <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        img: ImageRenderer,
-                        table: ({ node, ...props }: any) => (
-                            <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
-                                <table {...props} className="min-w-full" />
-                            </div>
-                        ),
-                        code({ node, inline, className, children, ...props }: any) {
-                            const match = /language-(\w+)/.exec(className || '')
-                            const isJson = match && match[1] === 'json';
-                            const childrenStr = String(children);
-
-                            if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) {
-                                return <ContractRenderer markdown={childrenStr} />;
-                            }
-
-                            if (!inline && isJson) {
-                                try {
-                                    const content = childrenStr.replace(/\n$/, '');
-                                    const data = JSON.parse(content);
-                                    if (data.beats && (data.title || data.synopsis)) return <VisualScriptRenderer data={data} />;
-                                    if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
-                                    if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
-                                    return <CollapsibleJson data={data} />;
-                                } catch (e) { }
-                            }
-                            return <code className={className} {...props}>{children}</code>
-                        }
-                    }}
-                >
-                    {msg.text}
-                </ReactMarkdown>
-            </div>
-
-            {msg.role === 'system' && <span>{msg.text}</span>}
-
-            {msg.isStreaming && (
-                <div className="mt-2 flex items-center gap-1.5 h-4">
-                    <motion.div
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                        className="w-1.5 h-1.5 bg-purple-500 rounded-full"
-                    />
-                    <motion.div
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.2 }}
-                        className="w-1.5 h-1.5 bg-purple-500/60 rounded-full"
-                    />
-                    <motion.div
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.4 }}
-                        className="w-1.5 h-1.5 bg-purple-500/30 rounded-full"
-                    />
-                </div>
-            )}
-
-            {msg.attachments && (
-                <div className="mt-4 flex gap-3 flex-wrap">
-                    {msg.attachments.map((att, i) => (
-                        <motion.div
-                            key={i}
-                            whileHover={{ scale: 1.05, rotate: 2 }}
-                            className="relative group/att"
-                        >
-                            <div className="absolute inset-0 bg-purple-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
-                            <img src={att.base64} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
-                        </motion.div>
-                    ))}
-                </div>
-            )}
-        </div>
-    </motion.div>
-));
 
 const EMPTY_ARRAY: AgentMessage[] = [];
 
@@ -260,6 +165,263 @@ const ImageRenderer = ({ src, alt }: { src?: string; alt?: string }) => {
         </div>
     );
 };
+
+const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: string }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-6 px-1`}
+    >
+        {msg.role === 'model' && (
+            <div className="relative mt-1 flex-shrink-0">
+                <div className="absolute -inset-1 bg-purple-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                {avatarUrl ? (
+                    <img
+                        src={avatarUrl}
+                        className="w-9 h-9 rounded-full object-cover relative z-10 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                        alt="AI"
+                    />
+                ) : (
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30">
+                        <Bot size={18} className="text-purple-200" />
+                    </div>
+                )}
+            </div>
+        )}
+
+        <div
+            data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
+            aria-live={msg.role === 'model' && msg.isStreaming ? 'polite' : undefined}
+            className={`max-w-[85%] rounded-[1.5rem] px-5 py-4 relative group transition-all duration-300 ${msg.role === 'user'
+                ? 'bg-gradient-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
+                : msg.role === 'system'
+                    ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[11px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-2'
+                    : 'bg-gradient-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
+                }`}>
+
+            {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} />}
+
+            <div className="prose prose-invert prose-sm max-w-none break-words leading-[1.6] font-medium tracking-tight">
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                        img: ImageRenderer,
+                        p: ({ children }: any) => {
+                            const text = getText(children);
+                            // console.log("Parsed P Text:", text);
+
+                            // Detect Raw AI Image Tool Output (Generic Director Tools)
+                            // Handles: generate_image, batch_edit_images, generate_high_res_asset, render_cinematic_grid, extract_grid_frame
+                            const toolMatch = text.match(/\[Tool: (generate_image|batch_edit_images|generate_high_res_asset|render_cinematic_grid|extract_grid_frame)\] Output: (?:Success: )?(\{.*\})/s);
+
+                            if (toolMatch) {
+                                try {
+                                    const toolName = toolMatch[1];
+                                    const json = JSON.parse(toolMatch[2]);
+                                    const { generatedHistory } = useStore.getState();
+
+                                    let imageIds: string[] = [];
+
+                                    // Collect IDs based on return format
+                                    if (json.image_ids && Array.isArray(json.image_ids)) imageIds = json.image_ids;
+                                    else if (json.asset_id) imageIds = [json.asset_id];
+                                    else if (json.grid_id) imageIds = [json.grid_id];
+                                    else if (json.frame_id) imageIds = [json.frame_id];
+
+                                    // Resolve IDs to Image Objects
+                                    const images = imageIds
+                                        .map(id => generatedHistory.find(h => h.id === id))
+                                        .filter(Boolean);
+
+                                    if (images.length > 0) {
+                                        return (
+                                            <div className="flex flex-col gap-4 my-4">
+                                                {images.map((img: any, idx: number) => (
+                                                    <div key={idx} className="bg-black/40 rounded-xl p-4 border border-white/10">
+                                                        <div className="text-xs text-purple-300 mb-2 font-mono flex items-center gap-2">
+                                                            <Sparkles size={12} />
+                                                            {toolName === 'generate_image' ? 'GENERATED ASSET' :
+                                                                toolName === 'batch_edit_images' ? 'EDITED ASSET' :
+                                                                    toolName === 'render_cinematic_grid' ? 'CINEMATIC GRID' :
+                                                                        toolName === 'extract_grid_frame' ? 'EXTRACTED FRAME' :
+                                                                            'HIGH-RES ASSET'} {idx + 1}
+                                                        </div>
+                                                        <ImageRenderer src={img.url} alt={img.prompt || `Generated Image ${idx + 1}`} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+
+                                    // Fallback: Legacy Base64 URLs (only for generate_image/batch_edit usually)
+                                    if (json.urls && Array.isArray(json.urls)) {
+                                        return (
+                                            <div className="flex flex-col gap-4 my-4">
+                                                {json.urls.map((url: string, idx: number) => (
+                                                    <div key={idx} className="bg-black/40 rounded-xl p-4 border border-white/10">
+                                                        <div className="text-xs text-purple-300 mb-2 font-mono flex items-center gap-2">
+                                                            <Sparkles size={12} /> GENERATED ASSET {idx + 1}
+                                                        </div>
+                                                        <ImageRenderer src={url} alt={`Generated Image ${idx + 1}`} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to parse image tool output:", e);
+                                }
+                            }
+
+                            // Detect Delegate Task Output (Nested Tool Outputs)
+                            const delegateMatch = text.match(/\[Tool: delegate_task\] Output: (?:Success: )?(\{.*\})/s);
+                            if (delegateMatch) {
+                                try {
+                                    const json = JSON.parse(delegateMatch[1]);
+                                    if (json.text) {
+                                        const innerToolMatch = json.text.match(/\[Tool: ([^\]]+)\] Output: (?:Success: )?(\{.*\})/s);
+
+                                        if (innerToolMatch) {
+                                            const toolName = innerToolMatch[1];
+                                            const innerJsonStr = innerToolMatch[2];
+
+                                            try {
+                                                const innerJson = JSON.parse(innerJsonStr);
+
+                                                if (toolName === 'analyze_brand_consistency' && innerJson.analysis) {
+                                                    return (
+                                                        <div className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
+                                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+                                                                <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                                                                <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
+                                                            </div>
+                                                            <div className="prose prose-invert prose-sm max-w-none">
+                                                                <ReactMarkdown components={{
+                                                                    p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>
+                                                                }}>
+                                                                    {innerJson.analysis}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <div className="my-2 p-3 bg-white/5 rounded-lg border-l-2 border-purple-500 text-sm text-gray-300 font-mono whitespace-pre-wrap">
+                                                        <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">Tool Result: {toolName}</div>
+                                                        {JSON.stringify(innerJson, null, 2)}
+                                                    </div>
+                                                );
+
+                                            } catch (e) {
+                                                // Failed to parse inner tool output, ignore
+                                            }
+                                        }
+                                        return <ReactMarkdown>{json.text}</ReactMarkdown>;
+                                    }
+                                } catch (e) {
+                                    console.warn("Failed to parse delegate tool output:", e);
+                                }
+                            }
+
+                            return <p className="mb-4 last:mb-0">{children}</p>;
+                        },
+                        pre: ({ children, ...props }: any) => {
+                            if (React.isValidElement(children)) {
+                                const { className, children: codeChildren } = children.props as any;
+                                const content = String(codeChildren || '');
+                                const match = /language-(\w+)/.exec(className || '');
+                                const isJson = match && match[1] === 'json';
+
+                                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) {
+                                    return <>{children}</>;
+                                }
+
+                                if (isJson) {
+                                    try {
+                                        JSON.parse(content.replace(/\n$/, ''));
+                                        return <>{children}</>;
+                                    } catch (e) { /* ignore json parse error */ }
+                                }
+                            }
+                            // Wrap pre in scrollable container for mobile responsiveness
+                            return (
+                                <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/30">
+                                    <pre {...props} className="p-4 min-w-full">{children}</pre>
+                                </div>
+                            );
+                        },
+                        table: ({ node, ...props }: any) => (
+                            <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
+                                <table {...props} className="min-w-full" />
+                            </div>
+                        ),
+                        code({ node, inline, className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || '')
+                            const isJson = match && match[1] === 'json';
+                            const childrenStr = String(children);
+
+                            if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) {
+                                return <ContractRenderer markdown={childrenStr} />;
+                            }
+
+                            if (!inline && isJson) {
+                                try {
+                                    const content = childrenStr.replace(/\n$/, '');
+                                    const data = JSON.parse(content);
+                                    if (data.beats && (data.title || data.synopsis)) return <VisualScriptRenderer data={data} />;
+                                    if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
+                                    if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
+                                    return <CollapsibleJson data={data} />;
+                                } catch (e) { /* ignore json parse error */ }
+                            }
+                            return <code className={className} {...props}>{children}</code>
+                        }
+                    }}
+                >
+                    {msg.text}
+                </ReactMarkdown>
+            </div>
+
+            {msg.role === 'system' && <span>{msg.text}</span>}
+
+            {msg.isStreaming && (
+                <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
+                    <motion.div
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                        className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+                    />
+                    <motion.div
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.2 }}
+                        className="w-1.5 h-1.5 bg-purple-500/60 rounded-full"
+                    />
+                    <motion.div
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.4 }}
+                        className="w-1.5 h-1.5 bg-purple-500/30 rounded-full"
+                    />
+                </div>
+            )}
+
+            {msg.attachments && (
+                <div className="mt-4 flex gap-3 flex-wrap">
+                    {msg.attachments.map((att, i) => (
+                        <motion.div
+                            key={i}
+                            whileHover={{ scale: 1.05, rotate: 2 }}
+                            className="relative group/att"
+                        >
+                            <div className="absolute inset-0 bg-purple-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
+                            <img src={att.base64} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </div>
+    </motion.div>
+));
 
 export default function ChatOverlay() {
     const agentHistory = useStore(state => state.agentHistory) || EMPTY_ARRAY;
@@ -342,7 +504,7 @@ export default function ChatOverlay() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[70] flex flex-col bg-[#0d1117]"
+                    className="fixed inset-0 z-[70] flex flex-col bg-bg-dark"
                 >
                     {/* Mobile Header */}
                     <div className="flex items-center justify-between p-4 border-b border-white/10 mobile-safe-top">
@@ -363,6 +525,7 @@ export default function ChatOverlay() {
                         <button
                             onClick={() => useStore.getState().toggleAgentWindow()}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400"
+                            aria-label="Close Agent"
                         >
                             <X size={20} />
                         </button>
@@ -381,7 +544,7 @@ export default function ChatOverlay() {
                     </div>
 
                     {/* Mobile Footer with Voice Toggle */}
-                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-[#0d1117] mobile-safe-bottom">
+                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-bg-dark mobile-safe-bottom">
                         <span className="text-xs text-gray-500">
                             {agentHistory.length} messages
                         </span>
@@ -391,6 +554,7 @@ export default function ChatOverlay() {
                                 ? 'bg-purple-600/20 text-purple-400 border-purple-500/30'
                                 : 'bg-black/50 text-gray-500 border-white/10'
                                 }`}
+                            aria-label={isVoiceEnabled ? "Mute Voice" : "Enable Voice"}
                         >
                             {!isVoiceEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
@@ -442,7 +606,7 @@ export default function ChatOverlay() {
                                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-60 transition duration-500"></div>
                                     <div className="relative w-9 h-9 rounded-full bg-black flex items-center justify-center border border-white/10 overflow-hidden">
                                         {avatarUrl ? (
-                                            <img src={avatarUrl} alt="Indii" className="w-full h-full object-cover" />
+                                            <img src={avatarUrl} alt="indii" className="w-full h-full object-cover" />
                                         ) : (
                                             <Sparkles size={18} className="text-purple-300" />
                                         )}
@@ -451,7 +615,7 @@ export default function ChatOverlay() {
 
                                 <div className="min-w-0 flex flex-col justify-center">
                                     <h3 className="text-[15px] font-bold text-white leading-tight flex items-center gap-2 tracking-tight">
-                                        {currentSession?.title || 'Talk to Indii'}
+                                        {currentSession?.title || 'Talk to indii'}
                                         <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
                                             BETA
                                         </span>
@@ -476,6 +640,7 @@ export default function ChatOverlay() {
                                         : 'bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                     title="Invite"
+                                    aria-label="Invite"
                                 >
                                     <UserPlus size={18} strokeWidth={1.5} />
                                 </button>
@@ -487,6 +652,7 @@ export default function ChatOverlay() {
                                         : 'bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white'
                                         }`}
                                     title="History"
+                                    aria-label="History"
                                 >
                                     <HistoryIcon size={18} strokeWidth={1.5} />
                                 </button>
@@ -495,6 +661,7 @@ export default function ChatOverlay() {
                                     onClick={() => createSession()}
                                     className="p-2 rounded-xl transition-all duration-300 border bg-transparent text-gray-400 border-transparent hover:bg-white/5 hover:text-white"
                                     title="New"
+                                    aria-label="New Session"
                                 >
                                     <Plus size={18} strokeWidth={1.5} />
                                 </button>
@@ -507,6 +674,7 @@ export default function ChatOverlay() {
                                         ? 'text-white shadow-[0_0_15px_rgba(147,51,234,0.4)] border border-purple-500/50'
                                         : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                                         }`}
+                                    aria-label={isVoiceEnabled ? "Mute Voice" : "Enable Voice"}
                                 >
                                     <div className={`absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-blue-600/20 transition-opacity duration-300 ${isVoiceEnabled ? 'opacity-100' : 'opacity-0'}`}></div>
                                     <div className="relative">
@@ -518,6 +686,7 @@ export default function ChatOverlay() {
                                     onClick={() => useStore.getState().toggleAgentWindow()}
                                     className="p-2 rounded-xl transition-all duration-300 border border-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/10"
                                     title="Close"
+                                    aria-label="Close Agent"
                                 >
                                     <X size={18} strokeWidth={1.5} />
                                 </button>
@@ -531,7 +700,7 @@ export default function ChatOverlay() {
                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-black/20 overflow-x-auto custom-scrollbar">
                                     {currentSession.participants.map(p => (
                                         <span key={p} className="text-[10px] bg-purple-900/30 px-2 py-1 rounded text-purple-200 border border-purple-500/20 whitespace-nowrap">
-                                            {p === 'indii' ? '🤖 Indii' : `👤 ${p.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
+                                            {p === 'indii' ? '🤖 indii' : `👤 ${p.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
                                         </span>
                                     ))}
                                 </div>

@@ -1,14 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Camera, Image as ImageIcon } from 'lucide-react';
-import { BananaTheme } from '@/modules/merchandise/themes';
+import { MerchTheme } from '@/modules/merchandise/themes';
 
 interface ScenarioBuilderProps {
     scenePrompt: string;
     motionPrompt: string;
     onSceneChange: (val: string) => void;
     onMotionChange: (val: string) => void;
-    theme?: BananaTheme;
+    theme?: MerchTheme;
 }
 
 const PRESETS = [

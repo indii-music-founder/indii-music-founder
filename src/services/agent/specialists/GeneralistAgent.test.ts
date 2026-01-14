@@ -19,7 +19,13 @@ describe('GeneralistAgent', () => {
             currentOrganizationId: 'org-1',
             currentProjectId: 'proj-1',
             uploadedImages: [],
-            agentHistory: []
+            agentHistory: [],
+            studioControls: {
+                resolution: '1024x1024',
+                aspectRatio: '1:1',
+                negativePrompt: ''
+            },
+            addToHistory: vi.fn()
         });
     });
 
@@ -52,12 +58,9 @@ describe('GeneralistAgent', () => {
         // Mock AI response to avoid actual call
         (AI.generateContentStream as any).mockResolvedValue({
             stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => JSON.stringify({ final_response: 'Understood.' }) } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => JSON.stringify({ final_response: 'Understood.' }) };
+                }
             },
             response: Promise.resolve({
                 text: () => JSON.stringify({ final_response: 'Understood.' }),
@@ -71,8 +74,8 @@ describe('GeneralistAgent', () => {
         await agent.execute('Test task', context);
 
         // Verify the prompt contains the injected data
-        const callArgs = generateSpy.mock.calls[0][0];
-        const promptText = (callArgs.contents[0].parts as any[]).find(p => p.text.includes('BRAND CONTEXT'))?.text;
+        const callArgs: any = generateSpy.mock.calls[0]?.[0];
+        const promptText = callArgs?.contents?.[0]?.parts?.find((p: any) => p.text?.includes('BRAND CONTEXT'))?.text;
 
         expect(promptText).toBeDefined();
         expect(promptText).toContain('Identity: Test Bio');
@@ -80,5 +83,38 @@ describe('GeneralistAgent', () => {
         expect(promptText).toContain('Spotify: https://spotify.com/test');
         expect(promptText).toContain('PRO: ASCAP');
         expect(promptText).toContain('Distributor: DistroKid');
+        expect(promptText).toContain('Distributor: DistroKid');
+    });
+
+    it('should execute generate_image tool when requested by AI', async () => {
+        // Mock AI to return a tool call
+        const toolCallJson = JSON.stringify({
+            thought: "I need to generate an image.",
+            tool: "generate_image",
+            args: { prompt: "A cool cat", count: 1 }
+        });
+
+        (AI.generateContentStream as any).mockResolvedValue({
+            stream: {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => toolCallJson };
+                    yield { text: () => JSON.stringify({ final_response: "Image generated." }) };
+                }
+            },
+            response: Promise.resolve({ text: () => toolCallJson })
+        });
+
+        // Use dynamic import to spy on the singleton instance used by the tools
+        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+        const generateSpy = vi.spyOn(ImageGeneration, 'generateImages').mockResolvedValue([
+            { id: 'img-1', url: 'http://img.com/1', prompt: 'A cool cat' }
+        ]);
+
+        await agent.execute('Make a cat image');
+
+        expect(generateSpy).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: 'A cool cat',
+            count: 1
+        }));
     });
 });

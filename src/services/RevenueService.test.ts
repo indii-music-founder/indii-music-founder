@@ -87,7 +87,9 @@ describe('RevenueService (Production Logic)', () => {
             source: 'direct',
             customerId: 'cust-1',
             userId: 'seller-1',
-            timestamp: 1234567890
+            timestamp: 1234567890,
+            status: 'completed',
+            currency: 'usd'
         };
 
         await revenueService.recordSale(entry);
