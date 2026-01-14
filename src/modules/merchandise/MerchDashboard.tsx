@@ -151,7 +151,11 @@ export default function MerchDashboard() {
                         </div>
                         <div className="space-y-4">
                             {products.slice(0, 3).map((product) => (
-                                <RecentDesignItem key={product.id} product={product} />
+                                <RecentDesignItem
+                                    key={product.id}
+                                    product={product}
+                                    onClick={() => navigate('/merch/design')}
+                                />
                             ))}
                             {products.length === 0 && (
                                 <p className="text-neutral-500 text-sm">No products created yet.</p>
