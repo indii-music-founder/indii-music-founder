@@ -121,7 +121,6 @@ export class FinanceService {
     }
   }
 
-  async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> {
   /**
    * Internal validation for double-entry bookkeeping principles.
    */
@@ -139,7 +138,7 @@ export class FinanceService {
     }
   }
 
-  async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<string> {
+  async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> {
     try {
       if (!auth.currentUser || auth.currentUser.uid !== expense.userId) {
         throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized add expense operation');
