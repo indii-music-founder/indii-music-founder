@@ -271,8 +271,11 @@ export const triggerLongFormVideoJob = functions
             const limits = TIER_LIMITS[userTier];
             const durationNum = parseFloat((totalDuration || 0).toString());
 
+            // GOD MODE: Bypass for Builder
+            const isGodMode = context.auth?.token.email === 'the.walking.agency.det@gmail.com';
+
             // 2. Validate Duration Limit
-            if (durationNum > limits.maxVideoDuration) {
+            if (!isGodMode && durationNum > limits.maxVideoDuration) {
                 throw new functions.https.HttpsError(
                     "resource-exhausted",
                     `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
@@ -287,7 +290,7 @@ export const triggerLongFormVideoJob = functions
                 const usageDoc = await transaction.get(usageRef);
                 const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
 
-                if (currentUsage >= limits.maxVideoGenerationsPerDay) {
+                if (!isGodMode && currentUsage >= limits.maxVideoGenerationsPerDay) {
                     throw new functions.https.HttpsError(
                         "resource-exhausted",
                         `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
