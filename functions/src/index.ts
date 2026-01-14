@@ -925,6 +925,16 @@ export const ragProxy = functions
             }
 
             try {
+                // SECURITY: Block Method Override Headers to prevent bypassing method checks
+                // Express might handle X-HTTP-Method-Override automatically, so strict method checking is key.
+
+                // 1. BLOCK DELETE (Data Integrity / Anti-Griefing)
+                // Prevents users from deleting files that might belong to others in the shared project.
+                if (req.method === 'DELETE') {
+                    res.status(403).send('Forbidden: Method not allowed');
+                    return;
+                }
+
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
                 const allowedPrefixes = [
@@ -932,6 +942,15 @@ export const ragProxy = functions
                     '/v1beta/models',
                     '/upload/v1beta/files'
                 ];
+
+                // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
+                // Prevents users from listing all files uploaded to the shared project.
+                // Exception: Getting metadata for a SPECIFIC file is allowed (path has extra segments).
+                // Path must NOT be exactly '/v1beta/files' if method is GET.
+                if (req.method === 'GET' && req.path === '/v1beta/files') {
+                    res.status(403).send('Forbidden: Listing files is disabled for security');
+                    return;
+                }
 
                 const isAllowed = allowedPrefixes.some(prefix =>
                     req.path === prefix || req.path.startsWith(prefix + '/')
