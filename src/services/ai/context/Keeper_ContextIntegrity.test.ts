@@ -26,15 +26,25 @@ vi.mock('firebase/app', () => ({
     getApps: vi.fn(() => [])
 }));
 
-vi.mock('firebase/auth', () => ({
-    getAuth: vi.fn(() => ({
-        currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
-    })),
-    onAuthStateChanged: vi.fn()
-}));
-
-vi.mock('firebase/firestore', async () => {
+vi.mock('firebase/auth', async (importOriginal) => {
+    const actual = await importOriginal() as any;
     return {
+        ...actual,
+        getAuth: vi.fn(() => ({
+            currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
+        })),
+        initializeAuth: vi.fn(() => ({})),
+        onAuthStateChanged: vi.fn(),
+        browserLocalPersistence: {},
+        browserSessionPersistence: {},
+        indexedDBLocalPersistence: {}
+    };
+});
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
         Timestamp: {
             now: () => ({ toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
             fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })
@@ -49,7 +59,7 @@ vi.mock('firebase/firestore', async () => {
         collection: vi.fn(),
         onSnapshot: vi.fn(),
         writeBatch: vi.fn(() => ({ commit: vi.fn() })),
-    };
+    }
 });
 
 vi.mock('firebase/storage', () => ({

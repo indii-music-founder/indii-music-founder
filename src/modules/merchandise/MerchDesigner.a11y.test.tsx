@@ -27,7 +27,12 @@ vi.mock('fabric', () => {
 
 // Mock useStore
 vi.mock('@/core/store', () => ({
-  useStore: vi.fn(() => ({ userProfile: { displayName: 'Test User' } })),
+  useStore: vi.fn(() => ({
+    userProfile: { displayName: 'Test User' },
+    generatedHistory: [],
+    uploadedImages: [],
+    currentProjectId: 'test-project'
+  })),
 }));
 
 describe('MerchDesigner Accessibility', () => {
@@ -43,11 +48,11 @@ describe('MerchDesigner Accessibility', () => {
     // Before fix: These fail because they are divs without roles/labels
     // After fix: These should pass
     const colorButtons = screen.queryAllByRole('button', { name: /select color/i });
-    expect(colorButtons.length).toBe(5);
+    expect(colorButtons.length).toBe(6);
   });
 
   it('renders accessible icon buttons', () => {
-     render(
+    render(
       <MemoryRouter>
         <ToastProvider>
           <MerchDesigner />
@@ -63,7 +68,7 @@ describe('MerchDesigner Accessibility', () => {
     expect(redoBtn).toBeInTheDocument();
   });
 
-  it('renders accessible emoji and asset pickers', () => {
+  it('renders accessible asset library tools', () => {
     render(
       <MemoryRouter>
         <ToastProvider>
@@ -72,13 +77,16 @@ describe('MerchDesigner Accessibility', () => {
       </MemoryRouter>
     );
 
-    // Verify emojis are accessible buttons
-    const emojiButtons = screen.queryAllByRole('button', { name: /add emoji/i });
-    // This assertion should fail initially as they are divs
-    expect(emojiButtons.length).toBeGreaterThan(0);
+    // Verify AI Gen button is accessible (might appear in ToolButton and AssetLibrary)
+    const aiGenBtns = screen.queryAllByRole('button', { name: /AI Gen/i });
+    expect(aiGenBtns.length).toBeGreaterThan(0);
 
-    // Check specific emoji
-    const shirtEmojiBtn = screen.getByRole('button', { name: /add emoji 👕/i });
-    expect(shirtEmojiBtn).toBeInTheDocument();
+    // Verify Text tool
+    const textBtns = screen.queryAllByRole('button', { name: /Text/i });
+    expect(textBtns.length).toBeGreaterThan(0);
+
+    // Verify Undo/Redo are accessible
+    expect(screen.getAllByRole('button', { name: /Undo/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Redo/i })[0]).toBeInTheDocument();
   });
 });

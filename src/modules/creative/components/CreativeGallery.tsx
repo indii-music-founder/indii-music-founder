@@ -20,17 +20,17 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     const toast = useToast();
 
     // Filter items based on search query
-    const filteredUploadedImages = searchQuery
-        ? uploadedImages.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedImages;
+    const filteredUploadedImages = (searchQuery
+        ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedImages) || [];
 
-    const filteredUploadedAudio = searchQuery
-        ? uploadedAudio.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedAudio;
+    const filteredUploadedAudio = (searchQuery
+        ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedAudio) || [];
 
-    const filteredGenerated = searchQuery
-        ? generatedHistory.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : generatedHistory;
+    const filteredGenerated = (searchQuery
+        ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : generatedHistory) || [];
 
     // Combine all items and sort by timestamp (newest first)
     const allItems = [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);

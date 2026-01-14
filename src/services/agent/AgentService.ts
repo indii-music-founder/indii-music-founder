@@ -199,7 +199,7 @@ export class AgentService {
         // then captures the value until whitespace or punctuation.
         // We use a replacement function to ensure we replace the VALUE, not the label.
         // Regex: (password(?:\s+is)?[:\s=]+)([^\s\.,;!]+)
-        const passwordRegex = /(password(?:\s+is)?[:\s=]+)([^\s\.,;!]+)/gi;
+        const passwordRegex = /(password(?:\s+is)?[:\s=]+)([^\s.,;!]+)/gi;
 
         // Heuristic Check: Only replace if it passes Luhn check?
         // For now, simple pattern matching to avoid complexity in this security filter.

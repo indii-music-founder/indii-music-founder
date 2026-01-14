@@ -99,7 +99,9 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             });
 
             fabricCanvasRef.current = canvas;
-            setIsInitialized(true);
+            requestAnimationFrame(() => {
+                setIsInitialized(true);
+            });
 
             // Notify parent that canvas is ready
             if (onCanvasReady) {
@@ -197,7 +199,9 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             };
         } catch (err) {
             console.error('Error initializing canvas:', err);
-            setError('Failed to initialize canvas');
+            requestAnimationFrame(() => {
+                setError('Failed to initialize canvas');
+            });
         }
     }, [onCanvasReady, handleSelectionChange, emitLayersChange]);
 

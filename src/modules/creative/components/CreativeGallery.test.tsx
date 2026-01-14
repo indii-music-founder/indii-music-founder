@@ -20,9 +20,12 @@ describe('CreativeGallery', () => {
     const mockStore = {
         generatedHistory: [],
         uploadedImages: [],
+        uploadedAudio: [],
         removeFromHistory: vi.fn(),
         addUploadedImage: vi.fn(),
         removeUploadedImage: vi.fn(),
+        addUploadedAudio: vi.fn(),
+        removeUploadedAudio: vi.fn(),
         currentProjectId: 'p1',
         generationMode: 'image',
         setVideoInput: vi.fn(),
@@ -50,13 +53,14 @@ describe('CreativeGallery', () => {
     it('renders generated history items correctly', () => {
         (useStore as any).mockReturnValue({
             ...mockStore,
-            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt' }],
-            uploadedImages: []
+            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt', timestamp: 1000, projectId: 'p1', origin: 'generated' }],
+            uploadedImages: [],
+            uploadedAudio: []
         });
 
         render(<CreativeGallery />);
 
-        expect(screen.getByText('Generation History')).toBeInTheDocument();
+        expect(screen.getByText('All Assets')).toBeInTheDocument();
         expect(screen.getByText('test prompt')).toBeInTheDocument();
         expect(screen.getByAltText('test prompt')).toBeInTheDocument();
     });
@@ -64,8 +68,9 @@ describe('CreativeGallery', () => {
     it('buttons have accessibility attributes', () => {
         (useStore as any).mockReturnValue({
             ...mockStore,
-            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt' }],
-            uploadedImages: []
+            generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test prompt', timestamp: 1000, projectId: 'p1', origin: 'generated' }],
+            uploadedImages: [],
+            uploadedAudio: []
         });
 
         render(<CreativeGallery />);

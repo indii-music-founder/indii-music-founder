@@ -89,7 +89,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
 
         // 3. Job A finally completes (Stale update)
         if (fireSnapshot!) {
-             fireSnapshot({
+            fireSnapshot({
                 exists: () => true,
                 id: 'job-id-pro',
                 data: () => ({ status: 'completed', output: { url: 'http://slow.url' } })
@@ -120,7 +120,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
     });
 
     it('should clean up subscription after completion (Happy Path Cleanup)', async () => {
-         // Setup: Mock onSnapshot to return success immediately
+        // Setup: Mock onSnapshot to return success immediately
         const unsubscribeSpy = vi.fn();
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             setTimeout(() => {
@@ -151,7 +151,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         // Fix: doc() receives (db, collection, id). We need to capture the ID (3rd arg).
         mocks.doc.mockImplementation((_db, _col, id) => `doc-ref-${id}`);
 
-        const callbacks: Record<string, Function> = {};
+        const callbacks: Record<string, (data: any) => void> = {};
 
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             // ref is `doc-ref-ID`
@@ -167,7 +167,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         const promiseB = service.waitForJob('job-b', 5000);
 
         // Complete Job B with Veo 3.1 Metadata (Mandatory)
-        if(callbacks['job-b']) {
+        if (callbacks['job-b']) {
             callbacks['job-b']({
                 exists: () => true,
                 id: 'job-b',
@@ -200,21 +200,21 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         expect(spyA).not.toHaveBeenCalled();
 
         // Complete Job A
-        if(callbacks['job-a']) {
+        if (callbacks['job-a']) {
             callbacks['job-a']({
-                 exists: () => true,
-                 id: 'job-a',
-                 data: () => ({
-                     status: 'completed',
-                     output: {
-                         url: 'url-a',
-                         metadata: {
+                exists: () => true,
+                id: 'job-a',
+                data: () => ({
+                    status: 'completed',
+                    output: {
+                        url: 'url-a',
+                        metadata: {
                             duration_seconds: 60.0,
                             fps: 30,
                             mime_type: 'video/mp4'
                         }
-                     }
-                 })
+                    }
+                })
             });
         }
 

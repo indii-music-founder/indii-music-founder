@@ -39,15 +39,18 @@ export const SOCIAL_TOOLS = {
 
         const schema: Schema = {
             type: SchemaType.OBJECT,
+            nullable: false,
             properties: {
                 handles: {
                     type: SchemaType.ARRAY,
-                    items: { type: SchemaType.STRING },
+                    nullable: false,
+                    items: { type: SchemaType.STRING, nullable: false },
                     description: "List of 5 creative handle/username ideas"
                 },
                 bios: {
                     type: SchemaType.ARRAY,
-                    items: { type: SchemaType.STRING },
+                    nullable: false,
+                    items: { type: SchemaType.STRING, nullable: false },
                     description: "List of 3 bio options"
                 }
             },

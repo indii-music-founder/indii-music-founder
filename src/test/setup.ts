@@ -71,55 +71,72 @@ vi.mock('firebase/auth', () => ({
         signOut: vi.fn(),
         onAuthStateChanged: vi.fn(() => () => { })
     })),
+    initializeAuth: vi.fn(() => ({
+        currentUser: { uid: 'test-uid', email: 'test@test.com' },
+        signInWithEmailAndPassword: vi.fn(),
+        signOut: vi.fn(),
+        onAuthStateChanged: vi.fn(() => () => { })
+    })),
+    browserLocalPersistence: {},
+    browserSessionPersistence: {},
+    indexedDBLocalPersistence: {},
     signInWithEmailAndPassword: vi.fn(),
     signOut: vi.fn(),
     onAuthStateChanged: vi.fn()
 }));
 
 // Mock Firebase Firestore
-vi.mock('firebase/firestore', () => ({
-    initializeFirestore: vi.fn(() => ({})),
-    getFirestore: vi.fn(() => ({})),
-    collection: vi.fn(() => ({ id: 'mock-coll-id' })),
-    doc: vi.fn(() => ({ id: crypto.randomUUID() })),
-    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
-    getDoc: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
-    getDocs: vi.fn(() => Promise.resolve({ docs: [], empty: true })),
-    setDoc: vi.fn(() => Promise.resolve()),
-    updateDoc: vi.fn(() => Promise.resolve()),
-    deleteDoc: vi.fn(() => Promise.resolve()),
-    onSnapshot: vi.fn(() => () => { }),
-    onSnapshots: vi.fn(() => () => { }),
-    query: vi.fn(() => ({})),
-    where: vi.fn(() => ({})),
-    limit: vi.fn(() => ({})),
-    orderBy: vi.fn(() => ({})),
-    startAfter: vi.fn(() => ({})),
-    arrayUnion: vi.fn((...args) => args),
-    arrayRemove: vi.fn((...args) => args),
-    increment: vi.fn((n) => n),
-    serverTimestamp: vi.fn(() => new Date()),
-    Timestamp: {
+vi.mock('firebase/firestore', () => {
+    const Timestamp = {
         now: vi.fn(() => ({ toMillis: () => Date.now(), toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 })),
-        fromDate: vi.fn((date) => ({ toMillis: () => date.getTime(), toDate: () => date, seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })),
-        fromMillis: vi.fn((millis) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
-    },
-    persistentLocalCache: vi.fn(() => ({})),
-    persistentMultipleTabManager: vi.fn(() => ({})),
-    runTransaction: vi.fn((cb) => cb({
-        get: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
-        set: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn()
-    })),
-    writeBatch: vi.fn(() => ({
-        set: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
-        commit: vi.fn(() => Promise.resolve())
-    })),
+        fromDate: vi.fn((date: Date) => ({ toMillis: () => date.getTime(), toDate: () => date, seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })),
+        fromMillis: vi.fn((millis: number) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
+    };
 
-}));
+    return {
+        initializeFirestore: vi.fn(() => ({})),
+        getFirestore: vi.fn(() => ({})),
+        Timestamp,
+        collection: vi.fn(() => ({ id: 'mock-coll-id' })),
+        doc: vi.fn(() => ({ id: crypto.randomUUID() })),
+        addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
+        getDoc: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
+        getDocs: vi.fn(() => Promise.resolve({ docs: [], empty: true })),
+        setDoc: vi.fn(() => Promise.resolve()),
+        updateDoc: vi.fn(() => Promise.resolve()),
+        deleteDoc: vi.fn(() => Promise.resolve()),
+        onSnapshot: vi.fn(() => () => { }),
+        onSnapshots: vi.fn(() => () => { }),
+        query: vi.fn(() => ({})),
+        where: vi.fn(() => ({})),
+        limit: vi.fn(() => ({})),
+        orderBy: vi.fn(() => ({})),
+        startAfter: vi.fn(() => ({})),
+        arrayUnion: vi.fn((...args) => args),
+        arrayRemove: vi.fn((...args) => args),
+        increment: vi.fn((n) => n),
+        serverTimestamp: vi.fn(() => new Date()),
+        getDocsViaCache: vi.fn(() => Promise.resolve({ docs: [], empty: true })),
+        getDocViaCache: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
+        disableNetwork: vi.fn(() => Promise.resolve()),
+        enableNetwork: vi.fn(() => Promise.resolve()),
+        persistentLocalCache: vi.fn(() => ({})),
+        persistentMultipleTabManager: vi.fn(() => ({})),
+        runTransaction: vi.fn((cb) => cb({
+            get: vi.fn(() => Promise.resolve({ exists: true, data: () => ({}) })),
+            set: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn()
+        })),
+        writeBatch: vi.fn(() => ({
+            set: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+            commit: vi.fn(() => Promise.resolve())
+        })),
+
+    };
+});
 
 // Mock Firebase Functions
 vi.mock('firebase/functions', () => ({
@@ -154,6 +171,13 @@ vi.mock('firebase/app-check', () => ({
 }));
 // Mock Firebase AI
 vi.mock('firebase/ai', () => ({
+    SchemaType: {
+        STRING: 'STRING',
+        NUMBER: 'NUMBER',
+        BOOLEAN: 'BOOLEAN',
+        OBJECT: 'OBJECT',
+        ARRAY: 'ARRAY'
+    },
     getAI: vi.fn(() => ({})),
     getGenerativeModel: vi.fn(() => ({
         generateContent: vi.fn().mockResolvedValue({

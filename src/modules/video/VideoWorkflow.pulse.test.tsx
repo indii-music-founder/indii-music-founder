@@ -33,7 +33,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock Video Editor Store
-let editorStoreState = {
+const editorStoreState = {
     status: 'idle',
     jobId: null,
     progress: 0,
@@ -155,9 +155,9 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
 
         // Resolve the API call
         await act(async () => {
-             if (resolveGeneratePromise) {
-                 resolveGeneratePromise([{ id: mockJobId, url: '', prompt: 'A long cinematic journey' }]);
-             }
+            if (resolveGeneratePromise) {
+                resolveGeneratePromise([{ id: mockJobId, url: '', prompt: 'A long cinematic journey' }]);
+            }
         });
 
         expect(mockSetJobId).toHaveBeenCalledWith(mockJobId);
@@ -191,9 +191,9 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         // 6. SUCCESS STATE
         const videoUrl = 'https://example.com/long.mp4';
         act(() => {
-             if (subscribeCallback) {
-                 subscribeCallback({ status: 'completed', videoUrl, prompt: 'A long cinematic journey' });
-             }
+            if (subscribeCallback) {
+                subscribeCallback({ status: 'completed', videoUrl, prompt: 'A long cinematic journey' });
+            }
         });
 
         expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');

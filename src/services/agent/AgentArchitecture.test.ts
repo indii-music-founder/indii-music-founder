@@ -209,7 +209,7 @@ describe('Multi-Agent Architecture Tests', () => {
                 tools: expect.arrayContaining([
                     expect.objectContaining({
                         functionDeclarations: expect.arrayContaining([
-                            expect.objectContaining({ name: 'search_knowledge' })
+                            expect.objectContaining({ name: 'recall_memories' })
                         ])
                     })
                 ])

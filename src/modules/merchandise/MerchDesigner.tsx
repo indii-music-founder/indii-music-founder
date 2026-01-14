@@ -68,6 +68,7 @@ const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, l
                 ? 'bg-yellow-400 border-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]'
                 : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/20 hover:text-white'
         )}
+        aria-label={label}
     >
         {icon}
         <span className="text-[10px] font-bold mt-1 uppercase tracking-tight">{label}</span>
@@ -292,8 +293,8 @@ export default function MerchDesigner() {
 
                             {/* Undo/Redo */}
                             <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
-                                <IconButton icon={<Undo size={16} />} onClick={() => { }} disabled />
-                                <IconButton icon={<Redo size={16} />} onClick={() => { }} disabled />
+                                <IconButton icon={<Undo size={16} />} onClick={() => { }} disabled label="Undo" />
+                                <IconButton icon={<Redo size={16} />} onClick={() => { }} disabled label="Redo" />
                             </div>
 
                             {/* Design Name */}
@@ -378,6 +379,7 @@ export default function MerchDesigner() {
                                         className="w-7 h-7 rounded-full border-2 border-white/20 hover:border-white/60 transition-all hover:scale-110"
                                         style={{ backgroundColor: color }}
                                         title={`Set background to ${color}`}
+                                        aria-label={`Select color ${color}`}
                                     />
                                 ))}
                             </div>
