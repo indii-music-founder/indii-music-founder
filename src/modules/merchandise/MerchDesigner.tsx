@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { cn } from '@/lib/utils';
 import { MerchLayout } from './components/Layout';
 import { MerchButton } from './components/MerchButton';
 import { MerchCard } from './components/MerchCard';
-import { Undo, Redo, Download, Layers, Type, Sticker, Wand2, Monitor, LayoutTemplate, Send } from 'lucide-react';
+import { Undo, Redo, Layers, Type, Sticker, Wand2, Monitor, LayoutTemplate, Send } from 'lucide-react';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import MerchCanvas, { MerchCanvasRef } from './components/MerchCanvas';
 import { useToast } from '@/core/context/ToastContext';
@@ -116,8 +117,8 @@ export default function MerchDesigner() {
                             <div className="h-6 w-px bg-white/10 mx-2" />
 
                             <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
-                                <IconButton onClick={() => canvasRef.current?.undo()} icon={<Undo size={16} />} />
-                                <IconButton onClick={() => canvasRef.current?.redo()} icon={<Redo size={16} />} />
+                                <IconButton onClick={() => canvasRef.current?.undo()} icon={<Undo size={16} />} label="Undo" />
+                                <IconButton onClick={() => canvasRef.current?.redo()} icon={<Redo size={16} />} label="Redo" />
                             </div>
                             <span className="text-sm font-bold text-neutral-500">INDII_STREETWEAR_V1</span>
                         </div>
@@ -239,11 +240,11 @@ export default function MerchDesigner() {
                                 <MerchCanvas ref={canvasRef} />
 
                                 <div className="absolute bottom-6 flex gap-4 bg-black/60 backdrop-blur-xl px-5 py-2.5 rounded-full border border-white/10 z-20 shadow-2xl">
-                                    <div onClick={() => canvasRef.current?.changeColor('#000000')} className="w-6 h-6 rounded-full bg-black border border-white/20 cursor-pointer hover:scale-110 transition-transform" />
-                                    <div onClick={() => canvasRef.current?.changeColor('#ffffff')} className="w-6 h-6 rounded-full bg-white border border-gray-300 cursor-pointer hover:scale-110 transition-transform" />
-                                    <div onClick={() => canvasRef.current?.changeColor('#FFE135')} className="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-600 ring-2 ring-white/20 cursor-pointer hover:scale-110 transition-transform" />
-                                    <div onClick={() => canvasRef.current?.changeColor('#3b82f6')} className="w-6 h-6 rounded-full bg-blue-600 border border-blue-800 cursor-pointer hover:scale-110 transition-transform" />
-                                    <div onClick={() => canvasRef.current?.changeColor('#ef4444')} className="w-6 h-6 rounded-full bg-red-600 border border-red-800 cursor-pointer hover:scale-110 transition-transform" />
+                                    <ColorSwatch color="#000000" onClick={() => canvasRef.current?.changeColor('#000000')} className="bg-black border border-white/20" />
+                                    <ColorSwatch color="#ffffff" onClick={() => canvasRef.current?.changeColor('#ffffff')} className="bg-white border border-gray-300" />
+                                    <ColorSwatch color="#FFE135" onClick={() => canvasRef.current?.changeColor('#FFE135')} className="bg-yellow-400 border border-yellow-600 ring-2 ring-white/20" />
+                                    <ColorSwatch color="#3b82f6" onClick={() => canvasRef.current?.changeColor('#3b82f6')} className="bg-blue-600 border border-blue-800" />
+                                    <ColorSwatch color="#ef4444" onClick={() => canvasRef.current?.changeColor('#ef4444')} className="bg-red-600 border border-red-800" />
                                 </div>
                             </div>
                         </div>
@@ -339,10 +340,24 @@ export default function MerchDesigner() {
     );
 }
 
-const IconButton = ({ icon, onClick }: { icon: React.ReactNode, onClick?: () => void }) => (
-    <button onClick={onClick} className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors">
+const IconButton = ({ icon, onClick, label }: { icon: React.ReactNode, onClick?: () => void, label?: string }) => (
+    <button
+        onClick={onClick}
+        className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]"
+        aria-label={label}
+        title={label}
+    >
         {icon}
     </button>
+);
+
+const ColorSwatch = ({ color, onClick, className }: { color: string, onClick: () => void, className?: string }) => (
+    <button
+        onClick={onClick}
+        className={cn("w-6 h-6 rounded-full cursor-pointer hover:scale-110 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]", className)}
+        aria-label={`Select color ${color}`}
+        title={`Select color ${color}`}
+    />
 );
 
 const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
