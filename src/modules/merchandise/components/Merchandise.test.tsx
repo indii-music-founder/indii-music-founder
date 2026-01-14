@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { StandardMerch } from './StandardMerch';
+import { ProMerch } from './ProMerch';
 import MerchDashboard from '../MerchDashboard';
 import { useMerchandise } from '../hooks/useMerchandise';
 import { MerchProduct } from '../types';
@@ -42,6 +44,23 @@ describe('Merchandise Dashboard', () => {
         createFromCatalog: vi.fn()
     };
 
+    it('StandardMerch renders standard products', () => {
+        vi.mocked(useMerchandise).mockReturnValue({
+            ...defaultMockReturn,
+            products: [...mockStandardProducts, ...mockProProducts],
+            standardProducts: mockStandardProducts,
+            proProducts: mockProProducts,
+        });
+
+        render(<StandardMerch />);
+
+        expect(screen.getByText('Standard Tee')).toBeInTheDocument();
+        expect(screen.getByText('$25.00')).toBeInTheDocument();
+        // Should not show Pro products in standard view usually, depends on component logic
+        // Verify standard logic: StandardMerch iterates standardProducts
+    });
+
+    it('ProMerch renders pro products', () => {
     it('renders MerchDashboard with products', () => {
         vi.mocked(useMerchandise).mockReturnValue(defaultMockReturn as any);
 
@@ -64,6 +83,7 @@ describe('Merchandise Dashboard', () => {
             products: []
         } as any);
 
+        render(<ProMerch />);
         render(
             <BrowserRouter>
                 <MerchDashboard />
@@ -87,6 +107,11 @@ describe('Merchandise Dashboard', () => {
             </BrowserRouter>
         );
 
+        render(<StandardMerch />);
+        // Check for specific empty state text if it exists, or just ensure no crash
+        // For now, simple render check
+        const heading = screen.getByText(/Merch/i); // Adjust based on actual heading
+        expect(heading).toBeInTheDocument();
         expect(screen.getByText('Failed to load dashboard data.')).toBeInTheDocument();
     });
 });

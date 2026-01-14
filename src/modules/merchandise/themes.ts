@@ -21,6 +21,12 @@ export interface MerchTheme {
 export const StandardTheme: MerchTheme = {
     name: 'Standard',
     colors: {
+        background: 'bg-[#FFF9E5]', // Creamy light yellow
+        surface: 'bg-[#FFEBA0]', // Light yellow surface
+        surfaceHighlight: 'bg-[#FFF2C0]',
+        border: 'border-yellow-200',
+        text: 'text-yellow-900',
+        textSecondary: 'text-yellow-800/70',
         background: 'bg-neutral-50',
         surface: 'bg-white',
         surfaceHighlight: 'bg-neutral-100',
