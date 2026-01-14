@@ -2,16 +2,54 @@ import { ipcMain } from 'electron';
 import { z } from 'zod';
 import { FetchUrlSchema } from '../validation';
 import { validateSender } from '../utils/ipc-security';
+import dns from 'dns';
 
 /**
- * Validates that a URL is safe to fetch.
+ * Checks if an IP address is private, loopback, or link-local.
+ */
+export function isPrivateIP(ip: string): boolean {
+    // IPv6 Loopback
+    if (ip === '::1') return true;
+
+    // IPv6 Unique Local (fc00::/7) or Link-Local (fe80::/10) - Simple string checks for now
+    if (ip.toLowerCase().startsWith('fc') || ip.toLowerCase().startsWith('fd') || ip.toLowerCase().startsWith('fe80')) {
+        return true;
+    }
+
+    const parts = ip.split('.');
+    if (parts.length !== 4) return false; // Not a valid IPv4 (assuming validated by dns lookup or caller)
+
+    const octets = parts.map(p => parseInt(p, 10));
+
+    // 0.0.0.0/8 (Current network)
+    if (octets[0] === 0) return true;
+
+    // 127.0.0.0/8 (Loopback)
+    if (octets[0] === 127) return true;
+
+    // 10.0.0.0/8 (Private)
+    if (octets[0] === 10) return true;
+
+    // 192.168.0.0/16 (Private)
+    if (octets[0] === 192 && octets[1] === 168) return true;
+
+    // 172.16.0.0/12 (Private)
+    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+
+    // 169.254.0.0/16 (Link-Local)
+    if (octets[0] === 169 && octets[1] === 254) return true;
+
+    return false;
+}
+
+/**
+ * Validates that a URL is safe to fetch by resolving its DNS.
  *
  * Policy:
  * 1. Must use http or https protocol.
- * 2. Must not resolve to private/reserved IP ranges (localhost, 127.0.0.0/8, 10.x, 192.168.x, 172.16.x, 169.254.x, 0.0.0.0).
- * 3. Must be a valid URL.
+ * 2. Must not resolve to private/reserved IP ranges.
  */
-export function validateSafeUrl(urlString: string): void {
+export async function validateSafeUrlAsync(urlString: string): Promise<void> {
     let url: URL;
     try {
         url = new URL(urlString);
@@ -23,53 +61,58 @@ export function validateSafeUrl(urlString: string): void {
         throw new Error(`Security Violation: Protocol '${url.protocol}' is not allowed. Only HTTP/HTTPS are permitted.`);
     }
 
-    // Normalize hostname by removing trailing dot if present
+    const hostname = url.hostname;
+
+    // Block empty hostname
+    if (!hostname) throw new Error('Invalid URL: Missing hostname');
+
+    // 1. Resolve DNS
+    try {
+        const { address } = await dns.promises.lookup(hostname);
+
+        // 2. Validate Resolved IP
+        if (isPrivateIP(address)) {
+            throw new Error(`Security Violation: Resolved IP ${address} is a private address.`);
+        }
+    } catch (error: any) {
+        // If DNS lookup fails, fail secure
+        // Exception: Propagate the Security Violation we just threw
+        if (error.message.startsWith('Security Violation')) throw error;
+
+        throw new Error(`DNS Lookup Failed for ${hostname}: ${error.message}`);
+    }
+}
+
+/**
+ * @deprecated Use validateSafeUrlAsync instead. Kept for backward compatibility with tests.
+ * This does NOT perform DNS resolution and is vulnerable to DNS rebinding.
+ */
+export function validateSafeUrl(urlString: string): void {
+     let url: URL;
+    try {
+        url = new URL(urlString);
+    } catch (e) {
+        throw new Error('Invalid URL format');
+    }
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error(`Security Violation: Protocol '${url.protocol}' is not allowed. Only HTTP/HTTPS are permitted.`);
+    }
+
     const hostname = url.hostname.replace(/\.$/, '');
 
-    // Block Localhost aliases
-    if (hostname === 'localhost' || hostname === '0.0.0.0' || hostname === '[::1]') {
+    // Manual string checks (Legacy)
+     if (hostname === 'localhost' || hostname === '0.0.0.0' || hostname === '[::1]') {
         throw new Error(`Security Violation: Access to localhost is denied.`);
     }
 
-    // Block Metadata Services (AWS, GCP, Azure) - Redundant but explicit check
     if (hostname === '169.254.169.254') {
         throw new Error(`Security Violation: Access to Cloud Metadata services is denied.`);
     }
 
-    // Private IP blocking (IPv4)
-    // 127.0.0.0/8 (Loopback)
-    // 10.0.0.0/8
-    // 172.16.0.0/12
-    // 192.168.0.0/16
-    // 169.254.0.0/16 (Link-Local)
-    const parts = hostname.split('.');
-    if (parts.length === 4 && parts.every(p => /^\d+$/.test(p))) {
-        const ip = parts.map(Number);
-
-        // Loopback (127.x.x.x)
-        if (ip[0] === 127) {
-            throw new Error(`Security Violation: Access to loopback address (127.x.x.x) is denied.`);
-        }
-
-        // Private Network (10.x.x.x)
-        if (ip[0] === 10) {
-            throw new Error(`Security Violation: Access to private network (10.x.x.x) is denied.`);
-        }
-
-        // Private Network (192.168.x.x)
-        if (ip[0] === 192 && ip[1] === 168) {
-            throw new Error(`Security Violation: Access to private network (192.168.x.x) is denied.`);
-        }
-
-        // Private Network (172.16.x.x - 172.31.x.x)
-        if (ip[0] === 172 && ip[1] >= 16 && ip[1] <= 31) {
-            throw new Error(`Security Violation: Access to private network (172.16-31.x.x) is denied.`);
-        }
-
-        // Link-Local (169.254.x.x)
-        if (ip[0] === 169 && ip[1] === 254) {
-             throw new Error(`Security Violation: Access to Link-Local address (169.254.x.x) is denied.`);
-        }
+    if (isPrivateIP(hostname)) {
+         if (hostname.startsWith('127.')) throw new Error(`Security Violation: Access to loopback address (127.x.x.x) is denied.`);
+         throw new Error(`Security Violation: Access to private network is denied.`);
     }
 }
 
@@ -85,12 +128,14 @@ export function registerNetworkHandlers() {
             console.log(`[Network] Validating Request: ${url}`);
 
             // 3. SSRF Protection: Validate URL before fetching
-            // Checks protocol, localhost, and private IP ranges
-            validateSafeUrl(validatedUrl);
+            // Checks protocol, localhost, and private IP ranges via DNS resolution
+            await validateSafeUrlAsync(validatedUrl);
 
             console.log(`[Network] Fetching Safe URL: ${validatedUrl}`);
 
             // 4. Fetch with redirect: 'error' to prevent open redirect bypasses to internal IPs
+            // Note: Even with DNS check, redirects could lead to internal IPs.
+            // fetch({ redirect: 'error' }) prevents following redirects entirely, which is the safest default for this utility.
             const response = await fetch(validatedUrl, { redirect: 'error' });
 
             if (!response.ok) {
