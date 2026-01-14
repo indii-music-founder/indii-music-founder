@@ -121,6 +121,7 @@ export class FinanceService {
     }
   }
 
+  async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> {
   /**
    * Internal validation for double-entry bookkeeping principles.
    */
@@ -143,15 +144,21 @@ export class FinanceService {
       if (!auth.currentUser || auth.currentUser.uid !== expense.userId) {
         throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized add expense operation');
       }
+      const now = Timestamp.now();
 
       // Local Validation for Double-Entry principles
       this.validateDoubleEntry(expense);
 
       const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), {
         ...expense,
-        createdAt: Timestamp.now()
+        createdAt: now
       });
-      return docRef.id;
+
+      return {
+        id: docRef.id,
+        ...expense,
+        createdAt: now.toDate().toISOString()
+      };
     } catch (error) {
       Sentry.captureException(error);
       throw error;

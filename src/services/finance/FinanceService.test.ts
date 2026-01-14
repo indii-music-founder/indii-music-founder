@@ -77,7 +77,7 @@ describe('FinanceService', () => {
     });
 
     describe('addExpense', () => {
-        it('should successfully add an expense and return the ID', async () => {
+        it('should successfully add an expense and return the full object', async () => {
             const expense: Omit<Expense, 'id' | 'createdAt'> = {
                 userId: 'user-123',
                 vendor: 'Test Vendor',
@@ -99,7 +99,11 @@ describe('FinanceService', () => {
                     createdAt: expect.any(MockTimestamp)
                 })
             );
-            expect(result).toBe('new-expense-id');
+
+            // Verify full object return
+            expect(result.id).toBe('new-expense-id');
+            expect(result.vendor).toBe('Test Vendor');
+            expect(result.createdAt).toBeDefined(); // Should be ISO string
         });
     });
 
