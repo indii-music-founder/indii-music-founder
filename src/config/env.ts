@@ -95,7 +95,7 @@ if (!parsed.success) {
 } else {
     // Validation successful
     // Environment validation passed
-// (console.log removed - Platinum Polish)
+    // (console.log removed - Platinum Polish)
 }
 
 const runtimeEnv = parsed.success ? parsed.data : (processEnv as typeof processEnv);
@@ -132,11 +132,11 @@ export const firebaseDefaultConfig = {
 const firebaseEnv = parsed.success ? parsed.data : processEnv;
 
 export const firebaseConfig = {
-    apiKey: firebaseEnv.firebaseApiKey || "",
-    authDomain: firebaseEnv.firebaseProjectId ? `${firebaseEnv.firebaseProjectId}.firebaseapp.com` : "",
+    apiKey: firebaseEnv.firebaseApiKey || firebaseEnv.apiKey || "",
+    authDomain: (firebaseEnv.firebaseProjectId || firebaseEnv.projectId) ? `${firebaseEnv.firebaseProjectId || firebaseEnv.projectId}.firebaseapp.com` : "",
     databaseURL: firebaseEnv.firebaseDatabaseURL || "",
-    projectId: firebaseEnv.firebaseProjectId || "",
-    storageBucket: firebaseEnv.firebaseStorageBucket || "",
+    projectId: firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "",
+    storageBucket: firebaseEnv.firebaseStorageBucket || (firebaseEnv.firebaseProjectId || firebaseEnv.projectId ? `${firebaseEnv.firebaseProjectId || firebaseEnv.projectId}.firebasestorage.app` : ""),
     messagingSenderId: "223837784072", // Messaging Sender ID is generally static per project, but safe to keep or remove. Kept for now if needed.
     appId: "1:223837784072:web:28eabcf0c5dd985395e9bd", // Main App ID
     measurementId: "G-KNWPRGE5JK"

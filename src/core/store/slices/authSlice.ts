@@ -105,11 +105,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
 
     initializeAuthListener: () => {
         console.log('[Auth] Initializing Auth Listener...');
-        // @ts-ignore
         console.log('[Auth] API Key check:', auth.app.options.apiKey);
 
         // FAST FAIL: If no API key, don't wait for Firebase (it might hang or crash)
-        // @ts-ignore - accessing internal options to check validity
         const apiKey = auth.app.options.apiKey;
         if (!apiKey || apiKey.includes('FAKE_KEY')) {
             console.warn('[Auth] No valid API Key found. Disabling real auth listener.');

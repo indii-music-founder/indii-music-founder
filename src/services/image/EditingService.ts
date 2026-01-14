@@ -231,7 +231,7 @@ export class EditingService {
         };
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - Schema typing mismatch
+        // @ts-expect-error - Schema typing mismatch
         const plan = await firebaseAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
         const scenes = plan.scenes || [];
         while (scenes.length < options.count) scenes.push(`${options.prompt} (${options.timeDeltaLabel} Sequence)`);
