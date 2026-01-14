@@ -710,7 +710,17 @@ export const editImage = functions
         try {
             const modelId = "gemini-3-pro-image-preview";
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
+            // Use Vertex AI IAM authentication instead of API key for consistency
+            const auth = new GoogleAuth({
+                scopes: ['https://www.googleapis.com/auth/cloud-platform']
+            });
+
+            const client = await auth.getClient();
+            const projectId = await auth.getProjectId();
+            const accessToken = await client.getAccessToken();
+            const location = 'us-central1';
+
+            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
 
             const parts: any[] = [
                 {
@@ -746,6 +756,7 @@ export const editImage = functions
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
+                    "Authorization": `Bearer ${accessToken.token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -753,19 +764,23 @@ export const editImage = functions
                         role: "user",
                         parts: parts
                     }],
-                    generation_config: {
-                        response_modalities: ["IMAGE"],
+                    generationConfig: {
+                        responseModalities: ["IMAGE"],
                     }
                 }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new functions.https.HttpsError('internal', errorText);
+                throw new functions.https.HttpsError('internal', `Vertex AI Error: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-            return result;
+
+            // Normalize response for frontend
+            const candidates = result.predictions || result.candidates || [];
+
+            return { candidates };
 
         } catch (error: unknown) {
             console.error("Function Error:", error);
