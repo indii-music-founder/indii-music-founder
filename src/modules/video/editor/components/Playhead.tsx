@@ -1,3 +1,9 @@
+import React from 'react';
+import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { PIXELS_PER_FRAME } from '../constants';
+
+export const Playhead: React.FC = () => {
+    // Select only currentTime to prevent re-renders on other store changes
 import React, { memo } from 'react';
 import { useVideoEditorStore } from '../../store/videoEditorStore';
 import { PIXELS_PER_FRAME } from '../constants';
@@ -14,6 +20,7 @@ export const Playhead = memo(() => {
             <div className="absolute -top-1 -left-1.5 w-3 h-3 bg-red-500 transform rotate-45"></div>
         </div>
     );
+};
 });
 
 Playhead.displayName = 'Playhead';
