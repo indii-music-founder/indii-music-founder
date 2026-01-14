@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
@@ -59,6 +59,9 @@ export default function VideoWorkflow() {
     const handleDragStart = React.useCallback((e: React.DragEvent, item: HistoryItem) => {
         // Drag logic
     }, []);
+
+    // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
+    const videoHistory = useMemo(() => generatedHistory.filter(h => h.type === 'video'), [generatedHistory]);
 
     // Sync pending prompt
     useEffect(() => {
@@ -332,7 +335,7 @@ export default function VideoWorkflow() {
 
                 {/* Dailies Strip (Bottom Overlay) */}
                 <DailiesStrip
-                    items={generatedHistory.filter(h => h.type === 'video')}
+                    items={videoHistory}
                     selectedId={activeVideo?.id || null}
                     onSelect={setActiveVideo}
                     onDragStart={handleDragStart}
