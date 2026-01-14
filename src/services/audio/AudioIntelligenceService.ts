@@ -45,7 +45,7 @@ export class AudioIntelligenceService {
     /**
      * Orchestrates full audio analysis:
      * 1. Technical (local WASM)
-     * 2. Semantic (Gemini 1.5 Pro)
+     * 2. Semantic (Gemini 3 Pro - AI_MODELS.TEXT.AGENT)
      */
     async analyze(file: File): Promise<AudioIntelligenceProfile> {
         console.log(`[AudioIntelligence] Starting analysis for ${file.name}`);
@@ -113,7 +113,8 @@ Describe the audio's "Visual Vibe" — if this song was a scene in a movie, what
             ],
             SEMANTIC_SCHEMA,
             undefined, // No thinking budget for standard analysis
-            "You are an expert audio analyst."
+            "You are an expert audio analyst.",
+            AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
         );
 
         return response;

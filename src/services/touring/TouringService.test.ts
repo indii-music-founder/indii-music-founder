@@ -8,7 +8,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
         ...actual,
         collection: vi.fn(),
@@ -84,17 +84,17 @@ describe('TouringService', () => {
             const invalidItinerary = {
                 userId: 'user1',
                 tourName: 'Tour 2',
-                 // Missing stops, totalDistance, etc.
+                // Missing stops, totalDistance, etc.
             };
 
-            vi.mocked(onSnapshot).mockImplementation((query, callback) => {
+            vi.mocked(onSnapshot).mockImplementation((query: any, callback: any) => {
                 callback({
                     docs: [
                         { id: '1', data: () => validItinerary },
                         { id: '2', data: () => invalidItinerary }
                     ]
                 } as any);
-                return () => {};
+                return () => { };
             });
 
             const callback = vi.fn();

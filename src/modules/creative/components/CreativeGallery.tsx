@@ -108,6 +108,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                     onSelect ? onSelect(item) : setSelectedItem(item);
                 }
             }}

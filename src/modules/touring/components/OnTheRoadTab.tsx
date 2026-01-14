@@ -12,7 +12,7 @@ interface FuelStats {
     tankSizeGallons: number;
     mpg: number;
     gasPricePerGallon: number;
-    userId?: string;
+    userId: string;
 }
 
 interface OnTheRoadTabProps {

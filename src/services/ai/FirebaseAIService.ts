@@ -359,7 +359,8 @@ export class FirebaseAIService {
         prompt: string | Part[],
         schema: Schema,
         thinkingBudget?: number,
-        systemInstruction?: string
+        systemInstruction?: string,
+        modelOverride?: string
     ): Promise<T> {
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
@@ -371,10 +372,9 @@ export class FirebaseAIService {
                 config.thinkingConfig = { thinkingBudget };
             }
 
-            // CACHE CHECK
-            const modelName = this.model!.model;
-            // For structured data, prompt + schema is the key
-            const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema);
+            const modelName = modelOverride || this.model!.model;
+            // For structured data, prompt + schema + model is the key
+            const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema) + modelName;
             const cached = await aiCache.get(cacheKeyString, modelName, config);
 
             if (cached) {

@@ -15,8 +15,18 @@ describe('ProfileSlice Persistence', () => {
 
     const mockProfile: UserProfile = {
         id: 'guest',
+        uid: 'guest',
+        email: 'guest@example.com',
+        displayName: 'Guest User',
+        photoURL: null,
+        createdAt: { seconds: 0, nanoseconds: 0 } as any,
+        updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+        lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+        emailVerified: true,
+        membership: { tier: 'pro', expiresAt: null },
+        accountType: 'artist',
         bio: 'Test Bio',
-        preferences: {},
+        preferences: { theme: 'dark', notifications: true },
         brandKit: {
             colors: [],
             fonts: '',

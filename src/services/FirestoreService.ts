@@ -26,75 +26,51 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async add(data: Omit<T, 'id'>): Promise<string> {
-        try {
-            const docRef = await addDoc(this.collection, {
-                ...data,
-                createdAt: Timestamp.now(),
-                updatedAt: Timestamp.now()
-            });
-            return docRef.id;
-        } catch (error) {
-            throw error;
-        }
+        const docRef = await addDoc(this.collection, {
+            ...data,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        });
+        return docRef.id;
     }
 
     async set(id: string, data: T): Promise<void> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            await setDoc(docRef, {
-                ...data,
-                updatedAt: Timestamp.now()
-            }, { merge: true });
-        } catch (error) {
-            throw error;
-        }
+        const docRef = doc(db, this.collectionPath, id);
+        await setDoc(docRef, {
+            ...data,
+            updatedAt: Timestamp.now()
+        }, { merge: true });
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            await updateDoc(docRef, {
-                ...data,
-                updatedAt: Timestamp.now()
-            });
-        } catch (error) {
-            throw error;
-        }
+        const docRef = doc(db, this.collectionPath, id);
+        await updateDoc(docRef, {
+            ...data,
+            updatedAt: Timestamp.now()
+        });
     }
 
     async delete(id: string): Promise<void> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            await deleteDoc(docRef);
-        } catch (error) {
-            throw error;
-        }
+        const docRef = doc(db, this.collectionPath, id);
+        await deleteDoc(docRef);
     }
 
     async get(id: string): Promise<T | null> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            const snapshot = await getDoc(docRef);
-            if (snapshot.exists()) {
-                return { id: snapshot.id, ...snapshot.data() } as unknown as T;
-            }
-            return null;
-        } catch (error) {
-            throw error;
+        const docRef = doc(db, this.collectionPath, id);
+        const snapshot = await getDoc(docRef);
+        if (snapshot.exists()) {
+            return { id: snapshot.id, ...snapshot.data() } as unknown as T;
         }
+        return null;
     }
 
     async list(constraints: QueryConstraint[] = []): Promise<T[]> {
-        try {
-            const q = query(this.collection, ...constraints);
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as unknown as T));
-        } catch (error) {
-            throw error;
-        }
+        const q = query(this.collection, ...constraints);
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as unknown as T));
     }
 
     // Specialized query method that allows flexible sorting client-side if needed (for small datasets)

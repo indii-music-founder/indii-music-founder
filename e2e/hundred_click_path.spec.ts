@@ -1,5 +1,53 @@
 import { test, expect, Locator } from '@playwright/test';
 
+// Reuseable mock state injector/restorer
+const injectMockState = async (page: any) => {
+    await page.evaluate(() => {
+        const mockUser = {
+            uid: 'maestro-user-id',
+            email: 'maestro@example.com',
+            displayName: 'Maestro Test User',
+            emailVerified: true,
+            isAnonymous: false,
+            metadata: {},
+            providerData: [],
+            refreshToken: '',
+            tenantId: null,
+            delete: async () => { },
+            getIdToken: async () => 'mock-token',
+            getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+            reload: async () => { },
+            toJSON: () => ({}),
+            phoneNumber: null,
+            photoURL: null
+        };
+
+        // Inject if store is available
+        if ((window as any).useStore) {
+            // @ts-expect-error - Mocking partial store state for test
+            window.useStore.setState({
+                initializeAuthListener: () => () => { },
+                user: mockUser,
+                userProfile: {
+                    id: 'maestro-user-id',
+                    uid: 'maestro-user-id',
+                    displayName: 'Maestro Test User',
+                    email: 'maestro@example.com',
+                    role: 'admin',
+                    onboardingStatus: 'completed'
+                },
+                authLoading: false,
+                isSidebarOpen: true,
+                generatedHistory: [
+                    { id: 'gen-1', url: 'https://via.placeholder.com/150', prompt: 'Test Item 1', timestamp: Date.now(), type: 'image' },
+                    { id: 'gen-2', url: 'https://via.placeholder.com/150', prompt: 'Test Item 2', timestamp: Date.now(), type: 'image' }
+                ],
+            });
+            console.log('Mock store state injected');
+        }
+    });
+};
+
 /**
  * 100-CLICK PATH TEST: CREATIVE STUDIO STABILITY GAUNTLET
  * This test navigates through the main Creative Studio modules, simulating a heavy user session.
@@ -14,50 +62,7 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         await page.waitForLoadState('networkidle');
 
         // Mock user injection
-        await page.evaluate(() => {
-            const mockUser = {
-                uid: 'maestro-user-id',
-                email: 'maestro@example.com',
-                displayName: 'Maestro Test User',
-                emailVerified: true,
-                isAnonymous: false,
-                metadata: {},
-                providerData: [],
-                refreshToken: '',
-                tenantId: null,
-                delete: async () => { },
-                getIdToken: async () => 'mock-token',
-                getIdTokenResult: async () => ({ token: 'mock-token' } as any),
-                reload: async () => { },
-                toJSON: () => ({}),
-                phoneNumber: null,
-                photoURL: null
-            };
-
-            // Inject if store is available
-            if ((window as any).useStore) {
-                // @ts-expect-error - Mocking partial store state for test
-                window.useStore.setState({
-                    initializeAuthListener: () => () => { },
-                    user: mockUser,
-                    userProfile: {
-                        id: 'maestro-user-id',
-                        uid: 'maestro-user-id',
-                        displayName: 'Maestro Test User',
-                        email: 'maestro@example.com',
-                        role: 'admin',
-                        onboardingStatus: 'completed'
-                    },
-                    authLoading: false,
-                    isSidebarOpen: true,
-                    generatedHistory: [
-                        { id: 'gen-1', url: 'https://via.placeholder.com/150', prompt: 'Test Item 1', timestamp: Date.now(), type: 'image' },
-                        { id: 'gen-2', url: 'https://via.placeholder.com/150', prompt: 'Test Item 2', timestamp: Date.now(), type: 'image' }
-                    ],
-                });
-                console.log('Mock store state injected');
-            }
-        });
+        await injectMockState(page);
 
         // Wait for sidebar and initial stability
         await page.waitForSelector('[data-testid^="nav-item-"]', { state: 'visible', timeout: 30000 });
@@ -226,11 +231,16 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         console.log('--- Phase 5: Cycle to 100 Clicks ---');
         const modules = ['video', 'merch', 'creative', 'reference-manager'];
         let cycleId = 30;
+        let lastReloadCount = -1;
+
         while (clickCount < 100) {
             const mod = modules[cycleId % modules.length];
-            if (clickCount > 0 && clickCount % 20 === 0) {
+            if (clickCount > 0 && clickCount % 20 === 0 && clickCount !== lastReloadCount) {
                 console.log(`[INFO] Periodic reload at ${clickCount} clicks...`);
-                await page.reload();
+                lastReloadCount = clickCount;
+                await page.reload().catch(() => { });
+                await page.waitForTimeout(10000);
+                await injectMockState(page);
                 await page.waitForTimeout(2000);
             }
             await page.waitForTimeout(100 + Math.random() * 200);

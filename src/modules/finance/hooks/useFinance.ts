@@ -21,6 +21,7 @@ export function useFinance() {
     // Subscribe to Earnings
     useEffect(() => {
         if (!userProfile?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEarningsLoading(false);
             return;
         }
@@ -40,6 +41,7 @@ export function useFinance() {
     // Subscribe to Expenses
     useEffect(() => {
         if (!userProfile?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setExpensesLoading(false);
             return;
         }

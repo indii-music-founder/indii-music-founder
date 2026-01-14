@@ -15,7 +15,7 @@ test('Audio Intelligence Service - End-to-End Verification', async ({ page }) =>
 
     // 3. Inject code to load the file and run analysis
     const analysisResult = await page.evaluate(async () => {
-        // @ts-ignore
+        // @ts-expect-error - Checking for property existence on unknown global type
         const audioService = window.audioIntelligence;
         if (!audioService) throw new Error("AudioIntelligenceService not found on window");
 
@@ -55,7 +55,7 @@ test('Audio Intelligence Service - End-to-End Verification', async ({ page }) =>
         const blob = new Blob([byteArray], { type: mimeType });
         const file = new File([blob], "sample-6s.mp3", { type: mimeType });
 
-        // @ts-ignore
+        // @ts-expect-error - Checking for property existence on unknown global type
         return await window.audioIntelligence.analyze(file);
     }, { base64, mimeType });
 

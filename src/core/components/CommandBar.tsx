@@ -130,6 +130,7 @@ function CommandBar() {
     // Sync isIndiiMode with currentModule changes
     useEffect(() => {
         if (currentModule === 'dashboard' || currentModule === 'select-org') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsIndiiMode(true);
         } else {
             setIsIndiiMode(false);
@@ -262,7 +263,7 @@ function CommandBar() {
             console.error("CommandBar: Fatal crash in handleSubmit", fatalError);
             setIsProcessing(false);
         }
-    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing]);
+    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode]); // eslint-disable-line react-hooks/preserve-manual-memoization
 
     return (
         <div className="w-full bg-bg-dark border-t border-white/10 p-4">

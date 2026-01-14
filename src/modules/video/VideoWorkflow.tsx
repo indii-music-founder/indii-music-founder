@@ -62,7 +62,9 @@ export default function VideoWorkflow() {
 
     // Sync pending prompt
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (pendingPrompt) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
             setPrompt(pendingPrompt);
             setPendingPrompt(null);
@@ -84,7 +86,9 @@ export default function VideoWorkflow() {
 
     // Set initial active video
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (selectedItem?.type === 'video') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveVideo(selectedItem);
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video

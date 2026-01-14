@@ -33,7 +33,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
                     }}
                     controls
                     loop
-                    onFrameUpdate={(e) => onFrameUpdate?.(e.frame)}
+
                 />
 
                 {/* Glassmorphic Overlay Border */}

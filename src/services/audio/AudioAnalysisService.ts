@@ -40,7 +40,8 @@ export class AudioAnalysisService {
                 };
 
                 const imported = await import('essentia.js') as any;
-                let { Essentia, EssentiaWASM } = imported;
+                const { Essentia } = imported;
+                let { EssentiaWASM } = imported;
 
                 // Handle Vite/Rollup interop for EssentiaWASM import
                 if (!EssentiaWASM && imported.default?.EssentiaWASM) {

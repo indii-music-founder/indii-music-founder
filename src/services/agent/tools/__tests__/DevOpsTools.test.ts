@@ -59,7 +59,7 @@ describe('DevOpsTools', () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('Cloud API Error');
-            expect(result.metadata.errorCode).toBe('TOOL_EXECUTION_ERROR');
+            expect(result.metadata?.errorCode).toBe('TOOL_EXECUTION_ERROR');
         });
     });
 
