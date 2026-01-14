@@ -37,32 +37,18 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
         }
         setIsGenerating(true);
         try {
-            const resultStr = await SOCIAL_TOOLS.generate_social_identity({
+            const identity = await SOCIAL_TOOLS.generate_social_identity({
                 brand_name: brandName,
                 platform: platform.name,
                 industry: industry
             });
 
-            // Basic cleaning of markdown code blocks if present
-            const cleanJson = resultStr.replace(/```json/g, '').replace(/```/g, '').trim();
-            let result;
-            try {
-                result = JSON.parse(cleanJson);
-            } catch (e) {
-                console.error("Failed to parse identity JSON", e);
-                throw new Error("Invalid response format");
-            }
-
-            setGeneratedIdentity(result);
+            setGeneratedIdentity(identity);
             toast.success("Identity ideas generated!");
         } catch (error) {
             console.error(error);
-            toast.error("Failed to generate identity ideas");
-            // Fallback mock for demo/error case
-            setGeneratedIdentity({
-                handles: [`@${brandName.replace(/\s+/g, '')}_official`, `@${brandName.replace(/\s+/g, '')}HQ`, `@Try${brandName.replace(/\s+/g, '')}`],
-                bios: [`Official account of ${brandName}. Innovating in ${industry}.`, `Welcome to ${brandName}. Follow for updates!`, `Leading the way in ${industry}.`]
-            });
+            toast.error("Failed to generate identity ideas. Please try again.");
+            setGeneratedIdentity(null);
         } finally {
             setIsGenerating(false);
         }
