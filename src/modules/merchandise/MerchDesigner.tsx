@@ -431,13 +431,14 @@ export default function MerchDesigner() {
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-3 gap-2">
                                             {['👕', '🔥', '💀', '⚡', '🖤', '🎸', '🎨', '🚀', '💎'].map((emoji, i) => (
-                                                <div
+                                                <button
                                                     key={i}
                                                     onClick={() => handleAddEmoji(emoji)}
-                                                    className="aspect-square bg-neutral-900 rounded-lg border border-white/5 hover:border-yellow-400 hover:bg-neutral-800 transition-all cursor-pointer flex items-center justify-center text-2xl group"
+                                                    aria-label={`Add emoji ${emoji}`}
+                                                    className="aspect-square bg-neutral-900 rounded-lg border border-white/5 hover:border-yellow-400 hover:bg-neutral-800 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400 transition-all cursor-pointer flex items-center justify-center text-2xl group"
                                                 >
                                                     <span className="group-hover:scale-125 transition-transform">{emoji}</span>
-                                                </div>
+                                                </button>
                                             ))}
                                         </div>
 
@@ -450,13 +451,14 @@ export default function MerchDesigner() {
                                                     'https://images.unsplash.com/photo-1515405299443-f71bb798351e?w=200&h=200&fit=crop',
                                                     'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=200&h=200&fit=crop'
                                                 ].map((url, i) => (
-                                                    <div
+                                                    <button
                                                         key={i}
                                                         onClick={() => handleAddAsset(url)}
-                                                        className="aspect-square bg-neutral-900 rounded-lg overflow-hidden border border-white/5 hover:border-yellow-400 cursor-pointer"
+                                                        aria-label="Add sample graphic"
+                                                        className="aspect-square bg-neutral-900 rounded-lg overflow-hidden border border-white/5 hover:border-yellow-400 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-400 cursor-pointer p-0"
                                                     >
-                                                        <img src={url} alt="asset" className="w-full h-full object-cover" />
-                                                    </div>
+                                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>

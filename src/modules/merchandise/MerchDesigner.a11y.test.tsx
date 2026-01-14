@@ -62,4 +62,23 @@ describe('MerchDesigner Accessibility', () => {
     const redoBtn = screen.getByRole('button', { name: /redo/i });
     expect(redoBtn).toBeInTheDocument();
   });
+
+  it('renders accessible emoji and asset pickers', () => {
+    render(
+      <MemoryRouter>
+        <ToastProvider>
+          <MerchDesigner />
+        </ToastProvider>
+      </MemoryRouter>
+    );
+
+    // Verify emojis are accessible buttons
+    const emojiButtons = screen.queryAllByRole('button', { name: /add emoji/i });
+    // This assertion should fail initially as they are divs
+    expect(emojiButtons.length).toBeGreaterThan(0);
+
+    // Check specific emoji
+    const shirtEmojiBtn = screen.getByRole('button', { name: /add emoji 👕/i });
+    expect(shirtEmojiBtn).toBeInTheDocument();
+  });
 });
