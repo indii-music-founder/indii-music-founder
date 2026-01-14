@@ -14,7 +14,13 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    auth: {},
+    auth: {
+        app: {
+            options: {
+                apiKey: 'mock-api-key'
+            }
+        }
+    },
     db: {}
 }));
 

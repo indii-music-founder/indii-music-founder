@@ -12,6 +12,7 @@ import {
     Timestamp
 } from 'firebase/firestore';
 import { Product, Purchase } from './types';
+import { paymentService } from '@/services/payment/PaymentService';
 
 export class MarketplaceService {
     private static PRODUCTS_COLLECTION = 'products';
@@ -110,27 +111,35 @@ export class MarketplaceService {
      */
     static async purchaseProduct(productId: string, buyerId: string, sellerId: string, amount: number): Promise<string> {
         // 1. Validate Product Availability (Inventory)
+        // TODO: Check inventory here
 
-        // 2. Process Payment
-        // TODO: Integrate Stripe Payment Intents or Checkout Sessions for products.
-        // The current subscription flow (createCheckoutSession) is not compatible with one-off product purchases.
-        throw new Error("Payment processing is not yet enabled in this environment.");
+        // 2. Process Payment via PaymentService
+        try {
+            const transaction = await paymentService.processPayment({
+                buyerId,
+                sellerId,
+                amount,
+                currency: 'USD',
+                productId
+            });
 
-        /*
-        // 3. Record Purchase
-        const purchaseData: Omit<Purchase, 'id'> = {
-            buyerId,
-            sellerId,
-            productId,
-            amount,
-            currency: 'USD',
-            status: 'completed',
-            transactionId: "txn_placeholder",
-            createdAt: new Date().toISOString()
-        };
+            // 3. Record Purchase
+            const purchaseData: Omit<Purchase, 'id'> = {
+                buyerId,
+                sellerId,
+                productId,
+                amount,
+                currency: 'USD',
+                status: 'completed',
+                transactionId: transaction.id,
+                createdAt: new Date().toISOString()
+            };
 
-        const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
-        return purchaseRef.id;
-        */
+            const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
+            return purchaseRef.id;
+        } catch (error) {
+            console.error('[MarketplaceService] Purchase failed:', error);
+            throw error; // Propagate error to UI
+        }
     }
 }
