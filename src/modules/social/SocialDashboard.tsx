@@ -71,7 +71,7 @@ export default function SocialDashboard() {
         for (let i = 1; i <= daysInMonth; i++) {
             const campaign = campaigns.find(c => c.day === i);
             days.push(
-                <div key={i} className="h-32 bg-bg-dark border border-gray-800/50 p-2 relative group hover:bg-[#161b22] transition-colors">
+                <div key={i} className="h-32 bg-bg-dark border border-gray-800/50 p-2 relative group hover:bg-[#161b22] focus-within:bg-[#161b22] transition-colors">
                     <span className="text-gray-500 text-sm font-mono">{i}</span>
                     {campaign && (
                         <div className="mt-2 p-2 rounded bg-blue-900/20 border border-blue-800/50 text-xs cursor-pointer hover:bg-blue-900/40 transition-colors">
@@ -82,8 +82,12 @@ export default function SocialDashboard() {
                             </div>
                         </div>
                     )}
-                    <button className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 transition-opacity">
-                        <Plus size={14} />
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        aria-label={`Create post for ${new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString()}`}
+                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1 hover:bg-gray-700 rounded text-gray-400 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500"
+                    >
+                        <Plus size={14} aria-hidden="true" />
                     </button>
                 </div>
             );
@@ -170,7 +174,7 @@ export default function SocialDashboard() {
                             <span className="w-2 h-2 rounded-full bg-purple-500 ml-2"></span> Email
                             <span className="w-2 h-2 rounded-full bg-green-500 ml-2"></span> Content
                         </div>
-                        <button className="p-2 hover:bg-gray-800 rounded text-gray-400">
+                        <button className="p-2 hover:bg-gray-800 rounded text-gray-400" aria-label="Calendar options">
                             <MoreHorizontal size={20} />
                         </button>
                     </div>
