@@ -9,10 +9,10 @@ export const MerchLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <aside className="w-64 border-r border-white/5 bg-black/50 backdrop-blur-xl flex flex-col z-20">
                 <div className="p-6 flex items-center gap-3">
                     <div className="w-8 h-8 bg-[#FFE135] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,225,53,0.3)]">
-                        <span className="text-black font-black text-lg">B</span>
+                        <span className="text-black font-black text-lg">M</span>
                     </div>
                     <div>
-                        <h1 className="font-bold text-lg tracking-tight leading-none">Banana<span className="text-[#FFE135]">Pro</span></h1>
+                        <h1 className="font-bold text-lg tracking-tight leading-none">Merch<span className="text-[#FFE135]">Pro</span></h1>
                         <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Merch OS</span>
                     </div>
                 </div>

@@ -5,7 +5,7 @@ import { StandardProductCard } from './StandardProductCard';
 import { DeptLoader } from '@/components/ui/DeptLoader';
 
 
-export const BananaMerch: React.FC = () => {
+export const StandardMerch: React.FC = () => {
     const { standardProducts: products, loading } = useMerchandise();
 
     return (
@@ -27,7 +27,7 @@ export const BananaMerch: React.FC = () => {
                         Season 25 // Summer
                     </div>
                     <h2 className="text-5xl md:text-7xl font-black text-foreground mb-4 drop-shadow-sm tracking-tighter leading-none">
-                        THE <span className="text-primary italic">BANANA</span> COLLECTION
+                        THE <span className="text-primary italic">MERCH</span> COLLECTION
                     </h2>
                     <p className="text-foreground/80 text-xl max-w-lg font-medium drop-shadow-sm leading-relaxed">
                         Bold, vibrant, and unapologetically fun.

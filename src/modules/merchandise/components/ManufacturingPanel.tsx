@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator } from 'lucide-react';
-import { BananaTheme } from '@/modules/merchandise/themes';
+import { MerchTheme } from '@/modules/merchandise/themes';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { useToast } from '@/core/context/ToastContext';
 import { ProductType } from '../types';
 
 interface ManufacturingPanelProps {
-    theme: BananaTheme;
+    theme: MerchTheme;
     productType: ProductType;
     onClose?: () => void;
 }

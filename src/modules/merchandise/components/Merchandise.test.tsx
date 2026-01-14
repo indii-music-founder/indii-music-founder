@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { BananaMerch } from './BananaMerch';
-import { BananaProMerch } from './BananaProMerch';
+import { StandardMerch } from './StandardMerch';
+import { ProMerch } from './ProMerch';
 import { useMerchandise } from '../hooks/useMerchandise';
 import { MerchProduct } from '../types';
 
@@ -41,7 +41,7 @@ describe('Merchandise Components', () => {
         createFromCatalog: vi.fn()
     };
 
-    it('BananaMerch renders standard products', () => {
+    it('StandardMerch renders standard products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
             products: [...mockStandardProducts, ...mockProProducts],
@@ -49,15 +49,15 @@ describe('Merchandise Components', () => {
             proProducts: mockProProducts,
         });
 
-        render(<BananaMerch />);
+        render(<StandardMerch />);
 
         expect(screen.getByText('Standard Tee')).toBeInTheDocument();
         expect(screen.getByText('$25.00')).toBeInTheDocument();
         // Should not show Pro products in standard view usually, depends on component logic
-        // Verify standard logic: BananaMerch iterates standardProducts
+        // Verify standard logic: StandardMerch iterates standardProducts
     });
 
-    it('BananaProMerch renders pro products', () => {
+    it('ProMerch renders pro products', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
             products: [...mockStandardProducts, ...mockProProducts],
@@ -65,7 +65,7 @@ describe('Merchandise Components', () => {
             proProducts: mockProProducts,
         });
 
-        render(<BananaProMerch />);
+        render(<ProMerch />);
 
         expect(screen.getByText('Pro Hoodie')).toBeInTheDocument();
         expect(screen.getByText('$60.00')).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('Merchandise Components', () => {
             loading: false, // assuming component handles empty list gracefully
         });
 
-        render(<BananaMerch />);
+        render(<StandardMerch />);
         // Check for specific empty state text if it exists, or just ensure no crash
         // For now, simple render check
         const heading = screen.getByText(/Merch/i); // Adjust based on actual heading

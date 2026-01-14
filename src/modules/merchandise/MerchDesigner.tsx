@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MerchLayout } from './components/Layout';
-import { BananaButton } from './components/BananaButton';
+import { MerchButton } from './components/MerchButton';
 import { MerchCard } from './components/MerchCard';
 import { Undo, Redo, Download, Layers, Type, Sticker, Wand2, Monitor, LayoutTemplate } from 'lucide-react';
 import EnhancedShowroom from './components/EnhancedShowroom';
@@ -50,10 +50,10 @@ export default function MerchDesigner() {
                         </div>
                         <div className="flex items-center gap-3">
                             <button className="text-sm text-neutral-400 hover:text-white transition-colors">Save Draft</button>
-                            <BananaButton size="sm" glow>
+                            <MerchButton size="sm" glow>
                                 <Download size={16} />
                                 Export
-                            </BananaButton>
+                            </MerchButton>
                         </div>
                     </header>
 
@@ -74,7 +74,7 @@ export default function MerchDesigner() {
                                 <div className="grid grid-cols-3 gap-2">
                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
                                         <div key={i} className="aspect-square bg-neutral-800 rounded-lg border border-white/5 hover:border-[#FFE135] hover:bg-neutral-700 transition-all cursor-pointer flex items-center justify-center">
-                                            <span className="text-xl">🍌</span>
+                                            <span className="text-2xl text-neutral-600">+</span>
                                         </div>
                                     ))}
                                 </div>
@@ -90,7 +90,7 @@ export default function MerchDesigner() {
                                     <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent_70%)]" />
                                     <div className="relative z-10 text-center">
                                         <h1 className="text-6xl font-black text-[#FFE135] drop-shadow-[0_0_15px_rgba(255,225,53,0.5)] tracking-tighter transform -rotate-6">
-                                            BANANA<br />PRO
+                                            YOUR<br />DESIGN
                                         </h1>
                                     </div>
                                 </div>
@@ -112,8 +112,8 @@ export default function MerchDesigner() {
                                     <h4 className="text-sm font-bold text-white">Layers</h4>
                                 </div>
                                 <div className="space-y-2">
-                                    <LayerItem active label="Text: BANANA PRO" visible />
-                                    <LayerItem label="Image: Peel.png" visible />
+                                    <LayerItem active label="Text: YOUR DESIGN" visible />
+                                    <LayerItem label="Image: Logo.png" visible />
                                     <LayerItem label="Base: Heavy Cotton Tee" visible={false} locked />
                                 </div>
                             </MerchCard>

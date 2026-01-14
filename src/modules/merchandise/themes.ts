@@ -1,4 +1,4 @@
-export interface BananaTheme {
+export interface MerchTheme {
     name: string;
     colors: {
         background: string;
@@ -18,11 +18,11 @@ export interface BananaTheme {
     };
 }
 
-export const StandardTheme: BananaTheme = {
+export const StandardTheme: MerchTheme = {
     name: 'Standard',
     colors: {
         background: 'bg-[#FFF9E5]', // Creamy light yellow
-        surface: 'bg-[#FFEBA0]', // Ripe banana skin
+        surface: 'bg-[#FFEBA0]', // Light yellow surface
         surfaceHighlight: 'bg-[#FFF2C0]',
         border: 'border-yellow-200',
         text: 'text-yellow-900',
@@ -38,7 +38,7 @@ export const StandardTheme: BananaTheme = {
     },
 };
 
-export const ProTheme: BananaTheme = {
+export const ProTheme: MerchTheme = {
     name: 'Pro',
     colors: {
         background: 'bg-black',

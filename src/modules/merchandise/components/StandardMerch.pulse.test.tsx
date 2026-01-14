@@ -1,7 +1,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { BananaMerch } from './BananaMerch';
+import { StandardMerch } from './StandardMerch';
 import { useMerchandise } from '../hooks/useMerchandise';
 
 // Mock the hook
@@ -16,7 +16,7 @@ vi.mock('@/core/store', () => ({
     })
 }));
 
-describe('BananaMerch Loading States (Pulse)', () => {
+describe('StandardMerch Loading States (Pulse)', () => {
     const defaultMockReturn = {
         products: [],
         standardProducts: [],
@@ -37,7 +37,7 @@ describe('BananaMerch Loading States (Pulse)', () => {
             loading: true,
         });
 
-        render(<BananaMerch />);
+        render(<StandardMerch />);
 
         // Assert that some loading indicator is present.
         // We will look for a "status" role or a "loading" text or specific test id.
@@ -64,7 +64,7 @@ describe('BananaMerch Loading States (Pulse)', () => {
             standardProducts: [mockProduct],
         });
 
-        render(<BananaMerch />);
+        render(<StandardMerch />);
 
         expect(screen.getByText('Test Shirt')).toBeInTheDocument();
         expect(screen.queryByRole('status')).not.toBeInTheDocument();

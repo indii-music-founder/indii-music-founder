@@ -1,13 +1,13 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface BananaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface MerchButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
     size?: 'sm' | 'md' | 'lg';
     glow?: boolean;
 }
 
-export const BananaButton = React.forwardRef<HTMLButtonElement, BananaButtonProps>(
+export const MerchButton = React.forwardRef<HTMLButtonElement, MerchButtonProps>(
     ({ className, variant = 'primary', size = 'md', glow = false, children, ...props }, ref) => {
 
         const baseStyles = "font-bold tracking-tight rounded-md transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]";
@@ -39,4 +39,4 @@ export const BananaButton = React.forwardRef<HTMLButtonElement, BananaButtonProp
     }
 );
 
-BananaButton.displayName = "BananaButton";
+MerchButton.displayName = "MerchButton";

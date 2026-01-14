@@ -4,7 +4,7 @@ import { useMerchandise } from '../hooks/useMerchandise';
 
 
 
-export const BananaProMerch: React.FC = () => {
+export const ProMerch: React.FC = () => {
     const { proProducts: products } = useMerchandise();
 
     return (
@@ -23,7 +23,7 @@ export const BananaProMerch: React.FC = () => {
                     <div className="space-y-2 mb-8">
                         <span className="text-[10px] tracking-[0.8em] text-primary font-black uppercase mb-4 block">Archive Series // 2025</span>
                         <h2 className="text-7xl md:text-9xl font-black tracking-tighter text-foreground italic leading-none">
-                            BANANA <span className="text-outline text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/20">PRO</span>
+                            MERCH <span className="text-outline text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/20">PRO</span>
                         </h2>
                     </div>
 
@@ -128,7 +128,7 @@ export const BananaProMerch: React.FC = () => {
                 </p>
                 <div className="mt-12 flex justify-center items-center gap-4">
                     <div className="h-px w-12 bg-border/50" />
-                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-[0.5em]">Banana Studio R&D</span>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-[0.5em]">Merch Studio R&D</span>
                     <div className="h-px w-12 bg-border/50" />
                 </div>
             </div>

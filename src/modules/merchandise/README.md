@@ -37,14 +37,14 @@ The Merchandise module is a comprehensive, AI-powered system for designing merch
 
 **Features:**
 - User greeting with dynamic name
-- Revenue metrics ("Banana Juice")
-- Sales volume ("Units Peeled")
+- Revenue metrics ("Total Revenue")
+- Sales volume ("Units Sold")
 - Conversion rate tracking
-- Ripeness Score (94/100) - overall health metric
-- Peel Performance - week-over-week growth
+- Health Score (94/100) - overall health metric
+- Sales Performance - week-over-week growth
 - Top Sellers section with revenue breakdown
 - Fresh Prints - recent design history
-- "Peel New Design" CTA button
+- "New Design" CTA button
 
 ### 2. Designer (`MerchDesigner.tsx`)
 
@@ -59,15 +59,15 @@ The Designer has **two modes** accessible via toggle:
 ┌────────┬──────────────┬────────────┐
 │ Assets │    Canvas    │ Properties │
 │Library │              │            │
-│        │  [BANANA]    │  Layers    │
-│🍌🍌🍌   │   [PRO]      │  Blending  │
-│🍌🍌🍌   │              │  Opacity   │
-│🍌🍌🍌   │              │            │
+│        │  [DESIGN]    │  Layers    │
+│ + + +  │   [HERE]     │  Blending  │
+│ + + +  │              │  Opacity   │
+│ + + +  │              │            │
 └────────┴──────────────┴────────────┘
 ```
 
 **Features:**
-- **Left Panel:** Asset library with 9 banana emoji placeholders
+- **Left Panel:** Asset library with 9 placeholder slots
 - **Tool Selection:** Stickers, Text, AI Gen
 - **Center Canvas:** Design area with grid background and product preview
 - **Right Panel:** Layers panel + Properties (Blend Mode, Opacity)
@@ -153,26 +153,26 @@ The Designer has **two modes** accessible via toggle:
 - **Order Sample** button
 - **Send to Production** button
 
-### 3. Catalog (`BananaMerch.tsx` & `BananaProMerch.tsx`)
+### 3. Catalog (Standard & Pro Collections)
 
 **Purpose:** Browse and clone product templates
 
-**Standard Collection (`BananaMerch.tsx`):**
+**Standard Collection:**
 - Bright, vibrant aesthetic
 - Creamy yellow background (#FFF9E5)
-- Ripe banana skin colors (#FFEBA0)
-- "BANANA COLLECTION" hero banner
+- Light yellow surface colors (#FFEBA0)
+- "MERCH COLLECTION" hero banner
 - Grid display with hover animations
 - "LATEST DROPS" section with category filters
 - Flash Drops (Sunday 10AM EST)
 - Artist Collabs banners
 
-**Pro Collection (`BananaProMerch.tsx`):**
+**Pro Collection:**
 - Elite, minimalist aesthetic
 - Black background with white accents
 - Yellow-400 accent colors
 - Glassmorphism effects with backdrop blur
-- "BANANA PRO" with gradient text
+- "MERCH PRO" with gradient text
 - "THE CATALOGUE" with sourcing/shipping details
 - Staggered grid layout (offset rows)
 - "SECURE ITEM" buttons on hover
@@ -347,8 +347,8 @@ Video generation jobs
 ### Standard Theme
 ```typescript
 {
-  primary: '#FFE135',        // Banana yellow
-  secondary: '#FFEBA0',      // Light banana
+  primary: '#FFE135',        // Yellow
+  secondary: '#FFEBA0',      // Light yellow
   background: '#FFF9E5',     // Creamy yellow
   text: '#4A4A4A',           // Dark gray
   accent: '#FF9800'          // Orange accent
@@ -358,7 +358,7 @@ Video generation jobs
 ### Pro Theme
 ```typescript
 {
-  primary: '#FFE135',        // Banana yellow
+  primary: '#FFE135',        // Yellow
   secondary: '#1a1a1a',      // Near black
   background: '#000000',     // Pure black
   text: '#FFFFFF',           // White
@@ -372,21 +372,21 @@ Video generation jobs
 MerchStudio.tsx (Router)
 ├── MerchDashboard.tsx
 │   ├── MerchCard
-│   ├── BananaButton
+│   ├── MerchButton
 │   └── StandardProductCard
 │
 ├── MerchDesigner.tsx
 │   ├── Layout
 │   ├── MerchCard
-│   ├── BananaButton
+│   ├── MerchButton
 │   └── EnhancedShowroom
 │       ├── ManufacturingPanel
 │       └── (Asset/Scenario/Stage/Production columns)
 │
 └── Catalog Routes
-    ├── BananaMerch (Standard)
+    ├── StandardMerch (Standard)
     │   └── StandardProductCard (memoized)
-    └── BananaProMerch (Pro)
+    └── ProMerch (Pro)
         └── StandardProductCard (memoized)
 ```
 
@@ -419,7 +419,7 @@ MerchStudio.tsx (Router)
 ### Complete Production Flow
 
 1. **Dashboard** → View stats and recent designs
-2. **Click "Peel New Design"** → Enter Designer
+2. **Click "New Design"** → Enter Designer
 3. **Design Mode:**
    - Select tools (Stickers/Text/AI Gen)
    - Add assets to canvas
@@ -540,8 +540,8 @@ function Component() {
 ## Known Issues
 
 ### E2E Test Failures (Pre-Migration)
-- `BananaMerch` price test fails (text split across elements)
-- `BananaProMerch` price test fails (same issue)
+- Standard collection price test fails (text split across elements)
+- Pro collection price test fails (same issue)
 - **Fix:** Use selector refinement instead of full text match
 
 ### Video Generation Timing
@@ -573,7 +573,7 @@ function Component() {
 
 **Before:**
 - Showroom scattered in Creative Studio (confusing UX)
-- Basic Banana Merch with limited showroom mode
+- Basic merchandise feature with limited showroom mode
 - Two incomplete implementations
 
 **After:**

@@ -11,7 +11,7 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
     const mockProduct: MerchProduct = {
         id: '1',
         userId: 'user1',
-        title: 'Banana Phone Case',
+        title: 'Phone Case',
         image: 'https://example.com/image.jpg',
         price: '$29.99',
         category: 'standard',
@@ -28,7 +28,7 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
     it('renders the product title and price correctly on mobile', () => {
         render(<StandardProductCard product={mockProduct} />);
 
-        const title = screen.getByText('Banana Phone Case');
+        const title = screen.getByText('Phone Case');
         const price = screen.getByText('$29.99');
 
         expect(title).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
     it('images use lazy loading for performance on mobile data', () => {
         render(<StandardProductCard product={mockProduct} />);
 
-        const img = screen.getByAltText('Banana Phone Case');
+        const img = screen.getByAltText('Phone Case');
         expect(img).toHaveAttribute('loading', 'lazy');
         expect(img).toHaveAttribute('decoding', 'async');
     });
