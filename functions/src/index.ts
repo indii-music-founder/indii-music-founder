@@ -587,13 +587,6 @@ export const inngestApi = functions
 // Image Generation (Gemini)
 // ----------------------------------------------------------------------------
 
-interface GenerateImageRequestData {
-    prompt: string;
-    aspectRatio?: string;
-    count?: number;
-    images?: { mimeType: string; data: string }[];
-}
-
 export const generateImageV3 = functions
     .runWith({
         secrets: [geminiApiKey],

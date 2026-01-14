@@ -3,6 +3,7 @@
  */
 
 import { SubscriptionTier } from './SubscriptionTier';
+export { SubscriptionTier };
 
 /**
  * User subscription record

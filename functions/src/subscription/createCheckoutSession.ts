@@ -7,6 +7,7 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe, getPriceId } from '../stripe/config';
+import Stripe from 'stripe';
 import { CheckoutSessionParams, CheckoutSessionResponse } from '../../../src/services/subscription/types';
 import { Subscription, SubscriptionTier } from '../../../src/services/subscription/types';
 
@@ -71,8 +72,8 @@ export const createCheckoutSession = onCall(async (request) => {
           quantity: 1
         }
       ],
-      success_url,
-      cancel_url,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: { userId, tier },
       allow_promotion_codes: true,
       client_reference_id: userId

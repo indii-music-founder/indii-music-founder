@@ -6,8 +6,9 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import Stripe from 'stripe';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
-import { SubscriptionTier, Subscription } from '../../../src/services/subscription/types';
+import { SubscriptionTier, Subscription as LocalSubscription } from '../../../src/services/subscription/types';
 
 /**
  * Verify Stripe webhook signature
@@ -44,12 +45,12 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const now = Date.now();
 
   // Update or create subscription
-  const subscriptionData: Partial<Subscription> = {
+  const subscriptionData: Partial<LocalSubscription> = {
     tier,
-    status: mapStripeStatus(subscription.status),
-    currentPeriodStart: subscription.current_period_start * 1000,
-    currentPeriodEnd: subscription.current_period_end * 1000,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    status: mapStripeStatus((subscription as any).status),
+    currentPeriodStart: (subscription as any).current_period_start * 1000,
+    currentPeriodEnd: (subscription as any).current_period_end * 1000,
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
     stripeCustomerId,
     stripeSubscriptionId: subscription.id,
     updatedAt: now
@@ -95,10 +96,10 @@ async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
 
   await snapshot.docs[0].ref.update({
     tier,
-    status: mapStripeStatus(subscription.status),
-    currentPeriodStart: subscription.current_period_start * 1000,
-    currentPeriodEnd: subscription.current_period_end * 1000,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    status: mapStripeStatus((subscription as any).status),
+    currentPeriodStart: (subscription as any).current_period_start * 1000,
+    currentPeriodEnd: (subscription as any).current_period_end * 1000,
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
     stripeSubscriptionId: subscription.id,
     updatedAt: now
   });
@@ -139,10 +140,10 @@ async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
 
   await snapshot.docs[0].ref.update({
     tier,
-    status: mapStripeStatus(subscription.status),
-    currentPeriodStart: subscription.current_period_start * 1000,
-    currentPeriodEnd: subscription.current_period_end * 1000,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    status: mapStripeStatus((subscription as any).status),
+    currentPeriodStart: (subscription as any).current_period_start * 1000,
+    currentPeriodEnd: (subscription as any).current_period_end * 1000,
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
     updatedAt: Date.now()
   });
 
@@ -208,10 +209,10 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   const userId = snapshot.docs[0].id;
 
   // Update billing period end
-  if (invoice.subscription) {
-    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+  if ((invoice as any).subscription) {
+    const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
     await snapshot.docs[0].ref.update({
-      currentPeriodEnd: subscription.current_period_end * 1000,
+      currentPeriodEnd: (subscription as any).current_period_end * 1000,
       status: 'active',
       updatedAt: Date.now()
     });
@@ -261,16 +262,18 @@ export const stripeWebhook = onRequest(async (req, res) => {
 
   if (!webhookSecret) {
     console.error('[stripeWebhook] Webhook secret not configured');
-    return res.status(500).json({ error: 'Webhook secret not configured' });
+    res.status(500).json({ error: 'Webhook secret not configured' });
+    return;
   }
 
   let event: Stripe.Event;
 
   try {
-    event = verifyStripeWebhook(req.rawBody, signature, webhookSecret);
+    event = verifyStripeWebhook(req.rawBody.toString(), signature, webhookSecret);
   } catch (error) {
     console.error('[stripeWebhook] Signature verification failed:', error);
-    return res.status(400).json({ error: 'Invalid signature' });
+    res.status(400).json({ error: 'Invalid signature' });
+    return;
   }
 
   try {
@@ -297,9 +300,9 @@ export const stripeWebhook = onRequest(async (req, res) => {
         console.log(`[stripeWebhook] Unhandled event type: ${event.type}`);
     }
 
-    return res.json({ received: true });
+    res.json({ received: true });
   } catch (error) {
     console.error('[stripeWebhook] Handler error:', error);
-    return res.status(500).json({ error: 'Webhook handler failed' });
+    res.status(500).json({ error: 'Webhook handler failed' });
   }
 });
