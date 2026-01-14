@@ -38,6 +38,7 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
                         onChange={(e) => setCity(e.target.value)}
                         className="block w-full pl-10 pr-3 py-3 bg-slate-950/50 border border-transparent rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:bg-slate-950 focus:ring-1 focus:ring-slate-700 transition-all font-medium sm:text-sm"
                         placeholder="Target City (e.g. Nashville)"
+                        aria-label="Target City"
                     />
                 </div>
 
@@ -55,14 +56,18 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
                         onChange={(e) => setGenre(e.target.value)}
                         className="block w-full pl-10 pr-3 py-3 bg-slate-950/50 border border-transparent rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:bg-slate-950 focus:ring-1 focus:ring-slate-700 transition-all font-medium sm:text-sm"
                         placeholder="Focus Genre (e.g. Rock)"
+                        aria-label="Focus Genre"
                     />
                 </div>
 
                 {/* Autonomous Toggle */}
                 <button
                     onClick={() => setIsAutonomous(!isAutonomous)}
+                    role="switch"
+                    aria-checked={isAutonomous}
+                    aria-label="Toggle autonomous mode"
                     className={`
-                        relative flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all border
+                        relative flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all border outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
                         ${isAutonomous
                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                             : 'bg-slate-950/50 border-transparent text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'}
@@ -78,8 +83,9 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
                 <button
                     onClick={handleScan}
                     disabled={isScanning}
+                    aria-busy={isScanning}
                     className={`
-                        flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm tracking-wide shadow-lg transition-all
+                        flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm tracking-wide shadow-lg transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
                         ${isScanning
                             ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
                             : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:brightness-110 active:scale-[0.98] shadow-emerald-500/20'}
