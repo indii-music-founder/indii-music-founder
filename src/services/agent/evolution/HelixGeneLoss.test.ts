@@ -76,4 +76,49 @@ describe('🧬 Helix: Gene Loss Prevention', () => {
     // 1 (Undefined) + 1 (Null) + 3 (Success needed for 3 spots) = 5 calls
     expect(mockMutationFn).toHaveBeenCalledTimes(5);
   });
+
+  it('Elitism Integrity: Ensures mutation of offspring does not corrupt the elite parent (Mutation by Reference)', async () => {
+    // Scenario: The "Fly" Defect.
+    // 1. Crossover lazily returns a reference to Parent 1 (no cloning).
+    // 2. Mutation modifies that reference IN PLACE.
+    // 3. Since Parent 1 is an Elite, the Elite in the next generation accidentally gets mutated too.
+    // Helix must prevent this gene corruption.
+
+    engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const eliteGene: AgentGene = {
+      ...healthyGene,
+      id: 'elite',
+      systemPrompt: 'ORIGINAL_PURE_PROMPT',
+      fitness: 1.0
+    };
+
+    const population: AgentGene[] = [
+      eliteGene,
+      { ...healthyGene, id: 'weak', fitness: 0.1 }
+    ];
+
+    // 1. Mock "Lazy" Crossover (Returns Parent Reference)
+    mockCrossoverFn.mockImplementation(async (p1, p2) => {
+      return p1; // DANGER: Returning reference!
+    });
+
+    // 2. Mock "Destructive" Mutation (Modifies In-Place)
+    mockMutationFn.mockImplementation(async (g) => {
+      g.systemPrompt = 'CORRUPTED_MUTATION'; // DANGER: Modifying reference!
+      return g;
+    });
+
+    // 3. Evolve
+    const nextGen = await engine.evolve(population);
+
+    // 4. Assertions
+    expect(nextGen).toHaveLength(4);
+
+    // The Elite (Index 0) MUST remain pure
+    const eliteSurvivor = nextGen[0];
+    expect(eliteSurvivor.id).toBe('elite');
+    expect(eliteSurvivor.systemPrompt).toBe('ORIGINAL_PURE_PROMPT');
+    expect(eliteSurvivor.systemPrompt).not.toBe('CORRUPTED_MUTATION');
+  });
 });
