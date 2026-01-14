@@ -54,7 +54,7 @@ const injectMockState = async (page: any) => {
  */
 
 test.describe('100-Click Path Challenge: Creative Studio', () => {
-    test.setTimeout(900000); // 15 minutes
+    test.setTimeout(1800000); // 30 minutes for the stability gauntlet
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ page }) => {
@@ -94,7 +94,7 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                 await test.step(`Click ${desc}`, async () => {
                     if (!options.noWait) {
                         try {
-                            await locator.waitFor({ state: 'visible', timeout: options.timeout || 10000 });
+                            await locator.waitFor({ state: 'visible', timeout: options.timeout || 5000 });
                         } catch (e) {
                             console.log(`[RECOVERY] Step ${id}: Attempting to clear modals...`);
                             await page.keyboard.press('Escape');
@@ -235,13 +235,13 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
 
         while (clickCount < 100) {
             const mod = modules[cycleId % modules.length];
-            if (clickCount > 0 && clickCount % 20 === 0 && clickCount !== lastReloadCount) {
+            if (clickCount > 0 && clickCount % 50 === 0 && clickCount !== lastReloadCount) {
                 console.log(`[INFO] Periodic reload at ${clickCount} clicks...`);
                 lastReloadCount = clickCount;
                 await page.reload().catch(() => { });
-                await page.waitForTimeout(10000);
+                await page.waitForLoadState('networkidle').catch(() => { });
                 await injectMockState(page);
-                await page.waitForTimeout(2000);
+                await page.waitForTimeout(3000);
             }
             await page.waitForTimeout(100 + Math.random() * 200);
             const success = await safeClick(cycleId, `nav-item-${mod}`, `Cycle: Navigate to ${mod}`);

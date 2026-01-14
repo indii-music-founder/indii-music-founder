@@ -22,7 +22,9 @@ test.describe('Audio Intelligence UI Flow', () => {
             try {
                 localStorage.clear();
                 sessionStorage.clear();
-            } catch (e) { }
+            } catch (e) {
+                // Silently ignore storage clear errors in init script
+            }
         });
 
         // Monitor for 431 or other errors
