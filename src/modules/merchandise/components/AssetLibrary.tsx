@@ -15,6 +15,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [isUploading, setIsUploading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Filter history for images only
@@ -29,8 +30,16 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
             .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
     }, [history]);
 
-    // Debug logging to diagnose red block issue
+    // Loading state management
     React.useEffect(() => {
+        const timer = setTimeout(() => setIsLoading(false), 300);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Debug logging (dev mode only)
+    React.useEffect(() => {
+        if (!import.meta.env.DEV) return;
+
         console.group('🖼️ Asset Library Debug');
         console.log('Total history items:', history.length);
         console.log('Filtered image assets:', imageAssets.length);
@@ -40,32 +49,15 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
             console.log('Sample asset:', {
                 id: sample.id,
                 type: sample.type,
-                prompt: sample.prompt,
-                urlExists: !!sample.url,
-                urlLength: sample.url?.length,
                 urlPrefix: sample.url?.substring(0, 30),
-                timestamp: sample.timestamp,
-                origin: sample.origin
+                urlType: sample.url?.startsWith('data:') ? 'data-uri' :
+                         sample.url?.startsWith('http') ? 'http' :
+                         sample.url?.startsWith('blob:') ? 'blob' : 'unknown'
             });
-
-            // Check if URL is valid
-            if (!sample.url || sample.url === '' || sample.url === 'PENDING') {
-                console.error('❌ Invalid URL detected:', sample.url);
-            } else if (sample.url.startsWith('data:image')) {
-                console.log('✅ Data URI detected (good)');
-            } else if (sample.url.startsWith('http')) {
-                console.log('⚠️ HTTP URL detected (check CORS)');
-            } else if (sample.url.startsWith('blob:')) {
-                console.log('⚠️ Blob URL detected (may expire)');
-            } else {
-                console.warn('⚠️ Unknown URL format:', sample.url.substring(0, 50));
-            }
-        } else {
-            console.warn('No image assets found');
         }
 
         console.groupEnd();
-    }, [imageAssets, history]);
+    }, [imageAssets.length, history.length]);
 
     // Search filter
     const filteredAssets = useMemo(() => {
@@ -185,7 +177,16 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
 
             {/* Asset Grid */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {filteredAssets.length === 0 ? (
+                {isLoading ? (
+                    <div className="grid grid-cols-3 gap-2 pb-2">
+                        {[...Array(9)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="aspect-square bg-neutral-800 rounded-lg animate-pulse"
+                            />
+                        ))}
+                    </div>
+                ) : filteredAssets.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
                         <ImageIcon size={48} className="text-neutral-700 mb-3" />
                         <p className="text-sm text-neutral-500 mb-2">No assets found</p>
@@ -207,14 +208,13 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                                 <img
                                     src={asset.url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'}
                                     alt={asset.prompt || 'Asset'}
-                                    onLoad={() => console.log('✅ Image loaded:', asset.id)}
+                                    loading="lazy"
                                     onError={(e) => {
-                                        console.error('❌ Image failed to load:', {
-                                            assetId: asset.id,
-                                            url: asset.url?.substring(0, 100),
-                                            urlLength: asset.url?.length,
-                                            error: e.type
-                                        });
+                                        if (import.meta.env.DEV) {
+                                            console.error('❌ Image load failed:', asset.id, asset.url?.substring(0, 50));
+                                        }
+                                        // Fallback: hide broken image
+                                        e.currentTarget.style.display = 'none';
                                     }}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none"
                                 />
