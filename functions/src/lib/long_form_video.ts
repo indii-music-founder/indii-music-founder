@@ -190,29 +190,6 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     return triggerResult.name;
                 });
 
-                // 2. Poll for Completion
-                let isDone = false;
-                let segmentResult = null;
-                let attempts = 0;
-
-                while (!isDone && attempts < 60) { // 60 * 5s = 5 minutes
-                    attempts++;
-                    await step.sleep(`wait-segment-${i}-${attempts}`, "5s");
-
-                    const status = await step.run(`check-segment-${i}-${attempts}`, async () => {
-                        const statusResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`);
-                        if (statusResponse.ok) {
-                            return await statusResponse.json();
-                        }
-                        return null;
-                    });
-
-                    if (status && status.done) {
-                        segmentResult = status;
-                        isDone = true;
-                    return triggerResult.name as string;
-                });
-
                 // FIX #1: Move polling outside step.run using step.sleep
                 let segmentResult: any = null;
                 let isDone = false;
@@ -239,11 +216,6 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                 if (!isDone || !segmentResult || !segmentResult.response) {
                     throw new Error(`Veo Segment ${i} timed out during polling`);
-                }
-
-                // 3. Process and Save Segment
-                const segmentUrl = await step.run(`process-segment-${i}`, async () => {
-                    throw new Error(`Veo Segment ${i} timed out during polling after ${SEGMENT_MAX_POLL_ATTEMPTS * SEGMENT_POLL_INTERVAL_SECONDS}s`);
                 }
 
                 // Store segment in Cloud Storage
@@ -497,6 +469,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     }
                 }
             }
+            }
 
             // All segments done, trigger stitching
             const derivedMetadata = {
@@ -593,19 +566,6 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                                 {
                                     key: "atom0",
                                     inputs: segmentUrls.map((_: any, index: number) => `input${index}`)
-                                }
-                            ],
-                            elementaryStreams: [
-                                {
-                                    key: "video_stream0",
-                                    videoStream: {
-                                        h264: {
-                                            heightPixels: 720,
-                                            widthPixels: 1280,
-                                            bitrateBps: 5000000,
-                                            frameRate: 30,
-                                        },
-                                    },
                                 }
                             ],
                             elementaryStreams,
