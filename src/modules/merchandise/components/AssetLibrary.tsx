@@ -20,7 +20,12 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
     // Filter history for images only
     const imageAssets = useMemo(() => {
         return history
-            .filter(item => item.type === 'image')
+            .filter(item =>
+                item.type === 'image' &&
+                item.url &&
+                item.url !== '' &&
+                !item.url.startsWith('placeholder:')
+            )
             .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
     }, [history]);
 
