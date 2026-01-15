@@ -6,6 +6,7 @@ import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { useStore } from '@/core/store';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
+import { areFeedItemPropsEqual } from './SocialFeed.utils';
 
 interface SocialFeedProps {
     userId?: string;
@@ -247,7 +248,8 @@ export default SocialFeed;
 
 // Sub-component for individual items to handle async product fetching if needed
 // ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
-// We use default shallow comparison here. It relies on the parent passing stable objects.
+// We use custom deep comparison here because Firestore onSnapshot often returns new object references
+// even for unchanged items, which defeats shallow comparison.
 const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
@@ -343,4 +345,4 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
             </div>
         </article>
     );
-});
+}, areFeedItemPropsEqual);
