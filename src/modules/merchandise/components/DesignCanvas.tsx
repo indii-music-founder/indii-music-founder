@@ -575,10 +575,6 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
                 format: format === 'jpeg' ? 'jpeg' : 'png',
                 quality: format === 'jpeg' ? 0.9 : 1,
                 multiplier: 2 // Export at 2x resolution
-            return canvasRef.current.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 2
             });
 
             // Convert to WebP if requested
