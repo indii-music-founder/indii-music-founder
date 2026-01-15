@@ -42,8 +42,8 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 // Trigger Single Shot
                 results = await VideoGeneration.generateVideo({
                     prompt: prompt,
-                    aspectRatio: studioControls.aspectRatio,
-                    resolution: studioControls.resolution,
+                    aspectRatio: studioControls.aspectRatio as any,
+                    resolution: studioControls.resolution as any,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     duration: studioControls.duration,

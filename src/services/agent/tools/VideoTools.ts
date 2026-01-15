@@ -1,6 +1,7 @@
 import { useStore } from '@/core/store';
 import { Editing } from '@/services/image/EditingService';
-import { VideoGeneration, VideoGenerationOptions } from '@/services/video/VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoGenerationOptions } from '@/modules/video/schemas';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 

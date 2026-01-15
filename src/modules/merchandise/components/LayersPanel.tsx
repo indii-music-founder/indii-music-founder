@@ -120,7 +120,7 @@ const LayerProperties: React.FC<{
                     <select
                         value={localBlendMode}
                         onChange={(e) => {
-                            setLocalBlendMode(e.target.value);
+                            setLocalBlendMode(e.target.value as any);
                             onUpdateProperty?.(layer, 'globalCompositeOperation', e.target.value);
                         }}
                         className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
@@ -212,8 +212,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                         }
                                     }}
                                     className={`group relative p-2 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50 ${isSelected
-                                            ? 'bg-[#FFE135]/20 border border-[#FFE135]/40'
-                                            : 'bg-neutral-900/50 hover:bg-neutral-800/50 border border-transparent hover:border-white/10'
+                                        ? 'bg-[#FFE135]/20 border border-[#FFE135]/40'
+                                        : 'bg-neutral-900/50 hover:bg-neutral-800/50 border border-transparent hover:border-white/10'
                                         }`}
                                 >
                                     {/* Layer Info */}

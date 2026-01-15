@@ -97,7 +97,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             const result = await service.generateVideo({
                 prompt: 'A cinematic shot',
                 aspectRatio: '16:9',
-                resolution: '1080p'
+                resolution: '1920x1080'
             });
 
             expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -136,7 +136,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
                         })
                     });
                 }, 10);
-                return () => {}; // unsubscribe
+                return () => { }; // unsubscribe
             });
 
             const job = await service.waitForJob('job-123');
@@ -150,23 +150,23 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
         });
 
         it('should handle SafetySettings rejection (Gemini 3 Guardrails)', async () => {
-             mocks.doc.mockReturnValue('doc-ref');
-             mocks.onSnapshot.mockImplementation((ref, callback) => {
-                 setTimeout(() => {
-                     callback({
-                         exists: () => true,
-                         id: 'job-123',
-                         data: () => ({
-                             status: 'failed',
-                             error: 'Safety violation: Content blocked by safety filters.'
-                         })
-                     });
-                 }, 10);
-                 return () => {};
-             });
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'job-123',
+                        data: () => ({
+                            status: 'failed',
+                            error: 'Safety violation: Content blocked by safety filters.'
+                        })
+                    });
+                }, 10);
+                return () => { };
+            });
 
-             await expect(service.waitForJob('job-123'))
-                 .rejects.toThrow('Safety violation: Content blocked by safety filters.');
+            await expect(service.waitForJob('job-123'))
+                .rejects.toThrow('Safety violation: Content blocked by safety filters.');
         });
     });
 
