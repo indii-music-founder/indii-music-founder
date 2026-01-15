@@ -212,6 +212,31 @@ export default function MerchDesigner() {
         setBackgroundColor(color);
     }, [setBackgroundColor]);
 
+    // Drag-and-drop handlers for asset library
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const url = e.dataTransfer.getData('image/url');
+        const name = e.dataTransfer.getData('image/name');
+
+        if (url) {
+            try {
+                await addImage(url, name || 'Dropped Image');
+                toast.success('Asset added to canvas');
+            } catch (error) {
+                console.error('Failed to add dropped asset:', error);
+                toast.error('Failed to add asset');
+            }
+        }
+    }, [addImage, toast]);
+
     // Work Mode Toggle
     const toggleWorkMode = useCallback(() => {
         const newMode = workMode === 'agent' ? 'user' : 'agent';
@@ -401,7 +426,11 @@ export default function MerchDesigner() {
                         </div>
 
                         {/* Center Canvas */}
-                        <div className="lg:col-span-2 relative rounded-2xl border border-white/5 overflow-hidden">
+                        <div
+                            className="lg:col-span-2 relative rounded-2xl border border-white/5 overflow-hidden"
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                        >
                             <DesignCanvas
                                 onLayersChange={setLayers}
                                 onSelectionChange={setSelectedLayer}
