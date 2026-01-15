@@ -20,13 +20,15 @@ export interface DesignCanvasProps {
     onLayersChange?: (objects: CanvasObject[]) => void;
     onSelectionChange?: (selected: CanvasObject | null) => void;
     onCanvasReady?: (canvas: fabric.Canvas) => void;
+    onRequestDelete?: (objects: CanvasObject[]) => void;
 }
 
 export const DesignCanvas: React.FC<DesignCanvasProps> = ({
     onExport,
     onLayersChange,
     onSelectionChange,
-    onCanvasReady
+    onCanvasReady,
+    onRequestDelete
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -194,9 +196,17 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject) {
                     e.preventDefault();
                     const activeObjects = canvas.getActiveObjects();
-                    activeObjects.forEach(obj => canvas.remove(obj));
-                    canvas.discardActiveObject();
-                    canvas.renderAll();
+
+                    // If onRequestDelete callback is provided, use it (allows confirmation dialog)
+                    if (onRequestDelete) {
+                        const canvasObjects = activeObjects.map(convertFabricToCanvasObject);
+                        onRequestDelete(canvasObjects);
+                    } else {
+                        // Fallback to immediate deletion
+                        activeObjects.forEach(obj => canvas.remove(obj));
+                        canvas.discardActiveObject();
+                        canvas.renderAll();
+                    }
                 }
 
                 // Copy: Cmd/Ctrl + C
@@ -265,7 +275,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             console.error('Error initializing canvas:', err);
             setError('Failed to initialize canvas');
         }
-    }, [onCanvasReady, handleSelectionChange, emitLayersChange]);
+    }, [onCanvasReady, handleSelectionChange, emitLayersChange, onRequestDelete, convertFabricToCanvasObject]);
 
     // Responsive canvas sizing
     useEffect(() => {
@@ -661,15 +671,6 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         canvasRef.current.renderAll();
     }, [canvasRef]);
 
-    // TODO: Implement proper undo/redo with history stack
-    const undo = useCallback(() => {
-        console.log('Undo not yet implemented');
-    }, []);
-
-    const redo = useCallback(() => {
-        console.log('Redo not yet implemented');
-    }, []);
-
     return {
         addImage,
         addImageAtPosition,
@@ -680,8 +681,6 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         exportToImage,
         clear,
         setBackgroundColor,
-        alignObjects,
-        undo,
-        redo
+        alignObjects
     };
 };

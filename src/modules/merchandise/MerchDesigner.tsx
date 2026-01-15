@@ -30,7 +30,7 @@ export default function MerchDesigner() {
 
     // Dialog State
     const [showAIDialog, setShowAIDialog] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject[]>([]);
 
     const toast = useToast();
 
@@ -77,6 +77,29 @@ export default function MerchDesigner() {
         toast.success('Text added to canvas');
     }, [addText, toast]);
 
+    // Wrap alignment with toast feedback
+    const handleAlign = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+        if (!fabricCanvasRef.current) return;
+
+        const activeObjects = fabricCanvasRef.current.getActiveObjects();
+        if (activeObjects.length < 2) {
+            toast.error('Select 2 or more objects to align');
+            return;
+        }
+
+        alignObjects(alignment);
+
+        const alignmentNames = {
+            left: 'Left',
+            center: 'Center',
+            right: 'Right',
+            top: 'Top',
+            middle: 'Middle',
+            bottom: 'Bottom'
+        };
+        toast.success(`Aligned ${activeObjects.length} objects: ${alignmentNames[alignment]}`);
+    }, [alignObjects, toast]);
+
     // Layer Management Handlers
     const handleSelectLayer = useCallback((layer: CanvasObject) => {
         if (!fabricCanvasRef.current) return;
@@ -99,17 +122,29 @@ export default function MerchDesigner() {
     }, [layers]);
 
     const handleDeleteLayer = useCallback((layer: CanvasObject) => {
-        // Show confirmation dialog
-        setDeleteConfirm(layer);
+        // Show confirmation dialog for single layer
+        setDeleteConfirm([layer]);
+    }, []);
+
+    const handleDeleteLayers = useCallback((objects: CanvasObject[]) => {
+        // Show confirmation dialog for multiple layers (keyboard delete)
+        setDeleteConfirm(objects);
     }, []);
 
     const confirmDelete = useCallback(() => {
-        if (!deleteConfirm) return;
+        if (deleteConfirm.length === 0) return;
 
-        fabricCanvasRef.current?.remove(deleteConfirm.fabricObject);
+        // Delete all objects in the confirmation list
+        deleteConfirm.forEach(obj => {
+            fabricCanvasRef.current?.remove(obj.fabricObject);
+        });
+
+        fabricCanvasRef.current?.discardActiveObject();
         fabricCanvasRef.current?.renderAll();
-        setDeleteConfirm(null);
-        toast.success('Layer deleted');
+        setDeleteConfirm([]);
+
+        const count = deleteConfirm.length;
+        toast.success(`${count} ${count === 1 ? 'layer' : 'layers'} deleted`);
     }, [deleteConfirm, toast]);
 
     const handleReorderLayer = useCallback((layer: CanvasObject, direction: 'up' | 'down') => {
@@ -238,33 +273,33 @@ export default function MerchDesigner() {
                             <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <IconButton
                                     icon={<AlignLeft size={16} />}
-                                    onClick={() => alignObjects('left')}
+                                    onClick={() => handleAlign('left')}
                                     title="Align Left"
                                 />
                                 <IconButton
                                     icon={<AlignCenter size={16} />}
-                                    onClick={() => alignObjects('center')}
+                                    onClick={() => handleAlign('center')}
                                     title="Align Center"
                                 />
                                 <IconButton
                                     icon={<AlignRight size={16} />}
-                                    onClick={() => alignObjects('right')}
+                                    onClick={() => handleAlign('right')}
                                     title="Align Right"
                                 />
                                 <div className="w-px h-4 bg-white/10" />
                                 <IconButton
                                     icon={<AlignVerticalJustifyStart size={16} />}
-                                    onClick={() => alignObjects('top')}
+                                    onClick={() => handleAlign('top')}
                                     title="Align Top"
                                 />
                                 <IconButton
                                     icon={<AlignVerticalJustifyCenter size={16} />}
-                                    onClick={() => alignObjects('middle')}
+                                    onClick={() => handleAlign('middle')}
                                     title="Align Middle"
                                 />
                                 <IconButton
                                     icon={<AlignVerticalJustifyEnd size={16} />}
-                                    onClick={() => alignObjects('bottom')}
+                                    onClick={() => handleAlign('bottom')}
                                     title="Align Bottom"
                                 />
                             </div>
@@ -339,6 +374,7 @@ export default function MerchDesigner() {
                                 onCanvasReady={(canvas) => {
                                     fabricCanvasRef.current = canvas;
                                 }}
+                                onRequestDelete={handleDeleteLayers}
                             />
 
                             {/* Background Color Picker */}
@@ -405,15 +441,19 @@ export default function MerchDesigner() {
             )}
 
             {/* Delete Confirmation Dialog */}
-            {deleteConfirm && (
+            {deleteConfirm.length > 0 && (
                 <ConfirmDialog
-                    title="Delete Layer?"
-                    message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
+                    title={deleteConfirm.length === 1 ? "Delete Layer?" : "Delete Layers?"}
+                    message={
+                        deleteConfirm.length === 1
+                            ? `Are you sure you want to delete "${deleteConfirm[0].name}"? This action cannot be undone.`
+                            : `Are you sure you want to delete ${deleteConfirm.length} layers? This action cannot be undone.`
+                    }
                     confirmLabel="Delete"
                     cancelLabel="Cancel"
                     variant="danger"
                     onConfirm={confirmDelete}
-                    onCancel={() => setDeleteConfirm(null)}
+                    onCancel={() => setDeleteConfirm([])}
                 />
             )}
         </MerchLayout>
