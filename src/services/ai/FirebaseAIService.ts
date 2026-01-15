@@ -38,6 +38,7 @@ import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
+import { generateSecureId } from '@/utils/security';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
@@ -507,7 +508,7 @@ export class FirebaseAIService {
             const { doc, getDoc } = await import('firebase/firestore');
 
             const triggerVideoJobFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'triggerVideoJob');
-            const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const jobId = generateSecureId('job', 9);
 
             // 1. Trigger the background job
             await this.withRetry(() => triggerVideoJobFn({
