@@ -18,6 +18,8 @@ describe('WhiskSidebar', () => {
     const mockSetPreciseReference = vi.fn();
     const mockToastSuccess = vi.fn();
     const mockToastInfo = vi.fn();
+    const mockToastWarning = vi.fn();
+    const mockToastError = vi.fn();
 
     const mockWhiskState = {
         preciseReference: false,
@@ -32,8 +34,8 @@ describe('WhiskSidebar', () => {
         (useToast as any).mockReturnValue({
             success: mockToastSuccess,
             info: mockToastInfo,
-            warning: vi.fn(),
-            error: vi.fn()
+            warning: mockToastWarning,
+            error: mockToastError
         });
 
         (useStore as any).mockReturnValue({
@@ -101,5 +103,64 @@ describe('WhiskSidebar', () => {
         const editBtn = screen.getByTitle('Edit Caption');
         fireEvent.click(editBtn);
         expect(mockUpdateWhiskItem).toHaveBeenCalledWith('subject', '1', { aiCaption: 'New Robot Caption' });
+    });
+
+    it('handles QuotaExceededError during file upload', async () => {
+        // Mock FileReader
+        const mockReadAsDataURL = vi.fn();
+        let capturedFileReader: any;
+
+        class MockFileReader {
+            readAsDataURL = mockReadAsDataURL;
+            onload = null as any;
+            constructor() {
+                // eslint-disable-next-line @typescript-eslint/no-this-alias
+                capturedFileReader = this;
+            }
+        }
+
+        // Save original
+        const originalFileReader = window.FileReader;
+        window.FileReader = MockFileReader as any;
+
+        // Mock ImageGeneration.captionImage to reject with QuotaExceededError
+        const quotaError = new Error('Quota exceeded details');
+        (quotaError as any).name = 'QuotaExceededError';
+        (ImageGeneration.captionImage as any) = vi.fn().mockRejectedValue(quotaError);
+
+        render(<WhiskSidebar />);
+
+        // Open add menu
+        const addButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-plus'));
+        fireEvent.click(addButtons[0]);
+
+        // Find file input
+        const fileInput = document.querySelector('input[type="file"]');
+        expect(fileInput).toBeInTheDocument();
+
+        // Simulate file selection
+        const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
+        fireEvent.change(fileInput!, { target: { files: [file] } });
+
+        // Verify readAsDataURL called
+        expect(mockReadAsDataURL).toHaveBeenCalledWith(file);
+
+        // Trigger the onload callback
+        await waitFor(() => {
+            if (capturedFileReader && capturedFileReader.onload) {
+                capturedFileReader.onload({ target: { result: 'data:image/png;base64,fakecontent' } });
+            }
+        });
+
+        // Check if toast.error was called
+        await waitFor(() => {
+            expect(mockToastError).toHaveBeenCalledWith('Quota exceeded details');
+        });
+
+        // Also check that it added the image anyway (fallback behavior)
+        expect(mockAddWhiskItem).toHaveBeenCalledWith('subject', 'image', 'data:image/png;base64,fakecontent', undefined);
+
+        // Restore
+        window.FileReader = originalFileReader;
     });
 });

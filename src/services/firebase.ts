@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
+import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getAI, VertexAIBackend } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
@@ -11,7 +11,17 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 import { getRemoteConfig } from 'firebase/remote-config';
 import { AI_MODELS } from '@/core/config/ai-models';
 
-export const app = initializeApp(firebaseConfig);
+// Prevent crash if config is missing (e.g. CI/Dev without env vars)
+const safeConfig = firebaseConfig.apiKey ? firebaseConfig : {
+    ...firebaseConfig,
+    apiKey: "AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000", // valid format placeholder
+    projectId: "demo-project",
+    authDomain: "demo-project.firebaseapp.com"
+};
+
+export const app = initializeApp(safeConfig);
+
+
 
 // Initialize Firebase AI with Production Security (App Check + Vertex AI Backend)
 export const ai = getAI(app, {
@@ -37,7 +47,12 @@ export const db = initializeFirestore(app, {
 });
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
-export const auth = getAuth(app);
+
+// Use initializeAuth to ensure persistence is correctly configured for Electron
+// This fixes potential hangs where default persistence (IndexedDB) might fail silently
+export const auth = initializeAuth(app, {
+    persistence: [browserLocalPersistence, browserSessionPersistence]
+});
 
 // Initialize Remote Config
 export const remoteConfig = getRemoteConfig(app);
@@ -55,12 +70,14 @@ if (typeof window !== 'undefined') {
         window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
     }
 
-    // Require App Check key in production
+    // SECURITY: Warn in production if App Check is not configured
+    // This is a critical security control - App Check prevents unauthorized API access
     if (!env.DEV && !env.appCheckKey) {
-        console.error('SECURITY: App Check key missing in production. App Check disabled.');
+        const errorMessage = 'SECURITY WARNING: App Check key missing in production. Application running without App Check.';
+        console.warn(errorMessage);
     }
 
-    // Only initialize App Check if we have a valid key
+    // Initialize App Check if we have a valid key
     if (env.appCheckKey) {
         try {
             appCheck = initializeAppCheck(app, {
@@ -69,6 +86,10 @@ if (typeof window !== 'undefined') {
             });
         } catch (e) {
             console.error('App Check initialization failed:', e);
+            // In production, re-throw to prevent running without security
+            if (!env.DEV) {
+                throw e;
+            }
         }
     }
 }
@@ -89,8 +110,10 @@ declare global {
     }
 }
 
-if ((import.meta.env.DEV || window.location.hostname === 'localhost') && typeof window !== 'undefined') {
-    console.log("[App] Exposing Firebase Internals for E2E");
+// SECURE: Only expose Firebase internals in development builds with explicit env flag
+// Never expose based on runtime hostname check (can be spoofed)
+if (import.meta.env.DEV && import.meta.env.VITE_EXPOSE_INTERNALS === 'true' && typeof window !== 'undefined') {
+    console.log("[App] Exposing Firebase Internals for E2E (DEV ONLY)");
     window.db = db;
     window.firebaseInternals = { doc, setDoc };
     window.functions = functions;

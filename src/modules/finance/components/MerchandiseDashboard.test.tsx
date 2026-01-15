@@ -6,13 +6,13 @@ import { describe, it, expect, vi } from 'vitest';
 // Mock Recharts to avoid layout/JSDOM issues
 vi.mock('recharts', () => ({
     ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-    AreaChart: ({ children }: any) => <div>{children}</div>,
+    AreaChart: ({ children }: any) => <svg>{children}</svg>,
     Area: () => null,
     XAxis: () => null,
     YAxis: () => null,
     CartesianGrid: () => null,
     Tooltip: () => null,
-    BarChart: ({ children }: any) => <div>{children}</div>,
+    BarChart: ({ children }: any) => <svg>{children}</svg>,
     Bar: () => null,
     Cell: () => null,
 }));
@@ -30,21 +30,22 @@ describe('MerchandiseDashboard', () => {
     it('renders the dashboard header with correct revenue stats', () => {
         render(<MerchandiseDashboard />);
 
-        expect(screen.getByText('Merchandise Revenue')).toBeInTheDocument();
-        expect(screen.getByText('$12,450')).toBeInTheDocument();
-        expect(screen.getByText(/Growth/)).toBeInTheDocument();
+        expect(screen.getByText('Merchandise')).toBeInTheDocument();
+        expect(screen.getByText('Sales')).toBeInTheDocument();
+        expect(screen.getByText('$12,450.00')).toBeInTheDocument();
+        expect(screen.getByText(/30D Growth/)).toBeInTheDocument();
     });
 
-    it('renders the Banana analytics components', () => {
+    it('renders the Sales analytics components', () => {
         render(<MerchandiseDashboard />);
 
         // These texts are inside MerchandiseAnalytics
-        expect(screen.getByText('Banana Sales Trend')).toBeInTheDocument();
-        expect(screen.getByText('Banana Pro Performance')).toBeInTheDocument();
+        expect(screen.getByText('Revenue Velocity')).toBeInTheDocument();
+        expect(screen.getByText('Active Cycle')).toBeInTheDocument();
 
         // Check for specific data points labels
-        expect(screen.getByText('Standard Product Performance')).toBeInTheDocument();
-        expect(screen.getByText('Premium/Limited Edition')).toBeInTheDocument();
+        expect(screen.getByText('Volume over 4 week period')).toBeInTheDocument();
+        expect(screen.getByText('Daily Conversion Performance')).toBeInTheDocument();
     });
 
     it('renders the MerchTable in dashboard view mode', () => {

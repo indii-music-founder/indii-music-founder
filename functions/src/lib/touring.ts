@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions/v1";
-import * as admin from "firebase-admin";
+
 import { z } from "zod";
 import { defineSecret } from "firebase-functions/params";
 import { Client } from "@googlemaps/google-maps-services-js";

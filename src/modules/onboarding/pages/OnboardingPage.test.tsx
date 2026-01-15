@@ -15,6 +15,17 @@ vi.mock('@/core/store', () => ({
     }),
 }));
 
+// Mock useToast
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        showToast: vi.fn()
+    })
+}));
+
 // Mock Service
 vi.mock('@/services/onboarding/onboardingService', () => ({
     runOnboardingConversation: vi.fn(),

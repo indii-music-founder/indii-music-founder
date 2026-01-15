@@ -118,11 +118,11 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
             distributorId: 'cdbaby',
             releaseId: releaseId,
             period: period,
-            streams: Math.floor(Math.random() * 10000),
-            downloads: Math.floor(Math.random() * 200),
-            grossRevenue: 100.00,
-            distributorFee: 9.00, // 9%
-            netRevenue: 91.00,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0,
+            netRevenue: 0,
             currencyCode: 'USD',
             lastUpdated: new Date().toISOString()
         };

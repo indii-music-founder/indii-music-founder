@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { MerchLayout } from './components/Layout';
 import { MerchButton } from './components/MerchButton';
 import { DesignCanvas, useCanvasControls, CanvasObject } from './components/DesignCanvas';
@@ -14,13 +14,89 @@ import { useAutoSave } from './hooks/useAutoSave';
 import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
 import { PerformanceOverlay } from './components/PerformanceOverlay';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, Layers, Sticker, Wand2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { cn } from '@/lib/utils';
+import { MerchCard } from './components/MerchCard';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
 
 // Generate unique design ID (persistent per session)
 const generateDesignId = () => `design-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// UI Components
+const IconButton = ({ icon, onClick, label, disabled }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        className={cn(
+            "p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
+            disabled && "opacity-30 cursor-not-allowed"
+        )}
+        aria-label={label}
+        title={label}
+    >
+        {icon}
+    </button>
+);
+
+const ColorSwatch = ({ color, active, onClick, className }: { color: string, active?: boolean, onClick: () => void, className?: string }) => (
+    <button
+        onClick={onClick}
+        className={cn(
+            "w-6 h-6 rounded-full cursor-pointer transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
+            active ? 'ring-2 ring-white scale-110' : 'hover:scale-110',
+            className
+        )}
+        style={{ backgroundColor: color }}
+        aria-label={`Select color ${color}`}
+        title={`Select color ${color}`}
+    />
+);
+
+const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
+    <button
+        onClick={onClick}
+        data-testid={dataTestId}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${active
+            ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
+            : 'text-neutral-400 hover:text-white hover:bg-white/10'
+            }`}
+    >
+        {icon}
+        <span>{label}</span>
+    </button>
+);
+
+const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
+    <button
+        onClick={onClick}
+        className={cn(
+            "flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200",
+            active
+                ? 'bg-yellow-400 border-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]'
+                : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/20 hover:text-white'
+        )}
+        aria-label={label}
+    >
+        {icon}
+        <span className="text-[10px] font-bold mt-1 uppercase tracking-tight">{label}</span>
+    </button>
+);
+
+const LayerItem = ({ label, active, visible, locked }: { label: string, active?: boolean, visible?: boolean, locked?: boolean }) => (
+    <div className={`p-2 rounded flex items-center justify-between text-[11px] font-medium tracking-tight ${active ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20' : 'text-neutral-500 hover:bg-white/5'}`}>
+        <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-yellow-400' : 'bg-neutral-700'}`} />
+            <span>{label}</span>
+        </div>
+        <div className="flex gap-2">
+            {locked && <span className="text-[10px] opacity-20">🔒</span>}
+            {visible && <span className="text-[10px] opacity-20">👁️</span>}
+        </div>
+    </div>
+);
 
 export default function MerchDesigner() {
     // View State
@@ -134,11 +210,23 @@ export default function MerchDesigner() {
         setLayers([...layers]);
     }, [layers]);
 
-    const handleToggleLock = useCallback((layer: CanvasObject) => {
-        layer.fabricObject.selectable = layer.locked;
-        layer.fabricObject.evented = layer.locked;
-        fabricCanvasRef.current?.renderAll();
-        setLayers([...layers]);
+    const handleToggleLock = useCallback((targetLayer: CanvasObject) => {
+        if (!fabricCanvasRef.current) return;
+
+        const newLayers = layers.map(layer => {
+            if (layer.id === targetLayer.id) {
+                const newLocked = !layer.locked;
+                // Update Fabric object
+                layer.fabricObject.selectable = !newLocked;
+                layer.fabricObject.evented = !newLocked;
+                // Update React state object
+                return { ...layer, locked: newLocked };
+            }
+            return layer;
+        });
+
+        fabricCanvasRef.current.renderAll();
+        setLayers(newLayers);
     }, [layers]);
 
     const handleDeleteLayer = useCallback((layer: CanvasObject) => {
@@ -171,9 +259,9 @@ export default function MerchDesigner() {
         if (!fabricCanvasRef.current) return;
 
         if (direction === 'up') {
-            fabricCanvasRef.current.bringForward(layer.fabricObject);
+            fabricCanvasRef.current.bringObjectForward(layer.fabricObject);
         } else {
-            fabricCanvasRef.current.sendBackwards(layer.fabricObject);
+            fabricCanvasRef.current.sendObjectBackwards(layer.fabricObject);
         }
         fabricCanvasRef.current.renderAll();
     }, []);
@@ -218,32 +306,37 @@ export default function MerchDesigner() {
         setWorkMode(newMode);
 
         if (newMode === 'agent') {
-            toast.success('Agent Mode: AI will help automate your workflow', { duration: 3000 });
+            toast.success('Agent Mode: AI will help automate your workflow', 3000);
         } else {
-            toast.success('User Mode: You have full manual control', { duration: 3000 });
+            toast.success('User Mode: You have full manual control', 3000);
         }
     }, [workMode, toast]);
+
+    const currentMode = viewMode;
 
     return (
         <MerchLayout>
             {viewMode === 'design' ? (
-                <div className="h-full flex flex-col">
+
+                <div className="h-full flex flex-col animate-in fade-in duration-500">
                     {/* Toolbar Header */}
                     <header className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
                             {/* View Mode Toggle */}
                             <div className="flex items-center bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <ModeToggle
-                                    active={viewMode === 'design'}
+                                    active={currentMode === 'design'}
                                     onClick={() => setViewMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
+                                    data-testid="mode-design-btn"
                                 />
                                 <ModeToggle
-                                    active={viewMode === 'showroom'}
+                                    active={currentMode === 'showroom'}
                                     onClick={handleExportToShowroom}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
+                                    data-testid="mode-showroom-btn"
                                 />
                             </div>
 
@@ -251,11 +344,10 @@ export default function MerchDesigner() {
                             <div className="relative">
                                 <button
                                     onClick={toggleWorkMode}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${
-                                        workMode === 'agent'
-                                            ? 'bg-purple-500/20 border-purple-500 text-purple-300'
-                                            : 'bg-blue-500/20 border-blue-500 text-blue-300'
-                                    }`}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${workMode === 'agent'
+                                        ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                                        : 'bg-blue-500/20 border-blue-500 text-blue-300'
+                                        }`}
                                     title={workMode === 'agent' ? 'AI assists your workflow' : 'Full manual control'}
                                 >
                                     {workMode === 'agent' ? (
@@ -291,6 +383,8 @@ export default function MerchDesigner() {
                                     disabled={!canRedo}
                                     title="Redo (Cmd+Shift+Z)"
                                 />
+                                <IconButton icon={<Undo size={16} />} onClick={() => { }} disabled label="Undo" />
+                                <IconButton icon={<Redo size={16} />} onClick={() => { }} disabled label="Redo" />
                             </div>
 
                             <div className="h-6 w-px bg-white/10 mx-2" />
@@ -350,6 +444,7 @@ export default function MerchDesigner() {
                                 </button>
                             )}
                         </div>
+                        <span className="text-sm font-bold text-neutral-500">INDII_STREETWEAR_V1</span>
 
                         {/* Actions */}
                         <div className="flex items-center gap-3">
@@ -420,6 +515,7 @@ export default function MerchDesigner() {
                                         className="w-7 h-7 rounded-full border-2 border-white/20 hover:border-white/60 transition-all hover:scale-110"
                                         style={{ backgroundColor: color }}
                                         title={`Set background to ${color}`}
+                                        aria-label={`Select color ${color}`}
                                     />
                                 ))}
                             </div>
@@ -436,35 +532,48 @@ export default function MerchDesigner() {
                             onReorderLayer={handleReorderLayer}
                             onUpdateProperty={handleUpdateProperty}
                         />
-                    </div>
 
-                    {/* AI Generation Dialog */}
-                    <AIGenerationDialog
-                        isOpen={showAIDialog}
-                        onClose={() => setShowAIDialog(false)}
-                        onImageGenerated={handleAIImageGenerated}
-                    />
+
+
+                        {/* AI Generation Dialog */}
+                        <AIGenerationDialog
+                            isOpen={showAIDialog}
+                            onClose={() => setShowAIDialog(false)}
+                            onImageGenerated={handleAIImageGenerated}
+                        />
+                    </div>
                 </div>
             ) : (
-                <div className="h-full flex flex-col">
+                <div className="h-full flex flex-col animate-in slide-in-from-right duration-500">
                     {/* Showroom Mode Toolbar */}
                     <header className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <ModeToggle
-                                    active={viewMode === 'design'}
+                                    active={currentMode === 'design'}
                                     onClick={() => setViewMode('design')}
                                     icon={<LayoutTemplate size={16} />}
                                     label="Design"
+                                    data-testid="mode-design-btn"
                                 />
                                 <ModeToggle
-                                    active={viewMode === 'showroom'}
+                                    active={currentMode === 'showroom'}
                                     onClick={() => setViewMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
+                                    data-testid="mode-showroom-btn"
                                 />
                             </div>
+                            <div className="h-6 w-px bg-white/10 mx-2" />
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">Stage Live</span>
+                            </div>
                         </div>
+                        <MerchButton size="sm" onClick={() => setViewMode('design')}>
+                            <LayoutTemplate size={16} />
+                            Back to Canvas
+                        </MerchButton>
                     </header>
 
                     {/* Enhanced Showroom */}

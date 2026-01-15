@@ -11,21 +11,15 @@
   "categories": ["productivity", "entertainment", "music", "photo"],
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
+      "src": "/indiiOS-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ],
   "shortcuts": [
@@ -34,21 +28,21 @@
       "short_name": "Studio",
       "description": "Open Creative Studio for image generation",
       "url": "/?module=creative",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/indiiOS-logo.svg", "sizes": "any" }]
     },
     {
       "name": "Video Studio",
       "short_name": "Video",
       "description": "Open Video Studio",
       "url": "/?module=video",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/indiiOS-logo.svg", "sizes": "any" }]
     },
     {
       "name": "Music Analysis",
       "short_name": "Music",
       "description": "Open Music Analysis",
       "url": "/?module=music",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/indiiOS-logo.svg", "sizes": "any" }]
     }
   ]
 }

@@ -4,7 +4,7 @@ import { resolve, basename } from 'path';
 import { readdir, readFile, stat, writeFile, mkdir, unlink, rm } from 'fs/promises';
 import { createWriteStream } from 'fs';
 import { GeminiRetrieval } from '../src/services/rag/GeminiRetrievalService';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core'; // Replaced deprecated ytdl-core
 import { JSDOM } from 'jsdom';
 
 // Load environment variables
@@ -59,8 +59,9 @@ async function main() {
             await handleFileSystem(input, storeName, existingMap);
         }
 
-    } catch (e: any) {
-        console.error("\n❌ System Error:", e.message);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        console.error("\n❌ System Error:", message);
         process.exit(1);
     }
 }

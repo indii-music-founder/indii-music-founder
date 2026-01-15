@@ -19,7 +19,7 @@ export default function RightPanel() {
                 return <VideoPanel toggleRightPanel={toggleRightPanel} />;
             case 'files':
                 return (
-                    <div className="h-full flex flex-col bg-[#0d1117] relative">
+                    <div className="h-full flex flex-col bg-bg-dark relative">
                         <div className="absolute top-2 right-2 z-10">
                             <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors">
                                 <ChevronRight size={16} />
@@ -65,7 +65,7 @@ export default function RightPanel() {
             initial={false}
             animate={{ width: isRightPanelOpen ? 320 : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-white/10 bg-[#0d1117]/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
+            className="h-full border-l border-white/10 bg-bg-dark/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
         >
             <AnimatePresence mode="wait">
                 {!isRightPanelOpen ? (

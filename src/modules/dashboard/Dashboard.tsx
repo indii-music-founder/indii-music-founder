@@ -4,7 +4,7 @@ import AgentWorkspace from './components/AgentWorkspace';
 
 export default function Dashboard() {
     return (
-        <div className="min-h-screen bg-[#0d1117] p-8 overflow-y-auto w-full">
+        <div className="min-h-screen bg-bg-dark p-8 overflow-y-auto w-full">
             <div className="max-w-7xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

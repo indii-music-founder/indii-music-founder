@@ -6,9 +6,10 @@ import MerchDesigner from './MerchDesigner';
 export default function MerchStudio() {
     return (
         <Routes>
-            <Route index element={<MerchDashboard />} />
-            <Route path="design" element={<MerchDesigner />} />
-            <Route path="*" element={<Navigate to="." />} />
+            <Route path="merch" element={<MerchDashboard />} />
+            <Route path="merch/design" element={<MerchDesigner />} />
+            {/* Catch all for this module - redirect to dashboard root */}
+            <Route path="*" element={<Navigate to="/merch" replace />} />
         </Routes>
     );
 }

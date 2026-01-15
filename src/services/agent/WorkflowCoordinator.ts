@@ -108,6 +108,7 @@ export class WorkflowCoordinator {
                 });
             }
         } catch (e) {
+            // Ignore error if folder creation fails (might already exist)
         }
     }
 

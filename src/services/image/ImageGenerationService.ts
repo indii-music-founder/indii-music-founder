@@ -100,8 +100,7 @@ export class ImageGenerationService {
                 prompt: fullPrompt,
                 aspectRatio: aspectRatio,
                 count: count,
-                images: options.sourceImages,
-                apiKey: env.apiKey
+                images: options.sourceImages?.length ? options.sourceImages : [],
             });
 
             interface GenerateImageResponse {

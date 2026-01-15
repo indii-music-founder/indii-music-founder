@@ -198,7 +198,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
 
                 {/* Progress Bar */}
                 {isGenerating && progress && (
-                    <div className="px-6 py-3 border-b border-gray-800 bg-[#0d1117]">
+                    <div className="px-6 py-3 border-b border-gray-800 bg-bg-dark">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm text-gray-400">
                                 Generating {progress.current} of {progress.total}...
@@ -242,7 +242,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                         {postStates.map((state, index) => (
                             <div
                                 key={state.post.id}
-                                className={`relative aspect-square bg-[#0d1117] border rounded-lg overflow-hidden group ${state.status === 'complete' || state.status === 'skipped'
+                                className={`relative aspect-square bg-bg-dark border rounded-lg overflow-hidden group ${state.status === 'complete' || state.status === 'skipped'
                                     ? 'border-gray-700'
                                     : state.status === 'error'
                                         ? 'border-red-500/50'
@@ -318,7 +318,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-[#0d1117]">
+                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-bg-dark">
                     <div className="flex items-center gap-2">
                         {errorCount > 0 && !isGenerating && (
                             <button

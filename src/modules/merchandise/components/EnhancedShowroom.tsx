@@ -66,6 +66,13 @@ export default function EnhancedShowroom({ initialAsset = null }: EnhancedShowro
 
     // State
     const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
+
+    // Sync state with prop if it changes from outside
+    useEffect(() => {
+        if (initialAsset) {
+            setProductAsset(initialAsset);
+        }
+    }, [initialAsset]);
     const [productType, setProductType] = useState('t-shirt');
     const [placement, setPlacement] = useState('center-chest');
     const [scenePrompt, setScenePrompt] = useState('');
@@ -336,7 +343,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
             {/* Header */}
             <div className="h-16 border-b border-white/10 flex items-center px-6 justify-between bg-neutral-900">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#FFE135]/20 rounded-lg text-[#FFE135]">
+                    <div className="p-2 bg-yellow-400/20 rounded-lg text-yellow-400">
                         <Box size={20} />
                     </div>
                     <div>
@@ -350,19 +357,19 @@ Style: Premium brand commercial, 4K cinematic quality.`;
             <div className="lg:hidden flex border-b border-white/10 bg-neutral-900">
                 <button
                     onClick={() => setActiveMobileSection('setup')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'setup' ? 'text-[#FFE135] border-b-2 border-[#FFE135] bg-white/5' : 'text-neutral-500'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'setup' ? 'text-yellow-400 border-b-2 border-yellow-400 bg-white/5' : 'text-neutral-500'}`}
                 >
                     Setup (1 & 2)
                 </button>
                 <button
                     onClick={() => setActiveMobileSection('stage')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'stage' ? 'text-[#FFE135] border-b-2 border-[#FFE135] bg-white/5' : 'text-neutral-500'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'stage' ? 'text-yellow-400 border-b-2 border-yellow-400 bg-white/5' : 'text-neutral-500'}`}
                 >
                     The Stage (3)
                 </button>
                 <button
                     onClick={() => setActiveMobileSection('production')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'production' ? 'text-[#FFE135] border-b-2 border-[#FFE135] bg-white/5' : 'text-neutral-500'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeMobileSection === 'production' ? 'text-yellow-400 border-b-2 border-yellow-400 bg-white/5' : 'text-neutral-500'}`}
                 >
                     Production
                 </button>
@@ -390,7 +397,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                 fileInputRef.current?.click();
                             }
                         }}
-                        className={`aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-8 relative group overflow-hidden focus-visible:ring-2 focus-visible:ring-[#FFE135] focus-visible:outline-none ${productAsset ? 'border-[#FFE135] bg-[#FFE135]/10' : 'border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800'}`}
+                        className={`aspect-square rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-8 relative group overflow-hidden focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none ${productAsset ? 'border-yellow-400 bg-yellow-400/10' : 'border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800'}`}
                     >
                         <input
                             type="file"
@@ -437,7 +444,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                         }
                                     }}
                                     data-testid={`showroom-product-${type.id}`}
-                                    className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-[#FFE135]/20 border-[#FFE135] text-[#FFE135]' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
+                                    className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
                                 >
                                     <type.icon size={16} />
                                     <span className="text-sm font-medium">{type.label}</span>
@@ -457,7 +464,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                     key={option.id}
                                     onClick={() => setPlacement(option.id)}
                                     data-testid={`placement-${option.id}`}
-                                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${placement === option.id ? 'bg-[#FFE135]/20 border-[#FFE135] text-[#FFE135]' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
+                                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${placement === option.id ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
                                 >
                                     {option.icon}
                                     {option.label}
@@ -549,7 +556,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                             key={preset.id}
                                             onClick={() => handleMotionPreset(preset)}
                                             data-testid={`motion-preset-${preset.id}`}
-                                            className="px-3 py-1.5 bg-[#FFE135]/10 border border-[#FFE135]/30 rounded-full text-xs text-[#FFE135] hover:text-white hover:border-[#FFE135] hover:bg-[#FFE135]/20 transition-colors"
+                                            className="px-3 py-1.5 bg-yellow-400/10 border border-yellow-400/30 rounded-full text-xs text-yellow-400 hover:text-white hover:border-yellow-400 hover:bg-yellow-400/20 transition-colors"
                                         >
                                             {preset.label}
                                         </button>
@@ -583,7 +590,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         {/* Loading Overlay */}
                         {(isGeneratingMockup || isGeneratingVideo) && (
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
-                                <Loader2 size={48} className="text-[#FFE135] animate-spin mb-4" />
+                                <Loader2 size={48} className="text-yellow-400 animate-spin mb-4" />
                                 <p className="text-white font-bold animate-pulse">
                                     {isGeneratingMockup ? "Compositing Scene..." : "Rendering Video..."}
                                 </p>
@@ -599,7 +606,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             data-testid="showroom-generate-mockup-btn"
                             className="py-4 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-neutral-700 hover:border-neutral-500"
                         >
-                            <ImageIcon size={20} className="text-[#FFE135]" />
+                            <ImageIcon size={20} className="text-yellow-400" />
                             <span>Generate Mockup</span>
                         </button>
 
@@ -607,9 +614,9 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             onClick={handleGenerateVideo}
                             disabled={isGeneratingVideo || !mockupResult || !motionPrompt}
                             data-testid="showroom-animate-scene-btn"
-                            className="py-4 bg-[#FFE135]/20 hover:bg-[#FFE135]/40 disabled:opacity-50 disabled:cursor-not-allowed text-[#FFE135] rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-[#FFE135]/50 hover:border-[#FFE135]"
+                            className="py-4 bg-yellow-400/20 hover:bg-yellow-400/40 disabled:opacity-50 disabled:cursor-not-allowed text-yellow-400 rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-yellow-400/50 hover:border-yellow-400"
                         >
-                            <Video size={20} className={mockupResult ? "text-[#FFE135]" : "text-neutral-600"} />
+                            <Video size={20} className={mockupResult ? "text-yellow-400" : "text-neutral-600"} />
                             <span>Animate Scene</span>
                         </button>
                     </div>
@@ -623,7 +630,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     </h2>
                     <ManufacturingPanel
                         theme={THEMES.pro}
-                        productType={productType.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        productType={productType.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as any}
                     />
                 </div>
             </div>

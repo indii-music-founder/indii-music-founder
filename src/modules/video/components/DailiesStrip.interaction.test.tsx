@@ -9,9 +9,9 @@ describe('DailiesStrip Interaction', () => {
     const mockOnDragStart = vi.fn();
 
     const mockItems: HistoryItem[] = [
-        { id: 'vid1', type: 'video', url: 'vid1.mp4', prompt: 'Video 1', timestamp: 100 },
-        { id: 'img1', type: 'image', url: 'img1.png', prompt: 'Image 1', timestamp: 101 },
-        { id: 'vid2', type: 'video', url: 'vid2.mp4', prompt: 'Video 2', timestamp: 102 },
+        { id: 'vid1', type: 'video', url: 'vid1.mp4', prompt: 'Video 1', timestamp: 100, projectId: 'test-project' },
+        { id: 'img1', type: 'image', url: 'img1.png', prompt: 'Image 1', timestamp: 101, projectId: 'test-project' },
+        { id: 'vid2', type: 'video', url: 'vid2.mp4', prompt: 'Video 2', timestamp: 102, projectId: 'test-project' },
     ];
 
     it('renders only video items', () => {

@@ -7,6 +7,11 @@ import { AgentContext } from './types';
 export interface AgentResponse {
     text: string;
     data?: unknown;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+    };
 }
 
 export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;

@@ -39,7 +39,8 @@ export const PublicistAgent = createAgent('publicist')
                 status: 'Draft',
                 releaseDate: startDate,
                 progress: 0,
-                openRate: 0
+                openRate: 0,
+                budget: 0
             });
             return {
                 success: true,

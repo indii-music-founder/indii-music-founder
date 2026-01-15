@@ -95,7 +95,7 @@ export default function KnowledgeBase() {
     );
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden relative">
+        <div className="h-full flex flex-col bg-bg-dark text-white overflow-hidden relative">
             <div className="flex-1 overflow-y-auto p-8"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}

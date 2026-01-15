@@ -314,6 +314,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                                 );
 
                                             } catch (e) {
+                                                // Failed to parse inner tool output, ignore
                                             }
                                         }
                                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
@@ -340,7 +341,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     try {
                                         JSON.parse(content.replace(/\n$/, ''));
                                         return <>{children}</>;
-                                    } catch (e) { }
+                                    } catch (e) { /* ignore json parse error */ }
                                 }
                             }
                             // Wrap pre in scrollable container for mobile responsiveness
@@ -372,7 +373,7 @@ const MessageItem = memo(({ msg, avatarUrl }: { msg: AgentMessage; avatarUrl?: s
                                     if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
                                     if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
                                     return <CollapsibleJson data={data} />;
-                                } catch (e) { }
+                                } catch (e) { /* ignore json parse error */ }
                             }
                             return <code className={className} {...props}>{children}</code>
                         }
@@ -503,7 +504,7 @@ export default function ChatOverlay() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[70] flex flex-col bg-[#0d1117]"
+                    className="fixed inset-0 z-[70] flex flex-col bg-bg-dark"
                 >
                     {/* Mobile Header */}
                     <div className="flex items-center justify-between p-4 border-b border-white/10 mobile-safe-top">
@@ -543,7 +544,7 @@ export default function ChatOverlay() {
                     </div>
 
                     {/* Mobile Footer with Voice Toggle */}
-                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-[#0d1117] mobile-safe-bottom">
+                    <div className="flex items-center justify-between p-4 border-t border-white/10 bg-bg-dark mobile-safe-bottom">
                         <span className="text-xs text-gray-500">
                             {agentHistory.length} messages
                         </span>

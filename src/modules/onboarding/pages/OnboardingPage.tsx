@@ -286,6 +286,7 @@ export default function OnboardingPage() {
                 setUserProfile({ ...userProfile, bio: newBio });
             }
         } catch (error) {
+            // Silent catch
         } finally {
             setIsRegenerating(false);
         }
@@ -398,11 +399,11 @@ export default function OnboardingPage() {
     );
 
     return (
-        <div className="flex h-screen w-full bg-[#0d1117] overflow-hidden">
+        <div className="flex h-screen w-full bg-bg-dark overflow-hidden">
             {/* Left Panel: Chat */}
             <div className="flex-1 flex flex-col relative">
                 {/* Header */}
-                <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-10 flex justify-between items-center bg-gradient-to-b from-[#0d1117] via-[#0d1117]/90 to-transparent">
+                <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-10 flex justify-between items-center bg-gradient-to-b from-bg-dark via-bg-dark/90 to-transparent">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
                             <Sparkles className="text-white" size={20} />
@@ -635,7 +636,7 @@ export default function OnboardingPage() {
 
                 {/* File Previews */}
                 {files.length > 0 && (
-                    <div className="px-4 py-2 bg-[#0d1117]/95 backdrop-blur border-t border-gray-800 flex gap-2 overflow-x-auto max-w-3xl mx-auto w-full z-20">
+                    <div className="px-4 py-2 bg-bg-dark/95 backdrop-blur border-t border-gray-800 flex gap-2 overflow-x-auto max-w-3xl mx-auto w-full z-20">
                         {files.map(file => (
                             <div key={file.id} className="relative group flex-shrink-0 w-16 h-16 bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
                                 {file.type === 'image' ? (
@@ -662,7 +663,7 @@ export default function OnboardingPage() {
 
                 {/* Quick Suggestions */}
                 {history.length > 0 && history.length < 6 && !input && !isProcessing && (
-                    <div className="px-4 pb-2 bg-[#0d1117]">
+                    <div className="px-4 pb-2 bg-bg-dark">
                         <div className="max-w-3xl mx-auto">
                             <p className="text-xs text-gray-600 mb-2">Not sure what to say? Try:</p>
                             <div className="flex flex-wrap gap-2">
@@ -687,7 +688,7 @@ export default function OnboardingPage() {
                 )}
 
                 {/* Input Area */}
-                <div className="p-4 md:p-6 bg-[#0d1117] border-t border-gray-800 z-20 pb-safe">
+                <div className="p-4 md:p-6 bg-bg-dark border-t border-gray-800 z-20 pb-safe">
                     <div className="max-w-3xl mx-auto flex gap-2 md:gap-3">
                         <input
                             type="file"
@@ -763,7 +764,7 @@ export default function OnboardingPage() {
                                         <textarea
                                             value={editedBio}
                                             onChange={(e) => setEditedBio(e.target.value)}
-                                            className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-3 text-sm text-gray-200 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
+                                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-3 text-sm text-gray-200 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500"
                                             rows={4}
                                             placeholder="Write your bio..."
                                         />
@@ -798,25 +799,25 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {(userProfile.brandKit.releaseDetails.title || userProfile.brandKit.releaseDetails.genre) && (
+                        {(userProfile.brandKit?.releaseDetails?.title || userProfile.brandKit?.releaseDetails?.genre) && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50">
                                 <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Latest Release</p>
-                                {userProfile.brandKit.releaseDetails.title && (
-                                    <p className="text-sm text-white font-medium mb-1">{userProfile.brandKit.releaseDetails.title}</p>
+                                {userProfile.brandKit?.releaseDetails?.title && (
+                                    <p className="text-sm text-white font-medium mb-1">{userProfile.brandKit?.releaseDetails?.title}</p>
                                 )}
                                 <div className="flex gap-2 text-xs">
-                                    {userProfile.brandKit.releaseDetails.genre && (
-                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit.releaseDetails.genre}</span>
+                                    {userProfile.brandKit?.releaseDetails?.genre && (
+                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit?.releaseDetails?.genre}</span>
                                     )}
-                                    {userProfile.brandKit.releaseDetails.type && (
-                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit.releaseDetails.type}</span>
+                                    {userProfile.brandKit?.releaseDetails?.type && (
+                                        <span className="bg-gray-800 px-2 py-1 rounded text-gray-300">{userProfile.brandKit?.releaseDetails?.type}</span>
                                     )}
                                 </div>
                             </div>
                         )}
 
                         {/* Color Palette Preview */}
-                        {userProfile.brandKit.colors && userProfile.brandKit.colors.length > 0 && (
+                        {userProfile.brandKit?.colors && userProfile.brandKit.colors.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50">
                                 <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Brand Colors</p>
                                 <div className="flex gap-2 flex-wrap">
@@ -833,9 +834,9 @@ export default function OnboardingPage() {
                         )}
 
                         {/* Aesthetic, Fonts & Avoid Preview */}
-                        {(userProfile.brandKit.aestheticStyle || userProfile.brandKit.fonts || userProfile.brandKit.negativePrompt) && (
+                        {(userProfile.brandKit?.aestheticStyle || userProfile.brandKit?.fonts || userProfile.brandKit?.negativePrompt) && (
                             <div className="mt-4 pt-4 border-t border-gray-700/50 space-y-3">
-                                {userProfile.brandKit.aestheticStyle && (
+                                {userProfile.brandKit?.aestheticStyle && (
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold">Aesthetic</p>
                                         <span className="inline-block mt-1 text-sm text-purple-300 bg-purple-500/10 px-2 py-1 rounded">
@@ -843,13 +844,13 @@ export default function OnboardingPage() {
                                         </span>
                                     </div>
                                 )}
-                                {userProfile.brandKit.fonts && (
+                                {userProfile.brandKit?.fonts && (
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold">Typography</p>
                                         <p className="text-sm text-gray-300">{userProfile.brandKit.fonts}</p>
                                     </div>
                                 )}
-                                {userProfile.brandKit.negativePrompt && (
+                                {userProfile.brandKit?.negativePrompt && (
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase font-bold">Avoid</p>
                                         <p className="text-sm text-gray-400 italic">{userProfile.brandKit.negativePrompt}</p>
@@ -877,7 +878,7 @@ export default function OnboardingPage() {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-[#0d1117] border-l border-gray-800 p-6 z-50 lg:hidden shadow-2xl flex flex-col"
+                            className="fixed inset-y-0 right-0 w-[85%] max-w-sm bg-bg-dark border-l border-gray-800 p-6 z-50 lg:hidden shadow-2xl flex flex-col"
                         >
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-white font-bold text-lg">Your Progress</h3>

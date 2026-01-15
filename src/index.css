@@ -50,7 +50,7 @@
   /* ─────────────────────────────────────────────────────────────────────────────
    * SURFACE COLORS - Professional dark palette
    * ───────────────────────────────────────────────────────────────────────────── */
-  --color-bg-dark: #0F172A;
+  --color-bg-dark: #0d1117;
   --color-surface: #1E293B;
   --color-surface-elevated: #334155;
 
@@ -147,11 +147,6 @@
   --input: 240 5.9% 90%;
   --ring: 240 10% 3.9%;
   --radius: 0.5rem;
-
-  /* Banana Brand Colors (Legacy/Ref) */
-  --banana-yellow: #FFE135;
-  --banana-peel: #FFF4B0;
-  --banana-pro-accent: #E3FF00;
 }
 
 .dark {
@@ -159,9 +154,8 @@
   --foreground: 0 0% 98%;
   --card: 240 10% 3.9%;
   --card-foreground: 0 0% 98%;
-  --primary: 50 100% 50%;
-  /* Banana Yellow Primary */
-  --primary-foreground: 240 5.9% 10%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
   --secondary: 270 100% 60%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 5% 10%;
@@ -170,52 +164,7 @@
   --accent-foreground: 0 0% 98%;
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
-  --ring: 50 100% 50%;
-}
-
-.banana {
-  --background: 50 100% 95%;
-  --foreground: 30 10% 20%;
-  --card: 0 0% 100%;
-  --card-foreground: 30 10% 20%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 30 10% 20%;
-  --primary: 50 100% 50%;
-  --primary-foreground: 30 10% 20%;
-  --secondary: 45 100% 90%;
-  --secondary-foreground: 30 10% 20%;
-  --muted: 45 30% 90%;
-  --muted-foreground: 30 10% 60%;
-  --accent: 50 100% 50%;
-  --accent-foreground: 30 10% 20%;
-  --border: 45 50% 80%;
-  --input: 45 50% 80%;
-  --ring: 50 100% 50%;
-  --radius: 1rem;
-}
-
-.banana-pro {
-  --background: 240 10% 3%;
-  --foreground: 50 100% 95%;
-  --card: 240 10% 6%;
-  --card-foreground: 50 100% 90%;
-  --popover: 240 10% 8%;
-  --popover-foreground: 50 100% 90%;
-  --primary: 50 100% 50%;
-  --primary-foreground: 240 10% 3%;
-  --secondary: 240 10% 10%;
-  --secondary-foreground: 50 100% 90%;
-  --muted: 240 10% 15%;
-  --muted-foreground: 240 10% 60%;
-  --accent: 60 100% 50%;
-  --accent-foreground: 240 10% 3%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 50 100% 90%;
-  --border: 50 100% 15%;
-  --input: 240 10% 12%;
-  --ring: 50 100% 50%;
-  --radius: 0.25rem;
-  /* Sharper */
+  --ring: 240 5% 65%;
 }
 
 @theme {
@@ -248,20 +197,25 @@
    * Usage: text-dept-royalties, bg-dept-marketing, border-dept-legal, etc.
    * These mirror the :root variables for Tailwind utility generation
    * ═══════════════════════════════════════════════════════════════════════════ */
-  --color-dept-royalties: #FFC107;
-  --color-dept-distribution: #2196F3;
-  --color-dept-marketing: #E91E63;
-  --color-dept-legal: #455A64;
-  --color-dept-creative: #9C27B0;
-  --color-dept-touring: #FF5722;
-  --color-dept-publishing: #8BC34A;
-  --color-dept-social: #00BCD4;
-  --color-dept-licensing: #009688;
-  --color-dept-brand: #FFB300;
-  --color-dept-campaign: #FF7043;
-  --color-dept-default: #78909C;
+  --color-dept-royalties: var(--color-dept-royalties);
+  --color-dept-distribution: var(--color-dept-distribution);
+  --color-dept-marketing: var(--color-dept-marketing);
+  --color-dept-legal: var(--color-dept-legal);
+  --color-dept-creative: var(--color-dept-creative);
+  --color-dept-touring: var(--color-dept-touring);
+  --color-dept-publishing: var(--color-dept-publishing);
+  --color-dept-social: var(--color-dept-social);
+  --color-dept-licensing: var(--color-dept-licensing);
+  --color-dept-brand: var(--color-dept-brand);
+  --color-dept-campaign: var(--color-dept-campaign);
+  --color-dept-default: var(--color-dept-default);
 
-  /* Sonic OS Palette */
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SYSTEM COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-bg-dark: #0d1117;
+  /* GitHub Dark - Standard App Background */
+
   --color-sonic-purple: var(--sonic-purple);
   --color-sonic-blue: var(--sonic-blue);
   --color-sonic-yellow: var(--sonic-yellow);
@@ -272,10 +226,6 @@
   --font-sans: var(--font-main);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
-
-  /* Banana Semantic Aliases */
-  --color-banana-yellow: #FFE135;
-  --color-banana-pro-accent: #E3FF00;
 }
 
 @layer base {
@@ -292,12 +242,12 @@
   }
 
   /* Neon Glow Utilities */
-  .glow-text-yellow {
-    text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+  .glow-text {
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
   }
 
-  .glow-border-yellow {
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  .glow-border {
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
   }
 
   html {
@@ -344,44 +294,7 @@
   }
 }
 
-/* Banana Theme Animations */
-@keyframes banana-peel {
-  0% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scaleY(0);
-    opacity: 0;
-  }
-}
-
-@keyframes banana-wiggle {
-
-  0%,
-  100% {
-    transform: rotate(-3deg);
-  }
-
-  50% {
-    transform: rotate(3deg);
-  }
-}
-
-.animate-peel {
-  animation: banana-peel 0.5s ease-in-out forwards;
-}
-
-.animate-wiggle {
-  animation: banana-wiggle 2s ease-in-out infinite;
-}
-
-.banana-gradient-text {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+/* Sonic Brand Animations */
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * BOLT UI ANIMATIONS - Unified dynamics for AI-driven updates
@@ -398,10 +311,12 @@
     border-color: transparent;
     background-color: rgba(255, 255, 255, 0);
   }
+
   50% {
     border-color: var(--dept-color, var(--color-dept-default));
     background-color: rgba(255, 255, 255, 0.05);
   }
+
   100% {
     border-color: transparent;
     background-color: rgba(255, 255, 255, 0);
@@ -446,6 +361,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -456,8 +372,13 @@
 }
 
 @keyframes shine {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
 
 .shine-text {

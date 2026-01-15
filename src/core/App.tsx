@@ -15,14 +15,13 @@ import ChatOverlay from './components/ChatOverlay';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useURLSync } from '@/hooks/useURLSync';
 
 // ============================================================================
 // Lazy-loaded Module Components
 // ============================================================================
 
 const CreativeStudio = lazy(() => import('../modules/creative/CreativeStudio'));
-const MusicStudio = lazy(() => import('../modules/music/MusicStudio'));
 const LegalDashboard = lazy(() => import('../modules/legal/LegalDashboard'));
 const MarketingDashboard = lazy(() => import('../modules/marketing/MarketingDashboard'));
 const VideoStudio = lazy(() => import('../modules/video/VideoStudioContainer'));
@@ -45,7 +44,6 @@ const DistributionDashboard = lazy(() => import('../modules/distribution/Distrib
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
-const BananaThemePreview = lazy(() => import('../components/BananaThemePreview').then(m => ({ default: m.BananaThemePreview })));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 
@@ -63,7 +61,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'dashboard': Dashboard,
     'creative': CreativeStudio,
     'video': VideoStudio,
-    'music': MusicStudio,
     'legal': LegalDashboard,
     'marketing': MarketingDashboard,
     'workflow': WorkflowLab,
@@ -83,7 +80,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
-    'banana-preview': BananaThemePreview,
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
 };
@@ -177,36 +173,66 @@ function useOnboardingRedirect() {
     }, [user, authLoading, currentModule]);
 }
 
-function useURLSync() {
-    const { currentModule, setModule } = useStore();
-    const navigate = useNavigate();
-    const location = useLocation();
+// ============================================================================
+// Router Synchronization Hook
+// ============================================================================
 
-    // 1. URL -> Store (Deep Link / Back Button)
+function useRouterSync() {
+    const { currentModule, setModule, user, authLoading } = useStore();
+
+    // 1. Initial Load: Sync URL to State (Deep Linking)
     useEffect(() => {
-        // Parse module from path segments (robust splitting)
-        const pathSegments = location.pathname.split('/').filter(Boolean);
-        const targetModule = pathSegments[0] || 'dashboard';
+        if (!user || authLoading) return;
 
-        // Check if it is a valid module
-        // We cast to ModuleId to check existence in MODULE_COMPONENTS
-        if (targetModule !== currentModule && MODULE_COMPONENTS[targetModule as ModuleId]) {
-             setModule(targetModule as ModuleId);
+        const path = window.location.pathname.substring(1); // Remove leading slash
+        const parts = path.split('/');
+        const initialModule = parts[0] as ModuleId;
+
+        // If URL has a module and it's different from current, update state
+        if (initialModule && initialModule !== currentModule && MODULE_COMPONENTS[initialModule]) {
+            setModule(initialModule);
+        } else if (!initialModule || initialModule === '') {
+             // Ensure dashboard URL if empty
+             window.history.replaceState(null, '', '/dashboard');
         }
-    }, [location.pathname, currentModule, setModule]);
+    }, [user, authLoading, setModule]); // Run only on mount/auth-ready
 
-    // 2. Store -> URL (Navigation)
+    // 2. State Change: Sync State to URL
     useEffect(() => {
-        const pathSegments = location.pathname.split('/').filter(Boolean);
-        const currentPathModule = pathSegments[0] || 'dashboard';
+        if (!user || authLoading) return;
 
-        // Only navigate if the module actually CHANGED from what's in the URL
-        // This preserves sub-paths (e.g. /creative/123) if the module is still 'creative'
-        if (currentModule !== currentPathModule) {
-             const targetUrl = currentModule === 'dashboard' ? '/' : `/${currentModule}`;
-             navigate(targetUrl);
+        const path = window.location.pathname.substring(1);
+        const parts = path.split('/');
+        const urlModule = parts[0] as ModuleId;
+
+        if (currentModule !== urlModule) {
+            const newPath = `/${currentModule}`;
+            // Use pushState only if we are actually changing contexts,
+            // but we need to avoid fighting with initial load or popstate
+            // Check if the current URL already matches
+            if (path !== currentModule) {
+                window.history.pushState(null, '', newPath);
+            }
         }
-    }, [currentModule, navigate, location.pathname]);
+    }, [currentModule, user, authLoading]);
+
+    // 3. Browser Navigation (Back/Forward): Sync URL to State
+    useEffect(() => {
+        const handlePopState = () => {
+            const path = window.location.pathname.substring(1);
+            const parts = path.split('/');
+            const navModule = parts[0] as ModuleId;
+
+            if (navModule && MODULE_COMPONENTS[navModule]) {
+                setModule(navModule);
+            } else if (path === '' || path === '/') {
+                setModule('dashboard');
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [setModule]);
 }
 
 // ============================================================================
@@ -243,6 +269,9 @@ export default function App() {
     useAppInitialization();
     useOnboardingRedirect();
 
+    // Sync URL with State
+    useRouterSync();
+
     // Log module changes in dev
 
     // Handle Theme Switching
@@ -251,15 +280,11 @@ export default function App() {
         const theme = userProfile?.preferences?.theme || 'dark';
 
         // Remove all theme classes first
-        document.documentElement.classList.remove('dark', 'banana', 'banana-pro');
+        document.documentElement.classList.remove('dark');
 
         // Apply current theme
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-        } else if (theme === 'banana') {
-            document.documentElement.classList.add('banana');
-        } else if (theme === 'banana-pro') {
-            document.documentElement.classList.add('banana-pro', 'dark'); // Banana Pro is dark-based
         }
     }, [userProfile?.preferences?.theme]);
 

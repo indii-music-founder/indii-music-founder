@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TouringService } from '@/services/touring/TouringService';
-import { VehicleStats, Itinerary } from '../types';
+import { VehicleStats, Itinerary, ItineraryStop } from '../types';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -17,34 +17,36 @@ export const useTouring = () => {
     const currentItineraryRef = useRef<Itinerary | null>(null);
     useEffect(() => { currentItineraryRef.current = currentItinerary; }, [currentItinerary]);
 
+    const [prevUserId, setPrevUserId] = useState(userProfile?.id);
+    if (userProfile?.id !== prevUserId) {
+        setPrevUserId(userProfile?.id);
+        setLoading(!!userProfile?.id);
+    }
+
     useEffect(() => {
         if (!userProfile?.id) return;
 
-        setLoading(true);
+        const defaultStats: VehicleStats = {
+            userId: userProfile.id,
+            milesDriven: 0,
+            fuelLevelPercent: 100,
+            tankSizeGallons: 150,
+            mpg: 8,
+            gasPricePerGallon: 4.50
+        };
 
         // Fetch vehicle stats
         TouringService.getVehicleStats(userProfile.id).then(stats => {
             if (stats) {
                 setVehicleStats(stats);
             } else {
-                // Seed default stats if none exist
-                TouringService.seedDatabase(userProfile.id).then(newStats => {
-                    setVehicleStats(newStats);
-                }).catch(err => {
-                    console.error("Failed to seed vehicle stats:", err);
-                    // Fallback local state if seeding/fetch fails
-                    setVehicleStats({
-                        userId: userProfile.id,
-                        milesDriven: 0,
-                        fuelLevelPercent: 100,
-                        tankSizeGallons: 150,
-                        mpg: 8,
-                        gasPricePerGallon: 4.50
-                    });
-                });
+                // Use default local state if no data exists
+                setVehicleStats(defaultStats);
             }
         }).catch(error => {
             console.error('Failed to fetch vehicle stats:', error);
+            // Fallback to default state on error to keep UI functional
+            setVehicleStats(defaultStats);
         });
 
         // Subscribe to itineraries
@@ -64,7 +66,7 @@ export const useTouring = () => {
         return () => unsubscribe();
     }, [userProfile?.id]);
 
-    const updateItineraryStop = async (index: number, stop: any) => {
+    const updateItineraryStop = async (index: number, stop: ItineraryStop) => {
         if (!currentItinerary || !currentItinerary.id) return;
 
         const updatedStops = [...currentItinerary.stops];

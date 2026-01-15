@@ -29,7 +29,9 @@ service firebase.storage {
 
     // Allow users to upload to their own folder within a project
     match /projects/{projectId}/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId
+        && firestore.exists(/databases/(default)/documents/projects/$(projectId))
+        && request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(firestore.get(/databases/(default)/documents/projects/$(projectId)).data.orgId)).data.members;
     }
 
     // ========================================

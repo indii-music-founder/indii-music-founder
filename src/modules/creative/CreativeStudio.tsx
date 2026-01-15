@@ -9,6 +9,7 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import WhiskSidebar from './components/whisk/WhiskSidebar';
 import { WhiskService } from '@/services/WhiskService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
     const {
@@ -90,8 +91,12 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     } else {
                         toast.error("Generation returned no images. Please try again.");
                     }
-                } catch (e) {
-                    toast.error("Image generation failed.");
+                } catch (e: any) {
+                    if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
+                        toast.error(e.message || "Quota exceeded. Please upgrade.");
+                    } else {
+                        toast.error("Image generation failed.");
+                    }
                 } finally {
                     setIsGenerating(false);
                 }

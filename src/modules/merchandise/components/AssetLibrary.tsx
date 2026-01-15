@@ -10,7 +10,8 @@ export interface AssetLibraryProps {
 }
 
 export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenerateAI }) => {
-    const { history, currentProjectId } = useStore();
+    const { generatedHistory, uploadedImages, currentProjectId } = useStore();
+    const history = useMemo(() => [...generatedHistory, ...uploadedImages], [generatedHistory, uploadedImages]);
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [isUploading, setIsUploading] = useState(false);
@@ -20,7 +21,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
     const imageAssets = useMemo(() => {
         return history
             .filter(item => item.type === 'image')
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
     }, [history]);
 
     // Search filter

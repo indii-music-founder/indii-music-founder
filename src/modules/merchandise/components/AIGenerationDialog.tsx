@@ -5,6 +5,7 @@ import { MerchButton } from './MerchButton';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 export interface AIGenerationDialogProps {
     isOpen: boolean;
@@ -32,10 +33,10 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
         const loadingId = toast.loading('Generating image with AI...');
 
         try {
-            const result = await ImageGeneration.generate({
+            const result = await ImageGeneration.generateImages({
                 prompt: prompt.trim(),
                 aspectRatio: '1:1',
-                numberOfImages: 1
+                count: 1
             });
 
             if (result && result.length > 0) {
@@ -64,10 +65,22 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
                 toast.dismiss(loadingId);
                 toast.error('No image generated');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('AI generation error:', error);
             toast.dismiss(loadingId);
-            toast.error('Failed to generate image');
+
+            // Handle Quota Exceeded specifically
+            if (error?.name === 'QuotaExceededError' || error?.code === 'QUOTA_EXCEEDED') {
+                toast.error(error.message || 'Generation limit reached. Please upgrade.');
+                return;
+            }
+
+            // Handle Firebase/Network errors
+            if (error?.message) {
+                toast.error(`Generation failed: ${error.message}`);
+            } else {
+                toast.error('Failed to generate image. Please try again.');
+            }
         } finally {
             setIsGenerating(false);
         }
@@ -100,10 +113,11 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
 
                 {/* Prompt Input */}
                 <div className="mb-6">
-                    <label className="text-sm font-medium text-white block mb-2">
+                    <label htmlFor="prompt-input" className="text-sm font-medium text-white block mb-2">
                         Describe what you want to create
                     </label>
                     <textarea
+                        id="prompt-input"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="e.g., A vibrant logo with a sunset theme, geometric patterns, and bold typography"

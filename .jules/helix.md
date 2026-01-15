@@ -12,3 +12,20 @@
 ## 2026-01-12 - [Doomsday Switch Implementation]
 **Learning:** The Evolution Engine lacked an internal generation cap, relying solely on the caller. This risks infinite loops if the orchestrator fails.
 **Action:** Implemented strict `maxGenerations` check inside `EvolutionEngine.evolve` and verified with "Doomsday Switch" test.
+
+## 2026-05-27 - [The Zombie Gene Prevention]
+**Learning:** If an offspring inherits a fitness score (e.g., via buggy Crossover logic copying the parent object), the engine must strictly reset it to `undefined` upon birth. Failure to do so allows "Zombie Agents" to bypass the fitness function in the subsequent generation, surviving solely on inherited glory without validation.
+**Action:** Added `HelixLifecycle.test.ts` to enforce `fitness: undefined` on all new offspring, acting as a mandatory "Birth Certificate" for the next cycle.
+## 2026-01-15 - [The Bloat Check]
+**Learning:** Without explicit length constraints, the mutation function could theoretically produce infinitely growing prompts (Runaway Mutation), potentially crashing the context window of the LLM.
+**Action:** Implemented "The Bloat Check" in `EvolutionEngine` (cap at 100k chars) and verified it with `HelixSanity.test.ts`.
+## 2024-05-22 - [Gene Loss Prevention]
+**Learning:** Mutated agents can sometimes lose their "parameters" object (brain) if the mutation function (LLM) returns partial JSON. The original engine guardrail only checked for `systemPrompt`, allowing "Brainless" agents (undefined parameters) to crash the runtime later.
+**Action:** Implemented a "Brainless" Check in `EvolutionEngine` to strictly validate that `parameters` exist and are an object before accepting an offspring. Added `HelixGeneLoss.test.ts` to verify this rejection.
+
+## 2026-05-28 - [Mutation by Reference Defect]
+**Learning:** In environments where Crossover returns a direct reference to a parent (Lazy Crossover), subsequent Mutation operations (if in-place) will corrupt the Elite survivors in the previous generation. This destroys the "Elitism" guarantee, causing the best agents to be overwritten by their own mutated offspring.
+**Action:** Implemented a mandatory "Deep Clone" (via structuredClone) of the offspring immediately after Crossover in EvolutionEngine. This ensures that the new generation is physically distinct from the old one, preserving the integrity of Elite agents.
+## 2026-06-01 - [Mutation by Reference]
+**Learning:** If a Crossover function lazily returns a reference to a parent (instead of a new object), and the subsequent Mutation function modifies that object in-place, the original Parent (which might be an Elite preserved in the next generation) gets corrupted. This breaks Elitism and population stability.
+**Action:** Implemented a "Reference Integrity Check" in `EvolutionEngine` that detects if an offspring is a reference to a parent and creates a deep copy (JSON clone) before allowing mutation. Verified with `HelixReferenceIntegrity.test.ts`.
