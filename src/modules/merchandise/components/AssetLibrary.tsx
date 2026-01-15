@@ -206,15 +206,19 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                                 title={asset.prompt || 'Image'}
                             >
                                 <img
-                                    src={asset.url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'}
+                                    src={asset.thumbnailUrl || asset.url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'}
                                     alt={asset.prompt || 'Asset'}
                                     loading="lazy"
                                     onError={(e) => {
                                         if (import.meta.env.DEV) {
                                             console.error('❌ Image load failed:', asset.id, asset.url?.substring(0, 50));
                                         }
-                                        // Fallback: hide broken image
-                                        e.currentTarget.style.display = 'none';
+                                        // Fallback: try full URL if thumbnail fails
+                                        if (asset.thumbnailUrl && e.currentTarget.src === asset.thumbnailUrl) {
+                                            e.currentTarget.src = asset.url;
+                                        } else {
+                                            e.currentTarget.style.display = 'none';
+                                        }
                                     }}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none"
                                 />
