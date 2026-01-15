@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { X, Calendar, Image as ImageIcon, Wand2, Loader2, ChevronDown } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { ScheduledPost, CampaignStatus, ImageAsset } from '../types';
@@ -20,6 +20,13 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isAssetDrawerOpen, setIsAssetDrawerOpen] = useState(false);
+
+    // IDs for accessibility
+    const copyInputId = useId();
+    const dateInputId = useId();
+    const timeInputId = useId();
+    const modalTitleId = useId();
+    const platformLabelId = useId();
 
     const handleGenerateCopy = async () => {
         setIsGenerating(true);
@@ -64,15 +71,24 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={modalTitleId}
+        >
             <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
                 <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-bg-dark">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <h2 id={modalTitleId} className="text-lg font-bold text-white flex items-center gap-2">
                         Create New Post
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition-colors">
-                        <X size={20} />
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition-colors"
+                        aria-label="Close modal"
+                    >
+                        <X size={20} aria-hidden="true" />
                     </button>
                 </div>
 
@@ -80,13 +96,14 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                 <div className="p-6 overflow-y-auto space-y-6 flex-1">
 
                     {/* Platform Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Platform</label>
-                        <div className="flex gap-3">
+                    <div role="group" aria-label="Select Platform">
+                        <span className="block text-sm font-medium text-gray-400 mb-2" id={platformLabelId}>Platform</span>
+                        <div className="flex gap-3" aria-labelledby={platformLabelId}>
                             {(['Twitter', 'Instagram', 'LinkedIn'] as const).map((p) => (
                                 <button
                                     key={p}
                                     onClick={() => setPlatform(p)}
+                                    aria-pressed={platform === p}
                                     className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${platform === p
                                         ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
                                         : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-750'
@@ -101,17 +118,18 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                     {/* Copy Section */}
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <label className="block text-sm font-medium text-gray-400">Post Copy</label>
+                            <label htmlFor={copyInputId} className="block text-sm font-medium text-gray-400">Post Copy</label>
                             <button
                                 onClick={handleGenerateCopy}
                                 disabled={isGenerating}
                                 className="text-xs flex items-center gap-1.5 text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50"
                             >
-                                {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                                {isGenerating ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Wand2 size={12} aria-hidden="true" />}
                                 {isGenerating ? 'Generating...' : 'Generate with AI'}
                             </button>
                         </div>
                         <textarea
+                            id={copyInputId}
                             value={copy}
                             onChange={(e) => setCopy(e.target.value)}
                             placeholder="What's on your mind?"
@@ -121,17 +139,18 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
 
                     {/* Media Section */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Media</label>
+                        <span className="block text-sm font-medium text-gray-400 mb-2">Media</span>
                         {selectedImage ? (
                             <div className="relative group rounded-lg overflow-hidden border border-gray-700 inline-block">
-                                <img src={selectedImage.imageUrl} alt="Selected" className="h-40 w-auto object-cover" />
+                                <img src={selectedImage.imageUrl} alt={selectedImage.title || "Selected image"} className="h-40 w-auto object-cover" />
                                 <button
                                     onClick={() => setSelectedImage(null)}
-                                    className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-500/80 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all"
+                                    className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-500/80 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+                                    aria-label="Remove image"
                                 >
-                                    <X size={14} />
+                                    <X size={14} aria-hidden="true" />
                                 </button>
-                                <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-xs text-white truncate">
+                                <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-xs text-white truncate" aria-hidden="true">
                                     {selectedImage.title}
                                 </div>
                             </div>
@@ -139,8 +158,9 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             <button
                                 onClick={() => setIsAssetDrawerOpen(true)}
                                 className="w-full h-32 border-2 border-dashed border-gray-700 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-gray-500 hover:bg-gray-800/50 transition-all gap-2"
+                                aria-label="Select media from Brand Assets"
                             >
-                                <ImageIcon size={24} />
+                                <ImageIcon size={24} aria-hidden="true" />
                                 <span className="text-sm">Select from Brand Assets</span>
                             </button>
                         )}
@@ -149,27 +169,29 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                     {/* Scheduling */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Date</label>
+                            <label htmlFor={dateInputId} className="block text-sm font-medium text-gray-400 mb-2">Date</label>
                             <div className="relative">
                                 <input
+                                    id={dateInputId}
                                     type="date"
                                     value={scheduledDate}
                                     onChange={(e) => setScheduledDate(e.target.value)}
                                     className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
-                                <Calendar className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
+                                <Calendar className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={16} aria-hidden="true" />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Time</label>
+                            <label htmlFor={timeInputId} className="block text-sm font-medium text-gray-400 mb-2">Time</label>
                             <div className="relative">
                                 <input
+                                    id={timeInputId}
                                     type="time"
                                     value={scheduledTime}
                                     onChange={(e) => setScheduledTime(e.target.value)}
                                     className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
                                 />
-                                <ChevronDown className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={16} />
+                                <ChevronDown className="absolute right-3 top-2.5 text-gray-500 pointer-events-none" size={16} aria-hidden="true" />
                             </div>
                         </div>
                     </div>
