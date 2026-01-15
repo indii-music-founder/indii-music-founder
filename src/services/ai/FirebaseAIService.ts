@@ -519,10 +519,10 @@ export class FirebaseAIService {
                 ...options.config
             }));
 
-            // 2. Poll for completion with dynamic timeout
-            const durationSeconds = options.config?.durationSeconds || 8;
-            const calculatedTimeout = Math.max(120000, durationSeconds * 10000);
-            const timeoutMs = options.timeoutMs || Math.min(calculatedTimeout, 600000);
+            // 2. Poll for completion with dynamic timeout (FIX #7: using shared config)
+            const { calculateVideoTimeout, AI_CONFIG } = await import('@/core/config/ai-models');
+            const durationSeconds = options.config?.durationSeconds || AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS;
+            const timeoutMs = options.timeoutMs || calculateVideoTimeout(durationSeconds);
             const pollInterval = 1000;
             const maxAttempts = Math.ceil(timeoutMs / pollInterval);
 

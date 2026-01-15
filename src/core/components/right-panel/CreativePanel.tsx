@@ -3,6 +3,11 @@ import { Wand2, History, ChevronRight, ChevronDown, Sliders } from 'lucide-react
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
+import { z } from 'zod';
+import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+
+type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
+type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 
 interface CreativePanelProps {
     toggleRightPanel: () => void;
@@ -76,13 +81,14 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                             <div className="relative group">
                                 <select
                                     value={studioControls.aspectRatio}
-                                    onChange={(e) => setStudioControls({ aspectRatio: e.target.value })}
+                                    onChange={(e) => setStudioControls({ aspectRatio: e.target.value as VideoAspectRatio })}
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
                                     <option value="16:9">16:9 Landscape</option>
                                     <option value="1:1">1:1 Square</option>
                                     <option value="9:16">9:16 Portrait</option>
-                                    <option value="21:9">21:9 Ultrawide</option>
+                                    <option value="4:3">4:3 Standard</option>
+                                    <option value="3:4">3:4 Vertical</option>
                                 </select>
                                 <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
                             </div>
@@ -92,13 +98,14 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                             <div className="relative group">
                                 <select
                                     value={studioControls.resolution || '1024x1024'}
-                                    onChange={(e) => setStudioControls({ resolution: e.target.value })}
+                                    onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
                                     <option value="1024x1024">1K (Square)</option>
                                     <option value="1280x720">HD (720p)</option>
                                     <option value="1920x1080">FHD (1080p)</option>
-                                    <option value="3840x2160">4K (UHD)</option>
+                                    <option value="1080x1920">Vertical (1080x1920)</option>
+                                    <option value="720x1280">Vertical (720x1280)</option>
                                 </select>
                                 <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
                             </div>

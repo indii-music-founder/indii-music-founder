@@ -35,6 +35,33 @@ interface GenerationConfig {
 
 export class VideoService {
 
+    /**
+     * FIX #8: Retry logic with exponential backoff for rate-limited requests.
+     */
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        retries = 3,
+        delay = 1000
+    ): Promise<T> {
+        try {
+            return await operation();
+        } catch (error: any) {
+            const isRetryable =
+                error?.code === 'resource-exhausted' ||
+                error?.message?.includes('429') ||
+                error?.message?.includes('quota') ||
+                error?.message?.includes('rate') ||
+                error?.message?.includes('RESOURCE_EXHAUSTED');
+
+            if (retries > 0 && isRetryable) {
+                console.warn(`[VideoService] Rate limited, retrying in ${delay}ms... (${retries} retries left)`);
+                await new Promise(r => setTimeout(r, delay));
+                return this.withRetry(operation, retries - 1, delay * 2);
+            }
+            throw error;
+        }
+    }
+
     async generateMotionBrush(image: { mimeType: string; data: string }, mask: { mimeType: string; data: string }): Promise<string | null> {
         try {
             // Step 1: Plan Motion
@@ -52,14 +79,14 @@ export class VideoService {
             });
             const plan = AI.parseJSON(analysisRes.text());
 
-            // Step 2: Generate Video
+            // Step 2: Generate Video (with retry for rate limiting)
             const videoPrompt = typeof plan.video_prompt === 'string' ? plan.video_prompt : "Animate";
-            const uri = await AI.generateVideo({
+            const uri = await this.withRetry(() => AI.generateVideo({
                 model: AI_MODELS.VIDEO.GENERATION,
                 prompt: videoPrompt,
                 image: { imageBytes: image.data, mimeType: image.mimeType },
                 config: { aspectRatio: '16:9', durationSeconds: 5 }
-            });
+            }));
 
             return uri || null;
         } catch (e) {
@@ -133,12 +160,13 @@ export class VideoService {
                 ? { imageBytes: firstFrameSource.data, mimeType: firstFrameSource.mimeType }
                 : undefined;
 
-            const uri = await AI.generateVideo({
+            // FIX #8: Wrap with retry logic for rate limiting
+            const uri = await this.withRetry(() => AI.generateVideo({
                 model,
                 prompt: options.prompt,
                 image: inputImage,
                 config: config as unknown as Record<string, unknown>
-            });
+            }));
 
             // Increment usage counter after successful generation
             if (uri) {
@@ -162,7 +190,8 @@ export class VideoService {
 
     async generateKeyframeTransition(startImage: { mimeType: string; data: string }, endImage: { mimeType: string; data: string }, prompt: string): Promise<string | null> {
         try {
-            const uri = await AI.generateVideo({
+            // FIX #8: Wrap with retry logic
+            const uri = await this.withRetry(() => AI.generateVideo({
                 model: AI_MODELS.VIDEO.GENERATION,
                 prompt: prompt || "Transition",
                 image: { imageBytes: startImage.data, mimeType: startImage.mimeType },
@@ -171,7 +200,7 @@ export class VideoService {
                     durationSeconds: 5,
                     lastFrame: `data:${endImage.mimeType};base64,${endImage.data}`
                 }
-            });
+            }));
             return uri || null;
         } catch (e) {
             console.error("Keyframe Transition Error:", e);

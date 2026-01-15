@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { useAutoSave } from './useAutoSave';
 import { useStore } from '@/core/store';
 
@@ -69,7 +69,7 @@ describe('useAutoSave', () => {
     });
 
     it('should derive activeOrg from organizations array', () => {
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
@@ -88,7 +88,7 @@ describe('useAutoSave', () => {
     });
 
     it('should skip save when canvas is null', async () => {
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(null, 'Test Design', 'design-123', { enabled: false })
@@ -112,7 +112,7 @@ describe('useAutoSave', () => {
             currentProjectId: 'project-test-123'
         } as any);
 
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
@@ -136,7 +136,7 @@ describe('useAutoSave', () => {
             currentProjectId: ''
         } as any);
 
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
@@ -161,7 +161,7 @@ describe('useAutoSave', () => {
             currentProjectId: 'project-test-123'
         } as any);
 
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
@@ -238,7 +238,7 @@ describe('useAutoSave', () => {
         await result.current.saveDesign();
         await waitFor(() => expect(result.current.isSaving).toBe(false));
 
-        const secondSaveCall = vi.mocked(mockSetDoc).mock.calls[1][1];
+        const secondSaveCall = vi.mocked(mockSetDoc).mock.calls[1][1] as any;
         expect(secondSaveCall.createdAt).toBeUndefined();
     });
 
@@ -247,7 +247,7 @@ describe('useAutoSave', () => {
         const errorMessage = 'Network error';
         vi.mocked(mockSetDoc).mockRejectedValue(new Error(errorMessage));
 
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
@@ -269,7 +269,7 @@ describe('useAutoSave', () => {
         const { setDoc: mockSetDoc } = await import('firebase/firestore');
         vi.mocked(mockSetDoc).mockResolvedValue(undefined);
 
-        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })

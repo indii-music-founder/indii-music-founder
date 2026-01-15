@@ -24,7 +24,7 @@ type ViewMode = 'design' | 'showroom';
 // Generate unique design ID (persistent per session)
 const generateDesignId = () => `design-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 // UI Components
-const IconButton = ({ icon, onClick, label, disabled }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean }) => (
+const IconButton = ({ icon, onClick, label, disabled, title }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean, title?: string }) => (
     <button
         onClick={onClick}
         disabled={disabled}
@@ -32,8 +32,8 @@ const IconButton = ({ icon, onClick, label, disabled }: { icon: React.ReactNode,
             "p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
             disabled && "opacity-30 cursor-not-allowed"
         )}
-        aria-label={label}
-        title={label}
+        aria-label={label || title}
+        title={title || label}
     >
         {icon}
     </button>
@@ -76,6 +76,7 @@ export default function MerchDesigner() {
 
     // Canvas State
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+    const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
     const [layers, setLayers] = useState<CanvasObject[]>([]);
     const [selectedLayer, setSelectedLayer] = useState<CanvasObject | null>(null);
     const [exportedDesign, setExportedDesign] = useState<string | null>(null);
@@ -98,21 +99,21 @@ export default function MerchDesigner() {
         clear,
         setBackgroundColor,
         alignObjects
-    } = useCanvasControls(fabricCanvasRef);
+    } = useCanvasControls(fabricCanvas);
 
     // Canvas history hook (undo/redo)
-    const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvasRef.current);
+    const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvas);
 
     // Auto-save hook
     const { saveDesign, lastSaved, isSaving } = useAutoSave(
-        fabricCanvasRef.current,
+        fabricCanvas,
         designName,
         designId,
         { interval: 30000, enabled: true }
     );
 
     // Performance monitoring (dev mode only)
-    const performanceMetrics = usePerformanceMonitor(fabricCanvasRef.current);
+    const performanceMetrics = usePerformanceMonitor(fabricCanvas);
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -499,6 +500,7 @@ export default function MerchDesigner() {
                                 onSelectionChange={setSelectedLayer}
                                 onCanvasReady={(canvas) => {
                                     fabricCanvasRef.current = canvas;
+                                    setFabricCanvas(canvas);
                                 }}
                                 onRequestDelete={handleDeleteLayers}
                             />

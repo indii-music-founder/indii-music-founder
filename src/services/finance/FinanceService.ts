@@ -18,7 +18,7 @@ import {
   EarningsSummarySchema,
   type EarningsSummary as ValidatedEarningsSummary
 } from '@/services/revenue/schema';
-import { EarningsSummary as DSREarningsSummary } from '@/services/ddex/types/dsr';
+import { ExpenseSchema, type Expense } from '@/modules/finance/schemas';
 
 export interface EarningsSummary {
   totalEarnings: number;
@@ -37,16 +37,7 @@ export interface EarningsSummary {
   }[];
 }
 
-export interface Expense {
-  id: string;
-  userId: string;
-  vendor: string;
-  amount: number;
-  category: string;
-  date: string;
-  description: string;
-  createdAt?: any;
-}
+export type { Expense };
 
 export class FinanceService {
   private readonly EXPENSES_COLLECTION = 'expenses';
@@ -121,41 +112,29 @@ export class FinanceService {
     }
   }
 
-  /**
-   * Internal validation for double-entry bookkeeping principles.
-   */
-  private validateDoubleEntry(expense: Omit<Expense, 'id' | 'createdAt'>): void {
-    // 1. Every transaction must be balanced: Debits = Credits
-    // In this simple context, the expense (Debit) must equal the payout source (Credit).
-    // We implicitly treat the 'amount' as both the debit to expense and credit to cash.
-    if (!expense.amount || expense.amount <= 0) {
-      throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Double-entry failure: Transaction amount must be positive and non-zero.');
-    }
-
-    // 2. Attribution check
-    if (!expense.userId || !expense.category) {
-      throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Double-entry failure: Transaction must have a user and account category.');
-    }
-  }
-
   async addExpense(expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense> {
     try {
       if (!auth.currentUser || auth.currentUser.uid !== expense.userId) {
         throw new AppException(AppErrorCode.UNAUTHORIZED, 'Unauthorized add expense operation');
       }
+
+      // Zod Validation
+      const validation = ExpenseSchema.safeParse(expense);
+      if (!validation.success) {
+        throw new AppException(AppErrorCode.INVALID_ARGUMENT, `Invalid expense data: ${validation.error.message}`);
+      }
+
+      const validExpense = validation.data;
       const now = Timestamp.now();
 
-      // Local Validation for Double-Entry principles
-      this.validateDoubleEntry(expense);
-
       const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), {
-        ...expense,
+        ...validExpense,
         createdAt: now
       });
 
       return {
         id: docRef.id,
-        ...expense,
+        ...validExpense,
         createdAt: now.toDate().toISOString()
       };
     } catch (error) {

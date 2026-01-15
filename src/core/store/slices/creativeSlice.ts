@@ -2,6 +2,11 @@ import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 
 export type { HistoryItem };
+import { z } from 'zod';
+import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+
+type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
+type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 
 export interface CanvasImage {
     id: string;
@@ -73,8 +78,8 @@ export interface CreativeSlice {
 
     // Studio Controls
     studioControls: {
-        aspectRatio: string;
-        resolution: string;
+        aspectRatio: VideoAspectRatio;
+        resolution: VideoResolution;
         negativePrompt: string;
         seed: string;
         cameraMovement: string;
@@ -248,7 +253,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
 
     studioControls: {
         aspectRatio: '16:9',
-        resolution: '4K',
+        resolution: '1280x720',
         negativePrompt: '',
         seed: '',
         cameraMovement: 'Static',

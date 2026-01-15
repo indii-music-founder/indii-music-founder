@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 
 export interface PerformanceMetrics {
     fps: number;

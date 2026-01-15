@@ -11,6 +11,10 @@ const SEMANTIC_SCHEMA: Schema = {
         mood: { type: 'ARRAY', items: { type: 'STRING' } },
         genre: { type: 'ARRAY', items: { type: 'STRING' } },
         instruments: { type: 'ARRAY', items: { type: 'STRING' } },
+        ddexGenre: { type: 'STRING' },
+        ddexSubGenre: { type: 'STRING' },
+        language: { type: 'STRING' },
+        isExplicit: { type: 'BOOLEAN' },
         visualImagery: {
             type: 'OBJECT',
             properties: {
@@ -37,7 +41,7 @@ const SEMANTIC_SCHEMA: Schema = {
             required: ['imagen', 'veo']
         }
     },
-    required: ['mood', 'genre', 'instruments', 'visualImagery', 'marketingHooks', 'targetPrompts']
+    required: ['mood', 'genre', 'instruments', 'ddexGenre', 'ddexSubGenre', 'language', 'isExplicit', 'visualImagery', 'marketingHooks', 'targetPrompts']
 } as unknown as Schema; // Cast to unknown then Schema to bypass deep type strictness if needed
 
 export class AudioIntelligenceService {
@@ -88,15 +92,22 @@ export class AudioIntelligenceService {
 
         const systemPrompt = `
 You are an expert Creative Director and Audio Engineer. 
-Your task is to listen to this audio track and generate structured metadata to drive AI art and video generation.
+Your task is to listen to this audio track and generate structured metadata for both creative expression and music industry distribution (DDEX).
 
 Technical Context (Use these to inform your vibe):
 - BPM: ${bpm}
 - Key: ${key}
 
 Output Targets:
-1. 'targetPrompts.imagen': A visual prompt optimized for Google Imagen 3. Focus on lighting, texture, and composition.
-2. 'targetPrompts.veo': A video prompt optimized for Google Veo. Focus on motion, camera movement, and atmosphere.
+1. DDEX Metadata:
+   - 'ddexGenre': Choose the most appropriate high-level genre (e.g., Pop, Rock, Electronic).
+   - 'ddexSubGenre': Choose a specific sub-genre.
+   - 'language': The ISO 639-2 code for the language of performance (e.g., 'eng', 'spa'). Use 'zxx' if instrumental.
+   - 'isExplicit': True if the lyrics contain explicit content, False otherwise.
+
+2. Creative Direction:
+   - 'targetPrompts.imagen': A visual prompt optimized for Google Imagen 3. Focus on lighting, texture, and composition.
+   - 'targetPrompts.veo': A video prompt optimized for Google Veo. Focus on motion, camera movement, and atmosphere.
 
 Describe the audio's "Visual Vibe" — if this song was a scene in a movie, what would it look like?
 `;

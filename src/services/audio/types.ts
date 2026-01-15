@@ -4,6 +4,13 @@ export interface AudioSemanticData {
     mood: string[];         // e.g., ["Dark", "Energetic"]
     genre: string[];        // e.g., ["Industrial Techno", "Cyberpunk"]
     instruments: string[];  // e.g., ["Synthesizer", "Distorted Bass"]
+
+    // DDEX Specific Fields (Inferred)
+    ddexGenre: string;      // Primary Genre for DDEX (e.g., "Electronic")
+    ddexSubGenre: string;   // SubGenre for DDEX (e.g., "Techno")
+    language: string;       // ISO 639-2 (e.g., "eng", "zxx" for instrumental)
+    isExplicit: boolean;    // Content advisory
+
     visualImagery: {
         abstract: string;   // For abstract visualizers
         narrative: string;  // For finding stock footage or generating scenes

@@ -91,6 +91,22 @@ export function validateStartImage(input: string): string {
 }
 
 // ----------------------------------------------------------------------------
+// Constants
+// ----------------------------------------------------------------------------
+
+// Polling configuration
+const SEGMENT_POLL_INTERVAL_SECONDS = 10;
+const SEGMENT_MAX_POLL_ATTEMPTS = 30;
+const FRAME_EXTRACTION_POLL_INTERVAL_MS = 2000;
+const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
+const STITCH_POLL_INTERVAL_SECONDS = 10;
+const STITCH_MAX_POLL_ATTEMPTS = 60;
+
+// Video segment defaults
+const DEFAULT_SEGMENT_DURATION_SECONDS = 5;
+const DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
+
+// ----------------------------------------------------------------------------
 // Inngest Functions
 // ----------------------------------------------------------------------------
 
@@ -125,6 +141,12 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                 const apiKey = geminiApiKey.value();
 
                 // 1. Trigger Video Generation
+                // FIX #2: Validate API key exists before use
+                const apiKey = process.env.GEMINI_API_KEY;
+                if (!apiKey) {
+                    throw new Error("GEMINI_API_KEY environment variable is not set");
+                }
+
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
                     const modelId = 'veo-3.1-generate-preview';
                     const triggerEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`;
@@ -145,7 +167,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                         ],
                         parameters: {
                             sampleCount: 1,
-                            videoLength: "5s",
+                            videoLength: `${DEFAULT_SEGMENT_DURATION_SECONDS}s`,
                             aspectRatio: options?.aspectRatio || "16:9"
                         }
                     };
@@ -185,6 +207,30 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     if (status && status.done) {
                         segmentResult = status;
                         isDone = true;
+                    return triggerResult.name as string;
+                });
+
+                // FIX #1: Move polling outside step.run using step.sleep
+                let segmentResult: any = null;
+                let isDone = false;
+
+                for (let attempt = 0; attempt < SEGMENT_MAX_POLL_ATTEMPTS; attempt++) {
+                    // Use step.sleep instead of setTimeout inside step.run
+                    await step.sleep(`wait-segment-${i}-${attempt}`, `${SEGMENT_POLL_INTERVAL_SECONDS}s`);
+
+                    segmentResult = await step.run(`poll-segment-${i}-${attempt}`, async () => {
+                        const statusResponse = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
+                        );
+                        if (!statusResponse.ok) {
+                            return { done: false };
+                        }
+                        return await statusResponse.json();
+                    });
+
+                    if (segmentResult.done) {
+                        isDone = true;
+                        break;
                     }
                 }
 
@@ -194,6 +240,11 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                 // 3. Process and Save Segment
                 const segmentUrl = await step.run(`process-segment-${i}`, async () => {
+                    throw new Error(`Veo Segment ${i} timed out during polling after ${SEGMENT_MAX_POLL_ATTEMPTS * SEGMENT_POLL_INTERVAL_SECONDS}s`);
+                }
+
+                // Store segment in Cloud Storage
+                const segmentUrl = await step.run(`store-segment-${i}`, async () => {
                     const prediction = segmentResult.response.outputs[0];
                     const bucket = admin.storage().bucket();
                     const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
@@ -207,7 +258,6 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                         throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
                     }
 
-                    // Return public URL
                     return `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${segmentId}.mp4`;
                 });
 
@@ -320,6 +370,116 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     } catch (e: any) {
                         console.warn(`[LongForm] Frame extraction failed for segment ${i}:`, e.message);
                         // Continue without chaining if extraction fails
+                    // FIX #3: Better error handling for frame extraction - retry with fallback
+                    let extractionAttempts = 0;
+                    const maxExtractionAttempts = 2;
+
+                    while (extractionAttempts < maxExtractionAttempts) {
+                        try {
+                            const nextStartImage = await step.run(`extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                const auth = new GoogleAuth({
+                                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                                });
+                                const transcoder = new TranscoderServiceClient();
+                                try {
+                                    const projectId = await auth.getProjectId();
+                                    const location = 'us-central1';
+                                    const bucket = admin.storage().bucket();
+                                    const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
+
+                                    // 1. Normalize Input URI
+                                    const inputUri = toGcsUri(segmentUrl);
+
+                                    // FIX #6: Calculate frame extraction time dynamically
+                                    // For a 5s video, extract at 4.5s. For shorter videos, extract near the end.
+                                    const videoDurationSeconds = DEFAULT_SEGMENT_DURATION_SECONDS;
+                                    const extractionTime = Math.min(
+                                        DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
+                                        videoDurationSeconds - 0.5
+                                    );
+                                    const extractionSeconds = Math.floor(extractionTime);
+                                    const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
+
+                                    // 2. Create Sprite Job (acting as frame extractor)
+                                    const [job] = await transcoder.createJob({
+                                        parent: transcoder.locationPath(projectId, location),
+                                        job: {
+                                            outputUri,
+                                            config: {
+                                                inputs: [{ key: "input0", uri: inputUri }],
+                                                editList: [{ key: "atom0", inputs: ["input0"] }],
+                                                spriteSheets: [
+                                                    {
+                                                        filePrefix: "frame_",
+                                                        startTimeOffset: { seconds: extractionSeconds, nanos: extractionNanos },
+                                                        endTimeOffset: { seconds: 0, nanos: 0 },
+                                                        columnCount: 1,
+                                                        rowCount: 1,
+                                                        totalCount: 1,
+                                                        quality: 100
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    });
+
+                                    // 3. Poll for Completion
+                                    let finalState = 'PROCESSING';
+                                    for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
+                                        await new Promise(r => setTimeout(r, FRAME_EXTRACTION_POLL_INTERVAL_MS));
+                                        try {
+                                            const [status] = await transcoder.getJob({ name: job.name });
+                                            if (status.state === 'SUCCEEDED' || status.state === 'FAILED') {
+                                                finalState = status.state as string;
+                                                break;
+                                            }
+                                        } catch (err: any) {
+                                            console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                        }
+                                    }
+
+                                    if (finalState !== 'SUCCEEDED') {
+                                        throw new Error(`Frame extraction failed or timed out: ${finalState}`);
+                                    }
+
+                                    // 4. Download and Convert to Base64
+                                    await new Promise(r => setTimeout(r, 1000));
+                                    const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
+
+                                    if (!files || files.length === 0) {
+                                        throw new Error(`No frame file generated for segment ${i}`);
+                                    }
+
+                                    const frameFile = files[0];
+                                    const [buffer] = await frameFile.download();
+                                    return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                                } finally {
+                                    await transcoder.close();
+                                }
+                            });
+
+                            currentStartImage = nextStartImage;
+                            break; // Success - exit retry loop
+                        } catch (e: any) {
+                            extractionAttempts++;
+                            console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed for segment ${i}:`, e.message);
+
+                            if (extractionAttempts >= maxExtractionAttempts) {
+                                // FIX #3: Log detailed error and continue without chaining
+                                // This prevents complete job failure while maintaining visibility
+                                console.error(`[LongForm] All frame extraction attempts failed for segment ${i}. Continuing without visual continuity.`);
+                                await step.run(`log-extraction-failure-${i}`, async () => {
+                                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                                        warnings: admin.firestore.FieldValue.arrayUnion(
+                                            `Frame extraction failed for segment ${i}: ${e.message}. Visual continuity may be affected.`
+                                        ),
+                                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                                    }, { merge: true });
+                                });
+                                // Clear currentStartImage to prevent using stale data
+                                currentStartImage = undefined;
+                            }
+                        }
                     }
                 }
             }
@@ -358,12 +518,14 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
 /**
  * Stitches multiple video segments into one using Google Cloud Transcoder API
+ *
+ * FIX #5: Now supports audio when source videos have audio tracks
  */
 export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunction(
     { id: "stitch-video-segments" },
     { event: "video/stitch.requested" },
     async ({ event, step }: any) => {
-        const { jobId, userId, segmentUrls } = event.data;
+        const { jobId, userId, segmentUrls, includeAudio } = event.data;
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = await admin.app().options.projectId;
@@ -372,6 +534,38 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
             const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
 
             const jobName = await step.run("create-transcoder-job", async () => {
+                // FIX #5: Build elementary streams dynamically based on audio availability
+                const elementaryStreams: any[] = [
+                    {
+                        key: "video_stream0",
+                        videoStream: {
+                            h264: {
+                                heightPixels: 720,
+                                widthPixels: 1280,
+                                bitrateBps: 5000000,
+                                frameRate: 30,
+                            },
+                        },
+                    }
+                ];
+
+                // Add audio stream if source videos have audio
+                if (includeAudio) {
+                    elementaryStreams.push({
+                        key: "audio_stream0",
+                        audioStream: {
+                            codec: "aac",
+                            bitrateBps: 128000,
+                            channelCount: 2,
+                            sampleRateHertz: 48000,
+                        },
+                    });
+                }
+
+                const muxStreamElementary = includeAudio
+                    ? ["video_stream0", "audio_stream0"]
+                    : ["video_stream0"];
+
                 const [job] = await transcoder.createJob({
                     parent: transcoder.locationPath(projectId!, location),
                     job: {
@@ -399,11 +593,12 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                                     },
                                 }
                             ],
+                            elementaryStreams,
                             muxStreams: [
                                 {
                                     key: "final_output",
                                     container: "mp4",
-                                    elementaryStreams: ["video_stream0"], // Only video
+                                    elementaryStreams: muxStreamElementary,
                                 }
                             ]
                         }
@@ -422,12 +617,12 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
             });
 
             // Poll with step.sleep
+            // Poll with step.sleep to avoid timeout (using constants)
             let jobStatus = "PENDING";
             let retries = 0;
 
-            while (jobStatus !== "SUCCEEDED" && jobStatus !== "FAILED" && retries < 60) {
-                // Wait for 10 seconds between checks
-                await step.sleep(`wait-for-transcoder-${retries}`, "10s");
+            while (jobStatus !== "SUCCEEDED" && jobStatus !== "FAILED" && retries < STITCH_MAX_POLL_ATTEMPTS) {
+                await step.sleep(`wait-for-transcoder-${retries}`, `${STITCH_POLL_INTERVAL_SECONDS}s`);
 
                 jobStatus = await step.run(`check-status-${retries}`, async () => {
                     const [job] = await transcoder.getJob({ name: jobName });
@@ -441,7 +636,7 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
             }
 
             if (jobStatus !== "SUCCEEDED") {
-                throw new Error("Transcoder job timed out or failed to complete in time.");
+                throw new Error(`Transcoder job timed out after ${STITCH_MAX_POLL_ATTEMPTS * STITCH_POLL_INTERVAL_SECONDS}s.`);
             }
 
             // Construct public URL

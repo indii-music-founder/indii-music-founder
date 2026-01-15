@@ -191,9 +191,9 @@ function useRouterSync() {
         // If URL has a module and it's different from current, update state
         if (initialModule && initialModule !== currentModule && MODULE_COMPONENTS[initialModule]) {
             setModule(initialModule);
-        } else if (!initialModule || initialModule === '') {
-             // Ensure dashboard URL if empty
-             window.history.replaceState(null, '', '/dashboard');
+        } else if (!initialModule) {
+            // Ensure dashboard URL if empty
+            window.history.replaceState(null, '', '/dashboard');
         }
     }, [user, authLoading, setModule]); // Run only on mount/auth-ready
 

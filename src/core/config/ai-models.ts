@@ -57,8 +57,29 @@ export const AI_CONFIG = {
         DEFAULT: {
             imageConfig: { imageSize: '2K' }
         }
+    },
+    // FIX #7: Standardized video timeout configuration
+    VIDEO: {
+        // Base timeout in milliseconds for video generation
+        MIN_TIMEOUT_MS: 120000,
+        // Multiplier per second of video duration
+        TIMEOUT_PER_SECOND_MS: 12000,
+        // Maximum allowed timeout
+        MAX_TIMEOUT_MS: 600000,
+        // Default duration if not specified
+        DEFAULT_DURATION_SECONDS: 8,
     }
 } as const;
+
+/**
+ * Calculate video generation timeout based on duration
+ * FIX #7: Standardized calculation used across all services
+ */
+export function calculateVideoTimeout(durationSeconds: number): number {
+    const { MIN_TIMEOUT_MS, TIMEOUT_PER_SECOND_MS, MAX_TIMEOUT_MS } = AI_CONFIG.VIDEO;
+    const calculated = Math.max(MIN_TIMEOUT_MS, durationSeconds * TIMEOUT_PER_SECOND_MS);
+    return Math.min(calculated, MAX_TIMEOUT_MS);
+}
 
 // ============================================================================
 // RUNTIME VALIDATION - DO NOT REMOVE

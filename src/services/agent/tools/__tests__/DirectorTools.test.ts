@@ -212,7 +212,7 @@ describe('DirectorTools', () => {
                 { id: 'ed-1', url: 'data:image/png;base64,edited1', prompt: 'edited' },
                 { id: 'ed-2', url: 'data:image/png;base64,edited2', prompt: 'edited' }
             ];
-            vi.mocked(Editing.batchEdit).mockResolvedValue(mockResults);
+            vi.mocked(Editing.batchEdit).mockResolvedValue({ results: mockResults, failures: [] });
 
             const result = await DirectorTools.batch_edit_images({ prompt: 'Make it brighter' });
 
