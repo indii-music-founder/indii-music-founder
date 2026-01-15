@@ -6,8 +6,15 @@ import { DesignCanvas, useCanvasControls, CanvasObject } from './components/Desi
 import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
 import { AIGenerationDialog } from './components/AIGenerationDialog';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
+import { useAutoSave } from './hooks/useAutoSave';
+import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
+import { PerformanceOverlay } from './components/PerformanceOverlay';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save } from 'lucide-react';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, Layers, Sticker, Wand2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
@@ -15,6 +22,24 @@ import { MerchCard } from './components/MerchCard';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
+
+// Generate unique design ID (persistent per session)
+const generateDesignId = () => `design-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// UI Components
+const IconButton = ({ icon, onClick, label, disabled }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        className={cn(
+            "p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
+            disabled && "opacity-30 cursor-not-allowed"
+        )}
+        aria-label={label}
+        title={label}
+    >
+        {icon}
+    </button>
+);
 
 const ColorSwatch = ({ color, active, onClick, className }: { color: string, active?: boolean, onClick: () => void, className?: string }) => (
     <button
@@ -49,6 +74,7 @@ export default function MerchDesigner() {
     const [workMode, setWorkMode] = useState<WorkMode>('user');
     const [designName, setDesignName] = useState('Untitled Design');
     const [isEditingName, setIsEditingName] = useState(false);
+    const [designId] = useState(() => generateDesignId());
 
     // Canvas State
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -58,6 +84,8 @@ export default function MerchDesigner() {
 
     // Dialog State
     const [showAIDialog, setShowAIDialog] = useState(false);
+    const [showExportDialog, setShowExportDialog] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject[]>([]);
 
     const toast = useToast();
 
@@ -70,11 +98,23 @@ export default function MerchDesigner() {
         sendToBack,
         exportToImage,
         clear,
-        setBackgroundColor
+        setBackgroundColor,
+        alignObjects
     } = useCanvasControls(fabricCanvasRef);
 
     // Canvas history hook (undo/redo)
     const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvasRef.current);
+
+    // Auto-save hook
+    const { saveDesign, lastSaved, isSaving } = useAutoSave(
+        fabricCanvasRef.current,
+        designName,
+        designId,
+        { interval: 30000, enabled: true }
+    );
+
+    // Performance monitoring (dev mode only)
+    const performanceMetrics = usePerformanceMonitor(fabricCanvasRef.current);
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -102,6 +142,29 @@ export default function MerchDesigner() {
         addText('Your Text');
         toast.success('Text added to canvas');
     }, [addText, toast]);
+
+    // Wrap alignment with toast feedback
+    const handleAlign = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+        if (!fabricCanvasRef.current) return;
+
+        const activeObjects = fabricCanvasRef.current.getActiveObjects();
+        if (activeObjects.length < 2) {
+            toast.error('Select 2 or more objects to align');
+            return;
+        }
+
+        alignObjects(alignment);
+
+        const alignmentNames = {
+            left: 'Left',
+            center: 'Center',
+            right: 'Right',
+            top: 'Top',
+            middle: 'Middle',
+            bottom: 'Bottom'
+        };
+        toast.success(`Aligned ${activeObjects.length} objects: ${alignmentNames[alignment]}`);
+    }, [alignObjects, toast]);
 
     // Layer Management Handlers
     const handleSelectLayer = useCallback((layer: CanvasObject) => {
@@ -137,9 +200,30 @@ export default function MerchDesigner() {
     }, [layers]);
 
     const handleDeleteLayer = useCallback((layer: CanvasObject) => {
-        fabricCanvasRef.current?.remove(layer.fabricObject);
-        fabricCanvasRef.current?.renderAll();
+        // Show confirmation dialog for single layer
+        setDeleteConfirm([layer]);
     }, []);
+
+    const handleDeleteLayers = useCallback((objects: CanvasObject[]) => {
+        // Show confirmation dialog for multiple layers (keyboard delete)
+        setDeleteConfirm(objects);
+    }, []);
+
+    const confirmDelete = useCallback(() => {
+        if (deleteConfirm.length === 0) return;
+
+        // Delete all objects in the confirmation list
+        deleteConfirm.forEach(obj => {
+            fabricCanvasRef.current?.remove(obj.fabricObject);
+        });
+
+        fabricCanvasRef.current?.discardActiveObject();
+        fabricCanvasRef.current?.renderAll();
+        setDeleteConfirm([]);
+
+        const count = deleteConfirm.length;
+        toast.success(`${count} ${count === 1 ? 'layer' : 'layers'} deleted`);
+    }, [deleteConfirm, toast]);
 
     const handleReorderLayer = useCallback((layer: CanvasObject, direction: 'up' | 'down') => {
         if (!fabricCanvasRef.current) return;
@@ -159,21 +243,27 @@ export default function MerchDesigner() {
 
     // Export to Showroom
     const handleExportToShowroom = useCallback(() => {
-        const dataUrl = exportToImage();
-        if (dataUrl) {
-            setExportedDesign(dataUrl);
+        setShowExportDialog(true);
+    }, []);
+
+    const handleExport = useCallback(async (format: 'png' | 'jpeg' | 'svg' | 'webp') => {
+        setShowExportDialog(false);
+
+        const exported = await exportToImage(format);
+        if (exported) {
+            setExportedDesign(exported);
             setViewMode('showroom');
-            toast.success('Design exported to Showroom');
+            toast.success(`Design exported as ${format.toUpperCase()}`);
         } else {
             toast.error('Failed to export design');
         }
     }, [exportToImage, toast]);
 
     // Save draft
-    const handleSaveDraft = useCallback(() => {
-        // TODO: Implement save to Firestore
-        toast.success('Draft saved (not implemented yet)');
-    }, [toast]);
+    const handleSaveDraft = useCallback(async () => {
+        await saveDesign();
+        toast.success('Draft saved successfully');
+    }, [saveDesign, toast]);
 
     // Background color change
     const handleBackgroundColorChange = useCallback((color: string) => {
@@ -267,6 +357,43 @@ export default function MerchDesigner() {
                                 <IconButton icon={<Redo size={16} />} onClick={() => { }} disabled label="Redo" />
                             </div>
 
+                            <div className="h-6 w-px bg-white/10 mx-2" />
+
+                            {/* Alignment Tools */}
+                            <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
+                                <IconButton
+                                    icon={<AlignLeft size={16} />}
+                                    onClick={() => handleAlign('left')}
+                                    title="Align Left"
+                                />
+                                <IconButton
+                                    icon={<AlignCenter size={16} />}
+                                    onClick={() => handleAlign('center')}
+                                    title="Align Center"
+                                />
+                                <IconButton
+                                    icon={<AlignRight size={16} />}
+                                    onClick={() => handleAlign('right')}
+                                    title="Align Right"
+                                />
+                                <div className="w-px h-4 bg-white/10" />
+                                <IconButton
+                                    icon={<AlignVerticalJustifyStart size={16} />}
+                                    onClick={() => handleAlign('top')}
+                                    title="Align Top"
+                                />
+                                <IconButton
+                                    icon={<AlignVerticalJustifyCenter size={16} />}
+                                    onClick={() => handleAlign('middle')}
+                                    title="Align Middle"
+                                />
+                                <IconButton
+                                    icon={<AlignVerticalJustifyEnd size={16} />}
+                                    onClick={() => handleAlign('bottom')}
+                                    title="Align Bottom"
+                                />
+                            </div>
+
                             {/* Design Name */}
                             {isEditingName ? (
                                 <input
@@ -291,13 +418,21 @@ export default function MerchDesigner() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={handleSaveDraft}
-                                className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
-                            >
-                                <Save size={16} />
-                                Save Draft
-                            </button>
+                            <div className="flex flex-col items-end">
+                                <button
+                                    onClick={handleSaveDraft}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Save size={16} className={isSaving ? 'animate-spin' : ''} />
+                                    {isSaving ? 'Saving...' : 'Save Draft'}
+                                </button>
+                                {lastSaved && (
+                                    <span className="text-[10px] text-neutral-600 mt-0.5">
+                                        Saved {new Date(lastSaved).toLocaleTimeString()}
+                                    </span>
+                                )}
+                            </div>
                             <MerchButton size="sm" onClick={handleExportToShowroom} glow>
                                 <Download size={16} />
                                 Export to Showroom
@@ -338,6 +473,7 @@ export default function MerchDesigner() {
                                 onCanvasReady={(canvas) => {
                                     fabricCanvasRef.current = canvas;
                                 }}
+                                onRequestDelete={handleDeleteLayers}
                             />
 
                             {/* Background Color Picker */}
@@ -415,6 +551,36 @@ export default function MerchDesigner() {
                         <EnhancedShowroom initialAsset={exportedDesign} />
                     </div>
                 </div>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            {deleteConfirm.length > 0 && (
+                <ConfirmDialog
+                    title={deleteConfirm.length === 1 ? "Delete Layer?" : "Delete Layers?"}
+                    message={
+                        deleteConfirm.length === 1
+                            ? `Are you sure you want to delete "${deleteConfirm[0].name}"? This action cannot be undone.`
+                            : `Are you sure you want to delete ${deleteConfirm.length} layers? This action cannot be undone.`
+                    }
+                    confirmLabel="Delete"
+                    cancelLabel="Cancel"
+                    variant="danger"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteConfirm([])}
+                />
+            )}
+
+            {/* Export Format Dialog */}
+            {showExportDialog && (
+                <ExportDialog
+                    onExport={handleExport}
+                    onCancel={() => setShowExportDialog(false)}
+                />
+            )}
+
+            {/* Performance Overlay (dev mode only) */}
+            {import.meta.env.DEV && viewMode === 'design' && (
+                <PerformanceOverlay metrics={performanceMetrics} />
             )}
         </MerchLayout>
     );

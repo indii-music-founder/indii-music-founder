@@ -7,7 +7,7 @@
  * - Visual zoom indicator
  */
 
-import React, { useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
@@ -119,7 +119,7 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
             {/* Zoomable Content Container */}
             <div
                 ref={containerRef}
-                className="flex-1 overflow-x-auto overflow-y-hidden"
+                className="flex-1 overflow-x-auto overflow-y-hidden relative pb-6"
                 style={{
                     scrollBehavior: 'smooth',
                 }}
@@ -136,15 +136,16 @@ export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineP
                 >
                     {children}
                 </div>
-            </div>
 
-            {/* Frame Ruler */}
-            <FrameRuler
-                totalFrames={totalFrames}
-                fps={project.fps}
-                zoom={timelineZoom}
-                frameWidth={frameWidth}
-            />
+                {/* ⚡ Bolt Optimization: FrameRuler moved inside to sync scroll and virtualize */}
+                <FrameRuler
+                    totalFrames={totalFrames}
+                    fps={project.fps}
+                    zoom={timelineZoom}
+                    frameWidth={frameWidth}
+                    containerRef={containerRef}
+                />
+            </div>
         </div>
     );
 }
@@ -154,11 +155,11 @@ interface FrameRulerProps {
     fps: number;
     zoom: number;
     frameWidth: number;
+    containerRef: React.RefObject<HTMLDivElement>;
 }
 
-const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, frameWidth }: FrameRulerProps) {
+const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, frameWidth, containerRef }: FrameRulerProps) {
     // Calculate tick interval based on zoom level thresholds
-    // This value only changes when zoom crosses specific thresholds
     const tickInterval = useMemo(() => {
         if (zoom >= 2) return fps / 4; // Show quarter-second marks
         if (zoom >= 1) return fps / 2; // Show half-second marks
@@ -166,7 +167,6 @@ const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, fram
         return fps * 2; // Show 2-second marks
     }, [zoom, fps]);
 
-    // Derived values for CSS grid (Optimization: Use CSS for lines instead of DOM nodes)
     const unitPx = frameWidth * zoom;
     const majorInterval = fps;
     const minorInterval = tickInterval;
@@ -188,22 +188,72 @@ const FrameRuler = React.memo(function FrameRuler({ totalFrames, fps, zoom, fram
         backgroundPosition: '0 0'
     };
 
-    // Generate labels only (significantly reducing iteration and object creation)
+    // ⚡ Bolt Optimization: Virtualize labels to only render visible range
+    const [visibleRange, setVisibleRange] = useState({ start: 0, end: 1200 }); // Default buffer
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const update = () => {
+             const scrollLeft = container.scrollLeft;
+             // Default to 1000 if clientWidth is 0 (e.g. testing)
+             const width = container.clientWidth || 1000;
+             const buffer = 500;
+
+             const start = Math.max(0, scrollLeft - buffer);
+             const end = scrollLeft + width + buffer;
+
+             setVisibleRange({ start, end });
+        };
+
+        update();
+
+        let ticking = false;
+        const onScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    update();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        container.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+
+        return () => {
+            container.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', onScroll);
+        };
+    }, [containerRef]);
+
+    // Generate labels only for visible range
     const labels = useMemo(() => {
         const result: { frame: number; label: string }[] = [];
-        // Determine label interval (labels appear on seconds, or every 2s if zoomed out)
         const step = Math.max(fps, tickInterval);
 
-        for (let frame = 0; frame <= totalFrames; frame += step) {
+        const startFrameRaw = visibleRange.start / unitPx;
+        const endFrameRaw = visibleRange.end / unitPx;
+
+        // Align to step
+        const firstFrame = Math.floor(startFrameRaw / step) * step;
+        const lastFrame = Math.ceil(endFrameRaw / step) * step;
+
+        const safeFirst = Math.max(0, firstFrame);
+        const safeLast = Math.min(totalFrames, lastFrame);
+
+        for (let frame = safeFirst; frame <= safeLast; frame += step) {
             const seconds = frame / fps;
             result.push({ frame, label: formatTime(seconds) });
         }
         return result;
-    }, [totalFrames, fps, tickInterval]);
+    }, [totalFrames, fps, tickInterval, visibleRange, unitPx]);
 
     return (
         <div
-            className="h-6 bg-black/30 border-t border-white/10 relative overflow-hidden"
+            className="absolute bottom-0 left-0 h-6 bg-black/30 border-t border-white/10 overflow-hidden pointer-events-none"
             style={{ width: `${totalFrames * unitPx}px`, ...backgroundStyle }}
         >
             {labels.map(({ frame, label }) => (
