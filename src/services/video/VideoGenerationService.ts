@@ -13,26 +13,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { delay } from '@/utils/async';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-
-export interface VideoGenerationOptions {
-    prompt: string;
-    aspectRatio?: string;
-    resolution?: string;
-    seed?: number;
-    negativePrompt?: string;
-    model?: string;
-    firstFrame?: string;
-    lastFrame?: string;
-    timeOffset?: number;
-    ingredients?: string[];
-    duration?: number;
-    fps?: number;
-    cameraMovement?: string;
-    motionStrength?: number;
-    shotList?: ShotItem[];
-    orgId?: string;
-    userProfile?: UserProfile;
-}
+import { VideoGenerationOptionsSchema, VideoGenerationOptions } from '@/modules/video/schemas';
 
 export class VideoGenerationService {
 
@@ -106,6 +87,13 @@ export class VideoGenerationService {
     }
 
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Zod Validation
+        const validation = VideoGenerationOptionsSchema.safeParse(options);
+        if (!validation.success) {
+            const errorMsg = validation.error.issues.map(i => i.message).join(', ');
+            throw new Error(`Invalid video parameters: ${errorMsg}`);
+        }
+
         // Enforce Authentication
         if (!auth.currentUser) {
             throw new Error("You must be signed in to generate video. Please log in.");
@@ -143,7 +131,7 @@ export class VideoGenerationService {
 
         const { jobId } = await this.triggerVideoGeneration({
             ...options,
-            aspectRatio: targetAspectRatio,
+            aspectRatio: targetAspectRatio as any, // Cast to match stricter enum if needed
             prompt: enrichedPrompt,
             orgId
         });

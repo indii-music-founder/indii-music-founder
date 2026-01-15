@@ -22,6 +22,7 @@ import {
   ScheduledPost,
   CampaignStatus,
 } from "./types";
+import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
 import { useStore } from "@/core/store";
 
 export class SocialService {
@@ -118,18 +119,24 @@ export class SocialService {
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
 
-    const newPost: Omit<ScheduledPost, "id"> = {
+    // Prepare data for validation
+    const rawPost = {
       ...post,
       authorId: userProfile.id,
-      status: CampaignStatus.PENDING,
-      // Ensure scheduledTime is a number (timestamp)
-      scheduledTime:
-        typeof post.scheduledTime === "string"
-          ? new Date(post.scheduledTime).getTime()
-          : post.scheduledTime,
+      status: CampaignStatus.PENDING
     };
 
-    const docRef = await addDoc(collection(db, "scheduled_posts"), newPost);
+    // Zod Validation
+    const validation = ScheduledPostSchema.safeParse(rawPost);
+    if (!validation.success) {
+        const errorMsg = validation.error.issues.map(i => i.message).join(', ');
+        throw new Error(`Invalid post data: ${errorMsg}`);
+    }
+
+    const validPost = validation.data;
+
+    // Use clean data from Zod
+    const docRef = await addDoc(collection(db, "scheduled_posts"), validPost);
     return docRef.id;
   }
 
@@ -211,6 +218,13 @@ export class SocialService {
   ): Promise<string> {
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
+
+    // Validate Input
+    const validation = CreatePostRequestSchema.safeParse({ content, mediaUrls, productId });
+    if (!validation.success) {
+        throw new Error(`Invalid post content: ${validation.error.issues[0].message}`);
+    }
+
     const currentUser = {
       uid: userProfile.id,
       displayName: userProfile.displayName,
