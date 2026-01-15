@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MerchCard } from './MerchCard';
 import { Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square } from 'lucide-react';
 import type { CanvasObject } from './DesignCanvas';
+
+// Debounce helper
+const debounce = <T extends (...args: any[]) => any>(fn: T, ms: number) => {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), ms);
+    };
+};
 
 export interface LayersPanelProps {
     layers: CanvasObject[];
@@ -24,6 +33,49 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     onReorderLayer,
     onUpdateProperty
 }) => {
+    // Local state for controlled inputs
+    const [localOpacity, setLocalOpacity] = useState(100);
+    const [localFontSize, setLocalFontSize] = useState(60);
+    const [localColor, setLocalColor] = useState('#FFE135');
+    const [localBlendMode, setLocalBlendMode] = useState('source-over');
+
+    // Sync local state with selected layer
+    useEffect(() => {
+        if (!selectedLayer) return;
+
+        setLocalOpacity(
+            selectedLayer.fabricObject.opacity
+                ? Math.round(selectedLayer.fabricObject.opacity * 100)
+                : 100
+        );
+
+        if (selectedLayer.type === 'text') {
+            setLocalFontSize((selectedLayer.fabricObject as any).fontSize || 60);
+            setLocalColor((selectedLayer.fabricObject as any).fill || '#FFE135');
+        }
+
+        setLocalBlendMode(selectedLayer.fabricObject.globalCompositeOperation || 'source-over');
+    }, [selectedLayer]);
+
+    // Debounced update functions
+    const debouncedOpacityUpdate = useMemo(
+        () => debounce((layer: CanvasObject, value: number) => {
+            if (onUpdateProperty) {
+                onUpdateProperty(layer, 'opacity', value / 100);
+            }
+        }, 150),
+        [onUpdateProperty]
+    );
+
+    const debouncedFontSizeUpdate = useMemo(
+        () => debounce((layer: CanvasObject, value: number) => {
+            if (onUpdateProperty) {
+                onUpdateProperty(layer, 'fontSize', value);
+            }
+        }, 150),
+        [onUpdateProperty]
+    );
+
     // Reverse layers for display (top layer first)
     const displayLayers = [...layers].reverse();
 
@@ -163,24 +215,24 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
 
             {/* Properties Panel (only shown when layer is selected) */}
             {selectedLayer && (
-                <MerchCard className="p-4">
+                <MerchCard className="p-4" key={selectedLayer.id}>
                     <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Properties</h4>
                     <div className="space-y-3">
                         {/* Opacity */}
                         <div>
-                            <label className="text-xs text-neutral-400 block mb-1.5">Opacity</label>
+                            <label className="text-xs text-neutral-400 block mb-1.5">
+                                Opacity
+                                <span className="ml-2 text-[#FFE135]">{localOpacity}%</span>
+                            </label>
                             <input
                                 type="range"
                                 min="0"
                                 max="100"
-                                defaultValue={
-                                    selectedLayer.fabricObject.opacity
-                                        ? Math.round(selectedLayer.fabricObject.opacity * 100)
-                                        : 100
-                                }
+                                value={localOpacity}
                                 onChange={(e) => {
-                                    const value = parseInt(e.target.value) / 100;
-                                    onUpdateProperty?.(selectedLayer, 'opacity', value);
+                                    const value = parseInt(e.target.value);
+                                    setLocalOpacity(value);
+                                    debouncedOpacityUpdate(selectedLayer, value);
                                 }}
                                 className="w-full accent-[#FFE135]"
                             />
@@ -195,10 +247,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                         type="number"
                                         min="8"
                                         max="200"
-                                        defaultValue={(selectedLayer.fabricObject as any).fontSize || 60}
+                                        value={localFontSize}
                                         onChange={(e) => {
-                                            const value = parseInt(e.target.value);
-                                            onUpdateProperty?.(selectedLayer, 'fontSize', value);
+                                            const value = parseInt(e.target.value) || 60;
+                                            setLocalFontSize(value);
+                                            debouncedFontSizeUpdate(selectedLayer, value);
                                         }}
                                         className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
                                     />
@@ -207,8 +260,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                     <label className="text-xs text-neutral-400 block mb-1.5">Color</label>
                                     <input
                                         type="color"
-                                        defaultValue={(selectedLayer.fabricObject as any).fill || '#FFE135'}
+                                        value={localColor}
                                         onChange={(e) => {
+                                            setLocalColor(e.target.value);
                                             onUpdateProperty?.(selectedLayer, 'fill', e.target.value);
                                         }}
                                         className="w-full h-8 bg-neutral-900 border border-white/10 rounded cursor-pointer"
@@ -221,8 +275,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                         <div>
                             <label className="text-xs text-neutral-400 block mb-1.5">Blend Mode</label>
                             <select
-                                defaultValue={selectedLayer.fabricObject.globalCompositeOperation || 'source-over'}
+                                value={localBlendMode}
                                 onChange={(e) => {
+                                    setLocalBlendMode(e.target.value);
                                     onUpdateProperty?.(selectedLayer, 'globalCompositeOperation', e.target.value);
                                 }}
                                 className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"

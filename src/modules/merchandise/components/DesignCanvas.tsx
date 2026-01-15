@@ -255,8 +255,78 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         );
     }
 
+    // Handle drag-and-drop
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy';
+    }, []);
+
+    const handleDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const url = e.dataTransfer.getData('image/url');
+        const name = e.dataTransfer.getData('image/name');
+
+        if (!url || !fabricCanvasRef.current || !canvasRef.current) return;
+
+        try {
+            // Calculate drop position relative to canvas
+            const canvasElement = canvasRef.current;
+            const rect = canvasElement.getBoundingClientRect();
+            const zoom = fabricCanvasRef.current.getZoom();
+            const viewportTransform = fabricCanvasRef.current.viewportTransform;
+
+            // Convert screen coordinates to canvas coordinates
+            const x = (e.clientX - rect.left - (viewportTransform?.[4] || 0)) / zoom;
+            const y = (e.clientY - rect.top - (viewportTransform?.[5] || 0)) / zoom;
+
+            // Add image using the new addImageAtPosition function from useCanvasControls
+            // We'll need to call this from the parent component since it's in the hook
+            console.log('Drop at position:', { x, y, url, name });
+
+            // For now, load the image directly here
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = () => {
+                fabric.Image.fromURL(url, (fabricImg) => {
+                    if (!fabricImg.width || !fabricImg.height) return;
+
+                    const maxSize = 600;
+                    const scale = Math.min(maxSize / fabricImg.width, maxSize / fabricImg.height, 1);
+
+                    fabricImg.set({
+                        left: x - (fabricImg.width * scale) / 2,
+                        top: y - (fabricImg.height * scale) / 2,
+                        scaleX: scale,
+                        scaleY: scale,
+                        name: name || `Image ${generateId()}`
+                    });
+
+                    fabricCanvasRef.current?.add(fabricImg);
+                    fabricCanvasRef.current?.setActiveObject(fabricImg);
+                    fabricCanvasRef.current?.renderAll();
+                }, {
+                    crossOrigin: 'anonymous'
+                });
+            };
+
+            img.src = url;
+        } catch (error) {
+            console.error('Failed to add dropped image:', error);
+            setError('Failed to add image');
+        }
+    }, []);
+
     return (
-        <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]">
+        <div
+            ref={containerRef}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className="w-full h-full flex items-center justify-center bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]"
+        >
             {!isInitialized && (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="w-8 h-8 text-[#FFE135] animate-spin" />
@@ -321,6 +391,53 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         }
     }, [canvasRef, getSmartPosition]);
 
+    const addImageAtPosition = useCallback(async (imageUrl: string, x: number, y: number, name?: string): Promise<void> => {
+        if (!canvasRef.current) {
+            throw new Error('Canvas not initialized');
+        }
+
+        return new Promise<void>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = () => {
+                fabric.Image.fromURL(imageUrl, (fabricImg) => {
+                    if (!fabricImg.width || !fabricImg.height) {
+                        reject(new Error('Invalid image dimensions'));
+                        return;
+                    }
+
+                    // Scale image to fit canvas (max 600px width/height)
+                    const maxSize = 600;
+                    const scale = Math.min(maxSize / fabricImg.width, maxSize / fabricImg.height, 1);
+
+                    // Center the image at the drop position
+                    fabricImg.set({
+                        left: x - (fabricImg.width * scale) / 2,
+                        top: y - (fabricImg.height * scale) / 2,
+                        scaleX: scale,
+                        scaleY: scale,
+                        name: name || `Image ${generateId()}`
+                    });
+
+                    canvasRef.current?.add(fabricImg);
+                    canvasRef.current?.setActiveObject(fabricImg);
+                    canvasRef.current?.renderAll();
+                    resolve();
+                }, {
+                    crossOrigin: 'anonymous'
+                });
+            };
+
+            img.onerror = () => {
+                reject(new Error('Failed to load image. Check CORS policy or URL.'));
+            };
+
+            img.src = imageUrl;
+        });
+    }, [canvasRef]);
+
+    const addText = useCallback((text: string = 'Your Text', options?: Partial<fabric.ITextOptions>) => {
     const addText = useCallback((text: string = 'Your Text', options?: any) => {
         if (!canvasRef.current) return;
 
@@ -415,6 +532,7 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
 
     return {
         addImage,
+        addImageAtPosition,
         addText,
         deleteSelected,
         bringToFront,
