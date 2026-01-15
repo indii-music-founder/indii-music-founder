@@ -29,3 +29,7 @@
 ## 2026-06-01 - [Mutation by Reference]
 **Learning:** If a Crossover function lazily returns a reference to a parent (instead of a new object), and the subsequent Mutation function modifies that object in-place, the original Parent (which might be an Elite preserved in the next generation) gets corrupted. This breaks Elitism and population stability.
 **Action:** Implemented a "Reference Integrity Check" in `EvolutionEngine` that detects if an offspring is a reference to a parent and creates a deep copy (JSON clone) before allowing mutation. Verified with `HelixReferenceIntegrity.test.ts`.
+
+## 2026-06-02 - [Mutation Safety & Retry Logic]
+**Learning:** Flaky mutation functions (e.g., LLMs producing invalid JSON/syntax errors) can cause generation gaps if not handled. The `EvolutionEngine` effectively catches these errors and retries the mutation step, ensuring the population size is preserved with valid agents.
+**Action:** Created `HelixMutationSafety.test.ts` to verify that invalid syntax errors trigger a retry loop, preventing "dead" slots in the next generation.

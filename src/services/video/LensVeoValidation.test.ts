@@ -16,7 +16,11 @@ const mocks = vi.hoisted(() => ({
     useStore: {
         getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
     },
-    delay: vi.fn()
+    delay: vi.fn(),
+    firebaseAI: {
+        analyzeImage: vi.fn()
+    },
+    uuid: vi.fn(() => 'lens-veo-job-id')
 }));
 
 // 2. Mock modules
@@ -51,12 +55,16 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
+vi.mock('../ai/FirebaseAIService', () => ({
+    firebaseAI: mocks.firebaseAI
+}));
+
 vi.mock('@/utils/async', () => ({
     delay: mocks.delay
 }));
 
 vi.mock('uuid', () => ({
-    v4: () => 'lens-veo-job-id'
+    v4: mocks.uuid
 }));
 
 describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {

@@ -170,16 +170,19 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     <button
                                         className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800"
                                         aria-label="Add image"
+                                        className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                                        aria-label="Add image to post"
                                     >
                                         <ImageIcon size={20} />
                                     </button>
                                     {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(!showProductPicker)}
-                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative
+                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                                                 ${selectedProductId ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
                                             title="Attach Product (Drop)"
                                             aria-label="Attach Product"
+                                            aria-label={selectedProductId ? "Remove attached product" : "Attach product from store"}
                                         >
                                             <ShoppingBag size={20} />
                                             {artistProducts.length > 0 && (
@@ -280,6 +283,8 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                         <button
                             className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
                             aria-label="More options"
+                            className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1 focus-visible:outline-none"
+                            aria-label={`More options for post by ${post.authorName}`}
                         >
                             <MoreHorizontal size={16} />
                         </button>
@@ -310,6 +315,8 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                         <button
                             className="flex items-center gap-2 hover:text-red-500 transition-colors group/like"
                             aria-label={`Like (${post.likes})`}
+                            className="flex items-center gap-2 hover:text-red-500 transition-colors group/like focus-visible:ring-2 focus-visible:ring-red-500 rounded px-1 focus-visible:outline-none"
+                            aria-label={`Like post, ${post.likes} likes`}
                         >
                             <Heart size={18} className="group-hover/like:scale-110 transition-transform" />
                             <span className="text-sm">{post.likes}</span>
@@ -317,6 +324,8 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                         <button
                             className="flex items-center gap-2 hover:text-blue-500 transition-colors"
                             aria-label={`Comment (${post.commentsCount})`}
+                            className="flex items-center gap-2 hover:text-blue-500 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 focus-visible:outline-none"
+                            aria-label={`Comment on post, ${post.commentsCount} comments`}
                         >
                             <MessageCircle size={18} />
                             <span className="text-sm">{post.commentsCount}</span>
@@ -324,6 +333,8 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                         <button
                             className="flex items-center gap-2 hover:text-green-500 transition-colors"
                             aria-label="Share"
+                            className="flex items-center gap-2 hover:text-green-500 transition-colors focus-visible:ring-2 focus-visible:ring-green-500 rounded px-1 focus-visible:outline-none"
+                            aria-label="Share post"
                         >
                             <Share2 size={18} />
                         </button>
