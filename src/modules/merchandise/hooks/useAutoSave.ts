@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
@@ -49,7 +49,7 @@ export const useAutoSave = (
 
         try {
             // Serialize canvas state
-            const canvasJSON = JSON.stringify(canvas.toJSON(['name', 'thumbnail']));
+            const canvasJSON = JSON.stringify(canvas.toObject(['name', 'thumbnail']));
 
             // Generate thumbnail (low quality for storage efficiency)
             const thumbnail = canvas.toDataURL({

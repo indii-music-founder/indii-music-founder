@@ -305,17 +305,6 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         };
     }, [isInitialized]);
 
-    if (error) {
-        return (
-            <div className="w-full h-full flex items-center justify-center bg-neutral-900/20 rounded-2xl border border-white/5">
-                <div className="text-center p-8">
-                    <p className="text-red-400 text-sm mb-2">Canvas Error</p>
-                    <p className="text-neutral-500 text-xs">{error}</p>
-                </div>
-            </div>
-        );
-    }
-
     // Handle drag-and-drop
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -351,27 +340,24 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             const img = new Image();
             img.crossOrigin = 'anonymous';
 
-            img.onload = () => {
-                fabric.Image.fromURL(url, (fabricImg) => {
-                    if (!fabricImg.width || !fabricImg.height) return;
+            img.onload = async () => {
+                const fabricImg = await fabric.FabricImage.fromURL(url, { crossOrigin: 'anonymous' });
+                if (!fabricImg.width || !fabricImg.height) return;
 
-                    const maxSize = 600;
-                    const scale = Math.min(maxSize / fabricImg.width, maxSize / fabricImg.height, 1);
+                const maxSize = 600;
+                const scale = Math.min(maxSize / fabricImg.width, maxSize / fabricImg.height, 1);
 
-                    fabricImg.set({
-                        left: x - (fabricImg.width * scale) / 2,
-                        top: y - (fabricImg.height * scale) / 2,
-                        scaleX: scale,
-                        scaleY: scale,
-                        name: name || `Image ${generateId()}`
-                    });
-
-                    fabricCanvasRef.current?.add(fabricImg);
-                    fabricCanvasRef.current?.setActiveObject(fabricImg);
-                    fabricCanvasRef.current?.renderAll();
-                }, {
-                    crossOrigin: 'anonymous'
+                fabricImg.set({
+                    left: x - (fabricImg.width * scale) / 2,
+                    top: y - (fabricImg.height * scale) / 2,
+                    scaleX: scale,
+                    scaleY: scale,
+                    name: name || `Image ${generateId()}`
                 });
+
+                fabricCanvasRef.current?.add(fabricImg);
+                fabricCanvasRef.current?.setActiveObject(fabricImg);
+                fabricCanvasRef.current?.renderAll();
             };
 
             img.src = url;
@@ -381,16 +367,26 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
         }
     }, []);
 
+    if (error) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-neutral-900/20 rounded-2xl border border-white/5">
+                <div className="text-center p-8">
+                    <p className="text-red-400 text-sm mb-2">Canvas Error</p>
+                    <p className="text-neutral-500 text-xs">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             ref={containerRef}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className={`w-full h-full flex items-center justify-center ${
-                snapToGrid
-                    ? 'bg-[linear-gradient(rgba(255,225,53,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,225,53,0.08)_1px,transparent_1px)] bg-[size:20px_20px]'
-                    : 'bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]'
-            }`}
+            className={`w-full h-full flex items-center justify-center ${snapToGrid
+                ? 'bg-[linear-gradient(rgba(255,225,53,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,225,53,0.08)_1px,transparent_1px)] bg-[size:20px_20px]'
+                : 'bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]'
+                }`}
         >
             {!isInitialized && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -408,12 +404,12 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 };
 
 // Export canvas manipulation functions
-export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | null>) => {
+export const useCanvasControls = (canvas: fabric.Canvas | null) => {
     // Smart positioning: find empty space or center
     const getSmartPosition = useCallback((width: number, height: number): { left: number; top: number } => {
-        if (!canvasRef.current) return { left: 400, top: 500 };
+        if (!canvas) return { left: 400, top: 500 };
 
-        const objects = canvasRef.current.getObjects();
+        const objects = canvas.getObjects();
         if (objects.length === 0) {
             return {
                 left: (800 - width) / 2,
@@ -426,10 +422,10 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             left: 100 + offset,
             top: 100 + offset
         };
-    }, [canvasRef]);
+    }, [canvas]);
 
     const addImage = useCallback(async (imageUrl: string, name?: string): Promise<void> => {
-        if (!canvasRef.current) {
+        if (!canvas) {
             throw new Error('Canvas not initialized');
         }
 
@@ -452,17 +448,17 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
 
             (img as any).name = name || `Image ${generateId()}`;
 
-            canvasRef.current.add(img);
-            canvasRef.current.setActiveObject(img);
-            canvasRef.current.renderAll();
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
         } catch (error) {
             console.error('Failed to load image:', error);
             throw error;
         }
-    }, [canvasRef, getSmartPosition]);
+    }, [canvas, getSmartPosition]);
 
     const addImageAtPosition = useCallback(async (imageUrl: string, x: number, y: number, name?: string): Promise<void> => {
-        if (!canvasRef.current) {
+        if (!canvas) {
             throw new Error('Canvas not initialized');
         }
 
@@ -470,8 +466,10 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             const img = new Image();
             img.crossOrigin = 'anonymous';
 
-            img.onload = () => {
-                fabric.Image.fromURL(imageUrl, (fabricImg) => {
+            img.onload = async () => {
+                try {
+                    const fabricImg = await fabric.FabricImage.fromURL(imageUrl, { crossOrigin: 'anonymous' });
+
                     if (!fabricImg.width || !fabricImg.height) {
                         reject(new Error('Invalid image dimensions'));
                         return;
@@ -490,13 +488,13 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
                         name: name || `Image ${generateId()}`
                     });
 
-                    canvasRef.current?.add(fabricImg);
-                    canvasRef.current?.setActiveObject(fabricImg);
-                    canvasRef.current?.renderAll();
+                    canvas.add(fabricImg);
+                    canvas.setActiveObject(fabricImg);
+                    canvas.renderAll();
                     resolve();
-                }, {
-                    crossOrigin: 'anonymous'
-                });
+                } catch (err) {
+                    reject(err);
+                }
             };
 
             img.onerror = () => {
@@ -505,10 +503,10 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
 
             img.src = imageUrl;
         });
-    }, [canvasRef]);
+    }, [canvas]);
 
     const addText = useCallback((text: string = 'Your Text', options?: any) => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
         const position = getSmartPosition(200, 60);
 
@@ -522,56 +520,56 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             ...options
         });
 
-        canvasRef.current.add(textObj);
-        canvasRef.current.setActiveObject(textObj);
-        canvasRef.current.renderAll();
-    }, [canvasRef, getSmartPosition]);
+        canvas.add(textObj);
+        canvas.setActiveObject(textObj);
+        canvas.renderAll();
+    }, [canvas, getSmartPosition]);
 
     const deleteSelected = useCallback(() => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
-        const activeObjects = canvasRef.current.getActiveObjects();
+        const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length === 0) return;
 
         activeObjects.forEach(obj => {
-            canvasRef.current?.remove(obj);
+            canvas.remove(obj);
         });
 
-        canvasRef.current.discardActiveObject();
-        canvasRef.current.renderAll();
-    }, [canvasRef]);
+        canvas.discardActiveObject();
+        canvas.renderAll();
+    }, [canvas]);
 
     const bringToFront = useCallback(() => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
-        const activeObject = canvasRef.current.getActiveObject();
+        const activeObject = canvas.getActiveObject();
         if (!activeObject) return;
 
-        canvasRef.current.bringObjectToFront(activeObject);
-        canvasRef.current.renderAll();
-    }, [canvasRef]);
+        canvas.bringObjectToFront(activeObject);
+        canvas.renderAll();
+    }, [canvas]);
 
     const sendToBack = useCallback(() => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
-        const activeObject = canvasRef.current.getActiveObject();
+        const activeObject = canvas.getActiveObject();
         if (!activeObject) return;
 
-        canvasRef.current.sendObjectToBack(activeObject);
-        canvasRef.current.renderAll();
-    }, [canvasRef]);
+        canvas.sendObjectToBack(activeObject);
+        canvas.renderAll();
+    }, [canvas]);
 
     const exportToImage = useCallback(async (format: 'png' | 'jpeg' | 'svg' | 'webp' = 'png'): Promise<string | null> => {
-        if (!canvasRef.current) return null;
+        if (!canvas) return null;
 
         try {
             // SVG export
             if (format === 'svg') {
-                return canvasRef.current.toSVG();
+                return canvas.toSVG();
             }
 
             // Raster formats (PNG, JPEG, WebP)
-            const dataURL = canvasRef.current.toDataURL({
+            const dataURL = canvas.toDataURL({
                 format: format === 'jpeg' ? 'jpeg' : 'png',
                 quality: format === 'jpeg' ? 0.9 : 1,
                 multiplier: 2 // Export at 2x resolution
@@ -587,7 +585,7 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             console.error('Export error:', err);
             return null;
         }
-    }, [canvasRef]);
+    }, [canvas]);
 
     // Helper function to convert data URL to WebP
     const convertToWebP = async (dataURL: string): Promise<string> => {
@@ -611,25 +609,25 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
     };
 
     const clear = useCallback(() => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
-        canvasRef.current.clear();
-        canvasRef.current.backgroundColor = '#000000';
-        canvasRef.current.renderAll();
-    }, [canvasRef]);
+        canvas.clear();
+        canvas.backgroundColor = '#000000';
+        canvas.renderAll();
+    }, [canvas]);
 
     const setBackgroundColor = useCallback((color: string) => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
-        canvasRef.current.backgroundColor = color;
-        canvasRef.current.renderAll();
-    }, [canvasRef]);
+        canvas.backgroundColor = color;
+        canvas.renderAll();
+    }, [canvas]);
 
     // Alignment tools
     const alignObjects = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
-        if (!canvasRef.current) return;
+        if (!canvas) return;
 
-        const activeObjects = canvasRef.current.getActiveObjects();
+        const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length < 2) return; // Need at least 2 objects to align
 
         const bounds = activeObjects.map(obj => ({
@@ -673,8 +671,8 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
             }
         }
 
-        canvasRef.current.renderAll();
-    }, [canvasRef]);
+        canvas.renderAll();
+    }, [canvas]);
 
     return {
         addImage,

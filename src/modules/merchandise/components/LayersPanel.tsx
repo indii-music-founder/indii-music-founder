@@ -23,6 +23,123 @@ export interface LayersPanelProps {
     onUpdateProperty?: (layer: CanvasObject, property: string, value: any) => void;
 }
 
+// Extracted Properties Component
+const LayerProperties: React.FC<{
+    layer: CanvasObject;
+    onUpdateProperty?: (layer: CanvasObject, property: string, value: any) => void;
+}> = ({ layer, onUpdateProperty }) => {
+    // Initialize state from props - key={layer.id} will ensure reset
+    const [localOpacity, setLocalOpacity] = useState(
+        layer.fabricObject.opacity ? Math.round(layer.fabricObject.opacity * 100) : 100
+    );
+    const [localFontSize, setLocalFontSize] = useState(
+        layer.type === 'text' ? ((layer.fabricObject as any).fontSize || 60) : 60
+    );
+    const [localColor, setLocalColor] = useState(
+        layer.type === 'text' ? ((layer.fabricObject as any).fill || '#FFE135') : '#FFE135'
+    );
+    const [localBlendMode, setLocalBlendMode] = useState(
+        layer.fabricObject.globalCompositeOperation || 'source-over'
+    );
+
+    // Debounced updaters
+    const debouncedOpacityUpdate = useMemo(
+        () => debounce((l: CanvasObject, value: number) => {
+            onUpdateProperty?.(l, 'opacity', value / 100);
+        }, 150),
+        [onUpdateProperty]
+    );
+
+    const debouncedFontSizeUpdate = useMemo(
+        () => debounce((l: CanvasObject, value: number) => {
+            onUpdateProperty?.(l, 'fontSize', value);
+        }, 150),
+        [onUpdateProperty]
+    );
+
+    return (
+        <MerchCard className="p-4">
+            <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Properties</h4>
+            <div className="space-y-3">
+                {/* Opacity */}
+                <div>
+                    <label className="text-xs text-neutral-400 block mb-1.5">
+                        Opacity
+                        <span className="ml-2 text-[#FFE135]">{localOpacity}%</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={localOpacity}
+                        onChange={(e) => {
+                            const value = parseInt(e.target.value);
+                            setLocalOpacity(value);
+                            debouncedOpacityUpdate(layer, value);
+                        }}
+                        className="w-full accent-[#FFE135]"
+                    />
+                </div>
+
+                {/* Text-specific properties */}
+                {layer.type === 'text' && (
+                    <>
+                        <div>
+                            <label className="text-xs text-neutral-400 block mb-1.5">Font Size</label>
+                            <input
+                                type="number"
+                                min="8"
+                                max="200"
+                                value={localFontSize}
+                                onChange={(e) => {
+                                    const value = parseInt(e.target.value) || 60;
+                                    setLocalFontSize(value);
+                                    debouncedFontSizeUpdate(layer, value);
+                                }}
+                                className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-neutral-400 block mb-1.5">Color</label>
+                            <input
+                                type="color"
+                                value={localColor}
+                                onChange={(e) => {
+                                    setLocalColor(e.target.value);
+                                    onUpdateProperty?.(layer, 'fill', e.target.value);
+                                }}
+                                className="w-full h-8 bg-neutral-900 border border-white/10 rounded cursor-pointer"
+                            />
+                        </div>
+                    </>
+                )}
+
+                {/* Blend Mode */}
+                <div>
+                    <label className="text-xs text-neutral-400 block mb-1.5">Blend Mode</label>
+                    <select
+                        value={localBlendMode}
+                        onChange={(e) => {
+                            setLocalBlendMode(e.target.value);
+                            onUpdateProperty?.(layer, 'globalCompositeOperation', e.target.value);
+                        }}
+                        className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
+                    >
+                        <option value="source-over">Normal</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="screen">Screen</option>
+                        <option value="overlay">Overlay</option>
+                        <option value="darken">Darken</option>
+                        <option value="lighten">Lighten</option>
+                        <option value="color-dodge">Color Dodge</option>
+                        <option value="color-burn">Color Burn</option>
+                    </select>
+                </div>
+            </div>
+        </MerchCard>
+    );
+};
+
 export const LayersPanel: React.FC<LayersPanelProps> = ({
     layers,
     selectedLayer,
@@ -33,49 +150,6 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     onReorderLayer,
     onUpdateProperty
 }) => {
-    // Local state for controlled inputs
-    const [localOpacity, setLocalOpacity] = useState(100);
-    const [localFontSize, setLocalFontSize] = useState(60);
-    const [localColor, setLocalColor] = useState('#FFE135');
-    const [localBlendMode, setLocalBlendMode] = useState('source-over');
-
-    // Sync local state with selected layer
-    useEffect(() => {
-        if (!selectedLayer) return;
-
-        setLocalOpacity(
-            selectedLayer.fabricObject.opacity
-                ? Math.round(selectedLayer.fabricObject.opacity * 100)
-                : 100
-        );
-
-        if (selectedLayer.type === 'text') {
-            setLocalFontSize((selectedLayer.fabricObject as any).fontSize || 60);
-            setLocalColor((selectedLayer.fabricObject as any).fill || '#FFE135');
-        }
-
-        setLocalBlendMode(selectedLayer.fabricObject.globalCompositeOperation || 'source-over');
-    }, [selectedLayer]);
-
-    // Debounced update functions
-    const debouncedOpacityUpdate = useMemo(
-        () => debounce((layer: CanvasObject, value: number) => {
-            if (onUpdateProperty) {
-                onUpdateProperty(layer, 'opacity', value / 100);
-            }
-        }, 150),
-        [onUpdateProperty]
-    );
-
-    const debouncedFontSizeUpdate = useMemo(
-        () => debounce((layer: CanvasObject, value: number) => {
-            if (onUpdateProperty) {
-                onUpdateProperty(layer, 'fontSize', value);
-            }
-        }, 150),
-        [onUpdateProperty]
-    );
-
     // Reverse layers for display (top layer first)
     const displayLayers = [...layers].reverse();
 
@@ -137,11 +211,10 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                             onSelectLayer(displayLayers[index + 1]);
                                         }
                                     }}
-                                    className={`group relative p-2 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50 ${
-                                        isSelected
+                                    className={`group relative p-2 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50 ${isSelected
                                             ? 'bg-[#FFE135]/20 border border-[#FFE135]/40'
                                             : 'bg-neutral-900/50 hover:bg-neutral-800/50 border border-transparent hover:border-white/10'
-                                    }`}
+                                        }`}
                                 >
                                     {/* Layer Info */}
                                     <div className="flex items-center gap-2 mb-1">
@@ -155,9 +228,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                         ) : (
                                             getLayerIcon(layer.type)
                                         )}
-                                        <span className={`text-xs font-medium flex-1 truncate ${
-                                            isSelected ? 'text-[#FFE135]' : 'text-neutral-300'
-                                        }`}>
+                                        <span className={`text-xs font-medium flex-1 truncate ${isSelected ? 'text-[#FFE135]' : 'text-neutral-300'
+                                            }`}>
                                             {layer.name}
                                         </span>
                                     </div>
@@ -248,85 +320,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
 
             {/* Properties Panel (only shown when layer is selected) */}
             {selectedLayer && (
-                <MerchCard className="p-4" key={selectedLayer.id}>
-                    <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Properties</h4>
-                    <div className="space-y-3">
-                        {/* Opacity */}
-                        <div>
-                            <label className="text-xs text-neutral-400 block mb-1.5">
-                                Opacity
-                                <span className="ml-2 text-[#FFE135]">{localOpacity}%</span>
-                            </label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={localOpacity}
-                                onChange={(e) => {
-                                    const value = parseInt(e.target.value);
-                                    setLocalOpacity(value);
-                                    debouncedOpacityUpdate(selectedLayer, value);
-                                }}
-                                className="w-full accent-[#FFE135]"
-                            />
-                        </div>
-
-                        {/* Text-specific properties */}
-                        {selectedLayer.type === 'text' && (
-                            <>
-                                <div>
-                                    <label className="text-xs text-neutral-400 block mb-1.5">Font Size</label>
-                                    <input
-                                        type="number"
-                                        min="8"
-                                        max="200"
-                                        value={localFontSize}
-                                        onChange={(e) => {
-                                            const value = parseInt(e.target.value) || 60;
-                                            setLocalFontSize(value);
-                                            debouncedFontSizeUpdate(selectedLayer, value);
-                                        }}
-                                        className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-neutral-400 block mb-1.5">Color</label>
-                                    <input
-                                        type="color"
-                                        value={localColor}
-                                        onChange={(e) => {
-                                            setLocalColor(e.target.value);
-                                            onUpdateProperty?.(selectedLayer, 'fill', e.target.value);
-                                        }}
-                                        className="w-full h-8 bg-neutral-900 border border-white/10 rounded cursor-pointer"
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        {/* Blend Mode */}
-                        <div>
-                            <label className="text-xs text-neutral-400 block mb-1.5">Blend Mode</label>
-                            <select
-                                value={localBlendMode}
-                                onChange={(e) => {
-                                    setLocalBlendMode(e.target.value);
-                                    onUpdateProperty?.(selectedLayer, 'globalCompositeOperation', e.target.value);
-                                }}
-                                className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
-                            >
-                                <option value="source-over">Normal</option>
-                                <option value="multiply">Multiply</option>
-                                <option value="screen">Screen</option>
-                                <option value="overlay">Overlay</option>
-                                <option value="darken">Darken</option>
-                                <option value="lighten">Lighten</option>
-                                <option value="color-dodge">Color Dodge</option>
-                                <option value="color-burn">Color Burn</option>
-                            </select>
-                        </div>
-                    </div>
-                </MerchCard>
+                <LayerProperties
+                    key={selectedLayer.id}
+                    layer={selectedLayer}
+                    onUpdateProperty={onUpdateProperty}
+                />
             )}
         </div>
     );

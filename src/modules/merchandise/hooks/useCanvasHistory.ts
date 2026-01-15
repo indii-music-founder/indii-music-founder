@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 
 interface CanvasHistoryState {
   json: string;
@@ -38,7 +38,7 @@ export const useCanvasHistory = (
     if (!canvas || isPerformingAction.current) return;
 
     try {
-      const json = JSON.stringify(canvas.toJSON(['name'])); // Include custom properties
+      const json = JSON.stringify(canvas.toObject(['name'])); // Include custom properties
       const timestamp = Date.now();
 
       setHistory((prevHistory) => {
@@ -81,7 +81,7 @@ export const useCanvasHistory = (
   }, [saveState, debounceMs]);
 
   // Undo to previous state
-  const undo = useCallback(() => {
+  const undo = useCallback(async () => {
     if (!canvas || historyIndex <= 0) return;
 
     isPerformingAction.current = true;
@@ -90,11 +90,10 @@ export const useCanvasHistory = (
       const prevState = history[historyIndex - 1];
       const parsedJson = JSON.parse(prevState.json);
 
-      canvas.loadFromJSON(parsedJson, () => {
-        canvas.renderAll();
-        setHistoryIndex(historyIndex - 1);
-        isPerformingAction.current = false;
-      });
+      await canvas.loadFromJSON(parsedJson);
+      canvas.renderAll();
+      setHistoryIndex(historyIndex - 1);
+      isPerformingAction.current = false;
     } catch (error) {
       console.error('Failed to undo:', error);
       isPerformingAction.current = false;
@@ -102,7 +101,7 @@ export const useCanvasHistory = (
   }, [canvas, history, historyIndex]);
 
   // Redo to next state
-  const redo = useCallback(() => {
+  const redo = useCallback(async () => {
     if (!canvas || historyIndex >= history.length - 1) return;
 
     isPerformingAction.current = true;
@@ -111,11 +110,10 @@ export const useCanvasHistory = (
       const nextState = history[historyIndex + 1];
       const parsedJson = JSON.parse(nextState.json);
 
-      canvas.loadFromJSON(parsedJson, () => {
-        canvas.renderAll();
-        setHistoryIndex(historyIndex + 1);
-        isPerformingAction.current = false;
-      });
+      await canvas.loadFromJSON(parsedJson);
+      canvas.renderAll();
+      setHistoryIndex(historyIndex + 1);
+      isPerformingAction.current = false;
     } catch (error) {
       console.error('Failed to redo:', error);
       isPerformingAction.current = false;
@@ -156,7 +154,10 @@ export const useCanvasHistory = (
 
     // Save initial state if history is empty
     if (history.length === 0) {
-      saveState();
+      // Use setTimeout to avoid synchronous state update in effect
+      setTimeout(() => {
+        saveState();
+      }, 0);
     }
 
     return () => {

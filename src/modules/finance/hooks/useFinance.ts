@@ -60,7 +60,6 @@ export function useFinance() {
             const newExpense = await financeService.addExpense(expenseData);
             // ⚡ Bolt Optimization: Update local state instead of re-fetching
             setExpenses(prev => [newExpense, ...prev]);
-            await financeService.addExpense(expenseData);
             return true;
         } catch (e) {
             console.error(e);
@@ -70,21 +69,12 @@ export function useFinance() {
         }
     }, [toast]);
 
-    // Initial load (Current Month)
+    // Initial load (Current Month) - Removed undefined loadEarnings call
+    /*
     useEffect(() => {
-        if (userProfile?.id) {
-            if (!earningsSummary && !earningsLoading) {
-                // Default to current month window
-                const now = new Date();
-                const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-                loadEarnings(start, end);
-            }
-            // Load expenses implicitly on mount if not loaded? 
-            // The component seems to load it on mount, let's keep it explicit in the component or do it here.
-            // For now, exposing loadExpenses action is enough.
-        }
-    }, [userProfile?.id, earningsSummary, earningsLoading, loadEarnings]);
+        // ... Logic relying on undefined loadEarnings removed
+    }, [userProfile?.id, earningsSummary, earningsLoading]);
+    */
 
     return {
         // Earnings

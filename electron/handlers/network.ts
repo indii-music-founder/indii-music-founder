@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { FetchUrlSchema } from '../validation';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
+export { validateSafeUrlAsync };
 
 export function registerNetworkHandlers() {
     ipcMain.handle('net:fetch-url', async (event, url: string) => {
