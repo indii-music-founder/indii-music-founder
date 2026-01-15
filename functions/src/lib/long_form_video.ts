@@ -139,7 +139,6 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
             for (let i = 0; i < prompts.length; i++) {
                 const segmentId = `${jobId}_seg_${i}`;
                 const prompt = prompts[i];
-                const apiKey = geminiApiKey.value();
 
                 // 1. Trigger Video Generation
                 // FIX #2: Validate API key exists before use
