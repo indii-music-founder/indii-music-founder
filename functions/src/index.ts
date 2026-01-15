@@ -639,7 +639,6 @@ export const generateImageV3 = functions
                         responseModalities: ["TEXT", "IMAGE"],
                         candidateCount: count || 1,
                         ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                        mediaResolution: 'MEDIA_RESOLUTION_HIGH',
                         temperature: 1.0,
                         topK: 64,
                         topP: 0.95
