@@ -6,6 +6,7 @@ import InfiniteCanvas from './components/InfiniteCanvas';
 import VideoWorkflow from '../video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import WhiskSidebar from './components/whisk/WhiskSidebar';
 import { WhiskService } from '@/services/WhiskService';
@@ -20,7 +21,22 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         setPrompt, studioControls,
         addToHistory, currentProjectId,
         userProfile, whiskState
-    } = useStore();
+    } = useStore(useShallow(state => ({
+        viewMode: state.viewMode,
+        setViewMode: state.setViewMode,
+        selectedItem: state.selectedItem,
+        setSelectedItem: state.setSelectedItem,
+        generationMode: state.generationMode,
+        setGenerationMode: state.setGenerationMode,
+        pendingPrompt: state.pendingPrompt,
+        setPendingPrompt: state.setPendingPrompt,
+        setPrompt: state.setPrompt,
+        studioControls: state.studioControls,
+        addToHistory: state.addToHistory,
+        currentProjectId: state.currentProjectId,
+        userProfile: state.userProfile,
+        whiskState: state.whiskState
+    })));
     // const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
