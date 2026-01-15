@@ -8,7 +8,6 @@ import { LayersPanel } from './components/LayersPanel';
 import { AIGenerationDialog } from './components/AIGenerationDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save } from 'lucide-react';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, Layers, Sticker, Wand2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
@@ -16,22 +15,6 @@ import { MerchCard } from './components/MerchCard';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
-
-// UI Components
-const IconButton = ({ icon, onClick, label, disabled }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean }) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        className={cn(
-            "p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
-            disabled && "opacity-30 cursor-not-allowed"
-        )}
-        aria-label={label}
-        title={label}
-    >
-        {icon}
-    </button>
-);
 
 const ColorSwatch = ({ color, active, onClick, className }: { color: string, active?: boolean, onClick: () => void, className?: string }) => (
     <button
@@ -45,36 +28,6 @@ const ColorSwatch = ({ color, active, onClick, className }: { color: string, act
         aria-label={`Select color ${color}`}
         title={`Select color ${color}`}
     />
-);
-
-const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
-    <button
-        onClick={onClick}
-        data-testid={dataTestId}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${active
-            ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
-            : 'text-neutral-400 hover:text-white hover:bg-white/10'
-            }`}
-    >
-        {icon}
-        <span>{label}</span>
-    </button>
-);
-
-const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
-    <button
-        onClick={onClick}
-        className={cn(
-            "flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200",
-            active
-                ? 'bg-yellow-400 border-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]'
-                : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/20 hover:text-white'
-        )}
-        aria-label={label}
-    >
-        {icon}
-        <span className="text-[10px] font-bold mt-1 uppercase tracking-tight">{label}</span>
-    </button>
 );
 
 const LayerItem = ({ label, active, visible, locked }: { label: string, active?: boolean, visible?: boolean, locked?: boolean }) => (
@@ -468,35 +421,45 @@ export default function MerchDesigner() {
 }
 
 // UI Components
-const IconButton = ({ icon, onClick, disabled, title }: { icon: React.ReactNode, onClick: () => void, disabled?: boolean, title?: string }) => (
+const IconButton = ({ icon, onClick, label, disabled, title }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean, title?: string }) => (
     <button
         onClick={onClick}
         disabled={disabled}
+        className={cn(
+            "p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
+            disabled && "opacity-30 cursor-not-allowed"
+        )}
+        aria-label={label || title}
         title={title}
-        className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
     >
         {icon}
     </button>
 );
 
-const ModeToggle = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
+const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
     <button
         onClick={onClick}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-            active
-                ? 'bg-[#FFE135] text-black shadow-lg shadow-[#FFE135]/20'
-                : 'text-neutral-400 hover:text-white hover:bg-white/10'
-        }`}
+        data-testid={dataTestId}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${active
+            ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
+            : 'text-neutral-400 hover:text-white hover:bg-white/10'
+            }`}
     >
         {icon}
         <span>{label}</span>
     </button>
 );
 
-const ToolButton = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
+const ToolButton = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) => (
     <button
         onClick={onClick}
-        className="flex-1 flex flex-col items-center justify-center p-3 rounded-xl border bg-neutral-900 border-white/5 text-neutral-400 hover:border-[#FFE135]/50 hover:text-[#FFE135] hover:bg-neutral-800 transition-all"
+        className={cn(
+            "flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200",
+            active
+                ? 'bg-yellow-400 border-yellow-400 text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]'
+                : 'bg-neutral-900 border-white/5 text-neutral-400 hover:border-white/20 hover:text-white'
+        )}
+        aria-label={label}
     >
         {icon}
         <span className="text-[10px] font-bold mt-1 uppercase tracking-tight">{label}</span>

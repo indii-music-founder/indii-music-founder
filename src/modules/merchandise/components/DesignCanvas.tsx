@@ -437,7 +437,6 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         });
     }, [canvasRef]);
 
-    const addText = useCallback((text: string = 'Your Text', options?: Partial<fabric.ITextOptions>) => {
     const addText = useCallback((text: string = 'Your Text', options?: any) => {
         if (!canvasRef.current) return;
 
