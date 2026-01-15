@@ -193,8 +193,8 @@ export default function VideoWorkflow() {
             } else {
                 results = await VideoGeneration.generateVideo({
                     prompt: localPrompt,
-                    resolution: studioControls.resolution as any,
-                    aspectRatio: studioControls.aspectRatio as any,
+                    resolution: studioControls.resolution,
+                    aspectRatio: studioControls.aspectRatio,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     fps: studioControls.fps,

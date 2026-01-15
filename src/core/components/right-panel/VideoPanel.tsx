@@ -3,7 +3,12 @@ import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus,
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { motion } from 'framer-motion';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+import { z } from 'zod';
 import { useStore } from '../../store';
+
+type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
+type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 import { useToast } from '@/core/context/ToastContext';
 
 interface VideoPanelProps {
@@ -42,8 +47,8 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 // Trigger Single Shot
                 results = await VideoGeneration.generateVideo({
                     prompt: prompt,
-                    aspectRatio: studioControls.aspectRatio as any,
-                    resolution: studioControls.resolution as any,
+                    aspectRatio: studioControls.aspectRatio,
+                    resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     duration: studioControls.duration,
@@ -172,14 +177,15 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             <div className="relative group">
                                 <select
                                     value={studioControls.aspectRatio}
-                                    onChange={(e) => setStudioControls({ aspectRatio: e.target.value })}
+                                    onChange={(e) => setStudioControls({ aspectRatio: e.target.value as VideoAspectRatio })}
                                     data-testid="aspect-ratio-select"
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
                                     <option value="16:9" data-testid="aspect-ratio-option-16-9">16:9 Landscape</option>
                                     <option value="1:1" data-testid="aspect-ratio-option-1-1">1:1 Square</option>
                                     <option value="9:16" data-testid="aspect-ratio-option-9-16">9:16 Portrait</option>
-                                    <option value="21:9" data-testid="aspect-ratio-option-21-9">21:9 Ultrawide</option>
+                                    <option value="4:3">4:3 Standard</option>
+                                    <option value="3:4">3:4 Vertical</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                             </div>
@@ -189,14 +195,15 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             <div className="relative group">
                                 <select
                                     value={studioControls.resolution || '1024x1024'}
-                                    onChange={(e) => setStudioControls({ resolution: e.target.value })}
+                                    onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
                                     data-testid="resolution-select"
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
                                     <option value="1024x1024" data-testid="resolution-option-1k">1K (Square)</option>
                                     <option value="1280x720" data-testid="resolution-option-hd">HD (720p)</option>
                                     <option value="1920x1080" data-testid="resolution-option-fhd">FHD (1080p)</option>
-                                    <option value="3840x2160" data-testid="resolution-option-4k">4K (UHD)</option>
+                                    <option value="1080x1920">Vertical (1080x1920)</option>
+                                    <option value="720x1280">Vertical (720x1280)</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                             </div>

@@ -38,8 +38,8 @@ const LayerProperties: React.FC<{
     const [localColor, setLocalColor] = useState(
         layer.type === 'text' ? ((layer.fabricObject as any).fill || '#FFE135') : '#FFE135'
     );
-    const [localBlendMode, setLocalBlendMode] = useState(
-        layer.fabricObject.globalCompositeOperation || 'source-over'
+    const [localBlendMode, setLocalBlendMode] = useState<GlobalCompositeOperation>(
+        (layer.fabricObject.globalCompositeOperation as GlobalCompositeOperation) || 'source-over'
     );
 
     // Debounced updaters
@@ -105,8 +105,9 @@ const LayerProperties: React.FC<{
                                 type="color"
                                 value={localColor}
                                 onChange={(e) => {
-                                    setLocalColor(e.target.value);
-                                    onUpdateProperty?.(layer, 'fill', e.target.value);
+                                    const value = e.target.value;
+                                    setLocalColor(value);
+                                    onUpdateProperty?.(layer, 'fill', value);
                                 }}
                                 className="w-full h-8 bg-neutral-900 border border-white/10 rounded cursor-pointer"
                             />
@@ -120,8 +121,9 @@ const LayerProperties: React.FC<{
                     <select
                         value={localBlendMode}
                         onChange={(e) => {
-                            setLocalBlendMode(e.target.value as any);
-                            onUpdateProperty?.(layer, 'globalCompositeOperation', e.target.value);
+                            const value = e.target.value as GlobalCompositeOperation;
+                            setLocalBlendMode(value);
+                            onUpdateProperty?.(layer, 'globalCompositeOperation', value);
                         }}
                         className="w-full bg-neutral-900 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#FFE135]"
                     >

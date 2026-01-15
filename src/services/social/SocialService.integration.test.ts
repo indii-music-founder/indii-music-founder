@@ -47,7 +47,6 @@ describe('SocialService Integration', () => {
         const validPost = {
             platform: 'Twitter' as const,
             copy: 'Valid copy',
-            imageAsset: undefined as any,
             day: 1,
             scheduledTime: Date.now()
         };
@@ -71,7 +70,6 @@ describe('SocialService Integration', () => {
         const invalidPost = {
             platform: 'Twitter' as const,
             copy: '', // Invalid: empty string
-            imageAsset: undefined as any,
             day: 1,
             scheduledTime: Date.now()
         };

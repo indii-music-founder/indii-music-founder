@@ -53,7 +53,7 @@ export interface ScheduledPost {
     id: string;
     platform: 'Twitter' | 'Instagram' | 'LinkedIn';
     copy: string;
-    imageAsset: ImageAsset;
+    imageAsset?: ImageAsset;
     day: number; // Keep for backward compatibility or relative scheduling
     scheduledTime?: number; // Changed to number (timestamp) for serialization
     status: CampaignStatus;

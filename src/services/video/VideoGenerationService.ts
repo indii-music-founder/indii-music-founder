@@ -13,7 +13,10 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { delay } from '@/utils/async';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { VideoGenerationOptionsSchema, VideoGenerationOptions } from '@/modules/video/schemas';
+import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
+import { z } from 'zod';
+
+type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
 export class VideoGenerationService {
 
@@ -71,15 +74,15 @@ export class VideoGenerationService {
         return prompt;
     }
 
-    private determineTargetAspectRatio(options: { aspectRatio?: string, userProfile?: UserProfile }): string | undefined {
+    private determineTargetAspectRatio(options: { aspectRatio?: string, userProfile?: UserProfile }): VideoAspectRatio | undefined {
         // 1. Explicit override takes precedence
-        if (options.aspectRatio) return options.aspectRatio;
+        if (options.aspectRatio) return options.aspectRatio as VideoAspectRatio;
 
         // 2. Fallback to Distributor Constraints
         if (options.userProfile) {
             const constraints = getVideoConstraints(options.userProfile);
             if (constraints.canvas) {
-                return constraints.canvas.aspectRatio;
+                return constraints.canvas.aspectRatio as VideoAspectRatio;
             }
         }
 
@@ -131,7 +134,7 @@ export class VideoGenerationService {
 
         const { jobId } = await this.triggerVideoGeneration({
             ...options,
-            aspectRatio: targetAspectRatio as any, // Cast to match stricter enum if needed
+            aspectRatio: targetAspectRatio,
             prompt: enrichedPrompt,
             orgId
         });
