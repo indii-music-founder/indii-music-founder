@@ -613,19 +613,7 @@ export const generateImageV3 = functions
 
         try {
             const modelId = "gemini-3-pro-image-preview";
-
-            // Use Vertex AI IAM authentication instead of API key
-            // This resolves 403 Permission Denied errors with Gemini 3 Pro Image
-            const auth = new GoogleAuth({
-                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-            });
-
-            const client = await auth.getClient();
-            const projectId = await auth.getProjectId();
-            const accessToken = await client.getAccessToken();
-            const location = 'us-central1';
-
-            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [{ text: prompt }];
             if (images) {
@@ -642,7 +630,6 @@ export const generateImageV3 = functions
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${accessToken.token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -651,6 +638,7 @@ export const generateImageV3 = functions
                         responseModalities: ["TEXT", "IMAGE"],
                         candidateCount: count || 1,
                         ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                        mediaResolution: 'MEDIA_RESOLUTION_HIGH',
                         temperature: 1.0,
                         topK: 64,
                         topP: 0.95
@@ -660,22 +648,17 @@ export const generateImageV3 = functions
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("Vertex AI Error:", response.status, errorText);
-                throw new functions.https.HttpsError('internal', `Vertex AI Error: ${response.status} - ${errorText}`);
+                console.error("Google AI Error:", response.status, errorText);
+                throw new functions.https.HttpsError('internal', `Google AI Error: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-
-            // Vertex AI response format differs slightly, handle both formats
-            const candidates = result.predictions || result.candidates || [];
-            const processedImages = candidates.flatMap((c: any) =>
-                (c.content?.parts || c.candidates?.[0]?.content?.parts || [])
-                    .filter((p: any) => p.inlineData)
-                    .map((p: any) => ({
-                        bytesBase64Encoded: p.inlineData.data,
-                        mimeType: p.inlineData.mimeType
-                    }))
-            );
+            const processedImages = (result.candidates?.[0]?.content?.parts || [])
+                .filter((p: any) => p.inlineData)
+                .map((p: any) => ({
+                    bytesBase64Encoded: p.inlineData.data,
+                    mimeType: p.inlineData.mimeType || "image/png"
+                }));
 
             return { images: processedImages };
         } catch (error: any) {
@@ -710,17 +693,7 @@ export const editImage = functions
         try {
             const modelId = "gemini-3-pro-image-preview";
 
-            // Use Vertex AI IAM authentication instead of API key for consistency
-            const auth = new GoogleAuth({
-                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-            });
-
-            const client = await auth.getClient();
-            const projectId = await auth.getProjectId();
-            const accessToken = await client.getAccessToken();
-            const location = 'us-central1';
-
-            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [
                 {
@@ -756,7 +729,6 @@ export const editImage = functions
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${accessToken.token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -766,21 +738,18 @@ export const editImage = functions
                     }],
                     generationConfig: {
                         responseModalities: ["IMAGE"],
+                        temperature: 1.0
                     }
                 }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new functions.https.HttpsError('internal', `Vertex AI Error: ${response.status} - ${errorText}`);
+                throw new functions.https.HttpsError('internal', `Google AI Error: ${response.status} - ${errorText}`);
             }
 
             const result = await response.json();
-
-            // Normalize response for frontend
-            const candidates = result.predictions || result.candidates || [];
-
-            return { candidates };
+            return { candidates: result.candidates };
 
         } catch (error: unknown) {
             console.error("Function Error:", error);

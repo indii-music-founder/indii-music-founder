@@ -34,7 +34,9 @@ export const DirectorAgent: AgentConfig = {
                     properties: {
                         prompt: { type: "STRING", description: "The visual description." },
                         count: { type: "NUMBER", description: "Number of images (default 1)." },
-                        negativePrompt: { type: "STRING", description: "What to avoid." }
+                        negativePrompt: { type: "STRING", description: "What to avoid." },
+                        aspectRatio: { type: "STRING", description: "Aspect ratio (e.g., '16:9', '1:1', '9:16')." },
+                        resolution: { type: "STRING", description: "Resolution (e.g., '1024x1024')." }
                     },
                     required: ["prompt"]
                 }

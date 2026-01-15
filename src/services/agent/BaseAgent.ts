@@ -437,7 +437,13 @@ ${task}
         ]).slice(0, 12);
 
         const allTools: ToolDefinition[] = allFunctions.length > 0
-            ? [{ functionDeclarations: allFunctions }]
+            ? [{
+                functionDeclarations: allFunctions.map(fn => ({
+                    name: fn.name,
+                    description: fn.description,
+                    parameters: fn.parameters
+                }))
+            }]
             : [];
 
         try {
