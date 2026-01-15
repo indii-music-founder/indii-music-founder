@@ -18,7 +18,7 @@ import {
   EarningsSummarySchema,
   type EarningsSummary as ValidatedEarningsSummary
 } from '@/services/revenue/schema';
-import { ExpenseSchema, Expense } from '@/modules/finance/schemas';
+import { ExpenseSchema, type Expense } from '@/modules/finance/schemas';
 
 export interface EarningsSummary {
   totalEarnings: number;
@@ -37,7 +37,7 @@ export interface EarningsSummary {
   }[];
 }
 
-export { Expense };
+export type { Expense };
 
 export class FinanceService {
   private readonly EXPENSES_COLLECTION = 'expenses';
@@ -121,7 +121,7 @@ export class FinanceService {
       // Zod Validation
       const validation = ExpenseSchema.safeParse(expense);
       if (!validation.success) {
-          throw new AppException(AppErrorCode.INVALID_ARGUMENT, `Invalid expense data: ${validation.error.message}`);
+        throw new AppException(AppErrorCode.INVALID_ARGUMENT, `Invalid expense data: ${validation.error.message}`);
       }
 
       const validExpense = validation.data;

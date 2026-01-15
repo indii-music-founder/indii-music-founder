@@ -37,9 +37,9 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
 
         // 4. Ensure Agent Window is Open
         await page.evaluate(() => {
-            // @ts-ignore
+            // @ts-expect-error - Testing Environment Window Property
             if (window.useStore) {
-                // @ts-ignore
+                // @ts-expect-error - Testing Environment Window Property
                 const store = window.useStore.getState();
                 if (!store.isAgentOpen) {
                     store.toggleAgentWindow();
@@ -55,7 +55,7 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
     test('should handle wide markdown tables without breaking layout ("The Unbreakable Table")', async ({ page }) => {
         // Inject a wide table
         await page.evaluate(() => {
-             // @ts-ignore
+            // @ts-expect-error - Testing Environment Window Property
             const store = window.useStore.getState();
 
             const wideTable = `
@@ -105,7 +105,7 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
     test('should handle long code blocks without breaking layout', async ({ page }) => {
         // Inject a long code block
         await page.evaluate(() => {
-             // @ts-ignore
+            // @ts-expect-error - Testing Environment Window Property
             const store = window.useStore.getState();
 
             const longCode = `
@@ -142,7 +142,7 @@ function thisIsAVeryLongFunctionNameThatShouldDefinitelyOverflowTheViewportIfItD
         console.log(`📱 Code Container: scrollWidth=${scrollWidth}, clientWidth=${clientWidth}`);
         expect(scrollWidth).toBeGreaterThan(clientWidth);
 
-         // Verify BODY does NOT scroll horizontally
+        // Verify BODY does NOT scroll horizontally
         const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
         const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
 
