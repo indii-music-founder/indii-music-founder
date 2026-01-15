@@ -11,6 +11,7 @@ import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image"
 import { GoogleAuth } from "google-auth-library";
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
+import { FUNCTION_AI_MODELS } from "./config/models";
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -612,7 +613,7 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
-            const modelId = "gemini-3-pro-image-preview";
+            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [{ text: prompt }];
@@ -691,7 +692,7 @@ export const editImage = functions
         const { image, mask, prompt, referenceImage } = validation.data;
 
         try {
-            const modelId = "gemini-3-pro-image-preview";
+            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 

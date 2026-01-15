@@ -127,12 +127,19 @@ export class ImageGenerationService {
                     });
                 }
             }
-        } catch (err) {
-            console.error("Image Generation Error:", err);
+        } catch (err: any) {
+            console.error("❌ Image Generation Error:", err);
+            console.error("Error details:", {
+                message: err?.message,
+                code: err?.code,
+                details: err?.details,
+                stack: err?.stack?.substring(0, 500)
+            });
 
             // MOCK FALLBACK FOR DEV/DEMO (When Cloud Function fails or permissions deny)
             if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-                console.warn("Using Mock Fallback for Image Generation");
+                console.warn("⚠️ Using Mock Fallback for Image Generation");
+                console.warn("This means the Cloud Function call failed. Check the error above.");
                 // Return a generated placeholder
                 const mockId = crypto.randomUUID();
                 results.push({
