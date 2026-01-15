@@ -10,6 +10,7 @@ import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image"
 
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
+import { generateVideoFn } from "./lib/video_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
 
 // Initialize Firebase Admin
@@ -275,6 +276,8 @@ export const triggerLongFormVideoJob = functions
             const limits = TIER_LIMITS[userTier];
             const durationNum = parseFloat((totalDuration || 0).toString());
 
+            // GOD MODE: Bypass for Builder
+            const isGodMode = context.auth?.token?.email === 'the.walking.agency.det@gmail.com';
             // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
             const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
             const isGodMode = context.auth?.token?.admin === true ||
@@ -471,6 +474,7 @@ export const inngestApi = functions
         const inngestClient = getInngestClient();
 
         // 1. Single Video Generation Logic using Veo
+        const generateVideo = generateVideoFn(inngestClient, geminiApiKey);
         const generateVideoFn = inngestClient.createFunction(
             { id: "generate-video-logic" },
             { event: "video/generate.requested" },
@@ -611,14 +615,14 @@ export const inngestApi = functions
         );
 
         // 2. Long Form Video Generation Logic (Daisychaining)
-        const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey);
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
 
