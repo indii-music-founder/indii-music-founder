@@ -11,6 +11,8 @@ import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
+import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
+import { PerformanceOverlay } from './components/PerformanceOverlay';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -64,6 +66,9 @@ export default function MerchDesigner() {
         designId,
         { interval: 30000, enabled: true }
     );
+
+    // Performance monitoring (dev mode only)
+    const performanceMetrics = usePerformanceMonitor(fabricCanvasRef.current);
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -492,6 +497,11 @@ export default function MerchDesigner() {
                     onExport={handleExport}
                     onCancel={() => setShowExportDialog(false)}
                 />
+            )}
+
+            {/* Performance Overlay (dev mode only) */}
+            {import.meta.env.DEV && viewMode === 'design' && (
+                <PerformanceOverlay metrics={performanceMetrics} />
             )}
         </MerchLayout>
     );

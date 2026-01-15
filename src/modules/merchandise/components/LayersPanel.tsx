@@ -117,8 +117,27 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                             return (
                                 <div
                                     key={layer.id}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Layer ${layer.name}, ${layer.type}, ${layer.visible ? 'visible' : 'hidden'}, ${layer.locked ? 'locked' : 'unlocked'}`}
+                                    aria-selected={isSelected}
                                     onClick={() => onSelectLayer(layer)}
-                                    className={`group relative p-2 rounded-lg cursor-pointer transition-all ${
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            onSelectLayer(layer);
+                                        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                                            e.preventDefault();
+                                            onDeleteLayer(layer);
+                                        } else if (e.key === 'ArrowUp' && index > 0) {
+                                            e.preventDefault();
+                                            onSelectLayer(displayLayers[index - 1]);
+                                        } else if (e.key === 'ArrowDown' && index < displayLayers.length - 1) {
+                                            e.preventDefault();
+                                            onSelectLayer(displayLayers[index + 1]);
+                                        }
+                                    }}
+                                    className={`group relative p-2 rounded-lg cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50 ${
                                         isSelected
                                             ? 'bg-[#FFE135]/20 border border-[#FFE135]/40'
                                             : 'bg-neutral-900/50 hover:bg-neutral-800/50 border border-transparent hover:border-white/10'
@@ -151,7 +170,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                                 e.stopPropagation();
                                                 onToggleVisibility(layer);
                                             }}
-                                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                                            aria-label={layer.visible ? `Hide layer ${layer.name}` : `Show layer ${layer.name}`}
+                                            className="p-1 hover:bg-white/10 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50"
                                             title={layer.visible ? 'Hide' : 'Show'}
                                         >
                                             {layer.visible ? (
@@ -167,7 +187,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                                 e.stopPropagation();
                                                 onToggleLock(layer);
                                             }}
-                                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                                            aria-label={layer.locked ? `Unlock layer ${layer.name}` : `Lock layer ${layer.name}`}
+                                            className="p-1 hover:bg-white/10 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50"
                                             title={layer.locked ? 'Unlock' : 'Lock'}
                                         >
                                             {layer.locked ? (
@@ -184,7 +205,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                                 onReorderLayer(layer, 'up');
                                             }}
                                             disabled={index === 0}
-                                            className="p-1 hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                            aria-label={`Move layer ${layer.name} up`}
+                                            className="p-1 hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50"
                                             title="Move up"
                                         >
                                             <ChevronUp size={12} className="text-neutral-400 hover:text-white" />
@@ -197,7 +219,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                                 onReorderLayer(layer, 'down');
                                             }}
                                             disabled={index === displayLayers.length - 1}
-                                            className="p-1 hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                            aria-label={`Move layer ${layer.name} down`}
+                                            className="p-1 hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50"
                                             title="Move down"
                                         >
                                             <ChevronDown size={12} className="text-neutral-400 hover:text-white" />
@@ -209,7 +232,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                                 e.stopPropagation();
                                                 onDeleteLayer(layer);
                                             }}
-                                            className="p-1 hover:bg-red-500/20 rounded transition-colors ml-auto"
+                                            aria-label={`Delete layer ${layer.name}`}
+                                            className="p-1 hover:bg-red-500/20 rounded transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-red-500/50"
                                             title="Delete"
                                         >
                                             <Trash2 size={12} className="text-neutral-400 hover:text-red-400" />
