@@ -8,7 +8,6 @@ import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image";
 
-import { GoogleAuth } from "google-auth-library";
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { FUNCTION_AI_MODELS } from "./config/models";
@@ -458,10 +457,11 @@ export const renderVideo = functions
  */
 export const inngestApi = functions
     .runWith({
-        secrets: [inngestSigningKey, inngestEventKey],
+        secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
         timeoutSeconds: 540 // 9 minutes
     })
-    .https.onRequest((req, res) => {
+
+    .https.onRequest(async (req, res) => {
         const inngestClient = getInngestClient();
 
         // 1. Single Video Generation Logic using Veo
@@ -470,6 +470,7 @@ export const inngestApi = functions
             { event: "video/generate.requested" },
             async ({ event, step }) => {
                 const { jobId, prompt, userId, options } = event.data;
+                console.log(`[Inngest] Starting video generation for Job: ${jobId}`);
 
                 try {
                     // Update status to processing
@@ -480,19 +481,11 @@ export const inngestApi = functions
                         }, { merge: true });
                     });
 
-                    // Generate Video via Vertex AI (Veo)
-                    const videoUri = await step.run("generate-veo-video", async () => {
-                        const auth = new GoogleAuth({
-                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                        });
-
-                        const client = await auth.getClient();
-                        const projectId = await auth.getProjectId();
-                        const accessToken = await client.getAccessToken();
-                        const location = 'us-central1';
-                        const modelId = 'veo-3.1-generate-preview';
-
-                        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+                    // Start Video Generation Operation
+                    const operation = await step.run("trigger-google-ai-video", async () => {
+                        const modelId = FUNCTION_AI_MODELS.VIDEO.GENERATION;
+                        const apiKey = geminiApiKey.value();
+                        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`;
 
                         const requestBody = {
                             instances: [{ prompt: prompt }],
@@ -500,46 +493,88 @@ export const inngestApi = functions
                                 sampleCount: 1,
                                 videoLength: options?.duration || options?.durationSeconds || "5s",
                                 aspectRatio: options?.aspectRatio || "16:9"
-                            }
+                            },
                         };
 
                         const response = await fetch(endpoint, {
                             method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken.token}`,
-                                'Content-Type': 'application/json'
-                            },
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(requestBody)
                         });
 
                         if (!response.ok) {
                             const errorText = await response.text();
-                            throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
+                            throw new Error(`Google AI Trigger Error: ${response.status} ${errorText}`);
                         }
 
                         const result = await response.json();
-                        const predictions = result.predictions;
+                        if (!result.name) throw new Error("No operation name returned from Google AI");
+                        return result;
+                    });
 
-                        if (!predictions || predictions.length === 0) {
-                            throw new Error("No predictions returned from Veo API");
+                    const operationName = operation.name;
+                    console.log(`[Inngest] Operation started: ${operationName}`);
+
+                    // Polling Loop
+                    let isCompleted = false;
+                    let attempts = 0;
+                    const maxAttempts = 60; // 5 minutes (5s * 60)
+                    let finalResult = null;
+
+                    while (!isCompleted && attempts < maxAttempts) {
+                        attempts++;
+
+                        // Wait 5 seconds using Inngest sleep (better than setTimeout)
+                        await step.sleep(`wait-5s-${attempts}`, "5s");
+
+                        finalResult = await step.run(`check-status-${attempts}`, async () => {
+                            const apiKey = geminiApiKey.value();
+                            const statusEndpoint = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`;
+
+                            const statusResponse = await fetch(statusEndpoint);
+                            if (!statusResponse.ok) return null;
+
+                            const statusData = await statusResponse.json();
+                            if (statusData.done) return statusData;
+                            return null;
+                        });
+
+                        if (finalResult && finalResult.done) {
+                            isCompleted = true;
+                        }
+                    }
+
+                    if (!isCompleted || !finalResult || !finalResult.response) {
+                        throw new Error(`Video generation timed out after ${attempts} attempts`);
+                    }
+
+                    // Process Result
+                    const videoUri = await step.run("process-video-output", async () => {
+                        const responseData = finalResult.response;
+                        const outputs = responseData.outputs;
+
+                        if (!outputs || outputs.length === 0) {
+                            throw new Error("No outputs found in operation response");
                         }
 
-                        const prediction = predictions[0];
+                        const output = outputs[0];
 
-                        // Handle response (Base64 or URI)
-                        if (prediction.bytesBase64Encoded) {
+                        // If it returns bytes
+                        if (output.video && output.video.bytesBase64Encoded) {
                             const bucket = admin.storage().bucket();
                             const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                            await file.save(Buffer.from(output.video.bytesBase64Encoded, 'base64'), {
                                 metadata: { contentType: 'video/mp4' },
                                 public: true
                             });
                             return file.publicUrl();
                         }
 
-                        if (prediction.videoUri) return prediction.videoUri;
-                        if (prediction.gcsUri) return prediction.gcsUri;
-                        throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
+                        // If it returns a URI directly
+                        if (output.videoUri) return output.videoUri;
+                        if (output.gcsUri) return output.gcsUri;
+
+                        throw new Error("Could not find video data or URI in output: " + JSON.stringify(output));
                     });
 
                     // Update status to complete
@@ -555,6 +590,7 @@ export const inngestApi = functions
                     return { success: true, videoUrl: videoUri };
 
                 } catch (error: any) {
+                    console.error(`[Inngest] Error in Video Generation (${jobId}):`, error);
                     await step.run("update-status-failed", async () => {
                         await admin.firestore().collection("videoJobs").doc(jobId).set({
                             status: "failed",
@@ -571,8 +607,6 @@ export const inngestApi = functions
         const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
-        // Register Long Form Functions
-
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({

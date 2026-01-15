@@ -12,6 +12,9 @@ export const FUNCTION_AI_MODELS = {
     TEXT: {
         FAST: 'gemini-3-flash-preview',
         PRO: 'gemini-3-pro-preview',
+    },
+    VIDEO: {
+        GENERATION: 'veo-3.1-generate-preview',
     }
 } as const;
 

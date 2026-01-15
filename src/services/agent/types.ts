@@ -183,20 +183,9 @@ export interface AgentConfig {
     functions?: Record<string, AnyToolFunction>;
 }
 
-// ============================================================================
-// Agent Execution Types
-// ============================================================================
-
-export interface AgentExecutionEvent {
-    type: 'token' | 'thought' | 'tool' | 'error' | 'complete';
-    content: string;
-    toolName?: string;
-    toolArgs?: ToolFunctionArgs;
-    toolResult?: ToolFunctionResult | string;
-}
-
-export interface AgentExecutionResult {
+export interface AgentResponse {
     text: string;
+    data?: unknown;
     toolCalls?: Array<{
         name: string;
         args: ToolFunctionArgs;
@@ -211,4 +200,13 @@ export interface AgentExecutionResult {
     };
 }
 
-export type AgentResponse = AgentExecutionResult;
+export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;
+
+export interface SpecializedAgent {
+    id: string;
+    name: string;
+    description: string;
+    color: string;
+    category: AgentCategory;
+    execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
+}

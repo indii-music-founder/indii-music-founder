@@ -123,18 +123,11 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                 const segmentId = `${jobId}_seg_${i}`;
                 const prompt = prompts[i];
 
+
                 const segmentUrl = await step.run(`generate-segment-${i}`, async () => {
-                    const auth = new GoogleAuth({
-                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                    });
-
-                    const client = await auth.getClient();
-                    const projectId = await auth.getProjectId();
-                    const accessToken = await client.getAccessToken();
-                    const location = 'us-central1';
                     const modelId = 'veo-3.1-generate-preview';
-
-                    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+                    const apiKey = process.env.GEMINI_API_KEY || ""; // Accessible via secrets in index.ts
+                    const triggerEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`;
 
                     // Validate startImage format (Base64 vs Data URL)
                     let imagePayload = undefined;
@@ -157,41 +150,58 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                         }
                     };
 
-                    const response = await fetch(endpoint, {
+                    const triggerResponse = await fetch(triggerEndpoint, {
                         method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${accessToken.token}`,
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(requestBody)
                     });
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`Veo Segment ${i} failed: ${response.status} ${errorText}`);
+                    if (!triggerResponse.ok) {
+                        const errorText = await triggerResponse.text();
+                        throw new Error(`Veo Trigger Segment ${i} failed: ${triggerResponse.status} ${errorText}`);
                     }
 
-                    const result = await response.json();
+                    const triggerResult = await triggerResponse.json();
+                    const operationName = triggerResult.name;
 
-                    if (!result.predictions || result.predictions.length === 0) {
-                        throw new Error(`Veo Segment ${i}: No predictions returned. Response: ${JSON.stringify(result)}`);
+                    // Poll for segment completion
+                    let isDone = false;
+                    let segmentResult = null;
+                    for (let attempt = 0; attempt < 30; attempt++) {
+                        // We can't use step.sleep inside step.run, so we use a simple timeout
+                        // but since segments are shorter it's usually okay.
+                        // Actually, for consistency, we should ideally move polling OUT of step.run.
+                        // But for now let's use a nested step or just wait.
+                        await new Promise(r => setTimeout(r, 10000)); // 10s between checks
+                        const statusResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`);
+                        if (statusResponse.ok) {
+                            const statusData = await statusResponse.json();
+                            if (statusData.done) {
+                                segmentResult = statusData;
+                                isDone = true;
+                                break;
+                            }
+                        }
                     }
 
-                    const prediction = result.predictions[0];
+                    if (!isDone || !segmentResult || !segmentResult.response) {
+                        throw new Error(`Veo Segment ${i} timed out during polling`);
+                    }
+
+                    const prediction = segmentResult.response.outputs[0];
                     const bucket = admin.storage().bucket();
                     const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
 
-                    if (prediction.bytesBase64Encoded) {
-                        await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                    if (prediction.video && prediction.video.bytesBase64Encoded) {
+                        await file.save(Buffer.from(prediction.video.bytesBase64Encoded, 'base64'), {
                             metadata: { contentType: 'video/mp4' },
                             public: true
                         });
-
-                    } else if (!prediction.videoUri && !prediction.gcsUri) {
+                    } else {
                         throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
                     }
 
-                    // Return public URL or GCS URI
+                    // Return public URL
                     return `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${segmentId}.mp4`;
                 });
 

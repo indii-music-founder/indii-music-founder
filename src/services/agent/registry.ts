@@ -2,28 +2,7 @@ import { AI } from '@/services/ai/AIService'; // Keep if needed for types, thoug
 import { AI_MODELS } from '@/core/config/ai-models';
 import { AGENT_CONFIGS } from './agentConfig';
 
-import { AgentContext } from './types';
-
-export interface AgentResponse {
-    text: string;
-    data?: unknown;
-    usage?: {
-        promptTokens: number;
-        completionTokens: number;
-        totalTokens: number;
-    };
-}
-
-export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;
-
-export interface SpecializedAgent {
-    id: string;
-    name: string;
-    description: string;
-    color: string;
-    category: 'manager' | 'department' | 'specialist';
-    execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse>;
-}
+import { AgentContext, AgentResponse, AgentProgressCallback, SpecializedAgent } from './types';
 
 export class AgentRegistry {
     private agents: Map<string, SpecializedAgent> = new Map();
@@ -50,6 +29,7 @@ export class AgentRegistry {
             } as SpecializedAgent;
 
             this.registerLazy(meta, async () => {
+                console.log(`[AgentRegistry] Loading GeneralistAgent...`);
                 const { GeneralistAgent } = await import('./specialists/GeneralistAgent');
                 return new GeneralistAgent();
             });
@@ -78,8 +58,11 @@ export class AgentRegistry {
         }
 
         // Register Config-based Agents
+        console.log(`[AgentRegistry] Initializing agents from AGENT_CONFIGS. Count: ${AGENT_CONFIGS.length}`);
+
         AGENT_CONFIGS.forEach(config => {
             try {
+                console.log(`[AgentRegistry] Registering lazy loader for agent: ${config.id}`);
                 const meta = {
                     id: config.id,
                     name: config.name,
@@ -105,6 +88,7 @@ export class AgentRegistry {
     }
 
     registerLazy(meta: SpecializedAgent, loader: () => Promise<SpecializedAgent>) {
+        console.log(`[AgentRegistry] Adding lazy loader for: ${meta.id}`);
         this.metadata.set(meta.id, meta);
         this.loaders.set(meta.id, loader);
     }

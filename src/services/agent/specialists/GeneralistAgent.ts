@@ -4,6 +4,7 @@ import { useStore } from '@/core/store';
 import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AgentProgressCallback, AgentResponse } from '../types';
 
 export class GeneralistAgent extends BaseAgent {
     id = 'generalist';

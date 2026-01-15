@@ -1,8 +1,7 @@
-import { SpecializedAgent, AgentResponse, AgentProgressCallback } from './registry';
+import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
 import { TOOL_REGISTRY } from './tools';
-import { AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId } from './types';
 
 // Export types for use in definitions
 export type { AgentConfig };
