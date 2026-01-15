@@ -6,9 +6,44 @@ import dns from 'node:dns';
 import net from 'node:net';
 
 /**
+ * Expands an IPv6 address to its full 32-digit hexadecimal representation.
+ * Handles :: expansion and IPv4-mapped addresses.
+ */
+export function expandIPv6(ip: string): string {
+    // 1. Handle embedded IPv4 (e.g. ::ffff:192.168.1.1)
+    if (ip.includes('.')) {
+        const lastColon = ip.lastIndexOf(':');
+        const ipv4 = ip.substring(lastColon + 1);
+        if (net.isIP(ipv4) === 4) {
+            const parts = ipv4.split('.').map(Number);
+            const hex = parts.map(p => p.toString(16).padStart(2, '0')).join('');
+            const p1 = hex.substring(0, 4);
+            const p2 = hex.substring(4, 8);
+            const prefix = ip.substring(0, lastColon);
+            return expandIPv6(`${prefix}:${p1}:${p2}`);
+        }
+    }
+
+    // 2. Expand "::"
+    const parts = ip.split('::');
+    if (parts.length > 2) return ip; // Invalid
+
+    const head = parts[0] ? parts[0].split(':') : [];
+    const tail = parts.length > 1 ? (parts[1] ? parts[1].split(':') : []) : [];
+
+    // Total groups should be 8
+    const zerosToFill = 8 - (head.length + tail.length);
+    const zeros = new Array(zerosToFill).fill('0000');
+
+    const groups = [...head, ...zeros, ...tail];
+
+    return groups.map(g => g.padStart(4, '0')).join(':').toLowerCase();
+}
+
+/**
  * Checks if an IP address is private or reserved.
  */
-function isPrivateIP(ip: string): boolean {
+export function isPrivateIP(ip: string): boolean {
     const family = net.isIP(ip);
     if (family === 4) {
         const parts = ip.split('.').map(Number);
@@ -43,27 +78,48 @@ function isPrivateIP(ip: string): boolean {
 
         return false;
     } else if (family === 6) {
-        // Normalize IPv6 check (simplified)
-        if (ip === '::1') return true;
-        if (ip === '::') return true;
+        // Expand IPv6 to full 32-digit hex form
+        const expanded = expandIPv6(ip);
 
-        const lowerIp = ip.toLowerCase();
-        // Unique Local (fc00::/7)
-        if (lowerIp.startsWith('fc') || lowerIp.startsWith('fd')) return true;
-        // Link-Local (fe80::/10)
-        if (lowerIp.startsWith('fe8') || lowerIp.startsWith('fe9') || lowerIp.startsWith('fea') || lowerIp.startsWith('feb')) return true;
-        // Multicast (ff00::/8)
-        if (lowerIp.startsWith('ff')) return true;
+        // Loopback (::1) -> 0000:0000:0000:0000:0000:0000:0000:0001
+        if (expanded === '0000:0000:0000:0000:0000:0000:0000:0001') return true;
+
+        // Unspecified (::) -> 0000:0000:0000:0000:0000:0000:0000:0000
+        if (expanded === '0000:0000:0000:0000:0000:0000:0000:0000') return true;
+
+        // Unique Local (fc00::/7) -> fc.. or fd..
+        if (expanded.startsWith('fc') || expanded.startsWith('fd')) return true;
+
+        // Link-Local (fe80::/10) -> fe8., fe9., fea., feb.
+        const firstGroup = expanded.substring(0, 4);
+        if (['fe8', 'fe9', 'fea', 'feb'].some(prefix => firstGroup.startsWith(prefix))) return true;
+
+        // Multicast (ff00::/8) -> ff..
+        if (expanded.startsWith('ff')) return true;
 
         // IPv4 Mapped (::ffff:0:0/96)
-        if (lowerIp.includes('.')) {
-            const lastColon = lowerIp.lastIndexOf(':');
-            const ipv4Part = lowerIp.substring(lastColon + 1);
-            if (net.isIP(ipv4Part) === 4) {
-                return isPrivateIP(ipv4Part);
+        // 0000:0000:0000:0000:0000:ffff:xxxx:xxxx
+        if (expanded.startsWith('0000:0000:0000:0000:0000:ffff:')) {
+            const lastPart = expanded.substring(30);
+            const parts = lastPart.split(':');
+            const p1 = parseInt(parts[0], 16);
+            const p2 = parseInt(parts[1], 16);
+            const ip4 = `${(p1 >> 8) & 255}.${p1 & 255}.${(p2 >> 8) & 255}.${p2 & 255}`;
+            return isPrivateIP(ip4);
+        }
+
+        // IPv4 Compatible (deprecated but exists) ::0.0.0.0 (::/96)
+        // 0000:0000:0000:0000:0000:0000:xxxx:xxxx
+        if (expanded.startsWith('0000:0000:0000:0000:0000:0000:')) {
+            const lastPart = expanded.substring(30);
+            if (lastPart !== '0000:0001' && lastPart !== '0000:0000') {
+                const parts = lastPart.split(':');
+                const p1 = parseInt(parts[0], 16);
+                const p2 = parseInt(parts[1], 16);
+                const ip4 = `${(p1 >> 8) & 255}.${p1 & 255}.${(p2 >> 8) & 255}.${p2 & 255}`;
+                return isPrivateIP(ip4);
             }
         }
-        return false;
     }
     return false;
 }
