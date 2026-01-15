@@ -7,6 +7,7 @@ import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
 import { AIGenerationDialog } from './components/AIGenerationDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
+import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -42,6 +43,9 @@ export default function MerchDesigner() {
         clear,
         setBackgroundColor
     } = useCanvasControls(fabricCanvasRef);
+
+    // Canvas history hook (undo/redo)
+    const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvasRef.current);
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -202,8 +206,18 @@ export default function MerchDesigner() {
 
                             {/* Undo/Redo */}
                             <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
-                                <IconButton icon={<Undo size={16} />} onClick={() => {}} disabled />
-                                <IconButton icon={<Redo size={16} />} onClick={() => {}} disabled />
+                                <IconButton
+                                    icon={<Undo size={16} />}
+                                    onClick={undo}
+                                    disabled={!canUndo}
+                                    title="Undo (Cmd+Z)"
+                                />
+                                <IconButton
+                                    icon={<Redo size={16} />}
+                                    onClick={redo}
+                                    disabled={!canRedo}
+                                    title="Redo (Cmd+Shift+Z)"
+                                />
                             </div>
 
                             {/* Design Name */}
@@ -345,10 +359,11 @@ export default function MerchDesigner() {
 }
 
 // UI Components
-const IconButton = ({ icon, onClick, disabled }: { icon: React.ReactNode, onClick: () => void, disabled?: boolean }) => (
+const IconButton = ({ icon, onClick, disabled, title }: { icon: React.ReactNode, onClick: () => void, disabled?: boolean, title?: string }) => (
     <button
         onClick={onClick}
         disabled={disabled}
+        title={title}
         className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
     >
         {icon}
