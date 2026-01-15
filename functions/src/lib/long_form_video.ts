@@ -117,7 +117,7 @@ const DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
  * Uses Veo to generate each segment. If a startImage is provided (or extracted
  * from previous segment), it uses it for continuity.
  */
-export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.createFunction(
+export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) => inngestClient.createFunction(
     { id: "generate-long-form-video" },
     { event: "video/long_form.requested" },
     async ({ event, step }: any) => {
@@ -141,9 +141,10 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                 const prompt = prompts[i];
 
                 // FIX #2: Validate API key exists before use
-                const apiKey = process.env.GEMINI_API_KEY;
+                // Use secret instead of process.env
+                const apiKey = geminiApiKey.value();
                 if (!apiKey) {
-                    throw new Error("GEMINI_API_KEY environment variable is not set");
+                    throw new Error("GEMINI_API_KEY secret is not set");
                 }
 
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {

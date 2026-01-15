@@ -611,7 +611,7 @@ export const inngestApi = functions
         );
 
         // 2. Long Form Video Generation Logic (Daisychaining)
-        const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey);
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
         const stitchVideo = stitchVideoFn(inngestClient);
