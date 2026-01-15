@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +18,7 @@ const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module 
 
 export default function VideoWorkflow() {
     // Global State
+    // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates (like prompt keystrokes)
     const {
         generatedHistory,
         addToHistory,
@@ -29,7 +31,19 @@ export default function VideoWorkflow() {
         setPendingPrompt,
         selectedItem,
         setVideoInputs
-    } = useStore();
+    } = useStore(useShallow((state) => ({
+        generatedHistory: state.generatedHistory,
+        addToHistory: state.addToHistory,
+        setPrompt: state.setPrompt,
+        studioControls: state.studioControls,
+        currentProjectId: state.currentProjectId,
+        videoInputs: state.videoInputs,
+        currentOrganizationId: state.currentOrganizationId,
+        pendingPrompt: state.pendingPrompt,
+        setPendingPrompt: state.setPendingPrompt,
+        selectedItem: state.selectedItem,
+        setVideoInputs: state.setVideoInputs
+    })));
 
     // Editor Store
     const {

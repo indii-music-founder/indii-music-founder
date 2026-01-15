@@ -10,3 +10,6 @@
 ## 2025-05-22 - Firestore Snapshot Instability
 **Learning:** Firestore `onSnapshot` listeners combined with `doc.data()` mapping often generate new object references for *every* document on every update, breaking `React.memo`'s default shallow comparison.
 **Action:** Always implement a custom `arePropsEqual` deep comparison function for list items rendered from real-time Firestore collections to prevent full-list re-renders when single items change.
+## 2025-05-24 - Zustand Store Selectors
+**Learning:** Calling `useStore()` without selectors subscribes the component to the entire state tree. This causes re-renders on *any* state change (even unrelated ones), which is a critical bottleneck for complex root components like `VideoWorkflow`.
+**Action:** Always use granular selectors (e.g., `useStore(useShallow(state => ({ ... })))`) to subscribe only to the specific state slices a component actually needs.
