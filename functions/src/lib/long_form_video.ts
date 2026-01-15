@@ -143,6 +143,8 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                 // 1. Trigger Video Generation
                 // FIX #2: Validate API key exists before use
+                // Use secret instead of process.env
+                const apiKey = geminiApiKey.value();
                 if (!apiKey) {
                     throw new Error("GEMINI_API_KEY secret is not set");
                 }
