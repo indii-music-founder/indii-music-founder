@@ -156,6 +156,43 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             // Here we verify that we CAN detect it.
             expect(job.output.metadata.mime_type).not.toBe('video/mp4');
         });
+
+        it('should strictly respect aspect_ratio request in metadata', async () => {
+             // Setup: Job completes with valid Veo metadata
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'https://storage.googleapis.com/veo-generations/mock-video.mp4',
+                                metadata: {
+                                    duration_seconds: 6.0,
+                                    fps: 24,
+                                    mime_type: 'video/mp4',
+                                    resolution: '3840x2160' // 16:9 4K
+                                }
+                            }
+                        })
+                    });
+                }, 10);
+                return () => {};
+            });
+
+            // Simulate request with aspect ratio
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+            const job = await jobPromise;
+
+            // 16:9 check
+            expect(job.output.metadata.resolution).toBeDefined();
+            const [w, h] = job.output.metadata.resolution.split('x').map(Number);
+            const ratio = w / h;
+            expect(ratio).toBeCloseTo(16/9, 1);
+        });
     });
 
     describe('Generation Speed & Latency (Flash vs Pro)', () => {
@@ -284,6 +321,31 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             const jobPromise = service.waitForJob('lens-veo-job-id');
             vi.advanceTimersByTime(20);
             await expect(jobPromise).rejects.toThrow(/Safety violation/);
+        });
+
+        it('should handle granular SafetySettings violations without crashing', async () => {
+             // 🎥 SafetySettings Handshake
+             // Simulate a complex safety error structure that might come from Gemini
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'failed',
+                            error: 'Safety violation: [HARM_CATEGORY_DANGEROUS_CONTENT] triggered with probability [HIGH]. Generation blocked.'
+                        })
+                    });
+                }, 10);
+                return () => {};
+            });
+
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+
+            // Verify we catch it and it contains the specific category
+            await expect(jobPromise).rejects.toThrow(/HARM_CATEGORY_DANGEROUS_CONTENT/);
         });
 
         it('should handle specific Google API error codes (400/429)', async () => {
