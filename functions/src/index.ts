@@ -129,6 +129,10 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
+// Polling Constants
+const VIDEO_POLL_INTERVAL_SEC = 5;
+const VIDEO_MAX_POLL_ATTEMPTS = 60;
+
 // ----------------------------------------------------------------------------
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
@@ -494,7 +498,8 @@ export const inngestApi = functions
                             parameters: {
                                 sampleCount: 1,
                                 videoLength: options?.duration || options?.durationSeconds || "5s",
-                                aspectRatio: options?.aspectRatio || "16:9"
+                                aspectRatio: options?.aspectRatio || "16:9",
+                                ...(options?.generateAudio ? { generateAudio: true } : {})
                             },
                         };
 
@@ -520,14 +525,14 @@ export const inngestApi = functions
                     // Polling Loop
                     let isCompleted = false;
                     let attempts = 0;
-                    const maxAttempts = 60; // 5 minutes (5s * 60)
+                    const maxAttempts = VIDEO_MAX_POLL_ATTEMPTS; // 5 minutes
                     let finalResult = null;
 
                     while (!isCompleted && attempts < maxAttempts) {
                         attempts++;
 
-                        // Wait 5 seconds using Inngest sleep (better than setTimeout)
-                        await step.sleep(`wait-5s-${attempts}`, "5s");
+                        // Wait using Inngest sleep (better than setTimeout)
+                        await step.sleep(`wait-${VIDEO_POLL_INTERVAL_SEC}s-${attempts}`, `${VIDEO_POLL_INTERVAL_SEC}s`);
 
                         finalResult = await step.run(`check-status-${attempts}`, async () => {
                             const apiKey = geminiApiKey.value();
