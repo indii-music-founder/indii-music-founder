@@ -46,6 +46,7 @@ export const LongFormVideoJobSchema = z.object({
         resolution: z.string().optional(),
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
+        generateAudio: z.boolean().optional(),
     }).optional().default({})
 });
 
@@ -168,7 +169,8 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                         parameters: {
                             sampleCount: 1,
                             videoLength: `${DEFAULT_SEGMENT_DURATION_SECONDS}s`,
-                            aspectRatio: options?.aspectRatio || "16:9"
+                            aspectRatio: options?.aspectRatio || "16:9",
+                            ...(options?.generateAudio ? { generateAudio: true } : {})
                         }
                     };
 
@@ -376,7 +378,8 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                     while (extractionAttempts < maxExtractionAttempts) {
                         try {
-                            const nextStartImage = await step.run(`extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                            // 1. Trigger Frame Extraction Job
+                            const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
                                 const auth = new GoogleAuth({
                                     scopes: ['https://www.googleapis.com/auth/cloud-platform']
                                 });
@@ -387,11 +390,10 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                     const bucket = admin.storage().bucket();
                                     const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
-                                    // 1. Normalize Input URI
+                                    // Normalize Input URI
                                     const inputUri = toGcsUri(segmentUrl);
 
-                                    // FIX #6: Calculate frame extraction time dynamically
-                                    // For a 5s video, extract at 4.5s. For shorter videos, extract near the end.
+                                    // Calculate frame extraction time dynamically
                                     const videoDurationSeconds = DEFAULT_SEGMENT_DURATION_SECONDS;
                                     const extractionTime = Math.min(
                                         DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
@@ -400,7 +402,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                     const extractionSeconds = Math.floor(extractionTime);
                                     const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
 
-                                    // 2. Create Sprite Job (acting as frame extractor)
+                                    // Create Sprite Job
                                     const [job] = await transcoder.createJob({
                                         parent: transcoder.locationPath(projectId, location),
                                         job: {
@@ -422,40 +424,51 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                             }
                                         }
                                     });
-
-                                    // 3. Poll for Completion
-                                    let finalState = 'PROCESSING';
-                                    for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
-                                        await new Promise(r => setTimeout(r, FRAME_EXTRACTION_POLL_INTERVAL_MS));
-                                        try {
-                                            const [status] = await transcoder.getJob({ name: job.name });
-                                            if (status.state === 'SUCCEEDED' || status.state === 'FAILED') {
-                                                finalState = status.state as string;
-                                                break;
-                                            }
-                                        } catch (err: any) {
-                                            console.warn(`[FrameExtraction] Polling error: ${err.message}`);
-                                        }
-                                    }
-
-                                    if (finalState !== 'SUCCEEDED') {
-                                        throw new Error(`Frame extraction failed or timed out: ${finalState}`);
-                                    }
-
-                                    // 4. Download and Convert to Base64
-                                    await new Promise(r => setTimeout(r, 1000));
-                                    const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
-
-                                    if (!files || files.length === 0) {
-                                        throw new Error(`No frame file generated for segment ${i}`);
-                                    }
-
-                                    const frameFile = files[0];
-                                    const [buffer] = await frameFile.download();
-                                    return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                                    return job.name;
                                 } finally {
                                     await transcoder.close();
                                 }
+                            });
+
+                            // 2. Poll for Completion using step.sleep
+                            let finalState = 'PROCESSING';
+                            for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
+                                await step.sleep(`wait-extract-${i}-${extractionAttempts}-${j}`, `${FRAME_EXTRACTION_POLL_INTERVAL_MS / 1000}s`);
+
+                                finalState = await step.run(`poll-extract-${i}-${extractionAttempts}-${j}`, async () => {
+                                    const transcoder = new TranscoderServiceClient();
+                                    try {
+                                        const [status] = await transcoder.getJob({ name: jobName });
+                                        return status.state as string;
+                                    } catch (err: any) {
+                                        console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                        return 'PROCESSING';
+                                    } finally {
+                                        await transcoder.close();
+                                    }
+                                });
+
+                                if (finalState === 'SUCCEEDED' || finalState === 'FAILED') {
+                                    break;
+                                }
+                            }
+
+                            if (finalState !== 'SUCCEEDED') {
+                                throw new Error(`Frame extraction failed or timed out: ${finalState}`);
+                            }
+
+                            // 3. Download and Convert to Base64
+                            const nextStartImage = await step.run(`download-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                const bucket = admin.storage().bucket();
+                                const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
+
+                                if (!files || files.length === 0) {
+                                    throw new Error(`No frame file generated for segment ${i}`);
+                                }
+
+                                const frameFile = files[0];
+                                const [buffer] = await frameFile.download();
+                                return `data:image/jpeg;base64,${buffer.toString('base64')}`;
                             });
 
                             currentStartImage = nextStartImage;
@@ -499,7 +512,8 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     userId,
                     segmentUrls,
                     orgId,
-                    metadata: derivedMetadata
+                    metadata: derivedMetadata,
+                    includeAudio: !!options?.generateAudio
                 }
             });
 

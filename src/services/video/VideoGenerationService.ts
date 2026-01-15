@@ -164,7 +164,7 @@ export class VideoGenerationService {
     /**
      * Await a job to reach a terminal state (completed or failed).
      */
-    async waitForJob(jobId: string, timeoutMs: number = 300000): Promise<any> {
+    async waitForJob(jobId: string, timeoutMs: number = AI_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<any> {
         let unsub: (() => void) | undefined;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
