@@ -8,6 +8,20 @@ import { agentService } from '@/services/agent/AgentService';
 // Mock dependencies
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
+vi.mock('firebase/firestore', () => ({
+    Timestamp: {
+        now: () => ({ toMillis: () => Date.now() }),
+        fromDate: (date: Date) => ({ toMillis: () => date.getTime() }),
+    },
+    getFirestore: vi.fn(),
+    initializeFirestore: vi.fn(() => ({})),
+    persistentLocalCache: vi.fn(),
+    persistentMultipleTabManager: vi.fn(),
+    collection: vi.fn(),
+    doc: vi.fn(),
+    getDoc: vi.fn(),
+    setDoc: vi.fn(),
+}));
 vi.mock('@/services/agent/AgentService', () => ({
     agentService: {
         sendMessage: vi.fn(),
@@ -118,6 +132,61 @@ describe('CommandBar', () => {
 
         expect(mockSetModule).not.toHaveBeenCalled();
         expect(mockToggleAgentWindow).toHaveBeenCalled();
+    });
+
+    it('toggles Indii mode and updates message target when Indii button is clicked', async () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            currentModule: 'road',
+            setModule: mockSetModule,
+            toggleAgentWindow: mockToggleAgentWindow,
+            isAgentOpen: false,
+        });
+
+        render(<CommandBar />);
+
+        // Initial state: Delegate to Road
+        expect(screen.getByText('Delegate to Road')).toBeInTheDocument();
+
+        // Find the Indii toggle button
+        const indiiButton = screen.getByTitle('Talk to Indii');
+        expect(indiiButton).toBeInTheDocument();
+
+        // Click to toggle ON
+        fireEvent.click(indiiButton);
+
+        // Button should now be active
+        expect(indiiButton).toHaveAttribute('aria-pressed', 'true');
+
+        // Send a message
+        const input = screen.getByPlaceholderText('Describe your task, drop files, or take a picture...');
+        fireEvent.change(input, { target: { value: 'Hello Indii' } });
+        const submitButton = screen.getByTestId('command-bar-run-btn');
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            // Should send to 'dashboard' (Indii) because mode is active, even though module is 'road'
+            // 'dashboard' is not in knownAgentIds in the mock, so it falls back to undefined?
+            // Wait, logic is: targetId = isIndiiMode ? 'dashboard' : currentModule.
+            // knownAgentIds mock doesn't include 'dashboard'.
+            // So targetAgent = undefined.
+            // If we didn't toggle, targetId = 'road', which IS in knownAgentIds, so targetAgent = 'road'.
+
+            // So we expect undefined (default agent)
+            expect(agentService.sendMessage).toHaveBeenCalledWith('Hello Indii', undefined, undefined);
+        });
+
+        // Toggle OFF
+        fireEvent.click(indiiButton);
+        expect(indiiButton).toHaveAttribute('aria-pressed', 'false');
+
+        // Send another message
+        fireEvent.change(input, { target: { value: 'Hello Road' } });
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            // Should send to 'road' now
+            expect(agentService.sendMessage).toHaveBeenCalledWith('Hello Road', undefined, 'road');
+        });
     });
 
     it('updates button text based on current module', () => {

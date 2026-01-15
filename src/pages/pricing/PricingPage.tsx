@@ -86,7 +86,6 @@ export const PricingPage: React.FC = () => {
   const features = [
     'AI image generation',
     'AI video creation',
-    'AI music analysis',
     'Agent-powered assistance',
     'Project management',
     'Multi-format export',
@@ -121,14 +120,14 @@ export const PricingPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-bg-dark text-white flex items-center justify-center">
         <Loader2 className="animate-spin w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white">
+    <div className="min-h-screen bg-bg-dark text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <motion.div

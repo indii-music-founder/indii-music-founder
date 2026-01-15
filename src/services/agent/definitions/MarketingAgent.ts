@@ -1,6 +1,8 @@
 import { AgentConfig } from "../types";
 import systemPrompt from '@agents/marketing/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
+import { useStore } from '@/core/store';
 
 export const MarketingAgent: AgentConfig = {
     id: 'marketing',
@@ -66,6 +68,35 @@ export const MarketingAgent: AgentConfig = {
             } catch (e) {
                 return { success: false, error: (e as Error).message };
             }
+        },
+        generate_campaign_from_audio: async (args: { uploadedAudioIndex: number }) => {
+            const { uploadedAudio } = useStore.getState();
+            const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
+
+            if (!audioItem) {
+                return { success: false, error: "No audio found. Please upload audio first." };
+            }
+
+            try {
+                const fetchRes = await fetch(audioItem.url);
+                const blob = await fetchRes.blob();
+                const file = new File([blob], "audio_track.mp3", { type: blob.type });
+
+                const profile = await audioIntelligence.analyze(file);
+                const { mood, genre, marketingHooks } = profile.semantic;
+
+                return {
+                    success: true,
+                    data: {
+                        insight: `Analyzed track. Genre: ${genre.join(', ')}. Mood: ${mood.join(', ')}.`,
+                        suggested_one_liner: marketingHooks.oneLiner,
+                        keywords: marketingHooks.keywords,
+                        technical: profile.technical
+                    }
+                };
+            } catch (e: any) {
+                return { success: false, error: e.message };
+            }
         }
     },
     tools: [{
@@ -117,6 +148,17 @@ export const MarketingAgent: AgentConfig = {
                         campaignId: { type: 'STRING', description: 'The ID of the campaign to track.' }
                     },
                     required: ['campaignId']
+                }
+            },
+            {
+                name: 'generate_campaign_from_audio',
+                description: 'Analyze an audio track to generate marketing insights and campaign hooks.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        uploadedAudioIndex: { type: 'NUMBER', description: 'Index of audio file in uploads (default 0).' }
+                    },
+                    required: []
                 }
             }
         ]

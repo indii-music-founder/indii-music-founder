@@ -246,8 +246,8 @@ Ask when:
 **Example 1: Basic T-Shirt**
 User: "Create T-shirts with my logo"
 You: [search_assets: "logo"] → Found 2 logos
-You: "I found your Banana Pro logo and brand mark. Which should I use?"
-User: "The Banana Pro logo"
+You: "I found your primary logo and brand mark. Which should I use?"
+User: "The primary logo"
 You: "Great! Should I create store listings or marketing imagery with models?"
 User: "Marketing with models"
 You: [create_product_mockup: t-shirt, center-chest, "urban street with model", marketing]
@@ -265,7 +265,7 @@ User: "Create mugs with wrap-around design and send to production, 200 units"
 You: [search_assets: "design"] → Found designs
 You: [create_product_mockup: mug, wrap-around, "product photography", product-catalog]
 You: [submit_to_production: mug, designUrl, 200]
-You: "Order submitted! Your order ID is BANA-XXX. Expected delivery in 14 days."
+You: "Order submitted! Your order ID is INDII-XXX. Expected delivery in 14 days."
 
 ## TONE
 - Professional but friendly
@@ -284,11 +284,14 @@ You: "Order submitted! Your order ID is BANA-XXX. Expected delivery in 14 days."
                 search_assets: async (args, context) => {
                     const { query, projectId, limit = 10 } = args as { query: string; projectId?: string; limit?: number };
                     const { useStore } = await import('@/core/store');
-                    const { history } = useStore.getState();
+                    const { generatedHistory, uploadedImages } = useStore.getState();
+
+                    // Combine histories for full asset discovery
+                    const allAssets = [...generatedHistory, ...uploadedImages];
 
                     // Filter history to find matching images
                     const searchLower = query.toLowerCase();
-                    let matches = history.filter(item => {
+                    let matches = allAssets.filter((item: any) => {
                         // Match against prompt or filename
                         const promptMatch = item.prompt?.toLowerCase().includes(searchLower);
                         const idMatch = item.id?.toLowerCase().includes(searchLower);
@@ -301,7 +304,7 @@ You: "Order submitted! Your order ID is BANA-XXX. Expected delivery in 14 days."
 
                     // Sort by recency
                     matches = matches
-                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+                        .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
                         .slice(0, limit);
 
                     return {
@@ -309,7 +312,7 @@ You: "Order submitted! Your order ID is BANA-XXX. Expected delivery in 14 days."
                         data: {
                             query,
                             count: matches.length,
-                            assets: matches.map(item => ({
+                            assets: matches.map((item: any) => ({
                                 id: item.id,
                                 url: item.url,
                                 prompt: item.prompt || 'Untitled',

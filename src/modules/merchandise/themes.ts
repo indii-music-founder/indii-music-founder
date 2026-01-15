@@ -48,7 +48,7 @@ export const ProTheme: MerchTheme = {
         text: 'text-white',
         textSecondary: 'text-gray-400',
         accent: 'text-yellow-400',
-        accentGlow: 'shadow-yellow-500/50',
+        accentGlow: 'shadow-yellow-400/50',
     },
     effects: {
         glass: 'backdrop-blur-xl bg-opacity-40',

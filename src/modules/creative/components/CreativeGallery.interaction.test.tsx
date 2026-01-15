@@ -35,9 +35,12 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
     const mockStore = {
         generatedHistory: [mockItem],
         uploadedImages: [],
+        uploadedAudio: [],
         removeFromHistory: mockRemoveFromHistory,
         addUploadedImage: vi.fn(),
         removeUploadedImage: vi.fn(),
+        addUploadedAudio: vi.fn(),
+        removeUploadedAudio: vi.fn(),
         currentProjectId: 'p1',
         generationMode: 'image',
         setVideoInput: mockSetVideoInput,

@@ -128,7 +128,7 @@ export default function ReferenceManager() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                     {referenceImages.map((img, idx) => (
-                        <div key={idx} className="group relative aspect-square bg-[#161b22] rounded-2xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all shadow-lg hover:shadow-purple-900/20">
+                        <div key={idx} data-testid={`gallery-item-${idx}`} className="group relative aspect-square bg-[#161b22] rounded-2xl overflow-hidden border border-white/5 hover:border-purple-500/50 transition-all shadow-lg hover:shadow-purple-900/20">
                             <img
                                 src={img.url}
                                 alt={img.description}
@@ -163,7 +163,7 @@ export default function ReferenceManager() {
                 </div>
 
                 {referenceImages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-24 text-gray-500 border border-dashed border-gray-800 rounded-3xl bg-[#0d1117]/50 mt-8">
+                    <div className="flex flex-col items-center justify-center py-24 text-gray-500 border border-dashed border-gray-800 rounded-3xl bg-bg-dark/50 mt-8">
                         <div className="p-6 bg-gray-800/30 rounded-full mb-6 relative">
                             <div className="absolute inset-0 bg-purple-500/20 blur-xl rounded-full animate-pulse" />
                             <ImageIcon size={48} className="opacity-40 relative z-10" />

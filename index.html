@@ -20,8 +20,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="indiiOS" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="apple-touch-startup-image" href="/apple-splash-2048-2732.png" />
 
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileColor" content="#0f0f0f" />
@@ -39,6 +37,14 @@
 
     <!-- Critical Mobile Styles -->
     <style>
+      /* Prevent white flash on load - set dark background immediately */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #0f0f0f;
+        color: #ffffff;
+      }
+
       /* Prevent pull-to-refresh on mobile */
       body {
         overscroll-behavior-y: contain;
@@ -64,6 +70,25 @@
         --safe-area-inset-right: env(safe-area-inset-right);
         --safe-area-inset-bottom: env(safe-area-inset-bottom);
         --safe-area-inset-left: env(safe-area-inset-left);
+      }
+
+      /* Initial loading state - prevents flash of unstyled content */
+      #root:empty::before {
+        content: '';
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 48px;
+        height: 48px;
+        border: 3px solid rgba(99, 102, 241, 0.2);
+        border-top-color: rgba(99, 102, 241, 0.8);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: translate(-50%, -50%) rotate(360deg); }
       }
     </style>
   </head>

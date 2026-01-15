@@ -7,7 +7,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { ReleaseEarnings } from '@/services/ddex/types/dsr';
+import { ReleaseEarnings } from '@/services/revenue/schema';
 import { motion } from 'framer-motion';
 
 interface EarningsTableProps {

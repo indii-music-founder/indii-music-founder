@@ -1,8 +1,24 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import App from '../App';
 import { useStore } from '../store';
+
+// Mock matchMedia for JSDOM
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(), // deprecated
+        removeListener: vi.fn(), // deprecated
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+    })),
+});
 
 // Mock the store
 vi.mock('../store', () => ({
@@ -30,7 +46,6 @@ vi.mock('@/modules/touring/RoadManager', () => ({ default: () => <div data-testi
 vi.mock('@/modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
 vi.mock('@/modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
 vi.mock('@/modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
-vi.mock('@/modules/music/MusicStudio', () => ({ default: () => <div data-testid="music-studio">Music Analysis</div> }));
 vi.mock('@/modules/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
@@ -62,20 +77,30 @@ describe('Sidebar Navigation Integration', () => {
         authLoading: false,
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
+        loadSessions: vi.fn(),
         ...overrides,
     });
 
     beforeEach(() => {
         vi.clearAllMocks();
         const storeState = buildStoreState();
-        (useStore as any).mockReturnValue(storeState);
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                return selector(storeState);
+            }
+            return storeState;
+        });
         // Mock setState and getState on the store object itself for App.tsx direct usage
         (useStore as any).setState = vi.fn();
         (useStore as any).getState = vi.fn().mockReturnValue(storeState);
     });
 
     it('renders all sidebar items', () => {
-        render(<Sidebar />);
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
 
         expect(screen.getByText('Brand Manager')).toBeInTheDocument();
         expect(screen.getByText('Road Manager')).toBeInTheDocument();
@@ -90,7 +115,11 @@ describe('Sidebar Navigation Integration', () => {
     });
 
     it('calls setModule when a sidebar item is clicked', () => {
-        render(<Sidebar />);
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
 
         fireEvent.click(screen.getByText('Brand Manager'));
         expect(mockSetModule).toHaveBeenCalledWith('brand');
@@ -108,7 +137,11 @@ describe('Sidebar Navigation Integration', () => {
             currentModule: 'brand',
         });
 
-        render(<App />);
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId('brand-manager')).toBeInTheDocument();
@@ -121,7 +154,11 @@ describe('Sidebar Navigation Integration', () => {
             currentModule: 'campaign',
         });
 
-        render(<App />);
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId('campaign-dashboard')).toBeInTheDocument();
@@ -134,7 +171,11 @@ describe('Sidebar Navigation Integration', () => {
             currentModule: 'publicist',
         });
 
-        render(<App />);
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId('publicist-dashboard')).toBeInTheDocument();
@@ -147,7 +188,11 @@ describe('Sidebar Navigation Integration', () => {
             currentModule: 'publishing',
         });
 
-        render(<App />);
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId('publishing-dashboard')).toBeInTheDocument();
@@ -160,7 +205,11 @@ describe('Sidebar Navigation Integration', () => {
             currentModule: 'finance',
         });
 
-        render(<App />);
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId('finance-dashboard')).toBeInTheDocument();
@@ -173,7 +222,11 @@ describe('Sidebar Navigation Integration', () => {
             currentModule: 'licensing',
         });
 
-        render(<App />);
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
@@ -197,7 +250,11 @@ describe('Sidebar Navigation Integration', () => {
             logout: mockLogout,
         });
 
-        render(<Sidebar />);
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
 
         expect(screen.getByText('Creative Director')).toBeInTheDocument();
         expect(screen.getByText('Mock User Bio')).toBeInTheDocument();

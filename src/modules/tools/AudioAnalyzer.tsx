@@ -10,7 +10,6 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
-import { MusicLibraryService } from '../music/services/MusicLibraryService';
 import { SonicRadar } from './components/SonicRadar';
 import { TagMatrix } from './components/TagMatrix';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -136,59 +135,39 @@ const AudioAnalyzer: React.FC = () => {
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         try {
-            // Check Library first
-            const existing = await MusicLibraryService.getTrackAnalysis(audioFile);
+            // Run Analysis
+            const result = await audioAnalysisService.analyze(audioFile);
+            setFeatures({
+                bpm: result.bpm,
+                key: `${result.key} ${result.scale}`,
+                energy: result.energy,
+                danceability: result.danceability || 0.5,
+                happiness: result.valence || 0.5,
+                acousticness: 0.3,
+                instrumentalness: 0.7,
+                duration: result.duration
+            });
 
-            if (existing) {
-                setFeatures({
-                    bpm: existing.features.bpm,
-                    key: existing.features.key,
-                    energy: existing.features.energy,
-                    danceability: existing.features.danceability || 0.6,
-                    happiness: existing.features.valence || 0.5,
-                    acousticness: 0.2,
-                    instrumentalness: 0.8,
-                    duration: existing.features.duration
-                });
-                setTags(existing.generatedTags || []);
-            } else {
-                // Run Fresh Analysis
-                const result = await audioAnalysisService.analyze(audioFile);
-                setFeatures({
-                    bpm: result.bpm,
-                    key: `${result.key} ${result.scale}`,
-                    energy: result.energy,
-                    danceability: result.danceability || 0.5,
-                    happiness: result.valence || 0.5,
-                    acousticness: 0.3,
-                    instrumentalness: 0.7,
-                    duration: result.duration
-                });
+            // Smart Auto-Tagging based on Sonic DNA
+            const newTags: string[] = [];
 
-                // Smart Auto-Tagging based on Sonic DNA
-                const newTags: string[] = [];
+            // Mood Tags
+            if ((result.valence || 0.5) > 0.75) newTags.push('Euphoric', 'Positive');
+            else if ((result.valence || 0.5) > 0.6) newTags.push('Happy');
+            else if ((result.valence || 0.5) < 0.3) newTags.push('Melancholic', 'Dark');
+            else if ((result.valence || 0.5) < 0.45) newTags.push('Moody');
 
-                // Mood Tags
-                if ((result.valence || 0.5) > 0.75) newTags.push('Euphoric', 'Positive');
-                else if ((result.valence || 0.5) > 0.6) newTags.push('Happy');
-                else if ((result.valence || 0.5) < 0.3) newTags.push('Melancholic', 'Dark');
-                else if ((result.valence || 0.5) < 0.45) newTags.push('Moody');
+            // Energy Tags
+            if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
+            else if (result.energy > 0.6) newTags.push('Driving');
+            else if (result.energy < 0.3) newTags.push('Chill', 'Ambient');
 
-                // Energy Tags
-                if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
-                else if (result.energy > 0.6) newTags.push('Driving');
-                else if (result.energy < 0.3) newTags.push('Chill', 'Ambient');
+            // Rhythm Tags
+            if (result.bpm > 135) newTags.push('High Tempo');
+            else if (result.bpm < 90) newTags.push('Downtempo');
+            if ((result.danceability || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
 
-                // Rhythm Tags
-                if (result.bpm > 135) newTags.push('High Tempo');
-                else if (result.bpm < 90) newTags.push('Downtempo');
-                if ((result.danceability || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
-
-                setTags(newTags);
-
-                // Save
-                await MusicLibraryService.saveTrackAnalysis(audioFile, result, undefined);
-            }
+            setTags(newTags);
         } catch (error) {
             console.error("Deep Analysis Failed", error);
             toast.error("Analysis failed. Try another file.");
@@ -275,29 +254,7 @@ const AudioAnalyzer: React.FC = () => {
     };
 
     const handleSaveAnalysis = async () => {
-        if (!file) return;
-        setIsSaving(true);
-        const toastId = toast.loading(`Saving Sonic DNA for ${file.name}...`);
-        try {
-            // Map common features back to AudioFeatures format
-            // Map common features back to AudioFeatures format
-            const analysisFeatures = {
-                ...features,
-                bpm: features.bpm,
-                key: features.key.split(' ')[0], // Extract just the key
-                scale: features.key.split(' ')[1] || 'major',
-                valence: features.happiness
-            };
-
-            await MusicLibraryService.saveTrackAnalysis(file, analysisFeatures as any, undefined);
-            toast.success("Analysis saved to Music Library.");
-        } catch (error) {
-            console.error("Save failed:", error);
-            toast.error("Failed to save analysis.");
-        } finally {
-            toast.dismiss(toastId);
-            setIsSaving(false);
-        }
+        toast.info("Local save functionality currently in laboratory testing.");
     };
 
     const formatTime = (seconds: number) => {

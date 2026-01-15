@@ -158,13 +158,14 @@ export default function ProjectHub() {
                                 {/* Overlay Controls */}
                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
 
-                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity" ref={openMenuId === project.id ? menuRef : null}>
+                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" ref={openMenuId === project.id ? menuRef : null}>
                                     <button
+                                        aria-label="Project options"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setOpenMenuId(openMenuId === project.id ? null : project.id);
                                         }}
-                                        className="p-3 bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                        className="p-3 bg-black/60 backdrop-blur-md rounded-full text-white/80 hover:text-white border border-white/10 hover:border-white/20 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-white focus-visible:opacity-100"
                                     >
                                         <MoreVertical size={18} />
                                     </button>
@@ -255,7 +256,7 @@ export default function ProjectHub() {
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <TemplateIcon size={40} className="text-white/20 group-hover:text-white/40 transition-colors" />
                                     </div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] to-transparent opacity-80" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-bg-dark to-transparent opacity-80" />
                                     <div className="absolute inset-0 flex items-center justify-center scale-90 group-hover:scale-100 transition-transform duration-500">
                                         <div className="w-12 h-12 bg-purple-600/90 rounded-full flex items-center justify-center text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Plus size={20} />

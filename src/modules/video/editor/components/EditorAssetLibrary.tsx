@@ -8,6 +8,14 @@ interface EditorAssetLibraryProps {
     onDragStart: (e: React.DragEvent, item: HistoryItem) => void;
 }
 
+const EmptyState = () => (
+    <div className="text-center py-8 text-gray-500 text-xs">
+        No assets found in history.
+        <br />
+        Generate some content first!
+    </div>
+);
+
 export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragStart }) => {
     const history = useStore((state) => state.generatedHistory);
 
@@ -25,13 +33,7 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
         }
     };
 
-    const EmptyState = () => (
-        <div className="text-center py-8 text-gray-500 text-xs">
-            No assets found in history.
-            <br />
-            Generate some content first!
-        </div>
-    );
+
 
     return (
         <div className="h-full flex flex-col bg-gray-900 border-r border-gray-800 w-64">

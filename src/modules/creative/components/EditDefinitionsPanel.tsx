@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { X, Sparkles, AlertCircle } from 'lucide-react';
-import { NANA_COLORS, NanaColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '../constants';
 
 interface EditDefinitionsPanelProps {
     isOpen: boolean;
@@ -68,7 +68,7 @@ export default function EditDefinitionsPanel({
                     </p>
                 </div>
 
-                {NANA_COLORS.map((color) => (
+                {STUDIO_COLORS.map((color) => (
                     <div key={color.id} className="bg-[#222] rounded-xl border border-gray-800 overflow-hidden group focus-within:border-gray-600 transition-colors">
                         <div className="flex items-center gap-3 p-3 border-b border-gray-800/50 bg-[#1f1f1f]">
                             <div

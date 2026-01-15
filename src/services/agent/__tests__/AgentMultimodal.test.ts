@@ -57,7 +57,8 @@ describe('Agent Multimodal Support', () => {
         const mockResponse: WrappedResponse = {
             response: {} as any,
             text: () => 'I see a red car.',
-            functionCalls: () => []
+            functionCalls: () => [],
+            usage: () => undefined
         };
 
         (AI.generateContentStream as any).mockResolvedValue({

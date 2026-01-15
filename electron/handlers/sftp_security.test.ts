@@ -56,14 +56,14 @@ vi.mock('../services/SFTPService', () => ({
 import { registerSFTPHandlers } from './sftp';
 
 describe('🛡️ Shield: SFTP Security Integration Test', () => {
-    let handlers: Record<string, Function> = {};
+    let handlers: Record<string, (...args: any[]) => any> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = {};
 
         // Capture handlers when they are registered
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: Function) => {
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
             handlers[channel] = handler;
         });
 

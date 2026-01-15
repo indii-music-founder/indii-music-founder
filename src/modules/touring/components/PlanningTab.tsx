@@ -72,7 +72,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -82,7 +82,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all"
                                     />
                                 </div>
                             </div>
@@ -95,7 +95,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                         value={newLocation}
                                         onChange={(e) => setNewLocation(e.target.value)}
                                         placeholder="Enter City, State (e.g. Austin, TX)"
-                                        className="flex-1 bg-[#0d1117] border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all font-mono"
+                                        className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500 outline-none transition-all font-mono"
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
                                     />
                                     <Button
@@ -110,7 +110,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             </div>
 
                             {/* Location List */}
-                            <div className="flex-1 bg-[#0d1117] border border-gray-800 rounded-lg p-3 overflow-y-auto max-h-[150px] custom-scrollbar">
+                            <div className="flex-1 bg-bg-dark border border-gray-800 rounded-lg p-3 overflow-y-auto max-h-[150px] custom-scrollbar">
                                 {locations.length === 0 ? (
                                     <div className="h-full flex items-center justify-center text-xs text-gray-600 italic">
                                         No waypoints added
@@ -210,7 +210,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                     <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
 
                         {/* Itinerary Data Table */}
-                        <div className="flex-1 overflow-auto rounded-lg border border-gray-800 bg-[#0d1117] custom-scrollbar">
+                        <div className="flex-1 overflow-auto rounded-lg border border-gray-800 bg-bg-dark custom-scrollbar">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-gray-800/50 text-xs text-gray-400 uppercase tracking-widest font-mono border-b border-gray-700 sticky top-0 z-10 backdrop-blur-md">
@@ -294,7 +294,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                     <input
                                         value={selectedStop.city}
                                         onChange={(e) => setSelectedStop({ ...selectedStop, city: e.target.value })}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
                                     />
                                 </div>
                                 <div className="space-y-1">
@@ -302,7 +302,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                     <input
                                         value={selectedStop.venue}
                                         onChange={(e) => setSelectedStop({ ...selectedStop, venue: e.target.value })}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
                                     />
                                 </div>
                             </div>
@@ -313,7 +313,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                     <select
                                         value={selectedStop.type}
                                         onChange={(e) => setSelectedStop({ ...selectedStop, type: e.target.value })}
-                                        className="w-full bg-[#0d1117] border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
+                                        className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
                                     >
                                         <option value="Show">Show</option>
                                         <option value="Travel">Travel</option>

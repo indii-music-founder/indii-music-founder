@@ -19,11 +19,14 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 describe('CreativeGallery Accessibility', () => {
     const mockStore = {
-        generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test image' }],
+        generatedHistory: [{ id: '1', url: 'test.jpg', type: 'image', prompt: 'test image', timestamp: 1000, projectId: 'p1', origin: 'generated' }],
         uploadedImages: [],
+        uploadedAudio: [],
         removeFromHistory: vi.fn(),
         addUploadedImage: vi.fn(),
         removeUploadedImage: vi.fn(),
+        addUploadedAudio: vi.fn(),
+        removeUploadedAudio: vi.fn(),
         currentProjectId: 'p1',
         generationMode: 'video', // Enable video mode to show more buttons
         setVideoInput: vi.fn(),
@@ -54,13 +57,13 @@ describe('CreativeGallery Accessibility', () => {
     });
 
     it('overlay has group-focus-within class for keyboard accessibility', () => {
-         const { container } = render(<CreativeGallery />);
-         // The overlay div
-         const overlay = container.querySelector('.absolute.inset-0.bg-black\\/60');
-         expect(overlay).toBeInTheDocument();
-         // Check for the class that handles focus visibility
-         // Note: class string might vary, checking for partial match or specific class
-         expect(overlay?.className).toContain('group-focus-within:opacity-100');
+        const { container } = render(<CreativeGallery />);
+        // The overlay div
+        const overlay = container.querySelector('.absolute.inset-0.bg-black\\/60');
+        expect(overlay).toBeInTheDocument();
+        // Check for the class that handles focus visibility
+        // Note: class string might vary, checking for partial match or specific class
+        expect(overlay?.className).toContain('group-focus-within:opacity-100');
     });
 
     it('buttons have focus-visible styles', () => {

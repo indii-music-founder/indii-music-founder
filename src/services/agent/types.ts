@@ -49,7 +49,6 @@ export const VALID_AGENT_IDS = [
     'legal',
     'finance',
     'producer',
-    'music',
     'director',
     'screenwriter',
     'video',

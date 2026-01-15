@@ -120,27 +120,13 @@ describe('MarketplaceService', () => {
     });
 
     describe('purchaseProduct', () => {
-        it('should process a mock purchase successfully', async () => {
-            mockAddDoc.mockResolvedValueOnce({ id: 'purchase-id' });
-
-            const result = await MarketplaceService.purchaseProduct(
+        it('should throw error as payments are disabled', async () => {
+            await expect(MarketplaceService.purchaseProduct(
                 'prod-1',
                 'buyer-1',
                 'seller-1',
                 1000
-            );
-
-            expect(mockAddDoc).toHaveBeenCalledWith(
-                'MOCK_COLLECTION_REF',
-                expect.objectContaining({
-                    buyerId: 'buyer-1',
-                    sellerId: 'seller-1',
-                    productId: 'prod-1',
-                    amount: 1000,
-                    status: 'completed'
-                })
-            );
-            expect(result).toBe('purchase-id');
+            )).rejects.toThrow("Payment processing is not yet enabled in this environment.");
         });
     });
 });

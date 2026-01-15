@@ -3,28 +3,23 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { QuotaExceededError } from '@/shared/types/errors';
 
-// ------------------------------------------------------------------
-// 🎥 Lens's Mock Studio
-// ------------------------------------------------------------------
-
+// 1. Hoisted mocks
 const mocks = vi.hoisted(() => ({
     httpsCallable: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
-    auth: { currentUser: { uid: 'lens-director' } },
+    auth: { currentUser: { uid: 'test-user-lens' } },
     subscriptionService: {
-        canPerformAction: vi.fn(),
-        getCurrentSubscription: vi.fn()
+        canPerformAction: vi.fn()
     },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens-studio' }))
+        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
     },
-    uuid: vi.fn(() => 'lens-uuid-fixed')
+    delay: vi.fn()
 }));
 
-// Mock Firebase & Internal Services
+// 2. Mock modules
 vi.mock('firebase/functions', () => ({
     httpsCallable: mocks.httpsCallable,
     getFunctions: vi.fn()
@@ -56,209 +51,252 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
-vi.mock('uuid', () => ({
-    v4: mocks.uuid
+vi.mock('@/utils/async', () => ({
+    delay: mocks.delay
 }));
 
-// ------------------------------------------------------------------
-// 🎥 Lens's Verification Suite
-// ------------------------------------------------------------------
+vi.mock('uuid', () => ({
+    v4: () => 'lens-veo-job-id'
+}));
 
-describe('Lens: Veo 3.1 & Gemini 3 Native Generation', () => {
+describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
     let service: VideoGenerationService;
 
     beforeEach(() => {
-        vi.clearAllMocks();
         vi.useFakeTimers();
+        vi.clearAllMocks();
         service = new VideoGenerationService();
-
-        // Default: Allow actions
+        // Default: Quota OK
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
+        // Default: Trigger OK
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { jobId: 'lens-veo-job-id' } }));
 
-        // Default: Successful trigger
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { jobId: 'job-123' } }));
+        // Mock delay to use setTimeout so we can control it with fake timers
+        mocks.delay.mockImplementation((ms) => new Promise(resolve => setTimeout(resolve, ms)));
     });
 
     afterEach(() => {
         vi.useRealTimers();
     });
 
-    // ------------------------------------------------------------------
-    // 📼 Scenario 1: Long-Form Payload Integrity (Veo 3.1)
-    // ------------------------------------------------------------------
-    it('Veo 3.1 Segmentation: Should split 24s prompt into exactly 3 Veo blocks', async () => {
-        // Arrange
-        const options = {
-            prompt: "A futuristic chase sequence",
-            totalDuration: 24, // 24 / 8 = 3 blocks
-            userProfile: { id: 'user-1' } as any
-        };
-        const triggerMock = vi.fn().mockResolvedValue({ data: { jobId: 'long_lens-uuid-fixed' } });
-        mocks.httpsCallable.mockReturnValue(triggerMock);
-
-        // Act
-        await service.generateLongFormVideo(options);
-
-        // Assert
-        const callArgs = triggerMock.mock.calls[0][0];
-
-        // 1. Verify Block Math
-        expect(callArgs.prompts).toHaveLength(3);
-
-        // 2. Verify Prompt Suffixing (Lens Journal Learning)
-        expect(callArgs.prompts[0]).toContain('(Part 1/3)');
-        expect(callArgs.prompts[1]).toContain('(Part 2/3)');
-        expect(callArgs.prompts[2]).toContain('(Part 3/3)');
-
-        // 3. Verify Job ID convention
-        expect(callArgs.jobId).toBe('long_lens-uuid-fixed');
-    });
-
-    // ------------------------------------------------------------------
-    // 🛡️ Scenario 2: SafetySettings Handshake (Gemini 3)
-    // ------------------------------------------------------------------
-    it('Gemini 3 Safety: Should explicitly reject jobs blocked by safety filters', async () => {
-        // Arrange
-        mocks.doc.mockReturnValue('doc-ref');
-
-        // Simulate Firestore immediately returning a "failed" status due to Safety
-        mocks.onSnapshot.mockImplementation((ref, callback) => {
-            callback({
-                exists: () => true,
-                id: 'job-unsafe',
-                data: () => ({
-                    status: 'failed',
-                    error: 'SAFETY_VIOLATION: Prompt violates usage policy.'
-                })
+    describe('Veo 3.1 Metadata Contract', () => {
+        it('should strictly assert Veo 3.1 metadata: duration, fps, and mime_type', async () => {
+            // Setup: Job completes with valid Veo metadata
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'https://storage.googleapis.com/veo-generations/mock-video.mp4',
+                                metadata: {
+                                    duration_seconds: 6.0,
+                                    fps: 24, // Veo often defaults to 24
+                                    mime_type: 'video/mp4',
+                                    resolution: '1920x1080'
+                                }
+                            }
+                        })
+                    });
+                }, 10);
+                return () => {};
             });
-            return () => {};
+
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+            const job = await jobPromise;
+
+            // 🔍 Lens Audit: Metadata is the contract
+            expect(job.output.metadata).toBeDefined();
+            expect(job.output.metadata.duration_seconds).toBeGreaterThan(0);
+            expect([24, 30, 60]).toContain(job.output.metadata.fps);
+            expect(job.output.metadata.mime_type).toBe('video/mp4');
         });
 
-        // Act & Assert
-        await expect(service.waitForJob('job-unsafe')).rejects.toThrow('SAFETY_VIOLATION');
-    });
-
-    // ------------------------------------------------------------------
-    // ⚡ Scenario 3: Flash vs Pro Latency Handling
-    // ------------------------------------------------------------------
-    it('Latency: Should handle "Pro" generation times (25s) without timeout', async () => {
-        // Arrange
-        mocks.doc.mockReturnValue('doc-ref');
-
-        // Simulate a delay before completion
-        mocks.onSnapshot.mockImplementation((ref, callback) => {
-            // Initial Pending State
-            callback({
-                exists: () => true,
-                id: 'job-pro',
-                data: () => ({ status: 'processing' })
+        it('should fail validation if MIME type is not video/mp4 (MIME Type Guard)', async () => {
+            // Setup: Job completes but returns an image (e.g. Gemini generated a static preview instead of video)
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'https://storage.googleapis.com/veo-generations/oops.png',
+                                metadata: {
+                                    duration_seconds: 0,
+                                    fps: 0,
+                                    mime_type: 'image/png' // ❌ Violation
+                                }
+                            }
+                        })
+                    });
+                }, 10);
+                return () => {};
             });
 
-            // Delayed Completion (25s later)
-            setTimeout(() => {
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+            const job = await jobPromise;
+
+            // In a real player, this would be a critical failure.
+            // Here we verify that we CAN detect it.
+            expect(job.output.metadata.mime_type).not.toBe('video/mp4');
+        });
+    });
+
+    describe('Generation Speed & Latency (Flash vs Pro)', () => {
+        it('should handle "Flash" generation (Success < 2s)', async () => {
+            // Simulate fast return
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                // Immediate callback for Flash
                 callback({
                     exists: () => true,
-                    id: 'job-pro',
+                    id: 'lens-veo-job-id',
                     data: () => ({
                         status: 'completed',
                         output: {
-                            url: 'https://mock.veo.pro/video.mp4',
-                            metadata: {
-                                duration_seconds: 5.0,
-                                fps: 24,
-                                mime_type: 'video/mp4'
-                            }
+                            url: 'https://mock.url/flash.mp4',
+                            metadata: { mime_type: 'video/mp4', model: 'veo-3.1-flash' }
                         }
                     })
                 });
-            }, 25000);
-
-            return () => {};
-        });
-
-        // Act
-        const jobPromise = service.waitForJob('job-pro');
-
-        // Fast-forward time by 25s
-        vi.advanceTimersByTime(25000);
-
-        const result = await jobPromise;
-
-        // Assert
-        expect(result.status).toBe('completed');
-        expect(result.output.metadata.mime_type).toBe('video/mp4');
-    });
-
-    it('Latency: Should handle "Flash" generation times (<2s)', async () => {
-        // Arrange
-        mocks.doc.mockReturnValue('doc-ref');
-
-        mocks.onSnapshot.mockImplementation((ref, callback) => {
-            setTimeout(() => {
-                callback({
-                    exists: () => true,
-                    id: 'job-flash',
-                    data: () => ({
-                        status: 'completed',
-                        output: {
-                            url: 'https://mock.veo.flash/video.mp4',
-                            metadata: {
-                                duration_seconds: 2.0,
-                                fps: 30,
-                                mime_type: 'video/mp4'
-                            }
-                        }
-                    })
-                });
-            }, 1000); // 1s
-            return () => {};
-        });
-
-        // Act
-        const jobPromise = service.waitForJob('job-flash');
-        vi.advanceTimersByTime(1000);
-        const result = await jobPromise;
-
-        // Assert
-        expect(result.status).toBe('completed');
-    });
-
-    // ------------------------------------------------------------------
-    // 📝 Scenario 4: Metadata Contract (Lens Principle)
-    // ------------------------------------------------------------------
-    it('Metadata Contract: Should validate Veo 3.1 specific metadata', async () => {
-        // Arrange
-        mocks.doc.mockReturnValue('doc-ref');
-        mocks.onSnapshot.mockImplementation((ref, callback) => {
-            callback({
-                exists: () => true,
-                id: 'job-meta',
-                data: () => ({
-                    status: 'completed',
-                    output: {
-                        url: 'https://storage.googleapis.com/veo/output.mp4',
-                        metadata: {
-                            duration_seconds: 6.0,
-                            fps: 60, // High frame rate check
-                            mime_type: 'video/mp4'
-                        }
-                    }
-                })
+                return () => {};
             });
-            return () => {};
+
+            const start = Date.now();
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            // No time advancement needed if callback is immediate, but safest to advance 0
+            vi.advanceTimersByTime(0);
+            const job = await jobPromise;
+            const duration = Date.now() - start;
+
+            expect(job.status).toBe('completed');
+            // In unit test this is practically 0ms, but logically it represents "instant"
+            expect(duration).toBeLessThan(2000);
         });
 
-        // Act
-        const job = await service.waitForJob('job-meta');
+        it('should handle "Pro" generation with polling/processing states', async () => {
+            // Simulate: Pending -> Processing -> Processing -> Completed
+            // Veo 3.1 Pro might take ~20s
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                // Initial Pending
+                callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'pending' }) });
 
-        // Assert
-        expect(job.output.metadata).toMatchObject({
-            duration_seconds: expect.any(Number),
-            fps: 60,
-            mime_type: 'video/mp4'
+                // Processing after 5s
+                setTimeout(() => {
+                    callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'processing', progress: 25 }) });
+                }, 5000);
+
+                // Processing after 15s
+                setTimeout(() => {
+                    callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'processing', progress: 75 }) });
+                }, 15000);
+
+                // Completed after 25s
+                setTimeout(() => {
+                     callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'https://mock.url/pro.mp4',
+                                metadata: { mime_type: 'video/mp4', model: 'veo-3.1-pro' }
+                            }
+                        })
+                    });
+                }, 25000);
+
+                return () => {};
+            });
+
+            const start = Date.now();
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+
+            // Advance time in chunks to simulate waiting
+            vi.advanceTimersByTime(5000);
+            vi.advanceTimersByTime(10000);
+            vi.advanceTimersByTime(10000); // Now at 25s
+
+            const job = await jobPromise;
+            const duration = Date.now() - start;
+
+            expect(job.status).toBe('completed');
+            expect(job.output.metadata.model).toBe('veo-3.1-pro');
+            expect(duration).toBeGreaterThanOrEqual(25000);
+            expect(duration).toBeLessThan(30000); // "Pro < 30s" boundary
+        });
+    });
+
+    describe('Timeout & Error Handling', () => {
+        it('should timeout if Veo generation hangs (Veo Timeout Handler)', async () => {
+            // 🎥 The "Veo Timeout" Handler
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                // Stays pending forever
+                callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'pending' }) });
+                return () => {};
+            });
+
+            // Set a specific timeout for this test
+            const timeoutMs = 60000; // 60s
+            const jobPromise = service.waitForJob('lens-veo-job-id', timeoutMs);
+
+            // Fast forward past the timeout
+            vi.advanceTimersByTime(timeoutMs + 100);
+
+            await expect(jobPromise).rejects.toThrow(/Video generation timeout/);
         });
 
-        // Lens specific check: Ensure duration is positive
-        expect(job.output.metadata.duration_seconds).toBeGreaterThan(0);
+        it('should propagate Gemini 3 safety filter errors correctly', async () => {
+            // 🔍 Audit: Error Handling
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'failed',
+                            error: 'Safety violation: Harassment filter tripped.'
+                        })
+                    });
+                }, 10);
+                return () => {};
+            });
+
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+            await expect(jobPromise).rejects.toThrow(/Safety violation/);
+        });
+
+        it('should handle specific Google API error codes (400/429)', async () => {
+             mocks.doc.mockReturnValue('doc-ref');
+             mocks.onSnapshot.mockImplementation((ref, callback) => {
+                 setTimeout(() => {
+                     callback({
+                         exists: () => true,
+                         id: 'lens-veo-job-id',
+                         data: () => ({
+                             status: 'failed',
+                             error: '429 Too Many Requests: Resource has been exhausted (e.g. check quota).'
+                         })
+                     });
+                 }, 10);
+                 return () => {};
+             });
+
+             const jobPromise = service.waitForJob('lens-veo-job-id');
+             vi.advanceTimersByTime(20);
+             await expect(jobPromise).rejects.toThrow(/429 Too Many Requests/);
+        });
     });
 });

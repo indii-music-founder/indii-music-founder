@@ -437,7 +437,13 @@ ${task}
         ]).slice(0, 12);
 
         const allTools: ToolDefinition[] = allFunctions.length > 0
-            ? [{ functionDeclarations: allFunctions }]
+            ? [{
+                functionDeclarations: allFunctions.map(fn => ({
+                    name: fn.name,
+                    description: fn.description,
+                    parameters: fn.parameters
+                }))
+            }]
             : [];
 
         try {
@@ -497,7 +503,8 @@ ${task}
             }
 
             const response = await responsePromise;
-            const usage = response.usage();
+            // Defensive check for usage method (safeguard against SDK mismatches)
+            const usage = typeof response.usage === 'function' ? response.usage() : undefined;
             const mappedUsage = usage ? {
                 promptTokens: usage.promptTokenCount || 0,
                 completionTokens: usage.candidatesTokenCount || 0,
