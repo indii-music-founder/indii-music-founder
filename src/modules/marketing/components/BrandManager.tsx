@@ -274,13 +274,29 @@ const BrandManager: React.FC = () => {
                                                 <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">Public Perspective</p>
                                             </div>
                                             {!isEditingBio ? (
-                                                <button onClick={() => { setBioDraft(userProfile?.bio || ''); setIsEditingBio(true); }} className="p-2 hover:bg-white/5 rounded-lg text-gray-500 hover:text-white transition-all">
+                                                <button
+                                                    onClick={() => { setBioDraft(userProfile?.bio || ''); setIsEditingBio(true); }}
+                                                    className="p-2 hover:bg-white/5 rounded-lg text-gray-500 hover:text-white transition-all"
+                                                    aria-label="Edit bio"
+                                                >
                                                     <Edit2 size={14} />
                                                 </button>
                                             ) : (
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => setIsEditingBio(false)} className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-all border border-red-500/20"><X size={14} /></button>
-                                                    <button onClick={handleSaveBio} className="p-2 hover:bg-emerald-500/10 rounded-lg text-emerald-500 transition-all border border-emerald-500/20"><Check size={14} /></button>
+                                                    <button
+                                                        onClick={() => setIsEditingBio(false)}
+                                                        className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-all border border-red-500/20"
+                                                        aria-label="Cancel editing"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSaveBio}
+                                                        className="p-2 hover:bg-emerald-500/10 rounded-lg text-emerald-500 transition-all border border-emerald-500/20"
+                                                        aria-label="Save bio"
+                                                    >
+                                                        <Check size={14} />
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -379,6 +395,7 @@ const BrandManager: React.FC = () => {
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleRemoveColor(idx); }}
                                                             className="text-red-400 hover:text-red-300"
+                                                            aria-label={`Remove color ${color}`}
                                                         >
                                                             <Trash2 size={10} />
                                                         </button>
