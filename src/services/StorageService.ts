@@ -5,6 +5,7 @@ import { ref, uploadString, getDownloadURL, uploadBytes, deleteObject } from 'fi
 import { HistoryItem } from '@/core/types/history';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
+import { CloudStorageService } from './CloudStorageService';
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -71,23 +72,40 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
     }
 
     async saveItem(item: HistoryItem) {
-
         let imageUrl = item.url;
+        let thumbnailUrl: string | undefined;
 
-        // If it's a base64 data URL, upload to Storage
+        // If it's a base64 data URL, use CloudStorageService
         if (item.url.startsWith('data:')) {
-            // FALLBACK FOR DEV: Bypass Storage upload to avoid CORS/Auth issues locally
-            if (import.meta.env.DEV) {
-                // CRITICAL: Firestore has a 1MB limit for document size.
-                // If the data URI is too large, we store a placeholder in Firestore
-                // to avoid "Value too large" errors, while keeping the real URI in local state.
-                if (item.url.length > 800000) { // ~800KB safety margin
+            const { auth } = await import('./firebase');
+            const userId = auth.currentUser?.uid;
+
+            if (userId) {
+                try {
+                    // Use smart save: uploads large images, keeps small ones as data URIs
+                    const result = await CloudStorageService.smartSave(
+                        item.url,
+                        item.id,
+                        userId
+                    );
+                    imageUrl = result.url;
+                    thumbnailUrl = result.thumbnailUrl;
+
+                    console.log(`Image saved (${result.strategy}):`, item.id);
+                } catch (error) {
+                    console.error('Cloud upload failed, using data URI:', error);
+                    // Fallback: keep data URI if upload fails
+                    // Only in dev - show warning
+                    if (import.meta.env.DEV && item.url.length > 800000) {
+                        console.warn('Large data URI kept locally - may cause Firestore errors');
+                    }
+                }
+            } else if (import.meta.env.DEV) {
+                // Dev mode without auth: keep small data URIs, warn about large ones
+                if (item.url.length > 800000) {
+                    console.warn('No auth in dev - large image not uploaded. Use proper auth for full functionality.');
                     imageUrl = 'placeholder:dev-data-uri-too-large';
                 }
-            } else {
-                const storageRef = ref(storage, `generated/${item.id}`);
-                await uploadString(storageRef, item.url, 'data_url');
-                imageUrl = await getDownloadURL(storageRef);
             }
         }
 
@@ -105,6 +123,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         await this.set(item.id, {
             ...item,
             url: imageUrl,
+            thumbnailUrl,
             timestamp: Timestamp.fromMillis(item.timestamp),
             projectId: item.projectId || 'default-project',
             orgId: orgId || 'personal',
