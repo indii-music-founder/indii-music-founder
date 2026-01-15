@@ -96,11 +96,13 @@ export async function validateSafeUrlAsync(urlString: string): Promise<void> {
 
     // 2. Resolve DNS
     try {
-        const { address } = await dns.promises.lookup(hostname);
+        const addresses = await dns.promises.lookup(hostname, { all: true });
 
-        // 3. Validate Resolved IP
-        if (isPrivateIP(address)) {
-            throw new Error(`Security Violation: Domain '${hostname}' resolves to private IP ${address}.`);
+        // 3. Validate ALL Resolved IPs
+        for (const { address } of addresses) {
+            if (isPrivateIP(address)) {
+                throw new Error(`Security Violation: Domain '${hostname}' resolves to private IP ${address}.`);
+            }
         }
     } catch (error: any) {
         if (error.message.startsWith('Security Violation')) throw error;
