@@ -24,7 +24,9 @@ export const useAutoSave = (
 ): AutoSaveReturn => {
     const { interval = 30000, enabled = true } = options;
 
-    const { user, activeOrg, currentProjectId } = useStore();
+    const { user, currentOrganizationId, organizations, currentProjectId } = useStore();
+    const activeOrg = organizations.find(org => org.id === currentOrganizationId);
+
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,13 @@ export const useAutoSave = (
 
     const saveDesign = useCallback(async () => {
         if (!canvas || !user || !currentProjectId || !activeOrg) {
-            console.warn('Auto-save skipped: missing canvas, user, or project context');
+            console.warn('Auto-save skipped: missing canvas, user, or project context', {
+                hasCanvas: !!canvas,
+                hasUser: !!user,
+                hasProject: !!currentProjectId,
+                hasOrg: !!activeOrg,
+                currentOrganizationId
+            });
             return;
         }
 
@@ -72,7 +80,7 @@ export const useAutoSave = (
         } finally {
             setIsSaving(false);
         }
-    }, [canvas, user, activeOrg, currentProjectId, designName, designId, lastSaved]);
+    }, [canvas, user, currentOrganizationId, organizations, currentProjectId, designName, designId, lastSaved]);
 
     // Auto-save interval
     useEffect(() => {
