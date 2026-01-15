@@ -169,8 +169,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                             <div className="flex justify-between items-center mt-2 border-t border-gray-800 pt-3">
                                 <div className="flex gap-2">
                                     <button
-                                        className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800"
-                                        aria-label="Add image"
+                                        onClick={() => {}} // Placeholder for image upload
                                         className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                                         aria-label="Add image to post"
                                     >
@@ -182,7 +181,6 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                             className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                                                 ${selectedProductId ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
                                             title="Attach Product (Drop)"
-                                            aria-label="Attach Product"
                                             aria-label={selectedProductId ? "Remove attached product" : "Attach product from store"}
                                         >
                                             <ShoppingBag size={20} />
@@ -283,8 +281,6 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                             </span>
                         </div>
                         <button
-                            className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                            aria-label="More options"
                             className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1 focus-visible:outline-none"
                             aria-label={`More options for post by ${post.authorName}`}
                         >
@@ -315,8 +311,6 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
 
                     <div className="flex items-center gap-6 mt-3 text-gray-500">
                         <button
-                            className="flex items-center gap-2 hover:text-red-500 transition-colors group/like"
-                            aria-label={`Like (${post.likes})`}
                             className="flex items-center gap-2 hover:text-red-500 transition-colors group/like focus-visible:ring-2 focus-visible:ring-red-500 rounded px-1 focus-visible:outline-none"
                             aria-label={`Like post, ${post.likes} likes`}
                         >
@@ -324,8 +318,6 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                             <span className="text-sm">{post.likes}</span>
                         </button>
                         <button
-                            className="flex items-center gap-2 hover:text-blue-500 transition-colors"
-                            aria-label={`Comment (${post.commentsCount})`}
                             className="flex items-center gap-2 hover:text-blue-500 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 focus-visible:outline-none"
                             aria-label={`Comment on post, ${post.commentsCount} comments`}
                         >
@@ -333,8 +325,6 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                             <span className="text-sm">{post.commentsCount}</span>
                         </button>
                         <button
-                            className="flex items-center gap-2 hover:text-green-500 transition-colors"
-                            aria-label="Share"
                             className="flex items-center gap-2 hover:text-green-500 transition-colors focus-visible:ring-2 focus-visible:ring-green-500 rounded px-1 focus-visible:outline-none"
                             aria-label="Share post"
                         >
