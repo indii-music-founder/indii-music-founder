@@ -670,12 +670,9 @@ export const generateImageV3 = functions
                 body: JSON.stringify({
                     contents: [{ role: "user", parts: parts }],
                     generationConfig: {
-                        responseModalities: ["TEXT", "IMAGE"],
+                        responseModalities: ["IMAGE"],
                         candidateCount: count || 1,
                         ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                        temperature: 1.0,
-                        topK: 64,
-                        topP: 0.95
                     }
                 }),
             });
