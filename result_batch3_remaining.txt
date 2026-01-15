@@ -1,0 +1,41 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90m/app[39m
+
+ [32m✓[39m src/services/agent/evolution/EvolutionEngine.test.ts[2m > [22mEvolutionEngine (Helix Guardrails)[2m > [22mMicro-Universe: Should select, breed, and mutate correctly in one step[32m 7[2mms[22m[39m
+ [32m✓[39m src/services/agent/evolution/EvolutionEngine.test.ts[2m > [22mEvolutionEngine (Helix Guardrails)[2m > [22mGene Loss: Should preserve high fitness agents via elitism[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/agent/evolution/EvolutionEngine.test.ts[2m > [22mEvolutionEngine (Helix Guardrails)[2m > [22mResilience: Should discard offspring that fail mutation and continue evolution[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/agent/evolution/EvolutionEngine.test.ts[2m > [22mEvolutionEngine (Helix Guardrails)[2m > [22mFull Evolutionary Loop: Should evaluate fitness, select, breed, and mutate[32m 3[2mms[22m[39m
+[90mstdout[2m | src/services/finance/FinanceService.test.ts[2m > [22m[2mFinanceService[2m > [22m[2mfetchEarnings[2m > [22m[2mshould return null if no earnings data is found (no seeding)
+[22m[39m[FinanceService] No earnings data found for user: user-123
+
+ [32m✓[39m src/services/finance/FinanceService.test.ts[2m > [22mFinanceService[2m > [22maddExpense[2m > [22mshould successfully add an expense and return the full object[32m 8[2mms[22m[39m
+ [32m✓[39m src/services/finance/FinanceService.test.ts[2m > [22mFinanceService[2m > [22mgetExpenses[2m > [22mshould fetch and format expenses for a user[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/finance/FinanceService.test.ts[2m > [22mFinanceService[2m > [22mfetchEarnings[2m > [22mshould return existing earnings report if found[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/finance/FinanceService.test.ts[2m > [22mFinanceService[2m > [22mfetchEarnings[2m > [22mshould return null if no earnings data is found (no seeding)[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/finance/FinanceService.test.ts[2m > [22mFinanceService[2m > [22mfetchEarnings[2m > [22mshould handle errors by logging to Sentry[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mgenerateContent[2m > [22mshould generate content successfully[32m 5[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mgenerateContent[2m > [22mshould handle tool calls in response[32m 4[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mgenerateContent[2m > [22mshould retry on retryable errors[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mgenerateContent[2m > [22mshould throw AppException on fatal errors[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mgenerateContent[2m > [22mshould coalesce identical requests[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mparseJSON[2m > [22mshould parse valid JSON strings[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mparseJSON[2m > [22mshould parse JSON with markdown code blocks[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mparseJSON[2m > [22mshould return empty object on invalid JSON[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mparseJSON[2m > [22mshould return empty object on empty input[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mwithRetry[2m > [22mshould not retry on first success[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mwithRetry[2m > [22mshould retry on retryable errors[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mwithRetry[2m > [22mshould not retry on non-retryable errors[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/ai/__tests__/AIService.test.ts[2m > [22mAIService[2m > [22mwithRetry[2m > [22mshould throw error after max retries[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/marketing/MarketingService.test.ts[2m > [22mMarketingService[2m > [22mgetMarketingStats[2m > [22mshould return real stats if the stats document exists[32m 4[2mms[22m[39m
+ [32m✓[39m src/services/marketing/MarketingService.test.ts[2m > [22mMarketingService[2m > [22mgetMarketingStats[2m > [22mshould seed database if stats document does not exist[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/marketing/MarketingService.test.ts[2m > [22mMarketingService[2m > [22mgetCampaigns[2m > [22mshould fetch campaigns for the current user[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/marketing/MarketingService.test.ts[2m > [22mMarketingService[2m > [22mcreateCampaign[2m > [22mshould add a new campaign document with userId[32m 4[2mms[22m[39m
+ [32m✓[39m src/services/legal/LegalService.test.ts[2m > [22mLegalService[2m > [22mshould save a contract draft[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/legal/LegalService.test.ts[2m > [22mLegalService[2m > [22mshould throw error if user not authenticated[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/agent/specialists/specialists.test.ts[2m > [22mSpecialist Agents Connection[2m > [22mshould have Brand, Road, and Marketing agents registered[32m 45[2mms[22m[39m
+ [32m✓[39m src/services/agent/specialists/specialists.test.ts[2m > [22mSpecialist Agents Connection[2m > [22mshould inherit Agent Zero superpowers via BaseAgent[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[32m30 passed[39m[22m[90m (30)[39m
+[2m   Start at [22m 16:54:14
+[2m   Duration [22m 3.08s[2m (transform 1.51s, setup 1.03s, import 1.59s, tests 125ms, environment 3.66s)[22m

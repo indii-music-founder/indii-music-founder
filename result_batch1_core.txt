@@ -1,0 +1,141 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90m/app[39m
+
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould call vibrate with correct pattern for light haptic[32m 4[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould call vibrate with correct pattern for medium haptic[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould call vibrate with correct pattern for heavy haptic[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould call vibrate with correct pattern for success haptic[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould call vibrate with correct pattern for warning haptic[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould call vibrate with correct pattern for error haptic[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mHaptic Feedback[2m > [22mshould not throw if vibrate is not supported[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mDevice Detection[2m > [22mshould detect mobile devices[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mDevice Detection[2m > [22mshould detect iOS devices[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mDevice Detection[2m > [22mshould detect Android devices[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mDevice Detection[2m > [22mshould detect desktop devices[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mDevice Detection[2m > [22mshould detect standalone mode[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mNative Share[2m > [22mshould return true if share is supported[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mNative Share[2m > [22mshould return false if share is not supported[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mNative Share[2m > [22mshould check specific data if provided[32m 1[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mNetwork Status[2m > [22mshould return true if online[32m 0[2mms[22m[39m
+ [32m✓[39m src/lib/mobile.test.ts[2m > [22mMobile Utilities[2m > [22mNetwork Status[2m > [22mshould return false if offline[32m 0[2mms[22m[39m
+[90mstderr[2m | src/services/CleanupService.test.ts[2m > [22m[2mCleanupService[2m > [22m[2mstorage scanning[2m > [22m[2mhandles storage scanning errors gracefully
+[22m[39mError scanning storage: Error: Storage access denied
+    at [90m/app/[39msrc/services/CleanupService.test.ts:431:43
+    at [90mfile:///app/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///app/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///app/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///app/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///app/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///app/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.js:142:27[90m)[39m
+    at trace [90m(file:///app/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:239:21[90m)[39m
+    at runTest [90m(file:///app/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12[90m)[39m
+
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22mreturns empty report when no orphaned records exist[32m 5[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22midentifies orphaned history items with missing projects[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22midentifies orphaned history items with missing organizations[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22midentifies orphaned projects with missing organizations[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22mexcludes personal and default org IDs from orphan detection[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22mcalls progress callback during scan[32m 6[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mscan[2m > [22mcalculates correct summary totals[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mexecute[2m > [22mdeletes orphaned history items[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mexecute[2m > [22mdeletes orphaned projects[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mexecute[2m > [22mdeletes orphaned storage files[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mexecute[2m > [22mcaptures errors without stopping execution[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mexecute[2m > [22mcalls progress callback during deletion[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mvacuum[2m > [22mperforms scan only when dryRun is true[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mvacuum[2m > [22mperforms scan and execute when dryRun is false[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mquickCheck[2m > [22mreturns counts for all collections[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mstorage scanning[2m > [22mscans storage when includeStorage is true[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/CleanupService.test.ts[2m > [22mCleanupService[2m > [22mstorage scanning[2m > [22mhandles storage scanning errors gracefully[32m 10[2mms[22m[39m
+[90mstderr[2m | src/services/MembershipService.test.ts
+[22m[39mInvalid environment configuration: {
+  _errors: [],
+  apiKey: { _errors: [ [32m'API Key is required'[39m ] },
+  projectId: { _errors: [ [32m'Project ID is required'[39m ] }
+}
+WARNING: The following environment variables are missing: VITE_API_KEY, VITE_VERTEX_PROJECT_ID, VITE_FIREBASE_API_KEY
+App will attempt to run with defaults, but some features may be disabled.
+Critical environment variables missing. Proceeding with caution.
+Environment validation failed, but critical keys might be present. Proceeding with caution.
+⚠️ Firebase Configuration Missing: Please set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID
+
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetLimits[2m > [22mreturns correct limits for free tier[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetLimits[2m > [22mreturns correct limits for pro tier[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetLimits[2m > [22mreturns correct limits for enterprise tier[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetLimits[2m > [22mfalls back to free tier for invalid tier[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetMaxVideoDurationFrames[2m > [22mcalculates frames at 30fps[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetMaxVideoDurationFrames[2m > [22mcalculates frames at 60fps[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetMaxVideoDurationFrames[2m > [22muses 30fps as default[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetMaxVideoDurationSeconds[2m > [22mreturns correct seconds for each tier[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22misWithinVideoDurationLimit[2m > [22mreturns true when within limit[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22misWithinVideoDurationLimit[2m > [22mreturns false when exceeding limit[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22misWithinVideoDurationLimit[2m > [22mreturns true at exact limit boundary[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mcanUseFeature[2m > [22mreturns true for enabled boolean features[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mcanUseFeature[2m > [22mreturns false for disabled boolean features[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mcanUseFeature[2m > [22mreturns true for non-zero numeric features[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mcanUseFeature[2m > [22mhandles enterprise unlimited projects (-1)[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mformatDuration[2m > [22mformats seconds correctly[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mformatDuration[2m > [22mformats minutes correctly[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mformatDuration[2m > [22mformats hours correctly[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mformatDuration[2m > [22mformats hours with minutes correctly[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetTierDisplayName[2m > [22mreturns correct display names[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetUpgradeMessage[2m > [22msuggests Pro upgrade for free users[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mgetUpgradeMessage[2m > [22msuggests Enterprise upgrade for pro users[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mTIER_LIMITS export[2m > [22mexports all tiers[32m 0[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mTIER_LIMITS export[2m > [22mhas consistent structure across tiers[32m 1[2mms[22m[39m
+ [32m✓[39m src/services/MembershipService.test.ts[2m > [22mMembershipService[2m > [22mtier progression[2m > [22mhas increasing limits from free to enterprise[32m 1[2mms[22m[39m
+[90mstdout[2m | src/core/store/slices/profileSlice.test.ts[2m > [22m[2mProfileSlice Persistence[2m > [22m[2mloadUserProfile should load profile from storage
+[22m[39m[Profile] Loading user profile for: test-uid
+
+[90mstdout[2m | src/core/store/slices/profileSlice.test.ts[2m > [22m[2mProfileSlice Persistence[2m > [22m[2mloadUserProfile should load profile from storage
+[22m[39m[Profile] Loaded profile for: test-uid
+
+[90mstdout[2m | src/core/store/slices/profileSlice.test.ts[2m > [22m[2mProfileSlice Persistence[2m > [22m[2mloadUserProfile should use default profile if storage is empty
+[22m[39m[Profile] Loading user profile for: test-uid
+
+[90mstdout[2m | src/core/store/slices/profileSlice.test.ts[2m > [22m[2mProfileSlice Persistence[2m > [22m[2mloadUserProfile should use default profile if storage is empty
+[22m[39m[Profile] No profile found, creating default for: test-uid
+
+ [32m✓[39m src/core/store/slices/profileSlice.test.ts[2m > [22mProfileSlice Persistence[2m > [22msetUserProfile should update state and save to storage[32m 11[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/profileSlice.test.ts[2m > [22mProfileSlice Persistence[2m > [22mupdateBrandKit should update state and save to storage[32m 13[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/profileSlice.test.ts[2m > [22mProfileSlice Persistence[2m > [22mloadUserProfile should load profile from storage[32m 3[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/profileSlice.test.ts[2m > [22mProfileSlice Persistence[2m > [22mloadUserProfile should use default profile if storage is empty[32m 6[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/Keeper_Persistence.test.ts[2m > [22m📚 Keeper: Persistence[2m > [22mshould persist conversation history to SessionService when adding a message[32m 57[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/agentSlice.persistence.test.ts[2m > [22mAgentSlice Persistence (The Amnesia Check)[2m > [22mshould persist new messages to SessionService[32m 28[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/agentSlice.persistence.test.ts[2m > [22mAgentSlice Persistence (The Amnesia Check)[2m > [22mshould persist updated messages to SessionService[32m 43[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/agentSlice.persistence.test.ts[2m > [22mAgentSlice Persistence (The Amnesia Check)[2m > [22mshould persist cleared history to SessionService[32m 42[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/Keeper_Persistence.test.ts[2m > [22m📚 Keeper: Persistence[2m > [22mshould persist cleared history to SessionService[32m 104[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/Keeper_Persistence.test.ts[2m > [22m📚 Keeper: Persistence[2m > [22mshould persist message updates (e.g. streaming chunks) to SessionService[32m 101[2mms[22m[39m
+[90mstdout[2m | src/services/RevenueService.test.ts[2m > [22m[2mRevenueService (Production Logic)[2m > [22m[2mrecordSale should add document to "revenue" collection
+[22m[39m[RevenueService] Sale recorded successfully
+
+ [32m✓[39m src/services/RevenueService.test.ts[2m > [22mRevenueService (Production Logic)[2m > [22mgetTotalRevenue should query Firestore with correct filter[32m 9[2mms[22m[39m
+ [32m✓[39m src/services/RevenueService.test.ts[2m > [22mRevenueService (Production Logic)[2m > [22mgetRevenueBySource should aggregate correctly[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/RevenueService.test.ts[2m > [22mRevenueService (Production Logic)[2m > [22mrecordSale should add document to "revenue" collection[32m 5[2mms[22m[39m
+[90mstdout[2m | src/core/store/slices/authSlice.test.ts[2m > [22m[2mAuthSlice[2m > [22m[2minitializeAuthListener should set user on state change
+[22m[39m[Auth] Initializing Auth Listener...
+[Auth] API Key check: mock-api-key
+
+ [32m✓[39m src/core/store/slices/authSlice.test.ts[2m > [22mAuthSlice[2m > [22minitial state should be loading with no user[32m 3[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/authSlice.test.ts[2m > [22mAuthSlice[2m > [22mloginWithGoogle should call Firebase signInWithPopup[32m 1[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/authSlice.test.ts[2m > [22mAuthSlice[2m > [22mloginWithGoogle should handle errors[32m 1[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/authSlice.test.ts[2m > [22mAuthSlice[2m > [22mlogout should call Firebase signOut[32m 1[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/authSlice.test.ts[2m > [22mAuthSlice[2m > [22minitializeAuthListener should set user on state change[32m 5[2mms[22m[39m
+ [32m✓[39m src/core/store/slices/fileSystemSlice.test.ts[2m > [22mFileSystemSlice[2m > [22mcreateFileNode calls service and updates state[32m 5[2mms[22m[39m
+ [32m✓[39m src/hooks/useURLSync.test.ts[2m > [22museURLSync[2m > [22mshould update store when URL changes (Deep Link)[32m 23[2mms[22m[39m
+ [32m✓[39m src/hooks/useURLSync.test.ts[2m > [22museURLSync[2m > [22mshould update URL when store changes[32m 6[2mms[22m[39m
+ [32m✓[39m src/hooks/useURLSync.test.ts[2m > [22museURLSync[2m > [22mshould NOT update URL if store matches URL (Stable)[32m 4[2mms[22m[39m
+ [32m✓[39m src/hooks/useURLSync.test.ts[2m > [22museURLSync[2m > [22mshould NOT navigate if sub-path exists but module matches[32m 3[2mms[22m[39m
+ [32m✓[39m src/hooks/useURLSync.test.ts[2m > [22museURLSync[2m > [22mshould NOT update store for invalid modules[32m 5[2mms[22m[39m
+ [32m✓[39m src/services/StorageService.test.ts[2m > [22mStorageService[2m > [22mloads history with server-side sorting[32m 5[2mms[22m[39m
+ [32m✓[39m src/services/OrganizationService.test.ts[2m > [22mOrganizationService[2m > [22mcreates an organization and adds user to it[32m 3[2mms[22m[39m
+ [32m✓[39m src/services/OrganizationService.test.ts[2m > [22mOrganizationService[2m > [22mgets user organizations[32m 2[2mms[22m[39m
+ [32m✓[39m src/services/ProjectService.test.ts[2m > [22mProjectService[2m > [22mgets projects for org with server-side sorting[32m 4[2mms[22m[39m
+ [32m✓[39m src/core/config/EndpointService.test.ts[2m > [22mEndpointService[2m > [22mgenerates Production URL by default[32m 2[2mms[22m[39m
+ [32m✓[39m src/core/config/EndpointService.test.ts[2m > [22mEndpointService[2m > [22malways generates Production URL (emulator support disabled)[32m 1[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m      Tests [22m [1m[32m89 passed[39m[22m[90m (89)[39m
+[2m   Start at [22m 16:53:08
+[2m   Duration [22m 8.03s[2m (transform 1.49s, setup 3.58s, import 1.80s, tests 590ms, environment 13.90s)[22m
