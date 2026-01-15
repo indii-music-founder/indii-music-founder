@@ -3,6 +3,14 @@ import { Editing } from '../EditingService';
 import { AI } from '../../ai/AIService';
 import { firebaseAI } from '../../ai/FirebaseAIService';
 
+// Mock InputSanitizer
+vi.mock('../../ai/utils/InputSanitizer', () => ({
+    InputSanitizer: {
+        sanitize: (text: string) => text,
+        containsInjectionPatterns: () => false
+    }
+}));
+
 // Mock FirebaseAIService
 vi.mock('../../ai/FirebaseAIService', () => ({
     firebaseAI: {
@@ -155,10 +163,11 @@ describe('EditingService', () => {
             // We expect 4 variations, and each variation has 2 masks (steps).
             // Total backend calls = variationCount (4) * masks.length (2) = 8 calls.
 
+            // Use valid base64-like data (only alphanumeric, +, /, =)
             const mockResponse = {
                 data: {
                     candidates: [{
-                        content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'edited-step' } }] }
+                        content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'editedStepData123+/=' } }] }
                     }]
                 }
             };
@@ -179,13 +188,80 @@ describe('EditingService', () => {
             // Check if reference image was passed in the first call
             const firstCallArgs = mockHttpsCallable.mock.calls[0][0];
             expect(firstCallArgs.referenceImage).toBeDefined();
+            expect(firstCallArgs.refMimeType).toBe('image/jpeg');
             expect(firstCallArgs.referenceImage).toBe('ref1');
-            expect(firstCallArgs.prompt).toBe('edit1');
+            // Now includes variation suffix: "edit1 (variation 1 of 2)"
+            expect(firstCallArgs.prompt).toContain('edit1');
+            expect(firstCallArgs.prompt).toContain('variation');
 
             // Check second step (uses result of first as input)
             const secondCallArgs = mockHttpsCallable.mock.calls[1][0];
-            expect(secondCallArgs.image).toBe('edited-step'); // Input is output of join
-            expect(secondCallArgs.prompt).toBe('edit2');
+            expect(secondCallArgs.image).toBe('editedStepData123+/='); // Input is output of previous step
+            expect(secondCallArgs.prompt).toContain('edit2');
+        });
+    });
+
+    describe('deprecated video methods', () => {
+        it('editVideo should return null and log deprecation warning', async () => {
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            const result = await Editing.editVideo({
+                video: { mimeType: 'video/mp4', data: 'test' },
+                prompt: 'edit video'
+            });
+
+            expect(result).toBeNull();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('deprecated')
+            );
+
+            consoleSpy.mockRestore();
+        });
+
+        it('batchEditVideo should return empty array and log deprecation warning', async () => {
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            const result = await Editing.batchEditVideo({
+                videos: [{ mimeType: 'video/mp4', data: 'test' }],
+                prompt: 'edit videos'
+            });
+
+            expect(result).toEqual([]);
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('deprecated')
+            );
+
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe('batchEdit', () => {
+        it('should return results and failures', async () => {
+            const mockResponse = {
+                data: {
+                    candidates: [{
+                        content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'edited' } }] }
+                    }]
+                }
+            };
+
+            // First call succeeds, second fails
+            mockHttpsCallable
+                .mockResolvedValueOnce(mockResponse)
+                .mockRejectedValueOnce(new Error('Rate limit exceeded'));
+
+            const result = await Editing.batchEdit({
+                images: [
+                    { mimeType: 'image/png', data: 'img1' },
+                    { mimeType: 'image/png', data: 'img2' }
+                ],
+                prompt: 'edit'
+            });
+
+            expect(result.results).toHaveLength(1);
+            expect(result.failures).toHaveLength(1);
+            expect(result.failures[0].index).toBe(1);
+            expect(result.failures[0].error).toContain('Rate limit');
         });
     });
 });

@@ -271,8 +271,10 @@ export const triggerLongFormVideoJob = functions
             const limits = TIER_LIMITS[userTier];
             const durationNum = parseFloat((totalDuration || 0).toString());
 
-            // GOD MODE: Bypass for Builder
-            const isGodMode = context.auth?.token.email === 'the.walking.agency.det@gmail.com';
+            // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
+            const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+            const isGodMode = context.auth?.token?.admin === true ||
+                              godModeEmails.includes(context.auth?.token.email || '');
 
             // 2. Validate Duration Limit
             if (!isGodMode && durationNum > limits.maxVideoDuration) {
@@ -702,7 +704,7 @@ export const generateImageV3 = functions
     });
 
 export const editImage = functions
-    .runWith({ secrets: [geminiApiKey] })
+    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 120, memory: "512MB" })
     .https.onCall(async (data: unknown, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -719,7 +721,7 @@ export const editImage = functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { image, mask, prompt, referenceImage } = validation.data;
+        const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
 
         try {
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
@@ -729,30 +731,35 @@ export const editImage = functions
             const parts: any[] = [
                 {
                     inlineData: {
-                        mimeType: "image/png",
+                        mimeType: imageMimeType || "image/png",
                         data: image
                     }
                 }
             ];
 
+            // Track image count for correct position reference
+            let imageCount = 1;
+
             if (mask) {
                 parts.push({
                     inlineData: {
-                        mimeType: "image/png",
+                        mimeType: maskMimeType || "image/png",
                         data: mask
                     }
                 });
                 parts.push({ text: "Use the second image as a mask for inpainting." });
+                imageCount = 2;
             }
 
             if (referenceImage) {
+                const position = imageCount === 1 ? "second" : "third";
                 parts.push({
                     inlineData: {
-                        mimeType: "image/png",
+                        mimeType: refMimeType || "image/png",
                         data: referenceImage
                     }
                 });
-                parts.push({ text: "Use this third image as a reference." });
+                parts.push({ text: `Use this ${position} image as a reference.` });
             }
 
             parts.push({ text: prompt });

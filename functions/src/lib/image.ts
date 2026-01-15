@@ -12,9 +12,12 @@ export const GenerateImageRequestSchema = z.object({
 
 export const EditImageRequestSchema = z.object({
     image: z.string().min(1, "Base image is required"), // Base64
+    imageMimeType: z.string().default("image/png"), // Image format
     mask: z.string().optional(), // Base64
+    maskMimeType: z.string().optional(), // Mask format
     prompt: z.string().min(1, "Prompt is required"),
     referenceImage: z.string().optional(), // Base64
+    refMimeType: z.string().optional(), // Reference image format
 });
 
 export type GenerateImageRequest = z.infer<typeof GenerateImageRequestSchema>;

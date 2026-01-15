@@ -5,17 +5,77 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
 // ============================================================================
+// FIX #10: Input Validation Constants
+// ============================================================================
+
+const VALID_ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const;
+const VALID_RESOLUTIONS = ['720p', '1080p'] as const;
+const MAX_DURATION_SECONDS = 300;
+const MAX_CHAIN_DURATION_SECONDS = 300;
+
+/**
+ * Validates aspect ratio parameter
+ */
+function validateAspectRatio(aspectRatio?: string): string | null {
+    if (!aspectRatio) return null;
+    if (!VALID_ASPECT_RATIOS.includes(aspectRatio as any)) {
+        return `Invalid aspect ratio "${aspectRatio}". Valid options: ${VALID_ASPECT_RATIOS.join(', ')}`;
+    }
+    return null;
+}
+
+/**
+ * Validates resolution parameter
+ */
+function validateResolution(resolution?: string): string | null {
+    if (!resolution) return null;
+    if (!VALID_RESOLUTIONS.includes(resolution as any)) {
+        return `Invalid resolution "${resolution}". Valid options: ${VALID_RESOLUTIONS.join(', ')}`;
+    }
+    return null;
+}
+
+/**
+ * Validates duration parameter
+ */
+function validateDuration(duration: number | undefined, maxDuration: number = MAX_DURATION_SECONDS): string | null {
+    if (duration === undefined) return null;
+    if (typeof duration !== 'number' || isNaN(duration)) {
+        return "Duration must be a valid number.";
+    }
+    if (duration <= 0) {
+        return "Duration must be a positive number.";
+    }
+    if (duration > maxDuration) {
+        return `Duration cannot exceed ${maxDuration} seconds.`;
+    }
+    return null;
+}
+
+// ============================================================================
 // VideoTools Implementation
 // ============================================================================
 
 export const VideoTools: Record<string, AnyToolFunction> = {
-    generate_video: wrapTool('generate_video', async (args: { prompt: string, image?: string, duration?: number }) => {
+    generate_video: wrapTool('generate_video', async (args: { prompt: string, image?: string, duration?: number, aspectRatio?: string, resolution?: string }) => {
+        // FIX #10: Comprehensive input validation
         if (!args.prompt || args.prompt.trim().length === 0) {
             return toolError("Prompt cannot be empty.", 'INVALID_INPUT');
         }
 
-        if (args.duration !== undefined && (args.duration <= 0 || args.duration > 300)) {
-            return toolError("Duration must be a positive number and cannot exceed 300 seconds.", 'INVALID_INPUT');
+        const durationError = validateDuration(args.duration);
+        if (durationError) {
+            return toolError(durationError, 'INVALID_INPUT');
+        }
+
+        const aspectRatioError = validateAspectRatio(args.aspectRatio);
+        if (aspectRatioError) {
+            return toolError(aspectRatioError, 'INVALID_INPUT');
+        }
+
+        const resolutionError = validateResolution(args.resolution);
+        if (resolutionError) {
+            return toolError(resolutionError, 'INVALID_INPUT');
         }
 
         const { userProfile } = useStore.getState();
@@ -221,17 +281,24 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         }, `Keyframe updated for clip ${args.clipId} on property ${args.property} at frame ${args.frame} with value ${args.value}${args.easing ? ` and easing ${args.easing}` : ''}.`);
     }),
 
-    generate_video_chain: wrapTool('generate_video_chain', async (args: { prompt: string, startImage: string, totalDuration: number }) => {
+    generate_video_chain: wrapTool('generate_video_chain', async (args: { prompt: string, startImage: string, totalDuration: number, aspectRatio?: string }) => {
+        // FIX #10: Comprehensive input validation
         if (!args.prompt || args.prompt.trim().length === 0) {
             return toolError("Prompt cannot be empty.", 'INVALID_INPUT');
+        }
+
+        const durationError = validateDuration(args.totalDuration, MAX_CHAIN_DURATION_SECONDS);
+        if (durationError) {
+            return toolError(durationError, 'INVALID_INPUT');
         }
 
         if (!args.totalDuration || args.totalDuration <= 0) {
             return toolError("Duration must be a positive number.", 'INVALID_INPUT');
         }
 
-        if (args.totalDuration > 300) {
-            return toolError("Duration cannot exceed 300 seconds (5 minutes) for a single chain.", 'INVALID_INPUT');
+        const aspectRatioError = validateAspectRatio(args.aspectRatio);
+        if (aspectRatioError) {
+            return toolError(aspectRatioError, 'INVALID_INPUT');
         }
 
         const imgMatch = args.startImage.match(/^data:(.+);base64,(.+)$/);

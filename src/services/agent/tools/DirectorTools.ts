@@ -203,7 +203,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             return toolError("Could not process image data from uploads.", "PROCESS_FAILED");
         }
 
-        const results = await Editing.batchEdit({
+        const { results, failures } = await Editing.batchEdit({
             images: imageDataList,
             prompt: args.prompt,
             onProgress: (current, total) => {
@@ -227,10 +227,16 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     projectId: currentProjectId
                 });
             });
+
+            const failureInfo = failures.length > 0
+                ? ` (${failures.length} failed: ${failures.map(f => `image ${f.index + 1}: ${f.error}`).join(', ')})`
+                : '';
+
             return toolSuccess({
                 count: results.length,
-                image_ids: results.map(r => r.id)
-            }, `Successfully edited ${results.length} images based on instruction: "${args.prompt}".`);
+                image_ids: results.map(r => r.id),
+                failures: failures.length > 0 ? failures : undefined
+            }, `Successfully edited ${results.length} images based on instruction: "${args.prompt}"${failureInfo}.`);
         }
         return toolError("Batch edit completed but no images were returned.", "EMPTY_RESULT");
     }),
