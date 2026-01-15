@@ -307,6 +307,19 @@ service cloud.firestore {
     }
 
     // ========================================
+    // DESIGNS (merchandise design canvas - org-scoped)
+    // ========================================
+
+    match /designs/{designId} {
+      // Read if user is org member
+      allow read: if isResourceOrgMember();
+      // Create if user is authenticated and is org member
+      allow create: if isRequestOrgMember();
+      // Update/delete if user is org member
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

@@ -198,6 +198,12 @@ test.describe('Maestro: Multi-Step Approval Workflow', () => {
     await expect(page.getByText('Look at these dogs go!')).toBeVisible();
     await expect(page.getByText('Buy my song now.')).not.toBeVisible();
 
+    // Verify Resource Handoff (Image Assets)
+    // We check that the image URL passed from the Agent is actually rendered in the DOM
+    // This confirms the "Creative" output is accessible to the "Review" UI
+    const image1 = page.locator(`img[src="${goodPlan[0].imageAsset.imageUrl}"]`);
+    await expect(image1).toBeVisible();
+
     // -----------------------------------------------------------------------
     // 5. User Modification (Human-in-the-Loop)
     // -----------------------------------------------------------------------

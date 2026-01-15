@@ -585,6 +585,7 @@ export default function MerchDesigner() {
 }
 
 // UI Components
+
 const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
     <button
         onClick={onClick}
