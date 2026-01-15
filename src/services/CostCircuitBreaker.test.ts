@@ -99,4 +99,47 @@ describe('Ledger\'s Cost Circuit Breaker', () => {
         expect(check.allowed).toBe(false);
         expect(check.currentUsage).toBe(HIGH_USAGE);
     });
+
+    it('enforces the $1.00 Hard Limit on daily spend', async () => {
+        // "The 'Hard Limit': Set a budget of $1.00. Run a loop of tasks. Assert the system halts exactly when $1.00 is breached."
+
+        const BUDGET_LIMIT = 1.00;
+        const TASK_COST = 0.20;
+        let currentSpend = 0;
+
+        // Mock getDoc to return incrementing spend
+        vi.mocked(firestore.getDoc).mockImplementation(async () => {
+            return {
+                exists: () => true,
+                data: () => ({
+                    totalSpend: currentSpend,
+                    date: new Date().toISOString().split('T')[0]
+                })
+            } as any;
+        });
+
+        // Loop 5 times: 5 * 0.20 = 1.00
+        // We expect these to pass because the check is: (current + estimated) <= max
+        // 1. current=0, cost=0.20 -> 0.20 <= 1.00 (OK) -> new spend 0.20
+        // ...
+        // 5. current=0.80, cost=0.20 -> 1.00 <= 1.00 (OK) -> new spend 1.00
+
+        for (let i = 0; i < 5; i++) {
+            const result = await MembershipService.checkBudget(TASK_COST);
+
+            expect(result.allowed).toBe(true);
+            // Ledger: "Verify the wallet logic works"
+            // Simulate the transaction
+            currentSpend += TASK_COST;
+        }
+
+        // Now currentSpend is 1.00.
+        // Try to spend another 0.20.
+        // 1.00 + 0.20 = 1.20 > 1.00 (FAIL)
+
+        const breachCheck = await MembershipService.checkBudget(TASK_COST);
+
+        expect(breachCheck.allowed).toBe(false);
+        expect(breachCheck.remainingBudget).toBe(0);
+    });
 });
