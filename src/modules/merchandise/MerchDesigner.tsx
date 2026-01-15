@@ -6,9 +6,10 @@ import { DesignCanvas, useCanvasControls, CanvasObject } from './components/Desi
 import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
 import { AIGenerationDialog } from './components/AIGenerationDialog';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 type WorkMode = 'agent' | 'user';
@@ -29,6 +30,7 @@ export default function MerchDesigner() {
 
     // Dialog State
     const [showAIDialog, setShowAIDialog] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject | null>(null);
 
     const toast = useToast();
 
@@ -41,7 +43,8 @@ export default function MerchDesigner() {
         sendToBack,
         exportToImage,
         clear,
-        setBackgroundColor
+        setBackgroundColor,
+        alignObjects
     } = useCanvasControls(fabricCanvasRef);
 
     // Canvas history hook (undo/redo)
@@ -96,9 +99,18 @@ export default function MerchDesigner() {
     }, [layers]);
 
     const handleDeleteLayer = useCallback((layer: CanvasObject) => {
-        fabricCanvasRef.current?.remove(layer.fabricObject);
-        fabricCanvasRef.current?.renderAll();
+        // Show confirmation dialog
+        setDeleteConfirm(layer);
     }, []);
+
+    const confirmDelete = useCallback(() => {
+        if (!deleteConfirm) return;
+
+        fabricCanvasRef.current?.remove(deleteConfirm.fabricObject);
+        fabricCanvasRef.current?.renderAll();
+        setDeleteConfirm(null);
+        toast.success('Layer deleted');
+    }, [deleteConfirm, toast]);
 
     const handleReorderLayer = useCallback((layer: CanvasObject, direction: 'up' | 'down') => {
         if (!fabricCanvasRef.current) return;
@@ -217,6 +229,43 @@ export default function MerchDesigner() {
                                     onClick={redo}
                                     disabled={!canRedo}
                                     title="Redo (Cmd+Shift+Z)"
+                                />
+                            </div>
+
+                            <div className="h-6 w-px bg-white/10 mx-2" />
+
+                            {/* Alignment Tools */}
+                            <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
+                                <IconButton
+                                    icon={<AlignLeft size={16} />}
+                                    onClick={() => alignObjects('left')}
+                                    title="Align Left"
+                                />
+                                <IconButton
+                                    icon={<AlignCenter size={16} />}
+                                    onClick={() => alignObjects('center')}
+                                    title="Align Center"
+                                />
+                                <IconButton
+                                    icon={<AlignRight size={16} />}
+                                    onClick={() => alignObjects('right')}
+                                    title="Align Right"
+                                />
+                                <div className="w-px h-4 bg-white/10" />
+                                <IconButton
+                                    icon={<AlignVerticalJustifyStart size={16} />}
+                                    onClick={() => alignObjects('top')}
+                                    title="Align Top"
+                                />
+                                <IconButton
+                                    icon={<AlignVerticalJustifyCenter size={16} />}
+                                    onClick={() => alignObjects('middle')}
+                                    title="Align Middle"
+                                />
+                                <IconButton
+                                    icon={<AlignVerticalJustifyEnd size={16} />}
+                                    onClick={() => alignObjects('bottom')}
+                                    title="Align Bottom"
                                 />
                             </div>
 
@@ -353,6 +402,19 @@ export default function MerchDesigner() {
                         <EnhancedShowroom initialAsset={exportedDesign} />
                     </div>
                 </div>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            {deleteConfirm && (
+                <ConfirmDialog
+                    title="Delete Layer?"
+                    message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
+                    confirmLabel="Delete"
+                    cancelLabel="Cancel"
+                    variant="danger"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteConfirm(null)}
+                />
             )}
         </MerchLayout>
     );

@@ -126,7 +126,16 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                 >
                                     {/* Layer Info */}
                                     <div className="flex items-center gap-2 mb-1">
-                                        {getLayerIcon(layer.type)}
+                                        {/* Thumbnail (if available) */}
+                                        {(layer.fabricObject as any).thumbnail ? (
+                                            <img
+                                                src={(layer.fabricObject as any).thumbnail}
+                                                alt={layer.name}
+                                                className="w-10 h-10 rounded border border-white/10 object-cover bg-neutral-800 flex-shrink-0"
+                                            />
+                                        ) : (
+                                            getLayerIcon(layer.type)
+                                        )}
                                         <span className={`text-xs font-medium flex-1 truncate ${
                                             isSelected ? 'text-[#FFE135]' : 'text-neutral-300'
                                         }`}>

@@ -33,6 +33,17 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
     const [isInitialized, setIsInitialized] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
+    const [snapToGrid, setSnapToGrid] = useState(false);
+    const GRID_SIZE = 20;
+
+    // Show snap-to-grid status
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        // Optional: Show toast notification when toggled
+        // (Commented out to avoid too many toasts during development)
+        // console.log(`Snap to Grid: ${snapToGrid ? 'ON' : 'OFF'}`);
+    }, [snapToGrid, isInitialized]);
 
     // Memoized conversion function
     const convertFabricToCanvasObject = useCallback((obj: fabric.Object): CanvasObject => {
@@ -130,9 +141,43 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 handleSelectionChange(null);
             });
 
+            // Thumbnail generation helper
+            const generateThumbnail = (obj: fabric.Object) => {
+                try {
+                    const thumbnail = obj.toDataURL({
+                        format: 'png',
+                        quality: 0.7,
+                        multiplier: 0.15, // Low-res thumbnail (50x50 approx)
+                    });
+                    (obj as any).thumbnail = thumbnail;
+                } catch (err) {
+                    console.warn('Failed to generate thumbnail:', err);
+                }
+            };
+
+            // Snap-to-grid on object moving
+            canvas.on('object:moving', (e) => {
+                if (!snapToGrid || !e.target) return;
+
+                const obj = e.target;
+                const left = obj.left || 0;
+                const top = obj.top || 0;
+
+                obj.set({
+                    left: Math.round(left / GRID_SIZE) * GRID_SIZE,
+                    top: Math.round(top / GRID_SIZE) * GRID_SIZE,
+                });
+            });
+
             // Object modification handlers
-            canvas.on('object:modified', emitLayersChange);
-            canvas.on('object:added', emitLayersChange);
+            canvas.on('object:modified', (e) => {
+                if (e.target) generateThumbnail(e.target);
+                emitLayersChange();
+            });
+            canvas.on('object:added', (e) => {
+                if (e.target) generateThumbnail(e.target);
+                emitLayersChange();
+            });
             canvas.on('object:removed', emitLayersChange);
 
             // Keyboard shortcuts
@@ -200,6 +245,12 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     });
                     canvas.setActiveObject(sel);
                     canvas.requestRenderAll();
+                }
+
+                // Toggle Snap-to-Grid: Cmd/Ctrl + ;
+                if ((e.metaKey || e.ctrlKey) && e.key === ';') {
+                    e.preventDefault();
+                    setSnapToGrid(prev => !prev);
                 }
             };
 
@@ -339,11 +390,20 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             ref={containerRef}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className="w-full h-full flex items-center justify-center bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]"
+            className={`w-full h-full flex items-center justify-center ${
+                snapToGrid
+                    ? 'bg-[linear-gradient(rgba(255,225,53,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,225,53,0.08)_1px,transparent_1px)] bg-[size:20px_20px]'
+                    : 'bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px]'
+            }`}
         >
             {!isInitialized && (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="w-8 h-8 text-[#FFE135] animate-spin" />
+                </div>
+            )}
+            {snapToGrid && (
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-[#FFE135]/20 border border-[#FFE135]/40 rounded-lg text-xs font-medium text-[#FFE135] z-10">
+                    Snap to Grid ON (Cmd+;)
                 </div>
             )}
             <canvas ref={canvasRef} className="shadow-2xl" />
@@ -550,6 +610,57 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         canvasRef.current.renderAll();
     }, [canvasRef]);
 
+    // Alignment tools
+    const alignObjects = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+        if (!canvasRef.current) return;
+
+        const activeObjects = canvasRef.current.getActiveObjects();
+        if (activeObjects.length < 2) return; // Need at least 2 objects to align
+
+        const bounds = activeObjects.map(obj => ({
+            obj,
+            left: obj.left || 0,
+            top: obj.top || 0,
+            width: (obj.width || 0) * (obj.scaleX || 1),
+            height: (obj.height || 0) * (obj.scaleY || 1)
+        }));
+
+        switch (alignment) {
+            case 'left': {
+                const minLeft = Math.min(...bounds.map(b => b.left));
+                bounds.forEach(b => b.obj.set({ left: minLeft }));
+                break;
+            }
+            case 'center': {
+                const centerX = bounds.reduce((sum, b) => sum + b.left + b.width / 2, 0) / bounds.length;
+                bounds.forEach(b => b.obj.set({ left: centerX - b.width / 2 }));
+                break;
+            }
+            case 'right': {
+                const maxRight = Math.max(...bounds.map(b => b.left + b.width));
+                bounds.forEach(b => b.obj.set({ left: maxRight - b.width }));
+                break;
+            }
+            case 'top': {
+                const minTop = Math.min(...bounds.map(b => b.top));
+                bounds.forEach(b => b.obj.set({ top: minTop }));
+                break;
+            }
+            case 'middle': {
+                const centerY = bounds.reduce((sum, b) => sum + b.top + b.height / 2, 0) / bounds.length;
+                bounds.forEach(b => b.obj.set({ top: centerY - b.height / 2 }));
+                break;
+            }
+            case 'bottom': {
+                const maxBottom = Math.max(...bounds.map(b => b.top + b.height));
+                bounds.forEach(b => b.obj.set({ top: maxBottom - b.height }));
+                break;
+            }
+        }
+
+        canvasRef.current.renderAll();
+    }, [canvasRef]);
+
     // TODO: Implement proper undo/redo with history stack
     const undo = useCallback(() => {
         console.log('Undo not yet implemented');
@@ -569,6 +680,7 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         exportToImage,
         clear,
         setBackgroundColor,
+        alignObjects,
         undo,
         redo
     };
