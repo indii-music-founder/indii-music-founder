@@ -13,9 +13,7 @@ import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
 import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
 import { PerformanceOverlay } from './components/PerformanceOverlay';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save } from 'lucide-react';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, Layers, Sticker, Wand2 } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { MerchCard } from './components/MerchCard';
@@ -587,21 +585,6 @@ export default function MerchDesigner() {
 }
 
 // UI Components
-const IconButton = ({ icon, onClick, label, disabled, title }: { icon: React.ReactNode, onClick: () => void, label?: string, disabled?: boolean, title?: string }) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        className={cn(
-            "p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE135]",
-            disabled && "opacity-30 cursor-not-allowed"
-        )}
-        aria-label={label || title}
-        title={title}
-    >
-        {icon}
-    </button>
-);
-
 const ModeToggle = ({ icon, label, active, onClick, 'data-testid': dataTestId }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void, 'data-testid'?: string }) => (
     <button
         onClick={onClick}
