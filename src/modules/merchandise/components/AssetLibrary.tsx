@@ -20,9 +20,52 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
     // Filter history for images only
     const imageAssets = useMemo(() => {
         return history
-            .filter(item => item.type === 'image')
+            .filter(item =>
+                item.type === 'image' &&
+                item.url &&
+                item.url !== '' &&
+                !item.url.startsWith('placeholder:')
+            )
             .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
     }, [history]);
+
+    // Debug logging to diagnose red block issue
+    React.useEffect(() => {
+        console.group('🖼️ Asset Library Debug');
+        console.log('Total history items:', history.length);
+        console.log('Filtered image assets:', imageAssets.length);
+
+        if (imageAssets.length > 0) {
+            const sample = imageAssets[0];
+            console.log('Sample asset:', {
+                id: sample.id,
+                type: sample.type,
+                prompt: sample.prompt,
+                urlExists: !!sample.url,
+                urlLength: sample.url?.length,
+                urlPrefix: sample.url?.substring(0, 30),
+                timestamp: sample.timestamp,
+                origin: sample.origin
+            });
+
+            // Check if URL is valid
+            if (!sample.url || sample.url === '' || sample.url === 'PENDING') {
+                console.error('❌ Invalid URL detected:', sample.url);
+            } else if (sample.url.startsWith('data:image')) {
+                console.log('✅ Data URI detected (good)');
+            } else if (sample.url.startsWith('http')) {
+                console.log('⚠️ HTTP URL detected (check CORS)');
+            } else if (sample.url.startsWith('blob:')) {
+                console.log('⚠️ Blob URL detected (may expire)');
+            } else {
+                console.warn('⚠️ Unknown URL format:', sample.url.substring(0, 50));
+            }
+        } else {
+            console.warn('No image assets found');
+        }
+
+        console.groupEnd();
+    }, [imageAssets, history]);
 
     // Search filter
     const filteredAssets = useMemo(() => {
@@ -162,8 +205,17 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                                 title={asset.prompt || 'Image'}
                             >
                                 <img
-                                    src={asset.url}
+                                    src={asset.url || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'}
                                     alt={asset.prompt || 'Asset'}
+                                    onLoad={() => console.log('✅ Image loaded:', asset.id)}
+                                    onError={(e) => {
+                                        console.error('❌ Image failed to load:', {
+                                            assetId: asset.id,
+                                            url: asset.url?.substring(0, 100),
+                                            urlLength: asset.url?.length,
+                                            error: e.type
+                                        });
+                                    }}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
