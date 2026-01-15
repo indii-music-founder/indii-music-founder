@@ -182,6 +182,29 @@ describe('Video Functions', () => {
                 user: { id: 'user123' }
             });
         });
+
+        it('should accept generateAudio option', async () => {
+            const context: any = { auth: { uid: 'user123' } };
+            const data = {
+                jobId: 'job-audio-123',
+                prompt: 'test prompt with audio',
+                generateAudio: true,
+                orgId: 'personal'
+            };
+
+            const result = await triggerVideoJob(data, context);
+
+            expect(result).toEqual({ success: true, message: "Video generation job queued." });
+
+            // Verify Inngest receives generateAudio in options
+            expect(mocks.inngest.send).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({
+                    options: expect.objectContaining({
+                        generateAudio: true
+                    })
+                })
+            }));
+        });
     });
 
     describe('renderVideo', () => {

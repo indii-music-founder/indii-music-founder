@@ -19,6 +19,7 @@ export const VideoJobSchema = z.object({
     ingredients: z.array(z.string()).optional(),
     duration: z.string().optional(), // e.g. "5s"
     durationSeconds: z.number().optional(),
+    generateAudio: z.boolean().optional(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional(),
         resolution: z.enum(["720p", "1080p"]).optional(),
