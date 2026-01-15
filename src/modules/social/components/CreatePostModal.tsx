@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { ScheduledPost, CampaignStatus, ImageAsset } from '../types';
 import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
+import { ScheduledPostSchema } from '../schemas';
 
 interface CreatePostModalProps {
     onClose: () => void;
@@ -46,27 +47,30 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
     };
 
     const handleSave = () => {
-        if (!copy) {
-            toast.error("Please enter some copy for the post");
-            return;
-        }
+        const timestamp = new Date(`${scheduledDate}T${scheduledTime}`).getTime();
 
-        const newPost: ScheduledPost = {
+        const newPostData = {
             id: Math.random().toString(36).substr(2, 9),
             platform,
             copy,
-            imageAsset: selectedImage || {
-                assetType: 'image',
-                title: 'Placeholder',
-                imageUrl: '',
-                caption: ''
-            },
-            day: new Date(scheduledDate).getDate(), // Simplified day logic
-            scheduledTime: new Date(`${scheduledDate}T${scheduledTime}`),
-            status: CampaignStatus.PENDING
+            imageAsset: selectedImage || undefined,
+            day: new Date(scheduledDate).getDate(),
+            scheduledTime: timestamp,
+            status: CampaignStatus.PENDING,
+            authorId: 'client-pending' // Will be overwritten by service
         };
 
-        onSave(newPost);
+        // Zod Validation (Client-Side)
+        const validation = ScheduledPostSchema.safeParse(newPostData);
+
+        if (!validation.success) {
+            const errorMsg = validation.error.issues[0].message;
+            toast.error(errorMsg);
+            return;
+        }
+
+        // Pass validated data
+        onSave(validation.data as ScheduledPost);
         onClose();
     };
 

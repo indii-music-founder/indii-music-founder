@@ -6,6 +6,7 @@ import EditableCopyModal from './EditableCopyModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { CampaignExecutionRequest } from '../schemas';
 
 interface CampaignManagerProps {
     campaigns: CampaignAsset[];
@@ -45,46 +46,52 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         onUpdateCampaign(executingState);
 
         try {
-            // Check if we are in a dev environment or if functions is not initialized
-            const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
-            // Force mock for Maestro tests
+            // Determine Execution Mode
+            // 1. Force Mock for Test Environment (Maestro) or offline dev without functions
             const forceMock = (window as any).__MAESTRO_MOCK_EXECUTION__;
+            // 2. Dry Run for Localhost Dev to verify function connectivity without side effects
+            // Note: import.meta.env.DEV might be true in production builds if not configured correctly,
+            // but usually it's reliable for Vite.
+            const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
 
-            let responseData: { posts?: ScheduledPost[] } = {};
+            let responseData: { posts?: ScheduledPost[], success?: boolean, message?: string } = {};
 
-            if ((isDev && !functions) || forceMock) {
-                console.warn("[CampaignManager] Using Mock Execution (Dev/Test Mode)");
-                // Mock delay
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                // Mock success
-                responseData = {
+            if (forceMock || (!functions && isDev)) {
+                 console.warn("[CampaignManager] Using Client-Side Mock Execution");
+                 await new Promise(resolve => setTimeout(resolve, 1500));
+                 responseData = {
                     posts: selectedCampaign.posts.map(p => ({
                         ...p,
                         status: CampaignStatus.DONE,
                         scheduledTime: new Date()
-                    }))
+                    })),
+                    success: true
                 };
             } else {
+                // REAL PRODUCTION BINDING
+                // We map to our Zod-validated schema structure
+                const payload: CampaignExecutionRequest = {
+                    campaignId: selectedCampaign.id || 'unknown',
+                    posts: selectedCampaign.posts,
+                    dryRun: isDev // In dev mode, we ask the backend to dry-run
+                };
+
                 const executeCampaign = httpsCallable(functions, 'executeCampaign');
-                const response = await executeCampaign({ posts: selectedCampaign.posts });
-                responseData = response.data as { posts?: ScheduledPost[] };
+                const result = await executeCampaign(payload);
+                responseData = result.data as any;
             }
 
-            if (responseData.posts) {
+            if (responseData.success && responseData.posts) {
                 onUpdateCampaign({
                     ...selectedCampaign,
                     posts: responseData.posts,
-                    status: CampaignStatus.DONE // Assuming all done for now
-                });
-                toast.success("All posts successfully executed!");
-            } else {
-                // Fallback if no posts returned but no error thrown
-                onUpdateCampaign({
-                    ...selectedCampaign,
                     status: CampaignStatus.DONE
                 });
-                toast.success("Campaign execution sequence finished.");
+                toast.success(responseData.message || "Campaign executed successfully!");
+            } else {
+                 throw new Error(responseData.message || "Execution returned failure status.");
             }
+
         } catch (error: any) {
             console.error("Campaign Execution Failed:", error);
 

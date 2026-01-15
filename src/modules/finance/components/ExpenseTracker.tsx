@@ -9,6 +9,7 @@ import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
 import { ExpenseItem } from './ExpenseItem';
 import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
+import { ReceiptScanResultSchema } from '@/modules/finance/schemas';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
     const { userProfile } = useStore();
@@ -74,7 +75,16 @@ export const ExpenseTracker: React.FC = React.memo(() => {
 
                     const jsonMatch = resultJson.data?.raw_data?.match(/\{[\s\S]*\}/);
                     if (jsonMatch && userProfile?.id) {
-                        const data = JSON.parse(jsonMatch[0]);
+                        const rawData = JSON.parse(jsonMatch[0]);
+
+                        // Zod Validation for AI Output
+                        const validation = ReceiptScanResultSchema.safeParse(rawData);
+                        if (!validation.success) {
+                             throw new Error("Invalid receipt format returned by AI.");
+                        }
+
+                        const data = validation.data;
+
                         const expenseData = {
                             userId: userProfile.id,
                             vendor: data.vendor || 'Unknown Vendor',
