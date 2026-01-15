@@ -590,20 +590,54 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
         canvasRef.current.renderAll();
     }, [canvasRef]);
 
-    const exportToImage = useCallback((): string | null => {
+    const exportToImage = useCallback(async (format: 'png' | 'jpeg' | 'svg' | 'webp' = 'png'): Promise<string | null> => {
         if (!canvasRef.current) return null;
 
         try {
-            return canvasRef.current.toDataURL({
-                format: 'png',
-                quality: 1,
+            // SVG export
+            if (format === 'svg') {
+                return canvasRef.current.toSVG();
+            }
+
+            // Raster formats (PNG, JPEG, WebP)
+            const dataURL = canvasRef.current.toDataURL({
+                format: format === 'jpeg' ? 'jpeg' : 'png',
+                quality: format === 'jpeg' ? 0.9 : 1,
                 multiplier: 2 // Export at 2x resolution
             });
+
+            // Convert to WebP if requested
+            if (format === 'webp') {
+                return await convertToWebP(dataURL);
+            }
+
+            return dataURL;
         } catch (err) {
             console.error('Export error:', err);
             return null;
         }
     }, [canvasRef]);
+
+    // Helper function to convert data URL to WebP
+    const convertToWebP = async (dataURL: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Failed to get canvas context'));
+                    return;
+                }
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/webp', 0.9));
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = dataURL;
+        });
+    };
 
     const clear = useCallback(() => {
         if (!canvasRef.current) return;

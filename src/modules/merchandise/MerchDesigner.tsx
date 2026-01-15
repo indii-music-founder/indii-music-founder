@@ -7,13 +7,18 @@ import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
 import { AIGenerationDialog } from './components/AIGenerationDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
+import { useAutoSave } from './hooks/useAutoSave';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
+
+// Generate unique design ID (persistent per session)
+const generateDesignId = () => `design-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 export default function MerchDesigner() {
     // View State
@@ -21,6 +26,7 @@ export default function MerchDesigner() {
     const [workMode, setWorkMode] = useState<WorkMode>('user');
     const [designName, setDesignName] = useState('Untitled Design');
     const [isEditingName, setIsEditingName] = useState(false);
+    const [designId] = useState(() => generateDesignId());
 
     // Canvas State
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -30,6 +36,7 @@ export default function MerchDesigner() {
 
     // Dialog State
     const [showAIDialog, setShowAIDialog] = useState(false);
+    const [showExportDialog, setShowExportDialog] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject[]>([]);
 
     const toast = useToast();
@@ -49,6 +56,14 @@ export default function MerchDesigner() {
 
     // Canvas history hook (undo/redo)
     const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvasRef.current);
+
+    // Auto-save hook
+    const { saveDesign, lastSaved, isSaving } = useAutoSave(
+        fabricCanvasRef.current,
+        designName,
+        designId,
+        { interval: 30000, enabled: true }
+    );
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -165,21 +180,27 @@ export default function MerchDesigner() {
 
     // Export to Showroom
     const handleExportToShowroom = useCallback(() => {
-        const dataUrl = exportToImage();
-        if (dataUrl) {
-            setExportedDesign(dataUrl);
+        setShowExportDialog(true);
+    }, []);
+
+    const handleExport = useCallback(async (format: 'png' | 'jpeg' | 'svg' | 'webp') => {
+        setShowExportDialog(false);
+
+        const exported = await exportToImage(format);
+        if (exported) {
+            setExportedDesign(exported);
             setViewMode('showroom');
-            toast.success('Design exported to Showroom');
+            toast.success(`Design exported as ${format.toUpperCase()}`);
         } else {
             toast.error('Failed to export design');
         }
     }, [exportToImage, toast]);
 
     // Save draft
-    const handleSaveDraft = useCallback(() => {
-        // TODO: Implement save to Firestore
-        toast.success('Draft saved (not implemented yet)');
-    }, [toast]);
+    const handleSaveDraft = useCallback(async () => {
+        await saveDesign();
+        toast.success('Draft saved successfully');
+    }, [saveDesign, toast]);
 
     // Background color change
     const handleBackgroundColorChange = useCallback((color: string) => {
@@ -327,13 +348,21 @@ export default function MerchDesigner() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={handleSaveDraft}
-                                className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
-                            >
-                                <Save size={16} />
-                                Save Draft
-                            </button>
+                            <div className="flex flex-col items-end">
+                                <button
+                                    onClick={handleSaveDraft}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Save size={16} className={isSaving ? 'animate-spin' : ''} />
+                                    {isSaving ? 'Saving...' : 'Save Draft'}
+                                </button>
+                                {lastSaved && (
+                                    <span className="text-[10px] text-neutral-600 mt-0.5">
+                                        Saved {new Date(lastSaved).toLocaleTimeString()}
+                                    </span>
+                                )}
+                            </div>
                             <MerchButton size="sm" onClick={handleExportToShowroom} glow>
                                 <Download size={16} />
                                 Export to Showroom
@@ -454,6 +483,14 @@ export default function MerchDesigner() {
                     variant="danger"
                     onConfirm={confirmDelete}
                     onCancel={() => setDeleteConfirm([])}
+                />
+            )}
+
+            {/* Export Format Dialog */}
+            {showExportDialog && (
+                <ExportDialog
+                    onExport={handleExport}
+                    onCancel={() => setShowExportDialog(false)}
                 />
             )}
         </MerchLayout>
