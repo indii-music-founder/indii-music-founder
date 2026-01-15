@@ -628,9 +628,6 @@ export const useCanvasControls = (canvasRef: React.RefObject<fabric.Canvas | nul
     // Alignment tools
     const alignObjects = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
         if (!canvasRef.current) return;
-    const undo = useCallback(() => {
-        console.log('Undo not yet implemented');
-    }, []);
 
         const activeObjects = canvasRef.current.getActiveObjects();
         if (activeObjects.length < 2) return; // Need at least 2 objects to align
