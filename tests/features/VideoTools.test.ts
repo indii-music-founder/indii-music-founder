@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoTools } from '@/services/agent/tools/VideoTools';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 
 // Mock Dependencies
@@ -10,6 +11,12 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
         generateVideo: vi.fn(),
         waitForJob: vi.fn(),
         generateLongFormVideo: vi.fn()
+    }
+}));
+
+vi.mock('@/services/image/EditingService', () => ({
+    Editing: {
+        batchEditVideo: vi.fn()
     }
 }));
 
@@ -33,7 +40,8 @@ describe('VideoTools Feature', () => {
             userProfile: mockUserProfile,
             addToHistory: mockAddToHistory,
             addAgentMessage: mockAddAgentMessage,
-            currentProjectId: mockCurrentProjectId
+            currentProjectId: mockCurrentProjectId,
+            uploadedImages: [] // Default empty uploads
         });
     });
 
@@ -122,6 +130,97 @@ describe('VideoTools Feature', () => {
              expect(result.success).toBe(false);
              expect(result.error).toBe("API Down");
              expect(result.metadata?.errorCode).toBe('TOOL_EXECUTION_ERROR');
+        });
+    });
+
+    describe('batch_edit_videos', () => {
+        const validVideoData = "data:video/mp4;base64,AAAA";
+        const mockVideo1 = { id: 'v1', type: 'video', url: validVideoData };
+        const mockVideo2 = { id: 'v2', type: 'video', url: validVideoData };
+
+        it('should execute successfully with valid input and uploads', async () => {
+            // Setup store with videos
+            (useStore.getState as any).mockReturnValue({
+                userProfile: mockUserProfile,
+                addToHistory: mockAddToHistory,
+                addAgentMessage: mockAddAgentMessage,
+                currentProjectId: mockCurrentProjectId,
+                uploadedImages: [mockVideo1, mockVideo2]
+            });
+
+            const validArgs = { prompt: "Make it black and white", videoIndices: [0] };
+            const mockResult = { id: 'res-1', url: 'http://edited.mp4', prompt: validArgs.prompt };
+
+            (Editing.batchEditVideo as any).mockResolvedValue([mockResult]);
+
+            const result = await VideoTools.batch_edit_videos(validArgs);
+
+            expect(result.success).toBe(true);
+            expect(result.data.processedCount).toBe(1);
+            expect(Editing.batchEditVideo).toHaveBeenCalledWith(expect.objectContaining({
+                prompt: validArgs.prompt,
+                videos: expect.arrayContaining([expect.objectContaining({ mimeType: 'video/mp4' })])
+            }));
+            expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+                id: mockResult.id,
+                url: mockResult.url
+            }));
+        });
+
+        it('should return NOT_FOUND error if no videos uploaded', async () => {
+            // Store has no videos (default in beforeEach)
+             const result = await VideoTools.batch_edit_videos({ prompt: "edit" });
+
+             expect(result.success).toBe(false);
+             expect(result.metadata?.errorCode).toBe('NOT_FOUND');
+             expect(Editing.batchEditVideo).not.toHaveBeenCalled();
+        });
+
+        it('should return INVALID_INDEX error for out of bounds indices', async () => {
+            (useStore.getState as any).mockReturnValue({
+                userProfile: mockUserProfile,
+                uploadedImages: [mockVideo1], // Only 1 video (index 0)
+                addToHistory: mockAddToHistory, // Need to mock these as they are destructured
+                currentProjectId: mockCurrentProjectId
+            });
+
+            const result = await VideoTools.batch_edit_videos({ prompt: "edit", videoIndices: [99] });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('INVALID_INDEX');
+            expect(Editing.batchEditVideo).not.toHaveBeenCalled();
+        });
+
+        it('should return PROCESSING_FAILED if video data is invalid', async () => {
+            const invalidVideo = { id: 'v3', type: 'video', url: "http://external.com/video.mp4" }; // Not base64
+             (useStore.getState as any).mockReturnValue({
+                userProfile: mockUserProfile,
+                uploadedImages: [invalidVideo],
+                addToHistory: mockAddToHistory,
+                currentProjectId: mockCurrentProjectId
+            });
+
+            const result = await VideoTools.batch_edit_videos({ prompt: "edit" });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('PROCESSING_FAILED');
+            expect(Editing.batchEditVideo).not.toHaveBeenCalled();
+        });
+
+        it('should handle service returning no results', async () => {
+             (useStore.getState as any).mockReturnValue({
+                userProfile: mockUserProfile,
+                uploadedImages: [mockVideo1],
+                addToHistory: mockAddToHistory,
+                currentProjectId: mockCurrentProjectId
+            });
+
+            (Editing.batchEditVideo as any).mockResolvedValue([]);
+
+            const result = await VideoTools.batch_edit_videos({ prompt: "edit" });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('PROCESSING_FAILED');
         });
     });
 

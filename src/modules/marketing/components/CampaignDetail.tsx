@@ -47,7 +47,9 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                     <div className="flex-1">
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold text-white">{campaign.title}</h1>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+                            <span
+                                data-testid="campaign-status-badge"
+                                className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-green-500/10 border-green-500/20 text-green-400' :
                                 campaign.status === CampaignStatus.DONE ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
                                     'bg-gray-800 border-gray-700 text-gray-400'
                                 }`}>

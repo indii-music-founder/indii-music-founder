@@ -169,17 +169,10 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
         expect(screen.getByText('report.pdf')).toBeInTheDocument();
 
         // Remove it
-        const removeBtn = screen.getAllByRole('button', { name: '' }).find(b => b.querySelector('svg')); // Finding the X button
-        // Or better, look for the X icon specifically if we can target it, but easier to use aria-label if it had one.
-        // The component uses <X size={12} /> inside a button.
-        // Let's rely on text content of the file and find the button next to it?
-        // Actually, looking at code: <button ... onClick={() => onRemove(index)}><X ... /></button>
-        // It's inside the same container.
-
-        const removeButton = screen.getByText('report.pdf').parentElement?.querySelector('button');
+        const removeButton = screen.getByRole('button', { name: 'Remove report.pdf' });
         expect(removeButton).toBeTruthy();
 
-        fireEvent.click(removeButton!);
+        fireEvent.click(removeButton);
 
         expect(screen.queryByText('report.pdf')).not.toBeInTheDocument();
     });

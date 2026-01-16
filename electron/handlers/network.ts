@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { z } from 'zod';
-import { FetchUrlSchema } from '../validation';
+import { FetchUrlSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
 export { validateSafeUrlAsync };

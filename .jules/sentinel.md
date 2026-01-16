@@ -29,3 +29,9 @@
 **Vulnerability:** The `DevOpsTools.ts` allowed an Agent to execute destructive infrastructure changes (scaling clusters, restarting instances) without explicit human confirmation. While the *user* was authenticated as admin, a compromised Agent (via prompt injection or error) could abuse this authority to damage infrastructure.
 **Learning:** "Agency without Authorization is a vulnerability." Just because a *user* has permission doesn't mean the *agent* should automatically inherit the right to execute sensitive actions without a "human-in-the-loop" check.
 **Prevention:** Implemented a mandatory `requireApproval` check within `scale_deployment` and `restart_service` tools, enforcing a critical-level human approval dialog before execution.
+
+## 2026-01-16 - [Arbitrary File Read via Audio Analysis Symlinks]
+**Vulnerability:** The `audio:analyze` IPC handler accepted any file path provided by the renderer without validation. A compromised renderer could request analysis of sensitive system files (e.g., `/etc/passwd`) by creating a symlink with an allowed audio extension (e.g., `exploit.wav -> /etc/passwd`). The handler would then read the file to calculate its hash, enabling an oracle attack or information disclosure.
+**Risk:** High. Allows arbitrary file read of sensitive data by bypassing extension checks via symlinks.
+**Learning:** Checking file extensions is insufficient for security. "String validation does not equal path validation." Security boundaries must verify the *physical* file location (using `fs.realpath`) and restrict access to authorized user directories (e.g., Music, Downloads).
+**Prevention:** Implemented `validateSafeAudioPath` in `electron/utils/file-security.ts`. This utility forces `fs.realpathSync` to resolve symlinks and enforces an allowlist of safe user directories (Music, Downloads, Desktop) and strict extension checking, blocking access to system and hidden files.

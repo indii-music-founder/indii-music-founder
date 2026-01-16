@@ -5,3 +5,6 @@
 ## 2024-05-24 - Lucide Icon Mocking in Tests
 **Learning:** Unit tests mocking `lucide-react` must be manually updated whenever a new icon is imported in the source code, otherwise tests fail with "No export defined on the mock".
 **Action:** When adding a new icon to a component, immediately grep for `vi.mock('lucide-react'` in associated test files and add the new icon to the mock return object.
+## 2026-01-16 - Dynamic State Labels
+**Learning:** Action buttons that change visual state (e.g. "Run" -> Spinner) lose their accessible name, leaving screen reader users with an unlabelled "button".
+**Action:** Implement dynamic `aria-label` attributes that describe the current state (e.g., "Processing command" vs "Run command").
