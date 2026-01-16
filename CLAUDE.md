@@ -1,7 +1,8 @@
 # CLAUDE.md - AI Assistant's Guide to indiiOS
 
-**Last Updated:** 2025-12-26
-**Repository:** Rndr-AI-v1 (indiiOS - The AI-Native Creative Studio)
+**Last Updated:** 2026-01-16
+**Repository:** indiiOS-Alpha-Electron (indiiOS - The Operating System for Independent Artists)
+**Version:** 0.1.0-beta.2
 **Purpose:** Comprehensive guide for AI assistants to understand codebase structure, conventions, and development workflows.
 
 ---
@@ -11,93 +12,157 @@
 1. [Project Overview](#1-project-overview)
 2. [Codebase Structure](#2-codebase-structure)
 3. [Architecture](#3-architecture)
-4. [Tech Stack](#4-tech-stack)
-5. [Development Setup](#5-development-setup)
-6. [Key Conventions & Standards](#6-key-conventions--standards)
-7. [State Management](#7-state-management)
-8. [Multi-Tenancy & Security](#8-multi-tenancy--security)
-9. [AI & Agent System](#9-ai--agent-system)
-10. [Module Reference](#10-module-reference)
-11. [Testing Strategy](#11-testing-strategy)
-12. [Deployment](#12-deployment)
-13. [Critical Gotchas](#13-critical-gotchas)
-14. [Common Tasks](#14-common-tasks)
+4. [Agent Instructions](#4-agent-instructions)
+5. [Tech Stack](#5-tech-stack)
+6. [Development Setup](#6-development-setup)
+7. [Key Conventions & Standards](#7-key-conventions--standards)
+8. [State Management](#8-state-management)
+9. [Multi-Tenancy & Security](#9-multi-tenancy--security)
+10. [AI & Agent System](#10-ai--agent-system)
+11. [Module Reference](#11-module-reference)
+12. [Electron Desktop App](#12-electron-desktop-app)
+13. [Testing Strategy](#13-testing-strategy)
+14. [Deployment](#14-deployment)
+15. [Critical Gotchas](#15-critical-gotchas)
+16. [Common Tasks](#16-common-tasks)
 
 ---
 
 ## 1. Project Overview
 
-**indiiOS** is a multi-tenant, AI-native creative platform that unifies image generation, video production, music synthesis, and campaign management into a single intelligent workspace.
+**indiiOS** is a multi-tenant, AI-native creative platform and operating system for independent artists. It unifies image generation, video production, music distribution, campaign management, touring, merchandise, and business operations into a single intelligent workspace.
 
 ### Core Features
 
-- **Creative Studio:** Infinite canvas for image generation and editing
-- **Video Studio:** AI-powered video production with Director's Cut QA
-- **Music Analysis:** Audio analysis (BPM, key, energy extraction)
-- **Workflow Lab:** Node-based automation for chaining AI tasks
-- **Multi-Agent System:** Specialized AI agents (Legal, Marketing, Brand, Road Manager, Music)
+- **Creative Studio:** Infinite canvas for AI image generation and editing (Fabric.js)
+- **Video Studio:** AI-powered video production with Director's Cut QA (Remotion + Veo)
+- **Audio Intelligence:** Audio analysis (BPM, key, energy extraction via Essentia.js)
+- **Workflow Lab:** Node-based automation for chaining AI tasks (React Flow)
+- **Multi-Agent System:** Specialized AI agents (Legal, Marketing, Director, Producer, Screenwriter)
+- **Music Distribution:** Multi-distributor support (DistroKid, TuneCore, CD Baby, Symphonic)
+- **Business Suite:** Finance, licensing, touring, merchandise, and publicist modules
+- **Social Media:** Multi-platform content management and posting
 
 ### Live Deployments
 
 - **Landing Page:** <https://indiios-v-1-1.web.app>
 - **Studio App:** <https://indiios-studio.web.app>
+- **Desktop App:** Electron builds for Mac, Windows, Linux
 
 ---
 
 ## 2. Codebase Structure
 
 ```
-Rndr-AI-v1/
-├── src/                          # Frontend source code
+indiiOS-Alpha-Electron/
+├── src/                          # Frontend source code (822+ files)
+│   ├── agents/                   # Frontend AI agent implementations
+│   │   ├── director/             # Video direction agent
+│   │   ├── legal/                # Legal analysis agent
+│   │   ├── producer/             # Music production agent
+│   │   └── screenwriter/         # Content creation agent
 │   ├── core/                     # Core app infrastructure
-│   │   ├── App.tsx              # Main application entry
-│   │   ├── store.ts             # Zustand store root
-│   │   ├── store/slices/        # Store slices (auth, agent, creative, etc.)
-│   │   ├── components/          # Core UI components (Sidebar, CommandBar, etc.)
+│   │   ├── App.tsx              # Main application (20+ lazy-loaded modules)
+│   │   ├── store/               # Zustand store
+│   │   │   ├── index.ts         # Store composition
+│   │   │   └── slices/          # 10 active slices + 6 deferred
+│   │   ├── components/          # Core UI (Sidebar, CommandBar, ChatOverlay)
 │   │   ├── config/              # AI model configs
+│   │   ├── context/             # VoiceContext, ToastContext
+│   │   ├── constants.ts         # 30 module IDs
 │   │   └── theme/               # Module color schemes
-│   ├── modules/                  # Feature modules
-│   │   ├── auth/                # Authentication & org selection
+│   ├── modules/                  # Feature modules (22 directories)
+│   │   ├── agent/               # Agent dashboard & monitoring
 │   │   ├── creative/            # Creative Studio (image generation)
-│   │   ├── video/               # Video Studio
-│   │   ├── music/               # Music Analysis
-│   │   ├── workflow/            # Workflow Lab (node editor)
-│   │   ├── marketing/           # Marketing & Campaign management
-│   │   ├── publishing/          # Music distribution & royalties
-│   │   ├── legal/               # Legal dashboard
 │   │   ├── dashboard/           # Main dashboard
-│   │   └── onboarding/          # User onboarding
-│   ├── services/                 # Business logic layer
-│   │   ├── agent/               # Agent system (AgentZero, specialists)
-│   │   ├── ai/                  # AI service wrappers
-│   │   ├── image/               # Image generation services
-│   │   ├── video/               # Video generation services
-│   │   ├── rag/                 # RAG & file search
-│   │   ├── distribution/        # Music distribution (adapters, persistence)
-│   │   ├── ddex/                # DDEX standards (ERN, DSR parsing)
+│   │   ├── design/              # Design workspace
+│   │   ├── distribution/        # Multi-distributor management
+│   │   ├── files/               # File browser & preview
+│   │   ├── finance/             # Revenue & expense tracking
+│   │   ├── knowledge/           # Knowledge base/FAQs
+│   │   ├── legal/               # Contract review
+│   │   ├── licensing/           # License management
+│   │   ├── marketing/           # Campaigns & brand management
+│   │   ├── marketplace/         # Music/art marketplace
+│   │   ├── merchandise/         # Merch studio with 3D preview
+│   │   ├── observability/       # Analytics & monitoring
+│   │   ├── onboarding/          # User onboarding flow
+│   │   ├── publicist/           # Press kit & media relations
+│   │   ├── publishing/          # Music distribution UI
+│   │   ├── social/              # Social media management
+│   │   ├── tools/               # Audio analyzer, reference manager
+│   │   ├── touring/             # Tour dates, venue management
+│   │   ├── video/               # Video Studio
+│   │   └── workflow/            # Workflow Lab (node editor)
+│   ├── services/                 # Business logic layer (36+ directories)
+│   │   ├── agent/               # AgentZero orchestration
+│   │   ├── ai/                  # Gemini/Vertex AI wrappers
+│   │   ├── audio/               # Audio analysis (Essentia.js)
+│   │   ├── blockchain/          # Web3 integration
+│   │   ├── cache/               # Caching layer
+│   │   ├── ddex/                # DDEX standards (ERN, DSR)
+│   │   ├── design/              # Design system utilities
+│   │   ├── distribution/        # Multi-distributor facade & adapters
+│   │   ├── finance/             # Financial calculations
+│   │   ├── image/               # Image generation service
+│   │   ├── ingestion/           # Data import pipelines
+│   │   ├── licensing/           # License management
+│   │   ├── marketplace/         # Marketplace logic
+│   │   ├── metadata/            # Golden metadata standards
+│   │   ├── payment/             # Stripe integration
+│   │   ├── publicist/           # Media relations
+│   │   ├── publishing/          # Music publishing workflows
+│   │   ├── rag/                 # Retrieval-augmented generation
+│   │   ├── revenue/             # Revenue analytics
 │   │   ├── security/            # Credential management (keytar)
-│   │   ├── metadata/            # GoldenMetadata types
+│   │   ├── social/              # Social platform APIs
+│   │   ├── storage/             # Firebase Storage abstraction
+│   │   ├── subscription/        # Membership tiers
+│   │   ├── touring/             # Tour management
+│   │   ├── video/               # Video generation (Veo)
 │   │   └── firebase.ts          # Firebase initialization
 │   ├── components/               # Shared UI components
-│   │   ├── ui/                  # Base UI components
-│   │   ├── kokonutui/           # KokonutUI components
-│   │   └── motion-primitives/   # Animation components
-│   └── lib/                      # Utility functions
+│   │   ├── ui/                  # Base shadcn components
+│   │   ├── kokonutui/           # KokonutUI design system
+│   │   ├── motion-primitives/   # Framer Motion components
+│   │   ├── studio/              # Studio-specific UI
+│   │   ├── subscription/        # Pricing/tier UI
+│   │   └── instruments/         # Instrument approval modal
+│   ├── hooks/                    # Custom React hooks
+│   ├── lib/                      # Utility functions
+│   ├── shared/                   # Shared types & schemas
+│   │   ├── schemas/             # Zod validation schemas
+│   │   └── types/               # Shared TypeScript types
+│   ├── styles/                   # Global CSS
+│   └── test/                     # Test setup & utilities
 ├── functions/                    # Firebase Cloud Functions (Backend)
 │   └── src/
-│       ├── agents/              # Backend agent implementations
-│       ├── ai/                  # Vertex AI & Gemini wrappers
-│       ├── rag/                 # RAG backend
-│       ├── inngest/             # Inngest job workflows
-│       └── index.ts             # Function exports
+│       ├── lib/                 # Function implementations
+│       │   ├── video.ts         # Veo video generation
+│       │   ├── long_form_video.ts
+│       │   └── image.ts         # Image generation
+│       ├── config/              # Model & rate limit configs
+│       ├── stripe/              # Stripe webhook handlers
+│       ├── subscription/        # Membership management
+│       ├── analytics/           # Usage tracking
+│       └── index.ts             # 100+ exported functions
+├── electron/                     # Electron main/preload processes
+│   ├── main.ts                  # Window management, IPC handlers
+│   ├── preload.ts               # Context isolation bridge
+│   ├── security.ts              # Security hardening
+│   ├── handlers/                # IPC handlers
+│   │   ├── system.ts            # System info, file access
+│   │   ├── audio.ts             # Audio processing
+│   │   ├── credential.ts        # Keytar integration
+│   │   ├── agent.ts             # Agent IPC
+│   │   └── distribution.ts      # Distro upload
+│   └── utils/                   # IPC security, PKCE, validation
+├── e2e/                          # Playwright E2E tests (39 test files)
+├── landing-page/                 # Next.js landing site
 ├── docs/                         # Documentation
-│   ├── AGENT_SYSTEM_ARCHITECTURE.md
-│   ├── BACKEND_ARCHITECTURE.md
-│   └── UI_STATE.md
-├── e2e/                          # Playwright E2E tests
-├── landing-page/                 # Separate Next.js landing page
-├── electron/                     # Electron app wrapper
-├── .agent/workflows/             # Agent workflow definitions
+├── build/                        # Electron notarization, entitlements
+├── extensions/                   # Firebase Storage Resize Images
+├── scripts/                      # Build & utility scripts
 ├── RULES.md                      # Operational rules & Agent Zero protocol
 ├── MODEL_POLICY.md               # Strict model usage policy
 └── ROADMAP.md                    # Future plans
@@ -107,13 +172,16 @@ Rndr-AI-v1/
 
 | File | Purpose |
 |------|---------|
-| `package.json` | Dependencies, scripts (uses "indii-os" as name) |
-| `vite.config.ts` | Vite build config, aliases (`@/` → `src/`) |
-| `tsconfig.json` | TypeScript config (ES2022, strict mode) |
-| `firebase.json` | Firebase hosting targets (studio + landing) |
+| `package.json` | Dependencies, scripts (140+ deps, Node 22+) |
+| `vite.config.ts` | Vite build with PWA, manual chunking, port 4242 |
+| `tsconfig.json` | TypeScript config (ES2022, strict mode, @/ alias) |
+| `firebase.json` | Dual hosting targets (studio + landing) |
 | `firestore.rules` | Security rules for multi-tenancy |
+| `electron-builder.json` | Mac/Windows/Linux packaging |
+| `playwright.config.ts` | E2E with electron + chromium projects |
+| `eslint.config.js` | Flat config with React hooks, TypeScript |
+| `.husky/pre-commit` | Lint-staged + unit tests |
 | `components.json` | Shadcn UI component config |
-| `.env` / `.env.example` | Environment variables (API keys) |
 
 ---
 
@@ -123,10 +191,11 @@ Rndr-AI-v1/
 
 **Frontend (Client-Side):**
 
-- React 19 + Vite
+- React 18.3.1 + Vite 6.2.0
 - Text/chat uses `GoogleGenerativeAI` SDK directly for low-latency
-- State managed by Zustand
+- State managed by Zustand (10 active slices)
 - Firebase SDK for auth, Firestore, storage
+- Electron for desktop distribution
 
 **Backend (Cloud Functions):**
 
@@ -134,6 +203,7 @@ Rndr-AI-v1/
 - Vertex AI for image/video generation
 - Agent execution runs server-side
 - IAM Service Accounts (no exposed keys)
+- Inngest for durable job workflows
 
 **Rationale for Backend Migration:**
 
@@ -150,17 +220,12 @@ Rndr-AI-v1/
          │   (Orchestrator)    │
          └──────────┬──────────┘
                     │
-        ┌───────────┼───────────┐
-        │           │           │
-   ┌────▼───┐  ┌───▼────┐  ┌──▼─────┐
-   │ Legal  │  │ Brand  │  │Marketing│
-   │ Agent  │  │ Agent  │  │  Agent  │
-   └────────┘  └────────┘  └────────┘
-        │           │           │
-   ┌────▼───┐  ┌───▼────┐  ┌──▼─────┐
-   │  Road  │  │ Music  │  │Campaign│
-   │Manager │  │ Agent  │  │ Manager│
-   └────────┘  └────────┘  └────────┘
+    ┌───────────────┼───────────────┐
+    │       │       │       │       │
+┌───▼──┐ ┌──▼───┐ ┌─▼────┐ ┌▼─────┐ ┌▼────────┐
+│Legal │ │Brand │ │Market│ │Direct│ │Producer │
+│Agent │ │Agent │ │Agent │ │Agent │ │  Agent  │
+└──────┘ └──────┘ └──────┘ └──────┘ └─────────┘
 ```
 
 **Components:**
@@ -176,6 +241,7 @@ Rndr-AI-v1/
 - `src/services/agent/specialists/BaseAgent.ts` - Base class for specialists
 - `src/services/agent/registry.ts` - Agent registry
 - `src/services/agent/tools.ts` - Tool definitions
+- `src/agents/` - Frontend agent implementations (Director, Legal, Producer, Screenwriter)
 
 ---
 
@@ -224,45 +290,76 @@ Before writing a script, check `execution/` per your directive. Only create new 
 
 ### Frontend
 
-- **Framework:** React 19.2.0
-- **Build:** Vite 6.2.0
-- **Styling:** TailwindCSS v4.1.17 (CSS-first config)
-- **State:** Zustand 5.0.8
-- **Animation:** Framer Motion 12.23.24
-- **3D/Canvas:** Fabric.js 6.9.0, React Three Fiber (via Remotion)
-- **Audio:** Tone.js 15.1.22, Wavesurfer.js 7.11.1, Essentia.js 0.1.3
-- **Video:** Remotion 4.0.382 (Player, Renderer, Lambda)
-- **Workflow:** React Flow 11.11.4
-- **Icons:** Lucide React 0.555.0
-- **Markdown:** React Markdown 10.1.0
+| Category | Technology | Version |
+|----------|------------|---------|
+| Framework | React | 18.3.1 |
+| Build | Vite | 6.2.0 |
+| Styling | TailwindCSS | 4.1.17 (CSS-first) |
+| State | Zustand | 5.0.8 |
+| Animation | Framer Motion | 12.23.26 |
+| 3D/Canvas | Fabric.js | 6.9.0 |
+| 3D Rendering | React Three Fiber | 9.5.0 |
+| Audio | Essentia.js | 0.1.3 |
+| Audio Visual | Wavesurfer.js | 7.11.1 |
+| Video | Remotion | 4.0.382 |
+| Workflow | React Flow | 11.11.4 |
+| Charts | Recharts | 3.6.0 |
+| Icons | Lucide React | 0.555.0 |
+| Markdown | React Markdown | 10.1.0 |
+| Validation | Zod | 3.25.76 |
 
 ### Backend
 
-- **Platform:** Firebase (Hosting, Functions, Firestore, Storage, Analytics)
-- **Runtime:** Node.js 22
-- **AI SDK:** `@genkit-ai/ai` 1.25.0, `@google/genai` 1.30.0
-- **Jobs:** Inngest 3.46.0
+| Category | Technology | Version |
+|----------|------------|---------|
+| Platform | Firebase | 12.7.0 |
+| Runtime | Node.js | 22+ |
+| AI SDK | @google/genai | 1.30.0 |
+| AI SDK | @google/generative-ai | 0.24.1 |
+| Orchestration | Genkit | 1.26.0 |
+| Jobs | Inngest | 3.46.0 |
+| Payments | Stripe | 20.1.2 |
+| Analytics | BigQuery | 8.1.1 |
+
+### Desktop (Electron)
+
+| Category | Technology | Version |
+|----------|------------|---------|
+| Framework | Electron | Latest |
+| Builder | electron-builder | Latest |
+| Credentials | Keytar | 7.9.0 |
+| Storage | electron-store | 11.0.2 |
+| Media | FFmpeg/FFprobe | Static bundled |
 
 ### AI Models (STRICT POLICY - See MODEL_POLICY.md)
 
-- **Image:** `gemini-3-pro-image-preview` (Nano Banana Pro)
-- **Text/Reasoning:** `gemini-3-flash-preview` (Fast), `gemini-3-pro-preview` (Reasoning)
-- **Video:** `veo-3.1-generate-preview` (Standard)
-- **Forbidden:** Gemini 1.5 Pro, Gemini 1.5 Flash (Use Gemini 3 equivalents)
+| Purpose | Constant | Model ID |
+|---------|----------|----------|
+| Complex reasoning | `AI_MODELS.TEXT.AGENT` | `gemini-3-pro-preview` |
+| Fast tasks | `AI_MODELS.TEXT.FAST` | `gemini-3-flash-preview` |
+| Image generation | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
+| Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
+
+**Forbidden Models (WILL CRASH APP):**
+- `gemini-1.5-flash`, `gemini-1.5-pro` (ALL 1.5 variants BANNED)
+- `gemini-2.0-flash`, `gemini-2.0-pro` (ALL 2.0 variants BANNED)
+- `gemini-pro`, `gemini-pro-vision` (legacy BANNED)
 
 ### Testing
 
-- **Unit:** Vitest 4.0.15 + Testing Library
-- **E2E:** Playwright 1.57.0
-- **Environment:** jsdom, fake-indexeddb
+| Category | Technology | Version |
+|----------|------------|---------|
+| Unit | Vitest | 4.0.15 |
+| E2E | Playwright | 1.57.0 |
+| Environment | jsdom, fake-indexeddb | Latest |
 
 ---
 
-## 5. Development Setup
+## 6. Development Setup
 
 ### Prerequisites
 
-- Node.js 20+
+- **Node.js 22.0.0+** (strictly required)
 - Firebase CLI (`npm install -g firebase-tools`)
 
 ### Installation
@@ -270,7 +367,7 @@ Before writing a script, check `execution/` per your directive. Only create new 
 ```bash
 # Clone and install
 git clone <repo-url>
-cd Rndr-AI-v1
+cd indiiOS-Alpha-Electron
 npm install
 
 # Environment setup
@@ -278,16 +375,19 @@ cp .env.example .env
 # Edit .env with your keys:
 # - VITE_GEMINI_API_KEY
 # - VITE_FIREBASE_CONFIG (JSON string)
+# - VITE_VERTEX_PROJECT_ID
+# - VITE_VERTEX_LOCATION
 ```
 
 ### Development Commands
 
 ```bash
-# Frontend development
-npm run dev                    # Start Vite dev server (port 5173)
+# Frontend development (port 4242)
+npm run dev                    # Start Vite dev server
 
 # Building
-npm run build                  # Build studio app
+npm run build                  # Build with typecheck + lint
+npm run build:studio           # Build studio app only
 npm run build:landing          # Build landing page
 npm run build:all              # Build both
 
@@ -295,9 +395,17 @@ npm run build:all              # Build both
 npm run test                   # Run Vitest unit tests
 npm run test:e2e               # Run Playwright E2E tests
 
+# Linting
+npm run lint                   # Run ESLint
+npm run lint:fix               # Run ESLint with auto-fix
+
 # Electron (Desktop App)
-npm run electron:dev           # Development mode
+npm run electron:dev           # Development mode (requires dev server on 4242)
 npm run electron:build         # Production build
+npm run build:desktop          # Full desktop release (all platforms)
+npm run build:desktop:mac      # Mac only
+npm run build:desktop:win      # Windows only
+npm run build:desktop:linux    # Linux only
 
 # Preview
 npm run preview                # Preview production build
@@ -314,9 +422,9 @@ firebase emulators:start       # Run local emulators
 
 ---
 
-## 6. Key Conventions & Standards
+## 7. Key Conventions & Standards
 
-### 6.1 The Agent Zero Evolution Protocol (from RULES.md)
+### 7.1 The Agent Zero Evolution Protocol (from RULES.md)
 
 **Critical:** This system emulates Agent Zero framework with two internal modes:
 
@@ -337,7 +445,7 @@ firebase emulators:start       # Run local emulators
 - Explicitly link success to user's data
 - Example: "My previous marketing strategy failed to hit 1k streams. I've updated my curriculum to prioritize TikTok."
 
-### 6.2 Design Currency (2025 Standards)
+### 7.2 Design Currency (2025/2026 Standards)
 
 **From RULES.md:**
 
@@ -346,7 +454,7 @@ firebase emulators:start       # Run local emulators
 - **Aesthetic:** "Liquid Logic" - glassmorphism, subtle borders (`border-white/5`), organic 3D shapes
 - **Linting:** Run `npx eslint . --fix` before every code submission
 
-### 6.3 Code Style
+### 7.3 Code Style
 
 **TypeScript:**
 
@@ -360,6 +468,7 @@ firebase emulators:start       # Run local emulators
 - Functional components only
 - Hooks for state/effects
 - Prop types via TypeScript interfaces
+- Lazy loading for modules (`const Module = lazy(() => import(...))`)
 
 **File Naming:**
 
@@ -368,29 +477,9 @@ firebase emulators:start       # Run local emulators
 - Utilities: camelCase (e.g., `validationUtils.ts`)
 - Tests: `*.test.ts` or `*.test.tsx` or `__tests__/` directory
 
-### 6.4 Model Usage Policy (CRITICAL)
+### 7.4 Model Usage Policy (CRITICAL)
 
 > **WARNING: Runtime validation is enabled. Using forbidden models will CRASH the app on startup.**
-
-**From MODEL_POLICY.md - STRICTLY ENFORCED:**
-
-#### Approved Models (ONLY THESE ARE ALLOWED)
-
-| Purpose | Constant | Model ID |
-|---------|----------|----------|
-| Complex reasoning | `AI_MODELS.TEXT.AGENT` | `gemini-3-pro-preview` |
-| Fast tasks | `AI_MODELS.TEXT.FAST` | `gemini-3-flash-preview` |
-| Image generation | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
-| Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
-
-#### Forbidden Models (WILL CRASH APP)
-
-- `gemini-1.5-flash`, `gemini-1.5-pro` (ALL 1.5 variants are BANNED)
-- `gemini-2.0-flash`, `gemini-2.0-pro` (ALL 2.0 variants are BANNED)
-- `gemini-pro`, `gemini-pro-vision` (legacy BANNED)
-- Any model not explicitly listed in `Approved Models` above.
-
-#### Correct Usage
 
 ```typescript
 // ✅ CORRECT - Import from central config
@@ -407,32 +496,58 @@ const response = await AI.generateContent({
 });
 ```
 
-**Why:** Gemini 3.x is the current generation. Legacy models are deprecated and incompatible with Gemini 3 API features (thinking levels, thought signatures).
-
 ---
 
-## 7. State Management
+## 8. State Management
 
-### 7.1 Zustand Store Architecture
+### 8.1 Zustand Store Architecture
 
-**Central Store:** `src/core/store.ts`
+**Central Store:** `src/core/store/index.ts`
 
 ```typescript
-type AppState = AppSlice & AuthSlice & AgentSlice & CreativeSlice & WorkflowSlice;
-export const useStore = create<AppState>(...);
+export interface StoreState extends
+    AppSlice,
+    ProfileSlice,
+    AgentSlice,
+    CreativeSlice,
+    WorkflowSlice,
+    AuthSlice,
+    FinanceSlice,
+    DistributionSlice,
+    FileSystemSlice,
+    AudioIntelligenceSlice { }
+
+export const useStore = create<StoreState>()((...a) => ({
+    ...createAppSlice(...a),
+    ...createProfileSlice(...a),
+    // ... other slices
+}));
 ```
 
-**Slices:**
+### 8.2 Active Slices (10)
 
 | Slice | File | Responsibilities |
 |-------|------|------------------|
-| `AppSlice` | `slices/appSlice.ts` | Active module, sidebar, theme, toasts |
-| `AuthSlice` | `slices/authSlice.ts` | User, organizations, active org/project |
-| `AgentSlice` | `slices/agentSlice.ts` | Chat messages, agent state, persona |
-| `CreativeSlice` | `slices/creativeSlice.ts` | Images, canvas state, history, prompts |
-| `WorkflowSlice` | `slices/workflowSlice.ts` | Workflow nodes, edges, execution |
+| `AppSlice` | `appSlice.ts` | Active module, sidebar, theme, toasts |
+| `AuthSlice` | `authSlice.ts` | User, organizations, active org/project |
+| `ProfileSlice` | `profileSlice.ts` | User profile, preferences, metadata |
+| `AgentSlice` | `agentSlice.ts` | Chat messages, agent thoughts, responses |
+| `CreativeSlice` | `creativeSlice.ts` | Canvas images, history, generations |
+| `WorkflowSlice` | `workflowSlice.ts` | Workflow nodes, edges, execution |
+| `FinanceSlice` | `financeSlice.ts` | Revenue, expenses, financial data |
+| `DistributionSlice` | `distributionSlice.ts` | Release status, distributor connections |
+| `FileSystemSlice` | `fileSystemSlice.ts` | File hierarchy, uploads, downloads |
+| `AudioIntelligenceSlice` | `audioIntelligenceSlice.ts` | Audio analysis results (BPM, key, energy) |
 
-### 7.2 Usage Pattern
+### 8.3 Deferred Slices (6, commented out)
+
+- `DashboardSlice` - Dashboard widgets
+- `OnboardingSlice` - Onboarding state
+- `MusicSlice` - Music library
+- `LicensingSlice` - License management
+- `ShowroomSlice` - 3D showroom state
+
+### 8.4 Usage Pattern
 
 ```typescript
 import { useStore } from '@/core/store';
@@ -450,19 +565,19 @@ function MyComponent() {
 }
 ```
 
-### 7.3 Store Debugging
+### 8.5 Store Debugging
 
 ```javascript
-// Store is exposed globally for debugging
+// Store is exposed globally in dev mode for debugging
 window.useStore.getState();        // Get full state
 window.useStore.setState({...});   // Update state (use cautiously)
 ```
 
 ---
 
-## 8. Multi-Tenancy & Security
+## 9. Multi-Tenancy & Security
 
-### 8.1 Data Isolation Model
+### 9.1 Data Isolation Model
 
 **Hierarchy:**
 
@@ -477,9 +592,7 @@ User
 
 **Key Principle:** All data is scoped to `{ orgId, projectId }` tuple.
 
-### 8.2 Firestore Security Rules
-
-**From `firestore.rules`:**
+### 9.2 Firestore Security Rules
 
 ```javascript
 // Organizations: User must be in members array
@@ -488,65 +601,56 @@ allow read: if request.auth.uid in resource.data.members;
 // Projects: User must be org member
 allow read: if isOrgMember(resource.data.orgId);
 
-// History, Assets: Same org-scoped rules
-```
-
-**Helper Function:**
-
-```javascript
 function isOrgMember(orgId) {
   return request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
 }
 ```
 
-### 8.3 Frontend Context Injection
+### 9.3 Security Architecture
 
-**AgentService automatically injects:**
+**Frontend Security:**
+- API key environment variables (VITE_* prefix)
+- Firebase Security Rules for multi-tenancy
+- Credential storage via Keytar (Electron)
 
-- Active organization name
-- Active project name
-- Brand Kit (if present)
-- User profile
+**Backend Security:**
+- Admin claim enforcement on sensitive functions
+- Origin-based CORS (whitelist: studio.indiios.com, localhost in dev)
+- Rate limiting via Inngest
+- App Check for mobile/desktop app verification
 
-**Example:**
-
-```typescript
-// In AgentZero.ts
-const context = `
-Organization: ${activeOrg.name}
-Project: ${activeProject.name}
-Brand Kit: ${brandKit ? 'Yes' : 'None'}
-`;
-```
+**Electron Security:**
+- Context isolation enabled
+- Sandbox enabled
+- No node integration
+- IPC security validation
+- PKCE for OAuth flows
 
 ---
 
-## 9. AI & Agent System
+## 10. AI & Agent System
 
-### 9.1 Agent Lifecycle
+### 10.1 Frontend Agents (`src/agents/`)
+
+| Agent | Purpose |
+|-------|---------|
+| `DirectorAgent` | Video production decisions, shot selection |
+| `LegalAgent` | Contract analysis, IP clause extraction |
+| `ProducerAgent` | Music production advice, arrangement suggestions |
+| `ScreenwriterAgent` | Script generation, content creation |
+
+### 10.2 Agent Lifecycle
 
 **1. User sends message → AgentService**
 
 ```typescript
 // src/services/agent/AgentService.ts
 async chat(message: string) {
-  // Add user message to history
-  // Call AgentZero with context
   const response = await agentZero.execute(message, context);
 }
 ```
 
-**2. AgentZero analyzes request**
-
-```typescript
-// src/services/agent/AgentZero.ts
-async execute(task: string, context: Context) {
-  // Decide: Handle directly OR delegate
-  // If delegate, use 'delegate_task' tool
-}
-```
-
-**3. Delegation (if needed)**
+**2. AgentZero analyzes and potentially delegates**
 
 ```typescript
 // AgentZero calls delegate_task
@@ -557,21 +661,11 @@ async execute(task: string, context: Context) {
 }
 ```
 
-**4. Specialist execution**
+**3. Specialist executes with domain-specific tools**
 
-```typescript
-// src/services/agent/specialists/LegalAgent.ts
-class LegalAgent extends BaseAgent {
-  async execute(task, context) {
-    // Use specialized tools
-    // Return structured result
-  }
-}
-```
+**4. Result flows back to user**
 
-**5. Result flows back to user**
-
-### 9.2 Adding a New Specialist Agent
+### 10.3 Adding a New Specialist Agent
 
 **Step 1:** Create agent file
 
@@ -602,7 +696,6 @@ export class MyAgent extends BaseAgent {
     super();
     this.functions = {
       my_tool: async (args) => {
-        // Implementation
         return { result: 'data' };
       }
     };
@@ -612,201 +705,173 @@ export class MyAgent extends BaseAgent {
 
 **Step 2:** Register in `AgentRegistry`
 
-```typescript
-// src/services/agent/registry.ts
-import { MyAgent } from './specialists/MyAgent';
+**Step 3:** Update `delegate_task` tool description with new agent ID
 
-AgentRegistry.register(new MyAgent());
-```
-
-**Step 3:** Update `delegate_task` tool description
-
-```typescript
-// List valid agent IDs: 'legal', 'marketing', 'my-agent'
-```
-
-### 9.3 Tool Calling Standard
-
-**From AGENT_SYSTEM_ARCHITECTURE.md:**
+### 10.4 Tool Calling Standard
 
 **Critical Fix:** Google AI SDK exposes text via **method** `response.text()`, NOT property.
 
 ```typescript
 // ✅ CORRECT
-const response = await AI.generateContent({...});
 const text = response.text(); // Method call
 
 // ❌ WRONG (returns undefined)
 const text = response.text; // Property access
 ```
 
-**Tool Implementation Pattern:**
-
-```typescript
-this.functions = {
-  tool_name: async (args) => {
-    // REAL IMPLEMENTATION - No mocks in production
-    const response = await AI.generateContent({...});
-    return AI.parseJSON(response.text());
-  }
-};
-```
-
 ---
 
-## 10. Module Reference
+## 11. Module Reference
 
-### 10.1 Creative Studio (`src/modules/creative/`)
+### 11.1 Creative Studio (`src/modules/creative/`)
 
-**Purpose:** Image generation, infinite canvas, product showroom
+**Purpose:** AI image generation, infinite canvas, product showroom
 
 **Key Components:**
-
 - `CreativeStudio.tsx` - Main container
 - `InfiniteCanvas.tsx` - Fabric.js canvas with pan/zoom
 - `PromptBuilder.tsx` - AI-powered prompt construction
-- `Showroom.tsx` - 3D product visualization
 
-**Services:**
+**Services:** `ImageGenerationService.ts`
 
-- `ImageGenerationService.ts` - Calls backend `generateImage` function
-- `VideoDirector.ts` - Image-to-video director's cut
-
-**State:**
-
-- `creativeSlice.ts` - Images, canvas state, history
-
-**README:** `src/modules/creative/README.md`
-
-### 10.2 Video Studio (`src/modules/video/`)
+### 11.2 Video Studio (`src/modules/video/`)
 
 **Purpose:** AI video production workflow (Idea → Brief → Review)
 
 **Key Components:**
-
 - `VideoStudio.tsx` - Main container
 - `VideoEditor.tsx` - Timeline editor
 - `VideoPlayer.tsx` - Remotion Player wrapper
 
-**Services:**
+**Services:** `VideoGenerationService.ts` (Vertex AI Veo)
 
-- `VideoGenerationService.ts` - Vertex AI Veo integration
-
-**State:**
-
-- `videoEditorStore.ts` - Separate Zustand store for video editing
-
-**README:** `src/modules/video/README.md`
-
-### 10.3 Music Analysis (`src/modules/music/`)
-
-**Purpose:** Audio analysis (BPM, key, energy extraction), frequency visualization
-
-**Key Components:**
-
-- `MusicStudio.tsx` - Main container
-- `AudioAnalyzer.tsx` - Waveform & spectrum display
-
-**Services:**
-
-- `AudioAnalysisEngine.ts` - Essentia.js integration for audio features
-
-**README:** `src/modules/music/README.md`
-
-### 10.4 Workflow Lab (`src/modules/workflow/`)
+### 11.3 Workflow Lab (`src/modules/workflow/`)
 
 **Purpose:** Node-based automation for chaining AI tasks
 
 **Key Components:**
-
 - `WorkflowLab.tsx` - React Flow editor
 - `WorkflowEngine.ts` - Execution engine
 - `nodeRegistry.ts` - Available node types
 
-**Services:**
-
-- `workflowPersistence.ts` - Firestore sync
-
-**README:** `src/modules/workflow/README.md`
-
-### 10.5 Marketing (`src/modules/marketing/`)
+### 11.4 Marketing (`src/modules/marketing/`)
 
 **Purpose:** Campaign management, brand assets, copywriting
 
 **Key Components:**
-
 - `BrandManager.tsx` - Brand kit editor
 - `CampaignManager.tsx` - Campaign lifecycle
-- `MapsComponent.tsx` - Google Maps for geo-targeting
 
-**Agents:**
+### 11.5 Distribution (`src/modules/distribution/`)
 
-- `BrandAgent` - Brand consistency analysis
-- `MarketingAgent` - Campaign strategy
-- `CampaignManager` - Execution orchestration
-
-**README:** `src/modules/marketing/README.md`
-
-### 10.6 Legal (`src/modules/legal/`)
-
-**Purpose:** Contract review, rights management, compliance
-
-**Agents:**
-
-- `LegalAgent` - Contract analysis, IP clause extraction
-
-**README:** `src/modules/legal/README.md`
-
-### 10.7 Publishing (`src/modules/publishing/`)
-
-**Purpose:** Music distribution, DDEX integration, royalty management
-
-**Key Components:**
-
-- `PublishingDashboard.tsx` - Main dashboard with stats & releases
-- `components/ReleaseWizard.tsx` - Step-by-step release creation
+**Purpose:** Multi-distributor music distribution
 
 **Services (`src/services/distribution/`):**
+- `DistributorService.ts` - Main facade
+- `adapters/DistroKidAdapter.ts`
+- `adapters/TuneCoreAdapter.ts`
+- `adapters/CDBabyAdapter.ts`
+- `adapters/SymphonicAdapter.ts`
 
-- `DistributorService.ts` - Main facade for multi-distributor releases
-- `DistributionPersistenceService.ts` - Electron-store persistence
-- `adapters/DistroKidAdapter.ts` - DistroKid integration
-- `adapters/TuneCoreAdapter.ts` - TuneCore integration
-- `adapters/CDBabyAdapter.ts` - CD Baby integration
-- `adapters/SymphonicAdapter.ts` - Symphonic DDEX integration
+### 11.6 Finance (`src/modules/finance/`)
 
-**DDEX Services (`src/services/ddex/`):**
+**Purpose:** Revenue tracking, expense management, financial analytics
 
-- `ERNService.ts` - Electronic Release Notification generation
-- `DSRService.ts` - Digital Sales Report parsing
-- `DDEXParser.ts` - XML↔JSON conversion
-- `DDEXValidator.ts` - Schema validation
+### 11.7 Touring (`src/modules/touring/`)
 
-**Security (`src/services/security/`):**
+**Purpose:** Tour dates, venue management, road manager features
 
-- `CredentialService.ts` - Keytar-based secure credential storage
+### 11.8 Merchandise (`src/modules/merchandise/`)
 
-**Types:**
+**Purpose:** Merch studio with 3D product preview
 
-- `src/services/distribution/types/distributor.ts` - `DistributorId`, `ReleaseStatus`, `ReleaseAssets`
-- `src/services/metadata/types.ts` - `ExtendedGoldenMetadata`
-- `src/services/ddex/types/dsr.ts` - `DSRReport`, `DSRTransaction`
+### 11.9 Social (`src/modules/social/`)
 
-**Implementation Plan:** See [docs/DDEX_IMPLEMENTATION_PLAN.md](docs/DDEX_IMPLEMENTATION_PLAN.md) for Phase 8 UI components
+**Purpose:** Multi-platform social media management and posting
+
+### 11.10 Other Modules
+
+| Module | Purpose |
+|--------|---------|
+| `agent/` | Agent dashboard & monitoring |
+| `dashboard/` | Main dashboard hub |
+| `design/` | Design workspace |
+| `files/` | File browser & preview |
+| `knowledge/` | Knowledge base/FAQs |
+| `legal/` | Contract review |
+| `licensing/` | License management |
+| `marketplace/` | Music/art marketplace |
+| `observability/` | Analytics & monitoring |
+| `onboarding/` | User onboarding flow |
+| `publicist/` | Press kit & media relations |
+| `publishing/` | Music distribution UI |
+| `tools/` | Audio analyzer, reference manager |
 
 ---
 
-## 11. Testing Strategy
+## 12. Electron Desktop App
 
-### 11.1 Unit Tests (Vitest)
+### 12.1 Architecture
+
+**Main Process (`electron/main.ts`):**
+- BrowserWindow management (1280x800 default)
+- IPC handler registration
+- Security hardening configuration
+
+**Preload Bridge (`electron/preload.ts`):**
+- Context-isolated IPC exposure
+- Selective API surface for renderer
+
+**IPC Handlers (`electron/handlers/`):**
+
+| Handler | Purpose |
+|---------|---------|
+| `system.ts` | System info, file access |
+| `audio.ts` | Audio processing |
+| `credential.ts` | Keytar integration |
+| `agent.ts` | Agent IPC |
+| `distribution.ts` | Distro upload |
+
+### 12.2 Security Configuration
+
+```typescript
+// electron/main.ts
+const mainWindow = new BrowserWindow({
+  webPreferences: {
+    contextIsolation: true,    // Enabled
+    sandbox: true,              // Enabled
+    nodeIntegration: false,     // Disabled
+    webviewTag: false,          // Disabled
+    preload: path.join(__dirname, 'preload.cjs')
+  }
+});
+```
+
+### 12.3 Build Targets
+
+| Platform | Format | Command |
+|----------|--------|---------|
+| Mac | DMG + ZIP | `npm run build:desktop:mac` |
+| Windows | NSIS | `npm run build:desktop:win` |
+| Linux | AppImage | `npm run build:desktop:linux` |
+| All | All formats | `npm run build:desktop` |
+
+### 12.4 Deep Linking
+
+Auth protocol: `indii-os://` for OAuth callbacks
+
+---
+
+## 13. Testing Strategy
+
+### 13.1 Unit Tests (Vitest)
 
 **Location:** Co-located with source (`.test.ts` suffix) or `__tests__/` directory
 
 **Setup:** `src/test/setup.ts`
-
-- Mocks `firebase` SDK
+- Mocks Firebase SDK (auth, Firestore, storage, functions)
+- HTMLCanvasElement mock for jsdom
 - Provides `fake-indexeddb`
-- Configures Testing Library
 
 **Running:**
 
@@ -816,29 +881,23 @@ npm run test -- --ui      # Visual UI
 npm run test -- MyComponent  # Specific file
 ```
 
-**Example:**
+### 13.2 E2E Tests (Playwright)
 
-```typescript
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-
-describe('MyComponent', () => {
-  it('renders correctly', () => {
-    render(<MyComponent />);
-    expect(screen.getByText('Hello')).toBeInTheDocument();
-  });
-});
-```
-
-### 11.2 E2E Tests (Playwright)
-
-**Location:** `e2e/` directory
+**Location:** `e2e/` directory (39 test files)
 
 **Key Tests:**
+- `electron.spec.ts` - Desktop app flows
+- `auth-flow.spec.ts` - Authentication
+- `creative-persistence.spec.ts` - Canvas saving
+- `hub-spoke.spec.ts` - Agent system
+- `maestro-campaign-workflow.spec.ts` - Marketing campaigns
+- `audio_intelligence_ui.spec.ts` - Audio analysis
+- `stress-test.spec.ts` - Load testing
+- `chaos-monkey.spec.ts` - Stability testing
 
-- `user-flow.spec.ts` - Full user journey
-- `agent-flow.spec.ts` - Agent interaction
-- `stress-test.spec.ts` - Performance & load
+**Projects:**
+- Electron: Sequential execution
+- Web: Chromium on localhost:4242
 
 **Running:**
 
@@ -848,7 +907,7 @@ npx playwright test --ui            # Interactive
 npx playwright test --debug         # Debug mode
 ```
 
-### 11.3 Coverage Expectations
+### 13.3 Coverage Expectations
 
 - **Critical Paths:** AgentService, Specialists, Store slices
 - **UI Components:** Snapshot tests for complex components
@@ -856,45 +915,32 @@ npx playwright test --debug         # Debug mode
 
 ---
 
-## 12. Deployment
+## 14. Deployment
 
-### 12.1 Hosting Architecture
+### 14.1 Hosting Architecture
 
 **Firebase Hosting with multiple targets:**
 
 | Target | Site ID | Directory | URL |
 |--------|---------|-----------|-----|
-| Landing | `indiios-v-1-1` | `landing-page/out` | <https://indiios-v-1-1.web.app> |
+| Landing | `indiios-v-1-1` | `landing-page/dist` | <https://indiios-v-1-1.web.app> |
 | Studio | `indiios-studio` | `dist` | <https://indiios-studio.web.app> |
 
-**Config:** `firebase.json`
-
-### 12.2 GitHub Actions Workflow
+### 14.2 GitHub Actions Workflow
 
 **File:** `.github/workflows/deploy.yml`
 
 **Triggers:**
-
 - Push to `main` branch
 - Manual workflow dispatch
 
-**Steps:**
-
-1. Checkout repository
-2. Setup Node.js 20.x
-3. Install dependencies (root + landing-page)
-4. Build landing page (`npm run build:landing`)
-5. Build studio app (`npm run build:studio`)
-6. Deploy to Firebase Hosting (both targets)
-
 **Secrets Required:**
-
 - `VITE_API_KEY`
 - `VITE_VERTEX_PROJECT_ID`
 - `VITE_VERTEX_LOCATION`
 - `FIREBASE_SERVICE_ACCOUNT`
 
-### 12.3 Manual Deployment
+### 14.3 Manual Deployment
 
 ```bash
 # Build all
@@ -908,9 +954,12 @@ firebase deploy
 
 # Deploy specific function
 firebase deploy --only functions:generateImage
+
+# Deploy studio app
+npm run deploy
 ```
 
-### 12.4 Environment Variables
+### 14.4 Environment Variables
 
 **Required for Build:**
 
@@ -931,11 +980,9 @@ VERTEX_PROJECT_ID=<id>
 
 ---
 
-## 13. Critical Gotchas
+## 15. Critical Gotchas
 
-### 13.1 Google AI SDK Response Handling
-
-**Problem:** `response.text()` is a method, not a property.
+### 15.1 Google AI SDK Response Handling
 
 ```typescript
 // ❌ WRONG - Returns undefined
@@ -945,52 +992,19 @@ const text = response.text;
 const text = response.text();
 ```
 
-**Impact:** Silent failures in fallback logic, agent responses appearing empty.
+### 15.2 Agent Tool Hallucinations
 
-### 13.2 Agent Tool Hallucinations
+**Problem:** Orchestrator can hallucinate agent names.
 
-**Problem:** Orchestrator can hallucinate agent names (e.g., "social_media_agent" instead of "marketing").
+**Fix:** Strictly type `agent_id` and list valid IDs in tool description.
 
-**Fix:** Strictly type `agent_id` parameter and list valid IDs in tool description:
-
-```typescript
-{
-  name: 'delegate_task',
-  parameters: {
-    agent_id: {
-      type: 'STRING',
-      description: 'Valid IDs: legal, marketing, brand, road-manager, music'
-    }
-  }
-}
-```
-
-### 13.3 Firestore Query Constraints
+### 15.3 Firestore Query Constraints
 
 **Problem:** Compound queries require composite indexes.
 
 **Fix:** Run query in dev, copy index creation link from error, add to `firestore.indexes.json`.
 
-**Example:**
-
-```json
-{
-  "indexes": [
-    {
-      "collectionGroup": "history",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "orgId", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
-    }
-  ]
-}
-```
-
-### 13.4 Vite Build Chunk Size Warnings
-
-**Problem:** Large dependencies causing chunking warnings.
+### 15.4 Vite Build Chunk Size Warnings
 
 **Fix:** Manual chunks configured in `vite.config.ts`:
 
@@ -998,13 +1012,10 @@ const text = response.text();
 manualChunks: {
   'vendor-react': ['react', 'react-dom', 'framer-motion'],
   'vendor-firebase': ['firebase/app', 'firebase/auth', ...],
-  // etc.
 }
 ```
 
-### 13.5 Tailwind v4 Migration
-
-**Problem:** v3 config patterns don't work with v4 CSS-first approach.
+### 15.5 Tailwind v4 Migration
 
 **Fix:** Use CSS variables for theming, import Tailwind in `index.css`:
 
@@ -1012,202 +1023,84 @@ manualChunks: {
 @import 'tailwindcss';
 ```
 
-### 13.6 Firebase Functions Cold Starts
-
-**Problem:** First request after idle period is slow (5-10s).
+### 15.6 Firebase Functions Cold Starts
 
 **Mitigation:**
-
 - Use Gen 2 functions (faster cold starts)
-- Increase min instances for critical functions (costs more)
 - Implement request queueing with Inngest
 
-### 13.7 Electron Forge Build Fails with Spaced Paths (node-gyp)
+### 15.7 Electron Forge Build Fails with Spaced Paths
 
-**Problem:** Running `npm run make` fails when the project is located in a path containing spaces (e.g., `/Volumes/X SSD 2025/...`). The `canvas` native module (dependency of `fabric`) fails to rebuild because node-gyp doesn't properly quote paths with spaces.
+**Problem:** node-gyp fails with paths containing spaces.
 
-**Error signature:**
-
-```text
-clang++: error: no such file or directory: 'SSD'
-clang++: error: no such file or directory: '2025/Users/...'
-Error: node-gyp failed to rebuild '.../node_modules/fabric/node_modules/canvas'
-```
-
-**Root cause:** node-gyp passes include paths (`-I/Volumes/X SSD 2025/...`) without proper quoting, causing the compiler to interpret path segments as separate arguments.
-
-**Fix:** Configure `rebuildConfig` in `forge.config.cjs` to skip native module rebuilds:
+**Fix:** Configure `rebuildConfig` in `forge.config.cjs`:
 
 ```javascript
 rebuildConfig: {
-  // Skip rebuilding canvas - fabric.js uses browser Canvas API in Electron renderer
-  // canvas is only needed for server-side rendering, not in browser context
-  onlyModules: []  // Empty array means don't rebuild any native modules
+  onlyModules: []  // Skip native module rebuilds
 },
 ```
 
-**Why this works:** In Electron's renderer process (Chromium), fabric.js uses the browser's native HTML5 Canvas API. The `canvas` npm package is only needed for server-side/Node.js canvas rendering, which isn't used in our Electron app.
+### 15.8 Dev Server Port
 
-**Alternative (if native modules ARE needed):** Move the project to a path without spaces (e.g., `/Users/name/Projects/indiiOS`).
+**Important:** Development server runs on port **4242**, not 5173.
+
+```bash
+npm run dev  # Starts on http://localhost:4242
+```
 
 ---
 
-## 14. Common Tasks
+## 16. Common Tasks
 
-### 14.1 Add a New Module
-
-**1. Create module directory:**
+### 16.1 Add a New Module
 
 ```bash
 mkdir -p src/modules/my-module
 touch src/modules/my-module/{MyModule.tsx,README.md}
 ```
 
-**2. Define component:**
+1. Create component in `MyModule.tsx`
+2. Add lazy import in `App.tsx`
+3. Add to sidebar navigation in `Sidebar.tsx`
+4. Update module constants in `core/constants.ts`
 
-```typescript
-// src/modules/my-module/MyModule.tsx
-export default function MyModule() {
-  return <div>My Module</div>;
-}
-```
-
-**3. Add route in `App.tsx`:**
-
-```typescript
-{activeModule === 'my-module' && <MyModule />}
-```
-
-**4. Add to sidebar navigation:**
-
-```typescript
-// src/core/components/Sidebar.tsx
-{ id: 'my-module', label: 'My Module', icon: <Icon /> }
-```
-
-**5. Update `appSlice.ts` type:**
-
-```typescript
-type ModuleId = 'dashboard' | 'creative' | 'my-module' | ...;
-```
-
-### 14.2 Add a Cloud Function
-
-**1. Define function:**
+### 16.2 Add a Cloud Function
 
 ```typescript
 // functions/src/myFunction.ts
 import { onCall } from 'firebase-functions/v2/https';
 
 export const myFunction = onCall(async (request) => {
-  // Verify auth
   if (!request.auth) throw new Error('Unauthorized');
-
-  // Logic
   return { result: 'data' };
 });
 ```
 
-**2. Export in `functions/src/index.ts`:**
+Export in `functions/src/index.ts`, call from frontend with `httpsCallable`.
+
+### 16.3 Add a Store Slice
+
+1. Create slice in `src/core/store/slices/mySlice.ts`
+2. Import and add to `StoreState` interface in `store/index.ts`
+3. Add to store creation spread
+
+### 16.4 Debug Agent Issues
 
 ```typescript
-export { myFunction } from './myFunction';
-```
-
-**3. Call from frontend:**
-
-```typescript
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const functions = getFunctions();
-const myFunction = httpsCallable(functions, 'myFunction');
-const result = await myFunction({ arg: 'value' });
-```
-
-### 14.3 Add a Store Slice
-
-**1. Create slice file:**
-
-```typescript
-// src/core/store/slices/mySlice.ts
-export interface MySlice {
-  myData: string;
-  setMyData: (data: string) => void;
-}
-
-export const createMySlice: StateCreator<MySlice> = (set) => ({
-  myData: '',
-  setMyData: (data) => set({ myData: data }),
-});
-```
-
-**2. Combine in `store.ts`:**
-
-```typescript
-import { createMySlice, MySlice } from './slices/mySlice';
-
-type AppState = ... & MySlice;
-
-export const useStore = create<AppState>((...a) => ({
-  ...createMySlice(...a),
-  ...
-}));
-```
-
-### 14.4 Update AI Model
-
-**Critical:** Follow MODEL_POLICY.md strictly.
-
-```typescript
-// ✅ CORRECT
-const model = genAI.getGenerativeModel({
-  model: 'gemini-3-pro-preview'
-});
-
-// Update in:
-// - src/core/config/ai-models.ts
-// - functions/src/ai/gemini.ts
-```
-
-### 14.5 Debug Agent Issues
-
-**1. Enable verbose logging:**
-
-```typescript
-// src/services/agent/AgentZero.ts
+// Enable verbose logging in AgentZero.ts
 console.log('[AgentZero] Executing:', task);
 console.log('[AgentZero] Context:', context);
-console.log('[AgentZero] Response:', response);
-```
 
-**2. Check agent registry:**
-
-```javascript
 // Browser console
 window.useStore.getState().agentMessages;
-```
-
-**3. Verify tool definitions:**
-
-```typescript
-// Check tools array has correct JSON schema
-// Verify function implementations exist in constructor
-```
-
-**4. Test specialist directly:**
-
-```typescript
-import { LegalAgent } from '@/services/agent/specialists/LegalAgent';
-const agent = new LegalAgent();
-const result = await agent.execute('test task', {});
-console.log(result);
 ```
 
 ---
 
 ## Appendix: Related Documentation
 
-- **[AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md)** - Deep dive into Hub-and-Spoke model
+- **[AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md)** - Hub-and-Spoke model deep dive
 - **[BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)** - Vertex AI migration rationale
 - **[UI_STATE.md](./docs/UI_STATE.md)** - Design system & branding
 - **[RULES.md](./RULES.md)** - Agent Zero protocol & design standards
@@ -1230,10 +1123,6 @@ import { ImageGenerationService } from '@/services/image/ImageGenerationService'
 ### Key Constants
 
 ```typescript
-// src/modules/creative/constants.ts
-export const DEFAULT_IMAGE_SIZE = { width: 1024, height: 1024 };
-export const MAX_CANVAS_ZOOM = 5;
-
 // src/core/config/ai-models.ts
 export const PRIMARY_MODEL = 'gemini-3-pro-preview';
 export const IMAGE_MODEL = 'gemini-3-pro-image-preview';
@@ -1244,9 +1133,6 @@ export const IMAGE_MODEL = 'gemini-3-pro-image-preview';
 ```bash
 # Firestore emulator
 firebase emulators:start --only firestore
-
-# Check bundle size
-npm run build -- --report
 
 # Type check
 npx tsc --noEmit
