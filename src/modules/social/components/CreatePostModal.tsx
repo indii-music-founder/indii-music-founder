@@ -6,6 +6,12 @@ import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ScheduledPostSchema } from '../schemas';
 
+const PLATFORM_LIMITS = {
+    Twitter: 280,
+    Instagram: 2200,
+    LinkedIn: 3000
+};
+
 interface CreatePostModalProps {
     onClose: () => void;
     onSave: (post: ScheduledPost) => void;
@@ -24,10 +30,16 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
 
     // IDs for accessibility
     const copyInputId = useId();
+    const characterCountId = useId();
     const dateInputId = useId();
     const timeInputId = useId();
     const modalTitleId = useId();
     const platformLabelId = useId();
+
+    const charLimit = PLATFORM_LIMITS[platform];
+    const currentLength = copy.length;
+    const isOverLimit = currentLength > charLimit;
+    const isApproachingLimit = currentLength > charLimit * 0.9;
 
     const handleGenerateCopy = async () => {
         setIsGenerating(true);
@@ -47,6 +59,11 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
     };
 
     const handleSave = () => {
+        if (isOverLimit) {
+            toast.error(`Post exceeds character limit for ${platform}`);
+            return;
+        }
+
         const timestamp = new Date(`${scheduledDate}T${scheduledTime}`).getTime();
 
         const newPostData = {
@@ -137,8 +154,26 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             value={copy}
                             onChange={(e) => setCopy(e.target.value)}
                             placeholder="What's on your mind?"
-                            className="w-full h-32 bg-bg-dark border border-gray-700 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                            aria-describedby={characterCountId}
+                            className={`w-full h-32 bg-bg-dark border rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none transition-colors resize-none ${isOverLimit
+                                    ? 'border-red-500 focus:border-red-500'
+                                    : 'border-gray-700 focus:border-blue-500'
+                                }`}
                         />
+                        <div className="flex justify-end">
+                            <span
+                                id={characterCountId}
+                                className={`text-xs font-medium transition-colors ${isOverLimit
+                                        ? 'text-red-500'
+                                        : isApproachingLimit
+                                            ? 'text-yellow-500'
+                                            : 'text-gray-500'
+                                    }`}
+                                aria-live="polite"
+                            >
+                                {currentLength} / {charLimit} characters
+                            </span>
+                        </div>
                     </div>
 
                     {/* Media Section */}
@@ -211,7 +246,8 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20"
+                        disabled={isOverLimit}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Schedule Post
                     </button>
