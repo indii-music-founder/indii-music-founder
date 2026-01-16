@@ -191,7 +191,7 @@ indiiOS-Alpha-Electron/
 
 **Frontend (Client-Side):**
 
-- React 18.3.1 + Vite 6.2.0
+- React 19.2.0 + Vite 6.2.0
 - Text/chat uses `GoogleGenerativeAI` SDK directly for low-latency
 - State managed by Zustand (10 active slices)
 - Firebase SDK for auth, Firestore, storage
@@ -292,14 +292,15 @@ Before writing a script, check `execution/` per your directive. Only create new 
 
 | Category | Technology | Version |
 |----------|------------|---------|
-| Framework | React | 18.3.1 |
+| Framework | React | 19.2.0 |
 | Build | Vite | 6.2.0 |
 | Styling | TailwindCSS | 4.1.17 (CSS-first) |
 | State | Zustand | 5.0.8 |
 | Animation | Framer Motion | 12.23.26 |
 | 3D/Canvas | Fabric.js | 6.9.0 |
 | 3D Rendering | React Three Fiber | 9.5.0 |
-| Audio | Essentia.js | 0.1.3 |
+| Audio | Tone.js | 15.1.22 |
+| Audio Analysis | Essentia.js | 0.1.3 |
 | Audio Visual | Wavesurfer.js | 7.11.1 |
 | Video | Remotion | 4.0.382 |
 | Workflow | React Flow | 11.11.4 |
