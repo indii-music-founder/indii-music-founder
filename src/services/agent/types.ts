@@ -1,6 +1,7 @@
 
 import { AgentMessage } from '@/core/store';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
+import { WhiskState } from '@/core/store/slices/creativeSlice';
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -109,6 +110,7 @@ export interface AgentContext {
     traceId?: string;
     attachments?: { mimeType: string; base64: string }[];
     systemPrompt?: string;
+    whiskState?: WhiskState;
 }
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';

@@ -44,7 +44,8 @@ export class ContextResolver {
             brandKit,
             activeModule: currentModule,
             chatHistory: state.agentHistory || [],
-            distributor
+            distributor,
+            whiskState: state.whiskState
         };
     }
 }
