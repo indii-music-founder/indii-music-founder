@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { MerchCard } from './MerchCard';
 import { Upload, Search, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -11,7 +12,11 @@ export interface AssetLibraryProps {
 }
 
 export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenerateAI }) => {
-    const { generatedHistory, uploadedImages } = useStore();
+    // ⚡ Bolt Optimization: Use useShallow to prevent re-renders when unrelated store state changes
+    const { generatedHistory, uploadedImages } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        uploadedImages: state.uploadedImages
+    })));
     const history = useMemo(() => [...generatedHistory, ...uploadedImages], [generatedHistory, uploadedImages]);
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
