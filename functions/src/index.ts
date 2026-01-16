@@ -709,7 +709,8 @@ export const generateContentStream = functions
                 // See src/core/config/ai-models.ts for the master list.
                 const ALLOWED_MODELS = [
                     "gemini-3-pro-preview",
-                    "gemini-3-flash-preview"
+                    "gemini-3-flash-preview",
+                    "gemini-2.5-flash"
                 ];
 
                 if (!ALLOWED_MODELS.includes(modelId)) {
