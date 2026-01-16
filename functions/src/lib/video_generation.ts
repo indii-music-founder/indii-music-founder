@@ -92,7 +92,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
             }
 
             // Process Result
-            const videoUri = await step.run("process-video-output", async () => {
+            const { videoUri, metadata } = await step.run("process-video-output", async () => {
                 const responseData = finalResult.response;
                 console.log("[Inngest] Final Result from Google AI:", JSON.stringify(finalResult, null, 2));
 
@@ -106,7 +106,26 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     const sample = generatedSamples[0];
                     if (sample.video && sample.video.uri) {
                         console.log(`[Inngest] Found video URI: ${sample.video.uri}`);
-                        return sample.video.uri;
+
+                        // Extract metadata
+                        const videoMetadata = sample.videoMetadata || {};
+                        let durationSeconds = 5;
+                        if (videoMetadata.duration && typeof videoMetadata.duration === 'string') {
+                            const match = videoMetadata.duration.match(/([\d.]+)s$/);
+                            if (match) {
+                                durationSeconds = parseFloat(match[1]);
+                            }
+                        }
+
+                        return {
+                            videoUri: sample.video.uri,
+                            metadata: {
+                                mime_type: videoMetadata.mimeType || "video/mp4",
+                                duration_seconds: durationSeconds,
+                                fps: 24, // Default as it's not always provided
+                                resolution: options?.resolution || "1080p"
+                            }
+                        };
                     }
                 }
 
@@ -114,6 +133,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 const outputs = responseData.outputs;
                 if (outputs && outputs.length > 0) {
                     const output = outputs[0];
+                    let uri = null;
 
                     // If it returns bytes
                     if (output.video && output.video.bytesBase64Encoded) {
@@ -123,12 +143,23 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                             metadata: { contentType: 'video/mp4' },
                             public: true
                         });
-                        return file.publicUrl();
+                        uri = file.publicUrl();
+                    } else if (output.videoUri) {
+                        uri = output.videoUri;
+                    } else if (output.gcsUri) {
+                        uri = output.gcsUri;
                     }
 
-                    // If it returns a URI directly
-                    if (output.videoUri) return output.videoUri;
-                    if (output.gcsUri) return output.gcsUri;
+                    if (uri) {
+                        return {
+                            videoUri: uri,
+                            metadata: {
+                                mime_type: "video/mp4",
+                                duration_seconds: 5,
+                                fps: 24
+                            }
+                        };
+                    }
                 }
 
                 throw new Error("No video data or URI/generatedSamples found in operation response: " + JSON.stringify(responseData));
@@ -139,6 +170,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
                     status: "completed",
                     videoUrl: videoUri,
+                    output: { metadata },
                     progress: 100,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
