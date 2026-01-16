@@ -13,3 +13,7 @@
 ## 2025-02-18 - [Form Label Association]
 **Learning:** `screen.getByLabelText` requires explicit association between label and input using `htmlFor` and `id`, or nesting. Visual proximity is not enough for accessibility tools or tests.
 **Action:** When creating form inputs, always assign an `id` and link the label via `htmlFor` to ensure accessibility and testability.
+
+## 2025-02-18 - [Streaming & Act Warnings]
+**Learning:** When testing components that consume async generators (streams), failing to wait for the stream to fully complete results in 'act(...)' warnings. Also, icon-only buttons MUST have `aria-label` to be selectable by `getByRole` and accessible.
+**Action:** Always `await waitFor` the final state of a stream (e.g. the final message or empty loading indicator) before asserting or ending the test.
