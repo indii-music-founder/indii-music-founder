@@ -40,12 +40,14 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[300px]"
+                        role="menu"
                     >
                         <div className="overflow-y-auto custom-scrollbar">
                             <div className="p-1">
                                 <button
                                     onClick={() => onSelect('dashboard')}
                                     className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                    role="menuitem"
                                 >
                                     <div className="w-2 h-2 rounded-full bg-gray-500" />
                                     indii (Chief of Staff)
@@ -61,6 +63,7 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                                         key={agent.id}
                                         onClick={() => onSelect(agent.id)}
                                         className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                        role="menuitem"
                                     >
                                         <div className={`w-1.5 h-1.5 rounded-full ${agent.color}`} />
                                         {agent.name}
@@ -77,6 +80,7 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                                         key={dept.id}
                                         onClick={() => onSelect(dept.id)}
                                         className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                        role="menuitem"
                                     >
                                         <div className={`w-1.5 h-1.5 rounded-full ${dept.color}`} />
                                         {dept.name}
@@ -99,7 +103,12 @@ const AttachmentList = memo(({ attachments, onRemove }: { attachments: File[], o
                 <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
                     {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
                     <span className="max-w-[150px] truncate">{file.name}</span>
-                    <button type="button" onClick={() => onRemove(index)} className="hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors">
+                    <button
+                        type="button"
+                        onClick={() => onRemove(index)}
+                        className="hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors"
+                        aria-label={`Remove ${file.name}`}
+                    >
                         <X size={12} />
                     </button>
                 </div>
@@ -309,6 +318,7 @@ function CommandBar() {
                         <PromptInputTextarea
                             placeholder={isDragging ? "" : "Describe your task, drop files, or take a picture..."}
                             className="text-gray-200 placeholder-gray-600"
+                            aria-label="Command input"
                         />
 
                         {/* Attachments Preview */}
@@ -369,6 +379,8 @@ function CommandBar() {
                                             type="button"
                                             onClick={() => setOpenDelegate(!openDelegate)}
                                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                            aria-haspopup="true"
+                                            aria-expanded={openDelegate}
                                         >
                                             <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
                                             <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
@@ -420,6 +432,7 @@ function CommandBar() {
                                     data-testid="command-bar-run-btn"
                                     disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
+                                    aria-label={isProcessing ? "Processing command" : "Run command"}
                                 >
                                     {isProcessing ? (
                                         <Loader2 data-testid="run-loader" size={14} className="animate-spin" />
