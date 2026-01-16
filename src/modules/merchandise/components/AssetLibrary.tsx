@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { MerchCard } from './MerchCard';
 import { Upload, Search, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { Button } from '@/components/ui/button';
 
 export interface AssetLibraryProps {
     onAddAsset: (url: string, name: string) => Promise<void>;
@@ -10,7 +11,7 @@ export interface AssetLibraryProps {
 }
 
 export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenerateAI }) => {
-    const { generatedHistory, uploadedImages, currentProjectId } = useStore();
+    const { generatedHistory, uploadedImages } = useStore();
     const history = useMemo(() => [...generatedHistory, ...uploadedImages], [generatedHistory, uploadedImages]);
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
@@ -136,10 +137,11 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
 
                 {/* Search */}
                 <div className="relative mb-3">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={14} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={14} aria-hidden="true" />
                     <input
                         type="text"
                         placeholder="Search assets..."
+                        aria-label="Search assets"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-neutral-900 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE135] transition-colors"
@@ -148,22 +150,29 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                    <button
+                    <Button
                         onClick={() => fileInputRef.current?.click()}
+                        isLoading={isUploading}
                         disabled={isUploading}
-                        className="flex items-center justify-center gap-2 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-white/10 hover:border-[#FFE135]/50 rounded-lg text-xs font-medium text-neutral-300 hover:text-white transition-all disabled:opacity-50"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Upload image"
+                        className="bg-neutral-900 hover:bg-neutral-800 border border-white/10 hover:border-[#FFE135]/50 text-neutral-300 hover:text-white rounded-lg text-xs"
                     >
-                        <Upload size={14} />
+                        {!isUploading && <Upload size={14} className="mr-2" />}
                         Upload
-                    </button>
+                    </Button>
                     {onGenerateAI && (
-                        <button
+                        <Button
                             onClick={onGenerateAI}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-[#FFE135]/10 hover:bg-[#FFE135]/20 border border-[#FFE135]/20 hover:border-[#FFE135]/50 rounded-lg text-xs font-medium text-[#FFE135] transition-all"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Generate image with AI"
+                            className="bg-[#FFE135]/10 hover:bg-[#FFE135]/20 border border-[#FFE135]/20 hover:border-[#FFE135]/50 text-[#FFE135] hover:text-[#FFE135] rounded-lg text-xs"
                         >
-                            <Sparkles size={14} />
+                            <Sparkles size={14} className="mr-2" />
                             AI Generate
-                        </button>
+                        </Button>
                     )}
                 </div>
                 <input
