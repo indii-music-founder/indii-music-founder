@@ -7,6 +7,7 @@ import fs from 'fs';
 import { apiService } from '../services/APIService';
 import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
+import { validateSafeAudioPath } from '../utils/file-security';
 import { z } from 'zod';
 
 // Fix for packing in Electron (files in asar)
@@ -50,7 +51,10 @@ export function registerAudioHandlers() {
         try {
             validateSender(event);
             // Validation
-            const validatedPath = AudioAnalyzeSchema.parse(filePath);
+            const rawPath = AudioAnalyzeSchema.parse(filePath);
+
+            // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files)
+            const validatedPath = validateSafeAudioPath(rawPath);
 
             // Parallel execution: Hash + Metadata
             const [hash, metadata] = await Promise.all([
