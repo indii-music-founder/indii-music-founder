@@ -126,7 +126,8 @@ export class WhiskService {
             }
             return [];
         } catch (error) {
-            console.error('WhiskService.generateInspiration error:', error);
+            console.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
+            console.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));
             // Strict No Mock policy: Return empty array on failure
             return [];
         }

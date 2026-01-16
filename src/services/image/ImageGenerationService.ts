@@ -79,11 +79,22 @@ export class ImageGenerationService {
         const count = options.count || 1;
 
         // Pre-flight quota check
-        const quotaCheck = await subscriptionService.canPerformAction('generateImage', count);
+        const userId = options.userProfile?.id;
+        const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
         if (!quotaCheck.allowed) {
+            let tier: any = 'free'; // Using any to bypass strict enum mismatch if needed, but MembershipTier includes 'free'
+            try {
+                const sub = userId
+                    ? await subscriptionService.getSubscription(userId)
+                    : await subscriptionService.getCurrentSubscription();
+                tier = sub.tier;
+            } catch (e) {
+                console.warn("Failed to fetch tier for QuotaExceededError, defaulting to free", e);
+            }
+
             throw new QuotaExceededError(
                 'images',
-                (await subscriptionService.getCurrentSubscription().then(s => s.tier)),
+                tier,
                 quotaCheck.reason || 'Quota exceeded',
                 quotaCheck.currentUsage?.used || 0,
                 quotaCheck.currentUsage?.limit || count

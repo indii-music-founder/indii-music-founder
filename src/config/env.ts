@@ -1,18 +1,6 @@
 import { z } from 'zod';
 import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
 
-const readEnv = (key: string): string | undefined => {
-    if (typeof import.meta !== 'undefined' && typeof import.meta.env !== 'undefined' && key in import.meta.env) {
-        return import.meta.env[key] as string | undefined;
-    }
-
-    if (typeof process !== 'undefined' && process.env) {
-        return process.env[key];
-    }
-
-    return undefined;
-};
-
 const toBoolean = (value: string | boolean | undefined): boolean => {
     if (typeof value === 'boolean') return value;
     if (typeof value === 'string') return value.toLowerCase() === 'true';
@@ -38,35 +26,31 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     skipOnboarding: z.boolean().default(false),
 });
 
-
-const nodeEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefined;
-const metaEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
+const getEnv = (metaValue: any, processValue: any): string => {
+    return (metaValue || processValue || "") as string;
+};
 
 const processEnv = {
-    // Use environment variables when available - with fallbacks for Web/Public hosting
-    // 🛡️ Sentinel: Removed hardcoded fallback API key for security.
-    apiKey: readEnv('VITE_API_KEY') || "",
-    projectId: readEnv('VITE_VERTEX_PROJECT_ID') || "",
-    location: readEnv('VITE_VERTEX_LOCATION') || "us-central1",
-    useVertex: toBoolean(readEnv('VITE_USE_VERTEX') || "false"),
-    googleMapsApiKey: readEnv('VITE_GOOGLE_MAPS_API_KEY'),
+    // 🛡️ Sentinel: Using static lookups for Vite compatibility
+    apiKey: getEnv(import.meta.env.VITE_API_KEY, process.env.VITE_API_KEY),
+    projectId: getEnv(import.meta.env.VITE_VERTEX_PROJECT_ID, process.env.VITE_VERTEX_PROJECT_ID),
+    location: getEnv(import.meta.env.VITE_VERTEX_LOCATION, process.env.VITE_VERTEX_LOCATION) || "us-central1",
+    useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || process.env.VITE_USE_VERTEX),
+    googleMapsApiKey: getEnv(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, process.env.VITE_GOOGLE_MAPS_API_KEY),
 
-    // Pass through frontend specific - no hardcoded fallbacks for security
-    VITE_FUNCTIONS_URL: readEnv('VITE_FUNCTIONS_URL'),
-    VITE_RAG_PROXY_URL: readEnv('VITE_RAG_PROXY_URL'),
-    DEV: typeof metaEnv?.DEV === 'boolean'
-        ? metaEnv.DEV
-        : (nodeEnv === 'development' || toBoolean(readEnv('DEV'))),
+    VITE_FUNCTIONS_URL: getEnv(import.meta.env.VITE_FUNCTIONS_URL, process.env.VITE_FUNCTIONS_URL),
+    VITE_RAG_PROXY_URL: getEnv(import.meta.env.VITE_RAG_PROXY_URL, process.env.VITE_RAG_PROXY_URL),
+    DEV: import.meta.env.DEV,
 
     // Firebase specific overrides
-    firebaseApiKey: readEnv('VITE_FIREBASE_API_KEY'),
-    firebaseProjectId: readEnv('VITE_FIREBASE_PROJECT_ID'),
-    firebaseStorageBucket: readEnv('VITE_FIREBASE_STORAGE_BUCKET'),
-    firebaseDatabaseURL: readEnv('VITE_FIREBASE_DATABASE_URL'),
-    appCheckKey: readEnv('VITE_FIREBASE_APP_CHECK_KEY'),
-    appCheckDebugToken: readEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'),
+    firebaseApiKey: getEnv(import.meta.env.VITE_FIREBASE_API_KEY, process.env.VITE_FIREBASE_API_KEY),
+    firebaseProjectId: getEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID, process.env.VITE_FIREBASE_PROJECT_ID),
+    firebaseStorageBucket: getEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, process.env.VITE_FIREBASE_STORAGE_BUCKET),
+    firebaseDatabaseURL: getEnv(import.meta.env.VITE_FIREBASE_DATABASE_URL, process.env.VITE_FIREBASE_DATABASE_URL),
+    appCheckKey: getEnv(import.meta.env.VITE_FIREBASE_APP_CHECK_KEY, process.env.VITE_FIREBASE_APP_CHECK_KEY),
+    appCheckDebugToken: getEnv(import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN, process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN),
 
-    skipOnboarding: toBoolean(readEnv('VITE_SKIP_ONBOARDING')),
+    skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || process.env.VITE_SKIP_ONBOARDING),
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);
@@ -84,38 +68,21 @@ if (!parsed.success) {
         console.warn("WARNING: The following environment variables are missing:", missingKeys.join(', '));
         console.warn("App will attempt to run with defaults, but some features may be disabled.");
     }
-
-    // Downgraded from fatal throw to warning to allow Firebase Auth to initialize
-    if (!processEnv.apiKey || !processEnv.projectId) {
-        console.warn("Critical environment variables missing. Proceeding with caution.");
-    }
-
-    // We are proceeding despite validation errors
-    console.warn("Environment validation failed, but critical keys might be present. Proceeding with caution.");
-} else {
-    // Validation successful
-    // Environment validation passed
-    // (console.log removed - Platinum Polish)
 }
 
-const runtimeEnv = parsed.success ? parsed.data : (processEnv as typeof processEnv);
+const runtimeEnv = parsed.success ? parsed.data : (processEnv as any);
 
-// Export a combined object that exposes both the clean keys (apiKey, projectId, etc.)
-// and the historic VITE_* aliases so Vertex/Functions consumers keep working while
-// reading from the typed config object.
 export const env = {
     ...runtimeEnv,
     VITE_API_KEY: runtimeEnv.apiKey,
     VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
-    // App Check keys - use processEnv directly since Zod schema uses different property names
     appCheckKey: processEnv.appCheckKey,
     appCheckDebugToken: processEnv.appCheckDebugToken,
 };
-// Firebase defaults for the production project.
-// NOTE: Hardcoded fallbacks have been removed to prevent accidental production usage in dev/staging.
-// All configuration must be provided via environment variables (VITE_FIREBASE_*).
+
+// Firebase defaults
 export const firebaseDefaultConfig = {
     apiKey: "",
     authDomain: "",
@@ -127,9 +94,7 @@ export const firebaseDefaultConfig = {
     measurementId: ""
 };
 
-// Resolved Firebase configuration that never falls back to unrelated API keys
-// (e.g., Vertex) to avoid auth initialization errors.
-const firebaseEnv = parsed.success ? parsed.data : processEnv;
+const firebaseEnv = processEnv;
 
 export const firebaseConfig = {
     apiKey: firebaseEnv.firebaseApiKey || firebaseEnv.apiKey || "",
@@ -137,8 +102,8 @@ export const firebaseConfig = {
     databaseURL: firebaseEnv.firebaseDatabaseURL || "",
     projectId: firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "",
     storageBucket: firebaseEnv.firebaseStorageBucket || (firebaseEnv.firebaseProjectId || firebaseEnv.projectId ? `${firebaseEnv.firebaseProjectId || firebaseEnv.projectId}.firebasestorage.app` : ""),
-    messagingSenderId: "223837784072", // Messaging Sender ID is generally static per project, but safe to keep or remove. Kept for now if needed.
-    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd", // Main App ID
+    messagingSenderId: "223837784072",
+    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd",
     measurementId: "G-KNWPRGE5JK"
 };
 

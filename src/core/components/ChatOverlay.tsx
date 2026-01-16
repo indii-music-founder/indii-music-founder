@@ -18,6 +18,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const messages = useStore(state => state.agentHistory);
     const isProcessing = useStore(state => state.isAgentProcessing);
     const activeSessionId = useStore(state => state.activeSessionId);
+    const chatChannel = useStore(state => state.chatChannel);
 
     // Derived state for active agent (defaulting to 'generalist' or first participant)
     const activeAgentId = useStore(state => {
@@ -58,14 +59,17 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
         // (Virtuoso doesn't give us scrollHeight easily so we rely on user action for now or 'atBottom' state if we added it)
     };
 
-    // Agent Avatar/Header Info
-    const agentName = activeAgent?.name || 'Indii';
-    const agentRole = activeAgent?.role || 'Creative Orchestrator';
-    const agentColor = activeAgent?.color || 'purple';
+    // Agent Avatar/Header Info - channel-aware
+    // When in 'indii' mode, always show indii. When in 'agent' mode, show the active agent.
+    const displayAgent = chatChannel === 'indii' ? null : activeAgent;
+    const agentName = displayAgent?.name || 'indii';
+    const agentRole = displayAgent?.description || 'Creative Orchestrator';
+    const agentColor = displayAgent?.color || 'purple';
 
-    const getAgentAvatar = (agentId: string) => {
-        const agent = specializedAgents.find(a => a.id === agentId);
-        return agent?.avatar;
+    // No avatar property on SpecializedAgent, use null
+    const getAgentAvatar = (_agentId: string): string | undefined => {
+        // Avatar functionality removed - SpecializedAgent doesn't have avatar
+        return undefined;
     };
 
     return (
@@ -84,11 +88,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                         <div className="flex items-center gap-4">
                             <div className="relative group cursor-pointer">
                                 <div className={`absolute -inset-1 bg-${agentColor}-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                                {activeAgent?.avatar ? (
-                                    <img src={activeAgent.avatar} className="w-12 h-12 rounded-full object-cover border border-white/10 relative z-10 shadow-lg" alt={agentName} />
+                                {chatChannel === 'indii' ? (
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-indigo-900 flex items-center justify-center border border-white/10 relative z-10 shadow-lg">
+                                        <Bot size={24} className="text-white" />
+                                    </div>
                                 ) : (
                                     <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-${agentColor}-600 to-${agentColor}-900 flex items-center justify-center border border-white/10 relative z-10 shadow-lg`}>
-                                        <Bot size={20} className="text-white" />
+                                        <div className="text-white font-bold text-lg">{agentName.charAt(0)}</div>
                                     </div>
                                 )}
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121212] rounded-full z-20 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />

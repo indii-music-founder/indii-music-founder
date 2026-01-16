@@ -48,9 +48,7 @@ const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 
-// Dev-only components
-const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
-const AudioStressTest = lazy(() => import('../dev/AudioStressTest'));
+
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -110,6 +108,27 @@ function LoadingFallback() {
                 <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
         </div>
+    );
+}
+
+/**
+ * ChatOverlayWrapper - Bridges store state to ChatOverlay props
+ * The refactored ChatOverlay requires explicit onClose/onToggleMinimize props,
+ * while the app uses isAgentOpen from the store. This wrapper connects them.
+ */
+function ChatOverlayWrapper() {
+    const isAgentOpen = useStore(state => state.isAgentOpen);
+    const toggleAgentWindow = useStore(state => state.toggleAgentWindow);
+    const [isMinimized, setIsMinimized] = useState(false);
+
+    if (!isAgentOpen) return null;
+
+    return (
+        <ChatOverlay
+            onClose={toggleAgentWindow}
+            isMinimized={isMinimized}
+            onToggleMinimize={() => setIsMinimized(!isMinimized)}
+        />
     );
 }
 
@@ -276,7 +295,7 @@ export default function App() {
                         {showChrome && (
                             <div className="flex-shrink-0 z-50 relative">
                                 <ErrorBoundary>
-                                    <ChatOverlay />
+                                    <ChatOverlayWrapper />
                                     <CommandBar />
                                 </ErrorBoundary>
                             </div>
@@ -300,10 +319,6 @@ export default function App() {
                     {/* DevTools HUD - Only in Development */}
                     {import.meta.env.DEV && (
                         <Suspense fallback={null}>
-                            <TestPlaybookPanel />
-                            <div className="fixed bottom-4 left-4 z-50">
-                                <AudioStressTest />
-                            </div>
                             <DevPortWarning />
                         </Suspense>
                     )}

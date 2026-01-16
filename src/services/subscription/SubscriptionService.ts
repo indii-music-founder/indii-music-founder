@@ -197,7 +197,14 @@ export class SubscriptionService {
     }
 
     const targetUserId = userId || auth.currentUser?.uid;
+
     if (!targetUserId) {
+      // In development, allow anonymous access with a mock ID to prevent crashes
+      if (import.meta.env.DEV) {
+        console.warn("SubscriptionService: Anonymous user in DEV, bypassing authentication check.");
+        return { allowed: true };
+      }
+
       return {
         allowed: false,
         reason: 'User must be authenticated',

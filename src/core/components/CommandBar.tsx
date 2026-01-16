@@ -130,21 +130,20 @@ function CommandBar() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
 
-    const { currentModule, setModule, toggleAgentWindow, isAgentOpen } = useStore();
-    const [isIndiiMode, setIsIndiiMode] = useState(currentModule === 'dashboard' || currentModule === 'select-org');
+    const { currentModule, setModule, toggleAgentWindow, isAgentOpen, chatChannel, setChatChannel } = useStore();
+    const isIndiiMode = chatChannel === 'indii';
     const colors = getColorForModule(currentModule);
 
     const toast = useToast();
 
-    // Sync isIndiiMode with currentModule changes
+    // Auto-switch to agent channel when entering a specialist module
     useEffect(() => {
         if (currentModule === 'dashboard' || currentModule === 'select-org') {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setIsIndiiMode(true);
+            if (chatChannel !== 'indii') setChatChannel('indii');
         } else {
-            setIsIndiiMode(false);
+            if (chatChannel !== 'agent') setChatChannel('agent');
         }
-    }, [currentModule]);
+    }, [currentModule, setChatChannel, chatChannel]);
 
     // Memoize agent lists to avoid re-calling registry on every render
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
@@ -254,11 +253,12 @@ function CommandBar() {
             try {
                 const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
 
-                // Determine target agent based on Indii Mode toggle
-                const targetId = isIndiiMode ? 'dashboard' : currentModule;
-                const targetAgent = knownAgentIds.includes(targetId) ? targetId : undefined;
+                // Determine target agent based on Chat Channel
+                // If Indii channel: Send undefined (let Coordinator/Generalist handle it)
+                // If Agent channel: Send currentModule (forces specialist), unless module has no agent
+                const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
 
-                await agentService.sendMessage(currentInput, processedAttachments, targetAgent);
+                await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
                 setIsProcessing(false);
             } catch (error) {
                 console.error('CommandBar: Failed to send message:', error);
@@ -280,7 +280,13 @@ function CommandBar() {
                 {/* Input Area */}
                 <div
                     data-testid="command-bar-input-container"
-                    className={`bg-[#161b22] border rounded-xl transition-all ${colors.border} ${colors.ring} focus-within:ring-1 relative overflow-hidden ${isDragging ? 'ring-4 ring-blue-500/50 bg-blue-500/20' : ''}`}
+                    className={cn(
+                        "bg-[#161b22] border rounded-xl transition-all relative overflow-hidden focus-within:ring-1",
+                        isIndiiMode
+                            ? "border-purple-500/30 ring-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.05)]"
+                            : `${colors.border} ${colors.ring}`,
+                        isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20"
+                    )}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
@@ -316,7 +322,7 @@ function CommandBar() {
                         disabled={isProcessing}
                     >
                         <PromptInputTextarea
-                            placeholder={isDragging ? "" : "Describe your task, drop files, or take a picture..."}
+                            placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
                             className="text-gray-200 placeholder-gray-600"
                             aria-label="Command input"
                         />
@@ -401,15 +407,15 @@ function CommandBar() {
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setIsIndiiMode(!isIndiiMode)}
+                                    onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
                                     className={cn(
                                         "p-1.5 rounded-lg transition-all border flex items-center gap-2 px-3 group",
                                         isIndiiMode
                                             ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
                                             : "bg-black/20 border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10"
                                     )}
-                                    title={isIndiiMode ? "Talk to Indii (Active)" : "Talk to Indii"}
-                                    aria-label={isIndiiMode ? "Switch to Department" : "Switch to Indii"}
+                                    title={isIndiiMode ? "Talk to indii (Active)" : "Talk to indii"}
+                                    aria-label={isIndiiMode ? "Switch to Agent" : "Switch to indii"}
                                     aria-pressed={isIndiiMode}
                                 >
                                     <div className={cn("w-2 h-2 rounded-full transition-colors", isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
@@ -454,7 +460,7 @@ function CommandBar() {
                     </span>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 
