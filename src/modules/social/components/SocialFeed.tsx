@@ -4,7 +4,7 @@ import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
 import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { useStore } from '@/core/store';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag, Ghost } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
 import { areFeedItemPropsEqual } from './SocialFeed.utils';
 
@@ -204,12 +204,15 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             )}
 
             {/* Feed Tabs */}
-            <div className="flex border-b border-gray-800">
+            <div className="flex border-b border-gray-800" role="tablist" aria-label="Feed filter">
                 {(['all', 'following', 'mine'] as const).map((f) => (
                     <button
                         key={f}
+                        role="tab"
+                        aria-selected={filter === f}
+                        tabIndex={filter === f ? 0 : -1}
                         onClick={() => setFilter(f)}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors relative
+                        className={`flex-1 py-3 text-sm font-medium transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500
                             ${filter === f ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -227,8 +230,14 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="text-center p-8 text-gray-500">
-                        No posts yet. Be the first to share something!
+                    <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500 animate-in fade-in duration-500">
+                        <div className="bg-gray-800/50 p-4 rounded-full mb-4">
+                            <Ghost size={32} className="text-gray-400" aria-hidden="true" />
+                        </div>
+                        <h3 className="text-lg font-medium text-white mb-1">It's quiet in here</h3>
+                        <p className="text-sm max-w-[250px]">
+                            No posts yet. Be the first to share what's happening in your studio!
+                        </p>
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-800">
