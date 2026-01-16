@@ -1,3 +1,5 @@
+> **STATUS: ARCHIVED** - Superseded by [THREE_TIER_STRATEGY_COMPLETE.md](./THREE_TIER_STRATEGY_COMPLETE.md)
+
 # Three-Tier Strategy Implementation Blueprint
 
 **Project:** indiiOS - The Operating System for Independent Artists

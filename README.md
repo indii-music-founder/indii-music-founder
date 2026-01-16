@@ -388,7 +388,8 @@ Automated deployment triggers on push to `main` branch. See `.github/workflows/d
 | Document                                                                 | Description                              |
 | ------------------------------------------------------------------------ | ---------------------------------------- |
 | [CLAUDE.md](./CLAUDE.md)                                                 | Comprehensive AI assistant guide         |
-| [ROADMAP.md](./ROADMAP.md)                                               | Feature roadmap and technical debt       |
+| [MASTER_COMPLETION_PLAN.md](./MASTER_COMPLETION_PLAN.md)                 | RC1 Completion Status (Primary)          |
+| [TASKS.md](./TASKS.md)                                                   | Active Tasks & Operational Logs          |
 | [MODEL_POLICY.md](./MODEL_POLICY.md)                                     | AI model usage requirements              |
 | [RULES.md](./RULES.md)                                                   | Agent Zero protocol and design standards |
 | [docs/AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke design details             |

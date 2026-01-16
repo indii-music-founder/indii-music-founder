@@ -101,8 +101,18 @@ The following agents currently exist as definitions but lack specialized tool im
 
 ---
 
+## 6. Remaining Gaps & Polish
+
+### 6.1 Music Studio Persistence
+- [ ] **Implement `MusicLibraryService`**
+    - Persist audio analysis (Essentia results) to Firestore.
+    - Prevent re-analysis of tracks on reload.
+
+---
+
 ## Execution Order
 1.  **Video Infrastructure** (Backend + Export) ✅
 2.  **Agent Expansion** (Tools Implementation) ✅
 3.  **Distribution & Finance** (DDEX, Adapters, Revenue Service) ✅
 4.  **Social Commerce** (UI integration) ✅
+5.  **Gap Filling** (Music Studio) ⏳
