@@ -18,13 +18,15 @@
 7. [Key Conventions & Standards](#7-key-conventions--standards)
 8. [State Management](#8-state-management)
 9. [Multi-Tenancy & Security](#9-multi-tenancy--security)
-10. [AI & Agent System](#10-ai--agent-system)
+10. [AI & Agent System (Hub-and-Spoke)](#10-ai--agent-system-hub-and-spoke-architecture)
 11. [Module Reference](#11-module-reference)
 12. [Electron Desktop App](#12-electron-desktop-app)
-13. [Testing Strategy](#13-testing-strategy)
-14. [Deployment](#14-deployment)
-15. [Critical Gotchas](#15-critical-gotchas)
-16. [Common Tasks](#16-common-tasks)
+13. [Backend Cloud Functions](#13-backend-cloud-functions)
+14. [Core UI Components](#14-core-ui-components)
+15. [Testing Strategy](#15-testing-strategy)
+16. [Deployment](#16-deployment)
+17. [Critical Gotchas](#17-critical-gotchas)
+18. [Common Tasks](#18-common-tasks)
 
 ---
 
@@ -1103,9 +1105,186 @@ Auth protocol: `indii-os://` for OAuth callbacks
 
 ---
 
-## 13. Testing Strategy
+## 13. Backend Cloud Functions
 
-### 13.1 Unit Tests (Vitest)
+### 13.1 Architecture Overview
+
+**Location:** `functions/src/`
+
+**Runtime:** Node.js 22, Firebase Functions Gen 1/2 hybrid
+
+**Job Queue:** Inngest for durable async workflows
+
+### 13.2 Exported Functions
+
+**Video Generation (Veo):**
+
+| Function | Purpose |
+|----------|---------|
+| `triggerVideoJob` | Queue single video generation via Inngest |
+| `triggerLongFormVideoJob` | Queue multi-segment video (daisychaining) |
+| `renderVideo` | Stitch video clips via Google Transcoder |
+| `inngestApi` | Inngest webhook endpoint for job execution |
+
+**Image Generation (Gemini):**
+
+| Function | Purpose |
+|----------|---------|
+| `generateImageV3` | Generate images via Gemini 3 Pro Image |
+| `editImage` | Edit/inpaint images with mask support |
+
+**AI Streaming:**
+
+| Function | Purpose |
+|----------|---------|
+| `generateContentStream` | Server-Sent Events streaming for text generation |
+| `ragProxy` | Proxy for RAG file operations (upload, metadata) |
+
+**DevOps (Admin-only):**
+
+| Function | Purpose |
+|----------|---------|
+| `listGKEClusters` | List GKE clusters |
+| `getGKEClusterStatus` | Get cluster status |
+| `scaleGKENodePool` | Scale node pools |
+| `listGCEInstances` | List GCE VMs |
+| `restartGCEInstance` | Reset VM instances |
+
+**BigQuery Analytics (Admin-only):**
+
+| Function | Purpose |
+|----------|---------|
+| `listBigQueryDatasets` | List datasets |
+| `getBigQueryTableSchema` | Get table schema |
+| `executeBigQueryQuery` | Disabled for security |
+
+**Road Manager (Touring):**
+
+| Function | Purpose |
+|----------|---------|
+| `generateItinerary` | Generate tour itineraries |
+| `checkLogistics` | Validate tour logistics |
+| `findPlaces` | Search venues/hotels |
+| `calculateFuelLogistics` | Calculate travel costs |
+
+### 13.3 Security Model
+
+**Authentication:**
+- All callable functions require `context.auth`
+- Admin functions require `token.admin` custom claim
+
+**CORS Whitelist:**
+```typescript
+const ALLOWED_ORIGINS = [
+  'https://indiios-studio.web.app',
+  'https://studio.indiios.com',
+  'app://.'  // Electron app
+];
+```
+
+**Model Allowlist (Anti-SSRF):**
+```typescript
+const ALLOWED_MODELS = [
+  "gemini-3-pro-preview",
+  "gemini-3-flash-preview"
+];
+```
+
+**RAG Proxy Security:**
+- DELETE method blocked (data integrity)
+- File listing blocked (privacy/anti-IDOR)
+- Path whitelist: `/v1beta/files`, `/v1beta/models`
+
+### 13.4 Tier-Based Quotas
+
+| Tier | Max Duration | Daily Limit |
+|------|--------------|-------------|
+| Free | 8 minutes | 5 videos/day |
+| Pro | 60 minutes | 50 videos/day |
+| Enterprise | 4 hours | 500 videos/day |
+
+**God Mode:** Admin claim or `GOD_MODE_EMAILS` env var bypasses limits.
+
+### 13.5 Inngest Workflows
+
+**Events:**
+- `video/generate.requested` → Single video generation
+- `video/long_form.requested` → Multi-segment daisychaining
+- `video/stitch.requested` → Clip stitching via Transcoder
+
+**Functions:**
+- `generateVideoFn` - Veo API integration
+- `generateLongFormVideoFn` - Segment-by-segment generation
+- `stitchVideoFn` - Google Cloud Video Transcoder
+
+---
+
+## 14. Core UI Components
+
+### 14.1 Core Components (`src/core/components/`)
+
+| Component | Lines | Purpose |
+|-----------|-------|---------|
+| `ChatOverlay.tsx` | 42K | Main AI chat interface with streaming, tools, markdown |
+| `CommandBar.tsx` | 23K | Spotlight-style command palette |
+| `Sidebar.tsx` | 9K | Module navigation sidebar |
+| `RightPanel.tsx` | 7K | Context panel (brand kit, history) |
+| `MobileNav.tsx` | 7K | Mobile navigation |
+| `AgentSelector.tsx` | 7K | Agent selection dropdown |
+| `ErrorBoundary.tsx` | 4K | React error boundary |
+| `Toast.tsx` | 3K | Toast notification system |
+| `ApprovalModal.tsx` | 4K | Agent approval workflow UI |
+
+**Renderers (Structured Output):**
+- `CallSheetRenderer.tsx` - Video call sheet display
+- `ScreenplayRenderer.tsx` - Script/screenplay formatting
+- `VisualScriptRenderer.tsx` - Visual script display
+- `ContractRenderer.tsx` - Legal contract display
+
+### 14.2 Shared UI Components (`src/components/`)
+
+**Base UI (`ui/`):**
+- `button.tsx`, `badge.tsx`, `card.tsx`
+- `tabs.tsx`, `table.tsx`, `slider.tsx`
+- `tooltip.tsx`, `textarea.tsx`, `scroll-area.tsx`
+- `prompt-input.tsx` - AI prompt input with attachments
+- `DeptLoader.tsx` - Module loading spinner
+- `ThreeDButton.tsx`, `ThreeDCard.tsx` - 3D UI elements
+
+**Design Systems:**
+- `kokonutui/` - KokonutUI component library
+- `motion-primitives/` - Framer Motion animation components
+
+**Domain Components:**
+- `studio/` - Studio-specific UI
+- `subscription/` - Pricing/tier components
+- `instruments/` - Instrument approval modal
+- `project/` - Project management UI
+- `layout/` - Layout components
+- `PWAInstallPrompt.tsx` - PWA installation prompt
+
+### 14.3 Shared Types (`src/shared/`)
+
+**Types (`types/`):**
+
+`ai.dto.ts` - Gemini SDK compatible types:
+- `ContentPart`, `Content` - Message structure
+- `FunctionDeclaration`, `ToolConfig` - Tool definitions
+- `GenerationConfig` - Model configuration
+- `ThinkingConfig` - Thinking level settings (LOW/MEDIUM/HIGH)
+- `ImageConfig`, `SpeechConfig`, `VoiceConfig` - Modality configs
+
+`errors.ts` - Error types and handlers
+
+**Schemas (`schemas/`):**
+
+`env.schema.ts` - Zod validation for environment variables
+
+---
+
+## 15. Testing Strategy
+
+### 15.1 Unit Tests (Vitest)
 
 **Location:** Co-located with source (`.test.ts` suffix) or `__tests__/` directory
 
@@ -1122,7 +1301,7 @@ npm run test -- --ui      # Visual UI
 npm run test -- MyComponent  # Specific file
 ```
 
-### 13.2 E2E Tests (Playwright)
+### 15.2 E2E Tests (Playwright)
 
 **Location:** `e2e/` directory (39 test files)
 
@@ -1148,7 +1327,7 @@ npx playwright test --ui            # Interactive
 npx playwright test --debug         # Debug mode
 ```
 
-### 13.3 Coverage Expectations
+### 15.3 Coverage Expectations
 
 - **Critical Paths:** AgentService, Specialists, Store slices
 - **UI Components:** Snapshot tests for complex components
@@ -1156,9 +1335,9 @@ npx playwright test --debug         # Debug mode
 
 ---
 
-## 14. Deployment
+## 16. Deployment
 
-### 14.1 Hosting Architecture
+### 16.1 Hosting Architecture
 
 **Firebase Hosting with multiple targets:**
 
@@ -1167,7 +1346,7 @@ npx playwright test --debug         # Debug mode
 | Landing | `indiios-v-1-1` | `landing-page/dist` | <https://indiios-v-1-1.web.app> |
 | Studio | `indiios-studio` | `dist` | <https://indiios-studio.web.app> |
 
-### 14.2 GitHub Actions Workflow
+### 16.2 GitHub Actions Workflow
 
 **File:** `.github/workflows/deploy.yml`
 
@@ -1181,7 +1360,7 @@ npx playwright test --debug         # Debug mode
 - `VITE_VERTEX_LOCATION`
 - `FIREBASE_SERVICE_ACCOUNT`
 
-### 14.3 Manual Deployment
+### 16.3 Manual Deployment
 
 ```bash
 # Build all
@@ -1200,7 +1379,7 @@ firebase deploy --only functions:generateImage
 npm run deploy
 ```
 
-### 14.4 Environment Variables
+### 16.4 Environment Variables
 
 **Required for Build:**
 
@@ -1221,9 +1400,9 @@ VERTEX_PROJECT_ID=<id>
 
 ---
 
-## 15. Critical Gotchas
+## 17. Critical Gotchas
 
-### 15.1 Google AI SDK Response Handling
+### 17.1 Google AI SDK Response Handling
 
 ```typescript
 // ❌ WRONG - Returns undefined
@@ -1233,19 +1412,19 @@ const text = response.text;
 const text = response.text();
 ```
 
-### 15.2 Agent Tool Hallucinations
+### 17.2 Agent Tool Hallucinations
 
 **Problem:** Orchestrator can hallucinate agent names.
 
 **Fix:** Strictly type `agent_id` and list valid IDs in tool description.
 
-### 15.3 Firestore Query Constraints
+### 17.3 Firestore Query Constraints
 
 **Problem:** Compound queries require composite indexes.
 
 **Fix:** Run query in dev, copy index creation link from error, add to `firestore.indexes.json`.
 
-### 15.4 Vite Build Chunk Size Warnings
+### 17.4 Vite Build Chunk Size Warnings
 
 **Fix:** Manual chunks configured in `vite.config.ts`:
 
@@ -1256,7 +1435,7 @@ manualChunks: {
 }
 ```
 
-### 15.5 Tailwind v4 Migration
+### 17.5 Tailwind v4 Migration
 
 **Fix:** Use CSS variables for theming, import Tailwind in `index.css`:
 
@@ -1264,13 +1443,13 @@ manualChunks: {
 @import 'tailwindcss';
 ```
 
-### 15.6 Firebase Functions Cold Starts
+### 17.6 Firebase Functions Cold Starts
 
 **Mitigation:**
 - Use Gen 2 functions (faster cold starts)
 - Implement request queueing with Inngest
 
-### 15.7 Electron Forge Build Fails with Spaced Paths
+### 17.7 Electron Forge Build Fails with Spaced Paths
 
 **Problem:** node-gyp fails with paths containing spaces.
 
@@ -1282,7 +1461,7 @@ rebuildConfig: {
 },
 ```
 
-### 15.8 Dev Server Port
+### 17.8 Dev Server Port
 
 **Important:** Development server runs on port **4242**, not 5173.
 
@@ -1292,9 +1471,9 @@ npm run dev  # Starts on http://localhost:4242
 
 ---
 
-## 16. Common Tasks
+## 18. Common Tasks
 
-### 16.1 Add a New Module
+### 18.1 Add a New Module
 
 ```bash
 mkdir -p src/modules/my-module
@@ -1306,7 +1485,7 @@ touch src/modules/my-module/{MyModule.tsx,README.md}
 3. Add to sidebar navigation in `Sidebar.tsx`
 4. Update module constants in `core/constants.ts`
 
-### 16.2 Add a Cloud Function
+### 18.2 Add a Cloud Function
 
 ```typescript
 // functions/src/myFunction.ts
@@ -1320,13 +1499,13 @@ export const myFunction = onCall(async (request) => {
 
 Export in `functions/src/index.ts`, call from frontend with `httpsCallable`.
 
-### 16.3 Add a Store Slice
+### 18.3 Add a Store Slice
 
 1. Create slice in `src/core/store/slices/mySlice.ts`
 2. Import and add to `StoreState` interface in `store/index.ts`
 3. Add to store creation spread
 
-### 16.4 Debug Agent Issues
+### 18.4 Debug Agent Issues
 
 ```typescript
 // Enable verbose logging in AgentZero.ts
