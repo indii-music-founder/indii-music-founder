@@ -9,3 +9,7 @@
 ## 2025-02-18 - Modal Focus & Semantics
 **Learning:** Relying on `div` overlays for modals without `role="dialog"` and `aria-modal="true"` leaves screen reader users stranded in the main document flow. Simple visual "X" buttons are invisible to AT without explicit `aria-label`.
 **Action:** Enforce `role="dialog"`, `aria-modal="true"`, and accessible names for all custom modals. Ensure custom toggle buttons (like platform selectors) use `aria-pressed` to communicate state, not just color.
+
+## 2025-05-19 - Vitest Axe Integration
+**Learning:** `vitest-axe` matchers are not exported from the package root in this environment, causing test crashes. Additionally, `jsdom` lacks full `getComputedStyle` support for pseudo-elements, causing noisy (but non-fatal) errors during `axe-core` execution.
+**Action:** Import matchers from `vitest-axe/matchers` explicitly. For clean test output, consider mocking `getComputedStyle` or filtering console errors if color contrast checks are not the primary target.
