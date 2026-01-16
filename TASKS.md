@@ -1,3 +1,5 @@
+> **NOTE:** For high-level feature completion tracking (Release Candidate 1.0), please refer to [MASTER_COMPLETION_PLAN.md](./MASTER_COMPLETION_PLAN.md). This document tracks operational tasks and recent logs.
+
 # TASKS.md - Active Work Items
 
 **Last Updated:** 2026-01-04
