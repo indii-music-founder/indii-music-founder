@@ -31,7 +31,9 @@ vi.mock('@/core/store', () => ({
     userProfile: { displayName: 'Test User' },
     generatedHistory: [],
     uploadedImages: [],
-    currentProjectId: 'test-project'
+    currentProjectId: 'test-project',
+    organizations: [{ id: 'test-org', name: 'Test Org' }],
+    currentOrganizationId: 'test-org'
   })),
 }));
 
@@ -60,11 +62,11 @@ describe('MerchDesigner Accessibility', () => {
       </MemoryRouter>
     );
 
-    // Undo/Redo
-    const undoBtn = screen.getByRole('button', { name: /undo/i });
+    // Undo/Redo - use getAllByRole as there might be multiple (toolbar and mobile menu)
+    const undoBtn = screen.getAllByRole('button', { name: /undo/i })[0];
     expect(undoBtn).toBeInTheDocument();
 
-    const redoBtn = screen.getByRole('button', { name: /redo/i });
+    const redoBtn = screen.getAllByRole('button', { name: /redo/i })[0];
     expect(redoBtn).toBeInTheDocument();
   });
 

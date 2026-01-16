@@ -61,3 +61,4 @@ scripts/verify-dpid-config.ts
 tsconfig.verify.json
 functions/lib/
 dist-electron-studio/
+.gemini

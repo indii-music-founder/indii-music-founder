@@ -3,6 +3,7 @@ import { TraceService } from '../observability/TraceService';
 import { agentRegistry } from '../registry';
 import { PipelineContext } from './ContextPipeline';
 import { AgentResponse } from '../types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
  * AgentExecutor handles the low-level execution of a specific agent.
@@ -66,8 +67,10 @@ export class AgentExecutor {
             }
 
             // Intercept progress to log trace steps
-            const interceptedOnProgress = async (event: { type: string; content: string; toolName?: string }) => {
+            const interceptedOnProgress = async (event: any) => {
                 if (onProgress) onProgress(event);
+
+                const currentModel = agent?.id ? (AI_MODELS.TEXT.AGENT) : '';
 
                 if (event.type === 'thought') {
                     await TraceService.addStep(traceId, 'thought', event.content);
@@ -76,6 +79,18 @@ export class AgentExecutor {
                         tool: event.toolName,
                         args: event.content
                     });
+                } else if (event.type === 'usage' && event.usage) {
+                    await TraceService.addStepWithUsage(
+                        traceId,
+                        'thought', // Usage is usually associated with a thought/generation
+                        'Token usage report',
+                        currentModel,
+                        {
+                            promptTokenCount: event.usage.promptTokens,
+                            candidatesTokenCount: event.usage.completionTokens,
+                            totalTokenCount: event.usage.totalTokens
+                        }
+                    );
                 }
             };
 

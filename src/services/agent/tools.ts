@@ -96,16 +96,4 @@ AVAILABLE TOOLS:
 48. scan_content(text: string) - Scan content for sensitive data.
 49. rotate_credentials(service_name: string) - Rotate credentials.
 50. verify_zero_touch_prod(service_name: string) - Verify zero-touch prod.
-35. analyze_brand_consistency(content: string, brand_guidelines?: string) - Analyze brand consistency.
-36. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
-37. audit_visual_assets(assets: string[]) - Audit visual assets.
-38. create_campaign_brief(product: string, goal: string, budget?: string, duration?: string) - Create marketing campaign brief.
-39. analyze_audience(genre: string, similar_artists?: string[]) - Analyze target audience.
-40. schedule_content(campaign_start: string, platforms: string[], frequency: string) - Create content calendar.
-41. track_performance(campaignId: string) - Track marketing performance.
-42. plan_tour_route(start_location: string, end_location: string, stops: string[], timeframe: string) - Plan tour route.
-43. calculate_tour_budget(crew_size: number, duration_days: number, accommodation_level: string) - Calculate tour budget.
-44. generate_itinerary(city: string, date: string, venue: string, show_time: string) - Generate daily itinerary.
-45. audit_permissions(project_id?: string) - Audit security permissions.
-46. scan_for_vulnerabilities(scope: string) - Scan for vulnerabilities.
 `;

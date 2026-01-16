@@ -11,10 +11,17 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
         try {
             // Update status to processing
             await step.run("update-status-processing", async () => {
-                await admin.firestore().collection("videoJobs").doc(jobId).set({
-                    status: "processing",
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+                console.log(`[Inngest] Updating status to processing for ${jobId}`);
+                try {
+                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        status: "processing",
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    console.log(`[Inngest] Status updated to processing for ${jobId}`);
+                } catch (err) {
+                    console.error(`[Inngest] Failed to update status:`, err);
+                    throw err;
+                }
             });
 
             // Start Video Generation Operation
@@ -27,7 +34,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     instances: [{ prompt: prompt }],
                     parameters: {
                         sampleCount: 1,
-                        videoLength: options?.duration || options?.durationSeconds || "5s",
+                        // Note: veo-3.1-generate-preview does NOT support videoLength/seconds parameters currently
                         aspectRatio: options?.aspectRatio || "16:9"
                     },
                 };
@@ -87,30 +94,44 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
             // Process Result
             const videoUri = await step.run("process-video-output", async () => {
                 const responseData = finalResult.response;
+                console.log("[Inngest] Final Result from Google AI:", JSON.stringify(finalResult, null, 2));
+
+                if (!responseData) {
+                    throw new Error("No response data in final result");
+                }
+
+                // Veo 3.1 Response Structure
+                const generatedSamples = responseData.generateVideoResponse?.generatedSamples;
+                if (generatedSamples && generatedSamples.length > 0) {
+                    const sample = generatedSamples[0];
+                    if (sample.video && sample.video.uri) {
+                        console.log(`[Inngest] Found video URI: ${sample.video.uri}`);
+                        return sample.video.uri;
+                    }
+                }
+
+                // Fallback for older models
                 const outputs = responseData.outputs;
+                if (outputs && outputs.length > 0) {
+                    const output = outputs[0];
 
-                if (!outputs || outputs.length === 0) {
-                    throw new Error("No outputs found in operation response");
+                    // If it returns bytes
+                    if (output.video && output.video.bytesBase64Encoded) {
+                        const bucket = admin.storage().bucket();
+                        const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
+                        await file.save(Buffer.from(output.video.bytesBase64Encoded, 'base64'), {
+                            metadata: { contentType: 'video/mp4' },
+                            public: true
+                        });
+                        return file.publicUrl();
+                    }
+
+                    // If it returns a URI directly
+                    if (output.videoUri) return output.videoUri;
+                    if (output.gcsUri) return output.gcsUri;
                 }
 
-                const output = outputs[0];
-
-                // If it returns bytes
-                if (output.video && output.video.bytesBase64Encoded) {
-                    const bucket = admin.storage().bucket();
-                    const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                    await file.save(Buffer.from(output.video.bytesBase64Encoded, 'base64'), {
-                        metadata: { contentType: 'video/mp4' },
-                        public: true
-                    });
-                    return file.publicUrl();
-                }
-
-                // If it returns a URI directly
-                if (output.videoUri) return output.videoUri;
-                if (output.gcsUri) return output.gcsUri;
-
-                throw new Error("Could not find video data or URI in output: " + JSON.stringify(output));
+                throw new Error("No video data or URI/generatedSamples found in operation response: " + JSON.stringify(responseData));
             });
 
             // Update status to complete

@@ -1,6 +1,7 @@
 import { db } from '@/services/firebase';
-import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where } from 'firebase/firestore';
-import { AgentTrace, TraceStep, TraceStatus } from './types';
+import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
+import { AgentTrace, TraceStep, UsageMetrics } from './types';
+import { MODEL_PRICING } from '@/core/config/ai-models';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
@@ -21,22 +22,13 @@ export class TraceService {
         }
 
         try {
-            // Safety check for test environments where db might be undefined
             if (!db) {
-                console.warn('[TraceService] DB not initialized (likely test env), returning mock ID');
+                console.warn('[TraceService] DB not initialized, returning mock ID');
                 return crypto.randomUUID();
             }
 
-            // Use a more resilient way to get ID that works with both real Firebase and common mocks
-            let traceId: string;
-            try {
-                const docRef = doc(collection(db, this.COLLECTION));
-                traceId = docRef?.id || crypto.randomUUID();
-            } catch (e) {
-                traceId = crypto.randomUUID();
-            }
-
-            const ref = doc(db, this.COLLECTION, traceId);
+            const docRef = doc(collection(db, this.COLLECTION));
+            const traceId = docRef?.id || crypto.randomUUID();
 
             const trace: Partial<AgentTrace> = {
                 id: traceId,
@@ -46,34 +38,72 @@ export class TraceService {
                 status: 'pending',
                 startTime: serverTimestamp(),
                 steps: [],
-                swarmId: metadata?.swarmId || (parentTraceId ? null : traceId), // Use provided swarmId, or self if root
+                swarmId: metadata?.swarmId || (parentTraceId ? null : traceId),
                 metadata: {
                     ...(metadata || {}),
                     ...(parentTraceId ? { parentTraceId } : {})
                 }
             };
 
-            await setDoc(ref, trace);
+            await setDoc(doc(db, this.COLLECTION, traceId), trace);
             return traceId;
         } catch (error) {
             console.error('[TraceService] Failed to start trace:', error);
-            // Fallback for tests or disconnected mode: return a raw UUID so execution can continue
             return crypto.randomUUID();
         }
     }
 
     /**
-     * Add a step to an existing trace
+     * Calculate estimated cost for a step
      */
-    static async addStep(traceId: string, type: TraceStep['type'], content: any, metadata?: Record<string, any>): Promise<void> {
+    private static calculateCost(modelId: string, usage: any): number {
+        const pricing: any = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
+        if (!pricing) return 0;
+
+        if (pricing.perGeneration) {
+            return pricing.perGeneration;
+        }
+
+        if (usage.promptTokenCount && usage.candidatesTokenCount) {
+            const inputCost = (usage.promptTokenCount / 1_000_000) * pricing.input;
+            const outputCost = (usage.candidatesTokenCount / 1_000_000) * pricing.output;
+            return inputCost + outputCost;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Add a step with usage metrics
+     */
+    static async addStepWithUsage(
+        traceId: string,
+        type: TraceStep['type'],
+        content: any,
+        modelId: string,
+        rawUsage?: any,
+        metadata?: Record<string, any>
+    ): Promise<void> {
         if (!traceId) return;
+
+        let usage: UsageMetrics | undefined;
+        if (rawUsage) {
+            usage = {
+                promptTokens: rawUsage.promptTokenCount || 0,
+                candidatesTokens: rawUsage.candidatesTokenCount || 0,
+                totalTokens: rawUsage.totalTokenCount || 0,
+                cachedContentTokens: rawUsage.cachedContentTokenCount,
+                estimatedCost: this.calculateCost(modelId, rawUsage)
+            };
+        }
 
         const step: TraceStep = {
             id: crypto.randomUUID(),
             timestamp: new Date().toISOString(),
             type,
             content,
-            metadata
+            metadata,
+            usage
         };
 
         const ref = doc(db, this.COLLECTION, traceId);
@@ -82,9 +112,37 @@ export class TraceService {
             await updateDoc(ref, {
                 steps: arrayUnion(step)
             });
+
+            // If we have usage, also update the total trace usage
+            if (usage) {
+                const traceDoc = await getDoc(ref);
+                const currentTrace = traceDoc.data() as AgentTrace;
+                const totalUsage = currentTrace.totalUsage || {
+                    promptTokens: 0,
+                    candidatesTokens: 0,
+                    totalTokens: 0,
+                    estimatedCost: 0
+                };
+
+                await updateDoc(ref, {
+                    totalUsage: {
+                        promptTokens: totalUsage.promptTokens + (usage.promptTokens || 0),
+                        candidatesTokens: totalUsage.candidatesTokens + (usage.candidatesTokens || 0),
+                        totalTokens: totalUsage.totalTokens + (usage.totalTokens || 0),
+                        estimatedCost: (totalUsage.estimatedCost || 0) + (usage.estimatedCost || 0)
+                    }
+                });
+            }
         } catch (error) {
-            console.error(`[TraceService] Failed to add step to trace ${traceId}:`, error);
+            console.error(`[TraceService] Failed to add step with usage to trace ${traceId}:`, error);
         }
+    }
+
+    /**
+     * Legacy method for adding steps without explicit usage
+     */
+    static async addStep(traceId: string, type: TraceStep['type'], content: any, metadata?: Record<string, any>): Promise<void> {
+        return this.addStepWithUsage(traceId, type, content, '', undefined, metadata);
     }
 
     /**

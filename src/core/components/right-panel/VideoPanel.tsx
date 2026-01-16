@@ -19,7 +19,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     const [activeTab, setActiveTab] = useState('create');
     const [isGenerating, setIsGenerating] = useState(false);
     // Use global prompt state instead of local
-    const { addToHistory, currentProjectId, studioControls, setStudioControls, prompt, videoInputs, setVideoInput, currentOrganizationId } = useStore();
+    const { addToHistory, updateHistoryItem, currentProjectId, studioControls, setStudioControls, prompt, videoInputs, setVideoInput, currentOrganizationId } = useStore();
     const toast = useToast();
 
     const handleRender = async () => {
@@ -70,6 +70,22 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         type: 'video',
                         timestamp: Date.now(),
                         projectId: currentProjectId
+                    });
+
+                    // Subscribe to real-time updates for this job
+                    const unsub = VideoGeneration.subscribeToJob(res.id, (job) => {
+                        if (job) {
+                            if (job.status === 'completed' && job.videoUrl) {
+                                console.log(`[VideoPanel] Job ${res.id} completed. Updating URL.`);
+                                updateHistoryItem(res.id, { url: job.videoUrl });
+                                toast.success("Video generation completed!");
+                                unsub();
+                            } else if (job.status === 'failed') {
+                                console.error(`[VideoPanel] Job ${res.id} failed:`, job.error);
+                                toast.error(`Video generation failed: ${job.error}`);
+                                unsub();
+                            }
+                        }
                     });
                 });
                 toast.success("Video generation started!");
@@ -332,9 +348,9 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleRender}
-                            disabled={isGenerating}
+                            disabled={isGenerating || !prompt.trim()}
                             data-testid="render-sequence-btn"
-                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 border border-blue-400/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                         >
                             {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}
                             {isGenerating ? 'Rendering...' : 'Render Sequence'}

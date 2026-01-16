@@ -9,8 +9,8 @@ import type { AnyToolFunction } from '../types';
 // FIX #10: Input Validation Constants
 // ============================================================================
 
-const VALID_ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const;
-const VALID_RESOLUTIONS = ['720p', '1080p'] as const;
+const VALID_ASPECT_RATIOS = ['16:9', '9:16', '1:1', '4:3', '3:4'] as const;
+const VALID_RESOLUTIONS = ['1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024'] as const;
 const MAX_DURATION_SECONDS = 300;
 const MAX_CHAIN_DURATION_SECONDS = 300;
 
@@ -84,6 +84,8 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             prompt: args.prompt,
             firstFrame: args.image,
             duration: args.duration,
+            aspectRatio: args.aspectRatio as any,
+            resolution: args.resolution as any,
             userProfile
         });
 

@@ -3,13 +3,15 @@ import { createStore } from 'zustand';
 import { AgentSlice, createAgentSlice } from '@/core/store/slices/agentSlice';
 
 // Mock SessionService
-const mockUpdateSession = vi.fn().mockResolvedValue(true);
-const mockGetSessionsForUser = vi.fn().mockResolvedValue([]);
+const { mockUpdateSession, mockGetSessionsForUser } = vi.hoisted(() => ({
+    mockUpdateSession: vi.fn().mockResolvedValue(true),
+    mockGetSessionsForUser: vi.fn().mockResolvedValue([])
+}));
 
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
-        updateSession: (...args: any[]) => mockUpdateSession(...args),
-        getSessionsForUser: (...args: any[]) => mockGetSessionsForUser(...args)
+        updateSession: mockUpdateSession,
+        getSessionsForUser: mockGetSessionsForUser
     }
 }));
 
@@ -50,12 +52,12 @@ describe('📚 Keeper: Persistence', () => {
         expect(state.agentHistory[0].text).toBe('Hello, Keeper!');
 
         // Assert: Persistence is called
-        // We expect updateSession(sessionId, { messages: [...] })
-        // Use waitFor if needed, but setTimeout above should suffice
-        expect(mockUpdateSession).toHaveBeenCalledTimes(1);
+        // Use waitFor to handle async SessionService import and call
+        await vi.waitFor(() => {
+            expect(mockUpdateSession).toHaveBeenCalled();
+        }, { timeout: 1000, interval: 50 });
+
         const [sessionId, updatePayload] = mockUpdateSession.mock.calls[0];
-        // The sessionId in the call must match the activeSessionId in state
-        // Note: activeSessionId might be dynamic if createSession uses randomUUID
         expect(sessionId).toBe(state.activeSessionId);
         expect(updatePayload.messages).toHaveLength(1);
         expect(updatePayload.messages[0].text).toBe('Hello, Keeper!');
@@ -76,7 +78,10 @@ describe('📚 Keeper: Persistence', () => {
         expect(state.agentHistory).toHaveLength(0);
 
         // Assert: Persistence called with empty array
-        expect(mockUpdateSession).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+            expect(mockUpdateSession).toHaveBeenCalled();
+        }, { timeout: 1000, interval: 50 });
+
         const [_, updatePayload] = mockUpdateSession.mock.calls[0];
         expect(updatePayload.messages).toEqual([]);
     });
@@ -92,7 +97,10 @@ describe('📚 Keeper: Persistence', () => {
         await new Promise(resolve => setTimeout(resolve, 50));
 
         // Assert: Persistence called
-        expect(mockUpdateSession).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+            expect(mockUpdateSession).toHaveBeenCalled();
+        }, { timeout: 1000, interval: 50 });
+
         const [_, updatePayload] = mockUpdateSession.mock.calls[0];
         expect(updatePayload.messages[0].text).toBe('Thinking complete.');
     });

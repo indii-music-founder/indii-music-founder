@@ -201,9 +201,20 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                 });
         });
     },
-    updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
-        generatedHistory: state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item)
-    })),
+    updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => {
+        set((state) => {
+            const updatedHistory = state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item);
+            const updatedItem = updatedHistory.find(item => item.id === id);
+
+            if (updatedItem) {
+                import('@/services/StorageService').then(({ StorageService }) => {
+                    StorageService.saveItem(updatedItem).catch(console.error);
+                });
+            }
+
+            return { generatedHistory: updatedHistory };
+        });
+    },
     removeFromHistory: (id: string) => {
         set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) }));
         import('@/services/StorageService').then(({ StorageService }) => {

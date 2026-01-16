@@ -31,9 +31,9 @@ const DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
 function createMockDatabase(): MockDatabase {
     return {
         get: async () => null,
-        put: async () => {},
-        delete: async () => {},
-        clear: async () => {}
+        put: async () => { },
+        delete: async () => { },
+        clear: async () => { }
     };
 }
 
@@ -66,11 +66,25 @@ export class AIResponseCache {
         return hash.toString(36);
     }
 
+    private l1Cache = new Map<string, CachedResponse>();
+    private static readonly MAX_L1_SIZE = 50;
+
     async get(prompt: string, model: string, config?: any): Promise<string | null> {
         if (typeof window === 'undefined') return null;
 
         try {
             const key = await this.generateKey(prompt, model, config);
+
+            // L1 Cache Check
+            const l1Entry = this.l1Cache.get(key);
+            if (l1Entry) {
+                if (Date.now() > l1Entry.expiresAt) {
+                    this.l1Cache.delete(key);
+                } else {
+                    return l1Entry.response;
+                }
+            }
+
             const db = await this.dbPromise;
             const entry: CachedResponse = await db.get(STORE_NAME, key);
 
@@ -80,6 +94,9 @@ export class AIResponseCache {
                 await db.delete(STORE_NAME, key);
                 return null;
             }
+
+            // Hydrate L1
+            this.addToL1(key, entry);
 
             return entry.response;
         } catch {
@@ -94,16 +111,29 @@ export class AIResponseCache {
             const key = await this.generateKey(prompt, model, config);
             const db = await this.dbPromise;
 
-            await db.put(STORE_NAME, {
+            const entry = {
                 key,
                 response,
                 model,
                 timestamp: Date.now(),
                 expiresAt: Date.now() + ttl
-            });
+            };
+
+            // Update L1
+            this.addToL1(key, entry);
+
+            await db.put(STORE_NAME, entry);
         } catch {
             // Silent failure - cache is optional
         }
+    }
+
+    private addToL1(key: string, entry: CachedResponse) {
+        if (this.l1Cache.size >= AIResponseCache.MAX_L1_SIZE) {
+            const firstKey = this.l1Cache.keys().next().value;
+            if (firstKey) this.l1Cache.delete(firstKey);
+        }
+        this.l1Cache.set(key, entry);
     }
 
     private async generateKey(prompt: string, model: string, config?: any): Promise<string> {

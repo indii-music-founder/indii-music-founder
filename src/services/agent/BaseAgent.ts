@@ -429,11 +429,16 @@ ${task}
         const collaborationTools = filteredSuperpowers.filter(t => collaborationToolNames.includes(t.name));
         const otherSuperpowers = filteredSuperpowers.filter(t => !collaborationToolNames.includes(t.name));
 
+        // TOOL LIMIT: Gemini supports up to 128 tools, but we cap at 24 to keep prompts focused.
+        // This accommodates the largest agent (Creative Director: 11 config + 12 superpowers = 23).
+        // Previously was 12, which caused tools to be cut off silently.
+        const MAX_TOOLS_PER_AGENT = 24;
+
         const allFunctions: FunctionDeclaration[] = ([
             ...collaborationTools,
             ...(this.tools || []).flatMap(t => t.functionDeclarations || []),
             ...otherSuperpowers
-        ]).slice(0, 12);
+        ]).slice(0, MAX_TOOLS_PER_AGENT);
 
         const allTools: ToolDefinition[] = allFunctions.length > 0
             ? [{
@@ -510,6 +515,15 @@ ${task}
                 totalTokens: usage.totalTokenCount || 0
             } : undefined;
 
+            // Emit usage event for observability
+            if (mappedUsage) {
+                onProgress?.({
+                    type: 'usage',
+                    content: 'Token usage updated',
+                    usage: mappedUsage
+                });
+            }
+
             const functionCall = response.functionCalls()?.[0];
             if (functionCall) {
                 const { name, args } = functionCall;
@@ -541,10 +555,33 @@ ${task}
                 else if (TOOL_REGISTRY[name]) {
                     result = await TOOL_REGISTRY[name](args);
                 } else {
+                    // Enhanced error messaging: Find similar tool names
+                    const allToolNames = [
+                        ...Object.keys(this.functions),
+                        ...Object.keys(TOOL_REGISTRY)
+                    ];
+
+                    // Simple fuzzy match: find tools that start with same letters or contain the name
+                    const nameLower = name.toLowerCase();
+                    const suggestions = allToolNames
+                        .filter(t => {
+                            const tLower = t.toLowerCase();
+                            return tLower.includes(nameLower) ||
+                                nameLower.includes(tLower) ||
+                                tLower.startsWith(nameLower.substring(0, 3));
+                        })
+                        .slice(0, 5);
+
+                    const suggestionText = suggestions.length > 0
+                        ? ` Did you mean: ${suggestions.join(', ')}?`
+                        : ` Available tools include: ${allToolNames.slice(0, 10).join(', ')}...`;
+
+                    console.warn(`[${this.name}] Tool '${name}' not found.${suggestionText}`);
+
                     result = {
                         success: false,
-                        error: `Error: Tool '${name}' not implemented.`,
-                        message: `Error: Tool '${name}' not implemented.`
+                        error: `Error: Tool '${name}' not implemented.${suggestionText}`,
+                        message: `Error: Tool '${name}' not implemented.${suggestionText}`
                     };
                 }
 

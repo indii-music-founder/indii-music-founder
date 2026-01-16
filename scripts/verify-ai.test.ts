@@ -48,7 +48,7 @@ describe('VideoGenerationService', () => {
     it('should generate video with correct parameters', async () => {
         const result = await VideoGeneration.generateVideo({
             prompt: 'test prompt',
-            resolution: '1080p',
+            resolution: '1920x1080',
             aspectRatio: '16:9'
         });
 
@@ -56,7 +56,7 @@ describe('VideoGenerationService', () => {
         expect(result[0].id).toBe('test-uuid');
         expect(mockHttpsCallable).toHaveBeenCalledWith({
             prompt: 'test prompt',
-            resolution: '1080p',
+            resolution: '1920x1080',
             aspectRatio: '16:9',
             orgId: 'test-org',
             jobId: 'test-uuid'

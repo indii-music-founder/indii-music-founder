@@ -200,7 +200,17 @@ export interface AgentResponse {
     };
 }
 
-export type AgentProgressCallback = (event: { type: 'thought' | 'tool' | 'token'; content: string; toolName?: string }) => void;
+export type AgentProgressCallback = (event: {
+    type: 'thought' | 'tool' | 'token' | 'usage';
+    content: string;
+    toolName?: string;
+    usage?: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+        estimatedCost?: number;
+    }
+}) => void;
 
 export interface SpecializedAgent {
     id: string;

@@ -279,7 +279,7 @@ export const triggerLongFormVideoJob = functions
             // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
             const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
             const isGodMode = context.auth?.token?.admin === true ||
-                              godModeEmails.includes(context.auth?.token?.email || '');
+                godModeEmails.includes(context.auth?.token?.email || '');
 
             // 2. Validate Duration Limit
             if (!isGodMode && durationNum > limits.maxVideoDuration) {

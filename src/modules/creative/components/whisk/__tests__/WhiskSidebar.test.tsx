@@ -50,9 +50,10 @@ describe('WhiskSidebar', () => {
 
     it('renders sections correctly', () => {
         render(<WhiskSidebar />);
-        expect(screen.getByText(/Subjects/i)).toBeInTheDocument();
-        expect(screen.getByText(/Scenes/i)).toBeInTheDocument();
-        expect(screen.getByText(/Styles/i)).toBeInTheDocument();
+        expect(screen.getByText(/Subject/i)).toBeInTheDocument();
+        expect(screen.getByText(/Scene/i)).toBeInTheDocument();
+        // Style appears in both section header and Quick Styles, so use getAllByText
+        expect(screen.getAllByText(/Style/i).length).toBeGreaterThan(0);
         expect(screen.getByText('Robot')).toBeInTheDocument();
     });
 
@@ -67,14 +68,14 @@ describe('WhiskSidebar', () => {
         render(<WhiskSidebar />);
         const addButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-plus'));
         fireEvent.click(addButtons[0]);
-        expect(screen.getByPlaceholderText(/Enter subject text/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Describe subject/i)).toBeInTheDocument();
     });
 
     it('adds a text item on Enter', () => {
         render(<WhiskSidebar />);
         const addButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-plus'));
         fireEvent.click(addButtons[0]);
-        const input = screen.getByPlaceholderText(/Enter subject text/i);
+        const input = screen.getByPlaceholderText(/Describe subject/i);
         fireEvent.change(input, { target: { value: 'Alien' } });
         fireEvent.keyDown(input, { key: 'Enter' });
         expect(mockAddWhiskItem).toHaveBeenCalledWith('subject', 'text', 'Alien', undefined);
@@ -100,7 +101,7 @@ describe('WhiskSidebar', () => {
         window.prompt = vi.fn().mockReturnValue('New Robot Caption');
         render(<WhiskSidebar />);
         // Find by title which is unique to the edit button
-        const editBtn = screen.getByTitle('Edit Caption');
+        const editBtn = screen.getByTitle('Edit');
         fireEvent.click(editBtn);
         expect(mockUpdateWhiskItem).toHaveBeenCalledWith('subject', '1', { aiCaption: 'New Robot Caption' });
     });

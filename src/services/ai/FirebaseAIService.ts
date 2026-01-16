@@ -39,6 +39,7 @@ import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
+import { CachedContextService } from './context/CachedContextService';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
@@ -118,16 +119,13 @@ export class FirebaseAIService {
         }
     }
 
-    /**
-     * CORE: Raw generate content (returns SDK result)
-     */
     async rawGenerateContent(
         prompt: string | Content[],
         modelOverride?: string,
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, cachedContent?: string }
     ): Promise<GenerateContentResult> {
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
@@ -142,20 +140,37 @@ export class FirebaseAIService {
             // Validate & Sanitize
             const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-            const modelCallback = getGenerativeModel(ai, {
+            // 1. Check for Cached Content if systemInstruction is large
+            let cachedContent = options?.cachedContent;
+            if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                const hash = CachedContextService.generateHash(systemInstruction, tools);
+                const existingCache = await CachedContextService.findCache(hash);
+                if (existingCache) {
+                    cachedContent = existingCache;
+                    // console.info('[FirebaseAIService] Using cached context:', cachedContent);
+                }
+            }
+
+            const modelOptions: any = {
                 model: modelName,
                 generationConfig: config,
                 systemInstruction,
                 tools
-            });
+            };
+
+            // Inject cachedContent if supported/available
+            if (cachedContent) {
+                modelOptions.cachedContent = cachedContent;
+            }
+
+            const modelCallback = getGenerativeModel(ai, modelOptions);
 
             try {
-
                 const result = await modelCallback.generateContent(
                     typeof sanitizedPrompt === 'string'
                         ? sanitizedPrompt
                         : { contents: sanitizedPrompt } as any,
-                    // @ts-expect-error - options param not in typed definition but supported by underlying implementation
+                    // @ts-expect-error - options param validation
                     options
                 );
 
@@ -199,15 +214,28 @@ export class FirebaseAIService {
             const modelName = modelOverride || this.model!.model;
             const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-            const modelCallback = getGenerativeModel(ai, {
+            // 1. Check for Cached Content if systemInstruction is large
+            let cachedContent: string | undefined;
+            if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                const hash = CachedContextService.generateHash(systemInstruction, tools);
+                const existingCache = await CachedContextService.findCache(hash);
+                if (existingCache) {
+                    cachedContent = existingCache;
+                }
+            }
+
+            const modelOptions: any = {
                 model: modelName,
                 generationConfig: config,
-                systemInstruction: systemInstruction ? {
-                    role: 'system',
-                    parts: [{ text: systemInstruction }] as TextPart[]
-                } : undefined,
+                systemInstruction,
                 tools
-            });
+            };
+
+            if (cachedContent) {
+                modelOptions.cachedContent = cachedContent;
+            }
+
+            const modelCallback = getGenerativeModel(ai, modelOptions);
 
             try {
 
@@ -308,49 +336,40 @@ export class FirebaseAIService {
         thinkingBudgetOrModel?: number | string,
         systemInstructionOrConfig?: string | any
     ): Promise<string> {
-        return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
+        let model = this.model!.model;
+        let config: any = {};
+        let systemInstruction: string | undefined;
 
-            let model = this.model!.model;
-            let config: any = {};
-            let systemInstruction: string | undefined;
-
-            if (typeof thinkingBudgetOrModel === 'number') {
-                config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
-                systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
-            } else if (typeof thinkingBudgetOrModel === 'string') {
-                model = thinkingBudgetOrModel;
+        if (typeof thinkingBudgetOrModel === 'number') {
+            config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
+            systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
+        } else if (typeof thinkingBudgetOrModel === 'string') {
+            model = thinkingBudgetOrModel;
+            if (typeof systemInstructionOrConfig === 'string') {
+                systemInstruction = systemInstructionOrConfig;
+            } else {
                 config = systemInstructionOrConfig || {};
                 systemInstruction = config.systemInstruction;
-            } else if (thinkingBudgetOrModel && typeof thinkingBudgetOrModel === 'object') {
-                config = thinkingBudgetOrModel;
-                model = config.model || model;
-                systemInstruction = config.systemInstruction;
             }
+        }
 
-            const modelName = model || this.model!.model;
+        const modelName = model || this.model!.model;
+        const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
 
-            // CACHE CHECK
-            const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
-            const cached = await aiCache.get(cacheKey, modelName, config);
-            if (cached) return cached;
+        // Semantic Cache Check
+        const cached = await aiCache.get(cacheKey, modelName, config);
+        if (cached) return cached;
 
-            const modelCallback = getGenerativeModel(ai, {
-                model: model,
-                generationConfig: config,
-                systemInstruction: systemInstruction || config?.systemInstruction
-            });
+        const result = await this.rawGenerateContent(
+            typeof prompt === 'string' ? prompt : [{ role: 'user', parts: prompt }],
+            modelName,
+            config,
+            systemInstruction
+        );
 
-            const result = await modelCallback.generateContent(
-                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] }
-            );
-            const text = result.response.text();
-
-            // CACHE SET
-            await aiCache.set(cacheKey, text, modelName, config);
-
-            return text;
-        });
+        const text = result.response.text();
+        await aiCache.set(cacheKey, text, modelName, config);
+        return text;
     }
 
     /**
@@ -363,45 +382,36 @@ export class FirebaseAIService {
         systemInstruction?: string,
         modelOverride?: string
     ): Promise<T> {
-        return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
-            const config: GenerationConfig = {
-                responseMimeType: 'application/json',
-                responseSchema: schema
-            };
-            if (thinkingBudget) {
-                config.thinkingConfig = { thinkingBudget };
+        const config: GenerationConfig = {
+            responseMimeType: 'application/json',
+            responseSchema: schema
+        };
+        if (thinkingBudget) {
+            config.thinkingConfig = { thinkingBudget };
+        }
+
+        const modelName = modelOverride || this.model!.model;
+        const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema) + modelName;
+
+        const cached = await aiCache.get(cacheKeyString, modelName, config);
+        if (cached) {
+            try {
+                return JSON.parse(cached) as T;
+            } catch (e) {
+                // Ignore parse failure
             }
+        }
 
-            const modelName = modelOverride || this.model!.model;
-            // For structured data, prompt + schema + model is the key
-            const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema) + modelName;
-            const cached = await aiCache.get(cacheKeyString, modelName, config);
+        const result = await this.rawGenerateContent(
+            typeof prompt === 'string' ? prompt : [{ role: 'user', parts: prompt }],
+            modelName,
+            config,
+            systemInstruction
+        );
 
-            if (cached) {
-                try {
-                    return JSON.parse(cached) as T;
-                } catch (e) {
-                    // Cached JSON parse failed, regenerating
-                }
-            }
-
-            const modelCallback = getGenerativeModel(ai, {
-                model: modelName,
-                generationConfig: config,
-                systemInstruction
-            });
-
-            const result = await modelCallback.generateContent(
-                typeof prompt === 'string' ? prompt : { contents: [{ role: 'user', parts: prompt }] }
-            );
-            const text = result.response.text();
-
-            // CACHE SET
-            await aiCache.set(cacheKeyString, text, modelName, config);
-
-            return JSON.parse(text) as T;
-        });
+        const text = result.response.text();
+        await aiCache.set(cacheKeyString, text, modelName, config);
+        return JSON.parse(text) as T;
     }
 
     /**
@@ -412,35 +422,18 @@ export class FirebaseAIService {
         newMessage: string,
         systemInstruction?: string
     ): Promise<string> {
-        await this.ensureInitialized();
+        const contents: Content[] = history.map(h => ({
+            role: h.role,
+            parts: h.parts
+        }));
+        contents.push({ role: 'user', parts: [{ text: newMessage }] });
 
-        // Rate Limit Check
-        const userId = auth.currentUser?.uid;
-        if (userId) {
-            await TokenUsageService.checkQuota(userId);
-        }
-
-        const modelCallback = getGenerativeModel(ai, {
-            model: this.model!.model,
+        const result = await this.rawGenerateContent(
+            contents,
+            this.model!.model,
+            {},
             systemInstruction
-        });
-
-        const chatSession = modelCallback.startChat({ history });
-        const result = await chatSession.sendMessage(newMessage);
-
-        // Track usage (approximated for chat as explicit tokens aren't always returned in the same structure)
-        if (userId && result.response.usageMetadata) {
-            try {
-                await TokenUsageService.trackUsage(
-                    userId,
-                    this.model!.model,
-                    result.response.usageMetadata.promptTokenCount || 0,
-                    result.response.usageMetadata.candidatesTokenCount || 0
-                );
-            } catch {
-                // Ignore tracking errors
-            }
-        }
+        );
 
         return result.response.text();
     }
@@ -453,13 +446,12 @@ export class FirebaseAIService {
         imageBase64: string,
         mimeType: string = 'image/jpeg'
     ): Promise<string> {
-        await this.ensureInitialized();
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
         const imagePart: Part = {
             inlineData: { data: base64Data, mimeType }
         };
 
-        const result = await this.model!.generateContent([prompt, imagePart]);
+        const result = await this.rawGenerateContent([{ role: 'user', parts: [{ text: prompt }, imagePart] }]);
         return result.response.text();
     }
 
@@ -470,8 +462,7 @@ export class FirebaseAIService {
         prompt: string,
         parts: Part[]
     ): Promise<string> {
-        await this.ensureInitialized();
-        const result = await this.model!.generateContent([prompt, ...parts]);
+        const result = await this.rawGenerateContent([{ role: 'user', parts: [{ text: prompt }, ...parts] }]);
         return result.response.text();
     }
 
@@ -479,13 +470,7 @@ export class FirebaseAIService {
      * ADVANCED: Grounding with Google Search.
      */
     async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
-        await this.ensureInitialized();
-        const modelWithSearch = getGenerativeModel(ai, {
-            model: this.model!.model,
-            tools: [{ googleSearch: {} }] as unknown as Tool[]
-        });
-
-        return await modelWithSearch.generateContent(prompt);
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, [{ googleSearch: {} }] as unknown as Tool[]);
     }
 
     /**
@@ -494,7 +479,7 @@ export class FirebaseAIService {
     async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
         await this.ensureInitialized();
         return getLiveGenerativeModel(ai, {
-            model: AI_MODELS.TEXT.AGENT, // Upgraded reasoning model
+            model: AI_MODELS.TEXT.AGENT,
             systemInstruction
         });
     }
@@ -694,13 +679,13 @@ export class FirebaseAIService {
     /**
      * HIGH LEVEL: Parse JSON from AI response
      */
-    parseJSON<T = any>(text: string | undefined): T | Record<string, never> {
+    public parseJSON<T = any>(text: string | undefined): T | Record<string, never> {
         if (!text) return {};
         const clean = text.replace(/```json\n?|```/g, '').trim();
         try {
             return JSON.parse(clean);
         } catch {
-            return {};
+            return {} as any;
         }
     }
 
@@ -714,7 +699,6 @@ export class FirebaseAIService {
     }
 
     private handleError(error: unknown): AppException {
-
         const msg = error instanceof Error ? error.message : String(error);
 
         if (msg.includes('permission-denied') || msg.includes('app-check-token')) {
@@ -723,57 +707,60 @@ export class FirebaseAIService {
         if (msg.includes('Recaptcha')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
         }
-        if (msg.includes('429') || msg.includes('quota')) {
-            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Quota Exceeded');
+
+        // Detailed Quota & Rate Limit Mapping
+        if (msg.includes('quota') || msg.includes('resource-exhausted')) {
+            return new AppException(AppErrorCode.QUOTA_EXCEEDED, 'AI Quota Exceeded');
+        }
+        if (msg.includes('429')) {
+            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded');
+        }
+
+        // Service Availability
+        if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded')) {
+            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable');
         }
 
         return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
     }
 
-
-    // ... existing handleError ...
-
-    /**
-     * CORE: Retry logic
-     */
     private async withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
         try {
             return await operation();
         } catch (error: any) {
-            const isRetryable = error?.code === 'resource-exhausted' || error?.message?.includes('429');
+            const msg = error?.message || '';
+            const isRetryable =
+                msg.includes('429') ||
+                msg.includes('503') ||
+                msg.includes('service unavailable') ||
+                msg.includes('overloaded') ||
+                error?.code === 'resource-exhausted';
+
             if (retries > 0 && isRetryable) {
-                await new Promise(r => setTimeout(r, delay));
-                return this.withRetry(operation, retries - 1, delay * 2);
+                // Exponential backoff with jitter and 10s cap
+                const backoff = Math.min(delay * 2, 10000) + (Math.random() * 200);
+                await new Promise(r => setTimeout(r, backoff));
+                return this.withRetry(operation, retries - 1, backoff);
             }
             throw error;
         }
     }
 
-    /**
-     * Sanitize prompt content to remove control chars and check for injection
-     */
     private sanitizePrompt(prompt: string | Content[]): string | Content[] {
         if (typeof prompt === 'string') {
-            if (InputSanitizer.containsInjectionPatterns(prompt)) {
-                // Potential Prompt Injection detected
-            }
             return InputSanitizer.sanitize(prompt);
         }
 
         if (Array.isArray(prompt)) {
             return prompt.map(content => ({
-                ...content,
-                parts: content.parts.map(part => {
-                    if (part.text) {
-                        const cleanText = InputSanitizer.sanitize(part.text);
-                        if (InputSanitizer.containsInjectionPatterns(part.text)) {
-                            // Potential Prompt Injection detected in content part
-                        }
-                        return { ...part, text: cleanText };
+                role: content.role || 'user',
+                parts: content.parts.map((part: any) => {
+                    if (part.text && typeof part.text === 'string') {
+                        return { ...part, text: InputSanitizer.sanitize(part.text) };
                     }
                     return part;
                 })
-            }));
+            })) as Content[];
         }
 
         return prompt;
