@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
@@ -15,7 +16,23 @@ interface CreativeGalleryProps {
 }
 
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
-    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore();
+    // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
+    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        removeFromHistory: state.removeFromHistory,
+        uploadedImages: state.uploadedImages,
+        addUploadedImage: state.addUploadedImage,
+        removeUploadedImage: state.removeUploadedImage,
+        uploadedAudio: state.uploadedAudio,
+        addUploadedAudio: state.addUploadedAudio,
+        removeUploadedAudio: state.removeUploadedAudio,
+        currentProjectId: state.currentProjectId,
+        generationMode: state.generationMode,
+        setVideoInput: state.setVideoInput,
+        selectedItem: state.selectedItem,
+        setSelectedItem: state.setSelectedItem,
+        setEntityAnchor: state.setEntityAnchor
+    })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 

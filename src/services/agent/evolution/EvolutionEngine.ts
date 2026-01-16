@@ -127,7 +127,10 @@ export class EvolutionEngine {
 
         // Ensure ID is new and lineage is tracked
         offspring.id = uuidv4();
-        offspring.generation = Math.max(parent1.generation, parent2.generation) + 1;
+        // Helix: Time Integrity Check
+        // Ensure we handle malformed parent generations (undefined/null) by defaulting to 0.
+        // This prevents "NaN" generations which could break the Doomsday Switch.
+        offspring.generation = Math.max(parent1.generation || 0, parent2.generation || 0) + 1;
         offspring.lineage = [parent1.id, parent2.id];
         offspring.fitness = undefined; // Reset fitness for new gene
 

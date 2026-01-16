@@ -33,3 +33,7 @@
 ## 2026-06-02 - [Mutation Safety & Retry Logic]
 **Learning:** Flaky mutation functions (e.g., LLMs producing invalid JSON/syntax errors) can cause generation gaps if not handled. The `EvolutionEngine` effectively catches these errors and retries the mutation step, ensuring the population size is preserved with valid agents.
 **Action:** Created `HelixMutationSafety.test.ts` to verify that invalid syntax errors trigger a retry loop, preventing "dead" slots in the next generation.
+
+## 2026-06-03 - [Time Paradox: NaN Generations]
+**Learning:** When input agents have malformed metadata (e.g., `generation: undefined`), the offspring calculation `Math.max(undefined, undefined)` resulted in `NaN` generations. These "Timeless Agents" effectively bypassed the "Doomsday Switch" (Max Generations check), potentially leading to infinite evolutionary loops.
+**Action:** Implemented "Time Integrity Check" in `EvolutionEngine` to treat undefined generations as 0, ensuring the evolutionary clock always ticks forward. Verified with `HelixChronos.test.ts`.
