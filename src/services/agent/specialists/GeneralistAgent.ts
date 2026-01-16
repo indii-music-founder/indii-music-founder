@@ -1,6 +1,7 @@
 import { BaseAgent } from '../BaseAgent';
 import { useStore } from '@/core/store';
-import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
+// TOOL_REGISTRY removed to prevent circular dependency
+// import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
@@ -80,15 +81,21 @@ CRITICAL RULES:
             tools: []
         });
 
-        // GeneralistAgent has access to the FULL TOOL_REGISTRY
-        this.functions = TOOL_REGISTRY;
+        // Initialization moved to async initialize() to prevent circular execution
+    }
 
-        // Build native function declarations from TOOL_REGISTRY
+    /**
+     * Initializes the agent by loading tools dynamically.
+     * This must be called after instantiation by the registry.
+     */
+    async initialize() {
+        const { TOOL_REGISTRY } = await import('../tools');
+        this.functions = TOOL_REGISTRY;
         this.tools = this.buildToolDeclarations();
     }
 
     /**
-     * Builds native Gemini function declarations from the TOOL_REGISTRY.
+     * Builds native Gemini function declarations from the TOOL_REGISTRY(conceptually).
      * This enables proper function calling instead of JSON parsing.
      */
     private buildToolDeclarations(): ToolDefinition[] {
@@ -472,31 +479,35 @@ CURRENT REQUEST: ${task}
                             const msg = err instanceof Error ? err.message : String(err);
                             result = { success: false, error: msg, message: `Tool error: ${msg}` };
                         }
-                    } else if (TOOL_REGISTRY[name]) {
-                        try {
-                            result = await TOOL_REGISTRY[name](args);
-                        } catch (err: unknown) {
-                            const msg = err instanceof Error ? err.message : String(err);
-                            result = { success: false, error: msg, message: `Tool error: ${msg}` };
-                        }
                     } else {
-                        // Enhanced error: find similar tools
-                        const allToolNames = Object.keys(TOOL_REGISTRY);
-                        const nameLower = name.toLowerCase();
-                        const suggestions = allToolNames
-                            .filter(t => t.toLowerCase().includes(nameLower) || nameLower.includes(t.toLowerCase()))
-                            .slice(0, 5);
+                        // Dynamic try
+                        const { TOOL_REGISTRY } = await import('../tools');
+                        if (TOOL_REGISTRY[name]) {
+                            try {
+                                result = await TOOL_REGISTRY[name](args);
+                            } catch (err: unknown) {
+                                const msg = err instanceof Error ? err.message : String(err);
+                                result = { success: false, error: msg, message: `Tool error: ${msg}` };
+                            }
+                        } else {
+                            // Enhanced error: find similar tools
+                            const allToolNames = Object.keys(TOOL_REGISTRY);
+                            const nameLower = name.toLowerCase();
+                            const suggestions = allToolNames
+                                .filter(t => t.toLowerCase().includes(nameLower) || nameLower.includes(t.toLowerCase()))
+                                .slice(0, 5);
 
-                        const suggestionText = suggestions.length > 0
-                            ? ` Did you mean: ${suggestions.join(', ')}?`
-                            : '';
+                            const suggestionText = suggestions.length > 0
+                                ? ` Did you mean: ${suggestions.join(', ')}?`
+                                : '';
 
-                        console.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
-                        result = {
-                            success: false,
-                            error: `Tool '${name}' not found.${suggestionText}`,
-                            message: `Tool '${name}' not found.${suggestionText}`
-                        };
+                            console.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
+                            result = {
+                                success: false,
+                                error: `Tool '${name}' not found.${suggestionText}`,
+                                message: `Tool '${name}' not found.${suggestionText}`
+                            };
+                        }
                     }
 
                     const outputText = typeof result === 'string'

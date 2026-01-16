@@ -81,7 +81,7 @@ export default function Sidebar() {
     };
 
     return (
-        <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
+        <nav aria-label="Main navigation" className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
             {/* Header */}
             <div className={`p-4 border-b border-white/5 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && (
@@ -185,6 +185,6 @@ export default function Sidebar() {
                     </p>
                 )}
             </div>
-        </div>
+        </nav>
     );
 };

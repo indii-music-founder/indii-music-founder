@@ -235,7 +235,7 @@ export default function MerchDesigner() {
         fabricCanvasRef.current.renderAll();
     }, []);
 
-    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: any) => {
+    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: string | number | boolean | object | null) => {
         layer.fabricObject.set(property as any, value);
         fabricCanvasRef.current?.renderAll();
     }, []);
@@ -377,8 +377,6 @@ export default function MerchDesigner() {
                                     disabled={!canRedo}
                                     title="Redo (Cmd+Shift+Z)"
                                 />
-                                <IconButton icon={<Undo size={16} />} onClick={() => { }} disabled label="Undo" />
-                                <IconButton icon={<Redo size={16} />} onClick={() => { }} disabled label="Redo" />
                             </div>
 
                             <div className="h-6 w-px bg-white/10 mx-2" />

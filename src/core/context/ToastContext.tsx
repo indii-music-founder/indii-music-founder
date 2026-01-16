@@ -105,7 +105,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (
         <ToastContext.Provider value={contextValue}>
             {children}
-            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none" role="region" aria-label="Notifications" aria-live="polite">
                 <div className="flex flex-col gap-2 items-end pointer-events-auto">
                     <AnimatePresence>
                         {toasts.map(toast => (

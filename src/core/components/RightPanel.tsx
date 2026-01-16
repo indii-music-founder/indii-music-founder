@@ -61,7 +61,8 @@ export default function RightPanel() {
     };
 
     return (
-        <motion.div
+        <motion.aside
+            aria-label="Context panel"
             initial={false}
             animate={{ width: isRightPanelOpen ? 320 : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -127,6 +128,6 @@ export default function RightPanel() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </motion.aside>
     );
 }

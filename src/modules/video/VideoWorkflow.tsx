@@ -76,7 +76,9 @@ export default function VideoWorkflow() {
     }, []);
 
     // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
-    const videoHistory = useMemo(() => generatedHistory.filter(h => h.type === 'video'), [generatedHistory]);
+    const videoHistory = useMemo(() => {
+        return generatedHistory.filter(h => h.type === 'video' && (!currentProjectId || h.projectId === currentProjectId));
+    }, [generatedHistory, currentProjectId]);
 
     // Sync pending prompt
     useEffect(() => {

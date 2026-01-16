@@ -30,8 +30,22 @@ export class AgentRegistry {
 
             this.registerLazy(meta, async () => {
                 console.log(`[AgentRegistry] Loading GeneralistAgent...`);
-                const { GeneralistAgent } = await import('./specialists/GeneralistAgent');
-                return new GeneralistAgent();
+                try {
+                    const module = await import('./specialists/GeneralistAgent');
+                    console.log(`[AgentRegistry] GeneralistAgent module imported. Keys:`, Object.keys(module));
+                    if (!module.GeneralistAgent) {
+                        throw new Error("Module imported but GeneralistAgent export is missing!");
+                    }
+                    const agent = new module.GeneralistAgent();
+                    console.log(`[AgentRegistry] GeneralistAgent instantiated successfully.`);
+                    if ('initialize' in agent && typeof (agent as any).initialize === 'function') {
+                        await (agent as any).initialize();
+                    }
+                    return agent;
+                } catch (err: any) {
+                    console.error(`[AgentRegistry] loader() failed for GeneralistAgent:`, err);
+                    throw err;
+                }
             });
             // Log removed (Platinum Polish) - but we could use a silent internal flag if needed for debugging
         } catch (e) {

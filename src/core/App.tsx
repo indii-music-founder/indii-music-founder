@@ -16,6 +16,7 @@ import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -232,6 +233,9 @@ export default function App() {
     // Call URL Sync Hook (must be inside Router context, which App is)
     useURLSync();
 
+    // SSR-safe media query for desktop detection
+    const isDesktop = useMediaQuery('(min-width: 768px)');
+
     if (authLoading) {
         return <LoadingFallback />;
     }
@@ -243,6 +247,13 @@ export default function App() {
     return (
         <VoiceProvider>
             <ToastProvider>
+                {/* Skip to content link for keyboard accessibility */}
+                <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
+                >
+                    Skip to content
+                </a>
                 <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
                     {/* Left Sidebar - Hidden for standalone modules */}
                     {showChrome && (
@@ -253,7 +264,7 @@ export default function App() {
                         </div>
                     )}
 
-                    <main className="flex-1 flex flex-col min-w-0 bg-background relative">
+                    <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
                         <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                             <ErrorBoundary>
                                 <Suspense fallback={<LoadingFallback />}>
@@ -263,7 +274,7 @@ export default function App() {
                         </div>
 
                         {showChrome && (
-                            <div className="flex-shrink-0 z-10 relative">
+                            <div className="flex-shrink-0 z-50 relative">
                                 <ErrorBoundary>
                                     <ChatOverlay />
                                     <CommandBar />
@@ -273,7 +284,7 @@ export default function App() {
                     </main>
 
                     {/* Right Panel - Hidden for standalone modules and mobile */}
-                    {showChrome && typeof window !== 'undefined' && window.innerWidth >= 768 && (
+                    {showChrome && isDesktop && (
                         <ErrorBoundary>
                             <RightPanel />
                         </ErrorBoundary>

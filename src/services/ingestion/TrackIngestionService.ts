@@ -79,18 +79,20 @@ export class TrackIngestionService {
 
             // Defaults for a "New Ingestion"
             releaseDate: new Date().toISOString().split('T')[0],
+            releaseType: 'Single',
+            territories: ['Worldwide'],
+            distributionChannels: ['streaming', 'download'],
             labelName: DDEX_CONFIG.PARTY_NAME,
             dpid: DDEX_CONFIG.PARTY_ID,
 
+            // AI Content Disclosure
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false
+            },
+
             // Status
             isGolden: false // Needs human review
-        };
-
-        // AI Disclosure (Since we used AI to generate metadata, does that count?
-        // Usually this field means "Is the Audio AI?". We assume human audio for now unless detected otherwise.)
-        metadata.aiGeneratedContent = {
-            isFullyAIGenerated: false,
-            isPartiallyAIGenerated: false
         };
 
         return metadata;

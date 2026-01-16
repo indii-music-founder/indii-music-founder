@@ -49,6 +49,7 @@ export interface AgentSlice {
 
     isAgentOpen: boolean;
     agentMode: AgentMode;
+    isAgentProcessing: boolean;
     pendingApproval: ApprovalRequest | null;
 
     // Actions
@@ -67,6 +68,7 @@ export interface AgentSlice {
     resolveApproval: (approved: boolean) => void;
 
     addParticipant: (sessionId: string, agentId: string) => void;
+    setAgentProcessing: (isProcessing: boolean) => void;
     loadSessions: () => Promise<void>;
 }
 
@@ -78,6 +80,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     isAgentOpen: false,
     agentMode: 'assistant',
+    isAgentProcessing: false,
     pendingApproval: null,
 
     createSession: (title = 'New Conversation', initialAgents = ['indii']) => {
@@ -272,6 +275,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             }
         };
     }),
+
+    setAgentProcessing: (isProcessing) => set({ isAgentProcessing: isProcessing }),
 
     loadSessions: async () => {
         const { sessionService } = await import('@/services/agent/SessionService');

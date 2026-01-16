@@ -1,7 +1,7 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
-import { TOOL_REGISTRY } from './tools';
+// TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
 export type { AgentConfig };
@@ -552,37 +552,42 @@ ${task}
                     }
                 }
                 // Then check global tool registry
-                else if (TOOL_REGISTRY[name]) {
-                    result = await TOOL_REGISTRY[name](args);
-                } else {
-                    // Enhanced error messaging: Find similar tool names
-                    const allToolNames = [
-                        ...Object.keys(this.functions),
-                        ...Object.keys(TOOL_REGISTRY)
-                    ];
+                else {
+                    // Dynamic import to break circular dependency
+                    const { TOOL_REGISTRY } = await import('./tools');
 
-                    // Simple fuzzy match: find tools that start with same letters or contain the name
-                    const nameLower = name.toLowerCase();
-                    const suggestions = allToolNames
-                        .filter(t => {
-                            const tLower = t.toLowerCase();
-                            return tLower.includes(nameLower) ||
-                                nameLower.includes(tLower) ||
-                                tLower.startsWith(nameLower.substring(0, 3));
-                        })
-                        .slice(0, 5);
+                    if (TOOL_REGISTRY[name]) {
+                        result = await TOOL_REGISTRY[name](args);
+                    } else {
+                        // Enhanced error messaging: Find similar tool names
+                        const allToolNames = [
+                            ...Object.keys(this.functions),
+                            ...Object.keys(TOOL_REGISTRY)
+                        ];
 
-                    const suggestionText = suggestions.length > 0
-                        ? ` Did you mean: ${suggestions.join(', ')}?`
-                        : ` Available tools include: ${allToolNames.slice(0, 10).join(', ')}...`;
+                        // Simple fuzzy match: find tools that start with same letters or contain the name
+                        const nameLower = name.toLowerCase();
+                        const suggestions = allToolNames
+                            .filter(t => {
+                                const tLower = t.toLowerCase();
+                                return tLower.includes(nameLower) ||
+                                    nameLower.includes(tLower) ||
+                                    tLower.startsWith(nameLower.substring(0, 3));
+                            })
+                            .slice(0, 5);
 
-                    console.warn(`[${this.name}] Tool '${name}' not found.${suggestionText}`);
+                        const suggestionText = suggestions.length > 0
+                            ? ` Did you mean: ${suggestions.join(', ')}?`
+                            : ` Available tools include: ${allToolNames.slice(0, 10).join(', ')}...`;
 
-                    result = {
-                        success: false,
-                        error: `Error: Tool '${name}' not implemented.${suggestionText}`,
-                        message: `Error: Tool '${name}' not implemented.${suggestionText}`
-                    };
+                        console.warn(`[${this.name}] Tool '${name}' not found.${suggestionText}`);
+
+                        result = {
+                            success: false,
+                            error: `Error: Tool '${name}' not implemented.${suggestionText}`,
+                            message: `Error: Tool '${name}' not implemented.${suggestionText}`
+                        };
+                    }
                 }
 
                 onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });

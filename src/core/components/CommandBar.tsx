@@ -20,8 +20,8 @@ import {
 interface DelegateMenuProps {
     isOpen: boolean;
     currentModule: string;
-    managerAgents: any[];
-    departmentAgents: any[];
+    managerAgents: { id: string; name: string; color: string; description: string }[];
+    departmentAgents: { id: string; name: string; color: string; description: string }[];
     onSelect: (id: string) => void;
     onClose: () => void;
 }

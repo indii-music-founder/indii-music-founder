@@ -1,6 +1,5 @@
 
 import { AgentContext } from './types';
-import { agentService } from './AgentService';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { fileSystemService } from '@/services/FileSystemService';
