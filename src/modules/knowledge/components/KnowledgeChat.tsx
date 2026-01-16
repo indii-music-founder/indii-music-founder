@@ -191,6 +191,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     <button
                         onClick={() => handleSend()}
                         disabled={!input.trim() || isTyping}
+                        aria-label="Send Message"
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2.5 bg-[#FFE135] text-black hover:scale-105 active:scale-95 disabled:scale-100 rounded-xl disabled:bg-gray-800 disabled:text-gray-600 transition-all shadow-lg"
                     >
                         <Send size={18} />
