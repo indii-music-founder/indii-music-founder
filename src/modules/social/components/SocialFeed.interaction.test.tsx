@@ -20,6 +20,7 @@ vi.mock('lucide-react', () => ({
     Image: () => <div data-testid="icon-image" />,
     Send: () => <div data-testid="icon-send" />,
     ShoppingBag: () => <div data-testid="icon-shopping-bag" />,
+    Ghost: () => <div data-testid="icon-ghost" />,
 }));
 
 // Mock ProductCard
