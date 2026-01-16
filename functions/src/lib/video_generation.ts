@@ -172,7 +172,16 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     videoUrl: videoUri,
                     output: { metadata },
                     progress: 100,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    output: {
+                        url: videoUri,
+                        metadata: {
+                            duration_seconds: 5, // Veo preview is fixed at ~5s currently
+                            fps: options?.fps || 30, // Default to 30 if not specified
+                            mime_type: "video/mp4",
+                            resolution: options?.aspectRatio === "9:16" ? "720x1280" : "1280x720"
+                        }
+                    }
                 }, { merge: true });
             });
 
