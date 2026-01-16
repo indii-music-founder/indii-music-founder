@@ -1,11 +1,23 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image } from 'lucide-react';
 
 export default function Sidebar() {
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore();
+    // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore(
+        useShallow((state) => ({
+            currentModule: state.currentModule,
+            setModule: state.setModule,
+            isSidebarOpen: state.isSidebarOpen,
+            toggleSidebar: state.toggleSidebar,
+            userProfile: state.userProfile,
+            logout: state.logout,
+            setTheme: state.setTheme,
+        }))
+    );
 
     interface SidebarItem {
         id: ModuleId;
