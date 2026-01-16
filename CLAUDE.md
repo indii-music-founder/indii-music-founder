@@ -629,18 +629,115 @@ function isOrgMember(orgId) {
 
 ---
 
-## 10. AI & Agent System
+## 10. AI & Agent System (Hub-and-Spoke Architecture)
 
-### 10.1 Frontend Agents (`src/agents/`)
+### 10.1 Architecture Overview
 
-| Agent | Purpose |
-|-------|---------|
-| `DirectorAgent` | Video production decisions, shot selection |
-| `LegalAgent` | Contract analysis, IP clause extraction |
-| `ProducerAgent` | Music production advice, arrangement suggestions |
-| `ScreenwriterAgent` | Script generation, content creation |
+```
+                    ┌──────────────────────────────────┐
+                    │     GeneralistAgent (Hub)        │
+                    │        "Agent Zero"              │
+                    │   ─────────────────────────      │
+                    │   Mode A: Curriculum (Manager)   │
+                    │   Mode B: Executor (Worker)      │
+                    │   Mode C: Companion (Chat)       │
+                    └───────────────┬──────────────────┘
+                                    │ delegate_task
+         ┌──────────────────────────┼──────────────────────────┐
+         │          │          │    │    │          │          │
+    ┌────▼───┐ ┌────▼───┐ ┌───▼──┐ │ ┌──▼───┐ ┌────▼───┐ ┌────▼────┐
+    │Marketing│ │ Legal  │ │Finance│ │ │Brand │ │Social  │ │Publicist│
+    └────────┘ └────────┘ └──────┘ │ └──────┘ └────────┘ └─────────┘
+         │          │          │    │    │          │          │
+    ┌────▼───┐ ┌────▼───┐ ┌───▼──┐ │ ┌──▼───┐ ┌────▼───┐ ┌────▼────┐
+    │Producer│ │Director│ │Screen│ │ │Video │ │  Road  │ │Publishing│
+    │        │ │        │ │writer│ │ │      │ │Manager │ │         │
+    └────────┘ └────────┘ └──────┘ │ └──────┘ └────────┘ └─────────┘
+         │          │          │    │    │          │
+    ┌────▼───┐ ┌────▼───┐ ┌───▼────┐│ ┌──▼───┐ ┌────▼───┐
+    │Licensing│ │Merchan-│ │Security││ │DevOps│ │  ...   │
+    │        │ │  dise  │ │        ││ │      │ │        │
+    └────────┘ └────────┘ └────────┘│ └──────┘ └────────┘
+```
 
-### 10.2 Agent Lifecycle
+### 10.2 Valid Agent IDs (17 Agents)
+
+**Single Source of Truth:** `src/services/agent/types.ts` → `VALID_AGENT_IDS`
+
+| Agent ID | Name | Category | Purpose |
+|----------|------|----------|---------|
+| `generalist` | Agent Zero | manager | Hub orchestrator, fallback, complex reasoning |
+| `marketing` | Marketing Agent | department | Campaign strategy, audience targeting |
+| `legal` | Legal Agent | specialist | Contract analysis, IP clause extraction |
+| `finance` | Finance Agent | specialist | Revenue tracking, expense analysis |
+| `producer` | Producer Agent | specialist | Music production, arrangement advice |
+| `director` | Director Agent | specialist | Video production, shot selection |
+| `screenwriter` | Screenwriter Agent | specialist | Script generation, content creation |
+| `video` | Video Agent | specialist | Video editing, effects, rendering |
+| `social` | Social Agent | specialist | Social media posting, engagement |
+| `publicist` | Publicist Agent | specialist | Press releases, media relations |
+| `road` | Road Manager Agent | specialist | Tour dates, venue management |
+| `publishing` | Publishing Agent | specialist | Music distribution, royalties |
+| `licensing` | Licensing Agent | specialist | Sync licensing, rights management |
+| `brand` | Brand Agent | specialist | Brand consistency, style guides |
+| `devops` | DevOps Agent | specialist | Infrastructure, deployment |
+| `security` | Security Agent | specialist | Security audits, vulnerability checks |
+| `merchandise` | Merchandise Agent | specialist | Product design, mockups, manufacturing |
+
+### 10.3 Agent Sources
+
+**Frontend Agent Configs** (`src/agents/`):
+- `director/config.ts` - Director agent configuration
+- `legal/config.ts` - Legal agent configuration
+- `producer/config.ts` - Producer agent configuration
+- `screenwriter/config.ts` - Screenwriter agent configuration
+
+**Service Agent Definitions** (`src/services/agent/definitions/`):
+- `MarketingAgent.ts`, `FinanceAgent.ts`, `BrandAgent.ts`
+- `VideoAgent.ts`, `SocialAgent.ts`, `PublicistAgent.ts`
+- `RoadAgent.ts`, `PublishingAgent.ts`, `LicensingAgent.ts`
+- `DevOpsAgent.ts`, `SecurityAgent.ts`
+
+**Standalone Agents** (`src/services/agent/`):
+- `MerchandiseAgent.ts` - Full merchandise creation workflow
+- `specialists/GeneralistAgent.ts` - Agent Zero (hub)
+
+### 10.4 Agent Zero Protocol (3 Modes)
+
+```typescript
+// src/services/agent/specialists/GeneralistAgent.ts
+
+// Mode A: Curriculum Agent (The Manager)
+// - Strategic planning for complex goals
+// - Generates "Frontier Tasks" to push user forward
+// - Output: "[Curriculum]: Based on your current trajectory..."
+
+// Mode B: Executor Agent (The Worker)
+// - Tool use, coding, implementation
+// - Ruthless execution with available tools
+// - Output: "[Executor]: Deploying tools to solve this task..."
+
+// Mode C: Companion (Casual Conversation)
+// - Chat, greetings, simple Q&A
+// - Natural responses without prefixes
+```
+
+### 10.5 Key Agent Services
+
+| Service | File | Purpose |
+|---------|------|---------|
+| `AgentService` | `AgentService.ts` | Main entry point for agent interactions |
+| `BaseAgent` | `BaseAgent.ts` | Base class all agents extend |
+| `AgentRegistry` | `registry.ts` | Lazy-loading agent registry |
+| `MemoryService` | `MemoryService.ts` | Long-term memory storage/recall |
+| `ProactiveService` | `ProactiveService.ts` | Scheduled & event-triggered tasks |
+| `SessionService` | `SessionService.ts` | Session management |
+| `WorkflowCoordinator` | `WorkflowCoordinator.ts` | Multi-agent workflow coordination |
+| `AgentContextBridge` | `AgentContextBridge.ts` | Context injection (org, project, brand) |
+| `InstrumentAgentService` | `InstrumentAgentService.ts` | Tool approval workflows |
+| `BrowserAgentDriver` | `BrowserAgentDriver.ts` | Browser automation capabilities |
+
+### 10.6 Agent Lifecycle
 
 **1. User sends message → AgentService**
 
@@ -651,12 +748,12 @@ async chat(message: string) {
 }
 ```
 
-**2. AgentZero analyzes and potentially delegates**
+**2. Agent Zero determines mode and potentially delegates**
 
 ```typescript
-// AgentZero calls delegate_task
+// GeneralistAgent uses delegate_task tool
 {
-  agent_id: 'legal',
+  agent_id: 'legal',  // Must be in VALID_AGENT_IDS
   task: 'Review this contract for IP clauses',
   context: { /* relevant context */ }
 }
@@ -664,53 +761,37 @@ async chat(message: string) {
 
 **3. Specialist executes with domain-specific tools**
 
-**4. Result flows back to user**
+**4. Result flows back through Agent Zero to user**
 
-### 10.3 Adding a New Specialist Agent
+### 10.7 Adding a New Specialist Agent
 
-**Step 1:** Create agent file
+**Step 1:** Add agent ID to `VALID_AGENT_IDS` in `types.ts`
+
+**Step 2:** Create agent config in `definitions/` or `src/agents/`
 
 ```typescript
-// src/services/agent/specialists/MyAgent.ts
-import { BaseAgent } from './BaseAgent';
+// src/services/agent/definitions/MyAgent.ts
+import { AgentConfig } from '../types';
 
-export class MyAgent extends BaseAgent {
-  id = 'my-agent';
-  name = 'My Agent';
-  systemPrompt = 'You are an expert in...';
-
-  tools = [
-    {
-      functionDeclarations: [{
-        name: 'my_tool',
-        description: 'Does something',
-        parameters: {
-          type: 'OBJECT',
-          properties: { arg: { type: 'STRING' } },
-          required: ['arg']
-        }
-      }]
-    }
-  ];
-
-  constructor() {
-    super();
-    this.functions = {
-      my_tool: async (args) => {
-        return { result: 'data' };
-      }
-    };
-  }
-}
+export const MyAgent: AgentConfig = {
+  id: 'my-agent',
+  name: 'My Agent',
+  description: 'Expert in...',
+  color: '#hex',
+  category: 'specialist',
+  systemPrompt: 'You are an expert in...',
+  tools: [{ functionDeclarations: [...] }],
+  functions: { my_tool: async (args) => ({ success: true, data: ... }) }
+};
 ```
 
-**Step 2:** Register in `AgentRegistry`
+**Step 3:** Add to `AGENT_CONFIGS` array in `agentConfig.ts`
 
-**Step 3:** Update `delegate_task` tool description with new agent ID
+**Step 4:** Update `delegate_task` tool description if needed
 
-### 10.4 Tool Calling Standard
+### 10.8 Tool Calling Standard
 
-**Critical Fix:** Google AI SDK exposes text via **method** `response.text()`, NOT property.
+**Critical:** Google AI SDK exposes text via **method** `response.text()`, NOT property.
 
 ```typescript
 // ✅ CORRECT
@@ -719,6 +800,100 @@ const text = response.text(); // Method call
 // ❌ WRONG (returns undefined)
 const text = response.text; // Property access
 ```
+
+**Tool Result Standard:**
+
+```typescript
+interface ToolFunctionResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}
+```
+
+### 10.9 Tool Registry (50+ Tools)
+
+**Location:** `src/services/agent/tools/` and `src/services/agent/tools.ts`
+
+| Tool File | Domain | Key Functions |
+|-----------|--------|---------------|
+| `CoreTools.ts` | Core | `set_mode`, `update_prompt`, `read_history` |
+| `DirectorTools.ts` | Video Direction | Shot planning, scene analysis |
+| `VideoTools.ts` | Video | `generate_video`, `extend_video`, `update_keyframe` |
+| `MemoryTools.ts` | Memory | `save_memory`, `recall_memories` |
+| `AnalysisTools.ts` | Analysis | `analyze_audio`, `verify_output` |
+| `FinanceTools.ts` | Finance | Budget tracking, revenue analysis |
+| `SocialTools.ts` | Social | `generate_social_post` |
+| `OrganizationTools.ts` | Org Mgmt | `list_organizations`, `switch_organization` |
+| `StorageTools.ts` | Files | `list_files`, `search_files` |
+| `KnowledgeTools.ts` | Knowledge | `search_knowledge` |
+| `ProjectTools.ts` | Projects | `create_project`, `open_project` |
+| `NavigationTools.ts` | Navigation | Module switching |
+| `MapsTools.ts` | Maps | `search_places`, `get_place_details`, `get_distance_matrix` |
+| `BrandTools.ts` | Brand | `analyze_brand_consistency`, `generate_brand_guidelines` |
+| `MarketingTools.ts` | Marketing | `create_campaign_brief`, `analyze_audience`, `track_performance` |
+| `RoadTools.ts` | Touring | `plan_tour_route`, `calculate_tour_budget`, `generate_itinerary` |
+| `SecurityTools.ts` | Security | `audit_permissions`, `scan_for_vulnerabilities`, `rotate_credentials` |
+| `DevOpsTools.ts` | DevOps | `check_api_status`, `verify_zero_touch_prod` |
+| `PublicistTools.ts` | PR | `write_press_release`, `generate_crisis_response` |
+| `LegalTools.ts` | Legal | `analyze_contract` |
+| `BigQueryTools.ts` | Analytics | BigQuery integrations |
+| `NarrativeTools.ts` | Narrative | Story/content generation |
+| `ProducerTools.ts` | Music | Production advice |
+| `ScreenwriterTools.ts` | Scripts | Script generation |
+
+### 10.10 Agent Observability
+
+**Location:** `src/services/agent/observability/`
+
+| Service | Purpose |
+|---------|---------|
+| `TraceService.ts` | Execution tracing, stores to `agent_traces` collection |
+| `MetricsService.ts` | Performance metrics, latency tracking |
+
+**TraceService Features:**
+- Start/complete execution traces
+- Track individual steps within traces
+- Calculate usage metrics and costs
+- Support for swarm (multi-agent) tracing
+
+### 10.11 Agent Evolution System (Helix)
+
+**Location:** `src/services/agent/evolution/`
+
+The evolution system implements genetic algorithms for agent improvement:
+
+| Component | Purpose |
+|-----------|---------|
+| `EvolutionEngine.ts` | Core genetic algorithm (selection, crossover, mutation) |
+| `types.ts` | `AgentGene`, `EvolutionConfig`, fitness/mutation functions |
+
+**Helix Safety Features:**
+- **Doomsday Switch:** Halts evolution at max generations
+- **Fitness Validator:** 0.0 fitness kills agent (no reproduction)
+- **Anti-Inbreeding:** Prevents self-crossover
+- **Bloat Prevention:** Controls gene complexity
+- **Gene Loss Protection:** Maintains genetic diversity
+
+### 10.12 AI Services Layer
+
+**Location:** `src/services/ai/`
+
+| Service | Purpose |
+|---------|---------|
+| `AIService.ts` | Main AI service wrapper |
+| `FirebaseAIService.ts` | Firebase-backed AI with caching |
+| `AIResponseCache.ts` | Response caching layer |
+| `RateLimiter.ts` | Rate limiting for API calls |
+| `VoiceService.ts` | Voice/speech services |
+| `OCRService.ts` | Optical character recognition (Tesseract.js) |
+
+**Subdirectories:**
+- `billing/` - Usage billing
+- `config/` - AI configuration
+- `context/` - Context management
 
 ---
 
@@ -807,6 +982,71 @@ const text = response.text; // Property access
 | `publicist/` | Press kit & media relations |
 | `publishing/` | Music distribution UI |
 | `tools/` | Audio analyzer, reference manager |
+
+### 11.11 Core Services (`src/services/`)
+
+**Business Logic Services:**
+
+| Service | File | Purpose |
+|---------|------|---------|
+| `MembershipService` | `MembershipService.ts` | Subscription tiers, quotas, circuit breakers |
+| `RevenueService` | `RevenueService.ts` | Revenue tracking, royalty calculations |
+| `OrganizationService` | `OrganizationService.ts` | Multi-tenant organization management |
+| `ProjectService` | `ProjectService.ts` | Project CRUD operations |
+| `UserService` | `UserService.ts` | User profile management |
+| `CleanupService` | `CleanupService.ts` | Resource cleanup, garbage collection |
+| `ExportService` | `ExportService.ts` | Data export (PDF, ZIP, etc.) |
+| `WhiskService` | `WhiskService.ts` | Whisk image styling integration |
+
+**Storage Services:**
+
+| Service | File | Purpose |
+|---------|------|---------|
+| `StorageService` | `StorageService.ts` | Firebase Storage abstraction |
+| `CloudStorageService` | `CloudStorageService.ts` | Cloud storage operations |
+| `FileSystemService` | `FileSystemService.ts` | Virtual file system |
+| `NativeFileSystemService` | `NativeFileSystemService.ts` | Native FS access (Electron) |
+| `FirestoreService` | `FirestoreService.ts` | Firestore abstraction |
+
+**Domain Service Directories (36+):**
+
+| Directory | Purpose |
+|-----------|---------|
+| `agent/` | Agent system (covered in Section 10) |
+| `ai/` | AI services (AIService, FirebaseAI, caching) |
+| `audio/` | Audio analysis (Essentia.js integration) |
+| `blockchain/` | Web3/blockchain integration |
+| `cache/` | Caching layer |
+| `dashboard/` | Dashboard data services |
+| `ddex/` | DDEX standards (ERN, DSR parsing) |
+| `design/` | Design system utilities |
+| `distribution/` | Multi-distributor facade + adapters |
+| `finance/` | Financial calculations |
+| `identity/` | Identity verification |
+| `image/` | Image generation services |
+| `ingestion/` | Data import pipelines |
+| `knowledge/` | Knowledge base services |
+| `legal/` | Legal document services |
+| `licensing/` | License management |
+| `marketing/` | Marketing campaign services |
+| `marketplace/` | Marketplace logic |
+| `merchandise/` | Merchandise services |
+| `metadata/` | Golden metadata standards |
+| `onboarding/` | Onboarding flow services |
+| `optimistic/` | Optimistic UI updates |
+| `payment/` | Stripe integration |
+| `publicist/` | PR/media relations |
+| `rag/` | Retrieval-augmented generation |
+| `revenue/` | Revenue analytics |
+| `screen/` | Screen capture/sharing |
+| `scripts/` | Utility scripts |
+| `security/` | Credential management (Keytar) |
+| `social/` | Social platform APIs |
+| `storage/` | Storage abstractions |
+| `subscription/` | Membership tier management |
+| `touring/` | Tour management |
+| `utils/` | Shared utilities |
+| `video/` | Video generation (Veo) |
 
 ---
 
