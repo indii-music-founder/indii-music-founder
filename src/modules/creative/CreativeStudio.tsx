@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeGallery from './components/CreativeGallery';
 import CreativeNavbar from './components/CreativeNavbar';
@@ -11,6 +11,9 @@ import { useToast } from '@/core/context/ToastContext';
 
 import { WhiskService } from '@/services/WhiskService';
 import { QuotaExceededError } from '@/shared/types/errors';
+
+// Lazy load CreativePanel for mobile controls tab
+const CreativePanel = lazy(() => import('@/core/components/right-panel/CreativePanel'));
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
     const {
@@ -145,11 +148,14 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                 </div>
 
                 <div className="flex-1 flex overflow-hidden relative">
-                    {/* Whisk Sidebar - Controls Tab on Mobile */}
-                    {/* Whisk Sidebar Removed - moved to Right Panel */}
+                    {/* Mobile Controls Tab Content */}
+                    <div className={`${activeMobileTab === 'controls' ? 'flex' : 'hidden'} md:hidden flex-1 flex-col overflow-y-auto bg-[#0f0f0f]`}>
+                        <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading controls...</div>}>
+                            <CreativePanel toggleRightPanel={() => setActiveMobileTab('studio')} />
+                        </Suspense>
+                    </div>
 
-
-                    {/* Main Workspace - Studio Tab on Mobile */}
+                    {/* Main Workspace - Studio Tab on Mobile, always visible on desktop */}
                     <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>
                         {viewMode === 'gallery' && <CreativeGallery />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
