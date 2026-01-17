@@ -154,13 +154,24 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
         }
 
+        // Get aspect ratio from locked style preset (if any)
+        let effectiveAspectRatio = args.aspectRatio || studioControls.aspectRatio || '1:1';
+        if (hasWhiskRefs) {
+            const { WhiskService } = await import('@/services/WhiskService');
+            const lockedAspectRatio = await WhiskService.getLockedAspectRatio(whiskState);
+            if (lockedAspectRatio) {
+                effectiveAspectRatio = lockedAspectRatio;
+                console.log("DirectorTools: Using locked style aspect ratio:", lockedAspectRatio);
+            }
+        }
+
         // Use the Unified ImageGenerationService
         try {
             const results = await ImageGeneration.generateImages({
                 prompt: finalPrompt,
                 count: args.count || 1,
                 resolution: args.resolution || studioControls.resolution,
-                aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
+                aspectRatio: effectiveAspectRatio,
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
                 seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
                 sourceImages,

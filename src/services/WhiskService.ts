@@ -98,6 +98,27 @@ export class WhiskService {
     }
 
     /**
+     * Gets the aspect ratio from any locked style preset.
+     * Returns undefined if no style preset is locked, allowing the default to be used.
+     */
+    static async getLockedAspectRatio(whiskState: WhiskState): Promise<string | undefined> {
+        // Dynamically import to avoid circular dependencies
+        const { STYLE_PRESETS } = await import('@/modules/creative/components/whisk/WhiskPresetStyles');
+
+        const activeStyles = whiskState.styles.filter(i => i.checked);
+
+        for (const style of activeStyles) {
+            // Check if this style matches a preset
+            const matchingPreset = STYLE_PRESETS.find(p => p.prompt === style.content);
+            if (matchingPreset && matchingPreset.aspectRatio) {
+                return matchingPreset.aspectRatio;
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
      * Generates creative text suggestions for a given category using the AI service.
      */
     static async generateInspiration(category: 'subject' | 'scene' | 'style'): Promise<string[]> {
