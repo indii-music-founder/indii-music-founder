@@ -98,27 +98,31 @@ export class WhiskService {
     }
 
     /**
-     * Generates creative text suggestions for a given category using Gemini.
+     * Generates creative text suggestions for a given category using the AI service.
      */
     static async generateInspiration(category: 'subject' | 'scene' | 'style'): Promise<string[]> {
         try {
-            const { GoogleGenAI } = await import('@google/genai');
-            const { firebaseConfig } = await import('@/config/env');
+            const { AI } = await import('@/services/ai/AIService');
 
-            const config = firebaseConfig;
-            const ai = new GoogleGenAI({ apiKey: config.apiKey });
-
-            const response = await ai.models.generateContent({
-                model: AI_MODELS.TEXT.FAST,
+            const { stream } = await AI.generateContentStream({
                 contents: [{ role: 'user', parts: [{ text: 'Generate inspiration ideas now.' }] }],
+                systemInstruction: INSPIRATION_SYSTEM_PROMPTS[category],
                 config: {
-                    systemInstruction: INSPIRATION_SYSTEM_PROMPTS[category],
                     temperature: 1.0,
                     maxOutputTokens: 500,
                 }
             });
 
-            const text = response.text?.trim() || '[]';
+            // Consume stream to get full response
+            let fullText = '';
+            const reader = stream.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value?.text) fullText += value.text;
+            }
+
+            const text = fullText.trim() || '[]';
             // Parse JSON array from response
             const jsonMatch = text.match(/\[[\s\S]*\]/);
             if (jsonMatch) {
