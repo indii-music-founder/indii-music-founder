@@ -36,22 +36,16 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                         onClick={onClose}
                     />
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[300px]"
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute bottom-full left-0 mb-3 w-64 bg-[#0c0c0e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] z-50 overflow-hidden flex flex-col max-h-[350px] ring-1 ring-white/5"
                         role="menu"
                     >
                         <div className="overflow-y-auto custom-scrollbar">
                             <div className="p-1">
-                                <button
-                                    onClick={() => onSelect('dashboard')}
-                                    className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
-                                    role="menuitem"
-                                >
-                                    <div className="w-2 h-2 rounded-full bg-gray-500" />
-                                    indii (Chief of Staff)
-                                </button>
+                                {/* indii removed from delegate menu as it has a dedicated toggle */}
                             </div>
 
                             <div className="border-t border-gray-800 my-1" />
@@ -62,11 +56,11 @@ const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgent
                                     <button
                                         key={agent.id}
                                         onClick={() => onSelect(agent.id)}
-                                        className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                        className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all flex items-center gap-3 group"
                                         role="menuitem"
                                     >
-                                        <div className={`w-1.5 h-1.5 rounded-full ${agent.color}`} />
-                                        {agent.name}
+                                        <div className={`w-2 h-2 rounded-full ${agent.color} shadow-[0_0_8px_rgba(255,255,255,0.2)] group-hover:scale-125 transition-transform`} />
+                                        <span className="font-medium">{agent.name}</span>
                                     </button>
                                 ))}
                             </div>
@@ -143,7 +137,7 @@ function CommandBar() {
         } else {
             if (chatChannel !== 'agent') setChatChannel('agent');
         }
-    }, [currentModule, setChatChannel, chatChannel]);
+    }, [currentModule, setChatChannel]); // Removed chatChannel dependency to fix toggle reversion
 
     // Memoize agent lists to avoid re-calling registry on every render
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
@@ -385,21 +379,21 @@ function CommandBar() {
                                             type="button"
                                             onClick={() => setOpenDelegate(!openDelegate)}
                                             className={cn(
-                                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                                                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border duration-300",
                                                 !isIndiiMode
-                                                    ? `${colors.bg} ${colors.border} ${colors.text} shadow-lg`
-                                                    : "bg-transparent border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                                                    ? `${colors.bg} ${colors.border} ${colors.text} shadow-[0_0_10px_rgba(0,0,0,0.3)]`
+                                                    : "bg-transparent border-transparent text-gray-400 hover:bg-white/5 hover:text-white hover:border-white/10"
                                             )}
                                             aria-haspopup="true"
                                             aria-expanded={openDelegate}
                                         >
                                             {/* Active indicator dot */}
                                             <div className={cn(
-                                                "w-2 h-2 rounded-full transition-colors",
-                                                !isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600"
+                                                "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                                                !isIndiiMode ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" : "bg-gray-600"
                                             )} />
                                             <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
-                                            <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
+                                            <ChevronUp size={12} className={`transition-transform duration-300 ${openDelegate ? 'rotate-180 text-white' : ''}`} />
                                         </button>
 
                                         <DelegateMenu
@@ -422,17 +416,24 @@ function CommandBar() {
                                     type="button"
                                     onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
                                     className={cn(
-                                        "p-1.5 rounded-lg transition-all border flex items-center gap-2 px-3 group",
+                                        "p-1.5 rounded-full transition-all duration-300 border flex items-center gap-2 px-4 group relative overflow-hidden",
                                         isIndiiMode
-                                            ? "bg-purple-500/10 border-purple-500/30 text-purple-300"
-                                            : "bg-black/20 border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10"
+                                            ? "bg-purple-600/20 border-purple-500/50 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                                            : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200 hover:border-white/20 hover:bg-white/5"
                                     )}
-                                    title={isIndiiMode ? "Talk to indii (Active)" : "Talk to indii"}
+                                    title={isIndiiMode ? "active: indii (Orchestrator)" : "Switch to indii"}
                                     aria-label={isIndiiMode ? "Switch to Agent" : "Switch to indii"}
                                     aria-pressed={isIndiiMode}
                                 >
-                                    <div className={cn("w-2 h-2 rounded-full transition-colors", isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest group-hover:tracking-[0.15em] transition-all">indii</span>
+                                    {isIndiiMode && <div className="absolute inset-0 bg-purple-500/10 animate-pulse-slow" />}
+                                    <div className={cn(
+                                        "w-1.5 h-1.5 rounded-full transition-all duration-300 relative z-10",
+                                        isIndiiMode ? "bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" : "bg-gray-600 group-hover:bg-gray-500"
+                                    )} />
+                                    <span className={cn(
+                                        "text-[10px] font-bold tracking-widest transition-all relative z-10 font-lowercase",
+                                        isIndiiMode ? "text-purple-100 shadow-purple-500/50" : ""
+                                    )}>indii</span>
                                 </button>
                                 <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
                                 <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice input"}>

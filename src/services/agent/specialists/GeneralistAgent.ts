@@ -1,5 +1,5 @@
 import { BaseAgent } from '../BaseAgent';
-import { useStore } from '@/core/store';
+// useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
 // import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
 import { AI } from '@/services/ai/AIService';
