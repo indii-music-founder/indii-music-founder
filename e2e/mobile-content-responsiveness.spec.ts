@@ -48,8 +48,8 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
         });
 
         // Wait for agent to appear
-        // Mobile view: Fullscreen modal with "AI Assistant" header
-        await expect(page.getByText('AI Assistant')).toBeVisible();
+        // Mobile view: Fullscreen modal with "How can I help you?" (Empty State) or Agent Name
+        await expect(page.getByText('How can I help you?')).toBeVisible();
     });
 
     test('should handle wide markdown tables without breaking layout ("The Unbreakable Table")', async ({ page }) => {
