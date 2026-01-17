@@ -80,7 +80,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="fixed bottom-6 right-6 w-[500px] h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden z-[100] isolate ring-1 ring-white/10"
+                    className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 w-full md:w-[500px] h-full md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden z-[100] isolate ring-1 ring-white/10"
                 >
                     {/* Header */}
                     <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 pointer-events-none" />
