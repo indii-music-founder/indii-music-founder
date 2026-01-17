@@ -105,6 +105,7 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
                     <button
                         onClick={onClose}
                         disabled={isGenerating}
+                        aria-label="Close dialog"
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
                     >
                         <X size={20} className="text-neutral-400" />
