@@ -290,16 +290,12 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                             {/* Toggle Checkbox */}
                                             <button
                                                 onClick={() => onToggle(item.id)}
-                                                role="checkbox"
-                                                aria-checked={item.checked}
-                                                aria-label={`Select ${item.type === 'text' ? item.content : 'image'}`}
                                                 className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
                                                     ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
                                                     : 'bg-transparent border-gray-600 hover:border-gray-400'
                                                     }`}
                                                 role="checkbox"
                                                 aria-checked={item.checked}
-                                                aria-label={`Toggle selection for ${item.content}`}
                                                 aria-label={`Select ${item.type === 'text' ? item.content : (item.aiCaption || 'Image reference')}`}
                                             >
                                                 {item.checked && <Check size={12} strokeWidth={3} />}
@@ -330,8 +326,6 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     }}
                                                     className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
                                                     title="Edit"
-                                                    aria-label={`Edit ${item.content}`}
-                                                    aria-label="Edit item"
                                                     aria-label={`Edit ${item.type === 'text' ? 'text' : 'caption'}`}
                                                 >
                                                     <Edit3 size={12} />
@@ -341,7 +335,6 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                                     title="Remove"
                                                     aria-label={`Remove ${item.content}`}
-                                                    aria-label="Remove item"
                                                 >
                                                     <Trash2 size={12} />
                                                 </button>
@@ -404,9 +397,6 @@ export default function WhiskSidebar() {
                         <span className="text-[9px] text-gray-500 uppercase font-bold">Precise</span>
                         <button
                             onClick={() => setPreciseReference(!whiskState.preciseReference)}
-                            role="switch"
-                            aria-checked={whiskState.preciseReference}
-                            aria-label="Toggle precise mode"
                             className={`w-9 h-5 rounded-full relative transition-all ${whiskState.preciseReference
                                 ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
                                 : 'bg-gray-800'
@@ -416,7 +406,6 @@ export default function WhiskSidebar() {
                             aria-pressed={whiskState.preciseReference}
                             role="switch"
                             aria-checked={whiskState.preciseReference}
-                            aria-label="Precise reference mode"
                         >
                             <motion.div
                                 animate={{ x: whiskState.preciseReference ? 18 : 2 }}
