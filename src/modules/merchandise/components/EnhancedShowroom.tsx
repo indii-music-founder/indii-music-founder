@@ -65,6 +65,15 @@ const motionPresets = [
     { id: 'static-hero', label: 'Static Hero', prompt: 'Subtle ambient movement, hero product shot with slight camera drift' },
 ];
 
+const PRODUCT_TYPE_MAPPING: Record<string, ProductType> = {
+    't-shirt': 'T-Shirt',
+    'hoodie': 'Hoodie',
+    'mug': 'Mug',
+    'bottle': 'Bottle',
+    'phone': 'Phone Screen',
+    'poster': 'Poster',
+};
+
 interface EnhancedShowroomProps {
     initialAsset?: string | null;
     productId?: string; // Optional: If provided, showroom is working on an existing product
