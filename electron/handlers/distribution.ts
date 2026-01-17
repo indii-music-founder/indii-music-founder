@@ -7,6 +7,8 @@ import { validateSafeDistributionSource } from '../utils/security-checks';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
+import { PythonBridge } from '../utils/python-bridge';
+
 interface StagedFile {
     type: 'content' | 'path';
     data: string;
@@ -80,6 +82,53 @@ export const setupDistributionHandlers = () => {
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:run-forensics', async (event, filePath: string) => {
+        try {
+            validateSender(event);
+            console.log(`[Distribution] Running audio forensics on: ${filePath}`);
+
+            // Clean path
+            const rawPath = filePath.startsWith('file://') ? new URL(filePath).pathname : filePath;
+            const absolutePath = decodeURIComponent(rawPath);
+
+            // Security check using audio handler logic (reused conceptualy)
+            // Ideally we'd reuse validateSafeAudioPath from ../utils/file-security
+
+            // Execute Python Script
+            const report = await PythonBridge.runScript('audio', 'audio_forensics.py', [absolutePath]);
+            return { success: true, report };
+
+        } catch (error) {
+            console.error('[Distribution] Forensics failed:', error);
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:package-itmsp', async (event, releaseId: string) => {
+        try {
+            validateSender(event);
+            console.log(`[Distribution] Packaging ITMSP for release: ${releaseId}`);
+
+            // Resolve the staging path (using the same logic as stage-release)
+            const tempDir = os.tmpdir();
+            const stagingPath = path.join(tempDir, 'indiiOS-releases', releaseId);
+
+            // Execute Python Script
+            const report = await PythonBridge.runScript('distribution', 'package_itmsp.py', [releaseId, stagingPath]);
+
+            return {
+                success: report.status === 'PASS',
+                itmspPath: report.bundle_path,
+                message: report.details,
+                error: report.status === 'FAIL' ? report.error : undefined
+            };
+
+        } catch (error) {
+            console.error('[Distribution] Packaging failed:', error);
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });

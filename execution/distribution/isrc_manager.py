@@ -1,86 +1,159 @@
-import json
-import sys
-import os
 import datetime
+import json
+import logging
+import os
+import sys
+from typing import Any, Dict, List, Optional
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("isrc_manager")
 
 class IdentityManager:
-    def __init__(self, store_path):
+    """Manages unique identifiers for the music industry, including ISRCs and UPCs.
+
+    Adheres to the standard ISRC format: CC-XXX-YY-NNNNN.
+    - CC: Country Code (2 letters)
+    - XXX: Registrant Code (3 alphanumeric)
+    - YY: Year of Registration (2 digits)
+    - NNNNN: Unique Designation Code (5 digits)
+    """
+
+    def __init__(self, store_path: str):
+        """Initializes the IdentityManager.
+
+        Args:
+            store_path: Path to the JSON data store for persistence.
+        """
         self.store_path = store_path
         self.data = self._load_data()
 
-    def _load_data(self):
+    def _load_data(self) -> Dict[str, Any]:
+        """Loads data from the store or returns defaults."""
         defaults = {"isrc_count": 0, "upc_count": 0, "registry": {}}
         if os.path.exists(self.store_path):
             try:
                 with open(self.store_path, 'r') as f:
-                    data = json.load(f)
-                    # Merge defaults to handle missing keys in existing files
-                    for k, v in defaults.items():
-                        if k not in data:
-                            data[k] = v
-                    return data
-            except (json.JSONDecodeError, ValueError):
+                    stored_data = json.load(f)
+                    # Merge with defaults to ensure all keys exist
+                    return {**defaults, **stored_data}
+            except (json.JSONDecodeError, ValueError, OSError) as e:
+                logger.error(f"Failed to load identity store: {e}. Resetting to defaults.")
                 return defaults
         return defaults
 
-    def _save_data(self):
-        with open(self.store_path, 'w') as f:
-            json.dump(self.data, f, indent=2)
+    def _save_data(self) -> None:
+        """Persists identity data to the store."""
+        try:
+            with open(self.store_path, 'w') as f:
+                json.dump(self.data, f, indent=2)
+            logger.debug(f"Identity store saved to {self.store_path}")
+        except OSError as e:
+            logger.error(f"Failed to save identity store: {e}")
 
-    def generate_isrc(self, country="US", registrant="XXX"):
-        """
-        Generates a new ISRC: CC-XXX-YY-NNNNN
+    def generate_isrc(self, country: str = "US", registrant: str = "XXX") -> str:
+        """Generates a new valid ISRC.
+
+        Args:
+            country: 2-letter ISO country code.
+            registrant: 3-character registrant code assigned to the label/artist.
+
+        Returns:
+            A formatted ISRC string.
         """
         year = datetime.datetime.now().strftime("%y")
         self.data["isrc_count"] += 1
-        seq = str(self.data["isrc_count"]).zfill(5)
-        isrc = f"{country}-{registrant}-{year}-{seq}"
+        sequence = str(self.data["isrc_count"]).zfill(5)
+        
+        # Format: CC-XXX-YY-NNNNN
+        isrc = f"{country.upper()}-{registrant.upper()}-{year}-{sequence}"
+        logger.info(f"Generated ISRC: {isrc}")
         return isrc
 
-    def generate_upc(self, prefix="1234567"):
-        """
-        Generates a mock 12-digit UPC.
+    def generate_upc(self, prefix: str = "1234567") -> str:
+        """Generates a new mock 12-digit UPC (Universal Product Code).
+
+        Args:
+            prefix: 7-digit company prefix.
+
+        Returns:
+            A 12-digit UPC string.
         """
         self.data["upc_count"] += 1
-        seq = str(self.data["upc_count"]).zfill(4)
-        upc = f"{prefix}{seq}".zfill(12)
-        return upc
+        sequence = str(self.data["upc_count"]).zfill(4)
+        
+        # UPC is typically 12 digits
+        raw_upc = f"{prefix}{sequence}".zfill(12)
+        logger.info(f"Generated UPC: {raw_upc}")
+        return raw_upc
 
-    def register_release(self, release_id, metadata):
-        isrcs = []
+    def register_release(self, release_id: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Assigns ISRCs and a UPC to a release and its tracks.
+
+        Args:
+            release_id: Unique identifier for the release.
+            metadata: Metadata dictionary containing 'tracks' list.
+
+        Returns:
+            The augmented metadata with assigned IDs.
+        """
+        logger.info(f"Registering identities for release: {release_id}")
+        
+        assigned_isrcs = []
         for track in metadata.get("tracks", []):
             isrc = self.generate_isrc()
-            track["isrc"] = isrc
-            isrcs.append(isrc)
+            track["assigned_isrc"] = isrc
+            assigned_isrcs.append(isrc)
         
         upc = self.generate_upc()
-        metadata["upc"] = upc
+        metadata["assigned_upc"] = upc
         
+        # Store in registry for historical lookup
         self.data["registry"][release_id] = {
-            "metadata": metadata,
-            "created_at": datetime.datetime.now().isoformat(),
             "upc": upc,
-            "isrcs": isrcs
+            "isrcs": assigned_isrcs,
+            "metadata_snapshot": metadata,
+            "registered_at": datetime.datetime.now().isoformat()
         }
+        
         self._save_data()
         return metadata
 
 if __name__ == "__main__":
-    store = "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/distribution-store.json"
-    manager = IdentityManager(store)
+    # Default to a generic store path if not provided by environment
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    DEFAULT_STORE = os.path.join(BASE_DIR, "identity_store.json")
+    
+    manager = IdentityManager(DEFAULT_STORE)
     
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "No command provided (generate_isrc, generate_upc, register)"}))
+        print(json.dumps({
+            "error": "Command required: register, generate_isrc, or generate_upc."
+        }))
         sys.exit(1)
 
-    cmd = sys.argv[1]
-    if cmd == "register":
-        metadata = json.loads(sys.argv[2])
-        rid = sys.argv[3] if len(sys.argv) > 3 else "REL-" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        print(json.dumps(manager.register_release(rid, metadata), indent=2))
-    elif cmd == "generate_isrc":
-        print(manager.generate_isrc())
-        manager._save_data()
-    elif cmd == "generate_upc":
-        print(manager.generate_upc())
-        manager._save_data()
+    cmd = sys.argv[1].lower()
+    
+    try:
+        if cmd == "register":
+            # Usage: python3 isrc_manager.py register '{"tracks": [{"title": "Song 1"}]}' [rid]
+            payload = json.loads(sys.argv[2])
+            rid = sys.argv[3] if len(sys.argv) > 3 else f"REL-{datetime.datetime.now().strftime('%Y%m%d%f')}"
+            print(json.dumps(manager.register_release(rid, payload), indent=2))
+        elif cmd == "generate_isrc":
+            print(json.dumps({"isrc": manager.generate_isrc()}, indent=2))
+            manager._save_data()
+        elif cmd == "generate_upc":
+            print(json.dumps({"upc": manager.generate_upc()}, indent=2))
+            manager._save_data()
+        else:
+            print(json.dumps({"error": f"Unknown command: {cmd}"}))
+            sys.exit(1)
+            
+    except Exception as e:
+        logger.exception("Identity Manager Error")
+        print(json.dumps({"error": str(e)}))
+        sys.exit(1)

@@ -62,6 +62,8 @@ export interface ElectronAPI {
     // Distribution (DDEX Packaging)
     distribution: {
         stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<{ success: boolean; packagePath?: string; files?: string[]; error?: string }>;
+        runForensics: (filePath: string) => Promise<{ success: boolean; report: any; error?: string }>;
+        packageITMSP: (releaseId: string) => Promise<{ success: boolean; itmspPath?: string; message?: string; error?: string }>;
     };
 }
 

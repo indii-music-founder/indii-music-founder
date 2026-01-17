@@ -11,6 +11,7 @@ import { RoyaltyService, RevenueReportItem } from '@/services/finance/RoyaltySer
 import { db, auth } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { distributionService } from '@/services/distribution/DistributionService';
 
 // ISRC Registry counter (in production, this would be in Firestore)
 let isrcSequence = Math.floor(Math.random() * 90000) + 10000;
@@ -137,11 +138,15 @@ async function run_audio_qc(args: {
 
     if (isElectron) {
         try {
-            // Call Electron main process for actual audio analysis
-            const result = await (window as any).electronAPI.audio.analyzeFile(filePath, { checkAtmos });
+            // Create a task for monitoring
+            const taskId = await distributionService.createTask('QC', `Audio Forensics: ${filePath.split('/').pop()}`);
+
+            // Execute forensics via service (which handles IPC and progress updates)
+            const report = await distributionService.runLocalForensics(taskId, filePath);
+
             return JSON.stringify({
                 success: true,
-                data: result,
+                data: report,
                 message: `Audio QC completed for ${filePath}`
             });
         } catch (error) {

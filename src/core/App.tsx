@@ -13,6 +13,7 @@ import { ApprovalModal } from './components/ApprovalModal';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
@@ -331,6 +332,9 @@ export default function App() {
 
                     {/* PWA Install Prompt - Shows when app can be installed */}
                     <PWAInstallPrompt />
+
+                    {/* Industrial Transmission Monitor */}
+                    <TransmissionMonitor />
                 </div>
             </ToastProvider>
         </VoiceProvider>

@@ -67,6 +67,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Distribution
     distribution: {
         stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),
+        runForensics: (filePath: string) => ipcRenderer.invoke('distribution:run-forensics', filePath),
+        packageITMSP: (releaseId: string) => ipcRenderer.invoke('distribution:package-itmsp', releaseId),
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
