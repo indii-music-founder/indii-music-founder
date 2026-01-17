@@ -170,14 +170,14 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
                     status: "completed",
                     videoUrl: videoUri,
-                    output: { metadata },
                     progress: 100,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     output: {
                         url: videoUri,
                         metadata: {
-                            duration_seconds: 5, // Veo preview is fixed at ~5s currently
-                            fps: options?.fps || 30, // Default to 30 if not specified
+                            ...metadata,
+                            duration_seconds: metadata?.duration_seconds || 5,
+                            fps: options?.fps || 30,
                             mime_type: "video/mp4",
                             resolution: options?.aspectRatio === "9:16" ? "720x1280" : "1280x720"
                         }

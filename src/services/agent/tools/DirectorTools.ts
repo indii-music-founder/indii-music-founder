@@ -95,7 +95,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
         console.log("DirectorTools: generate_image called with args", args);
-        const { studioControls, addToHistory, currentProjectId, userProfile } = useStore.getState();
+        const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
 
@@ -131,10 +131,33 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
         }
 
+        // Synthesize Whisk references into the prompt if any are checked
+        let finalPrompt = args.prompt;
+        const hasWhiskRefs = whiskState && (
+            whiskState.subjects.some(s => s.checked) ||
+            whiskState.scenes.some(s => s.checked) ||
+            whiskState.styles.some(s => s.checked)
+        );
+
+        if (hasWhiskRefs) {
+            const { WhiskService } = await import('@/services/WhiskService');
+            finalPrompt = WhiskService.synthesizeWhiskPrompt(args.prompt, whiskState);
+            console.log("DirectorTools: Synthesized Whisk prompt:", finalPrompt);
+
+            // If no source images yet and precise mode is on, get them from Whisk
+            if (!sourceImages && whiskState.preciseReference) {
+                const whiskSourceImages = WhiskService.getSourceImages(whiskState);
+                if (whiskSourceImages && whiskSourceImages.length > 0) {
+                    sourceImages = whiskSourceImages;
+                    console.log("DirectorTools: Using Whisk source images for precise mode");
+                }
+            }
+        }
+
         // Use the Unified ImageGenerationService
         try {
             const results = await ImageGeneration.generateImages({
-                prompt: args.prompt,
+                prompt: finalPrompt,
                 count: args.count || 1,
                 resolution: args.resolution || studioControls.resolution,
                 aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',

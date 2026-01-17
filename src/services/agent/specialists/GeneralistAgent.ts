@@ -5,6 +5,7 @@ import { useStore } from '@/core/store';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
+import { WhiskState } from '@/core/store/slices/creativeSlice';
 
 /**
  * GeneralistAgent (Agent Zero) - The primary orchestrator and fallback agent.
@@ -92,6 +93,40 @@ CRITICAL RULES:
         const { TOOL_REGISTRY } = await import('../tools');
         this.functions = TOOL_REGISTRY;
         this.tools = this.buildToolDeclarations();
+    }
+
+    /**
+     * Builds a context string from the Reference Mixer (Whisk) state.
+     * This allows the agent to understand what references the user has locked.
+     */
+    private buildWhiskContext(whiskState: WhiskState): string {
+        const subjects = whiskState.subjects.filter(i => i.checked);
+        const scenes = whiskState.scenes.filter(i => i.checked);
+        const styles = whiskState.styles.filter(i => i.checked);
+
+        if (subjects.length === 0 && scenes.length === 0 && styles.length === 0) {
+            return '';
+        }
+
+        const lines: string[] = [
+            'REFERENCE MIXER CONTEXT (Whisk):',
+            `- Precise Mode: ${whiskState.preciseReference ? 'ON (strict adherence to references)' : 'OFF (creative freedom)'}`,
+        ];
+
+        if (subjects.length > 0) {
+            lines.push(`- SUBJECTS: ${subjects.map(s => s.aiCaption || s.content).join('; ')}`);
+        }
+        if (scenes.length > 0) {
+            lines.push(`- SCENES: ${scenes.map(s => s.aiCaption || s.content).join('; ')}`);
+        }
+        if (styles.length > 0) {
+            lines.push(`- STYLES: ${styles.map(s => s.aiCaption || s.content).join('; ')}`);
+        }
+
+        lines.push('');
+        lines.push('IMPORTANT: When generating images, you MUST incorporate these locked references. Synthesize the subject, scene, and style into a cohesive prompt.');
+
+        return lines.join('\n');
     }
 
     /**
@@ -358,9 +393,13 @@ RECENT UPLOADS (Reference by Index):
 ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${img.subject ? img.subject + ' - ' : ''}${img.category ? img.category.toUpperCase() + ': ' : ''}${img.prompt || 'Uploaded Image'} (${img.type}) ${img.tags ? '(' + img.tags.join(', ') + ')' : ''}`).slice(0, 10).join('\n') || 'None'}
 ` : '';
 
+        // Build Reference Mixer context (Whisk)
+        const whiskContext = context?.whiskState ? this.buildWhiskContext(context.whiskState) : '';
+
         const fullSystemPrompt = `${this.systemPrompt}
 ${orgContext}
 ${brandContext}
+${whiskContext}
 
 MODULE CONTEXT: You are currently in the '${currentModule}' module.
 - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
