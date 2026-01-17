@@ -130,9 +130,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="flex items-center gap-2 group"
                     aria-expanded={isExpanded}
-                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title} section`}
                     aria-label={isExpanded ? `Collapse ${title} section` : `Expand ${title} section`}
-                    aria-label={`Toggle ${title} section`}
                 >
                     <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">
                         {title}
@@ -151,8 +149,6 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                         disabled={isInspiring}
                         className="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors disabled:opacity-50"
                         title="Inspire Me"
-                        aria-label="Inspire Me - Generate ideas with AI"
-                        aria-label="Inspire me"
                         aria-label={isInspiring ? "Generating inspiration..." : `Inspire me with ${title} ideas`}
                     >
                         {isInspiring ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
@@ -237,7 +233,6 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                             onClick={() => fileInputRef.current?.click()}
                                             className="p-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
                                             title="Upload image"
-                                            aria-label="Upload image"
                                             aria-label="Upload reference image"
                                         >
                                             <ImageIcon size={16} />
