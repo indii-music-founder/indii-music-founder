@@ -241,32 +241,55 @@ export class AIService {
                 };
 
                 // Implement Race between Generation, Timeout, and AbortSignal
-                return new Promise<WrappedResponse>((resolve, reject) => {
-                    const timer = setTimeout(() => {
+                // Use proper cleanup to prevent memory leaks and race conditions
+                let timeoutId: ReturnType<typeof setTimeout> | undefined;
+                let abortHandler: (() => void) | undefined;
+
+                const cleanup = () => {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    if (abortHandler && signal) {
+                        signal.removeEventListener('abort', abortHandler);
+                    }
+                };
+
+                // Check if already aborted before starting
+                if (signal?.aborted) {
+                    return Promise.reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was already cancelled'));
+                }
+
+                // Create timeout promise
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        cleanup();
                         reject(new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${timeoutMs}ms`));
                     }, timeoutMs);
-
-                    if (signal) {
-                        if (signal.aborted) {
-                            clearTimeout(timer);
-                            return reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled'));
-                        }
-                        signal.addEventListener('abort', () => {
-                            clearTimeout(timer);
-                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled'));
-                        });
-                    }
-
-                    generateOp()
-                        .then(res => {
-                            clearTimeout(timer);
-                            resolve(res);
-                        })
-                        .catch(err => {
-                            clearTimeout(timer);
-                            reject(err);
-                        });
                 });
+
+                // Create abort promise if signal provided
+                const abortPromise = signal ? new Promise<never>((_, reject) => {
+                    abortHandler = () => {
+                        cleanup();
+                        reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled by user'));
+                    };
+                    signal.addEventListener('abort', abortHandler);
+                }) : null;
+
+                // Race the generation against timeout and abort
+                const racers: Promise<WrappedResponse | never>[] = [generateOp(), timeoutPromise];
+                if (abortPromise) racers.push(abortPromise);
+
+                try {
+                    const result = await Promise.race(racers);
+                    cleanup();
+                    return result;
+                } catch (err: any) {
+                    cleanup();
+                    // Handle abort-related errors from Firebase SDK
+                    if (err?.message?.includes('aborted') || err?.name === 'AbortError') {
+                        throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled');
+                    }
+                    throw err;
+                }
             });
         };
 
@@ -306,7 +329,10 @@ export class AIService {
                 err.code === 'unavailable' ||
                 errorMessage.includes('QUOTA_EXCEEDED') ||
                 errorMessage.includes('503') ||
-                errorMessage.includes('429');
+                errorMessage.includes('429') ||
+                // Abort errors from Firebase SDK are often transient and retryable
+                errorMessage.includes('aborted') ||
+                errorMessage.includes('signal is aborted');
 
             if (retries > 0 && isRetryable) {
                 console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
@@ -332,9 +358,14 @@ export class AIService {
                 options.model,
                 options.config,
                 options.systemInstruction,
-                tools
+                tools,
+                { signal: options.signal } // Pass the abort signal to Firebase AI
             );
-        } catch (error) {
+        } catch (error: any) {
+            // Handle abort errors gracefully
+            if (error?.message?.includes('aborted') || error?.name === 'AbortError') {
+                throw new AppException(AppErrorCode.CANCELLED, 'Streaming request was cancelled');
+            }
             console.error('[AIService] Stream Response Error:', error);
             throw AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
         }

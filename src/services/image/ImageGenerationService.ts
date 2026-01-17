@@ -3,7 +3,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
-import { isInlineDataPart } from '@/shared/types/ai.dto';
+// isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -209,22 +209,26 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
-            const response = await AI.generateContent({
-                model: AI_MODELS.IMAGE.GENERATION,
-                contents: {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } }, { text: "Content Ref" },
-                        { inlineData: { mimeType: options.styleImage.mimeType, data: options.styleImage.data } }, { text: "Style Ref" },
-                        { text: `Generate: ${options.prompt || "Fusion"}` }
-                    ]
-                },
-                config: AI_CONFIG.IMAGE.DEFAULT
+            // Use Cloud Function for image generation (properly uses REST API)
+            const generateImage = httpsCallable(functions, 'generateImageV3');
+
+            const result = await generateImage({
+                prompt: `Blend these two images together. Content reference should define the subject/composition. Style reference should define the artistic style, colors, and mood. ${options.prompt || 'Create a cohesive fusion.'}`,
+                images: [
+                    { mimeType: options.contentImage.mimeType, data: options.contentImage.data },
+                    { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                ],
+                aspectRatio: '1:1'
             });
 
-            const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && isInlineDataPart(part)) {
-                return { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` };
+            interface GenerateImageResponse {
+                images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+            }
+            const data = result.data as GenerateImageResponse;
+
+            if (data.images?.[0]?.bytesBase64Encoded) {
+                const mimeType = data.images[0].mimeType || 'image/png';
+                return { url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}` };
             }
             return null;
         } catch (e) {
@@ -263,29 +267,38 @@ export class ImageGenerationService {
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         const results: { id: string, url: string, prompt: string }[] = [];
+
+        // Use Cloud Function for image generation (properly uses REST API)
+        const generateImage = httpsCallable(functions, 'generateImageV3');
+
         try {
             for (const target of options.targetImages) {
-                const response = await AI.generateContent({
-                    model: AI_MODELS.IMAGE.GENERATION,
-                    contents: {
-                        role: 'user',
-                        parts: [
-                            { inlineData: { mimeType: target.mimeType, data: target.data } },
-                            { text: "[Content Reference]" },
-                            { inlineData: { mimeType: options.styleImage.mimeType, data: options.styleImage.data } },
-                            { text: "[Style Reference]" },
-                            { text: `Render the Content image exactly in the style of the Reference image. ${options.prompt || "Restyle"}` }
-                        ]
-                    },
-                    config: AI_CONFIG.IMAGE.DEFAULT
+                // Determine aspect ratio based on target image dimensions
+                let aspectRatio = '1:1';
+                if (target.width && target.height) {
+                    if (target.width > target.height * 1.2) aspectRatio = '16:9';
+                    else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+                }
+
+                const result = await generateImage({
+                    prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                    images: [
+                        { mimeType: target.mimeType, data: target.data },
+                        { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                    ],
+                    aspectRatio
                 });
 
-                const part = response.response.candidates?.[0]?.content?.parts?.[0];
-                if (part && isInlineDataPart(part)) {
-                    const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                interface GenerateImageResponse {
+                    images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+                }
+                const data = result.data as GenerateImageResponse;
+
+                if (data.images?.[0]?.bytesBase64Encoded) {
+                    const mimeType = data.images[0].mimeType || 'image/png';
                     results.push({
                         id: crypto.randomUUID(),
-                        url,
+                        url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
                         prompt: `Batch Style: ${options.prompt || "Restyle"}`
                     });
                 }

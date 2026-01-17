@@ -194,27 +194,20 @@ describe("ImageGenerationService", () => {
   });
 
   describe("remixImage", () => {
-    it("should remix images with style reference", async () => {
-      const mockResponse = {
-        response: {
-          candidates: [
+    it("should remix images with style reference via Cloud Function", async () => {
+      // remixImage now uses Cloud Function instead of AI.generateContent
+      const mockCloudResponse = {
+        data: {
+          images: [
             {
-              content: {
-                parts: [
-                  {
-                    inlineData: {
-                      mimeType: "image/png",
-                      data: "remixeddata",
-                    },
-                  },
-                ],
-              },
+              bytesBase64Encoded: "remixeddata",
+              mimeType: "image/png",
             },
           ],
         },
       };
 
-      (AI.generateContent as any).mockResolvedValue(mockResponse);
+      mockGenerateImage.mockResolvedValue(mockCloudResponse);
 
       const result = await ImageGeneration.remixImage({
         contentImage: { mimeType: "image/jpeg", data: "contentdata" },
@@ -224,31 +217,33 @@ describe("ImageGenerationService", () => {
 
       expect(result).toHaveProperty("url");
       expect(result!.url).toMatch(/^data:image\/png;base64,/);
+      expect(httpsCallable).toHaveBeenCalledWith(functions, "generateImageV3");
+      expect(mockGenerateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          images: expect.arrayContaining([
+            expect.objectContaining({ mimeType: "image/jpeg", data: "contentdata" }),
+            expect.objectContaining({ mimeType: "image/png", data: "styledata" }),
+          ]),
+        }),
+      );
     });
   });
 
   describe("batchRemix", () => {
-    it("should remix multiple images with style", async () => {
-      const mockResponse = {
-        response: {
-          candidates: [
+    it("should remix multiple images with style via Cloud Function", async () => {
+      // batchRemix now uses Cloud Function instead of AI.generateContent
+      const mockCloudResponse = {
+        data: {
+          images: [
             {
-              content: {
-                parts: [
-                  {
-                    inlineData: {
-                      mimeType: "image/png",
-                      data: "remixeddata",
-                    },
-                  },
-                ],
-              },
+              bytesBase64Encoded: "remixeddata",
+              mimeType: "image/png",
             },
           ],
         },
       };
 
-      (AI.generateContent as any).mockResolvedValue(mockResponse);
+      mockGenerateImage.mockResolvedValue(mockCloudResponse);
 
       const results = await ImageGeneration.batchRemix({
         styleImage: { mimeType: "image/png", data: "styledata" },
@@ -259,7 +254,8 @@ describe("ImageGenerationService", () => {
       });
 
       expect(results).toHaveLength(2);
-      expect(AI.generateContent).toHaveBeenCalledTimes(2);
+      // Cloud Function should be called twice (once per target image)
+      expect(mockGenerateImage).toHaveBeenCalledTimes(2);
     });
   });
 });

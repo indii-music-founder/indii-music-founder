@@ -701,6 +701,15 @@ export class FirebaseAIService {
     private handleError(error: unknown): AppException {
         const msg = error instanceof Error ? error.message : String(error);
 
+        // Handle abort signals explicitly (these are retryable)
+        if (msg.includes('aborted') || msg.includes('signal is aborted') || msg.includes('AbortError')) {
+            return new AppException(
+                AppErrorCode.CANCELLED,
+                'AI Request was cancelled or timed out. Please try again.',
+                { retryable: true }
+            );
+        }
+
         if (msg.includes('permission-denied') || msg.includes('app-check-token')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check)');
         }
