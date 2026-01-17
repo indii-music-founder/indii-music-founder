@@ -90,7 +90,7 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         const result = await invokeHandler('agent:navigate-and-extract', 'http://localhost:3000');
 
         expect(result.success).toBe(false);
-        expect(result.error).toMatch(/Security Violation: Access to localhost is denied/);
+        expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
         expect(mocks.browserAgentService.navigateTo).not.toHaveBeenCalled();
     });
 
@@ -98,14 +98,14 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         const result = await invokeHandler('agent:navigate-and-extract', 'http://127.0.0.1/admin');
 
         expect(result.success).toBe(false);
-        expect(result.error).toMatch(/Security Violation: Access to localhost is denied/);
+        expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
     });
 
     it('should BLOCK navigation to Cloud Metadata (AWS)', async () => {
         const result = await invokeHandler('agent:navigate-and-extract', 'http://169.254.169.254/latest/meta-data/');
 
         expect(result.success).toBe(false);
-        expect(result.error).toMatch(/Security Violation: Access to Cloud Metadata services is denied/);
+        expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
     });
 
     it('should BLOCK navigation to Domains resolving to Private IPs (DNS Rebinding)', async () => {
@@ -129,6 +129,6 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
 
         expect(result.success).toBe(false);
         // This comes from Zod validation (FetchUrlSchema)
-        expect(result.error).toMatch(/Validation Error: Only HTTP and HTTPS protocols are allowed/);
+        expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
     });
 });

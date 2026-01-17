@@ -37,6 +37,13 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                         // Note: veo-3.1-generate-preview does NOT support videoLength/seconds parameters currently
                         aspectRatio: options?.aspectRatio || "16:9"
                     },
+                    // 🛡️ SECURITY: Enforce strict safety settings for autonomous content generation
+                    safetySettings: [
+                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+                    ]
                 };
 
                 const response = await fetch(endpoint, {

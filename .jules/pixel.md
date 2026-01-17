@@ -17,3 +17,7 @@
 ## 2025-02-18 - [Streaming & Act Warnings]
 **Learning:** When testing components that consume async generators (streams), failing to wait for the stream to fully complete results in 'act(...)' warnings. Also, icon-only buttons MUST have `aria-label` to be selectable by `getByRole` and accessible.
 **Action:** Always `await waitFor` the final state of a stream (e.g. the final message or empty loading indicator) before asserting or ending the test.
+
+## 2025-02-18 - [Mixed State Mocking]
+**Learning:** When a component relies on both global store state (via hooks like `useStore`) and local state (via `useState`) for the same feature (e.g., loading indicators), mocking the store hook with a static return value prevents re-renders when the "store" updates.
+**Action:** If the component triggers a local state update (e.g., `setScanStatus`) alongside the store update, it will force a re-render that reads the new mock store value. Ensure your mock store logic allows modifying the returned value before the component re-renders.
