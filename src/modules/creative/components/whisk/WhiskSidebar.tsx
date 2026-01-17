@@ -125,6 +125,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="flex items-center gap-2 group"
                     aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${title} section`}
                     aria-label={isExpanded ? `Collapse ${title} section` : `Expand ${title} section`}
                     aria-label={`Toggle ${title} section`}
                 >
@@ -145,6 +146,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                         disabled={isInspiring}
                         className="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors disabled:opacity-50"
                         title="Inspire Me"
+                        aria-label="Inspire Me - Generate ideas with AI"
                         aria-label="Inspire me"
                         aria-label={isInspiring ? "Generating inspiration..." : `Inspire me with ${title} ideas`}
                     >
@@ -153,6 +155,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}
+                        aria-label={isAdding ? "Cancel adding item" : `Add new ${category}`}
                         aria-label={isAdding ? "Cancel add" : "Add item"}
                         aria-label={isAdding ? "Cancel adding item" : `Add new ${title}`}
                         aria-expanded={isAdding}
@@ -291,6 +294,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     }`}
                                                 role="checkbox"
                                                 aria-checked={item.checked}
+                                                aria-label={`Toggle selection for ${item.content}`}
                                                 aria-label={`Select ${item.type === 'text' ? item.content : (item.aiCaption || 'Image reference')}`}
                                             >
                                                 {item.checked && <Check size={12} strokeWidth={3} />}
@@ -321,6 +325,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     }}
                                                     className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
                                                     title="Edit"
+                                                    aria-label={`Edit ${item.content}`}
                                                     aria-label="Edit item"
                                                     aria-label={`Edit ${item.type === 'text' ? 'text' : 'caption'}`}
                                                 >
@@ -330,6 +335,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     onClick={() => onRemove(item.id)}
                                                     className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                                     title="Remove"
+                                                    aria-label={`Remove ${item.content}`}
                                                     aria-label="Remove item"
                                                 >
                                                     <Trash2 size={12} />
@@ -400,6 +406,8 @@ export default function WhiskSidebar() {
                                     : 'bg-gray-800'
                                 }`}
                             title={whiskState.preciseReference ? 'Precise: ON - Strict adherence to references' : 'Precise: OFF - Creative freedom'}
+                            aria-label="Toggle Precise Reference Mode"
+                            aria-pressed={whiskState.preciseReference}
                             role="switch"
                             aria-checked={whiskState.preciseReference}
                             aria-label="Precise reference mode"
