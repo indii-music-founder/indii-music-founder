@@ -642,7 +642,6 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     <ManufacturingPanel
                         theme={THEMES.pro}
                         productType={PRODUCT_TYPE_MAPPING[productType] || 'T-Shirt'}
-                        productType={productType.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as any}
                         productId={productId}
                     />
                 </div>
