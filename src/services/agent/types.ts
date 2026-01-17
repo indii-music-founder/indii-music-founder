@@ -64,6 +64,7 @@ export const VALID_AGENT_IDS = [
     'devops',
     'security',
     'merchandise',  // Merchandise creation & production
+    'distribution', // Industrial Direct-to-DSP Engine
     'generalist'  // Agent Zero
 ] as const;
 

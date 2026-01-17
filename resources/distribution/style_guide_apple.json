@@ -1,0 +1,33 @@
+{
+    "dsp": "Apple Music",
+    "version": "2026.1",
+    "rules": {
+        "title_casing": "Capitalize the first letter of every word, except for small words like 'a', 'an', 'and', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet'.",
+        "forbidden_keywords": [
+            "feat.",
+            "ft.",
+            "Produced by",
+            "Prod. by",
+            "presents",
+            "presents",
+            "DJ",
+            "mix",
+            "remix"
+        ],
+        "generic_content_ban": [
+            "Chill",
+            "Sleep",
+            "Lofi",
+            "Rain",
+            "Meditation",
+            "Yoga",
+            "Zen",
+            "Background"
+        ],
+        "audio": {
+            "min_sample_rate": 44100,
+            "min_bit_depth": 16,
+            "atmos_mastering": "-18 LKFS (average loudness)"
+        }
+    }
+}

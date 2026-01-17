@@ -105,6 +105,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             agentHistory: []
         }));
 
+        // Persist the new session immediately
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.createSession(newSession).catch(console.error);
+        });
+
         return id;
     },
 

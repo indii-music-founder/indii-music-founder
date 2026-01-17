@@ -64,11 +64,11 @@ export class GeneralistAgent extends BaseAgent {
 ${this.AGENT0_PROTOCOL}
 
 CRITICAL RULES:
-1. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
-2. When asked to create video content, use 'generate_video'.
-3. Be proactive - if a tool can help, use it immediately.
-4. For complex tasks, break them into steps and execute each one.
-5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn or the very next turn. Do NOT stop after calling 'speak'.
+1. **Naming & Identity:** You are the guardian of the Project's identity. ALWAYS capture and pass the Project Title and Artist Name from the context to your specialists. STRICTLY follow provided names. NEVER hallucinate or invent new names.
+2. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
+3. When asked to create video content, use 'generate_video'.
+4. Be proactive - if a tool can help, use it immediately.
+5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
 `;
 
     tools: ToolDefinition[] = [];

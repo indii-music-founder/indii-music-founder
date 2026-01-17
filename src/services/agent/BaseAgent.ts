@@ -427,6 +427,18 @@ ${this.systemPrompt}
 
 # CONTEXT
 ${JSON.stringify(enrichedContext, null, 2)}
+
+${context?.brandKit ? `
+## BRAND & IDENTITY
+- **Brand Description:** ${context.brandKit.brandDescription || 'Not provided'}
+- **Aesthetic Style:** ${context.brandKit.aestheticStyle || 'Not provided'}
+${context.brandKit.releaseDetails ? `
+- **CURRENT PROJECT (ALBUM/SINGLE):** ${context.brandKit.releaseDetails.title || 'Untitled Project'}
+- **ARTIST NAME:** ${context.brandKit.releaseDetails.artists || 'Unknown Artist'}
+- **MOOD/THEME:** ${context.brandKit.releaseDetails.mood || 'N/A'}
+` : ''}
+` : ''}
+
 ${whiskContext}
 
 # HISTORY

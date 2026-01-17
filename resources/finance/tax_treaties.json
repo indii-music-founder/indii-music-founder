@@ -1,0 +1,70 @@
+{
+    "treaties": {
+        "UK": {
+            "country_name": "United Kingdom",
+            "treaty_article": "12",
+            "rates": {
+                "royalties_copyright": 0,
+                "royalties_industrial": 0,
+                "dividends": 15,
+                "interest": 0
+            },
+            "tin_required": true
+        },
+        "CA": {
+            "country_name": "Canada",
+            "treaty_article": "XII",
+            "rates": {
+                "royalties_copyright": 0,
+                "royalties_industrial": 10,
+                "dividends": 15,
+                "interest": 10
+            },
+            "tin_required": true
+        },
+        "JP": {
+            "country_name": "Japan",
+            "treaty_article": "12",
+            "rates": {
+                "royalties_copyright": 0,
+                "royalties_industrial": 0,
+                "dividends": 10,
+                "interest": 0
+            },
+            "tin_required": true
+        },
+        "FR": {
+            "country_name": "France",
+            "treaty_article": "12",
+            "rates": {
+                "royalties_copyright": 5,
+                "royalties_industrial": 5,
+                "dividends": 15,
+                "interest": 0
+            },
+            "tin_required": true
+        },
+        "DE": {
+            "country_name": "Germany",
+            "treaty_article": "12",
+            "rates": {
+                "royalties_copyright": 0,
+                "royalties_industrial": 0,
+                "dividends": 15,
+                "interest": 0
+            },
+            "tin_required": true
+        },
+        "DEFAULT": {
+            "country_name": "Non-Treaty Country",
+            "treaty_article": "N/A",
+            "rates": {
+                "royalties_copyright": 30,
+                "royalties_industrial": 30,
+                "dividends": 30,
+                "interest": 30
+            },
+            "tin_required": false
+        }
+    }
+}

@@ -18,6 +18,7 @@ import { MarketingTools } from './tools/MarketingTools';
 import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
+import { DistributionTools } from './tools/DistributionTools';
 import { VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
@@ -40,8 +41,10 @@ export const TOOL_REGISTRY: Record<string, (args: any) => Promise<string>> = {
     ...SecurityTools,
     ...DevOpsTools,
     ...PUBLICIST_TOOLS,
-    ...FinanceTools
+    ...FinanceTools,
+    ...DistributionTools
 };
+
 
 export const BASE_TOOLS = `
 AVAILABLE TOOLS:
