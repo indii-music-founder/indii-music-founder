@@ -176,6 +176,30 @@ describe('VideoTools', () => {
             expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
             expect(mockGenerateVideo).not.toHaveBeenCalled();
         });
+
+        it('should fail if aspect ratio is invalid', async () => {
+            const result = await VideoTools.generate_video({
+                prompt: 'test prompt',
+                aspectRatio: '21:9' // Invalid aspect ratio
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(result.error).toContain('Invalid aspect ratio');
+            expect(mockGenerateVideo).not.toHaveBeenCalled();
+        });
+
+        it('should fail if resolution is invalid', async () => {
+            const result = await VideoTools.generate_video({
+                prompt: 'test prompt',
+                resolution: '4096x2160' // Invalid resolution
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(result.error).toContain('Invalid resolution');
+            expect(mockGenerateVideo).not.toHaveBeenCalled();
+        });
     });
 
     describe('generate_motion_brush', () => {
@@ -421,6 +445,18 @@ describe('VideoTools', () => {
             expect(result.success).toBe(false);
             expect(result.error).toContain("Must be a base64 data URI");
             expect(result.metadata?.errorCode).toBe("INVALID_INPUT");
+            expect(mockGenerateLongFormVideo).not.toHaveBeenCalled();
+        });
+
+        it('should fail if aspect ratio is invalid', async () => {
+            const result = await VideoTools.generate_video_chain({
+                ...validArgs,
+                aspectRatio: '21:9' // Invalid aspect ratio
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(result.error).toContain('Invalid aspect ratio');
             expect(mockGenerateLongFormVideo).not.toHaveBeenCalled();
         });
 
