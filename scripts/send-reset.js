@@ -3,6 +3,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
 const apiKey = process.env.VITE_FIREBASE_API_KEY;
+const authDomain = process.env.VITE_FIREBASE_AUTH_DOMAIN;
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
+
+if (!apiKey || !authDomain || !projectId) {
+    console.error("❌ Missing Firebase configuration in .env");
+    console.error("Please ensure VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, and VITE_FIREBASE_PROJECT_ID are set.");
 
 if (!apiKey) {
     console.error("❌ Error: VITE_FIREBASE_API_KEY is missing from environment variables.");
@@ -11,6 +17,9 @@ if (!apiKey) {
 }
 
 const firebaseConfig = {
+    apiKey,
+    authDomain,
+    projectId,
     apiKey: apiKey,
     authDomain: "indiios-v-1-1.firebaseapp.com",
     projectId: "indiios-v-1-1",
