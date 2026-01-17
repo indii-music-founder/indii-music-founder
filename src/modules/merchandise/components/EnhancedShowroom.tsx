@@ -6,6 +6,7 @@ import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '../themes';
+import { ProductType } from '../types';
 
 // Placement options for different product types
 const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {
@@ -57,9 +58,10 @@ const motionPresets = [
 
 interface EnhancedShowroomProps {
     initialAsset?: string | null;
+    productId?: string; // Optional: If provided, showroom is working on an existing product
 }
 
-export default function EnhancedShowroom({ initialAsset = null }: EnhancedShowroomProps) {
+export default function EnhancedShowroom({ initialAsset = null, productId }: EnhancedShowroomProps) {
     const toast = useToast();
     const { addToHistory, currentProjectId } = useStore();
     const [activeMobileSection, setActiveMobileSection] = useState<'setup' | 'stage' | 'production'>('stage');
@@ -631,6 +633,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     <ManufacturingPanel
                         theme={THEMES.pro}
                         productType={productType.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as any}
+                        productId={productId}
                     />
                 </div>
             </div>

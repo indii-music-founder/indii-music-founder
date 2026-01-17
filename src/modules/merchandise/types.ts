@@ -47,5 +47,17 @@ export const VideoGenerationSchema = z.object({
     createdAt: z.any() // Firestore Timestamp
 });
 
+export const CatalogProductSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    basePrice: z.number(),
+    image: z.string().url().optional(),
+    tags: z.array(z.string()).optional(),
+    features: z.array(z.string()).optional(),
+    category: z.enum(['standard', 'pro']),
+    description: z.string().optional()
+});
+
 export type MockupGeneration = z.infer<typeof MockupGenerationSchema>;
 export type VideoGeneration = z.infer<typeof VideoGenerationSchema>;
+export type CatalogProduct = z.infer<typeof CatalogProductSchema>;
