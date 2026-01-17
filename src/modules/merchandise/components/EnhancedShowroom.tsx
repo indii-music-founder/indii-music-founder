@@ -6,6 +6,16 @@ import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '../themes';
+import { ProductType } from '../types';
+
+const PRODUCT_TYPE_MAPPING: Record<string, ProductType> = {
+    't-shirt': 'T-Shirt',
+    'hoodie': 'Hoodie',
+    'mug': 'Mug',
+    'bottle': 'Bottle',
+    'poster': 'Poster',
+    'phone': 'Phone Screen'
+};
 
 // Placement options for different product types
 const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {
@@ -630,7 +640,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     </h2>
                     <ManufacturingPanel
                         theme={THEMES.pro}
-                        productType={productType.replace('-', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as any}
+                        productType={PRODUCT_TYPE_MAPPING[productType] || 'T-Shirt'}
                     />
                 </div>
             </div>
