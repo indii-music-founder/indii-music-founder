@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
 
@@ -53,7 +53,17 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('Runs ONE step of evolution (Select 2, Breed 1) and produces valid offspring', async () => {
+    // 0. Enforce Determinism (Helix Philosophy: Randomness is for Evolution, not for Testing)
+    // We mock Math.random to always return 0.
+    // Effect on Selection: Always picks index 0 (The Best Available Agent).
+    // Effect on Mutation: 0.0 < 1.0 (Always Mutates).
+    vi.spyOn(Math, 'random').mockReturnValue(0.0);
+
     // 1. Setup Micro-Universe (3 Mock Agents)
     const population: AgentGene[] = [
       { ...mockGene, id: 'agent-1', name: 'Alpha', fitness: 1.0, systemPrompt: 'PROMPT_A' },
@@ -89,8 +99,12 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     // Valid Lineage (Should be from top pool)
     expect(offspring.lineage.length).toBe(2);
-    // With tournament size 3, Alpha is extremely likely to be picked,
-    // but randomness exists. We mostly check structure here.
+
+    // STRICT SELECTION CHECK:
+    // Because we mocked random to 0, Selection MUST pick the top agents.
+    // Parent 1: Alpha (Index 0 of Full Pool)
+    // Parent 2: Beta (Index 0 of Remaining Pool)
+    expect(offspring.lineage).toEqual(['agent-1', 'agent-2']);
 
     // Valid Mutation (Mocked Gemini Call)
     expect(offspring.systemPrompt).toContain('[GEMINI_MUTATION]');
@@ -99,6 +113,8 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     // The prompt should contain parts of parents.
     // Since we forced mutation on top of crossover, it should be complex.
     // e.g. "PROMPT_A + PROMPT_B [GEMINI_MUTATION]"
+    expect(offspring.systemPrompt).toContain('PROMPT_A');
+    expect(offspring.systemPrompt).toContain('PROMPT_B');
     expect(offspring.systemPrompt).toContain('+');
   });
 });

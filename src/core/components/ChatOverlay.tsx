@@ -86,7 +86,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                     dragControls={dragControls}
                     dragListener={false}
                     dragMomentum={false}
-                    className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[70] isolate ring-0 md:ring-1 ring-white/10"
+                    className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[100] isolate ring-0 md:ring-1 ring-white/10"
                 >
                     {/* Header */}
                     <div

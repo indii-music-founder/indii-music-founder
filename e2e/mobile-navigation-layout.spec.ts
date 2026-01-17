@@ -69,9 +69,14 @@ test.describe('📱 Viewport: Mobile Navigation Layout', () => {
         });
 
         // 2. Verify Full Screen Modal
-        // The modal has fixed inset-0 z-[70]
-        const modal = page.locator('.fixed.inset-0.z-\\[70\\]');
-        await expect(modal).toBeVisible();
+        // Find the chat overlay via its close button to ensure we have the correct container
+        // Note: Aria label might be "Close chat" or "Close Agent" depending on implementation
+        const closeBtn = page.locator('button[aria-label="Close chat"], button[aria-label="Close Agent"]').first();
+        await expect(closeBtn).toBeVisible();
+
+        // The modal container is the ancestor with fixed position
+        const modal = closeBtn.locator('xpath=../../..');
+        await expect(modal).toHaveClass(/fixed/);
 
         const box = await modal.boundingBox();
         // Allow for safe areas, borders, and sub-pixel rendering (within 5% of viewport)
@@ -79,8 +84,6 @@ test.describe('📱 Viewport: Mobile Navigation Layout', () => {
         expect(box?.height).toBeGreaterThan(MOBILE_HEIGHT * 0.95);
 
         // 3. Verify Close Button works
-        const closeBtn = page.locator('button[aria-label="Close Agent"]');
-        await expect(closeBtn).toBeVisible();
         await closeBtn.click();
 
         // 4. Verify Closed

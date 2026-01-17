@@ -11,6 +11,11 @@ vi.mock('@/core/context/ToastContext');
 vi.mock('@/services/image/ImageGenerationService');
 
 describe('WhiskSidebar', () => {
+    // Silence window.scrollTo not implemented error from framer-motion in jsdom
+    beforeAll(() => {
+        window.scrollTo = vi.fn();
+    });
+
     const mockAddWhiskItem = vi.fn();
     const mockRemoveWhiskItem = vi.fn();
     const mockToggleWhiskItem = vi.fn();
@@ -57,24 +62,49 @@ describe('WhiskSidebar', () => {
         expect(screen.getByText('Robot')).toBeInTheDocument();
     });
 
-    it('toggles precise mode', () => {
-        render(<WhiskSidebar />);
-        const toggleBtn = screen.getByText('Precise').parentElement?.querySelector('button');
-        if (toggleBtn) fireEvent.click(toggleBtn);
+    it('Precise Mode Toggle: click -> update state -> feedback', () => {
+        const { rerender } = render(<WhiskSidebar />);
+
+        // 1. Initial State: Ready & OFF
+        const toggleBtn = screen.getByRole('switch', { name: 'Toggle precise mode' });
+        expect(toggleBtn).toBeInTheDocument();
+        expect(toggleBtn).toHaveAttribute('aria-checked', 'false');
+
+        // 2. Action: Click
+        fireEvent.click(toggleBtn);
+
+        // 3. Verify Action
         expect(mockSetPreciseReference).toHaveBeenCalledWith(true);
+
+        // 4. State Change (simulated)
+        const updatedState = { ...mockWhiskState, preciseReference: true };
+        (useStore as any).mockReturnValue({
+            whiskState: updatedState,
+            addWhiskItem: mockAddWhiskItem,
+            removeWhiskItem: mockRemoveWhiskItem,
+            toggleWhiskItem: mockToggleWhiskItem,
+            updateWhiskItem: mockUpdateWhiskItem,
+            setPreciseReference: mockSetPreciseReference
+        });
+        rerender(<WhiskSidebar />);
+
+        // 5. Verify Feedback: ON
+        const updatedBtn = screen.getByRole('switch', { name: 'Toggle precise mode' });
+        expect(updatedBtn).toHaveAttribute('aria-checked', 'true');
     });
 
     it('shows input when clicking add button', () => {
         render(<WhiskSidebar />);
-        const addButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-plus'));
-        fireEvent.click(addButtons[0]);
+        // With changes, we can now use aria-label
+        const addBtn = screen.getAllByRole('button', { name: 'Add item' })[0];
+        fireEvent.click(addBtn);
         expect(screen.getByPlaceholderText(/Describe subject/i)).toBeInTheDocument();
     });
 
     it('adds a text item on Enter', () => {
         render(<WhiskSidebar />);
-        const addButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-plus'));
-        fireEvent.click(addButtons[0]);
+        const addBtn = screen.getAllByRole('button', { name: 'Add item' })[0];
+        fireEvent.click(addBtn);
         const input = screen.getByPlaceholderText(/Describe subject/i);
         fireEvent.change(input, { target: { value: 'Alien' } });
         fireEvent.keyDown(input, { key: 'Enter' });
@@ -83,25 +113,23 @@ describe('WhiskSidebar', () => {
 
     it('toggles an item', () => {
         render(<WhiskSidebar />);
-        // Find the button that contains a lucide-check or is the toggle button
-        const robotItem = screen.getByText('Robot').closest('div');
-        const toggleBtn = robotItem?.parentElement?.querySelector('button'); // The toggle button is the first child
-        if (toggleBtn) fireEvent.click(toggleBtn);
+        const toggleBtn = screen.getByRole('checkbox', { name: 'Select Robot' });
+        fireEvent.click(toggleBtn);
         expect(mockToggleWhiskItem).toHaveBeenCalledWith('subject', '1');
     });
 
     it('removes an item', () => {
         render(<WhiskSidebar />);
-        const removeBtn = screen.getAllByRole('button').find(b => b.querySelector('svg.lucide-trash2'));
-        if (removeBtn) fireEvent.click(removeBtn);
+        const removeBtn = screen.getByRole('button', { name: 'Remove item' });
+        fireEvent.click(removeBtn);
         expect(mockRemoveWhiskItem).toHaveBeenCalledWith('subject', '1');
     });
 
     it('updates an item caption', () => {
         window.prompt = vi.fn().mockReturnValue('New Robot Caption');
         render(<WhiskSidebar />);
-        // Find by title which is unique to the edit button
-        const editBtn = screen.getByTitle('Edit');
+        // With changes, we can now use aria-label
+        const editBtn = screen.getByRole('button', { name: 'Edit item' });
         fireEvent.click(editBtn);
         expect(mockUpdateWhiskItem).toHaveBeenCalledWith('subject', '1', { aiCaption: 'New Robot Caption' });
     });
@@ -132,8 +160,8 @@ describe('WhiskSidebar', () => {
         render(<WhiskSidebar />);
 
         // Open add menu
-        const addButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-plus'));
-        fireEvent.click(addButtons[0]);
+        const addBtn = screen.getAllByRole('button', { name: 'Add item' })[0];
+        fireEvent.click(addBtn);
 
         // Find file input
         const fileInput = document.querySelector('input[type="file"]');

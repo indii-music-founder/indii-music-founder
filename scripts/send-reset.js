@@ -1,4 +1,5 @@
 
+
 import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
@@ -25,13 +26,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-const email = "the.walking.agency.det@gmail.com";
+// Ideally, this should also be an argument or env var, but focusing on the API key first.
+const email = process.argv[2] || "the.walking.agency.det@gmail.com";
 
 console.log(`Sending password reset email to ${email}...`);
 
 sendPasswordResetEmail(auth, email)
     .then(() => {
         console.log("Password reset email sent successfully!");
+        process.exit(0);
     })
     .catch((error) => {
         console.error("Error sending reset email:", error);
