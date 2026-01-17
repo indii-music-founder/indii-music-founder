@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Wand2, History, ChevronRight, ChevronDown, Sliders } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
@@ -6,10 +6,9 @@ import { useToast } from '@/core/context/ToastContext';
 import { z } from 'zod';
 import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
-import WhiskPresetStyles, { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';
-import { Sparkles, Lock, Image as ImageIcon, Film, ImagePlay } from 'lucide-react';
+import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
+import { Sparkles, Image as ImageIcon, Film, ImagePlay } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useCallback } from 'react';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -204,6 +203,14 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                 } else {
                                     addWhiskItem('style', 'text', preset.prompt, preset.label);
                                 }
+                                // Auto-apply aspect ratio from preset
+                                if (preset.aspectRatio) {
+                                    setStudioControls({ aspectRatio: preset.aspectRatio as VideoAspectRatio });
+                                }
+                                // Auto-apply duration for video presets
+                                if (preset.duration) {
+                                    setStudioControls({ duration: preset.duration });
+                                }
                                 toast.success(`Style: ${preset.label}`);
                             }} />
                         </div>
@@ -262,14 +269,18 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">STYLE PRESET</label>
+                            <label className="text-[10px] font-bold text-gray-500 tracking-wider">DURATION</label>
                             <div className="relative group">
-                                <select className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all">
-                                    <option>Cinematic</option>
-                                    <option>Photorealistic</option>
-                                    <option>Anime / Manga</option>
-                                    <option>3D Render</option>
-                                    <option>Oil Painting</option>
+                                <select
+                                    value={studioControls.duration}
+                                    onChange={(e) => setStudioControls({ duration: parseInt(e.target.value) })}
+                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                                >
+                                    <option value={4}>4 seconds</option>
+                                    <option value={5}>5 seconds</option>
+                                    <option value={6}>6 seconds</option>
+                                    <option value={8}>8 seconds</option>
+                                    <option value={10}>10 seconds</option>
                                 </select>
                                 <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
                             </div>

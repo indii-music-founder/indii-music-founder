@@ -4,6 +4,7 @@ import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
+import { WhiskService } from '../../services/WhiskService';
 // Removed unused imports from framer-motion and lucide-react as they are now in VideoStage
 import { Loader2, Layout, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
@@ -90,7 +91,8 @@ export default function VideoWorkflow() {
         pendingPrompt,
         setPendingPrompt,
         selectedItem,
-        setVideoInputs
+        setVideoInputs,
+        whiskState
     } = useStore(useShallow((state) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -102,7 +104,8 @@ export default function VideoWorkflow() {
         pendingPrompt: state.pendingPrompt,
         setPendingPrompt: state.setPendingPrompt,
         selectedItem: state.selectedItem,
-        setVideoInputs: state.setVideoInputs
+        setVideoInputs: state.setVideoInputs,
+        whiskState: state.whiskState
     })));
 
     // Editor Store
@@ -264,12 +267,15 @@ export default function VideoWorkflow() {
             // Update global prompt before generating
             setPrompt(localPrompt);
 
+            // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
+            const finalPrompt = WhiskService.synthesizeVideoPrompt(localPrompt, whiskState);
+
             let results: { id: string; url: string; prompt: string; }[] = [];
 
             // Check for long-form Video
             if (studioControls.duration > 8) {
                 results = await VideoGeneration.generateLongFormVideo({
-                    prompt: localPrompt,
+                    prompt: finalPrompt,
                     totalDuration: studioControls.duration,
                     aspectRatio: studioControls.aspectRatio,
                     resolution: studioControls.resolution,
@@ -283,7 +289,7 @@ export default function VideoWorkflow() {
                 });
             } else {
                 results = await VideoGeneration.generateVideo({
-                    prompt: localPrompt,
+                    prompt: finalPrompt,
                     resolution: studioControls.resolution,
                     aspectRatio: studioControls.aspectRatio,
                     negativePrompt: studioControls.negativePrompt,
