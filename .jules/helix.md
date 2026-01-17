@@ -37,3 +37,7 @@
 ## 2026-06-03 - [Time Paradox: NaN Generations]
 **Learning:** When input agents have malformed metadata (e.g., `generation: undefined`), the offspring calculation `Math.max(undefined, undefined)` resulted in `NaN` generations. These "Timeless Agents" effectively bypassed the "Doomsday Switch" (Max Generations check), potentially leading to infinite evolutionary loops.
 **Action:** Implemented "Time Integrity Check" in `EvolutionEngine` to treat undefined generations as 0, ensuring the evolutionary clock always ticks forward. Verified with `HelixChronos.test.ts`.
+
+## 2026-06-04 - [The Flaky Universe]
+**Learning:** Testing "Selection Pressure" (Fitness Ranking) with standard random seeds is mathematically flaky. A test that passes 99% of the time because "Alpha is extremely likely to be picked" is a defect in the Verification Layer.
+**Action:** Enforced Strict Determinism in `HelixMicroUniverse.test.ts` by mocking `Math.random` to 0.0, ensuring that "Survival of the Fittest" is a guarantee in the test environment, not a probability.
