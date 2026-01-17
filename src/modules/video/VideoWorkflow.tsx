@@ -140,6 +140,9 @@ export default function VideoWorkflow() {
                 }
 
                 if (newStatus === 'completed' && data.videoUrl) {
+                    // Extract metadata from Veo 3.1 output (enforcing contract)
+                    const metadata = data.output?.metadata || data.metadata;
+
                     const newAsset = {
                         id: jobId,
                         url: data.videoUrl,
@@ -147,7 +150,8 @@ export default function VideoWorkflow() {
                         type: 'video' as const,
                         timestamp: Date.now(),
                         projectId: currentProjectId || 'default',
-                        orgId: currentOrganizationId
+                        orgId: currentOrganizationId,
+                        meta: metadata ? JSON.stringify(metadata) : undefined
                     };
                     addToHistory(newAsset);
                     setActiveVideo(newAsset);
