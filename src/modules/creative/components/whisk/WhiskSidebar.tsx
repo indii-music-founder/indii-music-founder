@@ -124,6 +124,8 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="flex items-center gap-2 group"
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? `Collapse ${title} section` : `Expand ${title} section`}
                 >
                     <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">
                         {title}
@@ -142,12 +144,15 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                         disabled={isInspiring}
                         className="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors disabled:opacity-50"
                         title="Inspire Me"
+                        aria-label="Inspire me"
                     >
                         {isInspiring ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
                     </button>
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}
+                        aria-label={isAdding ? "Cancel add" : "Add item"}
+                        aria-expanded={isAdding}
                     >
                         <Plus size={14} />
                     </button>
@@ -222,6 +227,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                             onClick={() => fileInputRef.current?.click()}
                                             className="p-2 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
                                             title="Upload image"
+                                            aria-label="Upload image"
                                         >
                                             <ImageIcon size={16} />
                                         </button>
@@ -271,6 +277,9 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                             {/* Toggle Checkbox */}
                                             <button
                                                 onClick={() => onToggle(item.id)}
+                                                role="checkbox"
+                                                aria-checked={item.checked}
+                                                aria-label={`Select ${item.type === 'text' ? item.content : 'image'}`}
                                                 className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
                                                         ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
                                                         : 'bg-transparent border-gray-600 hover:border-gray-400'
@@ -304,6 +313,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     }}
                                                     className="p-1.5 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors"
                                                     title="Edit"
+                                                    aria-label="Edit item"
                                                 >
                                                     <Edit3 size={12} />
                                                 </button>
@@ -311,6 +321,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                                     onClick={() => onRemove(item.id)}
                                                     className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                                     title="Remove"
+                                                    aria-label="Remove item"
                                                 >
                                                     <Trash2 size={12} />
                                                 </button>
@@ -372,6 +383,9 @@ export default function WhiskSidebar() {
                         <span className="text-[9px] text-gray-500 uppercase font-bold">Precise</span>
                         <button
                             onClick={() => setPreciseReference(!whiskState.preciseReference)}
+                            role="switch"
+                            aria-checked={whiskState.preciseReference}
+                            aria-label="Toggle precise mode"
                             className={`w-9 h-5 rounded-full relative transition-all ${whiskState.preciseReference
                                     ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
                                     : 'bg-gray-800'
